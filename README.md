@@ -14,6 +14,8 @@
 
 Um sistema de credenciamento para eventos acadêmicos
 
+#### 🧭 Em breve disponível para Web, com aplicativo auxiliar Mobile
+
 ### 🚧 Features
 
 - [ ] Autenticação
@@ -39,7 +41,7 @@ Um sistema de credenciamento para eventos acadêmicos
 - [ ] Extras
   - Suporte a múltiplos idiomas
 
-#### 🧭 Em breve disponível para Web, com aplicativo auxiliar Mobile
+<br />
 
 > [!NOTE]
 > O design do frontend do projeto [está disponível no Figma](https://www.figma.com/design/eizWIGzoSSiJoEfSSwDjgO/verifIC?node-id=0-1&t=aDt9NN2PI4TJpJ4I-1).
@@ -106,7 +108,11 @@ Para a visualização do banco de dados, utilize `pnpm db:studio`
 > [!WARNING]
 > Execute esse comando sempre na raiz do projeto para evitar erros com variáveis de ambiente.
 
+<br />
+
 ## 🧹 Limpeza de dependências
+
+Caso seja necessário limpar as dependências de todos os pacotes e aplicações do monorepo, utilize o comando abaixo:
 
 ```bash
 pnpm dlx rimraf --glob **/node_modules
