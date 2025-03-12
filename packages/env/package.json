@@ -1,0 +1,19 @@
+{
+  "name": "@verific/env",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "lint": "pnpm biome lint ."
+  },
+  "dependencies": {
+    "@t3-oss/env-nextjs": "0.8.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@verific/biome-config": "workspace:*",
+    "@verific/typescript-config": "workspace:*",
+    "@types/node": "^20"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "extends": "@verific/typescript-config/lib.json",
+  "include": [
+    "."
+  ],
+  "exclude": [
+    "dist",
+    "build",
+    "node_modules"
+  ]
+}
