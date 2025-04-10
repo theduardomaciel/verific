@@ -19,7 +19,9 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="pt-BR">
-			<body className={`${hankenGrotesk.variable} antialiased min-h-screen`}>
+			<body
+				className={`${hankenGrotesk.variable} antialiased flex flex-col min-h-screen`}
+			>
 				{children}
 			</body>
 		</html>
