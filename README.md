@@ -82,6 +82,9 @@ pnpm install --global turbo dotenv-cli
 git clone https://github.com/theduardomaciel/verific.git
 ```
 
+> [!WARNING]
+> Para clonar o repositório você precisará ter o `git` instalado na sua máquina. Caso não tenha, você pode [baixá-lo aqui](https://git-scm.com/downloads).
+
 3. Após clonar o repositório, basta entrar na pasta do repositório clonado e acessar o projeto por meio de um editor de texto ou IDE de preferência, como o VSCode:
 
 ```
