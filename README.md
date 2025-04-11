@@ -75,28 +75,44 @@ Um sistema de credenciamento para eventos acadêmicos
 Antes mesmo de clonar o código do projeto, é necessário instalar algumas dependências globalmente. Recomendamos o uso do `pnpm` por sua disponibilidade em todas as principais plataformas (Windows, Linux e Mac) e sua velocidade quando comparado ao `npm` tradicional.
 Caso o `pnpm` não esteja instalado, é possível [https://pnpm.io/installation](baixá-lo aqui).
 
-1. Para o correto funcionamento da aplicação, instale as seguintes dependências:
+1. Para o correto funcionamento da aplicação, instale as seguintes dependências globais:
 
 ```
 pnpm install --global turbo dotenv-cli
 ```
 
-2. Após instalar as dependências globais, clone o repositório e utilize `pnpm install` para instalar as dependências do projeto.
+2. Após instalar as dependências globais, clone o repositório com:
+```
+git clone https://github.com/theduardomaciel/verific.git
+```
 
-3. Com tudo instalado, basta acessar o projeto por meio de um editor de texto ou IDE de preferência, como o VSCode:
+3. Após clonar o repositório, basta entrar na pasta do repositório clonado e acessar o projeto por meio de um editor de texto ou IDE de preferência, como o VSCode:
 
 ```
 cd verific
 code .
 ```
 
+4. Com o terminal aberto no repositório, use `pnpm install` para instalar as dependências do projeto
+. Esse comando irá instalar todas as dependências de todos os pacotes e aplicações do monorepo.
+
+```bash
+pnpm install
+```
+
 > [!WARNING]
 > Após a instalação das dependências, certifique-se de reiniciar tudo que possa estar carregando o projeto no momento, como o VSCode ou terminais.
 
-4. Em seguida, adicione o arquivo `.env` com as variáveis de ambiente adequadas para todos os pacotes (`/packages`) e aplicações (`/apps`), com base nos arquivos de exemplo `.env.example`.  
+5. Em seguida, crie um arquivo `.env` com as variáveis de ambiente adequadas para todos os pacotes (`/packages`) e aplicações (`/apps`), com base nos arquivos de exemplo `.env.example`.  
    Esse passo é essencial para o correto funcionamento dos pacotes e aplicações do monorepo.
 
-5. Para dar início ao servidor local de desenvolvimento, utilize `pnpm dev`
+6. Para dar início ao servidor local de desenvolvimento, utilize
+```bash
+pnpm dev
+```
+
+> [!NOTE]
+> Esse comando irá iniciar o servidor local de desenvolvimento, que provavelmente estará disponível em `http://localhost:3000`.
 
 <br />
 
