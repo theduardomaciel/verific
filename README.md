@@ -2,11 +2,11 @@
     verifIC
 </h1>
 
-<!-- <picture>
+<picture>
   <source media="(prefers-color-scheme: dark)" srcset="/.github/cover.png">
   <source media="(prefers-color-scheme: light)" srcset="/.github/cover_light.png">
     <img alt="Main project cover" src="/.github/cover_light.png">
-</picture> -->
+</picture>
 
 <br />
 
