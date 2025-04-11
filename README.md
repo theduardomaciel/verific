@@ -10,7 +10,7 @@
 
 Um sistema de credenciamento para eventos acadêmicos
 
-#### 🧭 Em breve disponível para Web, com aplicativo auxiliar Mobile
+#### 🧭 Em breve disponível para Web, com aplicação auxiliar Mobile
 
 ### 🚧 Features
 
@@ -66,7 +66,7 @@ Um sistema de credenciamento para eventos acadêmicos
 
 <br />
 
-## 👣 Como iniciar o projeto
+## ⚙️ Como iniciar o projeto
 
 Antes mesmo de clonar o código do projeto, é necessário instalar algumas dependências globalmente. Recomendamos o uso do `pnpm` por sua disponibilidade em todas as principais plataformas (Windows, Linux e Mac) e sua velocidade quando comparado ao `npm` tradicional.
 Caso o `pnpm` não esteja instalado, é possível [https://pnpm.io/installation](baixá-lo aqui).
