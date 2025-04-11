@@ -31,17 +31,28 @@ const chartConfig = {
 
 export function ParticipantsGraph() {
 	return (
-		<ChartContainer config={chartConfig}>
-			<AreaChart accessibilityLayer data={chartData}>
+		<ChartContainer
+			config={chartConfig}
+			className="min-h-[200px] w-full h-full"
+		>
+			<AreaChart
+				accessibilityLayer
+				data={chartData}
+				margin={{
+					left: 12,
+					right: 12,
+				}}
+			>
 				<CartesianGrid vertical={false} />
 				<XAxis
 					dataKey="date"
 					tickLine={false}
 					axisLine={false}
-					tickMargin={12}
+					tickMargin={8}
 					tickFormatter={(value) => value}
 				/>
 				<YAxis
+					width={30}
 					stroke="#888888"
 					fontSize={12}
 					tickLine={false}
@@ -50,7 +61,7 @@ export function ParticipantsGraph() {
 				/>
 				<ChartTooltip cursor={false} content={<ChartTooltipContent />} />
 				<defs>
-					<linearGradient id="filltotal" x1="0" y1="0" x2="0" y2="1">
+					<linearGradient id="fillTotal" x1="0" y1="0" x2="0" y2="1">
 						<stop
 							offset="5%"
 							stopColor="var(--color-total)"
@@ -62,7 +73,7 @@ export function ParticipantsGraph() {
 							stopOpacity={0.1}
 						/>
 					</linearGradient>
-					<linearGradient id="fillactive" x1="0" y1="0" x2="0" y2="1">
+					<linearGradient id="fillActive" x1="0" y1="0" x2="0" y2="1">
 						<stop
 							offset="5%"
 							stopColor="var(--color-active)"
@@ -78,7 +89,7 @@ export function ParticipantsGraph() {
 				<Area
 					dataKey="active"
 					type="natural"
-					fill="url(#fillactive)"
+					fill="url(#fillActive)"
 					fillOpacity={0.4}
 					stroke="var(--color-active)"
 					stackId="a"
@@ -86,7 +97,7 @@ export function ParticipantsGraph() {
 				<Area
 					dataKey="total"
 					type="natural"
-					fill="url(#filltotal)"
+					fill="url(#fillTotal)"
 					fillOpacity={0.4}
 					stroke="var(--color-total)"
 					stackId="a"
