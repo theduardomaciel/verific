@@ -6,17 +6,20 @@ import { cn } from "@/lib/utils";
 
 import Logo from "@/public/logo.svg";
 
-const footerVariants = cva("flex items-center justify-center w-full p-8", {
-	variants: {
-		variant: {
-			landing: "bg-transparent text-foreground",
-			dashboard: "bg-transparent text-foreground border-t",
+const footerVariants = cva(
+	"flex items-center justify-center w-full py-6 px-8 ",
+	{
+		variants: {
+			variant: {
+				landing: "bg-transparent text-foreground",
+				dashboard: "bg-transparent text-foreground border-t",
+			},
+		},
+		defaultVariants: {
+			variant: "dashboard",
 		},
 	},
-	defaultVariants: {
-		variant: "dashboard",
-	},
-});
+);
 
 function Footer({
 	className,
@@ -29,7 +32,7 @@ function Footer({
 	}) {
 	return (
 		<footer className={cn(footerVariants({ variant, className }))} {...props}>
-			<div className="flex flex-row flex-wrap items-start justify-start md:justify-between gap-4 px-4 w-full">
+			<div className="flex flex-row flex-wrap items-start justify-start md:justify-between gap-4 w-full">
 				<div className="flex flex-row flex-wrap items-center justify-start gap-3 md:gap-8 xs:justify-between max-md:w-full">
 					{/* Brand */}
 					<div className="flex items-center gap-3">

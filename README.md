@@ -1,12 +1,8 @@
-<h1 align="center">
-    verifIC
-</h1>
-
-<!-- <picture>
+<picture>
   <source media="(prefers-color-scheme: dark)" srcset="/.github/cover.png">
   <source media="(prefers-color-scheme: light)" srcset="/.github/cover_light.png">
-    <img alt="Main project cover" src="/.github/cover_light.png">
-</picture> -->
+    <img alt="verifIC" src="/.github/cover_light.png">
+</picture>
 
 <br />
 
@@ -14,7 +10,7 @@
 
 Um sistema de credenciamento para eventos acadêmicos
 
-#### 🧭 Em breve disponível para Web, com aplicativo auxiliar Mobile
+#### 🧭 Em breve disponível para Web, com aplicação auxiliar Mobile
 
 ### 🚧 Features
 
@@ -44,14 +40,14 @@ Um sistema de credenciamento para eventos acadêmicos
 <br />
 
 > [!NOTE]
-> O design do frontend do projeto [está disponível no Figma](https://www.figma.com/design/eizWIGzoSSiJoEfSSwDjgO/verifIC?node-id=0-1&t=aDt9NN2PI4TJpJ4I-1).
+> O design do frontend do projeto [está disponível no Figma](https://www.figma.com/design/I55WPfDNhSViBbha5eQEq4/verifIC?node-id=1-180&t=9EoIBQM7QSojG76w-1).
 
 <br />
 
 ## ✨ Tecnologias
 
 - `[Base]` Next.js
-- `[Estilização]` TailwindCSS + Shadcn
+- `[Estilização]` TailwindCSS + shadcn/ui
 - `[Banco de dados]` Neon (PostgreSQL)
 - `[Hospedagem]` Vercel
 
@@ -70,33 +66,52 @@ Um sistema de credenciamento para eventos acadêmicos
 
 <br />
 
-## 👣 Como iniciar o projeto
+## ⚙️ Como iniciar o projeto
 
-Antes mesmo de clonar o código do projeto, é necessário instalar algumas dependências globalmente. Recomendamos o uso do `pnpm` por sua disponibilidade em todas as principais plataformas (Windows, Linux e Mac) e sua velocidade quando comparado ao `npm` tradicional.
-Caso o `pnpm` não esteja instalado, é possível [https://pnpm.io/installation](baixá-lo aqui).
+Antes mesmo de clonar o código do projeto, é necessário instalar algumas dependências globalmente. Recomendamos o uso do `pnpm` por sua disponibilidade em todas as principais plataformas (Windows, Linux e Mac) e sua velocidade quando comparado ao `npm` tradicional.  
+Caso o `pnpm` não esteja instalado, é possível [baixá-lo aqui](https://pnpm.io/installation).
 
-1. Para o correto funcionamento da aplicação, instale as seguintes dependências:
+1. Para o correto funcionamento da aplicação, instale as seguintes dependências globais:
 
 ```
 pnpm install --global turbo dotenv-cli
 ```
 
-2. Após instalar as dependências globais, clone o repositório e utilize `pnpm install` para instalar as dependências do projeto.
+2. Após instalar as dependências globais, clone o repositório com:
+```
+git clone https://github.com/theduardomaciel/verific.git
+```
 
-3. Com tudo instalado, basta acessar o projeto por meio de um editor de texto ou IDE de preferência, como o VSCode:
+> [!WARNING]
+> Para clonar o repositório você precisará ter o `git` instalado na sua máquina. Caso não tenha, você pode [baixá-lo aqui](https://git-scm.com/downloads).
+
+3. Após clonar o repositório, basta entrar na pasta do repositório clonado e acessar o projeto por meio de um editor de texto ou IDE de preferência, como o VSCode:
 
 ```
 cd verific
 code .
 ```
 
+4. Com o terminal aberto no repositório, use `pnpm install` para instalar as dependências do projeto
+. Esse comando irá instalar todas as dependências de todos os pacotes e aplicações do monorepo.
+
+```bash
+pnpm install
+```
+
 > [!WARNING]
 > Após a instalação das dependências, certifique-se de reiniciar tudo que possa estar carregando o projeto no momento, como o VSCode ou terminais.
 
-4. Em seguida, adicione o arquivo `.env` com as variáveis de ambiente adequadas para todos os pacotes (`/packages`) e aplicações (`/apps`), com base nos arquivos de exemplo `.env.example`.  
+5. Em seguida, crie um arquivo `.env` com as variáveis de ambiente adequadas para todos os pacotes (`/packages`) e aplicações (`/apps`), com base nos arquivos de exemplo `.env.example`.  
    Esse passo é essencial para o correto funcionamento dos pacotes e aplicações do monorepo.
 
-5. Para dar início ao servidor local de desenvolvimento, utilize `pnpm dev`
+6. Para dar início ao servidor local de desenvolvimento, utilize
+```bash
+pnpm dev
+```
+
+> [!NOTE]
+> Esse comando irá iniciar o servidor local de desenvolvimento, que provavelmente estará disponível em `http://localhost:3000`.
 
 <br />
 
