@@ -1,11 +1,7 @@
-<h1 align="center">
-    verifIC
-</h1>
-
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="/.github/cover.png">
   <source media="(prefers-color-scheme: light)" srcset="/.github/cover_light.png">
-    <img alt="Main project cover" src="/.github/cover_light.png">
+    <img alt="verifIC" src="/.github/cover_light.png">
 </picture>
 
 <br />
