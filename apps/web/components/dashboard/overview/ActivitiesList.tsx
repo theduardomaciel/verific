@@ -1,10 +1,12 @@
+import { cn } from "@/lib/utils";
+
+// Components
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityCard } from "@/components/dashboard/overview/ActivityCard";
-import { cn } from "@/lib/utils";
 
 export function ActivitiesList({ className }: { className?: string }) {
 	return (
-		<Card className={cn("h-auto", className)}>
+		<Card className={cn("h-auto gap-2", className)}>
 			<CardHeader>
 				<CardTitle className="text-base font-medium">
 					Próximas atividades
@@ -12,33 +14,39 @@ export function ActivitiesList({ className }: { className?: string }) {
 			</CardHeader>
 			<CardContent className="grid gap-4">
 				<ActivityCard
-					number={1}
 					title="Atividade 1"
-					presenter="Carlos Magno Pereira"
+					speaker="Carlos Magno Pereira"
 					type="PALESTRA"
-					status="AGORA"
+					time="AGORA"
 				/>
 				<ActivityCard
-					number={2}
 					title="Atividade 2"
-					presenter="Ângela Batista Santos"
+					speaker="Ângela Batista Santos"
 					type="RODA DE CONVERSA"
-					status="EM INSTANTES"
+					time="EM BREVE"
 				/>
 				<ActivityCard
-					number={3}
 					title="Atividade 3"
-					presenter="José Ribeiro Correia"
+					speaker="José Ribeiro Correia"
 					type="WORKSHOP"
-					status="HOJE"
 					time="Hoje, às 17h"
 				/>
 				<ActivityCard
-					number={4}
 					title="Atividade 4"
-					presenter="Fernando Machado"
+					speaker="Fernando Machado"
 					type="MINICURSO"
-					status="HOJE"
+					time="Hoje, às 18h"
+				/>
+				<ActivityCard
+					title="Atividade 4"
+					speaker="Fernando Machado"
+					type="MINICURSO"
+					time="Hoje, às 18h"
+				/>
+				<ActivityCard
+					title="Atividade 4"
+					speaker="Fernando Machado"
+					type="MINICURSO"
 					time="Hoje, às 18h"
 				/>
 			</CardContent>
