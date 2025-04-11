@@ -8,21 +8,19 @@ const rem = REM({
 	subsets: ["latin"],
 });
 
-const DASHBOARD_LINKS = [
-	{ href: "/dashboard", label: "Visão Geral" },
-	{ href: "/dashboard/activities", label: "Atividades" },
-	{ href: "/dashboard/participants", label: "Participantes" },
-	{ href: "/dashboard/settings", label: "Configurações" },
+const ACCOUNT_LINKS = [
+	{ href: "/account", label: "Projetos" },
+	{ href: "/account/settings", label: "Configurações" },
 ];
 
-export default function DashboardLayout({
+export default function AccountLayout({
 	children,
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
 	return (
 		<div className={`${rem.variable} w-full flex flex-col flex-1`}>
-			<Header links={DASHBOARD_LINKS} />
+			<Header links={ACCOUNT_LINKS} showProjectSwitcher={false} />
 			{children}
 			<Footer />
 		</div>
