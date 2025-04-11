@@ -8,6 +8,13 @@ const rem = REM({
 	subsets: ["latin"],
 });
 
+const DASHBOARD_LINKS = [
+	{ href: "/dashboard", label: "Visão Geral" },
+	{ href: "/dashboard/activities", label: "Atividades" },
+	{ href: "/dashboard/participants", label: "Participantes" },
+	{ href: "/dashboard/settings", label: "Configurações" },
+];
+
 export default function DashboardLayout({
 	children,
 }: Readonly<{
@@ -15,7 +22,7 @@ export default function DashboardLayout({
 }>) {
 	return (
 		<div className={`${rem.variable} w-full flex flex-col flex-1`}>
-			<Header />
+			<Header links={DASHBOARD_LINKS} />
 			{children}
 			<Footer />
 		</div>
