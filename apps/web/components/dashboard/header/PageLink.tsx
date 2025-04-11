@@ -7,17 +7,18 @@ import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
-const DASHBOARD_LINKS = [
-	{ href: "", label: "Visão Geral" },
-	{ href: "/activities", label: "Atividades" },
-	{ href: "/participants", label: "Participantes" },
-	{ href: "/settings", label: "Configurações" },
-];
+export interface MainNavProps {
+	links: {
+		href: string;
+		label: string;
+	}[];
+}
 
 export default function MainNav({
 	className,
+	links,
 	...props
-}: React.HTMLAttributes<HTMLElement>) {
+}: React.HTMLAttributes<HTMLElement> & MainNavProps) {
 	const pathname = usePathname();
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
 	const activeButtonRef = useRef<HTMLAnchorElement>(null);
@@ -50,8 +51,8 @@ export default function MainNav({
 			{...props}
 		>
 			<nav className="flex items-center justify-start gap-4 px-4 min-w-fit">
-				{DASHBOARD_LINKS.map((link) => {
-					const href = `/dashboard${link.href}`;
+				{links.map((link) => {
+					const href = link.href;
 					const isActive = pathname === href;
 
 					return (
