@@ -25,7 +25,7 @@ export default function LoginPage() {
 
 			{/* Right Part */}
 			<div className="w-full flex-1 md:w-1/2 flex flex-col items-center justify-center p-8">
-				<div className="flex flex-col gap-6 items-center justify-center w-full max-w-sm">
+				<div className="flex flex-col gap-6 items-center justify-center w-full max-w-sm max-md:pb-8">
 					<div className="flex flex-col items-center justify-center gap-2">
 						<h3 className="font-dashboard foreground text-2xl font-bold mb-2 text-center">
 							Autenticação
@@ -59,6 +59,11 @@ export default function LoginPage() {
 						</a>
 						.
 					</p>
+					<footer className="flex md:hidden w-full justify-center items-center absolute bottom-0 left-1/2 -translate-x-1/2 pb-8 max-w-[50%]">
+						<p className="text-xs opacity-20 text-center">
+							Copyright 2025 verifIC. Todos os direitos reservados
+						</p>
+					</footer>
 				</div>
 			</div>
 		</div>
