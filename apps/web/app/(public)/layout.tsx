@@ -1,7 +1,6 @@
 import { Fragment, type ReactNode } from "react";
 
-import Footer from "@/components/footer";
-import Header from "@/components/header";
+import { Footer } from "@/components/Footer";
 
 export default function AppLayout({
 	children,
@@ -10,7 +9,7 @@ export default function AppLayout({
 }>) {
 	return (
 		<Fragment>
-			<Header />
+			{/* HEADER */}
 			{children}
 			<Footer />
 		</Fragment>
