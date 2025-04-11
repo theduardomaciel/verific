@@ -40,14 +40,14 @@ Um sistema de credenciamento para eventos acadêmicos
 <br />
 
 > [!NOTE]
-> O design do frontend do projeto [está disponível no Figma](https://www.figma.com/design/eizWIGzoSSiJoEfSSwDjgO/verifIC?node-id=0-1&t=aDt9NN2PI4TJpJ4I-1).
+> O design do frontend do projeto [está disponível no Figma](https://www.figma.com/design/I55WPfDNhSViBbha5eQEq4/verifIC?node-id=1-180&t=9EoIBQM7QSojG76w-1).
 
 <br />
 
 ## ✨ Tecnologias
 
 - `[Base]` Next.js
-- `[Estilização]` TailwindCSS + Shadcn
+- `[Estilização]` TailwindCSS + shadcn/ui
 - `[Banco de dados]` Neon (PostgreSQL)
 - `[Hospedagem]` Vercel
 
@@ -68,8 +68,8 @@ Um sistema de credenciamento para eventos acadêmicos
 
 ## ⚙️ Como iniciar o projeto
 
-Antes mesmo de clonar o código do projeto, é necessário instalar algumas dependências globalmente. Recomendamos o uso do `pnpm` por sua disponibilidade em todas as principais plataformas (Windows, Linux e Mac) e sua velocidade quando comparado ao `npm` tradicional.
-Caso o `pnpm` não esteja instalado, é possível [https://pnpm.io/installation](baixá-lo aqui).
+Antes mesmo de clonar o código do projeto, é necessário instalar algumas dependências globalmente. Recomendamos o uso do `pnpm` por sua disponibilidade em todas as principais plataformas (Windows, Linux e Mac) e sua velocidade quando comparado ao `npm` tradicional.  
+Caso o `pnpm` não esteja instalado, é possível [baixá-lo aqui](https://pnpm.io/installation).
 
 1. Para o correto funcionamento da aplicação, instale as seguintes dependências globais:
 
