@@ -22,7 +22,7 @@ git switch -b nome-da-sua-branch
 ```
 
 > [!NOTE]
-> Caso prefira usar o VS Code, você pode criar uma nova branch clicando no nome da branch atual na parte inferior esquerda do editor e selecionando "Criar nova ramificação".
+> Caso prefira usar o VS Code, você pode criar uma nova branch clicando no nome da branch atual na parte inferior esquerda do editor e selecionando "Criar nova ramificação".  
 > ![Mudança de branch no VS Code](./assets/vscode-branch.png)
 
 **Padrão sugerido para nomes de branches:**
