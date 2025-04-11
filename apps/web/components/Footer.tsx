@@ -44,7 +44,7 @@ function Footer({
 								<div className="w-[1px] h-3 bg-foreground rounded-full hidden md:flex" />
 							</>
 						)}
-						<Logo />
+						<Logo className="h-5 text-foreground" />
 					</div>
 					{/* Links */}
 					<nav className="flex gap-6">
