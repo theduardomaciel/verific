@@ -10,6 +10,21 @@ Mesmo que você não tenha muito contato com Git, aqui vão as orientações bá
 
 Sempre que for trabalhar em uma nova funcionalidade (ex: uma tela do frontend ou uma função do backend), crie uma nova branch **antes de começar a programar**.
 
+Você pode criar uma branch com o comando:
+
+```bash
+git checkout -b nome-da-sua-branch
+```
+ou, se preferir, pode usar o comando abaixo para criar e mudar para a nova branch ao mesmo tempo:
+
+```bash
+git switch -b nome-da-sua-branch
+```
+
+> [!NOTE]
+> Caso prefira usar o VS Code, você pode criar uma nova branch clicando no nome da branch atual na parte inferior esquerda do editor e selecionando "Criar nova ramificação".
+> ![Mudança de branch no VS Code](./assets/vscode-branch.png)
+
 **Padrão sugerido para nomes de branches:**
 
 - `front/` para coisas do frontend  
