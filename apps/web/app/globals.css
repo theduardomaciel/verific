@@ -42,7 +42,7 @@
 	--radius-xl: calc(var(--radius) + 4px);
 	--font-mono: JetBrains Mono, monospace;
 	--font-serif: Source Serif 4, serif;
-	--radius: 0.6rem;
+	--radius: 0.5rem;
 	--shadow-2xl: var(--shadow-2xl);
 	--shadow-xl: var(--shadow-xl);
 	--shadow-lg: var(--shadow-lg);
@@ -64,7 +64,7 @@
 }
 
 :root {
-	--radius: 0.6rem;
+	--radius: 0.5rem;
 	--spacing-landing: 1.5rem;
 	--spacing-dashboard: 1.5rem;
 	--card: oklch(1.0 0 0);
@@ -177,7 +177,7 @@
 	--sidebar-border: oklch(0.37 0 0);
 	--sidebar-ring: oklch(0.62 0.19 259.81);
 	--destructive-foreground: oklch(1.0 0 0);
-	--radius: 0.6rem;
+	--radius: 0.5rem;
 	--shadow-color: hsl(0 0% 0%);
 	--font-sans: Inter, sans-serif;
 	--font-serif: Source Serif 4, serif;
