@@ -42,7 +42,10 @@ export function EventList() {
 						))}
 					</ul>
 
-					<Button className="w-full py-6 bg-primary hover:bg-blue-600 text-white flex items-center justify-center gap-2">
+					<Button
+						className="w-full py-6 bg-primary hover:bg-blue-600 text-white flex items-center justify-center gap-2"
+						size={"lg"}
+					>
 						<Plus className="font-hanken font-medium text-base leading-6 tracking-normal align-middle" />
 						Criar novo projeto
 					</Button>
