@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 
 // Components
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ActivityCard } from "@/components/dashboard/overview/ActivityCard";
+import { ActivityCard } from "@/components/dashboard/overview/activity-card";
 
 export function ActivitiesList({ className }: { className?: string }) {
 	return (

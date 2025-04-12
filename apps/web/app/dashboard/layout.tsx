@@ -1,7 +1,7 @@
 import { REM } from "next/font/google";
 
 import { Header } from "@/components/dashboard/header";
-import { Footer } from "@/components/Footer";
+import { Footer } from "@/components/footer";
 
 const rem = REM({
 	variable: "--font-rem",
