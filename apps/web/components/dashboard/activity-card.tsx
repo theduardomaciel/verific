@@ -117,7 +117,7 @@ function ActivityInfo({ speaker, category, date }: InfoProps) {
 
 	return (
 		<div
-			className={cn("flex justify-between items-center gap-2", {
+			className={cn("flex flex-wrap justify-between items-center gap-2", {
 				"md:flex-col md:items-end max-md:w-full": !speaker,
 			})}
 		>

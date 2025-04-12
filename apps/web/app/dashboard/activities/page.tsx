@@ -1,23 +1,29 @@
 import { Suspense } from "react";
+
+// Icons
+import { Plus } from "lucide-react";
+
+// Components
+import { Button } from "@/components/ui/button";
 import { ActivityList } from "@/components/dashboard/activities/activity-list";
 import { ActivityFilters } from "@/components/dashboard/activities/activity-filters";
 import { ActivitySearch } from "@/components/dashboard/activities/activity-search";
 import { ActivityPagination } from "@/components/dashboard/activities/activity-pagination";
+
+// Data
 import {
 	getActivities,
 	getCategories,
 	getMonitors,
 	getStatuses,
 } from "@/lib/data";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 
 export default async function ActivitiesPage({
 	searchParams,
 }: {
 	searchParams: { [key: string]: string | string[] | undefined };
 }) {
-	// Get search parameters
+	// Obtemos os parâmetros de pesquisa da URL
 	const query =
 		typeof searchParams.query === "string" ? searchParams.query : "";
 	const sort =
@@ -42,7 +48,8 @@ export default async function ActivitiesPage({
 			: [searchParams.monitors]
 		: [];
 
-	// Fetch data (these would be actual data fetching functions in a real app)
+	// Obtém os dados (seriam reais funções de busca de dados em um aplicativo real)
+	// Funções simuladas de busca de dados com atraso artificial
 	const activities = await getActivities({
 		query,
 		sort,

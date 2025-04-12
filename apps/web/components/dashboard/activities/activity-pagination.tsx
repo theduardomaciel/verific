@@ -21,10 +21,11 @@ export function ActivityPagination({
 	currentPage,
 	totalPages,
 }: ActivityPaginationProps) {
+	const PAGE_SIZE = 5; // Define o tamanho da página
 	const router = useRouter();
 	const searchParams = useSearchParams();
 
-	// Create a new URLSearchParams instance and update the URL
+	// Cria uma nova instância de URLSearchParams e atualiza a URL
 	const createQueryString = useCallback(
 		(name: string, value: string) => {
 			const params = new URLSearchParams(searchParams.toString());
@@ -35,45 +36,46 @@ export function ActivityPagination({
 		[searchParams],
 	);
 
-	// Navigate to a specific page
+	// Navega para uma página específica
 	const goToPage = (page: number) => {
-		if (page < 1 || page > totalPages) return;
+		if (page < 1 || page > Math.ceil(totalPages / PAGE_SIZE)) return;
 
 		const queryString = createQueryString("page", page.toString());
 		router.push(`/dashboard/activities?${queryString}`);
 	};
 
-	// Generate page numbers to display
+	// Gera os números de página para exibição
 	const getPageNumbers = () => {
 		const pages = [];
+		const totalPageCount = Math.ceil(totalPages / PAGE_SIZE);
 
-		// Always show first page
+		// Sempre mostra a primeira página
 		if (currentPage > 3) {
 			pages.push(1);
 		}
 
-		// Show ellipsis if needed
+		// Mostra elipses se necessário
 		if (currentPage > 4) {
 			pages.push("ellipsis");
 		}
 
-		// Show pages around current page
+		// Mostra páginas ao redor da página atual
 		for (
 			let i = Math.max(2, currentPage - 1);
-			i <= Math.min(totalPages - 1, currentPage + 1);
+			i <= Math.min(totalPageCount - 1, currentPage + 1);
 			i++
 		) {
 			pages.push(i);
 		}
 
-		// Show ellipsis if needed
-		if (currentPage < totalPages - 3) {
+		// Mostra elipses se necessário
+		if (currentPage < totalPageCount - 3) {
 			pages.push("ellipsis");
 		}
 
-		// Always show last page
-		if (currentPage < totalPages - 2 && totalPages > 1) {
-			pages.push(totalPages);
+		// Sempre mostra a última página
+		if (currentPage < totalPageCount - 2 && totalPageCount > 1) {
+			pages.push(totalPageCount);
 		}
 
 		return pages;
@@ -122,7 +124,9 @@ export function ActivityPagination({
 							goToPage(currentPage + 1);
 						}}
 						className={
-							currentPage >= totalPages ? "pointer-events-none opacity-50" : ""
+							currentPage >= Math.ceil(totalPages / PAGE_SIZE)
+								? "pointer-events-none opacity-50"
+								: ""
 						}
 					/>
 				</PaginationItem>
