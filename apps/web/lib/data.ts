@@ -1,3 +1,6 @@
+import type { z } from "zod";
+import type { getActivitiesParams } from "@verific/api/routers/activities";
+
 const now = new Date();
 
 export interface Activity {
@@ -100,26 +103,21 @@ export const isToday = (date: Date): boolean => {
 	return date.toDateString() === now.toDateString();
 };
 
-interface GetActivitiesParams {
-	query?: string;
-	sort?: string;
-	page?: number;
-	categoryIds?: string[];
-	statusIds?: string[];
-	monitorIds?: string[];
-}
+type GetActivitiesParams = z.infer<typeof getActivitiesParams>;
 
 // Simulated data fetching functions with artificial delay
 export async function getActivities({
-	query = "",
+	query,
 	sort = "recent",
-	page = 1,
-	categoryIds = [],
-	statusIds = [],
-	monitorIds = [],
+	page = 0,
+	pageSize = 10,
+	status = [],
+	category = [],
+	audience = [],
+	speakerIds = [],
 }: GetActivitiesParams): Promise<Activity[]> {
 	// Simulate server delay
-	await new Promise((resolve) => setTimeout(resolve, 2500));
+	await new Promise((resolve) => setTimeout(resolve, 500));
 
 	// Filter activities based on parameters
 	let filtered = [...activities];
@@ -132,28 +130,28 @@ export async function getActivities({
 		);
 	}
 
-	if (categoryIds.length > 0) {
+	if (category.length > 0) {
 		filtered = filtered.filter((activity) =>
-			categoryIds.includes(activity.category),
+			category.includes(activity.category),
 		);
 	}
 
 	// Fixing the filtering logic for statusIds
-	if (statusIds.length > 0) {
+	if (status.length > 0) {
 		filtered = filtered.filter((activity) => {
-			if (statusIds.includes("now") && isLive(activity.date)) {
+			if (status.includes("now") && isLive(activity.date)) {
 				return true;
 			}
-			if (statusIds.includes("next") && isStartingSoon(activity.date)) {
+			if (status.includes("next") && isStartingSoon(activity.date)) {
 				return true;
 			}
 			return false;
 		});
 	}
 
-	if (monitorIds.length > 0) {
+	if (speakerIds.length > 0) {
 		filtered = filtered.filter((activity) =>
-			activity.monitors.some((monitor) => monitorIds.includes(monitor)),
+			activity.monitors.some((speaker) => speakerIds.includes(speaker)),
 		);
 	}
 

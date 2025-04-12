@@ -37,6 +37,59 @@ interface ActivityFiltersProps {
 	defaultSelectedMonitors?: string[];
 }
 
+interface FilterListProps {
+	title: string;
+	items: { id: string; label: string }[];
+	selectedItems: string[];
+	onItemChange: (id: string, checked: boolean) => void;
+}
+
+export function FilterList({ title, items, selectedItems, onItemChange }: FilterListProps) {
+	const [isExpanded, setIsExpanded] = useState(false);
+
+	return (
+		<div className="space-y-3">
+			<h3 className="font-medium">{title}</h3>
+			<div className="space-y-2">
+				{items.slice(0, 2).map((item) => (
+					<div key={item.id} className="flex items-center space-x-2">
+						<Checkbox
+							id={`${title}-${item.id}`}
+							checked={selectedItems.includes(item.id)}
+							onCheckedChange={(checked) => onItemChange(item.id, checked as boolean)}
+						/>
+						<label htmlFor={`${title}-${item.id}`} className="text-sm">
+							{item.label}
+						</label>
+					</div>
+				))}
+
+				{items.length > 2 && (
+					<Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+						<CollapsibleTrigger className="flex items-center text-sm text-blue-600">
+							{isExpanded ? <ChevronUp className="h-4 w-4 mr-1" /> : <ChevronDown className="h-4 w-4 mr-1" />} Ver mais
+						</CollapsibleTrigger>
+						<CollapsibleContent className="space-y-2 pt-2">
+							{items.slice(2).map((item) => (
+								<div key={item.id} className="flex items-center space-x-2">
+									<Checkbox
+										id={`${title}-${item.id}`}
+										checked={selectedItems.includes(item.id)}
+										onCheckedChange={(checked) => onItemChange(item.id, checked as boolean)}
+									/>
+									<label htmlFor={`${title}-${item.id}`} className="text-sm">
+										{item.label}
+									</label>
+								</div>
+							))}
+						</CollapsibleContent>
+					</Collapsible>
+				)}
+			</div>
+		</div>
+	);
+}
+
 export function ActivityFilters({
 	categories,
 	statuses,
@@ -50,9 +103,6 @@ export function ActivityFilters({
 	const isMobile = useIsMobile();
 
 	const [isFiltersOpen, setIsFiltersOpen] = useState(!isMobile);
-	const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(false);
-	const [isStatusesExpanded, setIsStatusesExpanded] = useState(false);
-	const [isMonitorsExpanded, setIsMonitorsExpanded] = useState(false);
 
 	const [selectedCategories, setSelectedCategories] = useState<string[]>(
 		defaultSelectedCategories,
@@ -143,118 +193,20 @@ export function ActivityFilters({
 				</CollapsibleTrigger>
 				<CollapsibleContent className="px-4 pb-4 space-y-6">
 					{/* Categories */}
-					<div className="space-y-3">
-						<h3 className="font-medium">Filtrar por Categoria</h3>
-						<div className="space-y-2">
-							{categories.slice(0, 2).map((category) => (
-								<div key={category.id} className="flex items-center space-x-2">
-									<Checkbox
-										id={`category-${category.id}`}
-										checked={selectedCategories.includes(category.id)}
-										onCheckedChange={(checked) =>
-											handleCategoryChange(category.id, checked as boolean)
-										}
-									/>
-									<label
-										htmlFor={`category-${category.id}`}
-										className="text-sm"
-									>
-										{category.label}
-									</label>
-								</div>
-							))}
-
-							{categories.length > 2 && (
-								<Collapsible
-									open={isCategoriesExpanded}
-									onOpenChange={setIsCategoriesExpanded}
-								>
-									<CollapsibleTrigger className="flex items-center text-sm text-blue-600">
-										<ChevronDown className="h-4 w-4 mr-1" /> Ver mais
-									</CollapsibleTrigger>
-									<CollapsibleContent className="space-y-2 pt-2">
-										{categories.slice(2).map((category) => (
-											<div
-												key={category.id}
-												className="flex items-center space-x-2"
-											>
-												<Checkbox
-													id={`category-${category.id}`}
-													checked={selectedCategories.includes(category.id)}
-													onCheckedChange={(checked) =>
-														handleCategoryChange(
-															category.id,
-															checked as boolean,
-														)
-													}
-												/>
-												<label
-													htmlFor={`category-${category.id}`}
-													className="text-sm"
-												>
-													{category.label}
-												</label>
-											</div>
-										))}
-									</CollapsibleContent>
-								</Collapsible>
-							)}
-						</div>
-					</div>
+					<FilterList
+						title="Filtrar por Categoria"
+						items={categories}
+						selectedItems={selectedCategories}
+						onItemChange={handleCategoryChange}
+					/>
 
 					{/* Statuses */}
-					<div className="space-y-3">
-						<h3 className="font-medium">Filtrar por Status</h3>
-						<div className="space-y-2">
-							{statuses.slice(0, 2).map((status) => (
-								<div key={status.id} className="flex items-center space-x-2">
-									<Checkbox
-										id={`status-${status.id}`}
-										checked={selectedStatuses.includes(status.id)}
-										onCheckedChange={(checked) =>
-											handleStatusChange(status.id, checked as boolean)
-										}
-									/>
-									<label htmlFor={`status-${status.id}`} className="text-sm">
-										{status.label}
-									</label>
-								</div>
-							))}
-
-							{statuses.length > 2 && (
-								<Collapsible
-									open={isStatusesExpanded}
-									onOpenChange={setIsStatusesExpanded}
-								>
-									<CollapsibleTrigger className="flex items-center text-sm text-blue-600">
-										<ChevronDown className="h-4 w-4 mr-1" /> Ver mais
-									</CollapsibleTrigger>
-									<CollapsibleContent className="space-y-2 pt-2">
-										{statuses.slice(2).map((status) => (
-											<div
-												key={status.id}
-												className="flex items-center space-x-2"
-											>
-												<Checkbox
-													id={`status-${status.id}`}
-													checked={selectedStatuses.includes(status.id)}
-													onCheckedChange={(checked) =>
-														handleStatusChange(status.id, checked as boolean)
-													}
-												/>
-												<label
-													htmlFor={`status-${status.id}`}
-													className="text-sm"
-												>
-													{status.label}
-												</label>
-											</div>
-										))}
-									</CollapsibleContent>
-								</Collapsible>
-							)}
-						</div>
-					</div>
+					<FilterList
+						title="Filtrar por Status"
+						items={statuses}
+						selectedItems={selectedStatuses}
+						onItemChange={handleStatusChange}
+					/>
 
 					{/* Monitors */}
 					<div className="space-y-3">
@@ -286,8 +238,8 @@ export function ActivityFilters({
 						</div>
 
 						<Collapsible
-							open={isMonitorsExpanded}
-							onOpenChange={setIsMonitorsExpanded}
+							open={isFiltersOpen}
+							onOpenChange={setIsFiltersOpen}
 						>
 							<CollapsibleTrigger className="flex items-center text-sm text-blue-600">
 								<ChevronDown className="h-4 w-4 mr-1" /> Ver mais

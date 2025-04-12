@@ -7,8 +7,9 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ActivityList } from "@/components/dashboard/activities/activity-list";
 import { ActivityFilters } from "@/components/dashboard/activities/activity-filters";
-import { ActivitySearch } from "@/components/dashboard/activities/activity-search";
 import { ActivityPagination } from "@/components/dashboard/activities/activity-pagination";
+import { SearchBar } from "@/components/dashboard/search-bar";
+import { SortBy } from "@/components/dashboard/sort-by";
 
 // Data
 import {
@@ -18,67 +19,56 @@ import {
 	getStatuses,
 } from "@/lib/data";
 
-export default async function ActivitiesPage({
-	searchParams,
-}: {
-	searchParams: { [key: string]: string | string[] | undefined };
+// Validation
+import type { z } from "zod";
+import { getActivitiesParams } from "@verific/api/routers/activities";
+import { FiltersPanel } from "@/components/dashboard/filters-panel";
+import { Filter } from "@/components/dashboard/filter";
+
+type EventsPageParams = z.infer<typeof getActivitiesParams>;
+
+export default async function ActivitiesPage(props: {
+	searchParams: Promise<EventsPageParams>;
 }) {
-	// Obtemos os parâmetros de pesquisa da URL
-	const query =
-		typeof searchParams.query === "string" ? searchParams.query : "";
-	const sort =
-		typeof searchParams.sort === "string" ? searchParams.sort : "recent";
-	const page =
-		typeof searchParams.page === "string"
-			? Number.parseInt(searchParams.page)
-			: 1;
-	const categoryIds = searchParams.categories
-		? Array.isArray(searchParams.categories)
-			? searchParams.categories
-			: [searchParams.categories]
-		: [];
-	const statusIds = searchParams.statuses
-		? Array.isArray(searchParams.statuses)
-			? searchParams.statuses
-			: [searchParams.statuses]
-		: [];
-	const monitorIds = searchParams.monitors
-		? Array.isArray(searchParams.monitors)
-			? searchParams.monitors
-			: [searchParams.monitors]
-		: [];
+	const searchParams = await props.searchParams;
+	const parsedParams = getActivitiesParams.parse(searchParams);
 
 	// Obtém os dados (seriam reais funções de busca de dados em um aplicativo real)
 	// Funções simuladas de busca de dados com atraso artificial
-	const activities = await getActivities({
-		query,
-		sort,
-		page,
-		categoryIds,
-		statusIds,
-		monitorIds,
-	});
+	const activities = await getActivities(parsedParams);
 	const categories = await getCategories();
 	const statuses = await getStatuses();
 	const monitors = await getMonitors();
 
 	return (
-		<div className="mx-auto py-6 px-4 md:px-6">
+		<div className="px-dashboard py-8 min-h-screen">
 			<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-				<div className="md:col-span-2 space-y-4">
-					<ActivitySearch defaultQuery={query} defaultSort={sort} />
+				<div className="md:col-span-2 space-y-4 w-full">
+					<div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+						<div className="relative w-full md:flex-1">
+							<SearchBar placeholder="Pesquisar atividades..." />
+						</div>
+						<SortBy
+							sortBy={parsedParams.sort}
+							items={[
+								{ value: "recent", label: "Mais recentes" },
+								{ value: "oldest", label: "Mais antigas" },
+								{ value: "alphabetical", label: "Alfabética" },
+							]}
+						/>
+					</div>
 
 					<Suspense
 						fallback={
 							<div className="h-96 flex items-center justify-center">
-								Loading activities...
+								Carregando atividades...
 							</div>
 						}
 					>
 						<ActivityList activities={activities} />
 					</Suspense>
 
-					<ActivityPagination currentPage={page} totalPages={5} />
+					<ActivityPagination currentPage={parsedParams.page} totalPages={5} />
 				</div>
 
 				<div className="md:col-span-1 space-y-4 order-first md:order-last">
@@ -86,14 +76,17 @@ export default async function ActivitiesPage({
 						<Plus className="mr-2 h-4 w-4" /> Adicionar atividade
 					</Button>
 
-					<ActivityFilters
-						categories={categories}
-						statuses={statuses}
-						monitors={monitors}
-						defaultSelectedCategories={categoryIds}
-						defaultSelectedStatuses={statusIds}
-						defaultSelectedMonitors={monitorIds}
-					/>
+					<FiltersPanel>
+						<Filter
+							type="checkbox"
+							prefix="status"
+							title="Status"
+							items={statuses.map((status) => ({
+								value: status.id,
+								name: status.label,
+							}))}
+						/>
+					</FiltersPanel>
 				</div>
 			</div>
 		</div>
