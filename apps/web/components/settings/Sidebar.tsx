@@ -26,7 +26,7 @@ export function SettingsSidebar({ links }: Props) {
 							key={link.href}
 							href={link.href}
 							className={cn(
-								"py-2 px-4 text-left font-medium border-l-2 text-[#6b7280] hover:text-primary border-transparent",
+								"py-2 px-4 text-left font-medium border-l-2 text-muted-foreground hover:text-primary border-transparent",
 								{
 									"text-primary border-primary": isActive,
 								},

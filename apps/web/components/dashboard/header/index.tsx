@@ -1,7 +1,7 @@
 // Components
-import MainNav, { type MainNavProps } from "./PageLink";
-import ProjectSwitcher from "./ProjectSwitcher";
-import UserNav from "./UserNav";
+import MainNav, { type MainNavProps } from "./page-link";
+import ProjectSwitcher from "./project-switcher";
+import UserNav from "./user-nav";
 
 interface Props {
 	links: MainNavProps["links"];

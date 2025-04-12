@@ -1,4 +1,4 @@
-import { ToDo } from "@/components/ToDo";
+import { ToDo } from "@/components/to-do";
 
 export default async function EditActivity() {
 	return (
