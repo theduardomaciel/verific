@@ -119,7 +119,7 @@ export async function getActivities({
 	monitorIds = [],
 }: GetActivitiesParams): Promise<Activity[]> {
 	// Simulate server delay
-	await new Promise((resolve) => setTimeout(resolve, 100));
+	await new Promise((resolve) => setTimeout(resolve, 2500));
 
 	// Filter activities based on parameters
 	let filtered = [...activities];
