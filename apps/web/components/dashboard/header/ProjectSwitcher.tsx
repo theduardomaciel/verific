@@ -39,32 +39,18 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 
-const groups = [
+const projects = [
 	{
-		label: "Personal Account",
-		teams: [
-			{
-				label: "Alicia Koch",
-				value: "personal",
-			},
-		],
+		label: "SECOMP 2025",
+		value: "secomp2025",
 	},
 	{
-		label: "Teams",
-		teams: [
-			{
-				label: "Acme Inc.",
-				value: "acme-inc",
-			},
-			{
-				label: "Monsters Inc.",
-				value: "monsters",
-			},
-		],
+		label: "Escola de Inverno 2024",
+		value: "escoladeinverno2024",
 	},
 ];
 
-type Team = (typeof groups)[number]["teams"][number];
+type Project = (typeof projects)[number];
 
 type PopoverTriggerProps = React.ComponentPropsWithoutRef<
 	typeof PopoverTrigger
@@ -74,13 +60,13 @@ interface ProjectSwitcherProps extends PopoverTriggerProps {}
 
 export default function ProjectSwitcher({ className }: ProjectSwitcherProps) {
 	const [open, setOpen] = React.useState(false);
-	const [showNewTeamDialog, setShowNewTeamDialog] = React.useState(false);
-	const [selectedTeam, setSelectedTeam] = React.useState<Team>(
-		groups[0].teams[0],
+	const [showNewProjectDialog, setShowNewProjectDialog] = React.useState(false);
+	const [selectedProject, setSelectedProject] = React.useState<Project>(
+		projects[0],
 	);
 
 	return (
-		<Dialog open={showNewTeamDialog} onOpenChange={setShowNewTeamDialog}>
+		<Dialog open={showNewProjectDialog} onOpenChange={setShowNewProjectDialog}>
 			<Popover open={open} onOpenChange={setOpen}>
 				<PopoverTrigger asChild>
 					<Button
@@ -88,57 +74,56 @@ export default function ProjectSwitcher({ className }: ProjectSwitcherProps) {
 						// biome-ignore lint/a11y/useSemanticElements: No semantic element for this component
 						role="combobox"
 						aria-expanded={open}
-						aria-label="Select a team"
+						aria-label="Select a project"
 						className={cn("w-[200px] justify-between", className)}
 					>
-						<Avatar className="mr-2 h-5 w-5">
+						<Avatar className="mr-1 h-5 w-5">
 							<AvatarImage
-								src={`https://avatar.vercel.sh/${selectedTeam.value}.png`}
-								alt={selectedTeam.label}
+								src={`https://avatar.vercel.sh/${selectedProject.value}.png`}
+								alt={selectedProject.label}
 								className="grayscale"
 							/>
 							<AvatarFallback>SC</AvatarFallback>
 						</Avatar>
-						{selectedTeam.label}
+						<span className="text-left w-full line-clamp-1">
+							{selectedProject.label.slice(0, 15) +
+								(selectedProject.label.length > 15 ? "..." : "")}
+						</span>
 						<ChevronsUpDown className="ml-auto opacity-50" />
 					</Button>
 				</PopoverTrigger>
 				<PopoverContent className="w-[200px] p-0">
 					<Command>
-						<CommandInput placeholder="Search team..." />
+						<CommandInput placeholder="Procurar projeto..." />
 						<CommandList>
-							<CommandEmpty>No team found.</CommandEmpty>
-							{groups.map((group) => (
-								<CommandGroup key={group.label} heading={group.label}>
-									{group.teams.map((team) => (
-										<CommandItem
-											key={team.value}
-											onSelect={() => {
-												setSelectedTeam(team);
-												setOpen(false);
-											}}
-											className="text-sm"
-										>
-											<Avatar className="mr-2 h-5 w-5">
-												<AvatarImage
-													src={`https://avatar.vercel.sh/${team.value}.png`}
-													alt={team.label}
-													className="grayscale"
-												/>
-												<AvatarFallback>SC</AvatarFallback>
-											</Avatar>
-											{team.label}
-											<Check
-												className={cn(
-													"ml-auto",
-													selectedTeam.value === team.value
-														? "opacity-100"
-														: "opacity-0",
-												)}
-											/>
-										</CommandItem>
-									))}
-								</CommandGroup>
+							<CommandEmpty>No project found.</CommandEmpty>
+							{projects.map((project) => (
+								<CommandItem
+									key={project.value}
+									onSelect={() => {
+										setSelectedProject(project);
+										setOpen(false);
+									}}
+									className="text-sm py-2 rounded-none"
+								>
+									<Avatar className="mr-2 h-5 w-5">
+										<AvatarImage
+											src={`https://avatar.vercel.sh/${project.value}.png`}
+											alt={project.label}
+											className="grayscale"
+										/>
+										<AvatarFallback>SC</AvatarFallback>
+									</Avatar>
+									{project.label}
+									<Check
+										className={cn(
+											"ml-auto",
+											selectedProject.value === project.value
+												? "opacity-100"
+												: "opacity-0",
+										)}
+									/>
+								</CommandItem>
 							))}
 						</CommandList>
 						<CommandSeparator />
@@ -148,11 +133,11 @@ export default function ProjectSwitcher({ className }: ProjectSwitcherProps) {
 									<CommandItem
 										onSelect={() => {
 											setOpen(false);
-											setShowNewTeamDialog(true);
+											setShowNewProjectDialog(true);
 										}}
 									>
 										<PlusCircle className="h-5 w-5" />
-										Create Team
+										Create Project
 									</CommandItem>
 								</DialogTrigger>
 							</CommandGroup>
@@ -162,15 +147,15 @@ export default function ProjectSwitcher({ className }: ProjectSwitcherProps) {
 			</Popover>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>Create team</DialogTitle>
+					<DialogTitle>Create project</DialogTitle>
 					<DialogDescription>
-						Add a new team to manage products and customers.
+						Add a new project to manage products and customers.
 					</DialogDescription>
 				</DialogHeader>
 				<div>
 					<div className="space-y-4 py-2 pb-4">
 						<div className="space-y-2">
-							<Label htmlFor="name">Team name</Label>
+							<Label htmlFor="name">Project name</Label>
 							<Input id="name" placeholder="Acme Inc." />
 						</div>
 						<div className="space-y-2">
@@ -198,7 +183,10 @@ export default function ProjectSwitcher({ className }: ProjectSwitcherProps) {
 					</div>
 				</div>
 				<DialogFooter>
-					<Button variant="outline" onClick={() => setShowNewTeamDialog(false)}>
+					<Button
+						variant="outline"
+						onClick={() => setShowNewProjectDialog(false)}
+					>
 						Cancel
 					</Button>
 					<Button type="submit">Continue</Button>
