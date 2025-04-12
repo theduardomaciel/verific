@@ -2,6 +2,8 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
+
+// Components
 import {
 	Pagination,
 	PaginationContent,
@@ -17,11 +19,12 @@ interface ActivityPaginationProps {
 	totalPages: number;
 }
 
+const PAGE_SIZE = 5; // Define o tamanho da página
+
 export function ActivityPagination({
 	currentPage,
 	totalPages,
 }: ActivityPaginationProps) {
-	const PAGE_SIZE = 5; // Define o tamanho da página
 	const router = useRouter();
 	const searchParams = useSearchParams();
 
@@ -38,7 +41,8 @@ export function ActivityPagination({
 
 	// Navega para uma página específica
 	const goToPage = (page: number) => {
-		if (page < 1 || page > Math.ceil(totalPages / PAGE_SIZE)) return;
+		if (page < 1 || page > Math.max(1, Math.ceil(totalPages / PAGE_SIZE)))
+			return;
 
 		const queryString = createQueryString("page", page.toString());
 		router.push(`/dashboard/activities?${queryString}`);
@@ -47,12 +51,10 @@ export function ActivityPagination({
 	// Gera os números de página para exibição
 	const getPageNumbers = () => {
 		const pages = [];
-		const totalPageCount = Math.ceil(totalPages / PAGE_SIZE);
+		const totalPageCount = Math.max(1, Math.ceil(totalPages / PAGE_SIZE));
 
 		// Sempre mostra a primeira página
-		if (currentPage > 3) {
-			pages.push(1);
-		}
+		pages.push(1);
 
 		// Mostra elipses se necessário
 		if (currentPage > 4) {
@@ -105,9 +107,14 @@ export function ActivityPagination({
 							<PaginationLink
 								href="#"
 								isActive={currentPage === page}
+								className={
+									currentPage === page ? "pointer-events-none opacity-50" : ""
+								}
 								onClick={(e) => {
-									e.preventDefault();
-									goToPage(page as number);
+									if (currentPage !== page) {
+										e.preventDefault();
+										goToPage(page as number);
+									}
 								}}
 							>
 								{page}
@@ -124,7 +131,7 @@ export function ActivityPagination({
 							goToPage(currentPage + 1);
 						}}
 						className={
-							currentPage >= Math.ceil(totalPages / PAGE_SIZE)
+							currentPage >= Math.max(1, Math.ceil(totalPages / PAGE_SIZE))
 								? "pointer-events-none opacity-50"
 								: ""
 						}

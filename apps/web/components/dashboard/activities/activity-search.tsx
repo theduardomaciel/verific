@@ -11,7 +11,8 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Search } from "lucide-react";
-import { useDebouncedCallback } from "use-debounce";
+import { SearchBar } from "../search-bar";
+import { SortBy } from "../sort-by";
 
 interface ActivitySearchProps {
 	defaultQuery?: string;
@@ -56,24 +57,16 @@ export function ActivitySearch({
 	return (
 		<div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
 			<div className="relative w-full md:flex-1">
-				<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-				<Input
-					placeholder="Pesquisar atividades"
-					className="pl-10 w-full"
-					defaultValue={defaultQuery}
-					onChange={(e) => handleSearch(e.target.value)}
-				/>
+				<SearchBar placeholder="Pesquisar atividades..." />
 			</div>
-			<Select defaultValue={defaultSort} onValueChange={handleSortChange}>
-				<SelectTrigger className="w-full md:w-[180px]">
-					<SelectValue placeholder="Ordenar por" />
-				</SelectTrigger>
-				<SelectContent>
-					<SelectItem value="recent">Mais recentes</SelectItem>
-					<SelectItem value="oldest">Mais antigos</SelectItem>
-					<SelectItem value="name">Nome</SelectItem>
-				</SelectContent>
-			</Select>
+			<SortBy
+				sortBy={searchParams.get("sort") ?? defaultSort}
+				items={[
+					{ value: "recent", label: "Mais recentes" },
+					{ value: "oldest", label: "Mais antigas" },
+					{ value: "alphabetical", label: "Alfabética" },
+				]}
+			/>
 		</div>
 	);
 }

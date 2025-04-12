@@ -9,10 +9,19 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 
-import { speaker, participantOnEvent, project } from ".";
+import { speaker, participantOnActivity, project } from ".";
 
-export const activityTypes = ["internal", "external"] as const;
-export const typeEnum = pgEnum("type", activityTypes);
+export const activityAudiences = ["internal", "external"] as const;
+export const audienceEnum = pgEnum("type", activityAudiences);
+
+export const activityCategories = [
+	"lecture",
+	"workshop",
+	"round-table",
+	"mini-course",
+	"other"
+] as const;
+export const categoryEnum = pgEnum("category", activityCategories);
 
 export const activity = pgTable("activities", {
 	id: uuid("id").primaryKey().defaultRandom(),
@@ -20,7 +29,8 @@ export const activity = pgTable("activities", {
 	description: text("description"),
 	dateFrom: timestamp("date_from").notNull(),
 	dateTo: timestamp("date_to").notNull(),
-	type: typeEnum("type").notNull().default("internal"),
+	audience: audienceEnum("audience").notNull().default("internal"),
+	category: categoryEnum("category").notNull().default("other"),
 	speakerId: smallserial("speaker_id").references(() => speaker.id, {
 		onDelete: "set null",
 		onUpdate: "cascade",
@@ -44,5 +54,5 @@ export const activityRelations = relations(activity, ({ one, many }) => ({
 		fields: [activity.speakerId],
 		references: [speaker.id],
 	}),
-	participantsOnEvent: many(participantOnEvent),
+	participantsOnActivity: many(participantOnActivity),
 }));

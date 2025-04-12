@@ -1,7 +1,7 @@
 import { relations } from "drizzle-orm";
 import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
-import { activity, member, speaker } from ".";
+import { activity, participant, speaker } from ".";
 
 export const project = pgTable("projects", {
 	id: uuid("id").primaryKey().defaultRandom(),
@@ -11,6 +11,6 @@ export const project = pgTable("projects", {
 
 export const projectRelations = relations(project, ({ many }) => ({
 	activities: many(activity),
-	members: many(member),
+	participants: many(participant),
 	aces: many(speaker),
 }));
