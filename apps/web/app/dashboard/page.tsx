@@ -1,20 +1,14 @@
 import { Activity, BarChart3, Clock, Users } from "lucide-react";
 
 // Components
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 
-import { CalendarDateRangePicker } from "@/components/dashboard/overview/CalendarDateRangePicker";
-import { ParticipantsGraph } from "@/components/dashboard/overview/ParticipantsGraph";
-import { ActivitiesList } from "@/components/dashboard/overview/ActivitiesList";
-import { MetricCard } from "@/components/dashboard/overview/MetricCard";
+import { CalendarDateRangePicker } from "@/components/dashboard/overview/calendar-date-range-picker";
+import { ParticipantsGraph } from "@/components/dashboard/overview/participants-graph";
+import { ActivitiesList } from "@/components/dashboard/overview/activities-list";
+import { MetricCard } from "@/components/dashboard/overview/metric-card";
 
 export default function Overview() {
 	return (

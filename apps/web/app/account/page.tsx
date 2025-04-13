@@ -1,4 +1,4 @@
-import { EventList } from "@/components/account/EventList";
+import { EventList } from "@/components/account/event-list";
 
 export default function Home() {
 	return (

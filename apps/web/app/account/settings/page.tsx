@@ -1,4 +1,4 @@
-import { SettingsCard } from "@/components/settings/SettingsCard";
+import { SettingsCard } from "@/components/settings/settings-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Image } from "lucide-react";
