@@ -7,6 +7,7 @@ import {
 	useEffect,
 	useState,
 	useTransition,
+	useRef,
 } from "react";
 
 import { cn } from "@/lib/utils";
@@ -177,15 +178,6 @@ interface CheckboxItemsProps extends ItemsProps {
 }
 
 const MAX_VISIBLE_FILTERS = 2;
-const ITEM_HEIGHT = 40;
-const GAP = 16;
-
-const heightFormula = (linesAmount: number) => {
-	// A função ainda possui um bug: quando o usuário diminui muito o zoom, o texto do filtro passa a ocupar somente uma linha, mas o cálculo da altura não é atualizado
-	return (
-		(ITEM_HEIGHT + GAP) * MAX_VISIBLE_FILTERS - GAP * (linesAmount - 1 / 2)
-	);
-};
 
 function CheckboxFilter({
 	items,
@@ -195,6 +187,8 @@ function CheckboxFilter({
 	config,
 }: CheckboxItemsProps) {
 	const [isExpanded, setIsExpanded] = useState(false);
+	const itemsContainerRef = useRef<HTMLUListElement>(null);
+	const [collapsedHeight, setCollapsedHeight] = useState<number | null>(null);
 
 	const handleFilterChange = (value: string, checked: boolean) => {
 		const newFilters: string[] | undefined = checked
@@ -204,23 +198,50 @@ function CheckboxFilter({
 		setFilters(newFilters);
 	};
 
-	const linesAmount = config?.linesAmount ?? 1;
+	// Usar ResizeObserver para calcular a altura real baseada nos elementos visíveis
+	useEffect(() => {
+		if (!itemsContainerRef.current) return;
+
+		const calculateCollapsedHeight = () => {
+			if (!itemsContainerRef.current) return;
+
+			const items = Array.from(itemsContainerRef.current.children).slice(
+				0,
+				MAX_VISIBLE_FILTERS,
+			);
+
+			if (items.length === 0) return;
+
+			// Calcula a altura real dos primeiros MAX_VISIBLE_FILTERS itens
+			const lastVisibleItem = items[items.length - 1] as HTMLElement;
+			const containerTop =
+				itemsContainerRef.current.getBoundingClientRect().top;
+			const lastItemBottom = lastVisibleItem.getBoundingClientRect().bottom;
+
+			setCollapsedHeight(lastItemBottom - containerTop);
+		};
+
+		// Observer para recalcular quando o tamanho mudar (ex: quando o zoom mudar)
+		const resizeObserver = new ResizeObserver(calculateCollapsedHeight);
+		resizeObserver.observe(itemsContainerRef.current);
+
+		// Cálculo inicial
+		calculateCollapsedHeight();
+
+		return () => resizeObserver.disconnect();
+	}, []);
 
 	return (
 		<>
 			<ul
-				className={
-					"flex max-h-[50rem] flex-col items-start justify-start gap-4 overflow-hidden transition-[max-height] duration-300 ease-in-out"
-				}
+				ref={itemsContainerRef}
+				className="flex flex-col items-start justify-start gap-4 overflow-hidden transition-all duration-300 ease-in-out"
 				style={{
 					maxHeight: isExpanded
-						? `${ITEM_HEIGHT * items.length * linesAmount}px`
-						: `${
-								heightFormula(linesAmount)
-								// para linesAmount = 1 -> GAP / 2
-								// para linesAmount = 2 -> GAP * 2
-								// Como tornar isso em uma fórmula?
-							}px`,
+						? `${items.length * 100}px` // Altura suficientemente grande para todos os itens
+						: collapsedHeight
+							? `${collapsedHeight}px`
+							: "auto",
 				}}
 			>
 				{items.map((item, index) => (
@@ -245,9 +266,6 @@ function CheckboxFilter({
 						/>
 						<Label
 							className="line-clamp-2 overflow-hidden text-ellipsis leading-tight lg:text-sm"
-							style={{
-								maxHeight: ITEM_HEIGHT - 4,
-							}}
 							htmlFor={item.value}
 						>
 							{item.name}

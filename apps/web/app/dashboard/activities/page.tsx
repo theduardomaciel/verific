@@ -33,8 +33,8 @@ export default async function ActivitiesPage(props: {
 	const searchParams = await props.searchParams;
 	const parsedParams = getActivitiesParams.parse(searchParams);
 
-	// Obtém os dados (seriam reais funções de busca de dados em um aplicativo real)
-	// Funções simuladas de busca de dados com atraso artificial
+	// Obtemos os dados de exemplo (serão reais após implementar o back)
+	// Utilizamos funções com um atraso artificial para simular a latência da rede
 	const activities = await getActivities(parsedParams);
 	const categories = await getCategories();
 	const statuses = await getStatuses();
@@ -80,7 +80,16 @@ export default async function ActivitiesPage(props: {
 						<Filter
 							type="checkbox"
 							prefix="status"
-							title="Status"
+							title="Filtrar por Categoria"
+							items={categories.map((category) => ({
+								value: category.id,
+								name: category.label,
+							}))}
+						/>
+						<Filter
+							type="checkbox"
+							prefix="status"
+							title="Filtrar por Status"
 							items={statuses.map((status) => ({
 								value: status.id,
 								name: status.label,
