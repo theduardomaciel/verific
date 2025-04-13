@@ -27,10 +27,10 @@ export function CreateProjectDialog() {
 		<Dialog open={showNewProjectDialog} onOpenChange={setShowNewProjectDialog}>
 			<DialogTrigger asChild>
 				<Button
-					className="w-full py-6 bg-primary hover:bg-blue-600 text-white flex items-center justify-center gap-2"
+					className="w-full py-6 bg-primary flex items-center justify-center gap-2 leading-none"
 					size={"lg"}
 				>
-					<Plus className="font-hanken font-medium text-base leading-6 tracking-normal align-middle" />
+					<Plus className="mt-0.5" />
 					Criar novo projeto
 				</Button>
 			</DialogTrigger>
@@ -42,12 +42,17 @@ export function CreateProjectDialog() {
 					<Label htmlFor="name">Nome</Label>
 					<Input id="name" placeholder="Insira o nome do projeto" />
 				</div>
-				<div className="grid gap-4">
-					<Label htmlFor="description">Descrição</Label>
+				<div className="grid">
+					<Label className="mb-4" htmlFor="description">
+						Descrição
+					</Label>
 					<Textarea
 						id="description"
 						placeholder="Insira uma breve descrição do projeto"
 					/>
+					<p className="text-sm text-muted-foreground mt-1.5">
+						Máximo de 3000 caracteres
+					</p>
 				</div>
 				<DialogFooter>
 					<Button type="submit">Criar</Button>
