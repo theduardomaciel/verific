@@ -9,7 +9,10 @@
 			"recommended": true,
 			"nursery": {
 				"useSortedClasses": "error"
-			}
+			},
+			"suspicious": {
+				"noExplicitAny": "warn"
+			},
 		}
 	},
 	"formatter": {
