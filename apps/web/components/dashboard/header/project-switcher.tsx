@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronsUpDown, PlusCircle } from "lucide-react";
+import { Check, ChevronsUpDown, FolderCog, PlusCircle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,15 +15,7 @@ import {
 	CommandList,
 	CommandSeparator,
 } from "@/components/ui/command";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/dialog";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -38,6 +30,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import Link from "next/link";
 
 const projects = [
 	{
@@ -60,122 +53,87 @@ interface ProjectSwitcherProps extends PopoverTriggerProps {}
 
 export default function ProjectSwitcher({ className }: ProjectSwitcherProps) {
 	const [open, setOpen] = React.useState(false);
-	const [showNewProjectDialog, setShowNewProjectDialog] = React.useState(false);
 	const [selectedProject, setSelectedProject] = React.useState<Project>(
 		projects[0],
 	);
 
 	return (
-		<Dialog open={showNewProjectDialog} onOpenChange={setShowNewProjectDialog}>
-			<Popover open={open} onOpenChange={setOpen}>
-				<PopoverTrigger asChild>
-					<Button
-						variant="outline"
-						// biome-ignore lint/a11y/useSemanticElements: No semantic element for this component
-						role="combobox"
-						aria-expanded={open}
-						aria-label="Selecione um projeto"
-						className={cn("w-[200px] justify-between", className)}
-					>
-						<Avatar className="mr-1 h-5 w-5">
-							<AvatarImage
-								src={`https://avatar.vercel.sh/${selectedProject.value}.png`}
-								alt={selectedProject.label}
-								className="grayscale"
-							/>
-							<AvatarFallback>SC</AvatarFallback>
-						</Avatar>
-						<span className="text-left w-full line-clamp-1">
-							{selectedProject.label.slice(0, 15) +
-								(selectedProject.label.length > 15 ? "..." : "")}
-						</span>
-						<ChevronsUpDown className="ml-auto opacity-50" />
-					</Button>
-				</PopoverTrigger>
-				<PopoverContent className="w-[200px] p-0">
-					<Command>
-						<CommandInput placeholder="Procurar projeto..." />
-						<CommandList>
-							<CommandEmpty>Nenhum projeto encontrado.</CommandEmpty>
-							{projects.map((project) => (
+		<Popover open={open} onOpenChange={setOpen}>
+			<PopoverTrigger asChild>
+				<Button
+					variant="outline"
+					// biome-ignore lint/a11y/useSemanticElements: No semantic element for this component
+					role="combobox"
+					aria-expanded={open}
+					aria-label="Selecione um projeto"
+					className={cn("w-[200px] justify-between", className)}
+				>
+					<Avatar className="mr-1 h-5 w-5">
+						<AvatarImage
+							src={`https://avatar.vercel.sh/${selectedProject.value}.png`}
+							alt={selectedProject.label}
+							className="grayscale"
+						/>
+						<AvatarFallback>SC</AvatarFallback>
+					</Avatar>
+					<span className="text-left w-full line-clamp-1">
+						{selectedProject.label.slice(0, 15) +
+							(selectedProject.label.length > 15 ? "..." : "")}
+					</span>
+					<ChevronsUpDown className="ml-auto opacity-50" />
+				</Button>
+			</PopoverTrigger>
+			<PopoverContent className="w-[200px] p-0">
+				<Command>
+					<CommandInput placeholder="Procurar projeto..." />
+					<CommandList>
+						<CommandEmpty>Nenhum projeto encontrado.</CommandEmpty>
+						{projects.map((project) => (
+							<CommandItem
+								key={project.value}
+								onSelect={() => {
+									setSelectedProject(project);
+									setOpen(false);
+								}}
+								className="text-sm py-2 rounded-none"
+							>
+								<Avatar className="mr-2 h-5 w-5">
+									<AvatarImage
+										src={`https://avatar.vercel.sh/${project.value}.png`}
+										alt={project.label}
+										className="grayscale"
+									/>
+									<AvatarFallback>LA</AvatarFallback>
+								</Avatar>
+								{project.label}
+								<Check
+									className={cn(
+										"ml-auto",
+										selectedProject.value === project.value
+											? "opacity-100"
+											: "opacity-0",
+									)}
+								/>
+							</CommandItem>
+						))}
+					</CommandList>
+					<CommandSeparator />
+					<CommandList>
+						<CommandGroup>
+							<Link href={"/account"} passHref>
 								<CommandItem
-									key={project.value}
 									onSelect={() => {
-										setSelectedProject(project);
 										setOpen(false);
 									}}
-									className="text-sm py-2 rounded-none"
 								>
-									<Avatar className="mr-2 h-5 w-5">
-										<AvatarImage
-											src={`https://avatar.vercel.sh/${project.value}.png`}
-											alt={project.label}
-											className="grayscale"
-										/>
-										<AvatarFallback>LA</AvatarFallback>
-									</Avatar>
-									{project.label}
-									<Check
-										className={cn(
-											"ml-auto",
-											selectedProject.value === project.value
-												? "opacity-100"
-												: "opacity-0",
-										)}
-									/>
+									<FolderCog className="h-5 w-5" />
+									Ver projetos
 								</CommandItem>
-							))}
-						</CommandList>
-					</Command>
-				</PopoverContent>
-			</Popover>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Create project</DialogTitle>
-					<DialogDescription>
-						Add a new project to manage products and customers.
-					</DialogDescription>
-				</DialogHeader>
-				<div>
-					<div className="space-y-4 py-2 pb-4">
-						<div className="space-y-2">
-							<Label htmlFor="name">Project name</Label>
-							<Input id="name" placeholder="Acme Inc." />
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="plan">Subscription plan</Label>
-							<Select>
-								<SelectTrigger>
-									<SelectValue placeholder="Select a plan" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="free">
-										<span className="font-medium">Free</span> -{" "}
-										<span className="text-muted-foreground">
-											Trial for two weeks
-										</span>
-									</SelectItem>
-									<SelectItem value="pro">
-										<span className="font-medium">Pro</span> -{" "}
-										<span className="text-muted-foreground">
-											$9/month per user
-										</span>
-									</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
-					</div>
-				</div>
-				<DialogFooter>
-					<Button
-						variant="outline"
-						onClick={() => setShowNewProjectDialog(false)}
-					>
-						Cancel
-					</Button>
-					<Button type="submit">Continue</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+							</Link>
+						</CommandGroup>
+					</CommandList>
+				</Command>
+			</PopoverContent>
+		</Popover>
 	);
 }
