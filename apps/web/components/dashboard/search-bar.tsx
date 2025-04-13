@@ -67,10 +67,10 @@ export function SearchBar({
 				}
 			>
 				{isPendingSearchTransition ? (
-					<Loader2 className="h-4 w-4 origin-center animate-spin text-muted" />
+					<Loader2 className="h-4 w-4 origin-center animate-spin text-foreground" />
 				) : value ? (
 					<X
-						className="h-4 w-4 cursor-pointer text-muted"
+						className="h-4 w-4 cursor-pointer text-foreground"
 						onClick={() => {
 							setValue("");
 							router.push(toUrl({ [word]: undefined }));

@@ -71,11 +71,11 @@ export const monitors = [
 
 // Sample data for filters
 const categoriesData = [
+	{ id: "lecture", label: "Palestra" },
 	{ id: "workshop", label: "Workshop" },
-	{ id: "roda-conversa", label: "Roda de Conversa" },
-	{ id: "palestra", label: "Palestra" },
-	{ id: "curso", label: "Curso" },
-	{ id: "oficina", label: "Oficina" },
+	{ id: "round-table", label: "Roda de Conversa" },
+	{ id: "course", label: "Curso" },
+	{ id: "other", label: "Outro" },
 ];
 
 const statusesData = [
