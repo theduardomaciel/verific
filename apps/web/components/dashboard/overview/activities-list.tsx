@@ -18,9 +18,10 @@ export function ActivitiesList({ className }: { className?: string }) {
 				{activities.map((activity, _) => (
 					<SimpleActivityCard
 						key={activity.id}
+						id={activity.id}
 						title={activity.title}
 						speaker={activity.speaker}
-						type={activity.type as "lecture"}
+						category={activity.category as "lecture"}
 						date={activity.date}
 					/>
 				))}

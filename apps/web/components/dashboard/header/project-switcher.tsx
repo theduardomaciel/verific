@@ -74,7 +74,7 @@ export default function ProjectSwitcher({ className }: ProjectSwitcherProps) {
 						// biome-ignore lint/a11y/useSemanticElements: No semantic element for this component
 						role="combobox"
 						aria-expanded={open}
-						aria-label="Select a project"
+						aria-label="Selecione um projeto"
 						className={cn("w-[200px] justify-between", className)}
 					>
 						<Avatar className="mr-1 h-5 w-5">
@@ -96,7 +96,7 @@ export default function ProjectSwitcher({ className }: ProjectSwitcherProps) {
 					<Command>
 						<CommandInput placeholder="Procurar projeto..." />
 						<CommandList>
-							<CommandEmpty>No project found.</CommandEmpty>
+							<CommandEmpty>Nenhum projeto encontrado.</CommandEmpty>
 							{projects.map((project) => (
 								<CommandItem
 									key={project.value}
@@ -112,7 +112,7 @@ export default function ProjectSwitcher({ className }: ProjectSwitcherProps) {
 											alt={project.label}
 											className="grayscale"
 										/>
-										<AvatarFallback>SC</AvatarFallback>
+										<AvatarFallback>LA</AvatarFallback>
 									</Avatar>
 									{project.label}
 									<Check
@@ -125,22 +125,6 @@ export default function ProjectSwitcher({ className }: ProjectSwitcherProps) {
 									/>
 								</CommandItem>
 							))}
-						</CommandList>
-						<CommandSeparator />
-						<CommandList>
-							<CommandGroup>
-								<DialogTrigger asChild>
-									<CommandItem
-										onSelect={() => {
-											setOpen(false);
-											setShowNewProjectDialog(true);
-										}}
-									>
-										<PlusCircle className="h-5 w-5" />
-										Create Project
-									</CommandItem>
-								</DialogTrigger>
-							</CommandGroup>
 						</CommandList>
 					</Command>
 				</PopoverContent>
