@@ -18,7 +18,7 @@ export function ActivityList({ activities }: ActivityListProps) {
 	}
 
 	return (
-		<div className="space-y-6">
+		<div className="flex flex-col items-start justify-start gap-4">
 			{activities.map((activity) => (
 				<ActivityCard
 					key={activity.id}

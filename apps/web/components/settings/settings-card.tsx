@@ -23,7 +23,7 @@ export function SettingsCard({
 	footer,
 	footerClassName,
 	className,
-	borderColor = "border-[#e5e7eb]",
+	borderColor = "border-border",
 }: SettingsCardProps) {
 	return (
 		<div

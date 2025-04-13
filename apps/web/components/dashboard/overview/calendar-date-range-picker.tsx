@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { addDays, format } from "date-fns";
+import { addDays, format, subDays } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import type { DateRange } from "react-day-picker";
 
@@ -18,8 +19,8 @@ export function CalendarDateRangePicker({
 	className,
 }: React.HTMLAttributes<HTMLDivElement>) {
 	const [date, setDate] = React.useState<DateRange | undefined>({
-		from: new Date(2023, 0, 20),
-		to: addDays(new Date(2023, 0, 20), 20),
+		from: subDays(new Date(), 3),
+		to: addDays(new Date(), 5),
 	});
 
 	return (
@@ -38,14 +39,14 @@ export function CalendarDateRangePicker({
 						{date?.from ? (
 							date.to ? (
 								<>
-									{format(date.from, "LLL dd, y")} -{" "}
-									{format(date.to, "LLL dd, y")}
+									{format(date.from, "dd 'de' MMM, yyyy", { locale: ptBR })} -{" "}
+									{format(date.to, "dd 'de' MMM, yyyy", { locale: ptBR })}
 								</>
 							) : (
-								format(date.from, "LLL dd, y")
+								format(date.from, "dd 'de' MMM, yyyy", { locale: ptBR })
 							)
 						) : (
-							<span>Pick a date</span>
+							<span>Escolha uma data</span>
 						)}
 					</Button>
 				</PopoverTrigger>
@@ -57,6 +58,7 @@ export function CalendarDateRangePicker({
 						selected={date}
 						onSelect={setDate}
 						numberOfMonths={2}
+						locale={ptBR}
 					/>
 				</PopoverContent>
 			</Popover>
