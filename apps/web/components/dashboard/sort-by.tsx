@@ -25,7 +25,7 @@ export function SortBy({ sortBy, items }: SortByProps) {
 
 	const onValueChange = useCallback(
 		(value: string) => {
-			router.push(toUrl({ sortBy: value }));
+			router.push(toUrl({ sort: value }));
 		},
 		[router, toUrl],
 	);

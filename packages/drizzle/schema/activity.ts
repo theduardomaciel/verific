@@ -18,8 +18,8 @@ export const activityCategories = [
 	"lecture",
 	"workshop",
 	"round-table",
-	"mini-course",
-	"other"
+	"course",
+	"other",
 ] as const;
 export const categoryEnum = pgEnum("category", activityCategories);
 

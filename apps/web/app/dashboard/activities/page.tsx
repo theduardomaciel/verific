@@ -6,10 +6,11 @@ import { Plus } from "lucide-react";
 // Components
 import { Button } from "@/components/ui/button";
 import { ActivityList } from "@/components/dashboard/activities/activity-list";
-import { ActivityFilters } from "@/components/dashboard/activities/activity-filters";
 import { ActivityPagination } from "@/components/dashboard/activities/activity-pagination";
 import { SearchBar } from "@/components/dashboard/search-bar";
 import { SortBy } from "@/components/dashboard/sort-by";
+import { FiltersPanel } from "@/components/dashboard/filters-panel";
+import { Filter } from "@/components/dashboard/filter";
 
 // Data
 import {
@@ -22,8 +23,6 @@ import {
 // Validation
 import type { z } from "zod";
 import { getActivitiesParams } from "@verific/api/routers/activities";
-import { FiltersPanel } from "@/components/dashboard/filters-panel";
-import { Filter } from "@/components/dashboard/filter";
 
 type EventsPageParams = z.infer<typeof getActivitiesParams>;
 
@@ -79,7 +78,7 @@ export default async function ActivitiesPage(props: {
 					<FiltersPanel>
 						<Filter
 							type="checkbox"
-							prefix="status"
+							prefix="category"
 							title="Filtrar por Categoria"
 							items={categories.map((category) => ({
 								value: category.id,

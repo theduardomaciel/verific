@@ -2,7 +2,7 @@ import { z } from "zod";
 import { transformSingleToArray } from "../utils";
 import { activityCategories, activityAudiences } from "@verific/drizzle/schema";
 
-export const activitySort = ["recent", "oldest", "name"] as const; // Ordenação de atividades
+export const activitySort = ["recent", "oldest", "alphabetical"] as const; // Ordenação de atividades
 export const activityStatus = ["now", "next"] as const; // Status de atividades
 
 export const getActivitiesParams = z.object({

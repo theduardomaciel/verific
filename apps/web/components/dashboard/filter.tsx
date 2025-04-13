@@ -13,7 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 
 // Icons
-import { ChevronUp } from "lucide-react";
+import { ChevronUp, Loader2 } from "lucide-react";
 
 // Components
 import { Label } from "@/components/ui/label";
@@ -76,6 +76,7 @@ export function Filter({
 	const router = useRouter();
 	const { query, toUrl } = useQueryString();
 
+	const [currentFetchingData, setCurrentFetchingData] = useState<string[]>([]);
 	const [isPendingFilterTransition, startTransition] = useTransition();
 
 	const [filters, setFilters] = useState<string[]>(
@@ -86,6 +87,7 @@ export function Filter({
 
 	useEffect(() => {
 		startTransition(() => {
+			setCurrentFetchingData(debouncedValue);
 			router.push(
 				toUrl({
 					[`${prefix}`]:
@@ -116,6 +118,7 @@ export function Filter({
 				setFilters,
 				config,
 				isPendingFilterTransition,
+				currentFetchingData,
 			})}
 		</div>
 	);
@@ -133,10 +136,10 @@ interface SelectItemsProps extends ItemsProps {}
 
 function SelectFilter({
 	items,
+	config,
 	filters,
 	setFilters,
 	isPendingFilterTransition,
-	config,
 }: SelectItemsProps) {
 	const handleFilterChange = (value: string) => {
 		setFilters([value]);
@@ -175,16 +178,18 @@ function SelectFilter({
 
 interface CheckboxItemsProps extends ItemsProps {
 	isPendingFilterTransition: boolean;
+	currentFetchingData: string[];
 }
 
 const MAX_VISIBLE_FILTERS = 2;
 
 function CheckboxFilter({
 	items,
+	config,
 	filters,
 	setFilters,
 	isPendingFilterTransition,
-	config,
+	currentFetchingData,
 }: CheckboxItemsProps) {
 	const [isExpanded, setIsExpanded] = useState(false);
 	const itemsContainerRef = useRef<HTMLUListElement>(null);
@@ -247,10 +252,13 @@ function CheckboxFilter({
 				{items.map((item, index) => (
 					<li
 						key={item.value}
-						className={cn("flex w-full items-center justify-start gap-2", {
-							"pointer-events-none animate-pulse select-none":
-								isPendingFilterTransition,
-						})}
+						className={cn(
+							"flex w-full items-center justify-start gap-2 relative",
+							{
+								"pointer-events-none animate-pulse select-none":
+									isPendingFilterTransition,
+							},
+						)}
 					>
 						<Checkbox
 							id={item.value}
@@ -270,6 +278,14 @@ function CheckboxFilter({
 						>
 							{item.name}
 						</Label>
+
+						{isPendingFilterTransition &&
+							currentFetchingData.includes(item.value) && (
+								<Loader2
+									className="ml-2 h-4 w-4 animate-spin text-muted-foreground absolute top-1/2 right-0 translate-y-[-50%]"
+									size={16}
+								/>
+							)}
 					</li>
 				))}
 			</ul>
