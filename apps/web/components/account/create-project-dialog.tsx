@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 // Icons
 import { Plus } from "lucide-react";
@@ -9,19 +9,90 @@ import { Plus } from "lucide-react";
 import {
 	Dialog,
 	DialogContent,
-	DialogDescription,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "../ui/textarea";
+import { Textarea } from "@/components/ui/textarea";
+import {
+	Form,
+	FormControl,
+	FormDescription,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
+} from "@/components/ui/form";
+import { PlacePicker } from "@/components/place-picker";
+
+// Form
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+
+const placePickerSchema = z.object({
+	address: z.string().min(1, {
+		message: "Por favor, selecione um endereço.",
+	}),
+	latitude: z.number(),
+	longitude: z.number(),
+});
+
+type PlacePickerType = z.infer<typeof placePickerSchema>;
+
+const formSchema = z.object({
+	name: z.string().min(2, {
+		message: "Nome deve conter pelo menos 2 caracteres.",
+	}),
+	description: z
+		.string()
+		.min(10, {
+			message: "Descrições devem ter no mínimo 10 caracteres.",
+		})
+		.max(3000, {
+			message: "Descrições devem ter no máximo 3000 caracteres.",
+		}),
+	location: placePickerSchema,
+});
 
 export function CreateProjectDialog() {
 	const [showNewProjectDialog, setShowNewProjectDialog] = useState(false);
+
+	const [formData, setFormData] = useState<z.infer<typeof formSchema> | null>(
+		null,
+	);
+	const [locationValue, setLocationValue] = useState({
+		address: "",
+		latitude: 0,
+		longitude: 0,
+	});
+
+	const onPlaceChange = useCallback((place: PlacePickerType) => {
+		setLocationValue(place);
+	}, []);
+
+	// Inicializamos o formulário com o Zod e o React Hook Form
+	const form = useForm<z.infer<typeof formSchema>>({
+		resolver: zodResolver(formSchema),
+		defaultValues: {
+			name: "",
+			description: "",
+			location: {
+				address: "",
+				latitude: 0,
+				longitude: 0,
+			},
+		},
+	});
+
+	// Gerenciamos o envio do formulário
+	function onSubmit(values: z.infer<typeof formSchema>) {
+		setFormData(values);
+		console.log(values);
+	}
 
 	return (
 		<Dialog open={showNewProjectDialog} onOpenChange={setShowNewProjectDialog}>
@@ -36,6 +107,69 @@ export function CreateProjectDialog() {
 			</DialogTrigger>
 			<DialogContent className="sm:max-w-[425px]">
 				<DialogHeader>
+					<DialogTitle>Criar projeto</DialogTitle>
+				</DialogHeader>
+				<Form {...form}>
+					<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+						<FormField
+							control={form.control}
+							name="name"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Nome do projeto</FormLabel>
+									<FormControl>
+										<Input placeholder="Insira o nome do projeto" {...field} />
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="description"
+							render={({ field }) => (
+								<FormItem className="space-y-2">
+									<FormLabel>Descrição</FormLabel>
+									<FormControl>
+										<Textarea
+											placeholder="Insira uma breve descrição do projeto"
+											{...field}
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="location"
+							render={({ field }) => (
+								<FormItem>
+									<FormControl>
+										<PlacePicker
+											defaultValue={locationValue}
+											onPlaceChange={onPlaceChange}
+										/>
+									</FormControl>
+									<FormDescription>
+										Selecione uma localização pesquisando ou clicando no mapa.
+									</FormDescription>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+					</form>
+				</Form>
+				<DialogFooter>
+					<Button type="submit">Criar</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
+/* 
+<DialogHeader>
 					<DialogTitle>Criar projeto</DialogTitle>
 				</DialogHeader>
 				<div className="grid gap-4">
@@ -54,13 +188,7 @@ export function CreateProjectDialog() {
 						Máximo de 3000 caracteres
 					</p>
 				</div>
-				<DialogFooter>
-					<Button type="submit">Criar</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
-	);
-}
+*/
 
 /* 
 <DialogContent>
