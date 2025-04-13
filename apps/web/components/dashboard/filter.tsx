@@ -240,7 +240,7 @@ function CheckboxFilter({
 		<>
 			<ul
 				ref={itemsContainerRef}
-				className="flex flex-col items-start justify-start gap-4 overflow-hidden transition-all duration-300 ease-in-out"
+				className="flex flex-col items-start justify-start gap-4 overflow-hidden transition-all duration-300 ease-in-out w-full"
 				style={{
 					maxHeight: isExpanded
 						? `${items.length * 100}px` // Altura suficientemente grande para todos os itens

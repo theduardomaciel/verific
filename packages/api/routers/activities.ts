@@ -11,19 +11,23 @@ export const getActivitiesParams = z.object({
 	page: z.coerce.number().default(0), // Paginação: página atual
 	pageSize: z.coerce.number().default(10), // Paginação: tamanho da página
 	status: z
-		.union([z.array(z.enum(activityStatus)), z.enum(activityStatus)])
+		.string()
 		.transform(transformSingleToArray)
+		.pipe(z.array(z.enum(activityStatus)))
 		.optional(), // IDs de status
 	category: z
-		.union([z.array(z.enum(activityCategories)), z.enum(activityCategories)])
+		.string()
 		.transform(transformSingleToArray)
+		.pipe(z.array(z.enum(activityCategories)))
 		.optional(), // IDs de categorias
 	audience: z
-		.union([z.array(z.enum(activityAudiences)), z.enum(activityAudiences)])
+		.string()
 		.transform(transformSingleToArray)
+		.pipe(z.array(z.enum(activityAudiences)))
 		.optional(), // Tipos de atividade (interno ou externo)
 	speakerIds: z
-		.union([z.array(z.string()), z.string()])
+		.string()
 		.transform(transformSingleToArray)
+		.pipe(z.array(z.string().uuid()))
 		.optional(), // IDs de palestrantes
 });
