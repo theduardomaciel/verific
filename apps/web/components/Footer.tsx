@@ -50,25 +50,25 @@ function Footer({
 					<nav className="flex gap-6">
 						<Link
 							href="#"
-							className="text-xs text-gray-600 hover:text-gray-900"
+							className="text-xs text-foreground hover:text-muted-foreground transition-colors"
 						>
 							Ajuda
 						</Link>
 						<Link
 							href="#"
-							className="text-xs text-gray-600 hover:text-gray-900"
+							className="text-xs text-foreground hover:text-muted-foreground transition-colors"
 						>
 							Política de Privacidade
 						</Link>
 						<Link
 							href="#"
-							className="text-xs text-gray-600 hover:text-gray-900"
+							className="text-xs text-foreground hover:text-muted-foreground transition-colors"
 						>
 							Termos de Uso
 						</Link>
 					</nav>
 				</div>
-				<p className="text-xs text-gray-500">
+				<p className="text-xs text-foreground/50">
 					Copyright 2025 verifIC. Todos os direitos reservados
 				</p>
 			</div>

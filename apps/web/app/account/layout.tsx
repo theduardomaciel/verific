@@ -20,7 +20,11 @@ export default function AccountLayout({
 }>) {
 	return (
 		<div className={`${rem.variable} w-full flex flex-col flex-1`}>
-			<Header links={ACCOUNT_LINKS} showProjectSwitcher={false} />
+			<Header
+				links={ACCOUNT_LINKS}
+				showProjectSwitcher={false}
+				showAccountActions={false}
+			/>
 			{children}
 			<Footer />
 		</div>

@@ -240,7 +240,7 @@ function CheckboxFilter({
 		<>
 			<ul
 				ref={itemsContainerRef}
-				className="flex flex-col items-start justify-start gap-4 overflow-hidden transition-all duration-300 ease-in-out"
+				className="flex flex-col items-start justify-start gap-4 overflow-hidden transition-all duration-300 ease-in-out w-full"
 				style={{
 					maxHeight: isExpanded
 						? `${items.length * 100}px` // Altura suficientemente grande para todos os itens
@@ -310,11 +310,11 @@ function ExpandMore({
 	return (
 		<button
 			type="button"
-			className="flex flex-row items-center justify-start gap-4 text-sm"
+			className="flex flex-row items-center justify-start gap-4 text-sm leading-none"
 			onClick={() => setIsExpanded((prev) => !prev)}
 		>
 			<ChevronUp
-				className="transition-transform"
+				className="w-4 h-4 mt-1 transition-transform"
 				style={{
 					transform: isExpanded ? "rotate(0deg)" : "rotate(180deg)",
 				}}
