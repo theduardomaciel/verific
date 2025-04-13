@@ -1,6 +1,14 @@
+import Link from "next/link";
+
 import { cn } from "@/lib/utils";
+
+// Icons
 import { Calendar, Clock, Timer, User, Users } from "lucide-react";
+
+// Components
 import { Badge } from "@/components/ui/badge";
+
+// Data
 import {
 	formatFriendlyDate,
 	isLive,
@@ -10,13 +18,13 @@ import {
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
 	lecture: "Palestra",
-	workshop: "Oficina",
+	workshop: "Worskhop",
 	"round-table": "Mesa Redonda",
 	"mini-course": "Minicurso",
 };
 
 interface SimpleActivityCardProps
-	extends Pick<Activity, "speaker" | "category" | "date" | "title"> {
+	extends Pick<Activity, "speaker" | "category" | "date" | "title" | "id"> {
 	className?: string;
 }
 interface ActivityCardProps extends Activity {
@@ -24,6 +32,7 @@ interface ActivityCardProps extends Activity {
 }
 
 export function SimpleActivityCard({
+	id,
 	title,
 	speaker,
 	category,
@@ -31,7 +40,8 @@ export function SimpleActivityCard({
 	className,
 }: SimpleActivityCardProps) {
 	return (
-		<div
+		<Link
+			href={`/dashboard/activities/${id}`}
 			className={cn(
 				"flex hover:bg-foreground/5 flex-col md:flex-row items-start justify-start md:justify-between rounded-md border p-4 gap-2",
 				className,
@@ -44,7 +54,7 @@ export function SimpleActivityCard({
 				</p>
 			</div>
 			<ActivityInfo category={category} date={date} />
-		</div>
+		</Link>
 	);
 }
 
@@ -60,51 +70,60 @@ export function ActivityCard({
 	className,
 }: ActivityCardProps) {
 	return (
-		<div className={cn("rounded-md border bg-white", className)}>
-			<div className="p-6 space-y-4">
-				<div className="flex justify-between items-start">
-					<h3 className="text-xl font-semibold font-dashboard text-gray-900">
-						{title}
-					</h3>
-					{id && <span className="text-sm text-muted-foreground">#{id}</span>}
-				</div>
-
-				{description && (
-					<p className="text-foreground text-sm line-clamp-3">{description}</p>
+		<Link href={`/dashboard/activities/${id}`} className="flex w-full">
+			<div
+				className={cn(
+					"rounded-md border bg-card w-full hover:bg-card-foreground/10 transition-colors",
+					className,
 				)}
-
-				<ActivityInfo speaker={speaker} category={category} date={date} />
-
-				{(monitors || participants) && (
-					<div className="flex flex-wrap gap-4 justify-between items-center pt-2 border-t">
-						{monitors && monitors.length > 0 && (
-							<div className="flex items-center gap-2">
-								<div className="flex -space-x-2">
-									{monitors.map((monitor, _) => (
-										<div
-											key={monitor}
-											className="h-6 w-6 rounded-full bg-gray-300 border-2 border-white flex items-center justify-center overflow-hidden"
-										>
-											<User className="h-3 w-3 text-foreground" />
-										</div>
-									))}
-								</div>
-								<span className="text-xs text-foreground">
-									Monitorado por {monitors.join(", ")}
-								</span>
-							</div>
-						)}
-
-						{participants && (
-							<div className="flex items-center gap-1 text-xs text-foreground">
-								<Users className="h-4 w-4" />
-								<span>+ de {participants} participantes inscritos</span>
-							</div>
-						)}
+			>
+				<div className="p-6 space-y-4">
+					<div className="flex justify-between items-start">
+						<h3 className="text-xl font-semibold font-dashboard text-foreground">
+							{title}
+						</h3>
+						{id && <span className="text-sm text-muted-foreground">#{id}</span>}
 					</div>
-				)}
+
+					{description && (
+						<p className="text-foreground text-sm line-clamp-3">
+							{description}
+						</p>
+					)}
+
+					<ActivityInfo speaker={speaker} category={category} date={date} />
+
+					{(monitors || participants) && (
+						<div className="flex flex-wrap gap-4 justify-between items-center pt-2 border-t">
+							{monitors && monitors.length > 0 && (
+								<div className="flex items-center gap-2">
+									<div className="flex -space-x-2">
+										{monitors.map((monitor, _) => (
+											<div
+												key={monitor}
+												className="h-6 w-6 rounded-full bg-accent border-2 border-card flex items-center justify-center overflow-hidden"
+											>
+												<User className="h-3 w-3 text-foreground" />
+											</div>
+										))}
+									</div>
+									<span className="text-xs text-foreground">
+										Monitorado por {monitors.join(", ")}
+									</span>
+								</div>
+							)}
+
+							{participants && (
+								<div className="flex items-center gap-1 text-xs text-foreground">
+									<Users className="h-4 w-4" />
+									<span>+ de {participants} participantes inscritos</span>
+								</div>
+							)}
+						</div>
+					)}
+				</div>
 			</div>
-		</div>
+		</Link>
 	);
 }
 
@@ -143,13 +162,15 @@ function ActivityInfo({ speaker, category, date }: InfoProps) {
 					EM INSTANTES
 				</Badge>
 			) : (
-				<div className="flex items-center gap-2 text-foreground">
+				<div className="flex items-center justify-center gap-2 text-foreground">
 					{speaker ? (
-						<Calendar className="h-4 w-4" />
+						<Calendar className="h-4 w-4 mt-[1.2px]" />
 					) : (
-						<Clock className="h-3 w-3" />
+						<Clock className="h-3 w-3 mt-[1.2px]" />
 					)}
-					<p className="text-sm">{formatFriendlyDate(date, !!speaker)}</p>
+					<p className="text-sm leading-0">
+						{formatFriendlyDate(date, !!speaker)}
+					</p>
 				</div>
 			)}
 		</div>
