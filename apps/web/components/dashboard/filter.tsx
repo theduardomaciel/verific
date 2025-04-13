@@ -310,11 +310,11 @@ function ExpandMore({
 	return (
 		<button
 			type="button"
-			className="flex flex-row items-center justify-start gap-4 text-sm"
+			className="flex flex-row items-center justify-start gap-4 text-sm leading-none"
 			onClick={() => setIsExpanded((prev) => !prev)}
 		>
 			<ChevronUp
-				className="transition-transform"
+				className="w-4 h-4 mt-1 transition-transform"
 				style={{
 					transform: isExpanded ? "rotate(0deg)" : "rotate(180deg)",
 				}}

@@ -1,7 +1,8 @@
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { EventCard } from "./event-card";
 import Link from "next/link";
+
+// Components
+import { EventCard } from "./event-card";
+import { CreateProjectDialog } from "./create-project-dialog";
 
 const projects = [
 	{
@@ -30,7 +31,7 @@ export function EventList() {
 
 			<div className="bg-default rounded-lg p-4">
 				<div className="flex flex-col gap-4 border p-6 rounded">
-					<ul className="flex flex-col items-center justify-start gap-1">
+					<ul className="flex flex-col items-center justify-start gap-3">
 						{projects.map((project) => (
 							<Link href={"dashboard"} key={project.id} className="w-full">
 								<EventCard
@@ -42,13 +43,7 @@ export function EventList() {
 						))}
 					</ul>
 
-					<Button
-						className="w-full py-6 bg-primary hover:bg-blue-600 text-white flex items-center justify-center gap-2"
-						size={"lg"}
-					>
-						<Plus className="font-hanken font-medium text-base leading-6 tracking-normal align-middle" />
-						Criar novo projeto
-					</Button>
+					<CreateProjectDialog />
 				</div>
 			</div>
 		</div>

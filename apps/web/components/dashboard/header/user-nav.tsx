@@ -48,18 +48,18 @@ export default function UserNav({ showAccountActions }: Props) {
 							</DropdownMenuItem>
 						</Link>
 						<DropdownMenuGroup>
-							<Link href="/account">
+							{/* <Link href="/account">
 								<DropdownMenuItem>
 									<FolderCog className="mr-2 h-4 w-4" />
 									Projetos
 									<DropdownMenuShortcut>⇧⌘A</DropdownMenuShortcut>
 								</DropdownMenuItem>
-							</Link>
+							</Link> */}
 							{/* <DropdownMenuItem>
-						<Plus className="mr-2 h-4 w-4" />
-						Novo projeto
-						<DropdownMenuShortcut>⌘+T</DropdownMenuShortcut>
-					</DropdownMenuItem> */}
+								<Plus className="mr-2 h-4 w-4" />
+								Novo projeto
+								<DropdownMenuShortcut>⌘+T</DropdownMenuShortcut>
+							</DropdownMenuItem> */}
 						</DropdownMenuGroup>
 						<DropdownMenuSeparator />
 					</>

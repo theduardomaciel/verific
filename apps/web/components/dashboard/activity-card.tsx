@@ -73,7 +73,7 @@ export function ActivityCard({
 		<Link href={`/dashboard/activities/${id}`} className="flex w-full">
 			<div
 				className={cn(
-					"rounded-md border bg-card w-full hover:bg-card-foreground/10 transition-colors",
+					"rounded-md border bg-card w-full hover:bg-secondary transition-colors group",
 					className,
 				)}
 			>
@@ -101,7 +101,7 @@ export function ActivityCard({
 										{monitors.map((monitor, _) => (
 											<div
 												key={monitor}
-												className="h-6 w-6 rounded-full bg-accent border-2 border-card flex items-center justify-center overflow-hidden"
+												className="h-6 w-6 rounded-full bg-accent border-2 border-card flex items-center justify-center overflow-hidden group-hover:border-secondary transition-colors"
 											>
 												<User className="h-3 w-3 text-foreground" />
 											</div>
