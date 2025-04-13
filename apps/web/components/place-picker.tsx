@@ -163,19 +163,13 @@ export function PlacePicker({
 	};
 
 	return (
-		<div className={cn("space-y-2", className)}>
+		<div className={cn("space-y-2 w-full", className)}>
 			<Label htmlFor="location">Location</Label>
 			<Popover open={open} onOpenChange={setOpen}>
 				<PopoverTrigger asChild>
-					<Button
-						variant="outline"
-						// biome-ignore lint/a11y/useSemanticElements: <explanation>
-						role="combobox"
-						aria-expanded={open}
-						className="w-full justify-between"
-					>
+				<Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between max-w-full">
 						{address ? (
-							<div className="flex items-center gap-2 truncate">
+							<div className="flex items-center gap-2 w-full overflow-hidden">
 								<MapPin className="h-4 w-4 shrink-0 opacity-70" />
 								<span className="truncate">{address}</span>
 							</div>
@@ -188,7 +182,7 @@ export function PlacePicker({
 					<div className="p-4 space-y-4">
 						<div className="flex gap-2">
 							<Input
-								placeholder="Search for an address"
+								placeholder="Pesquisar endereço..."
 								value={searchInput}
 								onChange={(e) => setSearchInput(e.target.value)}
 								onKeyDown={(e) => {
@@ -204,14 +198,14 @@ export function PlacePicker({
 						</div>
 						<div id="map" className="h-[300px] w-full rounded-md border" />
 						<div className="text-xs text-muted-foreground">
-							Drag the marker or click on the map to set the location
+							Arraste o marcador ou clique no mapa para definir o local
 						</div>
 					</div>
 				</PopoverContent>
 			</Popover>
 			{address && (
 				<div className="text-sm text-muted-foreground mt-1">
-					Coordinates: {position[0].toFixed(6)}, {position[1].toFixed(6)}
+					Coordenadas: {position[0].toFixed(6)}, {position[1].toFixed(6)}
 				</div>
 			)}
 		</div>
