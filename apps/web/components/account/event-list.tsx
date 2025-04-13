@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { EventCard } from "./EventCard";
+import { EventCard } from "./event-card";
 import Link from "next/link";
 
 const projects = [

@@ -19,6 +19,9 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="pt-BR">
+			{/* <head>
+				<script src="https://unpkg.com/react-scan/dist/auto.global.js" />
+			</head> */}
 			<body
 				className={`${hankenGrotesk.variable} antialiased flex flex-col min-h-screen`}
 			>
