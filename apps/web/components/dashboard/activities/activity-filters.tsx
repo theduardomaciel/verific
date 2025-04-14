@@ -124,19 +124,16 @@ export function ActivityFilters({
 		params.delete("monitors");
 
 		// Add selected categories
-		// biome-ignore lint/complexity/noForEach: This is a simple loop to add selected categories to the URL params
 		selectedCategories.forEach((category) => {
 			params.append("categories", category);
 		});
 
 		// Add selected statuses
-		// biome-ignore lint/complexity/noForEach: This is a simple loop to add selected categories to the URL params
 		selectedStatuses.forEach((status) => {
 			params.append("statuses", status);
 		});
 
 		// Add selected monitors
-		// biome-ignore lint/complexity/noForEach: This is a simple loop to add selected categories to the URL params
 		selectedMonitors.forEach((monitor) => {
 			params.append("monitors", monitor);
 		});
