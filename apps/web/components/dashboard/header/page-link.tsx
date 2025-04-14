@@ -23,7 +23,6 @@ export default function MainNav({
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
 	const activeButtonRef = useRef<HTMLAnchorElement>(null);
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: pathname is a dependency
 	useEffect(() => {
 		if (scrollContainerRef.current && activeButtonRef.current) {
 			const container = scrollContainerRef.current;
