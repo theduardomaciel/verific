@@ -17,7 +17,7 @@ export function Hero() {
 					</p>
 					<Link href="#">
 						<Button
-							className="group text-foreground hover:bg-accent h-fit rounded-full bg-white !px-12 !py-4 font-semibold dark:bg-black dark:hover:bg-black/80"
+							className="group text-foreground hover:bg-accent h-fit rounded-full bg-white !px-12 !py-3 text-base font-semibold dark:bg-black dark:hover:bg-black/80"
 							size={"lg"}
 						>
 							<span>Comece a organizar seu evento</span>
