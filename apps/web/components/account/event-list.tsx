@@ -24,27 +24,29 @@ const projects = [
 
 export function EventList() {
 	return (
-		<div className="w-full max-w-lg px-4">
-			<h1 className="font-REM text-foreground text-2xl font-semibold text-center mb-6">
+		<div className="w-full max-w-md px-4">
+			<h1 className="font-REM text-foreground mb-6 text-center text-2xl font-semibold">
 				Selecione um projeto
 			</h1>
 
-			<div className="bg-default rounded-lg p-4">
-				<div className="flex flex-col gap-4 border p-6 rounded">
-					<ul className="flex flex-col items-center justify-start gap-3">
-						{projects.map((project) => (
-							<Link href={"dashboard"} key={project.id} className="w-full">
-								<EventCard
-									key={project.id}
-									name={project.name}
-									createdAt={project.createdAt}
-								/>
-							</Link>
-						))}
-					</ul>
+			<div className="flex w-full flex-col gap-4 p-3 md:rounded-lg md:border md:p-6">
+				<ul className="flex flex-col items-center justify-start gap-3">
+					{projects.map((project) => (
+						<Link
+							href={"dashboard"}
+							key={project.id}
+							className="w-full"
+						>
+							<EventCard
+								key={project.id}
+								name={project.name}
+								createdAt={project.createdAt}
+							/>
+						</Link>
+					))}
+				</ul>
 
-					<CreateProjectDialog />
-				</div>
+				<CreateProjectDialog />
 			</div>
 		</div>
 	);

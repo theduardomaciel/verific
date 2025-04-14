@@ -8,6 +8,7 @@ import { Plus } from "lucide-react";
 // Components
 import {
 	Dialog,
+	DialogClose,
 	DialogContent,
 	DialogFooter,
 	DialogHeader,
@@ -111,14 +112,14 @@ export function CreateProjectDialog() {
 			<Dialog open={open} onOpenChange={setOpen}>
 				<DialogTrigger asChild>
 					<Button
-						className="w-full py-6 bg-primary flex items-center justify-center gap-2 leading-none"
+						className="bg-primary flex w-full items-center justify-center gap-2 py-6 leading-none"
 						size={"lg"}
 					>
 						<Plus className="mt-0.5" />
 						Criar novo projeto
 					</Button>
 				</DialogTrigger>
-				<DialogContent className="sm:max-w-[425px]">
+				<DialogContent className="sm:max-w-md">
 					<DialogHeader>
 						<DialogTitle>Criar projeto</DialogTitle>
 					</DialogHeader>
@@ -128,7 +129,12 @@ export function CreateProjectDialog() {
 						onPlaceChange={onPlaceChange}
 						onSubmit={onSubmit}
 					/>
-					<DialogFooter>
+					<DialogFooter className="w-full grid-cols-2 gap-3 md:grid">
+						<DialogClose asChild>
+							<Button type="button" variant={"outline"}>
+								Cancelar
+							</Button>
+						</DialogClose>
 						<Button type="submit">Criar</Button>
 					</DialogFooter>
 				</DialogContent>
@@ -140,7 +146,7 @@ export function CreateProjectDialog() {
 		<Drawer open={open} onOpenChange={setOpen}>
 			<DrawerTrigger asChild>
 				<Button
-					className="w-full py-6 bg-primary flex items-center justify-center gap-2 leading-none"
+					className="bg-primary flex w-full items-center justify-center gap-2 py-6 leading-none"
 					size={"lg"}
 				>
 					<Plus className="mt-0.5" />
@@ -161,7 +167,7 @@ export function CreateProjectDialog() {
 					/>
 				</div>
 
-				<DrawerFooter className="w-full flex gap-2">
+				<DrawerFooter className="flex w-full gap-2">
 					<Button>Criar</Button>
 					<DrawerClose asChild>
 						<Button variant="outline">Cancelar</Button>
@@ -189,7 +195,7 @@ function CreateProjectForm({
 		<Form {...form}>
 			<form
 				onSubmit={form.handleSubmit(onSubmit)}
-				className="space-y-6 flex flex-col w-full"
+				className="flex w-full flex-col space-y-6"
 			>
 				<FormField
 					control={form.control}
@@ -198,7 +204,10 @@ function CreateProjectForm({
 						<FormItem>
 							<FormLabel>Nome do projeto</FormLabel>
 							<FormControl>
-								<Input placeholder="Insira o nome do projeto" {...field} />
+								<Input
+									placeholder="Insira o nome do projeto"
+									{...field}
+								/>
 							</FormControl>
 							<FormMessage />
 						</FormItem>
@@ -224,15 +233,16 @@ function CreateProjectForm({
 					control={form.control}
 					name="location"
 					render={({ field }) => (
-						<FormItem className="flex flex-col w-full">
-							<FormControl className="flex flex-col w-full">
+						<FormItem className="flex w-full flex-col">
+							<FormControl className="flex w-full flex-col">
 								<PlacePicker
 									defaultValue={locationValue}
 									onPlaceChange={onPlaceChange}
 								/>
 							</FormControl>
 							<FormDescription>
-								Selecione uma localização pesquisando ou clicando no mapa.
+								Selecione uma localização pesquisando ou
+								clicando no mapa.
 							</FormDescription>
 							<FormMessage />
 						</FormItem>

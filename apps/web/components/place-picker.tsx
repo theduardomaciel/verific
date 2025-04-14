@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 // Icons
-import { MapPin, Search } from "lucide-react";
+import { Loader2, MapPin, Search } from "lucide-react";
 
 // Components
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,11 @@ export function PlacePicker({
 			: [-9.669408, -35.721292],
 	);
 	const [searchInput, setSearchInput] = useState("");
+	const [status, setStatus] = useState<{
+		message?: string;
+		type: "error" | "loading" | null;
+	}>({ type: null });
+
 	const mapRef = useRef<any>(null);
 	const markerRef = useRef<any>(null);
 	const prevPlaceRef = useRef<PlaceData | null>(null);
@@ -160,6 +165,7 @@ export function PlacePicker({
 	// Geocodifica um endereço para obter as coordenadas
 	const geocodeAddress = async () => {
 		if (!searchInput.trim()) return;
+		setStatus({ type: "loading" });
 
 		try {
 			const response = await fetch(
@@ -172,17 +178,30 @@ export function PlacePicker({
 				setPosition([Number.parseFloat(lat), Number.parseFloat(lon)]);
 				setAddress(display_name);
 				setSearchInput("");
+				setStatus({ type: null });
 			} else {
 				// No results found
 				console.log("No locations found for this search term");
+				setStatus({
+					message: "Nenhum local encontrado para a pesquisa.",
+					type: "error",
+				});
 			}
 		} catch (error) {
 			console.error("Geocoding error:", error);
+			setStatus({
+				message: "Erro ao buscar o local.",
+				type: "error",
+			});
 		}
 	};
 
 	// Reverte a geocodificação das coordenadas para obter o endereço
 	const reverseGeocode = async (lat: number, lon: number) => {
+		if (!lat || !lon) return;
+
+		setStatus({ type: "loading" });
+
 		try {
 			const response = await fetch(
 				`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,
@@ -192,8 +211,14 @@ export function PlacePicker({
 			if (data?.display_name && data.display_name !== address) {
 				setAddress(data.display_name);
 			}
+
+			setStatus({ type: null });
 		} catch (error) {
 			console.error("Reverse geocoding error:", error);
+			setStatus({
+				message: "Erro ao buscar o local.",
+				type: "error",
+			});
 		}
 	};
 
@@ -205,10 +230,15 @@ export function PlacePicker({
 					<Button
 						variant="outline"
 						role="combobox"
+						disabled={status.type === "loading"}
 						aria-expanded={open}
 						className="w-full max-w-full justify-between"
 					>
-						{address ? (
+						{status.type === "error" ? (
+							<span className="text-red-500">
+								{status.message}
+							</span>
+						) : address ? (
 							<div className="grid w-full">
 								<div className="flex w-full items-center gap-2 overflow-hidden">
 									<MapPin className="h-4 w-4 shrink-0 opacity-70" />
@@ -227,6 +257,11 @@ export function PlacePicker({
 					<div className="space-y-4 p-4">
 						<div className="flex gap-2">
 							<Input
+								className={cn("w-full", {
+									"animate-pulse": status.type === "loading",
+									"!border-destructive !ring-destructive/50":
+										status.type === "error",
+								})}
 								placeholder="Pesquisar endereço..."
 								value={searchInput}
 								onChange={(e) => setSearchInput(e.target.value)}
@@ -237,8 +272,23 @@ export function PlacePicker({
 									}
 								}}
 							/>
-							<Button size="icon" onClick={geocodeAddress}>
-								<Search className="h-4 w-4" />
+							<Button
+								size="icon"
+								onClick={geocodeAddress}
+								// TODO: Não podemos colocar a verificação de status == loading,
+								// visto que causa algum tipo de efeito colateral que fecha o popover
+								disabled={!searchInput}
+								className={cn({
+									"pointer-events-none cursor-default opacity-50 select-none":
+										!searchInput ||
+										status.type === "loading",
+								})}
+							>
+								{status.type === "loading" ? (
+									<Loader2 className="h-4 w-4 animate-spin" />
+								) : (
+									<Search className="h-4 w-4" />
+								)}
 							</Button>
 						</div>
 						<div
