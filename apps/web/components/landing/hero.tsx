@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 
 export function Hero() {
 	return (
-		<section className="bg-primary relative flex w-full justify-center">
-			<div className="container w-full px-4 py-12 md:py-16 lg:py-20">
+		<section className="bg-primary relative container mt-8 flex w-full justify-center rounded-2xl">
+			<div className="container w-full p-8 md:p-10 lg:p-12">
 				<div className="max-w-2xl">
 					<h1 className="mb-4 text-3xl font-bold text-white md:text-4xl lg:text-5xl">
 						Seu próximo gerenciador de eventos
@@ -20,10 +20,15 @@ export function Hero() {
 					</p>
 					<Link href="#">
 						<Button
-							className="group text-foreground hover:bg-accent h-fit rounded-full bg-white !px-12 !py-3 text-base font-semibold dark:bg-black dark:hover:bg-black/80"
+							className="group text-foreground hover:bg-accent h-fit rounded-full bg-white !px-12 !py-3 text-base font-semibold max-md:w-full dark:bg-black dark:hover:bg-black/80"
 							size={"lg"}
 						>
-							<span>Comece a organizar seu evento</span>
+							<span className="hidden md:flex">
+								Comece a organizar seu evento
+							</span>
+							<span className="flex md:hidden">
+								Organize seu evento
+							</span>
 							<ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
 						</Button>
 					</Link>
