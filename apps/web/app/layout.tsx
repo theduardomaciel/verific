@@ -28,9 +28,7 @@ export default function RootLayout({
 			{/* <head>
 				<script src="https://unpkg.com/react-scan/dist/auto.global.js" />
 			</head> */}
-			<body
-				className={`${hankenGrotesk.variable} antialiased flex flex-col min-h-screen`}
-			>
+			<body className={`${hankenGrotesk.variable} antialiased`}>
 				<ThemeProvider
 					attribute="class"
 					defaultTheme="system"
