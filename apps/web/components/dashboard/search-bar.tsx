@@ -32,7 +32,6 @@ export function SearchBar({
 	const [value, setValue] = useState(query.get(word) || "");
 	const debouncedValue = useDebounce(value, 250);
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
 	useEffect(() => {
 		startTransition(() => {
 			router.push(

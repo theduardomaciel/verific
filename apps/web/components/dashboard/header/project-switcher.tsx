@@ -49,7 +49,7 @@ type PopoverTriggerProps = React.ComponentPropsWithoutRef<
 	typeof PopoverTrigger
 >;
 
-interface ProjectSwitcherProps extends PopoverTriggerProps {}
+interface ProjectSwitcherProps extends PopoverTriggerProps { }
 
 export default function ProjectSwitcher({ className }: ProjectSwitcherProps) {
 	const [open, setOpen] = React.useState(false);
@@ -62,7 +62,6 @@ export default function ProjectSwitcher({ className }: ProjectSwitcherProps) {
 			<PopoverTrigger asChild>
 				<Button
 					variant="outline"
-					// biome-ignore lint/a11y/useSemanticElements: No semantic element for this component
 					role="combobox"
 					aria-expanded={open}
 					aria-label="Selecione um projeto"

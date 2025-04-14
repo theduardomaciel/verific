@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import Logo from "@/public/logo.svg";
 
 const footerVariants = cva(
-	"flex items-center justify-center w-full py-6 px-8 ",
+	"flex items-center px-8 justify-center w-full py-6 ",
 	{
 		variants: {
 			variant: {
@@ -31,9 +31,12 @@ function Footer({
 		showWatermark?: boolean;
 	}) {
 	return (
-		<footer className={cn(footerVariants({ variant, className }))} {...props}>
-			<div className="flex flex-row flex-wrap items-start justify-start md:justify-between gap-4 w-full">
-				<div className="flex flex-row flex-wrap items-center justify-start gap-3 md:gap-8 xs:justify-between max-md:w-full">
+		<footer
+			className={cn(footerVariants({ variant, className }))}
+			{...props}
+		>
+			<div className="flex w-full flex-row flex-wrap items-start justify-start gap-4 md:justify-between">
+				<div className="xs:justify-between flex flex-row flex-wrap items-center justify-start gap-3 max-md:w-full md:gap-8">
 					{/* Brand */}
 					<div className="flex items-center gap-3">
 						{showWatermark && (
@@ -41,34 +44,34 @@ function Footer({
 								<span className="text-sm font-medium">
 									Feito com tecnologia
 								</span>
-								<div className="w-[1px] h-3 bg-foreground rounded-full hidden md:flex" />
+								<div className="bg-foreground hidden h-3 w-[1px] rounded-full md:flex" />
 							</>
 						)}
-						<Logo className="h-5 text-foreground" />
+						<Logo className="text-foreground h-5" />
 					</div>
 					{/* Links */}
 					<nav className="flex gap-6">
 						<Link
 							href="#"
-							className="text-xs text-foreground hover:text-muted-foreground transition-colors"
+							className="text-foreground hover:text-muted-foreground text-xs transition-colors"
 						>
 							Ajuda
 						</Link>
 						<Link
 							href="#"
-							className="text-xs text-foreground hover:text-muted-foreground transition-colors"
+							className="text-foreground hover:text-muted-foreground text-xs transition-colors"
 						>
 							Política de Privacidade
 						</Link>
 						<Link
 							href="#"
-							className="text-xs text-foreground hover:text-muted-foreground transition-colors"
+							className="text-foreground hover:text-muted-foreground text-xs transition-colors"
 						>
 							Termos de Uso
 						</Link>
 					</nav>
 				</div>
-				<p className="text-xs text-foreground/50">
+				<p className="text-foreground/50 text-xs">
 					Copyright 2025 verifIC. Todos os direitos reservados
 				</p>
 			</div>

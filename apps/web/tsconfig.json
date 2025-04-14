@@ -1,4 +1,5 @@
 {
+  "extends": "@verific/typescript-config/nextjs.json",
   "compilerOptions": {
     "target": "ES2017",
     "lib": [
