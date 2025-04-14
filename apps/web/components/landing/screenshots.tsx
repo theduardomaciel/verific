@@ -8,9 +8,9 @@ import mobileDark from "@/public/screenshots/dashboard-mobile.png";
 
 export function Screenshots() {
 	return (
-		<section className="flex w-full justify-center px-4 py-8 lg:py-16">
+		<section className="flex w-full justify-center px-4 pt-6 pb-8 lg:pb-16">
 			<div className="container flex w-full flex-col gap-6 lg:flex-row">
-				<div className="bg-primary flex h-[472px] w-full items-end justify-center overflow-hidden rounded-2xl px-10 pt-14 md:w-[71.4%]">
+				<div className="bg-primary flex h-[472px] w-full items-end justify-center overflow-hidden rounded-2xl px-10 pt-14 lg:w-[71.4%]">
 					<Image
 						src={desktopDark}
 						alt="Dashboard desktop"
