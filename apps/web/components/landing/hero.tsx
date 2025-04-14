@@ -1,10 +1,13 @@
-import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+
+import { ArrowRight } from "lucide-react";
+import Ticket from "@/public/ticket.svg";
+
+import { Button } from "@/components/ui/button";
 
 export function Hero() {
 	return (
-		<section className="bg-primary flex w-full justify-center">
+		<section className="bg-primary relative flex w-full justify-center">
 			<div className="container w-full px-4 py-12 md:py-16 lg:py-20">
 				<div className="max-w-2xl">
 					<h1 className="mb-4 text-3xl font-bold text-white md:text-4xl lg:text-5xl">
@@ -26,6 +29,10 @@ export function Hero() {
 					</Link>
 				</div>
 			</div>
+			<Ticket
+				className="absolute -right-32 -bottom-48 z-0 hidden rotate-12 text-white lg:block"
+				alt="Ticket"
+			/>
 		</section>
 	);
 }

@@ -50,21 +50,21 @@ function Footer({
 						<Logo className="text-foreground h-5" />
 					</div>
 					{/* Links */}
-					<nav className="flex gap-6">
+					<nav className="flex flex-row flex-wrap gap-2">
 						<Link
-							href="#"
+							href="/help"
 							className="text-foreground hover:text-muted-foreground text-xs transition-colors"
 						>
 							Ajuda
 						</Link>
 						<Link
-							href="#"
-							className="text-foreground hover:text-muted-foreground text-xs transition-colors"
+							href="/privacy-policy"
+							className="text-foreground hover:text-muted-foreground !mr-6 text-xs transition-colors"
 						>
 							Política de Privacidade
 						</Link>
 						<Link
-							href="#"
+							href="/terms-of-service"
 							className="text-foreground hover:text-muted-foreground text-xs transition-colors"
 						>
 							Termos de Uso

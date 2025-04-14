@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Menu } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { MobileMenu } from "./mobile-menu";
 import { Brand } from "./brand";
 import {
@@ -19,64 +19,66 @@ export function Header() {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 
 	return (
-		<>
-			<header className="border-border/40 bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 flex w-full justify-center border-b backdrop-blur">
-				<div className="container flex h-16 w-full items-center justify-between">
-					<Brand />
+		<header className="border-border/40 bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 flex w-full justify-center border-b backdrop-blur">
+			<div className="container flex h-16 w-full items-center justify-between">
+				<Brand />
 
-					<nav className="hidden items-center gap-9 md:flex">
-						<Link
-							href="#"
-							className="hover:text-primary text-sm font-medium"
+				<nav className="hidden items-center gap-9 md:flex">
+					<Link
+						href="#"
+						className="hover:text-primary text-sm font-medium"
+					>
+						Sobre o projeto
+					</Link>
+					<Link
+						href="#"
+						className="hover:text-primary text-sm font-medium"
+					>
+						Funcionalidades
+					</Link>
+					<Link
+						href="#"
+						className="hover:text-primary text-sm font-medium"
+					>
+						FAQ
+					</Link>
+					<div className="flex items-center gap-4">
+						<Select
+							defaultValue="pt"
+							onValueChange={(value) => console.log(value)}
 						>
-							Sobre o projeto
-						</Link>
-						<Link
-							href="#"
-							className="hover:text-primary text-sm font-medium"
-						>
-							Funcionalidades
-						</Link>
-						<Link
-							href="#"
-							className="hover:text-primary text-sm font-medium"
-						>
-							FAQ
-						</Link>
-						<div className="flex items-center gap-4">
-							{/* <Button variant="outline" size="sm">
-								Sobre o projeto
-							</Button>
-							<Button size="sm">Funcionalidades</Button>
-							<Button variant="outline" size="sm">
-								FAQ
-							</Button> */}
-							<Select
-								defaultValue="pt"
-								onValueChange={(value) => console.log(value)}
-							>
-								<SelectTrigger>
-									<SelectValue placeholder="Selecione o idioma" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem
-										value="pt"
-										className="cursor-pointer"
-									>
-										🇧🇷 PT
-									</SelectItem>
-									<SelectItem
-										value="en"
-										className="cursor-pointer"
-									>
-										🇺🇸 EN
-									</SelectItem>
-								</SelectContent>
-							</Select>
-							<ThemeSwitcher />
-						</div>
-					</nav>
+							<SelectTrigger>
+								<SelectValue placeholder="Selecione o idioma" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem
+									value="pt"
+									className="cursor-pointer"
+								>
+									🇧🇷 PT
+								</SelectItem>
+								<SelectItem
+									value="en"
+									className="cursor-pointer"
+								>
+									🇺🇸 EN
+								</SelectItem>
+							</SelectContent>
+						</Select>
+						<ThemeSwitcher />
+					</div>
+				</nav>
 
+				{isMenuOpen ? (
+					<Button
+						variant="ghost"
+						size="icon"
+						onClick={() => setIsMenuOpen(false)}
+					>
+						<X className="h-6 w-6" />
+						<span className="sr-only">Close menu</span>
+					</Button>
+				) : (
 					<Button
 						variant="ghost"
 						size="icon"
@@ -86,13 +88,10 @@ export function Header() {
 						<Menu className="h-6 w-6" />
 						<span className="sr-only">Toggle menu</span>
 					</Button>
-				</div>
-			</header>
+				)}
+			</div>
 
-			<MobileMenu
-				isOpen={isMenuOpen}
-				onClose={() => setIsMenuOpen(false)}
-			/>
-		</>
+			<MobileMenu isOpen={isMenuOpen} />
+		</header>
 	);
 }
