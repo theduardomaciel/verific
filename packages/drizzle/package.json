@@ -9,8 +9,7 @@
 		"db:drop": "drizzle-kit drop",
 		"db:migrate": "pnpm tsx ./migrate.ts",
 		"db:studio": "drizzle-kit studio",
-		"db:seed": "pnpm tsx ./seed_v2.ts",
-		"lint": "pnpm biome lint ."
+		"db:seed": "pnpm tsx ./seed_v2.ts"
 	},
 	"dependencies": {
 		"@faker-js/faker": "^9.6.0",
@@ -20,10 +19,12 @@
 		"zod": "^3.24.2"
 	},
 	"devDependencies": {
-		"@verific/biome-config": "workspace:*",
+		"@verific/prettier-config": "workspace:*",
+		"@verific/eslint-config": "workspace:*",
 		"@verific/typescript-config": "workspace:*",
 		"drizzle-kit": "^0.30.6",
 		"drizzle-orm": "^0.41.0",
 		"pg": "^8.14.1"
-	}
+	},
+	"prettier": "@verific/prettier-config"
 }

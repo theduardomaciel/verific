@@ -1,0 +1,13 @@
+{
+  "name": "@verific/prettier-config",
+  "version": "0.0.0",
+  "main": "index.mjs",
+  "license": "MIT",
+  "private": true,
+  "devDependencies": {
+    "eslint-config-prettier": "^10.1.2",
+    "prettier": "3.5.3",
+    "prettier-plugin-tailwindcss": "^0.6.11"
+  },
+  "prettier": "@verific/prettier-config"
+}

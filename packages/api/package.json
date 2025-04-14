@@ -1,18 +1,20 @@
 {
-	"name": "@verific/api",
-	"main": "./index.ts",
-	"types": "./index.ts",
-	"version": "0.0.0",
-	"private": true,
-	"scripts": {},
-	"dependencies": {
-		"@verific/drizzle": "workspace:*",
-		"@verific/env": "workspace:*",
-		"superjson": "^2.2.2",
-		"zod": "^3.24.2"
-	},
-	"devDependencies": {
-		"@verific/biome-config": "workspace:*",
-		"@verific/typescript-config": "workspace:*"
-	}
+  "name": "@verific/api",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {},
+  "dependencies": {
+    "@verific/drizzle": "workspace:*",
+    "@verific/env": "workspace:*",
+    "superjson": "^2.2.2",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@verific/eslint-config": "workspace:*",
+    "@verific/typescript-config": "workspace:*",
+    "@verific/prettier-config": "workspace:*"
+  },
+  "prettier": "@verific/prettier-config"
 }

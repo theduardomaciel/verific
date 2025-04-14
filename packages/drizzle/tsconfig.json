@@ -1,5 +1,5 @@
 {
-  "extends": "@verific/typescript-config/lib.json",
+  "extends": "@verific/typescript-config/base.json",
   "include": [
     "."
   ],

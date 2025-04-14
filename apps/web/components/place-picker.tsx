@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -39,7 +39,7 @@ export function PlacePicker({
 	const [position, setPosition] = useState<[number, number]>(
 		defaultValue
 			? [defaultValue.latitude, defaultValue.longitude]
-			: [51.505, -0.09],
+			: [-9.669408, -35.721292],
 	);
 	const [searchInput, setSearchInput] = useState("");
 	const mapRef = useRef<any>(null);
@@ -52,20 +52,42 @@ export function PlacePicker({
 
 		// Precisamos importar o Leaflet dinamicamente porque é uma biblioteca client-side
 		const initializeMap = async () => {
-			if (typeof window !== "undefined" && !mapRef.current) {
+			if (typeof window !== "undefined") {
 				// Importa o Leaflet dinamicamente
 				const L = (await import("leaflet")).default;
 
 				// Importa o CSS
 				await import("leaflet/dist/leaflet.css");
 
+				// If map already exists, remove it first
+				if (mapRef.current) {
+					mapRef.current.remove();
+					mapRef.current = null;
+					markerRef.current = null;
+				}
+
+				// Fix Leaflet's default icon issue
+				// This is needed because Leaflet's assets are not properly resolved when dynamically imported
+				L.Icon.Default.mergeOptions({
+					iconRetinaUrl:
+						"https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png",
+					iconUrl:
+						"https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
+					shadowUrl:
+						"https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
+				});
+
 				// Inicializa o mapa
+				console.log("Initializing map with position:", position);
 				const map = L.map("map").setView(position, 13);
 
-				L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-					attribution:
-						'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-				}).addTo(map);
+				L.tileLayer(
+					"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+					{
+						attribution:
+							'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+					},
+				).addTo(map);
 
 				// Adiciona um marcador
 				const marker = L.marker(position, {
@@ -111,7 +133,12 @@ export function PlacePicker({
 
 	// Notifica o componente pai quando o local muda
 	useEffect(() => {
-		if (onPlaceChange && address && position[0] !== 0 && position[1] !== 0) {
+		if (
+			onPlaceChange &&
+			address &&
+			position[0] !== 0 &&
+			position[1] !== 0
+		) {
 			// Usa um ref para rastrear os valores anteriores e evitar atualizações desnecessárias
 			const placeData = {
 				address,
@@ -120,7 +147,10 @@ export function PlacePicker({
 			};
 
 			// Só chama onPlaceChange se os valores realmente mudaram
-			if (JSON.stringify(placeData) !== JSON.stringify(prevPlaceRef.current)) {
+			if (
+				JSON.stringify(placeData) !==
+				JSON.stringify(prevPlaceRef.current)
+			) {
 				prevPlaceRef.current = placeData;
 				onPlaceChange(placeData);
 			}
@@ -129,6 +159,8 @@ export function PlacePicker({
 
 	// Geocodifica um endereço para obter as coordenadas
 	const geocodeAddress = async () => {
+		if (!searchInput.trim()) return;
+
 		try {
 			const response = await fetch(
 				`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchInput)}`,
@@ -140,6 +172,9 @@ export function PlacePicker({
 				setPosition([Number.parseFloat(lat), Number.parseFloat(lon)]);
 				setAddress(display_name);
 				setSearchInput("");
+			} else {
+				// No results found
+				console.log("No locations found for this search term");
 			}
 		} catch (error) {
 			console.error("Geocoding error:", error);
@@ -163,23 +198,33 @@ export function PlacePicker({
 	};
 
 	return (
-		<div className={cn("space-y-2 w-full", className)}>
-			<Label htmlFor="location">Location</Label>
+		<div className={cn("w-full space-y-2", className)}>
+			<Label htmlFor="location">Localização</Label>
 			<Popover open={open} onOpenChange={setOpen}>
 				<PopoverTrigger asChild>
-				<Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between max-w-full">
+					<Button
+						variant="outline"
+						role="combobox"
+						aria-expanded={open}
+						className="w-full max-w-full justify-between"
+					>
 						{address ? (
-							<div className="flex items-center gap-2 w-full overflow-hidden">
-								<MapPin className="h-4 w-4 shrink-0 opacity-70" />
-								<span className="truncate">{address}</span>
+							<div className="grid w-full">
+								<div className="flex w-full items-center gap-2 overflow-hidden">
+									<MapPin className="h-4 w-4 shrink-0 opacity-70" />
+									<span className="truncate">{address}</span>
+								</div>
 							</div>
 						) : (
 							<span>Selecione um local...</span>
 						)}
 					</Button>
 				</PopoverTrigger>
-				<PopoverContent className="w-[350px] p-0" align="start">
-					<div className="p-4 space-y-4">
+				<PopoverContent
+					className="w-[var(--radix-popover-trigger-width)] p-0"
+					align="start"
+				>
+					<div className="space-y-4 p-4">
 						<div className="flex gap-2">
 							<Input
 								placeholder="Pesquisar endereço..."
@@ -196,18 +241,21 @@ export function PlacePicker({
 								<Search className="h-4 w-4" />
 							</Button>
 						</div>
-						<div id="map" className="h-[300px] w-full rounded-md border" />
-						<div className="text-xs text-muted-foreground">
+						<div
+							id="map"
+							className="h-[300px] w-full rounded-md border"
+						/>
+						{/* <div className="text-xs text-muted-foreground">
 							Arraste o marcador ou clique no mapa para definir o local
-						</div>
+						</div> */}
 					</div>
 				</PopoverContent>
 			</Popover>
-			{address && (
+			{/* {address && (
 				<div className="text-sm text-muted-foreground mt-1">
 					Coordenadas: {position[0].toFixed(6)}, {position[1].toFixed(6)}
 				</div>
-			)}
+			)} */}
 		</div>
 	);
 }
