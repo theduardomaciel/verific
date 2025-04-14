@@ -16,7 +16,10 @@ export function Hero() {
 						gratuita.
 					</p>
 					<Link href="#">
-						<Button className="group rounded-full bg-black px-6 text-white hover:bg-black/80">
+						<Button
+							className="group text-foreground hover:bg-accent h-fit rounded-full bg-white !px-12 !py-4 font-semibold dark:bg-black dark:hover:bg-black/80"
+							size={"lg"}
+						>
 							<span>Comece a organizar seu evento</span>
 							<ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
 						</Button>

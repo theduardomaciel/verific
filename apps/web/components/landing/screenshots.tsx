@@ -24,14 +24,14 @@ export function Screenshots() {
 				</div>
 				<div className="bg-primary flex h-[472px] max-h-[472px] flex-1 items-end justify-center overflow-hidden rounded-2xl px-10 pt-14 md:hidden lg:flex">
 					<Image
-						src="/screenshots/dashboard-mobile.png"
+						src={mobileDark}
 						alt="Dashboard mobile"
 						width={810}
 						height={472}
 						className="hidden h-full object-contain object-bottom dark:flex"
 					/>
 					<Image
-						src="/screenshots/dashboard-mobile-light.png"
+						src={mobileLight}
 						alt="Dashboard mobile"
 						width={810}
 						height={472}
