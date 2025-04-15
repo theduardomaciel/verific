@@ -4,7 +4,7 @@ import UFAL_Icon from "@/public/icons/ufal.svg";
 
 export function TrustedBy() {
 	return (
-		<section className="container px-4 py-8 md:py-12">
+		<section className="px-landing container py-8 md:py-12">
 			<h2 className="text-muted-foreground mb-8 text-center text-lg">
 				Confiado por instituições como
 			</h2>

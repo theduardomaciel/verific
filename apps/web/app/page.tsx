@@ -5,7 +5,7 @@ import { TrustedBy } from "@/components/landing/trusted-by";
 import { Features } from "@/components/landing/features";
 import { FeatureCards } from "@/components/landing/feature-cards";
 import { Faq } from "@/components/landing/faq";
-import { Footer } from "@/components/footer";
+import { LandingFooter } from "@/components/landing/footer";
 
 export default function Home() {
 	return (
@@ -17,7 +17,7 @@ export default function Home() {
 			<Features />
 			<FeatureCards />
 			<Faq />
-			<Footer />
+			<LandingFooter />
 		</main>
 	);
 }

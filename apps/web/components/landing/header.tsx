@@ -19,7 +19,7 @@ export function Header() {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 
 	return (
-		<header className="border-border/40 bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 flex w-full justify-center border-b backdrop-blur">
+		<header className="border-border/40 bg-background/95 supports-[backdrop-filter]:bg-background/60 px-landing sticky top-0 z-50 flex w-full justify-center border-b backdrop-blur">
 			<div className="container flex h-16 w-full items-center justify-between">
 				<Brand />
 
