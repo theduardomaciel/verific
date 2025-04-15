@@ -1,7 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
 	integer,
-	pgEnum,
 	pgTable,
 	smallserial,
 	text,
@@ -11,17 +10,8 @@ import {
 
 import { speaker, participantOnActivity, project } from ".";
 
-export const activityAudiences = ["internal", "external"] as const;
-export const audienceEnum = pgEnum("type", activityAudiences);
-
-export const activityCategories = [
-	"lecture",
-	"workshop",
-	"round-table",
-	"course",
-	"other",
-] as const;
-export const categoryEnum = pgEnum("category", activityCategories);
+import { categoryEnum } from "../enum/category";
+import { audienceEnum } from "../enum/audience";
 
 export const activity = pgTable("activities", {
 	id: uuid("id").primaryKey().defaultRandom(),
@@ -36,6 +26,7 @@ export const activity = pgTable("activities", {
 		onUpdate: "cascade",
 	}),
 	participantsLimit: integer("participants_limit"),
+	tolerance: integer("tolerance"),
 	workload: integer("workload"),
 	projectId: uuid("project_id")
 		.notNull()

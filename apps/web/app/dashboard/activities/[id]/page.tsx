@@ -1,12 +1,30 @@
-import { ParticipantsList } from "@/components/dashboard/activities/participants-list";
+import {
+	BellDot,
+	Calendar,
+	Clock,
+	Edit,
+	Megaphone,
+	Share,
+	Share2,
+	Trash,
+} from "lucide-react";
+
+// Components
+import { ParticipantsList } from "@/components/dashboard/activity/participants-list";
+import { DashboardPagination } from "@/components/dashboard/pagination";
 import { SearchBar } from "@/components/dashboard/search-bar";
 import { SortBy } from "@/components/dashboard/sort-by";
-import { getActivityDetails } from "@/lib/data";
+import { Badge } from "@/components/ui/badge";
+
+// Data
 import { getDateString, getTimeString } from "@/lib/date";
-import { Suspense } from "react";
+import { getActivityDetails } from "@/lib/data";
 
 // Validation
 import { z } from "zod";
+import { CategoryCard } from "@/components/dashboard/category-card";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 const activityDetailsPageParams = z.object({
 	id: z.string(),
@@ -18,7 +36,6 @@ const activityDetailsPageSearchParams = z.object({
 	search: z.string().optional(),
 	general_search: z.string().optional(),
 	sortBy: z.enum(["recent", "oldest"]).optional(),
-	r: z.string().optional(),
 });
 
 type EventDetailsPageParams = z.infer<typeof activityDetailsPageParams>;
@@ -52,7 +69,7 @@ export default async function ActivityPage(props: {
 		<main className="p-dashboard flex min-h-screen flex-col items-center justify-start gap-9">
 			<div className="flex w-full flex-col items-start justify-start gap-4">
 				<div className="flex w-full flex-row flex-wrap items-start justify-between gap-4">
-					<h1 className="font-title text-neutral max-w-full text-4xl font-extrabold md:text-5xl lg:max-w-[60%]">
+					<h1 className="font-title text-foreground max-w-full text-4xl font-extrabold md:text-5xl lg:max-w-[60%]">
 						{activity.name}
 					</h1>
 					<span className="text-foreground text-base font-semibold opacity-50">
@@ -60,13 +77,20 @@ export default async function ActivityPage(props: {
 					</span>
 				</div>
 				<div className="flex flex-row items-center justify-start gap-4">
-					{/* <DateDisplay dateString={dateString} /> */}
-					<div className="bg-neutral h-1 w-1 rounded-full" />
-					<p className="text-base font-medium">
-						de {timeFrom} às {timeTo}
-					</p>
+					<Badge variant={"secondary"}>
+						<Calendar className="h-4 w-4" />
+						{dateString}
+					</Badge>
+					<Badge variant={"secondary"}>
+						<Clock className="h-4 w-4" />
+						{timeFrom} - {timeTo}
+					</Badge>
+					<Badge variant={"secondary"}>
+						<Megaphone className="h-4 w-4" />
+						15m de tolerância
+					</Badge>
 				</div>
-				<h2 className="text-neutral text-base leading-normal font-semibold">
+				<h2 className="text-muted-foreground text-base leading-normal font-medium">
 					{activity.description}
 				</h2>
 			</div>
@@ -90,45 +114,71 @@ export default async function ActivityPage(props: {
 					</div>
 				</div>
 			</div>
+			<div className="flex w-full flex-col items-center justify-start gap-4 md:flex-row">
+				<CategoryCard
+					className="w-full"
+					category={activity.category}
+					hours={activity.workload}
+					speakerName={activity.speaker.name}
+				/>
+				<div className="flex flex-row items-center justify-between gap-3 max-md:w-full">
+					<Button
+						asChild
+						size={"icon"}
+						variant={"destructive"}
+						className="h-10 min-w-10"
+					>
+						<Link href={`/dashboard/activities/${id}/edit`}>
+							<Trash className="h-5 w-5" />
+						</Link>
+					</Button>
+					<Button
+						asChild
+						size={"icon"}
+						variant={"outline"}
+						className="h-10 min-w-10"
+					>
+						<Link href={`/dashboard/activities/${id}/edit`}>
+							<Edit className="h-5 w-5" />
+						</Link>
+					</Button>
+					<Button
+						size={"icon"}
+						variant={"outline"}
+						className="h-10 min-w-10"
+					>
+						<Share2 className="h-5 w-5" />
+					</Button>
+					<Button size={"lg"} className="h-10 min-w-10">
+						<BellDot className="h-5 w-5" />
+						Abrir fila de espera
+					</Button>
+				</div>
+			</div>
 			<div className="flex w-full flex-col items-start justify-start gap-12 md:flex-row">
 				<div className="flex w-full flex-col items-center justify-start gap-4 md:w-3/5">
 					<ParticipantsList
-						participants={participants.filter(
-							(member) => member && member.role === "moderator",
-						)}
+						participants={participants
+							.map((t) => t.participant)
+							.filter(
+								(member) =>
+									member && member.role === "moderator",
+							)}
 						activityId={activity.id}
 					/>
 					{participants && participants.length > 0 && (
-						<Suspense fallback={null}>
-							{/* <PagesDisplay
-								currentPage={page || 1}
-								pageCount={pageCount}
-							/> */}
-						</Suspense>
+						<DashboardPagination
+							currentPage={page || 1}
+							totalPages={pageCount}
+							prefix={`activities/${activity.id}`}
+						/>
 					)}
-					{/* <div className="xs:flex-row xs:justify-between flex w-full flex-col items-center justify-start gap-4">
-						<MemberAdd
-							projectId={env.PROJECT_ID}
-							activityId={activity.id}
-							alreadyAddedMembers={participants.map(
-								(member) => member!.id,
-							)}
-							search={searchParams.search}
-							activityName={activity.name.split(" ")[1]}
-						/>
-						<ShareDialog
-							url={`https://ichess-web.vercel.app:3000/activitys/presence/${activity.id}`}
-						/>
-					</div> */}
 				</div>
 				<ParticipantsList
 					className="md:w-2/5"
-					participants={
-						activity.participantsOnActivity.filter(
-							(t) => t.role === "moderator",
-						)
-						/* .map((t) => t.participant) */
-					}
+					participants={activity.participantsOnActivity
+						.map((t) => t.participant)
+						.filter((t) => t.role === "moderator")}
 					activityId={activity.id}
 					isModerators
 				/>

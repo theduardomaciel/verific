@@ -4,12 +4,13 @@ import { Activity } from "./types/activity";
 import { Participant } from "./types/participant";
 import { Project } from "./types/project";
 import { ParticipantOnActivity } from "./types/participant-on-activity";
+import { Speaker } from "./types/speaker";
 
 const now = new Date();
 
 const projects: Project[] = [
 	{
-		id: "1",
+		id: "a6611044",
 		name: "SECOMP 2025",
 		description: "Semana de Computação 2025",
 		url: "https://secomp2025.com",
@@ -26,10 +27,9 @@ const projects: Project[] = [
 		createdAt: new Date("2025-01-01"),
 		activities: [],
 		participants: [],
-		speakers: [],
 	},
 	{
-		id: "2",
+		id: "099124525e29",
 		name: "Hackathon UFAL",
 		description: "Maratona de programação para resolver problemas reais",
 		url: "https://hackathonufal.com",
@@ -46,10 +46,9 @@ const projects: Project[] = [
 		createdAt: new Date("2025-02-01"),
 		activities: [],
 		participants: [],
-		speakers: [],
 	},
 	{
-		id: "3",
+		id: "2278638c",
 		name: "Workshop de IA",
 		description: "Workshop sobre Inteligência Artificial e suas aplicações",
 		url: "https://workshopia.com",
@@ -66,13 +65,12 @@ const projects: Project[] = [
 		createdAt: new Date("2025-03-01"),
 		activities: [],
 		participants: [],
-		speakers: [],
 	},
 ];
 
 const participants: Participant[] = [
 	{
-		id: "1",
+		id: "71557266",
 		userId: "1",
 		projectId: "1",
 		course: "Ciência da Computação",
@@ -85,13 +83,13 @@ const participants: Participant[] = [
 			email: "eduardo@example.com",
 			emailVerified: new Date("2025-01-01"),
 			image_url: "https://github.com/mauro-balades.png",
-			participants: [],
 		},
+		role: "moderator",
 		project: projects[0]!,
 		participantsOnEvent: [],
 	},
 	{
-		id: "2",
+		id: "f5dfa1b6",
 		userId: "2",
 		projectId: "2",
 		course: "Engenharia de Software",
@@ -104,13 +102,13 @@ const participants: Participant[] = [
 			email: "ana@example.com",
 			emailVerified: new Date("2025-02-01"),
 			image_url: "https://github.com/mauro-balades.png",
-			participants: [],
 		},
+		role: "moderator",
 		project: projects[1]!,
 		participantsOnEvent: [],
 	},
 	{
-		id: "3",
+		id: "e8766591",
 		userId: "3",
 		projectId: "3",
 		course: "Sistemas de Informação",
@@ -123,13 +121,13 @@ const participants: Participant[] = [
 			email: "carlos@example.com",
 			emailVerified: new Date("2025-03-01"),
 			image_url: "https://github.com/mauro-balades.png",
-			participants: [],
 		},
+		role: "moderator",
 		project: projects[2]!,
 		participantsOnEvent: [],
 	},
 	{
-		id: "4",
+		id: "47893537",
 		userId: "4",
 		projectId: "1",
 		course: "Análise de Sistemas",
@@ -142,13 +140,13 @@ const participants: Participant[] = [
 			email: "mariana@example.com",
 			emailVerified: new Date("2025-03-01"),
 			image_url: "https://github.com/mauro-balades.png",
-			participants: [],
 		},
+		role: "participant",
 		project: projects[0]!,
 		participantsOnEvent: [],
 	},
 	{
-		id: "5",
+		id: "6ba1c36e",
 		userId: "5",
 		projectId: "2",
 		course: "Engenharia de Computação",
@@ -161,8 +159,8 @@ const participants: Participant[] = [
 			email: "joao@example.com",
 			emailVerified: new Date("2025-04-01"),
 			image_url: "https://github.com/mauro-balades.png",
-			participants: [],
 		},
+		role: "participant",
 		project: projects[1]!,
 		participantsOnEvent: [],
 	},
@@ -170,10 +168,11 @@ const participants: Participant[] = [
 
 const activities: Activity[] = [
 	{
-		id: "1",
-		name: "Palestra de Abertura",
-		description: "Uma palestra inspiradora sobre o futuro da tecnologia.",
-		dateFrom: new Date(now.getTime() + 15 * 60 * 1000), // 15 minutos a partir de agora
+		id: "c03281137c42",
+		name: "O Futuro da Tecnologia: Inovação, Impacto e Possibilidades",
+		description:
+			"Prepare-se para uma palestra inspiradora que convida à reflexão sobre o papel transformador da tecnologia no futuro da humanidade. Vamos explorar tendências emergentes como inteligência artificial, computação quântica, biotecnologia e interfaces homem-máquina, discutindo não apenas seus avanços técnicos, mas também os impactos sociais, éticos e econômicos que moldarão o mundo nas próximas décadas. Mais do que prever o futuro, esta palestra busca provocar novas ideias, despertar o senso de propósito e destacar o poder que temos de construir um amanhã mais inteligente, humano e inclusivo por meio da tecnologia.",
+		dateFrom: new Date(now.getTime()), // agora
 		dateTo: new Date(now.getTime() + 1 * 60 * 60 * 1000), // 1 hora a partir de agora
 		audience: "internal",
 		category: "lecture",
@@ -196,7 +195,7 @@ const activities: Activity[] = [
 			{
 				participantId: "1",
 				activityId: "1",
-				role: "moderator",
+
 				joinedAt: new Date("2025-05-01T08:50:00"),
 				participant: participants[2]!,
 				activity: undefined,
@@ -204,7 +203,6 @@ const activities: Activity[] = [
 			{
 				participantId: "2",
 				activityId: "2",
-				role: "moderator",
 				joinedAt: new Date("2025-06-15T13:50:00"),
 				participant: participants[1]!,
 				activity: undefined,
@@ -212,7 +210,6 @@ const activities: Activity[] = [
 			{
 				participantId: "4",
 				activityId: "1",
-				role: "participant",
 				joinedAt: new Date("2025-05-01T08:55:00"),
 				participant: participants[3]!,
 				activity: undefined,
@@ -220,9 +217,10 @@ const activities: Activity[] = [
 		],
 	},
 	{
-		id: "2",
+		id: "7975b010c2cd",
 		name: "Workshop de Programação",
-		description: "Aprenda a programar em Python com exemplos práticos.",
+		description:
+			"Nesta palestra, você aprenderá os fundamentos da programação em Python de forma simples e acessível, por meio de exemplos práticos e situações do dia a dia da computação. Exploraremos os principais conceitos da linguagem — como variáveis, estruturas de controle, funções e manipulação de dados — com foco na aplicação imediata e na construção de pequenos programas funcionais. Indicada para quem está começando ou deseja revisar a base da linguagem, esta é uma oportunidade para desenvolver lógica de programação e dar os primeiros passos em uma das linguagens mais populares e versáteis do mundo.",
 		dateFrom: new Date(now.getTime() + 10 * 60 * 1000), // 10 minutos a partir de agora
 		dateTo: new Date(now.getTime() + 3 * 60 * 1000), // 3 horas a partir de agora
 		audience: "external",
@@ -246,7 +244,6 @@ const activities: Activity[] = [
 			{
 				participantId: "2",
 				activityId: "2",
-				role: "moderator",
 				joinedAt: new Date("2025-06-15T13:50:00"),
 				participant: participants[2]!,
 				activity: undefined,
@@ -254,7 +251,6 @@ const activities: Activity[] = [
 			{
 				participantId: "5",
 				activityId: "2",
-				role: "participant",
 				joinedAt: new Date("2025-06-15T14:00:00"),
 				participant: participants[4]!,
 				activity: undefined,
@@ -262,7 +258,6 @@ const activities: Activity[] = [
 			{
 				participantId: "5",
 				activityId: "2",
-				role: "participant",
 				joinedAt: new Date("2025-06-15T14:00:00"),
 				participant: participants[4]!,
 				activity: undefined,
@@ -270,7 +265,6 @@ const activities: Activity[] = [
 			{
 				participantId: "5",
 				activityId: "2",
-				role: "participant",
 				joinedAt: new Date("2025-06-15T14:00:00"),
 				participant: participants[4]!,
 				activity: undefined,
@@ -278,7 +272,6 @@ const activities: Activity[] = [
 			{
 				participantId: "5",
 				activityId: "2",
-				role: "participant",
 				joinedAt: new Date("2025-06-15T14:00:00"),
 				participant: participants[4]!,
 				activity: undefined,
@@ -286,10 +279,10 @@ const activities: Activity[] = [
 		],
 	},
 	{
-		id: "3",
+		id: "0d000758e5aa",
 		name: "Mesa Redonda: IA no Brasil",
 		description:
-			"Discussão sobre os desafios e oportunidades da IA no Brasil.",
+			"Nesta palestra, faremos uma imersão estratégica e reflexiva sobre o papel da Inteligência Artificial (IA) no contexto brasileiro, analisando tanto os desafios que ainda limitam seu avanço quanto as inúmeras oportunidades que ela oferece para impulsionar o desenvolvimento tecnológico e social do país.",
 		dateFrom: new Date(now.getTime() + 5 * 60 * 1000), // 5 minutos a partir de agora
 		dateTo: new Date(now.getTime() + 2 * 60 * 60 * 1000), // 2 horas a partir de agora
 		audience: "internal",
@@ -313,7 +306,6 @@ const activities: Activity[] = [
 			{
 				participantId: "3",
 				activityId: "3",
-				role: "moderator",
 				joinedAt: new Date("2025-07-10T09:50:00"),
 				participant: participants[2]!,
 				activity: undefined,
@@ -321,7 +313,6 @@ const activities: Activity[] = [
 			{
 				participantId: "1",
 				activityId: "1",
-				role: "moderator",
 				joinedAt: new Date("2025-05-01T08:50:00"),
 				participant: participants[0]!,
 				activity: undefined,
@@ -329,7 +320,6 @@ const activities: Activity[] = [
 			{
 				participantId: "1",
 				activityId: "1",
-				role: "moderator",
 				joinedAt: new Date("2025-05-01T08:50:00"),
 				participant: participants[1]!,
 				activity: undefined,
@@ -337,6 +327,36 @@ const activities: Activity[] = [
 		],
 	},
 ];
+
+const speakers = [
+	{
+		id: 1,
+		name: "Renato Coca",
+		description: "Especialista em IA",
+		image_url: "https://github.com/mauro-balades.png",
+		projectId: "1",
+		project: projects[0]!,
+		activities: [activities[0]!],
+	},
+	{
+		id: 2,
+		name: "Maria Clara",
+		description: "Engenheira de Software",
+		image_url: "https://github.com/mauro-balades.png",
+		projectId: "2",
+		project: projects[1]!,
+		activities: [activities[1]!],
+	},
+	{
+		id: 3,
+		name: "João Pedro",
+		description: "Pesquisador em IA",
+		image_url: "https://github.com/mauro-balades.png",
+		projectId: "3",
+		project: projects[2]!,
+		activities: [activities[2]!],
+	},
+] as Speaker[];
 
 // This file would contain actual data fetching logic in a real application
 // For now, we'll use mock data
@@ -419,19 +439,17 @@ export async function getActivities({
 
 	if (speakerIds.length > 0) {
 		filtered = filtered.filter((activity) =>
-			activity.participantsOnActivity?.some(
-				(speaker) =>
-					speaker.role === "moderator" &&
-					speakerIds.includes(speaker.participantId),
-			),
+			activity.speakerId
+				? speakerIds.includes(activity.speakerId.toString())
+				: false,
 		);
 	}
 
 	// Sort activities
 	if (sort === "recent") {
-		filtered.sort((a, b) => Number.parseInt(b.id) - Number.parseInt(a.id));
+		filtered.sort((a, b) => a.dateFrom.getTime() - b.dateFrom.getTime());
 	} else if (sort === "oldest") {
-		filtered.sort((a, b) => Number.parseInt(a.id) - Number.parseInt(b.id));
+		filtered.sort((a, b) => b.dateFrom.getTime() - a.dateFrom.getTime());
 	} else if (sort === "alphabetical") {
 		filtered.sort((a, b) => a.name.localeCompare(b.name));
 	}
@@ -513,6 +531,52 @@ export async function getActivityDetails(
 		participants: paginatedMembers,
 		pageCount,
 	};
+}
+
+type GetParticipantsParams = z.infer<typeof getActivitiesParams>;
+
+export function getParticipants({
+	query,
+	sort = "recent",
+	page = 0,
+	pageSize = 10,
+}: GetParticipantsParams): Promise<Participant[]> {
+	return new Promise((resolve) => {
+		setTimeout(() => {
+			let filtered = [...participants];
+
+			if (query) {
+				filtered = filtered.filter(
+					(participant) =>
+						participant.user.name
+							.toLowerCase()
+							.includes(query.toLowerCase()) ||
+						participant.course
+							.toLowerCase()
+							.includes(query.toLowerCase()),
+				);
+			}
+
+			if (sort === "recent") {
+				filtered.sort(
+					(a, b) => Number.parseInt(b.id) - Number.parseInt(a.id),
+				);
+			} else if (sort === "oldest") {
+				filtered.sort(
+					(a, b) => Number.parseInt(a.id) - Number.parseInt(b.id),
+				);
+			} else if (sort === "alphabetical") {
+				filtered.sort((a, b) => a.user.name.localeCompare(b.user.name));
+			}
+
+			const startIndex = page * pageSize;
+			const endIndex = startIndex + pageSize;
+			const paginatedMembers = filtered.slice(startIndex, endIndex);
+			const pageCount = Math.ceil(filtered.length / pageSize);
+
+			resolve(paginatedMembers);
+		}, 500);
+	});
 }
 
 export function formatFriendlyDate(date: Date, includeDay: boolean): string {

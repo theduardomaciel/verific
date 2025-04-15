@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { transformSingleToArray } from "../utils";
-import { participantRoles } from "@verific/drizzle/schema";
 import { courses } from "@verific/drizzle/enum/course";
 import { periods } from "@verific/drizzle/enum/period";
+import { participantRoles } from "@verific/drizzle/enum/role";
 
 export const participantSort = ["recent", "oldest", "alphabetical"] as const; // Ordenação de participantes
 

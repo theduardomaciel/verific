@@ -1,35 +1,31 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+	title: "Atividades",
+};
 
 // Icons
 import { Plus } from "lucide-react";
 
 // Components
 import { Button } from "@/components/ui/button";
-import { ActivityList } from "@/components/dashboard/activities/activity-list";
-import { ActivityPagination } from "@/components/dashboard/activities/activity-pagination";
+import { DashboardPagination } from "@/components/dashboard/pagination";
 import { SearchBar } from "@/components/dashboard/search-bar";
 import { SortBy } from "@/components/dashboard/sort-by";
 import { FiltersPanel } from "@/components/dashboard/filters-panel";
 import { Filter } from "@/components/dashboard/filter";
+import { Empty } from "@/components/empty";
+import { ActivityCard } from "@/components/dashboard/activity-card";
 
 // Data
-import {
-	getActivities,
-	getCategories,
-	// getMonitors,
-	getStatuses,
-} from "@/lib/data";
+import { getActivities, getCategories, getStatuses } from "@/lib/data";
 
 // Validation
 import type { z } from "zod";
 import { getActivitiesParams } from "@verific/api/routers/activities";
 
 type EventsPageParams = z.infer<typeof getActivitiesParams>;
-
-import type { Metadata } from "next";
-export const metadata: Metadata = {
-	title: "Atividades",
-};
 
 export default async function ActivitiesPage(props: {
 	searchParams: Promise<EventsPageParams>;
@@ -69,12 +65,24 @@ export default async function ActivitiesPage(props: {
 							</div>
 						}
 					>
-						<ActivityList activities={activities} />
+						{activities && activities.length > 0 ? (
+							<div className="flex flex-col items-start justify-start gap-4">
+								{activities.map((activity) => (
+									<ActivityCard
+										{...activity}
+										key={activity.id}
+									/>
+								))}
+							</div>
+						) : (
+							<Empty />
+						)}
 					</Suspense>
 
-					<ActivityPagination
-						currentPage={parsedParams.page}
+					<DashboardPagination
+						currentPage={parsedParams.page || 0}
 						totalPages={5}
+						prefix="activities"
 					/>
 				</div>
 
