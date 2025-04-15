@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { transformSingleToArray } from "../utils";
-import { activityCategories, activityAudiences } from "@verific/drizzle/schema";
+import { activityCategories } from "@verific/drizzle/enum/category";
+import { activityAudiences } from "@verific/drizzle/enum/audience";
 
 export const activitySort = ["recent", "oldest", "alphabetical"] as const; // Ordenação de atividades
 export const activityStatus = ["now", "next"] as const; // Status de atividades
@@ -8,8 +9,8 @@ export const activityStatus = ["now", "next"] as const; // Status de atividades
 export const getActivitiesParams = z.object({
 	query: z.string().optional(), // Para busca por nome ou descrição
 	sort: z.enum(activitySort).optional(), // Ordenação por data
-	page: z.coerce.number().default(0), // Paginação: página atual
-	pageSize: z.coerce.number().default(10), // Paginação: tamanho da página
+	page: z.coerce.number().default(0).optional(), // Paginação: página atual
+	pageSize: z.coerce.number().default(10).optional(), // Paginação: tamanho da página
 	status: z
 		.string()
 		.transform(transformSingleToArray)
