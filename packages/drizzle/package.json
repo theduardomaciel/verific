@@ -12,15 +12,15 @@
 		"db:seed": "pnpm tsx ./seed_v2.ts"
 	},
 	"dependencies": {
-		"@faker-js/faker": "^9.6.0",
+		"@faker-js/faker": "^9.7.0",
 		"@neondatabase/serverless": "^1.0.0",
 		"@verific/env": "workspace:*",
 		"tsx": "^4.19.3",
 		"zod": "^3.24.2"
 	},
 	"devDependencies": {
-		"@verific/prettier-config": "workspace:*",
 		"@verific/eslint-config": "workspace:*",
+		"@verific/prettier-config": "workspace:*",
 		"@verific/typescript-config": "workspace:*",
 		"drizzle-kit": "^0.30.6",
 		"drizzle-orm": "^0.41.0",
