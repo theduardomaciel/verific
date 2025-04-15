@@ -33,7 +33,7 @@ function InputWithSuffix({
 	return (
 		<div className={cn("relative flex items-center", containerClassName)}>
 			<Input {...props} className={cn("pr-16", className)} />
-			<span className="text-muted-foreground pointer-events-none absolute right-3 leading-none">
+			<span className="text-muted-foreground pointer-events-none absolute right-3 text-sm leading-none">
 				{suffix}
 			</span>
 		</div>
