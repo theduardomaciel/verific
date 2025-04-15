@@ -6,7 +6,7 @@ const settingsLinks = [
 		label: "Geral",
 	},
 	{
-		href: "/dashboard/settings/language",
+		href: "/dashboard/settings/preferences",
 		label: "Preferências",
 	},
 	{

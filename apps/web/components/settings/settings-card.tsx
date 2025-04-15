@@ -7,7 +7,7 @@ interface SettingsCardProps {
 	headerRight?: React.ReactNode;
 	children?: React.ReactNode;
 	footer?: {
-		text?: string;
+		text?: string | React.ReactNode;
 		action?: React.ReactNode;
 	};
 	footerClassName?: string;
@@ -28,14 +28,16 @@ export function SettingsCard({
 	return (
 		<div
 			className={cn(
-				`border ${borderColor} rounded-lg mb-6 overflow-hidden`,
+				`border ${borderColor} mb-6 overflow-hidden rounded-lg`,
 				className,
 			)}
 		>
-			<div className="flex flex-col p-6 gap-3">
-				<div className="flex flex-wrap gap-4 justify-between items-start mb-2">
+			<div className="flex flex-col gap-3 p-6">
+				<div className="mb-2 flex flex-wrap items-start justify-between gap-4">
 					<div className="flex flex-col items-start justify-start gap-2">
-						<h2 className="text-xl font-semibold text-foreground">{title}</h2>
+						<h2 className="text-foreground text-xl font-semibold">
+							{title}
+						</h2>
 						<span>{description && description}</span>
 					</div>
 					{headerRight && <div>{headerRight}</div>}
@@ -45,7 +47,7 @@ export function SettingsCard({
 			{footer && (
 				<div
 					className={cn(
-						"flex flex-row items-center justify-between text-muted-foreground p-4 border-t w-full",
+						"text-muted-foreground flex w-full flex-row items-center justify-between border-t p-4",
 						borderColor,
 						footerClassName,
 					)}

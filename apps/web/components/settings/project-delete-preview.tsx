@@ -18,8 +18,18 @@ export function ProjectDeletePreview() {
 				</div>
 			</div>
 			<div className="flex flex-row items-center justify-end gap-4">
-				<Badge variant="destructive">14 atividades</Badge>
-				<Badge variant="destructive">153 participantes</Badge>
+				<Badge
+					variant="destructive"
+					className="bg-destructive/80 rounded-full"
+				>
+					14 atividades
+				</Badge>
+				<Badge
+					variant="destructive"
+					className="bg-destructive/80 rounded-full"
+				>
+					153 participantes
+				</Badge>
 			</div>
 		</div>
 	);
