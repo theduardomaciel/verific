@@ -18,4 +18,26 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
 	);
 }
 
-export { Input };
+interface InputWithSuffixProps
+	extends React.InputHTMLAttributes<HTMLInputElement> {
+	suffix: string;
+	containerClassName?: string;
+}
+
+function InputWithSuffix({
+	suffix,
+	className,
+	containerClassName,
+	...props
+}: InputWithSuffixProps) {
+	return (
+		<div className={cn("relative flex items-center", containerClassName)}>
+			<Input {...props} className={cn("pr-16", className)} />
+			<span className="text-muted-foreground pointer-events-none absolute right-3">
+				{suffix}
+			</span>
+		</div>
+	);
+}
+
+export { Input, InputWithSuffix };

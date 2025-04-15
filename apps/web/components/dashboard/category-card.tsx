@@ -1,15 +1,11 @@
 import { cn } from "@/lib/utils";
 import { Clock } from "lucide-react";
 
-const EVENT_TYPE_LABELS: Record<string, string> = {
-	lecture: "Palestra",
-	workshop: "Worskhop",
-	"round-table": "Mesa Redonda",
-	course: "Minicurso",
-};
-
 // Types
 import { activityCategories } from "@verific/drizzle/enum/category";
+
+// Data
+import { EVENT_TYPE_LABELS } from "@/lib/data";
 
 interface CategoryCard {
 	className?: string;

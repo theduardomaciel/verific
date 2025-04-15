@@ -24,6 +24,7 @@ import { getActivities, getCategories, getStatuses } from "@/lib/data";
 // Validation
 import type { z } from "zod";
 import { getActivitiesParams } from "@verific/api/routers/activities";
+import Link from "next/link";
 
 type EventsPageParams = z.infer<typeof getActivitiesParams>;
 
@@ -87,8 +88,11 @@ export default async function ActivitiesPage(props: {
 				</div>
 
 				<div className="order-first space-y-4 md:order-last md:col-span-1">
-					<Button className="w-full" size="lg">
-						<Plus className="mr-2 h-4 w-4" /> Adicionar atividade
+					<Button asChild className="w-full" size="lg">
+						<Link href={"/dashboard/activities/create"}>
+							<Plus className="mr-2 h-4 w-4" /> Adicionar
+							atividade
+						</Link>
 					</Button>
 
 					<FiltersPanel>
