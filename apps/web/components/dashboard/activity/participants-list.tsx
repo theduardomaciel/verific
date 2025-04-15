@@ -37,10 +37,16 @@ function Title({ children, className }: Props) {
 interface ListProps {
 	className?: string;
 	activityId: string;
+	hasActivity?: boolean;
 	participants: Participant[];
 }
 
-function List({ activityId, participants, className }: ListProps) {
+function List({
+	activityId,
+	hasActivity = false,
+	participants,
+	className,
+}: ListProps) {
 	if (!participants || participants.length === 0) {
 		return (
 			<Empty
@@ -61,10 +67,15 @@ function List({ activityId, participants, className }: ListProps) {
 					key={participant.id}
 					participant={participant}
 					participantCardHref={`/dashboard/events/${activityId}/participant/${participant.id}`}
-					activity={{
-						id: activityId,
-						participantJoinedAt: participant.joinedAt,
-					}}
+					activity={
+						hasActivity
+							? {
+									id: activityId,
+									participantJoinedAt: participant.joinedAt,
+								}
+							: undefined
+					}
+					showJoinedAt={hasActivity}
 				/>
 			))}
 		</ul>
