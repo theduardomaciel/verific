@@ -37,13 +37,20 @@ import { activityCategories } from "@verific/drizzle/enum/category";
 
 // Data
 import { EVENT_TYPE_LABELS } from "@/lib/data";
+import { InstancePicker } from "@/components/instance-picker";
+import { Participant } from "@/lib/types/participant";
 
 interface Props {
 	form: UseFormReturn<MutateActivityFormSchema>;
+	participants: Participant[];
 	isEditing?: boolean;
 }
 
-export function MutateActivityFormContent({ form, isEditing }: Props) {
+export function MutateActivityFormContent({
+	form,
+	participants,
+	isEditing,
+}: Props) {
 	return (
 		<div
 			className={
@@ -171,17 +178,40 @@ export function MutateActivityFormContent({ form, isEditing }: Props) {
 					control={form.control}
 					name="participantIds"
 					render={({ field }) => (
-						<FormItem>
-							<FormLabel>Responsáveis</FormLabel>
-							{/* <ModeratorPicker
-									projectId={projectId}
-									initialModerators={field.value}
-									onSelect={field.onChange}
-								/> */}
+						<FormItem className="w-full">
+							<FormLabel>Moderadores</FormLabel>
+							<InstancePicker
+								items={participants.map((participant) => ({
+									id: participant.id,
+									label: participant.user.name,
+									image: participant.user.image_url,
+								}))}
+								initialItems={field.value}
+								onSelect={field.onChange}
+							/>
 							<FormMessage />
 						</FormItem>
 					)}
 				/>
+				{/* <FormField
+					control={form.control}
+					name="participantIds"
+					render={({ field }) => (
+						<FormItem className="w-full">
+							<FormLabel>Moderadores</FormLabel>
+							<InstancePicker
+								items={participants.map((participant) => ({
+									id: participant.id,
+									label: participant.user.name,
+									image: participant.user.image_url,
+								}))}
+								initialItems={field.value}
+								onSelect={field.onChange}
+							/>
+							<FormMessage />
+						</FormItem>
+					)}
+				/> */}
 				<div className="flex w-full flex-row items-start justify-start gap-3">
 					<FormField
 						control={form.control}

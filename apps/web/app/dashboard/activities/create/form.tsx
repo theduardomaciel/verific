@@ -22,14 +22,16 @@ import {
 	mutateActivityFormSchema,
 } from "@/lib/validations/mutate-activity-form";
 import { Activity } from "@/lib/types/activity";
+import { Participant } from "@/lib/types/participant";
 
 // API
 
 interface Props {
 	activity?: Activity;
+	participants: Participant[];
 }
 
-export default function MutateActivityForm({ activity }: Props) {
+export default function MutateActivityForm({ activity, participants }: Props) {
 	const [currentState, setCurrentState] = useState<
 		false | "submitting" | "submitted" | "error"
 	>(false);
@@ -71,7 +73,11 @@ export default function MutateActivityForm({ activity }: Props) {
 				onSubmit={form.handleSubmit(onSubmit)}
 				className="flex w-full flex-1 flex-col items-center justify-start gap-9"
 			>
-				<MutateActivityFormContent form={form} isEditing={!!activity} />
+				<MutateActivityFormContent
+					form={form}
+					isEditing={!!activity}
+					participants={participants}
+				/>
 			</form>
 			<LoadingDialog
 				isOpen={currentState === "submitting"}
