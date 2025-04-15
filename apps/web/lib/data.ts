@@ -553,3 +553,11 @@ export function formatFriendlyDate(date: Date, includeDay: boolean): string {
 		minute: "2-digit",
 	});
 }
+
+export const EVENT_TYPE_LABELS: Record<string, string> = {
+	lecture: "Palestra",
+	workshop: "Worskhop",
+	"round-table": "Mesa Redonda",
+	course: "Minicurso",
+	other: "Outro",
+};
