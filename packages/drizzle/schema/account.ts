@@ -25,12 +25,7 @@ export const account = pgTable(
 		id_token: text("id_token"),
 		session_state: text("session_state"),
 	},
-	(table) => [
-		uniqueIndex().on(
-			table.provider,
-			table.providerAccountId,
-		)
-	]
+	(table) => [uniqueIndex().on(table.provider, table.providerAccountId)],
 );
 
 export const accountRelations = relations(account, ({ one }) => ({

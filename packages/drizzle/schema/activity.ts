@@ -35,6 +35,7 @@ export const activity = pgTable("activities", {
 		onDelete: "set null",
 		onUpdate: "cascade",
 	}),
+	participantsLimit: integer("participants_limit"),
 	workload: integer("workload"),
 	projectId: uuid("project_id")
 		.notNull()

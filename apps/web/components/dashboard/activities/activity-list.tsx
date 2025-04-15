@@ -1,5 +1,5 @@
 import { ActivityCard } from "@/components/dashboard/activity-card";
-import type { Activity } from "@/lib/data";
+import { Activity } from "@/lib/types/activity";
 
 interface ActivityListProps {
 	activities: Activity[];
@@ -8,9 +8,11 @@ interface ActivityListProps {
 export function ActivityList({ activities }: ActivityListProps) {
 	if (activities.length === 0) {
 		return (
-			<div className="p-8 text-center border rounded-md">
-				<h3 className="text-lg font-medium">Nenhuma atividade encontrada</h3>
-				<p className="text-sm text-gray-500 mt-2">
+			<div className="rounded-md border p-8 text-center">
+				<h3 className="text-lg font-medium">
+					Nenhuma atividade encontrada
+				</h3>
+				<p className="mt-2 text-sm text-gray-500">
 					Tente ajustar seus filtros ou criar uma nova atividade.
 				</p>
 			</div>
@@ -20,17 +22,7 @@ export function ActivityList({ activities }: ActivityListProps) {
 	return (
 		<div className="flex flex-col items-start justify-start gap-4">
 			{activities.map((activity) => (
-				<ActivityCard
-					key={activity.id}
-					title={activity.title}
-					description={activity.description}
-					speaker={activity.speaker}
-					category={activity.category}
-					date={activity.date}
-					id={activity.id}
-					monitors={activity.monitors}
-					participants={activity.participants}
-				/>
+				<ActivityCard {...activity} key={activity.id} />
 			))}
 		</div>
 	);
