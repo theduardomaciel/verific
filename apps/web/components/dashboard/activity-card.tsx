@@ -7,17 +7,11 @@ import { Calendar, Clock, Timer, User, Users } from "lucide-react";
 
 // Components
 import { Badge } from "@/components/ui/badge";
+import { CategoryLabel } from "@/components/dashboard/category-card";
 
 // Data
 import { formatFriendlyDate, isLive, isStartingSoon } from "@/lib/data";
 import { Activity } from "@/lib/types/activity";
-
-const EVENT_TYPE_LABELS: Record<string, string> = {
-	lecture: "Palestra",
-	workshop: "Worskhop",
-	"round-table": "Mesa Redonda",
-	course: "Minicurso",
-};
 
 interface SimpleActivityCardProps
 	extends Pick<
@@ -158,8 +152,6 @@ interface InfoProps extends Pick<Activity, "category" | "dateFrom"> {
 }
 
 function ActivityInfo({ speaker, category, dateFrom }: InfoProps) {
-	const eventTypeLabel = EVENT_TYPE_LABELS[category] || category;
-
 	return (
 		<div
 			className={cn("flex flex-wrap items-center justify-between gap-2", {
@@ -167,9 +159,7 @@ function ActivityInfo({ speaker, category, dateFrom }: InfoProps) {
 			})}
 		>
 			<div className="flex items-center gap-2">
-				<span className="text-muted-foreground/80 text-sm font-bold uppercase">
-					{eventTypeLabel}
-				</span>
+				<CategoryLabel category={category} />
 				{speaker && (
 					<span className="text-foreground font-medium">
 						{speaker.name}
