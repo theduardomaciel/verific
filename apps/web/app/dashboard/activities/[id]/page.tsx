@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 
 // Components
-import { ParticipantsList } from "@/components/dashboard/activity/participants-list";
+import * as ParticipantsList from "@/components/dashboard/activity/participants-list";
 import { DashboardPagination } from "@/components/dashboard/pagination";
 import { SearchBar } from "@/components/dashboard/search-bar";
 import { SortBy } from "@/components/dashboard/sort-by";
@@ -54,12 +54,21 @@ export default async function ActivityPage(props: {
 	const { page, pageSize, general_search, sortBy } =
 		activityDetailsPageSearchParams.parse(searchParams);
 
-	const { activity, participants, pageCount } = await getActivityDetails(id, {
+	const { activity, pageCount } = await getActivityDetails(id, {
 		page,
 		pageSize,
 		general_search,
 		sortBy,
 	});
+
+	const participants = activity.participantsOnActivity
+		.filter((t) => t.participant.role === "participant")
+		.map((t) => {
+			return {
+				...t.participant,
+				joinedAt: t.joinedAt,
+			};
+		});
 
 	const dateString = getDateString(activity);
 	const timeFrom = getTimeString(activity.dateFrom);
@@ -95,61 +104,47 @@ export default async function ActivityPage(props: {
 				</h2>
 			</div>
 			<div className="flex w-full flex-col items-center justify-start gap-4 md:flex-row">
-				<div className="flex w-full flex-col items-start justify-start gap-4 sm:flex-row sm:gap-9">
-					<SearchBar
-						word={"general_search"}
-						placeholder="Pesquisar participantes"
-					/>
-					<div className="flex flex-row items-center justify-between gap-4 max-sm:w-full sm:justify-end">
-						<span className="text-sm font-medium text-nowrap">
-							Ordenar por
-						</span>
-						<SortBy
-							sortBy={sortBy}
-							items={[
-								{ label: "Mais recentes", value: "recent" },
-								{ label: "Mais antigos", value: "oldest" },
-							]}
-						/>
-					</div>
-				</div>
-			</div>
-			<div className="flex w-full flex-col items-center justify-start gap-4 md:flex-row">
 				<CategoryCard
 					className="w-full"
 					category={activity.category}
 					hours={activity.workload}
 					speakerName={activity.speaker.name}
 				/>
-				<div className="flex flex-row items-center justify-between gap-3 max-md:w-full">
-					<Button
-						asChild
-						size={"icon"}
-						variant={"destructive"}
-						className="h-10 min-w-10"
-					>
-						<Link href={`/dashboard/activities/${id}/edit`}>
-							<Trash className="h-5 w-5" />
-						</Link>
-					</Button>
-					<Button
-						asChild
-						size={"icon"}
-						variant={"outline"}
-						className="h-10 min-w-10"
-					>
-						<Link href={`/dashboard/activities/${id}/edit`}>
-							<Edit className="h-5 w-5" />
-						</Link>
-					</Button>
-					<Button
-						size={"icon"}
-						variant={"outline"}
-						className="h-10 min-w-10"
-					>
-						<Share2 className="h-5 w-5" />
-					</Button>
-					<Button size={"lg"} className="h-10 min-w-10">
+				<div className="flex flex-row items-center gap-3 max-md:w-full max-md:flex-wrap md:justify-between">
+					<div className="flex w-full flex-row items-center gap-3">
+						<Button
+							asChild
+							size={"icon"}
+							variant={"destructive"}
+							className="h-10 min-w-10"
+						>
+							<Link href={`/dashboard/activities/${id}/edit`}>
+								<Trash className="h-5 w-5" />
+							</Link>
+						</Button>
+						<Button
+							size={"icon"}
+							variant={"outline"}
+							className="h-10 min-w-10"
+						>
+							<Share2 className="h-5 w-5" />
+						</Button>
+						<Button
+							asChild
+							size={"lg"}
+							variant={"outline"}
+							className="h-10 min-w-10"
+						>
+							<Link
+								href={`/dashboard/activities/${id}/edit`}
+								className="flex-1"
+							>
+								<Edit className="h-5 w-5" />
+								Editar
+							</Link>
+						</Button>
+					</div>
+					<Button size={"lg"} className="h-10 flex-1">
 						<BellDot className="h-5 w-5" />
 						Abrir fila de espera
 					</Button>
@@ -157,15 +152,34 @@ export default async function ActivityPage(props: {
 			</div>
 			<div className="flex w-full flex-col items-start justify-start gap-12 md:flex-row">
 				<div className="flex w-full flex-col items-center justify-start gap-4 md:w-3/5">
-					<ParticipantsList
-						participants={participants
-							.map((t) => t.participant)
-							.filter(
-								(member) =>
-									member && member.role === "moderator",
-							)}
-						activityId={activity.id}
-					/>
+					<ParticipantsList.Holder>
+						<ParticipantsList.Title>
+							Participantes
+						</ParticipantsList.Title>
+						<div className="flex w-full flex-col items-start justify-start gap-2 sm:flex-row sm:gap-4">
+							<SearchBar
+								word={"general_search"}
+								placeholder="Pesquisar participantes"
+							/>
+							<SortBy
+								sortBy={sortBy}
+								items={[
+									{
+										label: "Mais recentes",
+										value: "recent",
+									},
+									{
+										label: "Mais antigos",
+										value: "oldest",
+									},
+								]}
+							/>
+						</div>
+						<ParticipantsList.List
+							participants={participants}
+							activityId={activity.id}
+						/>
+					</ParticipantsList.Holder>
 					{participants && participants.length > 0 && (
 						<DashboardPagination
 							currentPage={page || 1}
@@ -174,14 +188,15 @@ export default async function ActivityPage(props: {
 						/>
 					)}
 				</div>
-				<ParticipantsList
-					className="md:w-2/5"
-					participants={activity.participantsOnActivity
-						.map((t) => t.participant)
-						.filter((t) => t.role === "moderator")}
-					activityId={activity.id}
-					isModerators
-				/>
+				<ParticipantsList.Holder className="md:w-2/5">
+					<ParticipantsList.Title>Moderadores</ParticipantsList.Title>
+					<ParticipantsList.List
+						participants={activity.participantsOnActivity
+							.map((t) => t.participant)
+							.filter((t) => t.role === "moderator")}
+						activityId={activity.id}
+					/>
+				</ParticipantsList.Holder>
 			</div>
 		</main>
 	);

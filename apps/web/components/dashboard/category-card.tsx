@@ -1,7 +1,12 @@
 import { cn } from "@/lib/utils";
 import { Clock } from "lucide-react";
 
-// Icons
+const EVENT_TYPE_LABELS: Record<string, string> = {
+	lecture: "Palestra",
+	workshop: "Worskhop",
+	"round-table": "Mesa Redonda",
+	course: "Minicurso",
+};
 
 // Types
 import { activityCategories } from "@verific/drizzle/enum/category";
@@ -27,9 +32,7 @@ export function CategoryCard({
 			)}
 		>
 			<div className="inline-flex items-center justify-start gap-4">
-				<span className="text-muted-foreground text-base font-extrabold">
-					{category}
-				</span>
+				<CategoryLabel category={category} />
 				<p className="text-foreground shrink grow basis-0 text-base font-medium">
 					{speakerName}
 				</p>
@@ -43,5 +46,13 @@ export function CategoryCard({
 				</div>
 			)}
 		</div>
+	);
+}
+
+export function CategoryLabel({ category }: { category: string }) {
+	return (
+		<span className="text-muted-foreground/80 text-sm font-bold uppercase select-none">
+			{EVENT_TYPE_LABELS[category] || category}
+		</span>
 	);
 }

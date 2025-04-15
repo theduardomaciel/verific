@@ -76,7 +76,7 @@ const participants: Participant[] = [
 		course: "Ciência da Computação",
 		registrationId: "2025001",
 		period: "2025.1",
-		joinedAt: new Date("2025-04-01"),
+		joinedAt: new Date(now.getTime() - 1 * 60 * 60 * 1000), // 1 hora atrás
 		user: {
 			id: "1",
 			name: "Eduardo Maciel",
@@ -193,26 +193,16 @@ const activities: Activity[] = [
 		},
 		participantsOnActivity: [
 			{
-				participantId: "1",
-				activityId: "1",
-
-				joinedAt: new Date("2025-05-01T08:50:00"),
+				joinedAt: new Date(now.getTime() - 5 * 60 * 1000), // 5 minutos antes
 				participant: participants[2]!,
-				activity: undefined,
 			},
 			{
-				participantId: "2",
-				activityId: "2",
-				joinedAt: new Date("2025-06-15T13:50:00"),
+				joinedAt: new Date(now.getTime() - 10 * 60 * 1000), // 10 minutos antes
 				participant: participants[1]!,
-				activity: undefined,
 			},
 			{
-				participantId: "4",
-				activityId: "1",
-				joinedAt: new Date("2025-05-01T08:55:00"),
+				joinedAt: new Date(now.getTime() - 2 * 60 * 60 * 1000), // 2 horas antes
 				participant: participants[3]!,
-				activity: undefined,
 			},
 		],
 	},
@@ -242,39 +232,20 @@ const activities: Activity[] = [
 		},
 		participantsOnActivity: [
 			{
-				participantId: "2",
-				activityId: "2",
-				joinedAt: new Date("2025-06-15T13:50:00"),
+				joinedAt: new Date(now.getTime() - 10 * 60 * 1000), // 10 minutos antes
 				participant: participants[2]!,
-				activity: undefined,
 			},
 			{
-				participantId: "5",
-				activityId: "2",
-				joinedAt: new Date("2025-06-15T14:00:00"),
+				joinedAt: new Date(now.getTime() - 2 * 60 * 60 * 1000), // 2 horas antes
 				participant: participants[4]!,
-				activity: undefined,
 			},
 			{
-				participantId: "5",
-				activityId: "2",
-				joinedAt: new Date("2025-06-15T14:00:00"),
-				participant: participants[4]!,
-				activity: undefined,
+				joinedAt: new Date(now.getTime() - 1 * 60 * 60 * 1000), // 1 hora antes
+				participant: participants[3]!,
 			},
 			{
-				participantId: "5",
-				activityId: "2",
-				joinedAt: new Date("2025-06-15T14:00:00"),
-				participant: participants[4]!,
-				activity: undefined,
-			},
-			{
-				participantId: "5",
-				activityId: "2",
-				joinedAt: new Date("2025-06-15T14:00:00"),
-				participant: participants[4]!,
-				activity: undefined,
+				joinedAt: new Date(now.getTime() - 30 * 60 * 1000), // // 30 minutos antes
+				participant: participants[1]!,
 			},
 		],
 	},
@@ -304,25 +275,16 @@ const activities: Activity[] = [
 		},
 		participantsOnActivity: [
 			{
-				participantId: "3",
-				activityId: "3",
-				joinedAt: new Date("2025-07-10T09:50:00"),
+				joinedAt: new Date(now.getTime() - 5 * 60 * 1000), // 5 minutos antes
 				participant: participants[2]!,
-				activity: undefined,
 			},
 			{
-				participantId: "1",
-				activityId: "1",
-				joinedAt: new Date("2025-05-01T08:50:00"),
+				joinedAt: new Date(now.getTime() - 5 * 60 * 1000), // 5 minutos antes
 				participant: participants[0]!,
-				activity: undefined,
 			},
 			{
-				participantId: "1",
-				activityId: "1",
-				joinedAt: new Date("2025-05-01T08:50:00"),
+				joinedAt: new Date(now.getTime() - 10 * 60 * 1000), // 10 minutos antes
 				participant: participants[1]!,
-				activity: undefined,
 			},
 		],
 	},
@@ -490,7 +452,7 @@ export async function getActivityDetails(
 	},
 ): Promise<{
 	activity: Activity;
-	participants: ParticipantOnActivity[];
+	participants: Participant[];
 	pageCount: number;
 }> {
 	await new Promise((resolve) => setTimeout(resolve, 500));
@@ -501,25 +463,22 @@ export async function getActivityDetails(
 	}
 
 	const activityParticipants =
-		activity.participantsOnActivity?.filter(
-			(participant) => participant.activityId === activity.id,
-		) || [];
+		participants?.filter((participant) => participant.id === activity.id) ||
+		[];
 
-	const filteredParticipants = activityParticipants?.filter(
-		(participantOnActivity) => {
-			if (general_search) {
-				return (
-					participantOnActivity.participant?.user.name
-						?.toLowerCase()
-						.includes(general_search.toLowerCase()) ||
-					participantOnActivity.participant.course
-						?.toLowerCase()
-						.includes(general_search.toLowerCase())
-				);
-			}
-			return true;
-		},
-	);
+	const filteredParticipants = activityParticipants?.filter((participant) => {
+		if (general_search) {
+			return (
+				participant?.user.name
+					?.toLowerCase()
+					.includes(general_search.toLowerCase()) ||
+				participant.course
+					?.toLowerCase()
+					.includes(general_search.toLowerCase())
+			);
+		}
+		return true;
+	});
 
 	const startIndex = page * pageSize;
 	const endIndex = startIndex + pageSize;
