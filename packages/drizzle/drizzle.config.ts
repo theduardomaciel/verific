@@ -1,4 +1,4 @@
-import { drizzle_env as env } from "@ichess/env/drizzle_env";
+import { drizzle_env as env } from "@verific/env/drizzle_env";
 import type { Config } from "drizzle-kit";
 
 console.log(env.DATABASE_URL);

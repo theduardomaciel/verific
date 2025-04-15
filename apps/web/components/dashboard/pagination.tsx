@@ -14,17 +14,19 @@ import {
 	PaginationPrevious,
 } from "@/components/ui/pagination";
 
-interface ActivityPaginationProps {
+interface DashboardPaginationProps {
 	currentPage: number;
 	totalPages: number;
+	prefix: string;
 }
 
 const PAGE_SIZE = 5; // Define o tamanho da página
 
-export function ActivityPagination({
+export function DashboardPagination({
 	currentPage,
 	totalPages,
-}: ActivityPaginationProps) {
+	prefix,
+}: DashboardPaginationProps) {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 
@@ -45,7 +47,7 @@ export function ActivityPagination({
 			return;
 
 		const queryString = createQueryString("page", page.toString());
-		router.push(`/dashboard/activities?${queryString}`);
+		router.push(`/dashboard/${prefix}?${queryString}`);
 	};
 
 	// Gera os números de página para exibição
@@ -93,7 +95,11 @@ export function ActivityPagination({
 							e.preventDefault();
 							goToPage(currentPage - 1);
 						}}
-						className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
+						className={
+							currentPage <= 1
+								? "pointer-events-none opacity-50"
+								: ""
+						}
 					/>
 				</PaginationItem>
 
@@ -108,7 +114,9 @@ export function ActivityPagination({
 								href="#"
 								isActive={currentPage === page}
 								className={
-									currentPage === page ? "pointer-events-none opacity-50" : ""
+									currentPage === page
+										? "pointer-events-none opacity-50"
+										: ""
 								}
 								onClick={(e) => {
 									if (currentPage !== page) {
@@ -131,7 +139,8 @@ export function ActivityPagination({
 							goToPage(currentPage + 1);
 						}}
 						className={
-							currentPage >= Math.max(1, Math.ceil(totalPages / PAGE_SIZE))
+							currentPage >=
+							Math.max(1, Math.ceil(totalPages / PAGE_SIZE))
 								? "pointer-events-none opacity-50"
 								: ""
 						}

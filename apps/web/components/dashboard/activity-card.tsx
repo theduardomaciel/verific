@@ -7,24 +7,17 @@ import { Calendar, Clock, Timer, User, Users } from "lucide-react";
 
 // Components
 import { Badge } from "@/components/ui/badge";
+import { CategoryLabel } from "@/components/dashboard/category-card";
 
 // Data
-import {
-	formatFriendlyDate,
-	isLive,
-	isStartingSoon,
-	type Activity,
-} from "@/lib/data";
-
-const EVENT_TYPE_LABELS: Record<string, string> = {
-	lecture: "Palestra",
-	workshop: "Worskhop",
-	"round-table": "Mesa Redonda",
-	"mini-course": "Minicurso",
-};
+import { formatFriendlyDate, isLive, isStartingSoon } from "@/lib/data";
+import { Activity } from "@/lib/types/activity";
 
 interface SimpleActivityCardProps
-	extends Pick<Activity, "speaker" | "category" | "date" | "title" | "id"> {
+	extends Pick<
+		Activity,
+		"speaker" | "category" | "dateFrom" | "name" | "id"
+	> {
 	className?: string;
 }
 interface ActivityCardProps extends Activity {
@@ -33,90 +26,117 @@ interface ActivityCardProps extends Activity {
 
 export function SimpleActivityCard({
 	id,
-	title,
+	name,
 	speaker,
 	category,
-	date,
+	dateFrom,
 	className,
 }: SimpleActivityCardProps) {
 	return (
 		<Link
 			href={`/dashboard/activities/${id}`}
 			className={cn(
-				"flex hover:bg-foreground/5 flex-col md:flex-row items-start justify-start md:justify-between rounded-md border p-4 gap-2",
+				"hover:bg-foreground/5 flex flex-col items-start justify-start gap-2 rounded-md border p-4 md:flex-row md:justify-between",
 				className,
 			)}
 		>
-			<div className="flex flex-col items-start justify-center text-foreground h-full">
-				<h3 className="font-semibold font-dashboard">{title}</h3>
-				<p className="text-sm text-muted-foreground/80">
-					{speaker && <span>{speaker}</span>}
+			<div className="text-foreground flex h-full flex-col items-start justify-center">
+				<h3 className="font-dashboard font-semibold">{name}</h3>
+				<p className="text-muted-foreground/80 text-sm">
+					{speaker && <span>{speaker.name}</span>}
 				</p>
 			</div>
-			<ActivityInfo category={category} date={date} />
+			<ActivityInfo category={category} dateFrom={dateFrom} />
 		</Link>
 	);
 }
 
 export function ActivityCard({
 	id,
-	title,
+	name,
 	speaker,
 	category,
-	date,
+	dateFrom,
 	description,
-	monitors,
-	participants,
+	participantsOnActivity,
 	className,
 }: ActivityCardProps) {
+	const monitors =
+		participantsOnActivity
+			?.filter(
+				(onActivity) => onActivity.participant.role === "moderator",
+			)
+			.map((participant) => participant.participant.user.name) || [];
+
+	const participantsAmount =
+		participantsOnActivity?.filter(
+			(onActivity) => onActivity.participant.role === "participant",
+		).length || 0;
+
 	return (
 		<Link href={`/dashboard/activities/${id}`} className="flex w-full">
 			<div
 				className={cn(
-					"rounded-md border bg-card w-full hover:bg-secondary transition-colors group",
+					"bg-card hover:bg-secondary group w-full rounded-md border transition-colors",
 					className,
 				)}
 			>
-				<div className="p-6 space-y-4">
-					<div className="flex justify-between items-start">
-						<h3 className="text-xl font-semibold font-dashboard text-foreground">
-							{title}
+				<div className="space-y-4 p-6">
+					<div className="flex items-start justify-between">
+						<h3 className="font-dashboard text-foreground text-xl font-semibold">
+							{name}
 						</h3>
-						{id && <span className="text-sm text-muted-foreground">#{id}</span>}
+						{id && (
+							<span className="text-muted-foreground text-sm">
+								#{id}
+							</span>
+						)}
 					</div>
 
 					{description && (
-						<p className="text-foreground text-sm line-clamp-3">
+						<p className="text-foreground line-clamp-3 text-sm">
 							{description}
 						</p>
 					)}
 
-					<ActivityInfo speaker={speaker} category={category} date={date} />
+					<ActivityInfo
+						speaker={speaker}
+						category={category}
+						dateFrom={dateFrom}
+					/>
 
-					{(monitors || participants) && (
-						<div className="flex flex-wrap gap-4 justify-between items-center pt-2 border-t">
+					{(monitors || participantsAmount) && (
+						<div className="flex flex-wrap items-center justify-between gap-4 border-t pt-2">
 							{monitors && monitors.length > 0 && (
 								<div className="flex items-center gap-2">
 									<div className="flex -space-x-2">
-										{monitors.map((monitor, _) => (
+										{monitors.map((monitor) => (
 											<div
 												key={monitor}
-												className="h-6 w-6 rounded-full bg-accent border-2 border-card flex items-center justify-center overflow-hidden group-hover:border-secondary transition-colors"
+												className="bg-accent border-card group-hover:border-secondary flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border-2 transition-colors"
 											>
-												<User className="h-3 w-3 text-foreground" />
+												<User className="text-foreground h-3 w-3" />
 											</div>
 										))}
 									</div>
-									<span className="text-xs text-foreground">
+									<span className="text-foreground text-xs">
 										Monitorado por {monitors.join(", ")}
 									</span>
 								</div>
 							)}
 
-							{participants && (
-								<div className="flex items-center gap-1 text-xs text-foreground">
+							{participantsAmount ? (
+								<div className="text-foreground flex items-center gap-1 text-xs">
 									<Users className="h-4 w-4" />
-									<span>+ de {participants} participantes inscritos</span>
+									<span>
+										{participantsAmount === 1
+											? "1 participante inscrito"
+											: `+ de ${participantsAmount} participantes inscritos`}
+									</span>
+								</div>
+							) : (
+								<div className="text-foreground flex items-center gap-1 text-xs">
+									<span>Sem participantes inscritos</span>
 								</div>
 							)}
 						</div>
@@ -127,49 +147,47 @@ export function ActivityCard({
 	);
 }
 
-interface InfoProps extends Pick<Activity, "category" | "date"> {
+interface InfoProps extends Pick<Activity, "category" | "dateFrom"> {
 	speaker?: Activity["speaker"];
 }
 
-function ActivityInfo({ speaker, category, date }: InfoProps) {
-	const eventTypeLabel = EVENT_TYPE_LABELS[category] || category;
-
+function ActivityInfo({ speaker, category, dateFrom }: InfoProps) {
 	return (
 		<div
-			className={cn("flex flex-wrap justify-between items-center gap-2", {
-				"md:flex-col md:items-end max-md:w-full": !speaker,
+			className={cn("flex flex-wrap items-center justify-between gap-2", {
+				"w-full md:flex-col md:items-end": !speaker,
 			})}
 		>
 			<div className="flex items-center gap-2">
-				<span className="text-muted-foreground/80 uppercase text-sm font-bold">
-					{eventTypeLabel}
-				</span>
+				<CategoryLabel category={category} />
 				{speaker && (
-					<span className="text-foreground font-medium">{speaker}</span>
+					<span className="text-foreground font-medium">
+						{speaker.name}
+					</span>
 				)}
 			</div>
 
-			{isLive(date) ? (
+			{isLive(dateFrom) ? (
 				<Badge className="gap-2" variant="destructive">
-					<div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse">
-						<div className="w-1.5 h-1.5 rounded-full bg-white animate-ping absolute" />
+					<div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white">
+						<div className="absolute h-1.5 w-1.5 animate-ping rounded-full bg-white" />
 					</div>
 					AGORA
 				</Badge>
-			) : isStartingSoon(date) ? (
+			) : isStartingSoon(dateFrom) ? (
 				<Badge variant="secondary">
 					<Timer className="h-4 w-4" />
 					EM INSTANTES
 				</Badge>
 			) : (
-				<div className="flex items-center justify-center gap-2 text-foreground">
+				<div className="text-foreground flex items-center justify-center gap-2">
 					{speaker ? (
-						<Calendar className="h-4 w-4 mt-[1.2px]" />
+						<Calendar className="mt-[1.2px] h-4 w-4" />
 					) : (
-						<Clock className="h-3 w-3 mt-[1.2px]" />
+						<Clock className="mt-[1.2px] h-3 w-3" />
 					)}
-					<p className="text-sm leading-0">
-						{formatFriendlyDate(date, !!speaker)}
+					<p className="text-sm leading-0 overflow-ellipsis">
+						{formatFriendlyDate(dateFrom, !!speaker)}
 					</p>
 				</div>
 			)}
