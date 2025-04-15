@@ -1,16 +1,38 @@
 "use client";
+import Image from "next/image";
+import Link from "next/link";
+
+import CertificatePlaceholder from "@/public/screenshots/certificate-placeholder.png";
 
 // Components
 import { SettingsCard } from "@/components/settings/settings-card";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { ExternalLink } from "lucide-react";
-import Link from "next/link";
+import { ExternalLink, Mail } from "lucide-react";
 
 export default function PreferencesSettings() {
 	return (
 		<>
+			<Card className="mb-6 flex flex-col items-start justify-center gap-6 p-6 md:flex-row md:items-center">
+				<Image
+					src={CertificatePlaceholder}
+					className="flex-1 object-contain"
+					alt="Certificado de exemplo"
+				/>
+				<div className="flex flex-1 flex-col items-center justify-start gap-4">
+					<p className="text-foreground text-center text-xl font-semibold md:max-w-[70%]">
+						Enviar certificação aos participantes
+					</p>
+					<Button className="max-md:w-full" size={"lg"} disabled>
+						<Mail className="mr-2 h-4 w-4" />
+						Enviar certificados
+					</Button>
+					{/* TODO: Inserir um <Panel /> aqui */}
+				</div>
+			</Card>
+
 			{/* Manage subscription */}
 			<SettingsCard
 				title="Gerenciar Inscrições"
