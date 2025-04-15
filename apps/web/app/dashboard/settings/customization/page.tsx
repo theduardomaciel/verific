@@ -18,7 +18,7 @@ export default function CustomizationSettings() {
 				}}
 			>
 				<div className="flex flex-row items-center gap-6">
-					<div className="bg-input flex h-24 w-24 cursor-pointer items-center justify-center rounded-full">
+					<div className="bg-input flex h-24 w-24 min-w-24 cursor-pointer items-center justify-center rounded-full">
 						<ImageUp className="text-muted-foreground h-8 w-8" />
 					</div>
 					<div className="bg-input flex h-24 w-96 cursor-pointer items-center justify-center rounded">
@@ -34,7 +34,20 @@ export default function CustomizationSettings() {
 					action: <Button>Salvar</Button>,
 				}}
 			>
-				<ColorPicker />
+				<div className="flex flex-row flex-wrap items-center justify-start gap-6">
+					<div className="flex flex-row items-center justify-start gap-4">
+						<span className="text-muted-foreground text-sm font-normal">
+							Cor principal
+						</span>
+						<ColorPicker />
+					</div>
+					<div className="flex flex-row items-center justify-start gap-4">
+						<span className="text-muted-foreground text-sm font-normal">
+							Cor secundária
+						</span>
+						<ColorPicker />
+					</div>
+				</div>
 			</SettingsCard>
 		</>
 	);

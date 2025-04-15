@@ -13,18 +13,18 @@ export default function ColorPicker() {
 	const [selectedColor, setSelectedColor] = useState<string | null>(null);
 	const [inputColor, setInputColor] = useState("#f857a6");
 	const [sliderPosition, setSliderPosition] = useState(50);
-	const [pickerPosition, setPickerPosition] = useState({ x: 200, y: 60 }); // Default position for #f857a6
+	const [pickerPosition, setPickerPosition] = useState({ x: 200, y: 60 }); // Posição padrão pra #f857a6
 	const [hsl, setHsl] = useState({ h: 0, s: 0, l: 0 });
 
-	// Track dragging state
+	// Acompanhar o estado de arraste
+	// isDraggingPicker e isDraggingSlider são usados para acompanhar se o usuário está atualmente arrastando o seletor de cores ou o controle deslizante de brilho, respectivamente.
 	const [isDraggingPicker, setIsDraggingPicker] = useState(false);
 	const [isDraggingSlider, setIsDraggingSlider] = useState(false);
 
 	const colorPickerRef = useRef<HTMLDivElement>(null);
 	const sliderRef = useRef<HTMLDivElement>(null);
-	const gradientRef = useRef<HTMLDivElement>(null);
 
-	// Initialize picker position based on initial color
+	// Inicializa a posição do seletor de cores com base na cor inicial (inputColor).
 	useEffect(() => {
 		if (colorPickerRef.current) {
 			const initialHsl = hexToHsl(inputColor);
@@ -126,7 +126,7 @@ export default function ColorPicker() {
 	useEffect(() => {
 		const handleTouchMove = (e: TouchEvent) => {
 			if (e.touches.length > 0) {
-				const touch = e.touches[0];
+				const touch = e.touches[0]!;
 				if (isDraggingPicker) {
 					updateColorFromPosition(touch.clientX, touch.clientY);
 				} else if (isDraggingSlider) {
@@ -287,12 +287,14 @@ export default function ColorPicker() {
 						<span>Adicionar</span>
 					</Button>
 				) : (
-					<Button>
+					<Button variant={"outline"} className="hover:bg-muted px-2">
 						<div
-							className="h-6 w-6 rounded-sm"
+							className="h-4 w-4 rounded-sm"
 							style={{ backgroundColor: selectedColor }}
 						/>
-						<span className="text-[#a3a3a3]">{selectedColor}</span>
+						<span className="text-muted-foreground">
+							{selectedColor}
+						</span>
 					</Button>
 				)}
 			</PopoverTrigger>
@@ -311,8 +313,8 @@ export default function ColorPicker() {
 					onTouchStart={(e) => {
 						setIsDraggingPicker(true);
 						updateColorFromPosition(
-							e.touches[0].clientX,
-							e.touches[0].clientY,
+							e.touches[0]!.clientX,
+							e.touches[0]!.clientY,
 						);
 					}}
 				>
@@ -334,7 +336,7 @@ export default function ColorPicker() {
 					onMouseDown={handleSliderMouseDown}
 					onTouchStart={(e) => {
 						setIsDraggingSlider(true);
-						updateSliderPosition(e.touches[0].clientX);
+						updateSliderPosition(e.touches[0]!.clientX);
 					}}
 				>
 					<div
@@ -366,7 +368,7 @@ export default function ColorPicker() {
 						</Button>
 					)}
 					<Button className="flex-1" onClick={handleSaveColor}>
-						Salvar
+						Confirmar
 					</Button>
 				</PopoverClose>
 			</PopoverContent>
