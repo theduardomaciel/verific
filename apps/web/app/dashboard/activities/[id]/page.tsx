@@ -176,6 +176,7 @@ export default async function ActivityPage(props: {
 							/>
 						</div>
 						<ParticipantsList.List
+							hasActivity
 							participants={participants}
 							activityId={activity.id}
 						/>
