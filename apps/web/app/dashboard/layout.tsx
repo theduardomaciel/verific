@@ -15,13 +15,18 @@ const DASHBOARD_LINKS = [
 	{ href: "/dashboard/settings", label: "Configurações" },
 ];
 
+import type { Metadata } from "next";
+export const metadata: Metadata = {
+	title: "Dashboard",
+};
+
 export default function DashboardLayout({
 	children,
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
 	return (
-		<div className={`${rem.variable} w-full flex flex-col flex-1`}>
+		<div className={`${rem.variable} flex w-full flex-1 flex-col`}>
 			<Header links={DASHBOARD_LINKS} />
 			{children}
 			<Footer />
