@@ -15,16 +15,23 @@ const settingsLinks = [
 	},
 ];
 
+import type { Metadata } from "next";
+export const metadata: Metadata = {
+	title: "Configurações",
+};
+
 export default function AccountSettingsLayout({
 	children,
 }: {
 	children: React.ReactNode;
 }) {
 	return (
-		<main className="container mx-auto py-8 px-4 max-w-6xl min-h-screen relative">
-			<h1 className="text-3xl font-bold text-foreground mb-8">Configurações</h1>
+		<main className="relative container mx-auto min-h-screen max-w-6xl px-4 py-8">
+			<h1 className="text-foreground mb-8 text-3xl font-bold">
+				Configurações
+			</h1>
 
-			<div className="flex flex-col md:flex-row gap-8 h-full">
+			<div className="flex h-full flex-col gap-8 md:flex-row">
 				<SettingsSidebar links={settingsLinks} />
 				<div className="flex-1">{children}</div>
 			</div>

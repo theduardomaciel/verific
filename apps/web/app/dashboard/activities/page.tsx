@@ -16,7 +16,7 @@ import { Filter } from "@/components/dashboard/filter";
 import {
 	getActivities,
 	getCategories,
-	getMonitors,
+	// getMonitors,
 	getStatuses,
 } from "@/lib/data";
 
@@ -25,6 +25,11 @@ import type { z } from "zod";
 import { getActivitiesParams } from "@verific/api/routers/activities";
 
 type EventsPageParams = z.infer<typeof getActivitiesParams>;
+
+import type { Metadata } from "next";
+export const metadata: Metadata = {
+	title: "Atividades",
+};
 
 export default async function ActivitiesPage(props: {
 	searchParams: Promise<EventsPageParams>;
@@ -37,13 +42,13 @@ export default async function ActivitiesPage(props: {
 	const activities = await getActivities(parsedParams);
 	const categories = await getCategories();
 	const statuses = await getStatuses();
-	const monitors = await getMonitors();
+	// const monitors = await getMonitors();
 
 	return (
-		<div className="px-dashboard py-8 min-h-screen">
-			<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-				<div className="md:col-span-2 space-y-4 w-full">
-					<div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+		<div className="px-dashboard min-h-screen py-8">
+			<div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+				<div className="w-full space-y-4 md:col-span-2">
+					<div className="flex flex-col items-start gap-4 md:flex-row md:items-center">
 						<div className="relative w-full md:flex-1">
 							<SearchBar placeholder="Pesquisar atividades..." />
 						</div>
@@ -59,7 +64,7 @@ export default async function ActivitiesPage(props: {
 
 					<Suspense
 						fallback={
-							<div className="h-96 flex items-center justify-center">
+							<div className="flex h-96 items-center justify-center">
 								Carregando atividades...
 							</div>
 						}
@@ -67,10 +72,13 @@ export default async function ActivitiesPage(props: {
 						<ActivityList activities={activities} />
 					</Suspense>
 
-					<ActivityPagination currentPage={parsedParams.page} totalPages={5} />
+					<ActivityPagination
+						currentPage={parsedParams.page}
+						totalPages={5}
+					/>
 				</div>
 
-				<div className="md:col-span-1 space-y-4 order-first md:order-last">
+				<div className="order-first space-y-4 md:order-last md:col-span-1">
 					<Button className="w-full" size="lg">
 						<Plus className="mr-2 h-4 w-4" /> Adicionar atividade
 					</Button>
