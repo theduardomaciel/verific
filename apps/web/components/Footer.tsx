@@ -35,7 +35,7 @@ function Footer({
 			className={cn(footerVariants({ variant, className }))}
 			{...props}
 		>
-			<div className="flex w-full flex-row flex-wrap items-start justify-start gap-4 md:justify-between">
+			<div className="flex w-full flex-row flex-wrap items-start justify-start gap-4 md:items-center md:justify-between">
 				<div className="xs:justify-between flex flex-row flex-wrap items-center justify-start gap-3 max-md:w-full md:gap-8">
 					{/* Brand */}
 					<div className="flex items-center gap-3">
@@ -50,7 +50,7 @@ function Footer({
 						<Logo className="text-foreground h-5" />
 					</div>
 					{/* Links */}
-					<nav className="flex flex-row flex-wrap gap-2">
+					<nav className="flex flex-row flex-wrap gap-2 space-x-2 md:space-x-4">
 						<Link
 							href="/help"
 							className="text-foreground hover:text-muted-foreground text-xs transition-colors"
@@ -58,13 +58,13 @@ function Footer({
 							Ajuda
 						</Link>
 						<Link
-							href="/privacy-policy"
-							className="text-foreground hover:text-muted-foreground !mr-6 text-xs transition-colors"
+							href="/privacy"
+							className="text-foreground hover:text-muted-foreground text-xs transition-colors"
 						>
 							Política de Privacidade
 						</Link>
 						<Link
-							href="/terms-of-service"
+							href="/terms"
 							className="text-foreground hover:text-muted-foreground text-xs transition-colors"
 						>
 							Termos de Uso

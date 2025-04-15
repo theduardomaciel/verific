@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 
 export function Features() {
 	return (
-		<section className="container w-full gap-9 px-4 pt-16">
+		<section className="px-landing container w-full gap-9 pt-16">
 			<div className="mb-6 flex justify-center">
 				<Badge className="rounded-full px-4 py-1.5 font-semibold">
 					Funcionalidades
