@@ -61,6 +61,8 @@ export default function MutateActivityForm({ activity }: Props) {
 		await new Promise((resolve) => setTimeout(resolve, 2000));
 
 		setCurrentState("submitted");
+
+		submittedEventId.current = "c03281137c42"; // TODO: Pegar o ID do evento criado/atualizado
 	}
 
 	return (
@@ -81,8 +83,7 @@ export default function MutateActivityForm({ activity }: Props) {
 				description={
 					<>
 						A atividade foi {activity ? "atualizada" : "criada"} por
-						sucesso e já pode ser acessado por todos os membros do
-						grupo!
+						sucesso e já pode ser visualizada pelos participantes.
 						<br />
 						{!activity &&
 							"Agora, você pode visualizá-la a qualquer momento através da página de atividades."}

@@ -7,7 +7,7 @@ import { CloudUpload, Edit } from "lucide-react";
 
 // Components
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input, InputWithSuffix } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
 	FormControl,
@@ -60,7 +60,7 @@ export function MutateActivityFormContent({ form, isEditing }: Props) {
 							<FormLabel>Nome</FormLabel>
 							<FormControl>
 								<Input
-									placeholder="Reunião Semanal"
+									placeholder="Workshop de React"
 									{...field}
 								/>
 							</FormControl>
@@ -89,7 +89,8 @@ export function MutateActivityFormContent({ form, isEditing }: Props) {
 							<FormItem className="flex-1">
 								<FormLabel>Limite de vagas</FormLabel>
 								<FormControl>
-									<Input
+									<InputWithSuffix
+										suffix=" vagas"
 										className="w-full flex-1"
 										type="number"
 										placeholder="10"
@@ -222,7 +223,8 @@ export function MutateActivityFormContent({ form, isEditing }: Props) {
 							<FormItem className="flex-1">
 								<FormLabel>Carga horária</FormLabel>
 								<FormControl>
-									<Input
+									<InputWithSuffix
+										suffix=" horas"
 										className="w-full flex-1"
 										type="number"
 										placeholder="10"
