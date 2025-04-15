@@ -4,6 +4,7 @@ import Ticket from "@/public/ticket.svg";
 
 // Components
 import GoogleButton from "@/components/auth/GoogleButton";
+import Link from "next/link";
 
 export default function LoginPage() {
 	return (
@@ -39,7 +40,9 @@ export default function LoginPage() {
 					</div>
 
 					{/* Botão de login com Google */}
-					<GoogleButton />
+					<Link href={"/dashboard"} className="w-full">
+						<GoogleButton />
+					</Link>
 
 					<p className="text-muted-foreground text-center text-sm">
 						Ao continuar, você concorda com nossos
