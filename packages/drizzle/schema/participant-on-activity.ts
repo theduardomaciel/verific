@@ -1,17 +1,7 @@
 import { relations } from "drizzle-orm";
-import {
-	pgEnum,
-	pgTable,
-	timestamp,
-	uniqueIndex,
-	uuid,
-} from "drizzle-orm/pg-core";
+import { pgTable, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { participant, activity } from ".";
-
-export const participantRoles = ["participant", "moderator"] as const;
-export const roleEnum = pgEnum("role", participantRoles);
-export type Role = (typeof participantRoles)[number];
 
 export const participantOnActivity = pgTable(
 	"participant_activities",
@@ -28,13 +18,10 @@ export const participantOnActivity = pgTable(
 				onDelete: "cascade",
 				onUpdate: "cascade",
 			}),
-		role: roleEnum("role").notNull().default("participant"),
 		joinedAt: timestamp("joined_at").notNull().defaultNow(),
 		leftAt: timestamp("left_at"),
 	},
-	(table) => [
-		uniqueIndex().on(table.participantId, table.activityId, table.role),
-	],
+	(table) => [uniqueIndex().on(table.participantId, table.activityId)],
 );
 
 export const participantOnActivityRelations = relations(

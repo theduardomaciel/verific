@@ -6,6 +6,7 @@ import { participantOnActivity, project, user } from ".";
 // Enums
 import { courseEnum } from "../enum/course";
 import { periodEnum } from "../enum/period";
+import { roleEnum } from "../enum/role";
 
 export const participant = pgTable("participants", {
 	id: uuid("id").primaryKey().defaultRandom(),
@@ -25,6 +26,7 @@ export const participant = pgTable("participants", {
 	course: courseEnum("course"),
 	registrationId: text("registration_id").unique(),
 	period: periodEnum("period"),
+	role: roleEnum("role").notNull().default("participant"),
 	joinedAt: timestamp("joined_at").notNull().defaultNow(),
 });
 

@@ -16,6 +16,6 @@ export type Activity = {
 	projectId: string;
 	createdAt: Date;
 	project?: Project;
-	speaker?: Speaker;
+	speaker: Speaker;
 	participantsOnActivity: ParticipantOnActivity[];
 };

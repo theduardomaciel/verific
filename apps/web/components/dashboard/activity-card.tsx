@@ -69,11 +69,14 @@ export function ActivityCard({
 }: ActivityCardProps) {
 	const monitors =
 		participantsOnActivity
-			?.filter((participant) => participant.role === "moderator")
+			?.filter(
+				(onActivity) => onActivity.participant.role === "moderator",
+			)
 			.map((participant) => participant.participant.user.name) || [];
+
 	const participantsAmount =
 		participantsOnActivity?.filter(
-			(participant) => participant.role === "participant",
+			(onActivity) => onActivity.participant.role === "participant",
 		).length || 0;
 
 	return (

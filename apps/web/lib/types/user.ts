@@ -1,10 +1,7 @@
-import { Participant } from "./participant";
-
 export type User = {
 	id: string;
-	name: string | null;
+	name: string;
 	email: string;
-	emailVerified: Date | null;
-	image_url: string | null;
-	participants?: Participant[];
+	emailVerified: Date;
+	image_url: string;
 };

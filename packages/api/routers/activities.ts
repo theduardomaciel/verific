@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { transformSingleToArray } from "../utils";
-import { activityCategories, activityAudiences } from "@verific/drizzle/schema";
+import { activityCategories } from "@verific/drizzle/enum/category";
+import { activityAudiences } from "@verific/drizzle/enum/audience";
 
 export const activitySort = ["recent", "oldest", "alphabetical"] as const; // Ordenação de atividades
 export const activityStatus = ["now", "next"] as const; // Status de atividades

@@ -1,6 +1,5 @@
 import { Activity } from "./activity";
 import { Participant } from "./participant";
-import { Speaker } from "./speaker";
 
 export type Project = {
 	id: string;
@@ -18,7 +17,6 @@ export type Project = {
 	startDate: Date;
 	endDate: Date;
 	createdAt: Date;
-	activities?: Activity[];
-	participants?: Participant[];
-	speakers?: Speaker[];
+	activities: Activity[];
+	participants: Participant[];
 };
