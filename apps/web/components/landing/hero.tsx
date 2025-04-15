@@ -18,7 +18,7 @@ export function Hero() {
 						certificar eventos — em um só lugar, de forma simples e
 						gratuita.
 					</p>
-					<Link href="#">
+					<Link href="/auth">
 						<Button
 							className="group text-foreground hover:bg-accent h-fit rounded-full bg-white !px-12 !py-3 text-base font-semibold max-md:w-full dark:bg-black dark:hover:bg-black/80"
 							size={"lg"}
