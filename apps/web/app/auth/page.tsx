@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+
 // Icons
 import Logo from "@/public/logo.svg";
 import Ticket from "@/public/ticket.svg";
@@ -5,6 +7,10 @@ import Ticket from "@/public/ticket.svg";
 // Components
 import GoogleButton from "@/components/auth/GoogleButton";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+	title: "Autenticação",
+};
 
 export default function LoginPage() {
 	return (
