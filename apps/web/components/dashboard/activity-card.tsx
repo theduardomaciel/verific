@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 import { cn } from "@/lib/utils";
 
@@ -36,17 +37,31 @@ export function SimpleActivityCard({
 		<Link
 			href={`/dashboard/activities/${id}`}
 			className={cn(
-				"hover:bg-foreground/5 flex flex-col items-start justify-start gap-2 rounded-md border p-4 md:flex-row md:justify-between",
+				"hover:bg-foreground/5 flex flex-col items-start justify-start rounded-md border",
 				className,
 			)}
 		>
-			<div className="text-foreground flex h-full flex-col items-start justify-center">
+			<div className="text-foreground flex h-full flex-col items-start justify-center gap-1 p-4">
 				<h3 className="font-dashboard font-semibold">{name}</h3>
-				<p className="text-muted-foreground/80 text-sm">
-					{speaker && <span>{speaker.name}</span>}
-				</p>
+				<span className="flex flex-row items-center justify-center gap-2">
+					<Image
+						className="rounded-full"
+						src={"https://github.com/mauro-balades.png"}
+						alt="Logo"
+						width={14}
+						height={14}
+					/>
+					<p className="text-muted-foreground/80 -mt-0.5 text-sm">
+						{speaker && <span>{speaker.name}</span>}
+					</p>
+				</span>
 			</div>
-			<ActivityInfo category={category} dateFrom={dateFrom} />
+			<div className="bg-input h-[1px] w-full" />
+			<ActivityInfo
+				category={category}
+				dateFrom={dateFrom}
+				className="p-4"
+			/>
 		</Link>
 	);
 }
@@ -149,14 +164,19 @@ export function ActivityCard({
 
 interface InfoProps extends Pick<Activity, "category" | "dateFrom"> {
 	speaker?: Activity["speaker"];
+	className?: string;
 }
 
-function ActivityInfo({ speaker, category, dateFrom }: InfoProps) {
+function ActivityInfo({ className, speaker, category, dateFrom }: InfoProps) {
 	return (
 		<div
-			className={cn("flex flex-wrap items-center justify-between gap-2", {
-				"w-full md:flex-col md:items-end": !speaker,
-			})}
+			className={cn(
+				"flex flex-wrap items-center justify-between gap-2",
+				className,
+				{
+					"w-full": !speaker,
+				},
+			)}
 		>
 			<div className="flex items-center gap-2">
 				<CategoryLabel category={category} />
