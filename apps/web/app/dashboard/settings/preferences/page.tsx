@@ -1,7 +1,9 @@
 "use client";
+import { Fragment } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
+import { ExternalLink, Mail } from "lucide-react";
 import CertificatePlaceholder from "@/public/screenshots/certificate-placeholder.png";
 
 // Components
@@ -10,11 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { ExternalLink, Mail } from "lucide-react";
 
 export default function PreferencesSettings() {
 	return (
-		<>
+		<div>
 			<Card className="mb-6 flex flex-col items-start justify-center gap-6 p-6 md:flex-row md:items-center">
 				<Image
 					src={CertificatePlaceholder}
@@ -89,6 +90,6 @@ export default function PreferencesSettings() {
 					action: <Button>Arquivar</Button>,
 				}}
 			/>
-		</>
+		</div>
 	);
 }

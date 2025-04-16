@@ -1,14 +1,16 @@
+import { Fragment } from "react";
+
+// Components
 import { PlacePicker } from "@/components/place-picker";
 import { ProjectDeletePreview } from "@/components/settings/project-delete-preview";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Image } from "lucide-react";
 
 export default function ProjectSettings() {
 	return (
-		<>
+		<div>
 			{/* Name */}
 			<SettingsCard
 				title="Nome do Evento"
@@ -77,7 +79,7 @@ export default function ProjectSettings() {
 			</SettingsCard>
 
 			{/* Delete */}
-			<SettingsCard
+			{/* <SettingsCard
 				title="Excluir Evento"
 				description={
 					<>
@@ -97,7 +99,7 @@ export default function ProjectSettings() {
 					),
 				}}
 				footerClassName="bg-destructive/20 border-destructive"
-			/>
-		</>
+			/> */}
+		</div>
 	);
 }

@@ -8,10 +8,10 @@ export default function AppLayout({
 	children: ReactNode;
 }>) {
 	return (
-		<Fragment>
+		<div>
 			{/* HEADER */}
 			{children}
 			<Footer />
-		</Fragment>
+		</div>
 	);
 }
