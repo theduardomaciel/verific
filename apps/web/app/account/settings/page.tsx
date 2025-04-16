@@ -27,8 +27,8 @@ export default function AccountSettings() {
 				title="Avatar"
 				description="Clique no avatar para enviar uma imagem personalizada dos seus arquivos."
 				headerRight={
-					<div className="flex h-36 w-36 items-center justify-center rounded-full border">
-						<Image className="text-foreground h-10 w-10 opacity-30" />
+					<div className="flex h-28 w-28 items-center justify-center rounded-full border">
+						<Image className="text-foreground h-8 w-8 opacity-30" />
 					</div>
 				}
 				footer={{
