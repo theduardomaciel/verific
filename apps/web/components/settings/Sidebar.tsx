@@ -9,6 +9,7 @@ interface Props {
 	links: {
 		href: string;
 		label: string;
+		disabled?: boolean;
 	}[];
 }
 
@@ -16,7 +17,7 @@ export function SettingsSidebar({ links }: Props) {
 	const pathname = usePathname();
 
 	return (
-		<div className="w-full md:w-64 shrink-0 md:h-screen">
+		<div className="w-full shrink-0 md:h-screen md:w-64">
 			<nav className="flex flex-col space-y-1 md:sticky md:top-16">
 				{links.map((link) => {
 					const isActive = pathname === link.href;
@@ -26,9 +27,13 @@ export function SettingsSidebar({ links }: Props) {
 							key={link.href}
 							href={link.href}
 							className={cn(
-								"py-2 px-4 text-left font-medium border-l-2 text-muted-foreground hover:text-primary border-transparent",
+								"text-muted-foreground border-l-2 border-transparent px-4 py-2 text-left font-medium transition-colors",
 								{
 									"text-primary border-primary": isActive,
+									"text-muted-foreground cursor-not-allowed opacity-50":
+										link.disabled,
+									"hover:text-primary":
+										!isActive && !link.disabled,
 								},
 							)}
 						>

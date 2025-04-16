@@ -49,9 +49,9 @@ export function SearchBar({
 
 	return (
 		<div className="relative w-full">
-			<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+			<Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
 			<Input
-				className={cn("pl-10", props.className)}
+				className={cn("w-full pl-10", props.className)}
 				value={value}
 				onChange={(e) => {
 					if (onChange) onChange(e);
@@ -62,14 +62,14 @@ export function SearchBar({
 
 			<div
 				className={
-					"absolute right-4 top-1/2 flex -translate-y-1/2 flex-row items-center justify-end gap-2"
+					"absolute top-1/2 right-4 flex -translate-y-1/2 flex-row items-center justify-end gap-2"
 				}
 			>
 				{isPendingSearchTransition ? (
-					<Loader2 className="h-4 w-4 origin-center animate-spin text-foreground" />
+					<Loader2 className="text-foreground h-4 w-4 origin-center animate-spin" />
 				) : value ? (
 					<X
-						className="h-4 w-4 cursor-pointer text-foreground"
+						className="text-foreground h-4 w-4 cursor-pointer"
 						onClick={() => {
 							setValue("");
 							router.push(toUrl({ [word]: undefined }));
