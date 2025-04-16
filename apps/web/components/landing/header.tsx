@@ -20,7 +20,7 @@ export function Header() {
 
 	return (
 		<header className="border-border/40 bg-background/95 supports-[backdrop-filter]:bg-background/60 px-landing sticky top-0 z-50 flex w-full justify-center border-b backdrop-blur">
-			<div className="container flex h-16 w-full items-center justify-between">
+			<div className="container flex w-full items-center justify-between py-8 md:py-4">
 				<Brand />
 
 				<nav className="hidden items-center gap-9 md:flex">

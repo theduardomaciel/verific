@@ -44,7 +44,7 @@ export function LandingFooter() {
 				</ul>
 			</div>
 			<div className="bg-input w-full rounded-xl md:rounded-full">
-				<Footer className="border-none py-4" />
+				<Footer className="border-none px-4 py-4" />
 			</div>
 		</div>
 	);
