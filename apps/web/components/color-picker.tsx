@@ -353,23 +353,25 @@ export default function ColorPicker() {
 				/>
 
 				{/* Action buttons */}
-				<PopoverClose className="flex w-full justify-between gap-2">
-					{selectedColor ? (
-						<Button
-							variant="outline"
-							className="flex-1"
-							onClick={handleRemoveColor}
-						>
-							Remover
+				<PopoverClose asChild>
+					<div className="flex w-full justify-between gap-2">
+						{selectedColor ? (
+							<Button
+								variant="outline"
+								className="flex-1"
+								onClick={handleRemoveColor}
+							>
+								Remover
+							</Button>
+						) : (
+							<Button variant="outline" className="flex-1">
+								Cancelar
+							</Button>
+						)}
+						<Button className="flex-1" onClick={handleSaveColor}>
+							Confirmar
 						</Button>
-					) : (
-						<Button variant="outline" className="flex-1">
-							Cancelar
-						</Button>
-					)}
-					<Button className="flex-1" onClick={handleSaveColor}>
-						Confirmar
-					</Button>
+					</div>
 				</PopoverClose>
 			</PopoverContent>
 		</Popover>
