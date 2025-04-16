@@ -9,8 +9,8 @@ const rem = REM({
 });
 
 const ACCOUNT_LINKS = [
-	{ href: "/account", label: "Projetos" },
-	{ href: "/account/settings", label: "Configurações" },
+	{ href: "", label: "Projetos" },
+	{ href: "/settings", label: "Configurações" },
 ];
 
 export default function AccountLayout({
@@ -19,8 +19,9 @@ export default function AccountLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<div className={`${rem.variable} w-full flex flex-col flex-1`}>
+		<div className={`${rem.variable} flex w-full flex-1 flex-col`}>
 			<Header
+				prefix="/account"
 				links={ACCOUNT_LINKS}
 				showProjectSwitcher={false}
 				showAccountActions={false}
