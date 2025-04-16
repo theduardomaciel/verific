@@ -1,3 +1,5 @@
+import { Fragment } from "react";
+
 export default function Layout({
 	children,
 	modal,
@@ -6,9 +8,9 @@ export default function Layout({
 	modal: React.ReactNode;
 }) {
 	return (
-		<>
+		<div>
 			{modal}
 			{children}
-		</>
+		</div>
 	);
 }

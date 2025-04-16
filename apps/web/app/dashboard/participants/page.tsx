@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 export const metadata: Metadata = {
 	title: "Participantes",
@@ -8,8 +9,9 @@ import { DashboardPagination } from "@/components/dashboard/pagination";
 import { FiltersPanel } from "@/components/dashboard/filters-panel";
 import { SearchBar } from "@/components/dashboard/search-bar";
 import { SortBy } from "@/components/dashboard/sort-by";
-import { Suspense } from "react";
 import { Filter } from "@/components/dashboard/filter";
+import { ParticipantCard } from "@/components/dashboard/participant-card";
+import { Empty } from "@/components/empty";
 
 // Validation
 import { z } from "zod";
@@ -17,18 +19,14 @@ import { getParticipantsParams } from "@verific/api/routers/participants";
 
 // Data
 import { getParticipants } from "@/lib/data";
-import { Empty } from "@/components/empty";
-import { ParticipantCard } from "@/components/dashboard/participant-card";
 
-const participantsPageParams = getParticipantsParams.partial();
-
-type ParticipantsPageParams = z.infer<typeof participantsPageParams>;
+type ParticipantsPageParams = z.infer<typeof getParticipantsParams>;
 
 export default async function ParticipantsPage(props: {
 	searchParams: Promise<ParticipantsPageParams>;
 }) {
 	const searchParams = await props.searchParams;
-	const parsedParams = participantsPageParams.parse(searchParams);
+	const parsedParams = getParticipantsParams.parse(searchParams);
 
 	const participants = await getParticipants(parsedParams);
 

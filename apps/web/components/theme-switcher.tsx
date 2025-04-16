@@ -2,6 +2,8 @@
 
 import { useTheme } from "next-themes";
 
+import { Computer, Moon, Sun } from "lucide-react";
+
 import {
 	Select,
 	SelectContent,
@@ -9,7 +11,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Computer, Moon, Sun } from "lucide-react";
 
 export function ThemeSwitcher() {
 	const { theme, setTheme } = useTheme();

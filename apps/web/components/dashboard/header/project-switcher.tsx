@@ -49,12 +49,12 @@ type PopoverTriggerProps = React.ComponentPropsWithoutRef<
 	typeof PopoverTrigger
 >;
 
-interface ProjectSwitcherProps extends PopoverTriggerProps { }
+interface ProjectSwitcherProps extends PopoverTriggerProps {}
 
 export default function ProjectSwitcher({ className }: ProjectSwitcherProps) {
 	const [open, setOpen] = React.useState(false);
 	const [selectedProject, setSelectedProject] = React.useState<Project>(
-		projects[0],
+		projects[0]!,
 	);
 
 	return (
@@ -75,7 +75,7 @@ export default function ProjectSwitcher({ className }: ProjectSwitcherProps) {
 						/>
 						<AvatarFallback>SC</AvatarFallback>
 					</Avatar>
-					<span className="text-left w-full line-clamp-1">
+					<span className="line-clamp-1 w-full text-left">
 						{selectedProject.label.slice(0, 15) +
 							(selectedProject.label.length > 15 ? "..." : "")}
 					</span>
@@ -94,7 +94,7 @@ export default function ProjectSwitcher({ className }: ProjectSwitcherProps) {
 									setSelectedProject(project);
 									setOpen(false);
 								}}
-								className="text-sm py-2 rounded-none"
+								className="rounded-none py-2 text-sm"
 							>
 								<Avatar className="mr-2 h-5 w-5">
 									<AvatarImage

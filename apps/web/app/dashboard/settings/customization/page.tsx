@@ -5,10 +5,11 @@ import ColorPicker from "@/components/color-picker";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { Button } from "@/components/ui/button";
 import { ImageUp } from "lucide-react";
+import { Fragment } from "react";
 
 export default function CustomizationSettings() {
 	return (
-		<>
+		<div>
 			<SettingsCard
 				title="Marca do Evento"
 				description="Estes elementos serão utilizados na página de inscrição para customizá-la com a marca de seu evento"
@@ -49,6 +50,6 @@ export default function CustomizationSettings() {
 					</div>
 				</div>
 			</SettingsCard>
-		</>
+		</div>
 	);
 }
