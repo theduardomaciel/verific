@@ -18,10 +18,10 @@ export default function CustomizationSettings() {
 				}}
 			>
 				<div className="flex flex-row items-center gap-6">
-					<div className="bg-input flex h-24 w-24 min-w-24 cursor-pointer items-center justify-center rounded-full">
+					<div className="bg-input flex h-24 w-24 min-w-24 cursor-pointer items-center justify-center rounded-full md:h-32 md:w-32">
 						<ImageUp className="text-muted-foreground h-8 w-8" />
 					</div>
-					<div className="bg-input flex h-24 w-96 cursor-pointer items-center justify-center rounded">
+					<div className="bg-input flex h-24 w-96 cursor-pointer items-center justify-center rounded md:h-32">
 						<ImageUp className="text-muted-foreground h-8 w-8" />
 					</div>
 				</div>
