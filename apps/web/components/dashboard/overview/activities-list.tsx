@@ -7,7 +7,6 @@ import { getActivities } from "@/lib/data";
 
 export async function ActivitiesList({ className }: { className?: string }) {
 	const activities = await getActivities({});
-	console.log(activities);
 
 	return (
 		<Card className={cn("h-auto gap-2", className)}>
