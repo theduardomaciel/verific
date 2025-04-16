@@ -9,10 +9,10 @@ const rem = REM({
 });
 
 const DASHBOARD_LINKS = [
-	{ href: "/dashboard", label: "Visão Geral" },
-	{ href: "/dashboard/activities", label: "Atividades" },
-	{ href: "/dashboard/participants", label: "Participantes" },
-	{ href: "/dashboard/settings", label: "Configurações" },
+	{ href: "", label: "Visão Geral" },
+	{ href: "/activities", label: "Atividades" },
+	{ href: "/participants", label: "Participantes" },
+	{ href: "/settings", label: "Configurações" },
 ];
 
 import type { Metadata } from "next";
@@ -27,7 +27,7 @@ export default function DashboardLayout({
 }>) {
 	return (
 		<div className={`${rem.variable} flex w-full flex-1 flex-col`}>
-			<Header links={DASHBOARD_LINKS} />
+			<Header prefix={"/dashboard"} links={DASHBOARD_LINKS} />
 			{children}
 			<Footer />
 		</div>

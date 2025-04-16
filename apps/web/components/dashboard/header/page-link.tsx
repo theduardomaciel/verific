@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 export interface MainNavProps {
+	prefix: string; // Prefixo para as rotas
 	links: {
 		href: string;
 		label: string;
@@ -16,6 +17,7 @@ export interface MainNavProps {
 
 export default function MainNav({
 	className,
+	prefix,
 	links,
 	...props
 }: React.HTMLAttributes<HTMLElement> & MainNavProps) {
@@ -40,19 +42,29 @@ export default function MainNav({
 		}
 	}, [pathname]);
 
+	const isLinkActive = (href: string): boolean => {
+		// Caso especial para dashboard principal
+		if (href === prefix) {
+			return pathname === prefix || pathname === `${prefix}/`;
+		}
+
+		// Para as demais rotas, verifica se o pathname começa com o href
+		return pathname.startsWith(href + "/") || pathname === href;
+	};
+
 	return (
 		<div
 			ref={scrollContainerRef}
 			className={cn(
-				"relative w-full overflow-x-auto scroll-smooth scrollbar-none",
+				"scrollbar-none relative w-full overflow-x-auto scroll-smooth",
 				className,
 			)}
 			{...props}
 		>
-			<nav className="flex items-center justify-start gap-4 px-4 min-w-fit">
+			<nav className="flex min-w-fit items-center justify-start gap-4 px-4">
 				{links.map((link) => {
-					const href = link.href;
-					const isActive = pathname === href;
+					const href = prefix + link.href;
+					const isActive = isLinkActive(href);
 
 					return (
 						<Button
