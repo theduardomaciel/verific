@@ -32,7 +32,6 @@ export default function AccountSettingsLayout({
 			</h1>
 
 			<div className="flex h-full flex-col gap-8 md:flex-row">
-				<SettingsSidebar links={settingsLinks} />
 				<div className="flex-1">{children}</div>
 			</div>
 		</main>
