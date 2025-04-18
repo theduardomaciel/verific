@@ -32,6 +32,7 @@ const EVENT_LINKS = [
 		label: "Inscrições",
 		className:
 			"hover:text-primary-foreground hover:bg-secondary border-secondary font-semibold uppercase border text-primary-foreground text-xs",
+		activeClassName: "!text-primary-foreground !bg-secondary",
 	},
 ] as MainNavProps["links"];
 
@@ -56,6 +57,9 @@ export default async function EventLayout({
 				{
 					"--primary": event.primaryColor,
 					"--secondary": event.secondaryColor,
+					"--accent":
+						"color-mix(in oklab, var(--foreground) 2%, transparent)",
+					"--accent-foreground": event.primaryColor,
 				} as React.CSSProperties
 			}
 		>
