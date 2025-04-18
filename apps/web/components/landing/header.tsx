@@ -21,12 +21,13 @@ import { MobileMenu } from "./mobile-menu";
 import MainNav, { MainNavProps } from "@/components/main-nav";
 
 interface Props {
-	className?: string;
 	prefix?: string;
 	links: MainNavProps["links"];
 	logo?: React.ReactNode;
+	className?: string;
 	buttonClassName?: string;
 	languageSelectorClassName?: string;
+	mobileMenuClassName?: string;
 }
 
 export function Header({
@@ -36,6 +37,7 @@ export function Header({
 	logo,
 	buttonClassName,
 	languageSelectorClassName,
+	mobileMenuClassName,
 }: Props) {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -84,6 +86,7 @@ export function Header({
 					<Button
 						variant="ghost"
 						size="icon"
+						className={buttonClassName}
 						onClick={() => setIsMenuOpen(false)}
 					>
 						<X className="h-6 w-6" />
@@ -105,7 +108,13 @@ export function Header({
 				)}
 			</div>
 
-			<MobileMenu links={links} isOpen={isMenuOpen} />
+			<MobileMenu
+				className={mobileMenuClassName}
+				prefix={prefix}
+				links={links}
+				isOpen={isMenuOpen}
+				onClose={() => setIsMenuOpen(false)}
+			/>
 		</header>
 	);
 }
