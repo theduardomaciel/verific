@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 
 export interface MainNavProps {
 	prefix: string; // Prefixo para as rotas
+	buttonClassName?: string; // Classe CSS para o botão
 	links: {
 		href: string;
 		label: string;
@@ -17,6 +18,7 @@ export interface MainNavProps {
 
 export default function MainNav({
 	className,
+	buttonClassName,
 	prefix,
 	links,
 	...props
@@ -73,7 +75,10 @@ export default function MainNav({
 							asChild
 						>
 							<Link
-								className="font-medium whitespace-nowrap"
+								className={cn(
+									"font-medium whitespace-nowrap",
+									buttonClassName,
+								)}
 								href={href}
 								ref={isActive ? activeButtonRef : null}
 							>

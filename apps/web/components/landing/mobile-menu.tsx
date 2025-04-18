@@ -1,14 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { ThemeSwitcher } from "@/components/theme-switcher";
+
 import { cn } from "@/lib/utils";
 
+// Components
+import { ThemeSwitcher } from "@/components/theme-switcher";
+
 interface MobileMenuProps {
+	links: {
+		href: string;
+		label: string;
+		className?: string;
+	}[];
 	isOpen: boolean;
 }
 
-export function MobileMenu({ isOpen }: MobileMenuProps) {
+export function MobileMenu({ links, isOpen }: MobileMenuProps) {
 	return (
 		<div
 			className={cn(
@@ -19,15 +27,18 @@ export function MobileMenu({ isOpen }: MobileMenuProps) {
 			)}
 		>
 			<nav className="flex h-full flex-col items-start justify-center space-y-12 px-8 pb-16">
-				<Link href="#" className="text-xl font-medium">
-					Sobre o projeto
-				</Link>
-				<Link href="#" className="text-xl font-medium">
-					Funcionalidades
-				</Link>
-				<Link href="#" className="text-xl font-medium">
-					FAQ
-				</Link>
+				{links.map((link) => (
+					<Link
+						key={`${link.href}-${link.label}`}
+						href={link.href}
+						className={cn(
+							"hover:text-primary text-2xl font-medium",
+							link.className,
+						)}
+					>
+						{link.label}
+					</Link>
+				))}
 
 				<ThemeSwitcher />
 			</nav>
