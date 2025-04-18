@@ -1,7 +1,7 @@
 // Components
-import MainNav, { type MainNavProps } from "./page-link";
-import ProjectSwitcher from "./project-switcher";
-import UserNav from "./user-nav";
+import MainNav, { type MainNavProps } from "@/components/header/main-nav";
+import { ProjectSwitcher } from "./project-switcher";
+import { UserNav } from "./user-nav";
 
 interface Props {
 	prefix: MainNavProps["prefix"];
@@ -10,7 +10,7 @@ interface Props {
 	showAccountActions?: boolean;
 }
 
-export function Header({
+export function DashboardHeader({
 	prefix,
 	links,
 	showProjectSwitcher = true,

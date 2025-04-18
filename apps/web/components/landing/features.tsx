@@ -2,7 +2,13 @@ import { Badge } from "@/components/ui/badge";
 
 export function Features() {
 	return (
-		<section className="px-landing container w-full gap-9 pt-16">
+		<section
+			id="features"
+			// GAMBIARRA: o original é "pt-16", mas para a âncora funcionar corretamente,
+			// somamos o offset que queremos que a âncora tenha (neste caso, 8 * 4 = 32px)
+			// e subtraímos esse valor com margin-top negativo
+			className="px-landing container -mt-8 w-full gap-9 pt-24"
+		>
 			<div className="mb-6 flex justify-center">
 				<Badge className="rounded-full px-4 py-1.5 font-semibold">
 					Funcionalidades
