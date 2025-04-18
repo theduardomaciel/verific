@@ -8,18 +8,18 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 export interface MainNavProps {
-	prefix: string; // Prefixo para as rotas
-	buttonClassName?: string; // Classe CSS para o botão
+	prefix?: string; // Prefixo para as rotas
 	links: {
 		href: string;
 		label: string;
+		className?: string; // Classe CSS adicional para o link
+		activeClassName?: string; // Classe CSS adicional para o link ativo
 	}[];
 }
 
 export default function MainNav({
 	className,
-	buttonClassName,
-	prefix,
+	prefix = "",
 	links,
 	...props
 }: React.HTMLAttributes<HTMLElement> & MainNavProps) {
@@ -77,7 +77,10 @@ export default function MainNav({
 							<Link
 								className={cn(
 									"font-medium whitespace-nowrap",
-									buttonClassName,
+									link.className,
+									{
+										[link.activeClassName ?? ""]: isActive,
+									},
 								)}
 								href={href}
 								ref={isActive ? activeButtonRef : null}

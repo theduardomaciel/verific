@@ -15,8 +15,8 @@ export default function EventPage() {
 	return (
 		<main className="bg-background min-h-screen">
 			{/* Hero Section */}
-			<section className="from-primary bg-primary relative w-full px-4 py-12 md:px-8">
-				<div className="z-10 mx-auto flex max-w-7xl flex-col gap-8 md:flex-row">
+			<section className="from-primary bg-primary relative w-full py-12">
+				<div className="z-10 container mx-auto flex w-full flex-col gap-8 md:flex-row">
 					<div className="z-10 flex flex-1 flex-col items-start justify-center">
 						<h1 className="mb-4 text-5xl font-bold text-white">
 							SECOMP 2024
@@ -31,14 +31,14 @@ export default function EventPage() {
 						<div className="mb-8 flex flex-wrap gap-3">
 							<Badge
 								variant={"secondary"}
-								className="rounded-xl px-4 py-1.5"
+								className="rounded-xl bg-white px-4 py-1.5"
 							>
 								<Check className="mr-2 !h-4 !w-4" />
 								<span>Aberto para o público externo</span>
 							</Badge>
 							<Badge
 								variant={"secondary"}
-								className="rounded-xl px-4 py-1.5"
+								className="rounded-xl bg-white px-4 py-1.5"
 							>
 								<TicketCheck className="mr-2 !h-4 !w-4" />
 								<span>Emite certificado</span>
@@ -48,22 +48,22 @@ export default function EventPage() {
 						<Button
 							size={"lg"}
 							variant={"secondary"}
-							className="h-fit !px-12 py-3 text-base font-semibold max-md:w-full"
+							className="h-fit !px-12 py-3 text-base font-semibold text-white max-md:w-full"
 						>
 							INSCREVER-SE
 						</Button>
 					</div>
 
 					{/* Share card */}
-					<div className="border-primary relative z-20 w-full max-w-md rounded-lg p-8">
+					<div className="relative z-20 flex items-center justify-center">
 						<Image
 							src="/images/cover.png"
 							alt="SECOMP24"
-							width={500}
+							width={400}
 							height={240}
-							className="border-primary overflow-hidden rounded-3xl border-2"
+							className="border-primary max-w-md overflow-hidden rounded-3xl border-2"
 						/>
-						<Button className="absolute bottom-3 left-1/2 h-10 -translate-x-1/2 !px-6">
+						<Button className="absolute -bottom-4 left-1/2 h-10 -translate-x-1/2 !px-6">
 							<Share2 className="h-5 w-5" />
 							<span>Compartilhar</span>
 						</Button>
@@ -79,7 +79,7 @@ export default function EventPage() {
 			</section>
 
 			{/* Content Section */}
-			<section className="mx-auto max-w-7xl px-4 py-12 md:px-8">
+			<section className="container mx-auto py-12">
 				<div className="flex flex-col gap-16 lg:flex-row">
 					<div className="lg:w-2/3">
 						<h2 className="mb-6 text-2xl font-bold">
