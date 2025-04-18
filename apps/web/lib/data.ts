@@ -20,8 +20,8 @@ const projects: Project[] = [
 		isArchived: false,
 		coverUrl: "https://github.com/mauro-balades.png",
 		thumbnailUrl: "https://github.com/mauro-balades.png",
-		primaryColor: "#123456",
-		secondaryColor: "#654321",
+		primaryColor: "#5B15B5",
+		secondaryColor: "#22BEA0",
 		startDate: new Date("2025-05-01"),
 		endDate: new Date("2025-05-07"),
 		createdAt: new Date("2025-01-01"),
@@ -536,6 +536,10 @@ export function getParticipants({
 			resolve(paginatedMembers);
 		}, 500);
 	});
+}
+
+export function getEventById(id: string): Project | undefined {
+	return projects.find((project) => project.id === id);
 }
 
 export function formatFriendlyDate(date: Date, includeDay: boolean): string {

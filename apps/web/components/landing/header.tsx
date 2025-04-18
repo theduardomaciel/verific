@@ -17,19 +17,16 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { MobileMenu } from "../landing/mobile-menu";
-import MainNav from "@/components/header/main-nav";
+import { MobileMenu } from "./mobile-menu";
+import MainNav, { MainNavProps } from "@/components/main-nav";
 
 interface Props {
 	className?: string;
 	prefix?: string;
-	links: {
-		href: string;
-		label: string;
-		className?: string;
-	}[];
+	links: MainNavProps["links"];
 	logo?: React.ReactNode;
 	buttonClassName?: string;
+	languageSelectorClassName?: string;
 }
 
 export function Header({
@@ -38,6 +35,7 @@ export function Header({
 	links,
 	logo,
 	buttonClassName,
+	languageSelectorClassName,
 }: Props) {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -52,18 +50,16 @@ export function Header({
 				<Link href="#">{logo ?? <Logo className="h-6" />}</Link>
 
 				<nav className="hidden items-center gap-9 md:flex">
-					<MainNav
-						buttonClassName="hover:text-primary text-sm font-medium !bg-transparent"
-						prefix={prefix ?? ""}
-						links={links}
-					/>
+					<MainNav prefix={prefix} links={links} />
 
 					<div className="flex items-center gap-4">
 						<Select
 							defaultValue="pt"
 							onValueChange={(value) => console.log(value)}
 						>
-							<SelectTrigger>
+							<SelectTrigger
+								className={languageSelectorClassName}
+							>
 								<SelectValue placeholder="Selecione o idioma" />
 							</SelectTrigger>
 							<SelectContent>

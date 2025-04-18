@@ -1,4 +1,4 @@
-import { Header } from "@/components/header/landing";
+import { Header } from "@/components/landing/header";
 import { Hero } from "@/components/landing/hero";
 import { Screenshots } from "@/components/landing/screenshots";
 import { TrustedBy } from "@/components/landing/trusted-by";

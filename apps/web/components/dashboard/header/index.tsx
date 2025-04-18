@@ -1,5 +1,5 @@
 // Components
-import MainNav, { type MainNavProps } from "@/components/header/main-nav";
+import MainNav, { type MainNavProps } from "@/components/main-nav";
 import { ProjectSwitcher } from "./project-switcher";
 import { UserNav } from "./user-nav";
 
