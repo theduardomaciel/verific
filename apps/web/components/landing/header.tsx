@@ -2,18 +2,21 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+
 import { Menu, X } from "lucide-react";
-import { MobileMenu } from "./mobile-menu";
-import { Brand } from "./brand";
+
+// Components
+import { Button } from "@/components/ui/button";
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from "../ui/select";
-import { ThemeSwitcher } from "../theme-switcher";
+} from "@/components/ui/select";
+import { ThemeSwitcher } from "@/components/theme-switcher";
+import { MobileMenu } from "./mobile-menu";
+import { Brand } from "./brand";
 
 export function Header() {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);

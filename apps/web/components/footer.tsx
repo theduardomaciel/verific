@@ -40,15 +40,17 @@ function Footer({
 					{/* Brand */}
 					<div className="flex items-center gap-3">
 						{showWatermark && (
-							<>
-								<span className="text-sm font-medium">
-									Feito com tecnologia
-								</span>
-								<div className="bg-foreground hidden h-3 w-[1px] rounded-full md:flex" />
-							</>
+							<span className="text-sm font-medium">
+								Feito com tecnologia
+							</span>
 						)}
-						<Logo className="text-foreground h-5" />
+						<Link href={`/`}>
+							<Logo className="text-foreground h-5" />
+						</Link>
 					</div>
+					{showWatermark && (
+						<div className="bg-foreground hidden h-3 w-[1px] rounded-full md:flex" />
+					)}
 					{/* Links */}
 					<nav className="flex flex-row flex-wrap gap-2 space-x-2 md:space-x-4">
 						<Link
