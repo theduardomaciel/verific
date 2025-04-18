@@ -82,30 +82,37 @@ export function Header({
 					</div>
 				</nav>
 
-				{isMenuOpen ? (
-					<Button
-						variant="ghost"
-						size="icon"
-						className={buttonClassName}
-						onClick={() => setIsMenuOpen(false)}
-					>
-						<X className="h-6 w-6" />
-						<span className="sr-only">Close menu</span>
-					</Button>
-				) : (
-					<Button
-						variant="ghost"
-						size="icon"
+				<Button
+					variant="ghost"
+					size="icon"
+					className={cn(
+						"text-primary bg-primary/10 relative rounded-md md:hidden",
+						buttonClassName,
+					)}
+					onClick={() => setIsMenuOpen(!isMenuOpen)}
+				>
+					<X
 						className={cn(
-							"text-primary bg-primary/10 rounded-md md:hidden",
-							buttonClassName,
+							"absolute top-1/2 left-1/2 h-8 w-8 -translate-1/2 transition-all",
+							{
+								"scale-100": isMenuOpen,
+								"scale-0": !isMenuOpen,
+							},
 						)}
-						onClick={() => setIsMenuOpen(true)}
-					>
-						<Menu className="h-6 w-6" />
-						<span className="sr-only">Toggle menu</span>
-					</Button>
-				)}
+					/>
+					<Menu
+						className={cn(
+							"absolute top-1/2 left-1/2 h-8 w-8 -translate-1/2 transition-all",
+							{
+								"scale-100": !isMenuOpen,
+								"scale-0": isMenuOpen,
+							},
+						)}
+					/>
+					<span className="sr-only">
+						{isMenuOpen ? "Close menu" : "Toggle menu"}
+					</span>
+				</Button>
 			</div>
 
 			<MobileMenu
