@@ -10,12 +10,17 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 
-export default function EventPage() {
+export default async function EventPage({
+	params,
+}: Readonly<{ params: { id: string } }>) {
+	const id = await params.id;
+
 	return (
 		<main className="bg-background min-h-screen">
 			{/* Hero Section */}
-			<section className="from-primary bg-primary relative w-full py-12">
+			<section className="from-primary bg-primary px-landing relative w-full py-12">
 				<div className="z-10 container mx-auto flex w-full flex-col gap-8 md:flex-row">
 					<div className="z-10 flex flex-1 flex-col items-start justify-center">
 						<h1 className="mb-4 text-5xl font-bold text-white">
@@ -45,12 +50,13 @@ export default function EventPage() {
 							</Badge>
 						</div>
 
-						<Button
-							size={"lg"}
-							variant={"secondary"}
-							className="h-fit !px-12 py-3 text-base font-semibold text-white max-md:w-full"
-						>
-							INSCREVER-SE
+						<Button asChild size={"lg"} variant={"secondary"}>
+							<Link
+								href={`/event/${id}/subscribe`}
+								className="h-fit !px-12 py-3 text-base font-semibold text-white max-md:w-full"
+							>
+								INSCREVER-SE
+							</Link>
 						</Button>
 					</div>
 
@@ -79,8 +85,8 @@ export default function EventPage() {
 			</section>
 
 			{/* Content Section */}
-			<section className="container mx-auto py-12">
-				<div className="flex flex-col gap-16 lg:flex-row">
+			<section className="px-landing py-12">
+				<div className="container mx-auto flex flex-col gap-16 lg:flex-row">
 					<div className="lg:w-2/3">
 						<h2 className="mb-6 text-2xl font-bold">
 							Descrição do Evento

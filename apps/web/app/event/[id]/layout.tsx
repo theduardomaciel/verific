@@ -19,6 +19,7 @@ const EVENT_LINKS = [
 		className:
 			"hover:text-primary-foreground/90 text-primary-foreground text-sm hover:bg-transparent",
 		activeClassName: "!bg-primary-foreground !text-primary",
+		mobileClassName: "text-primary-foreground",
 	},
 	{
 		href: "/schedule",
@@ -26,6 +27,7 @@ const EVENT_LINKS = [
 		className:
 			"hover:text-primary-foreground/90 text-primary-foreground text-sm hover:bg-transparent",
 		activeClassName: "!bg-primary-foreground !text-primary",
+		mobileClassName: "text-primary-foreground",
 	},
 	{
 		href: "/subscribe",
@@ -33,6 +35,8 @@ const EVENT_LINKS = [
 		className:
 			"hover:text-primary-foreground hover:bg-secondary border-secondary font-semibold uppercase border text-primary-foreground text-xs",
 		activeClassName: "!text-primary-foreground !bg-secondary",
+		mobileClassName:
+			"text-primary-foreground uppercase py-3 border border-secondary w-full rounded text-center items-center text-sm bg-secondary",
 	},
 ] as MainNavProps["links"];
 
@@ -65,6 +69,7 @@ export default async function EventLayout({
 		>
 			<Header
 				className="!bg-primary border-none py-0"
+				mobileMenuClassName={"bg-primary"}
 				buttonClassName="bg-primary text-white text-primary-foreground !hover:bg-white"
 				languageSelectorClassName={
 					"border-none bg-transparent shadow-none text-primary-foreground"

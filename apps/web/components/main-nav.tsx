@@ -14,6 +14,7 @@ export interface MainNavProps {
 		label: string;
 		className?: string; // Classe CSS adicional para o link
 		activeClassName?: string; // Classe CSS adicional para o link ativo
+		mobileClassName?: string; // Classe CSS adicional para o link no mobile
 	}[];
 }
 
