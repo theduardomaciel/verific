@@ -3,7 +3,6 @@ import type { getActivitiesParams } from "@verific/api/routers/activities";
 import { Activity } from "./types/activity";
 import { Participant } from "./types/participant";
 import { Project } from "./types/project";
-import { ParticipantOnActivity } from "./types/participant-on-activity";
 import { Speaker } from "./types/speaker";
 
 const now = new Date();

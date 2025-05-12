@@ -15,12 +15,13 @@ import Link from "next/link";
 export default async function EventPage({
 	params,
 }: Readonly<{ params: { id: string } }>) {
-	const id = await params.id;
+	const fetched = await params;
+	const id = fetched.id;
 
 	return (
 		<main className="bg-background min-h-screen">
 			{/* Hero Section */}
-			<section className="from-primary bg-primary px-landing relative w-full py-12">
+			<section className="from-primary bg-primary px-landing border-secondary relative w-full border-b-[10px] py-12">
 				<div className="z-10 container mx-auto flex w-full flex-col gap-8 md:flex-row">
 					<div className="z-10 flex flex-1 flex-col items-start justify-center">
 						<h1 className="mb-4 text-5xl font-bold text-white">
@@ -36,14 +37,14 @@ export default async function EventPage({
 						<div className="mb-8 flex flex-wrap gap-3">
 							<Badge
 								variant={"secondary"}
-								className="rounded-xl bg-white px-4 py-1.5"
+								className="text-primary rounded-xl bg-white px-4 py-1.5"
 							>
 								<Check className="mr-2 !h-4 !w-4" />
 								<span>Aberto para o público externo</span>
 							</Badge>
 							<Badge
 								variant={"secondary"}
-								className="rounded-xl bg-white px-4 py-1.5"
+								className="text-primary rounded-xl bg-white px-4 py-1.5"
 							>
 								<TicketCheck className="mr-2 !h-4 !w-4" />
 								<span>Emite certificado</span>
@@ -86,7 +87,7 @@ export default async function EventPage({
 
 			{/* Content Section */}
 			<section className="px-landing py-12">
-				<div className="container mx-auto flex flex-col gap-16 lg:flex-row">
+				<div className="container mx-auto flex flex-col gap-16 lg:flex-row relative">
 					<div className="lg:w-2/3">
 						<h2 className="mb-6 text-2xl font-bold">
 							Descrição do Evento
@@ -221,7 +222,7 @@ export default async function EventPage({
 						</div>
 					</div>
 
-					<div className="lg:w-1/3">
+					<div className="lg:w-1/3 sticky top-16 right-0">
 						<div className="mb-6 rounded-lg border p-6">
 							<h3 className="mb-4 text-xl font-medium">Local</h3>
 							<p className="mb-4">

@@ -15,16 +15,16 @@ export const metadata: Metadata = {
 export default function LoginPage() {
 	return (
 		<div className="flex min-h-screen flex-col md:flex-row">
-			<div className="bg-primary relative flex flex-col justify-center gap-4 overflow-hidden rounded-b bg-[linear-gradient(180deg,_#2563EB_0%,_#3B82F6_100%)] p-6 md:m-8 md:w-1/2 md:justify-between md:rounded md:p-12">
-				<h1 className="font-dashboard text-secondary z-10 hidden text-4xl leading-[110%] font-extrabold tracking-normal md:flex md:text-5xl">
+			<div className="bg-primary relative flex flex-col justify-center gap-4 overflow-hidden rounded-b bg-[linear-gradient(180deg,_#2563EB_0%,_#3B82F6_100%)] p-6 md:m-8 md:w-1/2 md:justify-between md:rounded md:p-12 text-white">
+				<h1 className="font-dashboard text-white z-10 hidden text-4xl leading-[110%] font-extrabold tracking-normal md:flex md:text-6xl">
 					Tecnologia de eventos ao seu alcance
 				</h1>
 
-				<Ticket className="absolute -right-48 bottom-48 z-0 rotate-12 text-white md:-bottom-36" />
+				<Ticket className="absolute -right-48 bottom-48 z-0 rotate-12 md:-bottom-36" />
 
-				<div className="relative z-10 flex flex-col gap-3 text-white max-md:py-6 md:items-start">
+				<div className="relative z-10 flex flex-col gap-3 max-md:py-6 md:items-start">
 					<Logo className="h-10 md:h-8" />
-					<p className="text-secondary hidden text-xs leading-none font-normal tracking-normal opacity-80 md:flex">
+					<p className="text-white/90 hidden text-xs leading-none font-normal tracking-normal opacity-80 md:flex">
 						Copyright 2025 verifIC. Todos os direitos reservados
 					</p>
 				</div>
