@@ -10,13 +10,6 @@ import Logo from "@/public/logo.svg";
 
 // Components
 import { Button } from "@/components/ui/button";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { MobileMenu } from "./mobile-menu";
 import MainNav, { MainNavProps } from "@/components/main-nav";
 
@@ -49,12 +42,16 @@ export function Header({
 			)}
 		>
 			<div className="container flex w-full items-center justify-between py-8 md:py-4">
-				<Link href="#">{logo ?? <Logo className="h-6" />}</Link>
+				{logo ?? (
+					<Link href="/">
+						<Logo className="h-6" />
+					</Link>
+				)}
 
 				<nav className="hidden items-center gap-9 md:flex">
 					<MainNav prefix={prefix} links={links} />
 
-					<div className="flex items-center gap-4">
+					{/* <div className="flex items-center gap-4">
 						<Select
 							defaultValue="pt"
 							onValueChange={(value) => console.log(value)}
@@ -79,7 +76,7 @@ export function Header({
 								</SelectItem>
 							</SelectContent>
 						</Select>
-					</div>
+					</div> */}
 				</nav>
 
 				<Button

@@ -51,7 +51,7 @@ Um sistema de credenciamento para eventos acadêmicos
 - `[Banco de dados]` Neon (PostgreSQL)
 - `[Hospedagem]` Vercel
 
-> [!WARNING]
+> [!NOTE]
 > O projeto ainda está em desenvolvimento, portanto, diversos aspectos estarão inacabados e/ou não funcionais à medida que a aplicação torna-se mais robusta.
 
 <br />
@@ -82,7 +82,7 @@ pnpm install --global turbo dotenv-cli
 git clone https://github.com/theduardomaciel/verific.git
 ```
 
-> [!WARNING]
+> [!NOTE]
 > Para clonar o repositório você precisará ter o `git` instalado na sua máquina. Caso não tenha, você pode [baixá-lo aqui](https://git-scm.com/downloads).
 
 3. Após clonar o repositório, basta entrar na pasta do repositório clonado e acessar o projeto por meio de um editor de texto ou IDE de preferência, como o VSCode:

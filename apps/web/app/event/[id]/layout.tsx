@@ -6,6 +6,7 @@ import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/footer";
 import { getEventById } from "@/lib/data";
 import { MainNavProps } from "@/components/main-nav";
+import Link from "next/link";
 
 const rem = REM({
 	variable: "--font-rem",
@@ -47,10 +48,11 @@ export default async function EventLayout({
 	children: React.ReactNode;
 	params: { id: string };
 }>) {
-	const id = await params.id;
-	const event = await getEventById(id);
+	const fetched = await params;
+	const event = await getEventById(fetched.id);
 
 	if (!event) {
+		console.error("Event not found", { eventId: fetched.id });
 		notFound();
 	}
 
@@ -63,26 +65,28 @@ export default async function EventLayout({
 					"--secondary": event.secondaryColor,
 					"--accent":
 						"color-mix(in oklab, var(--foreground) 2%, transparent)",
-					"--accent-foreground": event.primaryColor,
+					"--accent-foreground": "var(--foreground)",
 				} as React.CSSProperties
 			}
 		>
 			<Header
 				className="!bg-primary border-none py-0"
 				mobileMenuClassName={"bg-primary"}
-				buttonClassName="bg-primary text-white text-primary-foreground !hover:bg-white"
+				buttonClassName="bg-primary text-white text-primary-foreground !hover:text-white"
 				languageSelectorClassName={
 					"border-none bg-transparent shadow-none text-primary-foreground"
 				}
 				links={EVENT_LINKS}
-				prefix={`/event/${id}`}
+				prefix={`/event/${fetched.id}`}
 				logo={
-					<Image
-						src={"/images/secomp.png"}
-						width={150}
-						height={28}
-						alt="Event logo"
-					/>
+					<Link href={`/event/${fetched.id}`}>
+						<Image
+							src={"/images/secomp.png"}
+							width={150}
+							height={28}
+							alt="Event logo"
+						/>
+					</Link>
 				}
 			/>
 			{children}
