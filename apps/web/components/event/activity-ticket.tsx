@@ -69,25 +69,38 @@ export function ActivityTicket({
 							</div>
 						)}
 
-						<div className="mb-6 flex items-center">
+						<div className="mb-6 flex w-full items-center justify-between">
 							<span className="text-xl">{startTime}</span>
-							<div className="mx-3 flex items-center">
-								{Array(7)
-									.fill(0)
-									.map((_, i) => (
-										<>
-											{i > 0 && (
+							<div className="mx-4 flex flex-1 items-center justify-center md:mx-8">
+								<div className="relative flex h-4 w-full items-center">
+									<div className="bg-foreground absolute top-1/2 left-0 h-0.5 w-full -translate-y-1/2" />
+									<span className="block md:hidden">
+										{Array(3)
+											.fill(0)
+											.map((_, i) => (
 												<div
-													key={`line-${i}`}
-													className="bg-foreground h-[1px] w-4"
-												></div>
-											)}
-											<div
-												key={`dot-${i}`}
-												className="bg-foreground h-1 w-1 rounded-full"
-											></div>
-										</>
-									))}
+													key={`dot-${i}`}
+													className="bg-foreground absolute top-1/2 h-2 w-2 -translate-y-1/2 rounded-full"
+													style={{
+														left: `${(i / 2) * 100}%`,
+													}}
+												/>
+											))}
+									</span>
+									<span className="hidden md:block">
+										{Array(7)
+											.fill(0)
+											.map((_, i) => (
+												<div
+													key={`dot-${i}`}
+													className="bg-foreground absolute top-1/2 h-2 w-2 -translate-y-1/2 rounded-full"
+													style={{
+														left: `${(i / 6) * 100}%`,
+													}}
+												/>
+											))}
+									</span>
+								</div>
 							</div>
 							<span className="text-xl">{endTime}</span>
 						</div>
@@ -106,13 +119,13 @@ export function ActivityTicket({
 						{speakerName && (
 							<div className="bg-card mb-6 rounded-lg border p-4">
 								<div className="flex">
-									<div className="mr-3 h-12 w-12 overflow-hidden rounded-full bg-gray-500">
+									<div className="mr-3 h-12 min-h-12 w-12 min-w-12 overflow-hidden rounded-full bg-gray-500">
 										<Image
 											src={
 												speakerImage ||
 												"/placeholder.svg?height=48&width=48"
 											}
-											alt={speakerName}
+											alt={""}
 											width={48}
 											height={48}
 											className="aspect-square object-cover"
