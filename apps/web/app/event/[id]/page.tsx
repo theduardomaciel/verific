@@ -14,7 +14,9 @@ import Link from "next/link";
 
 export default async function EventPage({
 	params,
-}: Readonly<{ params: { id: string } }>) {
+}: {
+	params: Promise<{ id: string }>;
+}) {
 	const fetched = await params;
 	const id = fetched.id;
 
