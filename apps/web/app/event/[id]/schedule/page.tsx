@@ -37,7 +37,7 @@ export default function EventSchedulePage() {
 					fill
 				/>
 			</section>
-			<div className="px-landing mx-auto flex w-full max-w-6xl flex-col items-center justify-center pt-16">
+			<div className="px-landing mx-auto flex w-full flex-col items-center justify-center pt-16">
 				<div className="container mb-8 flex flex-col justify-between gap-4 md:flex-row">
 					<SearchBar placeholder="Pesquisar atividades" />
 					<div className="flex gap-4">

@@ -22,7 +22,7 @@ export default async function EventPage({
 		<main className="bg-background min-h-screen">
 			{/* Hero Section */}
 			<section className="from-primary bg-primary px-landing border-secondary relative w-full border-b-[10px] py-12">
-				<div className="z-10 container mx-auto flex w-full flex-col gap-8 md:flex-row">
+				<div className="container-p z-10 mx-auto flex w-full flex-col gap-8 md:flex-row">
 					<div className="z-10 flex flex-1 flex-col items-start justify-center">
 						<h1 className="mb-4 text-5xl font-bold text-white">
 							SECOMP 2024
@@ -87,7 +87,7 @@ export default async function EventPage({
 
 			{/* Content Section */}
 			<section className="px-landing py-12">
-				<div className="container mx-auto flex flex-col gap-16 lg:flex-row relative">
+				<div className="relative container mx-auto flex flex-col gap-16 lg:flex-row">
 					<div className="lg:w-2/3">
 						<h2 className="mb-6 text-2xl font-bold">
 							Descrição do Evento
@@ -222,7 +222,7 @@ export default async function EventPage({
 						</div>
 					</div>
 
-					<div className="lg:w-1/3 sticky top-16 right-0">
+					<div className="sticky top-16 right-0 lg:w-1/3">
 						<div className="mb-6 rounded-lg border p-6">
 							<h3 className="mb-4 text-xl font-medium">Local</h3>
 							<p className="mb-4">

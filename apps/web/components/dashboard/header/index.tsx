@@ -17,8 +17,8 @@ export function DashboardHeader({
 	showAccountActions = true,
 }: Props) {
 	return (
-		<div className="flex w-full flex-col items-center gap-6 border-b py-4 md:flex-row-reverse">
-			<div className="px-dashboard flex items-center justify-between gap-6 max-md:w-full md:ml-auto">
+		<div className="container-p flex w-full flex-col items-center gap-6 border-b py-4 md:flex-row-reverse">
+			<div className="flex items-center justify-between gap-6 max-md:w-full md:ml-auto">
 				{showProjectSwitcher && <ProjectSwitcher />}
 				<UserNav showAccountActions={showAccountActions} />
 			</div>

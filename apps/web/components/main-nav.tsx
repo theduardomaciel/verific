@@ -64,7 +64,7 @@ export default function MainNav({
 			)}
 			{...props}
 		>
-			<nav className="flex min-w-fit items-center justify-start gap-4 px-4">
+			<nav className="flex min-w-fit items-center justify-start gap-4">
 				{links.map((link) => {
 					const href = prefix + link.href;
 					const isActive = isLinkActive(href);

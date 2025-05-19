@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 
 export function LandingFooter() {
 	return (
-		<div className="bg-muted flex w-full flex-col gap-10 rounded-t-3xl px-6 pt-6 pb-6 md:px-12 md:pt-16">
+		<div className="bg-muted container-p flex w-full flex-col gap-10 rounded-t-3xl pt-6 pb-6 md:pt-16">
 			<div className="flex w-full flex-col items-start justify-start gap-10 md:flex-row md:justify-between">
 				<div className="flex flex-col items-start justify-start gap-6">
 					<h6 className="!max-w-[60%] text-3xl font-bold">

@@ -75,7 +75,7 @@ export default async function ActivityPage(props: {
 	const timeTo = getTimeString(activity.dateTo);
 
 	return (
-		<main className="p-dashboard flex min-h-screen flex-col items-center justify-start gap-9">
+		<main className="py-container container-p flex min-h-screen flex-col items-center justify-start gap-9">
 			<div className="flex w-full flex-col items-start justify-start gap-4">
 				<div className="flex w-full flex-row flex-wrap items-start justify-between gap-4">
 					<h1 className="font-title text-foreground max-w-full text-4xl font-extrabold md:text-5xl lg:max-w-[60%]">

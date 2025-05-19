@@ -90,8 +90,8 @@ export default async function EventLayout({
 				}
 			/>
 			{children}
-			<div className="px-landing flex w-full items-center justify-center py-6">
-				<div className="bg-primary container w-full rounded-xl md:rounded-full">
+			<div className="container-p flex w-full items-center justify-center py-6">
+				<div className="bg-primary w-full rounded-xl md:rounded-full">
 					<Footer
 						className="border-none px-4 py-4 !text-white md:px-12"
 						showWatermark
