@@ -41,7 +41,7 @@ export default function AccountSettingsLayout({
 	children: React.ReactNode;
 }) {
 	return (
-		<main className="px-dashboard relative container mx-auto min-h-screen max-w-6xl py-8">
+		<main className="container-p relative mx-auto min-h-screen max-w-7xl py-8">
 			<h1 className="text-foreground mb-8 text-3xl font-bold">
 				Configurações
 			</h1>

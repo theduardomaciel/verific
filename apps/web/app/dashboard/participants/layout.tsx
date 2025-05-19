@@ -8,9 +8,9 @@ export default function Layout({
 	modal: React.ReactNode;
 }) {
 	return (
-		<div>
+		<>
 			{modal}
 			{children}
-		</div>
+		</>
 	);
 }

@@ -11,8 +11,8 @@ const footerVariants = cva(
 	{
 		variants: {
 			variant: {
-				landing: "bg-transparent text-foreground",
-				dashboard: "bg-transparent text-foreground border-t",
+				landing: "bg-transparent",
+				dashboard: "bg-transparent border-t",
 			},
 		},
 		defaultVariants: {
@@ -32,46 +32,51 @@ function Footer({
 	}) {
 	return (
 		<footer
-			className={cn(footerVariants({ variant, className }))}
+			className={cn(
+				"text-foreground",
+				footerVariants({ variant, className }),
+			)}
 			{...props}
 		>
-			<div className="flex w-full flex-row flex-wrap items-start justify-start gap-4 md:items-center md:justify-between">
+			<div className="container-p flex w-full flex-row flex-wrap items-start justify-start gap-4 md:items-center md:justify-between">
 				<div className="xs:justify-between flex flex-row flex-wrap items-center justify-start gap-3 max-md:w-full md:gap-8">
 					{/* Brand */}
 					<div className="flex items-center gap-3">
 						{showWatermark && (
-							<>
-								<span className="text-sm font-medium">
-									Feito com tecnologia
-								</span>
-								<div className="bg-foreground hidden h-3 w-[1px] rounded-full md:flex" />
-							</>
+							<span className="text-sm font-medium">
+								Feito com tecnologia
+							</span>
 						)}
-						<Logo className="text-foreground h-5" />
+						<Link href={`/`}>
+							<Logo className="h-5" />
+						</Link>
 					</div>
+					{showWatermark && (
+						<div className="hidden h-3 w-[1px] rounded-full bg-[currentColor] md:flex" />
+					)}
 					{/* Links */}
 					<nav className="flex flex-row flex-wrap gap-2 space-x-2 md:space-x-4">
 						<Link
 							href="/help"
-							className="text-foreground hover:text-muted-foreground text-xs transition-colors"
+							className="text-xs transition-colors hover:opacity-80"
 						>
 							Ajuda
 						</Link>
 						<Link
 							href="/privacy"
-							className="text-foreground hover:text-muted-foreground text-xs transition-colors"
+							className="text-xs transition-colors hover:opacity-80"
 						>
 							Política de Privacidade
 						</Link>
 						<Link
 							href="/terms"
-							className="text-foreground hover:text-muted-foreground text-xs transition-colors"
+							className="text-xs transition-colors hover:opacity-80"
 						>
 							Termos de Uso
 						</Link>
 					</nav>
 				</div>
-				<p className="text-foreground/50 text-xs">
+				<p className="text-xs text-[currentColor] opacity-50">
 					Copyright 2025 verifIC. Todos os direitos reservados
 				</p>
 			</div>

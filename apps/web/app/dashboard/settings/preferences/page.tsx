@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { ExternalLink, Mail } from "lucide-react";
-import CertificatePlaceholder from "@/public/screenshots/certificate-placeholder.png";
+import CertificatePlaceholder from "@/public/images/certificate-placeholder.png";
 
 // Components
 import { SettingsCard } from "@/components/settings/settings-card";
