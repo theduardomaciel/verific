@@ -26,7 +26,9 @@ export default function DashboardLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<div className={`${rem.variable} flex w-full flex-1 flex-col`}>
+		<div
+			className={`${rem.variable} flex w-full flex-1 flex-col items-center`}
+		>
 			<DashboardHeader prefix={"/dashboard"} links={DASHBOARD_LINKS} />
 			{children}
 			<Footer />
