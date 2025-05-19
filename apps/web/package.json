@@ -4,7 +4,7 @@
 	"private": true,
 	"scripts": {
 		"dev": "next dev --turbopack",
-		"build": "next build",
+		"build": "tsx tools/scripts/codegen-css-colors.ts && next build",
 		"start": "next start",
 		"lint": "next lint",
 		"codegen:css-colors": "tsx tools/scripts/codegen-css-colors.ts"
