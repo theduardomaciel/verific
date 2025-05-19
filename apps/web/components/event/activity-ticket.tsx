@@ -129,40 +129,19 @@ export function ActivityTicket({
 								</div>
 							</div>
 						)}
-
-						{/* Scan button only visible on mobile for moderator */}
-						{isModerator && (
-							<Button className="mb-6 w-full" size={"lg"}>
-								<BarcodeIcon />
-								Escanear crachás
-							</Button>
-						)}
 					</div>
 
-					{/* Footer integrated into main section */}
-					<div className="mt-auto border-t pt-4">
-						{isModerator ? (
-							<div className="flex items-center justify-between">
-								<div className="text-muted-foreground flex items-center">
-									<User size={18} className="mr-2" />
-									<span>Participantes credenciados</span>
-								</div>
-								<div className="text-2xl font-bold">
-									{currentParticipants}
-								</div>
+					{isModerator && (
+						<div className="mt-auto hidden items-center justify-between border-t pt-4 md:flex">
+							<div className="text-muted-foreground flex items-center">
+								<User size={18} className="mr-2" />
+								<span>Participantes credenciados</span>
 							</div>
-						) : (
-							<div className="flex items-center justify-between">
-								<div className="text-muted-foreground flex items-center">
-									<Check size={18} className="mr-2" />
-									<span>Presença confirmada</span>
-								</div>
-								<div className="text-2xl font-bold">
-									{attendanceTime}
-								</div>
+							<div className="text-2xl font-bold">
+								{currentParticipants}
 							</div>
-						)}
-					</div>
+						</div>
+					)}
 				</div>
 
 				{/* Mobile: full width with fixed height - Desktop: fixed width with full height */}
@@ -265,29 +244,51 @@ export function ActivityTicket({
 				</div>
 
 				{/* Right section */}
-				<div className="bg-card flex w-full flex-col items-center justify-center p-6 md:w-64 md:pl-0">
+				<div className="bg-card flex w-full flex-col items-center justify-center px-6 md:w-64 md:pl-0">
 					{isModerator ? (
 						<>
-							<p className="mb-6 text-center">
-								Credencie os participantes do evento pelo seu
-								telefone!
-							</p>
-							<div className="flex space-x-4">
-								<AppleIcon className="flex h-6 w-5 items-center justify-center text-black dark:text-white" />
-								<AndroidIcon className="flex w-8 items-center justify-center" />
+							<div className="hidden w-full flex-col items-center justify-center py-6 md:flex">
+								<p className="mb-6 text-center">
+									Credencie os participantes do evento pelo
+									seu telefone!
+								</p>
+								<div className="flex space-x-4">
+									<AppleIcon className="flex h-6 w-5 items-center justify-center text-black dark:text-white" />
+									<AndroidIcon className="flex w-8 items-center justify-center" />
+								</div>
+							</div>
+							<div className="flex w-full flex-col items-center justify-center gap-6 py-6 md:hidden">
+								<Button
+									className="flex w-full md:hidden"
+									size={"lg"}
+								>
+									<BarcodeIcon />
+									Escanear crachás
+								</Button>
+								<div className="flex w-full items-center justify-between">
+									<div className="text-muted-foreground flex items-center">
+										<User size={18} className="mr-2" />
+										<span>Participantes credenciados</span>
+									</div>
+									<div className="text-2xl font-bold">
+										{currentParticipants}
+									</div>
+								</div>
 							</div>
 						</>
 					) : (
 						<>
-							<span className="flex flex-col items-center justify-center gap-3">
-								<Check size={36} />
-								<p className="mb-2 text-center">
-									Presença confirmada
-								</p>
-							</span>
-							<p className="text-4xl font-bold">
-								{attendanceTime}
-							</p>
+							<div className="flex w-full items-center justify-between py-8 md:flex-col md:items-center md:justify-center md:border-0 md:pt-0">
+								<div className="text-muted-foreground md:text-card-foreground flex items-center md:flex-col md:gap-3 md:text-center">
+									<Check className="mr-2 size-6 md:mr-0 md:size-12" />
+									<span className="md:mb-2">
+										Presença confirmada
+									</span>
+								</div>
+								<div className="text-2xl font-bold md:text-4xl">
+									{attendanceTime}
+								</div>
+							</div>
 						</>
 					)}
 				</div>
