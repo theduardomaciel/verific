@@ -3,7 +3,6 @@ import type { getActivitiesParams } from "@verific/api/routers/activities";
 import { Activity } from "./types/activity";
 import { Participant } from "./types/participant";
 import { Project } from "./types/project";
-import { ParticipantOnActivity } from "./types/participant-on-activity";
 import { Speaker } from "./types/speaker";
 
 const now = new Date();
@@ -20,8 +19,8 @@ const projects: Project[] = [
 		isArchived: false,
 		coverUrl: "https://github.com/mauro-balades.png",
 		thumbnailUrl: "https://github.com/mauro-balades.png",
-		primaryColor: "#123456",
-		secondaryColor: "#654321",
+		primaryColor: "oklch(0.42 0.218 293.94)",
+		secondaryColor: "oklch(0.72 0.129 175.29)",
 		startDate: new Date("2025-05-01"),
 		endDate: new Date("2025-05-07"),
 		createdAt: new Date("2025-01-01"),
@@ -536,6 +535,10 @@ export function getParticipants({
 			resolve(paginatedMembers);
 		}, 500);
 	});
+}
+
+export function getEventById(id: string): Project | undefined {
+	return projects.find((project) => project.id === id);
 }
 
 export function formatFriendlyDate(date: Date, includeDay: boolean): string {

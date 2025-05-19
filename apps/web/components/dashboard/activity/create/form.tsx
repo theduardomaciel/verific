@@ -54,7 +54,7 @@ export function MutateActivityFormContent({
 	return (
 		<div
 			className={
-				"relative flex w-full max-w-6xl flex-1 flex-col items-start justify-start gap-9 md:flex-row"
+				"relative flex w-full flex-1 flex-col items-start justify-start gap-9 md:flex-row"
 			}
 		>
 			<div className="flex h-full w-full flex-col items-start justify-start gap-9">

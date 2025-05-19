@@ -10,7 +10,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 interface Category {
 	id: string;
@@ -44,7 +44,12 @@ interface FilterListProps {
 	onItemChange: (id: string, checked: boolean) => void;
 }
 
-export function FilterList({ title, items, selectedItems, onItemChange }: FilterListProps) {
+export function FilterList({
+	title,
+	items,
+	selectedItems,
+	onItemChange,
+}: FilterListProps) {
 	const [isExpanded, setIsExpanded] = useState(false);
 
 	return (
@@ -56,9 +61,14 @@ export function FilterList({ title, items, selectedItems, onItemChange }: Filter
 						<Checkbox
 							id={`${title}-${item.id}`}
 							checked={selectedItems.includes(item.id)}
-							onCheckedChange={(checked) => onItemChange(item.id, checked as boolean)}
+							onCheckedChange={(checked) =>
+								onItemChange(item.id, checked as boolean)
+							}
 						/>
-						<label htmlFor={`${title}-${item.id}`} className="text-sm">
+						<label
+							htmlFor={`${title}-${item.id}`}
+							className="text-sm"
+						>
 							{item.label}
 						</label>
 					</div>
@@ -67,17 +77,35 @@ export function FilterList({ title, items, selectedItems, onItemChange }: Filter
 				{items.length > 2 && (
 					<Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
 						<CollapsibleTrigger className="flex items-center text-sm text-blue-600">
-							{isExpanded ? <ChevronUp className="h-4 w-4 mr-1" /> : <ChevronDown className="h-4 w-4 mr-1" />} Ver mais
+							{isExpanded ? (
+								<ChevronUp className="mr-1 h-4 w-4" />
+							) : (
+								<ChevronDown className="mr-1 h-4 w-4" />
+							)}{" "}
+							Ver mais
 						</CollapsibleTrigger>
 						<CollapsibleContent className="space-y-2 pt-2">
 							{items.slice(2).map((item) => (
-								<div key={item.id} className="flex items-center space-x-2">
+								<div
+									key={item.id}
+									className="flex items-center space-x-2"
+								>
 									<Checkbox
 										id={`${title}-${item.id}`}
-										checked={selectedItems.includes(item.id)}
-										onCheckedChange={(checked) => onItemChange(item.id, checked as boolean)}
+										checked={selectedItems.includes(
+											item.id,
+										)}
+										onCheckedChange={(checked) =>
+											onItemChange(
+												item.id,
+												checked as boolean,
+											)
+										}
 									/>
-									<label htmlFor={`${title}-${item.id}`} className="text-sm">
+									<label
+										htmlFor={`${title}-${item.id}`}
+										className="text-sm"
+									>
 										{item.label}
 									</label>
 								</div>
@@ -100,7 +128,7 @@ export function ActivityFilters({
 }: ActivityFiltersProps) {
 	const router = useRouter();
 	const searchParams = useSearchParams();
-	const isMobile = useIsMobile();
+	const isMobile = useMediaQuery("(max-width: 768px)");
 
 	const [isFiltersOpen, setIsFiltersOpen] = useState(!isMobile);
 
@@ -178,7 +206,7 @@ export function ActivityFilters({
 	};
 
 	return (
-		<div className="border rounded-md overflow-hidden">
+		<div className="overflow-hidden rounded-md border">
 			<Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
 				<CollapsibleTrigger className="flex w-full items-center justify-between p-4 font-medium">
 					Filtros
@@ -188,7 +216,7 @@ export function ActivityFilters({
 						<ChevronDown className="h-4 w-4" />
 					)}
 				</CollapsibleTrigger>
-				<CollapsibleContent className="px-4 pb-4 space-y-6">
+				<CollapsibleContent className="space-y-6 px-4 pb-4">
 					{/* Categories */}
 					<FilterList
 						title="Filtrar por Categoria"
@@ -210,22 +238,26 @@ export function ActivityFilters({
 						<h3 className="font-medium">Filtrar por Monitor</h3>
 						<div className="flex flex-wrap gap-2">
 							{selectedMonitors.map((monitorId) => {
-								const monitor = monitors.find((m) => m.id === monitorId);
+								const monitor = monitors.find(
+									(m) => m.id === monitorId,
+								);
 								if (!monitor) return null;
 
 								return (
 									<Badge
 										key={monitorId}
 										variant="outline"
-										className="flex items-center gap-2 py-1 px-2"
+										className="flex items-center gap-2 px-2 py-1"
 									>
-										<div className="bg-black text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+										<div className="flex h-5 w-5 items-center justify-center rounded-full bg-black text-xs text-white">
 											{monitor.avatar}
 										</div>
 										{monitor.name}
 										<button
 											type="button"
-											onClick={() => handleRemoveMonitor(monitorId)}
+											onClick={() =>
+												handleRemoveMonitor(monitorId)
+											}
 										>
 											<X className="h-3 w-3" />
 										</button>
@@ -239,11 +271,14 @@ export function ActivityFilters({
 							onOpenChange={setIsFiltersOpen}
 						>
 							<CollapsibleTrigger className="flex items-center text-sm text-blue-600">
-								<ChevronDown className="h-4 w-4 mr-1" /> Ver mais
+								<ChevronDown className="mr-1 h-4 w-4" /> Ver
+								mais
 							</CollapsibleTrigger>
 							<CollapsibleContent className="space-y-2 pt-2">
 								{monitors
-									.filter((m) => !selectedMonitors.includes(m.id))
+									.filter(
+										(m) => !selectedMonitors.includes(m.id),
+									)
 									.map((monitor) => (
 										<div
 											key={monitor.id}
@@ -251,16 +286,21 @@ export function ActivityFilters({
 										>
 											<Checkbox
 												id={`monitor-${monitor.id}`}
-												checked={selectedMonitors.includes(monitor.id)}
+												checked={selectedMonitors.includes(
+													monitor.id,
+												)}
 												onCheckedChange={(checked) =>
-													handleMonitorChange(monitor.id, checked as boolean)
+													handleMonitorChange(
+														monitor.id,
+														checked as boolean,
+													)
 												}
 											/>
 											<label
 												htmlFor={`monitor-${monitor.id}`}
-												className="text-sm flex items-center gap-2"
+												className="flex items-center gap-2 text-sm"
 											>
-												<div className="bg-black text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+												<div className="flex h-5 w-5 items-center justify-center rounded-full bg-black text-xs text-white">
 													{monitor.avatar}
 												</div>
 												{monitor.name}

@@ -10,7 +10,10 @@ import { Badge } from "@/components/ui/badge";
 
 export function Faq() {
 	return (
-		<section className="px-landing container py-12 md:py-16 lg:py-24">
+		<section
+			id="faq"
+			className="px-landing container py-12 md:py-16 lg:py-24"
+		>
 			<div className="grid gap-8 md:grid-cols-2 md:gap-12 lg:gap-16">
 				<div>
 					<Badge className="mb-6 rounded-full px-4 py-1.5 font-semibold">

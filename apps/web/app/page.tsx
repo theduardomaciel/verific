@@ -9,8 +9,17 @@ import { LandingFooter } from "@/components/landing/footer";
 
 export default function Home() {
 	return (
-		<main className="bg-background flex min-h-screen w-full flex-col items-center">
-			<Header />
+		<main
+			id="about"
+			className="bg-background flex min-h-screen w-full flex-col items-center"
+		>
+			<Header
+				links={[
+					{ href: "#about", label: "Sobre o projeto" },
+					{ href: "#features", label: "Funcionalidades" },
+					{ href: "#faq", label: "FAQ" },
+				]}
+			/>
 			<Hero />
 			<Screenshots />
 			<TrustedBy />

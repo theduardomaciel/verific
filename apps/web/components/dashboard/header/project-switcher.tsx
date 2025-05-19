@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import * as React from "react";
-import { Check, ChevronsUpDown, FolderCog, PlusCircle } from "lucide-react";
+import { Check, ChevronsUpDown, FolderCog } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,22 +17,11 @@ import {
 	CommandList,
 	CommandSeparator,
 } from "@/components/ui/command";
-
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import Link from "next/link";
 
 const projects = [
 	{
@@ -49,9 +40,7 @@ type PopoverTriggerProps = React.ComponentPropsWithoutRef<
 	typeof PopoverTrigger
 >;
 
-interface ProjectSwitcherProps extends PopoverTriggerProps {}
-
-export default function ProjectSwitcher({ className }: ProjectSwitcherProps) {
+export function ProjectSwitcher({ className }: PopoverTriggerProps) {
 	const [open, setOpen] = React.useState(false);
 	const [selectedProject, setSelectedProject] = React.useState<Project>(
 		projects[0]!,

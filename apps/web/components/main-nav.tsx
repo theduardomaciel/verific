@@ -8,16 +8,19 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 export interface MainNavProps {
-	prefix: string; // Prefixo para as rotas
+	prefix?: string; // Prefixo para as rotas
 	links: {
 		href: string;
 		label: string;
+		className?: string; // Classe CSS adicional para o link
+		activeClassName?: string; // Classe CSS adicional para o link ativo
+		mobileClassName?: string; // Classe CSS adicional para o link no mobile
 	}[];
 }
 
 export default function MainNav({
 	className,
-	prefix,
+	prefix = "",
 	links,
 	...props
 }: React.HTMLAttributes<HTMLElement> & MainNavProps) {
@@ -61,7 +64,7 @@ export default function MainNav({
 			)}
 			{...props}
 		>
-			<nav className="flex min-w-fit items-center justify-start gap-4 px-4">
+			<nav className="flex min-w-fit items-center justify-start gap-4">
 				{links.map((link) => {
 					const href = prefix + link.href;
 					const isActive = isLinkActive(href);
@@ -73,7 +76,13 @@ export default function MainNav({
 							asChild
 						>
 							<Link
-								className="font-medium whitespace-nowrap"
+								className={cn(
+									"font-medium whitespace-nowrap",
+									link.className,
+									{
+										[link.activeClassName ?? ""]: isActive,
+									},
+								)}
 								href={href}
 								ref={isActive ? activeButtonRef : null}
 							>

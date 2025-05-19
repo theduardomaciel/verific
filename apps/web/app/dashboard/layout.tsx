@@ -1,6 +1,6 @@
 import { REM } from "next/font/google";
 
-import { Header } from "@/components/dashboard/header";
+import { DashboardHeader } from "@/components/dashboard/header";
 import { Footer } from "@/components/footer";
 
 const rem = REM({
@@ -26,8 +26,10 @@ export default function DashboardLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<div className={`${rem.variable} flex w-full flex-1 flex-col`}>
-			<Header prefix={"/dashboard"} links={DASHBOARD_LINKS} />
+		<div
+			className={`${rem.variable} flex w-full flex-1 flex-col items-center`}
+		>
+			<DashboardHeader prefix={"/dashboard"} links={DASHBOARD_LINKS} />
 			{children}
 			<Footer />
 		</div>

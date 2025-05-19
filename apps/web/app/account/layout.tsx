@@ -1,6 +1,6 @@
 import { REM } from "next/font/google";
 
-import { Header } from "@/components/dashboard/header";
+import { DashboardHeader } from "@/components/dashboard/header";
 import { Footer } from "@/components/footer";
 
 const rem = REM({
@@ -20,7 +20,7 @@ export default function AccountLayout({
 }>) {
 	return (
 		<div className={`${rem.variable} flex w-full flex-1 flex-col`}>
-			<Header
+			<DashboardHeader
 				prefix="/account"
 				links={ACCOUNT_LINKS}
 				showProjectSwitcher={false}
