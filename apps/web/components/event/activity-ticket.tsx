@@ -6,6 +6,7 @@ import AndroidIcon from "@/public/icons/android.svg";
 import AppleIcon from "@/public/icons/apple.svg";
 
 import { cn } from "@/lib/utils";
+import { Button } from "../ui/button";
 
 export interface WorkshopTicketProps {
 	title: string;
@@ -43,12 +44,9 @@ export function ActivityTicket({
 	return (
 		<div
 			className={cn(
-				"text-card-foreground relative overflow-hidden rounded-3xl",
+				"text-card-foreground relative overflow-hidden rounded-3xl drop-shadow-[5px_5px_10px_rgba(191,191,191,1)] dark:drop-shadow-none",
 				className,
 			)}
-			style={{
-				filter: "drop-shadow(5px 5px 10px #bfbfbf)",
-			}}
 		>
 			{/* Main content - flex-col on mobile, flex-row on md+ */}
 			<div className="flex flex-col md:flex-row">
@@ -94,7 +92,7 @@ export function ActivityTicket({
 							<span className="text-xl">{endTime}</span>
 						</div>
 
-						<div className="text-muted-foreground mb-6 flex items-center justify-between text-sm">
+						<div className="text-muted-foreground mb-6 flex items-center justify-evenly text-sm">
 							<div className="flex items-center">
 								<User size={16} className="mr-1" />
 								<span>{maxParticipants} máx</span>
@@ -134,15 +132,15 @@ export function ActivityTicket({
 
 						{/* Scan button only visible on mobile for moderator */}
 						{isModerator && (
-							<button className="mb-6 flex w-full items-center justify-center rounded-md bg-[#3b82f6] py-3 md:hidden">
+							<Button className="mb-6 w-full" size={"lg"}>
 								<BarcodeIcon />
 								Escanear crachás
-							</button>
+							</Button>
 						)}
 					</div>
 
 					{/* Footer integrated into main section */}
-					<div className="mt-auto border-t border-[#404040] pt-4">
+					<div className="mt-auto border-t pt-4">
 						{isModerator ? (
 							<div className="flex items-center justify-between">
 								<div className="text-muted-foreground flex items-center">
@@ -167,34 +165,34 @@ export function ActivityTicket({
 					</div>
 				</div>
 
-				<div
-					className="bg-card relative flex w-[10%] flex-col"
-					/* style={{
-						clipPath: "url(#myClip)",
-					}} */
-				>
-					{/* Fill available height using flex-grow */}
-					<div className="flex-1"></div>
-					{/* Line at the middle */}
-					<div className="border-foreground absolute top-1/2 left-1/2 h-3/4 w-[1px] -translate-x-1/2 -translate-y-1/2 rounded border border-dashed opacity-30" />
-					{/* Horizontal ticket cutouts */}
-					<div className="bg-background absolute top-0 left-1/2 -mt-3 hidden h-6 w-12 -translate-x-1/2 transform rounded-b-full md:block"></div>
-					<div className="bg-background absolute bottom-0 left-1/2 -mb-3 hidden h-6 w-12 -translate-x-1/2 transform rounded-t-full md:block"></div>
-				</div>
+				{/* Mobile: full width with fixed height - Desktop: fixed width with full height */}
+				<div className="relative h-16 w-full md:h-auto md:w-[7.5%] md:flex-col">
+					{/* Line decoration - vertical on mobile, horizontal on desktop */}
+					<div className="border-foreground absolute top-1/2 left-1/2 h-[1px] w-3/4 -translate-x-1/2 -translate-y-1/2 rounded border border-dashed opacity-30 md:h-3/4 md:w-[1px]" />
 
-				<div className="relative flex w-[7.5%] flex-col">
-					{/* Fill available height using flex-grow */}
-					<div className="flex flex-1 flex-col">
-						{/* Line at the middle */}
-						<div className="border-foreground absolute top-1/2 left-1/2 h-3/4 w-[1px] -translate-x-1/2 -translate-y-1/2 rounded border border-dashed opacity-30" />
-						<div className="relative w-full pb-[100%]">
+					<div className="flex h-full flex-row md:flex-col">
+						{/* Left/Top cutout */}
+						<div className="relative aspect-square h-full md:h-auto md:w-full md:pb-[100%]">
 							<svg
 								className="text-card absolute inset-0 h-full w-full"
 								viewBox="0 0 99 99"
 								preserveAspectRatio="none"
 							>
 								<defs>
-									<mask id="inverted-circle1">
+									<mask id="inverted-circle-mobile-1">
+										<rect
+											width="100"
+											height="100"
+											fill="white"
+										/>
+										<circle
+											cx="0"
+											cy="50"
+											r="50"
+											fill="black"
+										/>
+									</mask>
+									<mask id="inverted-circle-desktop-1">
 										<rect
 											width="100"
 											height="100"
@@ -212,19 +210,36 @@ export function ActivityTicket({
 									width="100"
 									height="100"
 									fill="currentColor"
-									mask="url(#inverted-circle1)"
+									className="mask-[url(#inverted-circle-mobile-1)] md:mask-[url(#inverted-circle-desktop-1)]"
 								/>
 							</svg>
 						</div>
-						<div className="bg-card aspect-square w-full flex-1" />
-						<div className="relative w-full pt-[100%]">
+
+						{/* Middle section */}
+						<div className="bg-card h-full flex-1 md:aspect-square md:w-full" />
+
+						{/* Right/Bottom cutout */}
+						<div className="relative aspect-square h-full md:h-auto md:w-full md:pt-[100%]">
 							<svg
 								className="text-card absolute inset-0 h-full w-full"
 								viewBox="0 0 99 99"
 								preserveAspectRatio="none"
 							>
 								<defs>
-									<mask id="inverted-circle2">
+									<mask id="inverted-circle-mobile-2">
+										<rect
+											width="100"
+											height="100"
+											fill="white"
+										/>
+										<circle
+											cx="100"
+											cy="50"
+											r="50"
+											fill="black"
+										/>
+									</mask>
+									<mask id="inverted-circle-desktop-2">
 										<rect
 											width="100"
 											height="100"
@@ -242,7 +257,7 @@ export function ActivityTicket({
 									width="100"
 									height="100"
 									fill="currentColor"
-									mask="url(#inverted-circle2)"
+									className="mask-[url(#inverted-circle-mobile-2)] md:mask-[url(#inverted-circle-desktop-2)]"
 								/>
 							</svg>
 						</div>
@@ -250,7 +265,7 @@ export function ActivityTicket({
 				</div>
 
 				{/* Right section */}
-				<div className="bg-card hidden w-64 flex-col items-center justify-center py-6 pr-6 md:flex">
+				<div className="bg-card flex w-full flex-col items-center justify-center p-6 md:w-64 md:pl-0">
 					{isModerator ? (
 						<>
 							<p className="mb-6 text-center">
