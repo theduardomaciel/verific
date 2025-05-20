@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
-import { ThemeProvider } from "@/components/theme-provider";
-
+// Fonts
 import { Hanken_Grotesk } from "next/font/google";
+
 const hankenGrotesk = Hanken_Grotesk({
 	variable: "--font-hanken-grotesk",
 	subsets: ["latin"],
@@ -18,6 +18,9 @@ export const metadata: Metadata = {
 	},
 };
 
+// Components
+import { Providers } from "@/components/providers";
+
 export default function RootLayout({
 	children,
 }: Readonly<{
@@ -29,14 +32,10 @@ export default function RootLayout({
 				<script src="https://unpkg.com/react-scan/dist/auto.global.js" />
 			</head> */}
 			<body className={`${hankenGrotesk.variable} antialiased`}>
-				<ThemeProvider
-					attribute="class"
-					defaultTheme="system"
-					enableSystem
-					disableTransitionOnChange
-				>
+				<Providers>
 					{children}
-				</ThemeProvider>
+					{/* <Toaster /> */}
+				</Providers>
 			</body>
 		</html>
 	);

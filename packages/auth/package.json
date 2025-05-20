@@ -1,0 +1,21 @@
+{
+	"name": "@verific/auth",
+	"main": "./index.ts",
+	"types": "./index.ts",
+	"version": "0.0.0",
+	"private": true,
+	"scripts": {
+		"lint": "pnpm biome lint ."
+	},
+	"dependencies": {
+		"@verific/drizzle": "workspace:*",
+		"@verific/env": "workspace:*",
+		"next-auth": "5.0.0-beta.25"
+	},
+	"devDependencies": {
+		"@verific/eslint-config": "workspace:*",
+		"@verific/typescript-config": "workspace:*",
+		"@verific/prettier-config": "workspace:*"
+	},
+	"prettier": "@verific/prettier-config"
+}

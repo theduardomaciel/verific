@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 // Components
-import MutateActivityForm from "./form";
+import MutateActivityForm from "@/components/forms/MutateActivityForm";
 import { getParticipants } from "@/lib/data";
 
 export const metadata: Metadata = {

@@ -1,0 +1,36 @@
+import { z } from "zod";
+
+import {
+	type JoinFormSection0Schema,
+	joinFormSection0Schema,
+} from "@/lib/validations/JoinForm/section0";
+
+import {
+	type JoinFormSection1Schema,
+	joinFormSection1Schema,
+} from "@/lib/validations/JoinForm/section1";
+
+import {
+	type JoinFormSection2Schema,
+	joinFormSection2Schema,
+} from "@/lib/validations/JoinForm/section2";
+
+export enum JoinFormTypeEnum {
+	Section0 = "section0",
+	Section1 = "section1",
+	Section2 = "section2",
+}
+
+export const joinFormSchema = z.object({
+	formType: z.nativeEnum(JoinFormTypeEnum),
+	section0: joinFormSection0Schema,
+	section1: joinFormSection1Schema,
+	section2: joinFormSection2Schema,
+});
+
+export type JoinFormSchema = {
+	formType: JoinFormTypeEnum;
+	section0: JoinFormSection0Schema;
+	section1: JoinFormSection1Schema;
+	section2: JoinFormSection2Schema;
+};

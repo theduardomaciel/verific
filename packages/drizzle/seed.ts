@@ -1,4 +1,4 @@
-import { env } from "@ichess/env";
+import { env } from "@verific/env";
 import { faker } from "@faker-js/faker";
 
 import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
@@ -76,7 +76,9 @@ export async function seedUsersAndMembers() {
 		const randomRole =
 			memberRoles[Math.floor(Math.random() * memberRoles.length)];
 		const randomExperience =
-			memberExperiences[Math.floor(Math.random() * memberExperiences.length)];
+			memberExperiences[
+				Math.floor(Math.random() * memberExperiences.length)
+			];
 
 		data.push({
 			id: faker.string.uuid(),
