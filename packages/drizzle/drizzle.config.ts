@@ -1,6 +1,7 @@
 import { drizzle_env as env } from "@verific/env/drizzle_env";
 import type { Config } from "drizzle-kit";
 
+console.log("DATABASE_URL:");
 console.log(env.DATABASE_URL);
 
 export default {

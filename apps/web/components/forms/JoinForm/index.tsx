@@ -47,7 +47,7 @@ export default function JoinForm({
 
 	// 1. Define your form.
 	const form = useForm<JoinFormSchema>({
-		resolver: zodResolver(joinFormSchema),
+		resolver: zodResolver(joinFormSchema as any), // TODO: Fix this type
 		defaultValues: {
 			formType: JoinFormTypeEnum.Section0,
 			section0: {
@@ -85,25 +85,6 @@ export default function JoinForm({
 		// ✅ This will be type-safe and validated.
 		const values = form.getValues();
 
-		// Send the research data to Google Sheets.
-		try {
-			const response = await fetch("/api/research/members", {
-				method: "POST",
-				body: JSON.stringify({
-					data: {
-						...values.section2,
-						registrationId: values.section1.registrationId,
-					},
-				}),
-			});
-
-			if (response.status !== 200) {
-				console.error("Error: Invalid data.");
-			}
-		} catch (error) {
-			console.error(error);
-		}
-
 		// Send the data to the server.
 		try {
 			await mutation.mutateAsync({
@@ -124,6 +105,8 @@ export default function JoinForm({
 
 	// 2. Define a submit handler.
 	async function handleNextFormType() {
+		console.log("handleNextFormType", formType);
+
 		// Switch between form sections.
 		switch (formType) {
 			case "section0":
@@ -143,7 +126,11 @@ export default function JoinForm({
 	return (
 		<Form {...form}>
 			<FormWrapper>
-				<form onSubmit={form.handleSubmit(handleNextFormType)}>
+				<form
+					onSubmit={form.handleSubmit(handleNextFormType, () => {
+						console.log("Form error");
+					})}
+				>
 					<JoinForm0
 						form={form as unknown as GenericForm}
 						email={user?.email}

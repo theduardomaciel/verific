@@ -8,10 +8,10 @@
 		},
 		"build": {
 			"env": [
-				"DATABASE_URL",
-				"AUTH_SECRET",
-				"GOOGLE_CLIENT_ID",
 				"VERCEL_URL",
+				"AUTH_SECRET",
+				"DATABASE_URL",
+				"GOOGLE_CLIENT_ID",
 				"GOOGLE_CLIENT_SECRET"
 			],
 			"dependsOn": ["^build"],

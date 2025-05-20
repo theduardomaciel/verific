@@ -21,12 +21,20 @@ export enum JoinFormTypeEnum {
 	Section2 = "section2",
 }
 
-export const joinFormSchema = z.object({
-	formType: z.nativeEnum(JoinFormTypeEnum),
-	section0: joinFormSection0Schema,
-	section1: joinFormSection1Schema,
-	section2: joinFormSection2Schema,
-});
+export const joinFormSchema = z.discriminatedUnion("formType", [
+	z.object({
+		formType: z.literal(JoinFormTypeEnum.Section0),
+		section0: joinFormSection0Schema,
+	}),
+	z.object({
+		formType: z.literal(JoinFormTypeEnum.Section1),
+		section1: joinFormSection1Schema,
+	}),
+	z.object({
+		formType: z.literal(JoinFormTypeEnum.Section2),
+		section2: joinFormSection2Schema,
+	}),
+]);
 
 export type JoinFormSchema = {
 	formType: JoinFormTypeEnum;

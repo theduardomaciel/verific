@@ -68,7 +68,7 @@ function FormSection({ form, children, ...rest }: FormSectionProps) {
 		>
 			<FormProgress {...rest} />
 			<div
-				className="relative flex w-full flex-col items-start justify-start gap-6 rounded-2xl border border-gray-200 p-6 md:p-9"
+				className="bg-card relative flex w-full flex-col items-start justify-start gap-6 rounded-2xl border p-6 md:p-9"
 				onClick={handleSelect}
 				onKeyUp={(e) => {
 					if (e.key === "Enter") handleSelect();
@@ -86,8 +86,8 @@ function FormProgress({
 	fields,
 }: Omit<FormSectionProps, "form">) {
 	return (
-		<div className="border-primary-100 top-4 left-0 flex w-full flex-col rounded-2xl border lg:sticky lg:w-2/5">
-			<div className="bg-primary-100 flex flex-row items-center justify-start rounded-tl-2xl rounded-tr-2xl px-6 py-[18px]">
+		<div className="border-secondary top-4 left-0 flex w-full flex-col rounded-2xl border lg:sticky lg:w-2/5">
+			<div className="bg-secondary flex flex-row items-center justify-start rounded-tl-2xl rounded-tr-2xl px-6 py-[18px]">
 				<h6 className="text-base font-extrabold text-white lg:text-lg">
 					{section + 1}. {title}
 				</h6>
@@ -100,13 +100,13 @@ function FormProgress({
 						<li
 							key={field.name}
 							className={cn(
-								"text-neutral flex flex-row items-center justify-start gap-2 text-sm select-none lg:text-base",
+								"text-foreground flex flex-row items-center justify-start gap-2 text-sm select-none lg:text-base",
 								{
 									"text-primary-200 opacity-50": field.value,
 								},
 							)}
 						>
-							{field.value && <CheckCircleIcon />}
+							{field.value && <CheckCircleIcon size={16} />}
 							<span className="font-semibold">{field.name}</span>
 						</li>
 					);
@@ -133,22 +133,15 @@ function Panel({
 	return (
 		<div
 			className={cn(
-				"relative inline-flex w-full flex-row items-center justify-start gap-2.5 rounded-lg px-6 py-3 text-white",
-				{
-					"bg-tertiary-200 dark:bg-tertiary-200/50": type === "error",
-					"bg-secondary-100 dark:bg-secondary-100/50":
-						type === "warning",
-					"bg-info-100 dark:bg-info-100/50": type === "info",
-					"bg-primary-200 dark:bg-primary-200/50": type === "success",
-				},
+				"bg-primary/50 relative inline-flex w-full flex-row items-center justify-start gap-2.5 rounded-lg px-6 py-3 text-white",
 			)}
 		>
 			{showIcon &&
 				{
-					error: <MessageCircleWarningIcon />,
-					warning: <MessageCircleWarningIcon />,
-					info: <InfoIcon className="h-[18px] w-[18px]" />,
-					success: <CheckCircleIcon />,
+					error: <MessageCircleWarningIcon size={16} />,
+					warning: <MessageCircleWarningIcon size={16} />,
+					info: <InfoIcon size={16} />,
+					success: <CheckCircleIcon size={16} />,
 				}[type]}
 			<p
 				className={cn(
@@ -186,7 +179,7 @@ function SectionFooter({
 		>
 			{children}
 			<Button
-				className="bg-primary-200 h-12 w-full px-9 font-extrabold text-white md:w-fit"
+				className="h-12 w-full !px-8 font-bold md:w-fit"
 				type="submit"
 			>
 				{isFinalSection ? (
@@ -210,10 +203,12 @@ function ResearchHeader({
 	children: React.ReactNode;
 }) {
 	return (
-		<div className="flex flex-col items-start justify-start gap-2">
+		<div className="flex w-full flex-col items-start justify-start gap-2">
 			<div className="flex w-full flex-row items-center justify-between">
 				<FormLabel>Pergunta {index}</FormLabel>
-				<p className="text-muted/80 text-xs lg:text-sm">Opcional</p>
+				<p className="text-muted-foreground/80 text-xs lg:text-sm">
+					Opcional
+				</p>
 			</div>
 			<FormLabel className="font-bold">{children}</FormLabel>
 		</div>
