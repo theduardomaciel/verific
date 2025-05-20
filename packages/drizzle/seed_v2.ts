@@ -5,8 +5,9 @@ import { drizzle } from "drizzle-orm/neon-http";
 
 const env = {
 	PROJECT_ID: "23b837ef-3321-4d0f-9b42-2aaab4c57dd4",
-	DATABASE_URL: "postgresql://ichess.ufal:84evKqXaUNth@ep-bold-breeze-a42pkssu-pooler.us-east-1.aws.neon.tech/ichess.db?sslmode=require",
-}
+	DATABASE_URL:
+		"postgresql://verific.ufal:84evKqXaUNth@ep-bold-breeze-a42pkssu-pooler.us-east-1.aws.neon.tech/verific.db?sslmode=require",
+};
 
 import {
 	ace,
@@ -70,20 +71,24 @@ export async function seedUsersAndMembers() {
 	const data: (typeof user.$inferInsert)[] = [];
 	const memberData: (typeof member.$inferInsert)[] = [];
 
-	const fetch_data = await fetch("https://secomp.pythonanywhere.com/subscribe/participant");
+	const fetch_data = await fetch(
+		"https://secomp.pythonanywhere.com/subscribe/participant",
+	);
 	const usersData = await fetch_data.json();
 
 	for (const user_data of usersData) {
 		const email = user_data["email"];
 
 		const randomExperience =
-			memberExperiences[Math.floor(Math.random() * memberExperiences.length)];
+			memberExperiences[
+				Math.floor(Math.random() * memberExperiences.length)
+			];
 
 		data.push({
 			id: user_data["id"],
 			name: user_data["nome"],
 			email,
-			emailVerified: new Date(user_data['created_at']),
+			emailVerified: new Date(user_data["created_at"]),
 			image: "https://i.imgur.com/y3xUR5B.png",
 			course: "cc",
 			registrationId: user_data["id"],
@@ -96,7 +101,7 @@ export async function seedUsersAndMembers() {
 			username: user_data["email"],
 			role: memberRoles["0"],
 			experience: randomExperience,
-			joinedAt: new Date(user_data['created_at']),
+			joinedAt: new Date(user_data["created_at"]),
 		});
 	}
 
@@ -168,17 +173,18 @@ async function updateAdmins() {
 		const admins = await db.query.account.findMany({
 			with: {
 				user: true,
-			}
+			},
 		});
 
-		const adminEmails = admins.map(admin => admin.user.email);
+		const adminEmails = admins.map((admin) => admin.user.email);
 		console.log(adminEmails);
 
-		await db.update(member)
+		await db
+			.update(member)
 			.set({
 				role: "admin",
 			})
-			.where(inArray(member.username, adminEmails))
+			.where(inArray(member.username, adminEmails));
 	} catch (error) {
 		console.error("❌ Erro ao atualizar membros para admin:", error);
 	}
@@ -193,7 +199,7 @@ async function resetMembersOnEvent() {
 	const accounts = await db.query.account.findMany({
 		with: {
 			user: true,
-		}
+		},
 	});
 
 	accounts.forEach(async (account) => {

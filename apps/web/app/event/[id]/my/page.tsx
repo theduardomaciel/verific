@@ -22,7 +22,7 @@ export default function EventAccountPage() {
 		<main className="bg-background min-h-screen">
 			{/* Hero Section */}
 			<section className="from-primary bg-primary px-landing border-secondary relative w-full border-b-[10px] py-12">
-				<div className="z-10 container mx-auto flex w-full flex-col gap-8 md:flex-row">
+				<div className="container-p z-10 mx-auto flex w-full flex-col gap-8 md:flex-row">
 					<div className="z-10 flex flex-1 flex-col items-start justify-center">
 						<h1 className="mb-4 text-5xl font-bold text-white">
 							Sua Conta

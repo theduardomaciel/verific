@@ -14,7 +14,7 @@ import {
 } from "@/components/forms/dialogs";
 
 // Content
-import { MutateActivityFormContent } from "@/components/dashboard/activity/create/form";
+import { MutateActivityFormContent } from "@/components/forms/MutateActivityForm/Content";
 
 // Validation
 import {

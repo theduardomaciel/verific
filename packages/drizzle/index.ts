@@ -1,4 +1,4 @@
-import { drizzle_env as env } from "@ichess/env/drizzle_env";
+import { drizzle_env as env } from "@verific/env/drizzle_env";
 import { Pool } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-serverless";
 

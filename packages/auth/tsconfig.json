@@ -1,5 +1,5 @@
 {
 	"extends": "@verific/typescript-config/base.json",
-	"include": ["."],
+	"include": ["auth.d.ts"],
 	"exclude": ["dist", "build", "node_modules"]
 }

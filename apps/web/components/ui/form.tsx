@@ -156,6 +156,14 @@ function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
 	);
 }
 
+function FormWrapper({ children }: { children: React.ReactNode }) {
+	return (
+		<Slot className="container-p flex w-full flex-col items-center justify-start gap-9 py-12 lg:py-24">
+			{children}
+		</Slot>
+	);
+}
+
 export {
 	useFormField,
 	Form,
@@ -165,4 +173,5 @@ export {
 	FormDescription,
 	FormMessage,
 	FormField,
+	FormWrapper,
 };
