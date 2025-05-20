@@ -3,7 +3,7 @@ import { Settings, Users, Ticket, FileCheck } from "lucide-react";
 
 export function FeatureCards() {
 	return (
-		<section className="px-landing container py-8 md:py-12 lg:py-16">
+		<section className="px-landing container-p py-8 md:py-12 lg:py-16">
 			<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
 				<FeatureCard
 					icon={<Settings className="h-8 w-8" />}

@@ -18,9 +18,9 @@ export default async function EventSubscribePage({
 	const session = await auth();
 
 	return (
-		<main className="flex min-h-screen w-full flex-1 flex-col items-center justify-center gap-4 text-center">
+		<main className="flex min-h-screen w-full flex-1 flex-col gap-4 text-center">
 			<section className="from-primary bg-primary px-landing border-secondary relative w-full border-b-[10px] py-12">
-				<div className="z-10 container mx-auto flex w-full flex-col items-center gap-8 md:flex-row">
+				<div className="container-p z-10 mx-auto flex w-full flex-col items-center gap-8 md:flex-row">
 					<div className="z-10 flex flex-1 flex-col items-center justify-center">
 						<h1 className="mb-4 text-5xl font-bold text-white">
 							Inscreva-se na <br />

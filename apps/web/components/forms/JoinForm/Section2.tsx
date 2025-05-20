@@ -56,7 +56,7 @@ export default function JoinForm2({ form }: { form: GenericForm }) {
 				control={form.control}
 				name="section2.reason"
 				render={({ field }) => (
-					<FormItem>
+					<FormItem className="w-full">
 						<ResearchHeader index={1}>
 							&quot;O que fez você se inscrever no IChess?&quot;
 						</ResearchHeader>
@@ -76,7 +76,7 @@ export default function JoinForm2({ form }: { form: GenericForm }) {
 					control={form.control}
 					name="section2.discovery"
 					render={({ field }) => (
-						<FormItem>
+						<FormItem className="w-full">
 							<ResearchHeader index={2}>
 								&quot;Por onde você descobriu o IChess?&quot;
 							</ResearchHeader>
@@ -85,7 +85,7 @@ export default function JoinForm2({ form }: { form: GenericForm }) {
 								defaultValue={field.value}
 							>
 								<FormControl>
-									<SelectTrigger>
+									<SelectTrigger className="w-full">
 										<SelectValue placeholder="Escolha uma opção" />
 									</SelectTrigger>
 								</FormControl>
@@ -108,8 +108,12 @@ export default function JoinForm2({ form }: { form: GenericForm }) {
 						control={form.control}
 						name="section2.discoveryOther"
 						render={({ field }) => (
-							<FormItem>
-								<Input placeholder="Outro meio" {...field} />
+							<FormItem className="w-full">
+								<Input
+									className="w-full"
+									placeholder="Outro meio"
+									{...field}
+								/>
 								<FormMessage />
 							</FormItem>
 						)}

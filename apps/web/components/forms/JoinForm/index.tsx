@@ -78,12 +78,13 @@ export default function JoinForm({
 
 		if (!user) {
 			console.error("User not found.");
-			setCurrentState(false);
+			setCurrentState("error");
 			return;
 		}
 
 		// ✅ This will be type-safe and validated.
 		const values = form.getValues();
+		console.log("values", values);
 
 		// Send the data to the server.
 		try {

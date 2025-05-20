@@ -63,48 +63,55 @@
 
 .container-p {
 	width: 100%;
-	padding-inline: 0rem;
+	padding-inline: 2rem;
 
-	@media (width >=20rem
+	@media (width >=25rem
 
 		/* 320px */
 	) {
-		padding-inline: calc((100% - 20rem) / 2);
+		padding-inline: calc((100% - 22.5rem) / 2);
 	}
 
-	@media (width >=40rem
+	@media (width >=30rem
 
-		/* 640px */
+		/* 480px */
 	) {
-		padding-inline: calc((100% - 40rem) / 2);
+		padding-inline: calc((100% - 30rem) / 2);
 	}
 
 	@media (width >=48rem
 
 		/* 768px */
 	) {
-		padding-inline: calc((100% - 48rem) / 2);
+		padding-inline: calc((100% - 40rem) / 2);
+	}
+
+	@media (width >=56rem
+
+		/* 1024px */
+	) {
+		padding-inline: calc((100% - 44rem) / 2);
 	}
 
 	@media (width >=64rem
 
 		/* 1024px */
 	) {
-		padding-inline: calc((100% - 64rem) / 2);
+		padding-inline: calc((100% - 56rem) / 2);
 	}
 
 	@media (width >=80rem
 
 		/* 1280px */
 	) {
-		padding-inline: calc((100% - 80rem) / 2);
+		padding-inline: calc((100% - 64rem) / 2);
 	}
 
 	@media (width >=96rem
 
 		/* 1536px */
 	) {
-		padding-inline: calc((100% - 96rem) / 2);
+		padding-inline: calc((100% - 72rem) / 2);
 	}
 }
 

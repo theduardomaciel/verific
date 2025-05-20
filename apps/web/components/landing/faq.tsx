@@ -12,7 +12,7 @@ export function Faq() {
 	return (
 		<section
 			id="faq"
-			className="px-landing container py-12 md:py-16 lg:py-24"
+			className="px-landing container-p py-12 md:py-16 lg:py-24"
 		>
 			<div className="grid gap-8 md:grid-cols-2 md:gap-12 lg:gap-16">
 				<div>

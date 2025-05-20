@@ -41,7 +41,7 @@ export function Header({
 				className,
 			)}
 		>
-			<div className="container flex w-full items-center justify-between py-8 md:py-6">
+			<div className="container-p flex w-full items-center justify-between py-8 md:py-6">
 				{logo ?? (
 					<Link href="/">
 						<Logo className="h-6" />
