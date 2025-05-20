@@ -18,7 +18,7 @@ export const user = pgTable(
 		emailVerified: timestamp("emailVerified", { mode: "date" }),
 		image_url: text("image_url"),
 	},
-	(table) => [uniqueIndex().on(table.email)],
+	(table) => [uniqueIndex("email_idx").on(table.email)],
 );
 
 export const userRelations = relations(user, ({ many }) => ({
