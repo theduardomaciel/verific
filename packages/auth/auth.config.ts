@@ -49,7 +49,7 @@ export const authConfig = {
 			const alreadyRedirected = url.includes("callbackUrl=");
 			if (isSameOriginUrl && alreadyRedirected) {
 				const originalCallbackUrl = decodeURIComponent(
-					url.split("callbackUrl=")[1],
+					url.split("callbackUrl=")[1] ?? "",
 				);
 
 				return originalCallbackUrl;
@@ -62,12 +62,14 @@ export const authConfig = {
 			}
 		},
 		async jwt({ token, user, session, trigger }) {
-			if (user) {
+			if (user && token.participant && token.participant.projectId) {
+				const projectId = token.participant.projectId;
+
 				const participant = await db.query.participant.findFirst({
 					where: (dbMember, { eq, and }) =>
 						and(
 							eq(dbMember.userId, user.id as string),
-							eq(dbMember.projectId, env.PROJECT_ID),
+							eq(dbMember.projectId, projectId),
 						),
 				});
 
@@ -87,20 +89,35 @@ export const authConfig = {
 			}
 
 			if (trigger === "update" && isSessionAvailable(session)) {
+				console.log("Session available", session);
 				token.name = session.user?.name;
 				token.participant = session.participant;
 			}
 
+			console.log("JWT", {
+				token,
+				user,
+				session,
+				trigger,
+			});
+
 			return token;
 		},
 		session({ session, token, ...params }) {
-			if ("token" in params && session.user) {
-				session.user.id = token.sub as string;
+			console.log("Session", {
+				session,
+				token,
+				params,
+			});
 
-				if (token.participant) {
-					session.participant = token.participant;
-				}
+			if (session.user) {
+				session.user.id = token.sub as string;
 			}
+			if (token.participant) {
+				session.participant = token.participant;
+			}
+
+			console.log("Updated session", session);
 
 			return session;
 		},

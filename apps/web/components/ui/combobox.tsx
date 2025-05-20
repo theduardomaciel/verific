@@ -19,7 +19,7 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 
-interface Props {
+interface Props extends Omit<React.ComponentProps<"button">, "onChange"> {
 	placeholder?: string;
 	searchMessage?: string;
 	emptyMessage?: string;
@@ -37,7 +37,9 @@ export function Combobox({
 	emptyMessage,
 	items,
 	value,
+	type = "button",
 	onChange,
+	...rest
 }: Props) {
 	const [open, setOpen] = React.useState(false);
 
@@ -52,6 +54,8 @@ export function Combobox({
 						"w-full justify-between",
 						!value && "text-muted-foreground",
 					)}
+					type={type}
+					{...rest}
 				>
 					{value
 						? items.find((item) => item.value === value)?.label

@@ -25,6 +25,9 @@ export const usersRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
+			console.log("Updating user", input);
+			console.log("Context", ctx);
+			console.log("Session", ctx.session);
 			const userId = ctx.session?.user.id;
 
 			const { name, course, registrationId, period, projectId } = input;

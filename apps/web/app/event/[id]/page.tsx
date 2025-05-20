@@ -89,7 +89,7 @@ export default async function EventPage({
 
 			{/* Content Section */}
 			<section className="px-landing py-12">
-				<div className="relative container mx-auto flex flex-col gap-16 lg:flex-row">
+				<div className="container-p relative mx-auto flex flex-col gap-16 lg:flex-row">
 					<div className="lg:w-2/3">
 						<h2 className="mb-6 text-2xl font-bold">
 							Descrição do Evento

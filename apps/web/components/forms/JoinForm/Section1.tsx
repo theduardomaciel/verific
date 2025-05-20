@@ -84,11 +84,10 @@ export default function JoinForm1({ form }: { form: GenericForm }) {
 										label: course,
 										value: course,
 									}))}
-									value={field.value}
-									onChange={field.onChange}
 									emptyMessage="Nenhum curso encontrado."
 									searchMessage="Pesquise um curso..."
 									placeholder="Selecione um curso"
+									{...field}
 								/>
 							</FormControl>
 							<FormMessage />

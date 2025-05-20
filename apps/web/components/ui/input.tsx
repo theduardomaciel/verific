@@ -65,7 +65,9 @@ function PhoneInput({
 	return (
 		<Input
 			{...props}
-			value={typeof value === "string" ? formatPhone(value) : value}
+			value={
+				typeof value === "string" ? formatPhone(value) : (value ?? "")
+			}
 			onChange={handleChange}
 			maxLength={15} // (99) 99999-9999
 			inputMode="tel"
