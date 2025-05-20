@@ -44,10 +44,10 @@ const EVENT_LINKS = [
 export default async function EventLayout({
 	children,
 	params,
-}: Readonly<{
+}: {
 	children: React.ReactNode;
-	params: { id: string };
-}>) {
+	params: Promise<{ id: string }>;
+}) {
 	const fetched = await params;
 	const event = await getEventById(fetched.id);
 
@@ -63,6 +63,8 @@ export default async function EventLayout({
 				{
 					"--primary": event.primaryColor,
 					"--secondary": event.secondaryColor,
+					"--ring": event.primaryColor,
+					"--muted": event.secondaryColor,
 					"--accent":
 						"color-mix(in oklab, var(--foreground) 2%, transparent)",
 					"--accent-foreground": "var(--foreground)",

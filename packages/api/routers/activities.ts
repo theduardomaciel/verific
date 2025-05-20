@@ -37,8 +37,8 @@ export const activitySort = ["recent", "oldest", "alphabetical"] as const;
 export const getActivitiesParams = z.object({
 	query: z.string().optional(),
 	sort: z.enum(activitySort).optional(),
-	page: z.coerce.number().default(0),
-	pageSize: z.coerce.number().default(10),
+	page: z.coerce.number().default(0).optional(),
+	pageSize: z.coerce.number().default(10).optional(),
 	category: z
 		.string()
 		.transform(transformSingleToArray)

@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 
 export function Hero() {
 	return (
-		<section className="px-landing mt-8 flex w-full justify-center overflow-hidden">
-			<div className="bg-primary container-p relative w-full overflow-hidden rounded-2xl p-8 md:p-10 lg:p-12">
+		<section className="container-p mt-8 flex w-full justify-center overflow-hidden">
+			<div className="bg-primary relative w-full overflow-hidden rounded-2xl p-8 md:p-10 lg:p-12">
 				<div className="max-w-2xl">
 					<h1 className="mb-4 text-3xl font-bold text-white md:text-4xl lg:text-5xl">
 						Seu próximo gerenciador de eventos

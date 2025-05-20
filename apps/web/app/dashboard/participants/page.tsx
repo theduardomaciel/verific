@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+
 export const metadata: Metadata = {
 	title: "Participantes",
 };
@@ -39,7 +40,7 @@ export default async function ParticipantsPage(props: {
 	);
 
 	return (
-		<div className="container-p py-container min-h-screen">
+		<div className="container-d py-container-v min-h-screen">
 			<div className="grid grid-cols-1 gap-6 md:grid-cols-3">
 				<div className="w-full space-y-4 md:col-span-2">
 					<div className="flex flex-col items-start gap-4 md:flex-row md:items-center">

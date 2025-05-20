@@ -19,7 +19,8 @@
 
 	/* Spacing */
 	--breakpoint-xs: 20rem;
-	--spacing-container: 2rem;
+	--spacing-container-h: 1.5rem;
+	--spacing-container-v: 2.5rem;
 
 	/* Shadows */
 	--shadow-color: hsl(0 0% 0%);
@@ -65,14 +66,9 @@
 	width: 100%;
 	padding-inline: 2rem;
 
-	@media (width >=25rem
 
-		/* 320px */
-	) {
-		padding-inline: calc((100% - 22.5rem) / 2);
-	}
 
-	@media (width >=30rem
+	@media (width >=36rem
 
 		/* 480px */
 	) {
@@ -90,7 +86,7 @@
 
 		/* 1024px */
 	) {
-		padding-inline: calc((100% - 44rem) / 2);
+		padding-inline: calc((100% - 48rem) / 2);
 	}
 
 	@media (width >=64rem
@@ -111,10 +107,35 @@
 
 		/* 1536px */
 	) {
-		padding-inline: calc((100% - 72rem) / 2);
+		padding-inline: calc((100% - 86rem) / 2);
 	}
 }
 
+.container-d {
+	width: 100%;
+	padding-inline: var(--spacing-container-h);
+
+	@media (width >=64rem
+
+		/* 1024px */
+	) {
+		padding-inline: calc((100% - 60rem) / 2);
+	}
+
+	@media (width >=80rem
+
+		/* 1280px */
+	) {
+		padding-inline: calc((100% - 64rem) / 2);
+	}
+
+	@media (width >=96rem
+
+		/* 1536px */
+	) {
+		padding-inline: calc((100% - 86rem) / 2);
+	}
+}
 
 @layer base {
 	* {
