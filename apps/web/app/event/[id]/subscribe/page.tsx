@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { auth } from "@verific/auth";
 
 // Icons
 import { Calendar } from "lucide-react";
@@ -14,13 +15,16 @@ export default async function EventSubscribePage({
 	const fetched = await params;
 	const id = fetched.id;
 
+	const session = await auth();
+
 	return (
-		<main className="flex min-h-screen w-full flex-1 flex-col items-center justify-center gap-4 py-12 text-center">
+		<main className="flex min-h-screen w-full flex-1 flex-col items-center justify-center gap-4 text-center">
 			<section className="from-primary bg-primary px-landing border-secondary relative w-full border-b-[10px] py-12">
-				<div className="z-10 container mx-auto flex w-full flex-col gap-8 md:flex-row">
-					<div className="z-10 flex flex-1 flex-col items-start justify-center">
+				<div className="z-10 container mx-auto flex w-full flex-col items-center gap-8 md:flex-row">
+					<div className="z-10 flex flex-1 flex-col items-center justify-center">
 						<h1 className="mb-4 text-5xl font-bold text-white">
-							Programação
+							Inscreva-se na <br />
+							Secomp 2025
 						</h1>
 						<div className="mb-4 flex items-center text-lg text-white/90">
 							<Calendar className="mr-2 h-4.5 w-4.5" />
@@ -38,7 +42,7 @@ export default async function EventSubscribePage({
 					fill
 				/>
 			</section>
-			<JoinForm user={undefined} projectId={id} />
+			<JoinForm user={session?.user || undefined} projectId={id} />
 		</main>
 	);
 }

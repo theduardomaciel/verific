@@ -1,10 +1,6 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
 
 import { cn } from "@/lib/utils";
-
-// Icons
-import { PersonStandingIcon } from "lucide-react";
 
 // Components
 import { Panel } from "@/components/forms";
@@ -55,12 +51,6 @@ export function Logged({ email }: LoggedProps) {
 	return (
 		<Panel type="success" showIcon>
 			Você está logado como <strong>{email}</strong>.
-			<Link
-				href="/auth"
-				className="absolute top-1/2 right-4 -translate-y-1/2"
-			>
-				<PersonStandingIcon width={22} height={22} />
-			</Link>
 		</Panel>
 	);
 }

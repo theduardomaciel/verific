@@ -70,7 +70,7 @@ export default async function EventLayout({
 			}
 		>
 			<Header
-				className="!bg-primary border-none py-0"
+				className="!bg-primary relative border-none py-0"
 				mobileMenuClassName={"bg-primary"}
 				buttonClassName="bg-primary text-white text-primary-foreground !hover:text-white"
 				languageSelectorClassName={

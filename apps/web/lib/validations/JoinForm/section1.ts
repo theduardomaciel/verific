@@ -29,6 +29,12 @@ export const joinFormSection1Schema = z.object({
 	period: z.enum(periods, {
 		required_error: "Selecione uma opção",
 	}),
+	phoneNumber: z
+		.string({ required_error: "Obrigatório" })
+		.regex(/^\(\d{2}\) \d{5}-\d{4}$/, {
+			message:
+				"O número de telefone deve estar no formato (XX) XXXXX-XXXX",
+		}),
 });
 
 export type JoinFormSection1Schema = z.infer<typeof joinFormSection1Schema>;

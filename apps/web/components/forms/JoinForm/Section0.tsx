@@ -40,15 +40,11 @@ export default function JoinForm0({
 				control={form.control}
 				name="section0.email"
 				render={() => (
-					<FormItem>
+					<FormItem className="w-full">
 						<FormLabel>E-mail institucional</FormLabel>
-						<GoogleButton
-							disabled={!!email}
-							className="w-full py-[1.35rem]"
-							callbackUrl="/join"
-						/>
+						<GoogleButton className="w-full" />
 						{email && <Logged email={email} />}
-						<FormMessage /* type="warning" showIcon */ />
+						<FormMessage type="warning" showIcon />
 					</FormItem>
 				)}
 			/>

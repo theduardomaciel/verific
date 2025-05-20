@@ -6,6 +6,7 @@ import {
 	SectionFooter,
 	type GenericForm,
 } from "@/components/forms";
+import { Combobox } from "@/components/ui/combobox";
 import {
 	FormControl,
 	FormField,
@@ -13,8 +14,7 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Input, PhoneInput } from "@/components/ui/input";
 import {
 	Select,
 	SelectContent,
@@ -29,6 +29,7 @@ import {
 	type JoinFormSection1Schema,
 	joinFormSection1Schema,
 } from "@/lib/validations/JoinForm/section1";
+import { courses, periods } from "@verific/drizzle/schema";
 
 const section1Keys = Object.keys(
 	joinFormSection1Schema.shape,
@@ -39,6 +40,7 @@ const formTitles = {
 	course: "Curso",
 	registrationId: "Nº de matrícula",
 	period: "Período",
+	phoneNumber: "Telefone",
 };
 
 export default function JoinForm1({ form }: { form: GenericForm }) {
@@ -60,7 +62,7 @@ export default function JoinForm1({ form }: { form: GenericForm }) {
 				control={form.control}
 				name="section1.name"
 				render={({ field }) => (
-					<FormItem>
+					<FormItem className="w-full">
 						<FormLabel>{formTitles.name}</FormLabel>
 						<FormControl>
 							<Input placeholder="Fulano da Silva" {...field} />
@@ -69,36 +71,25 @@ export default function JoinForm1({ form }: { form: GenericForm }) {
 					</FormItem>
 				)}
 			/>
-			<div className="flex w-full flex-col items-center justify-between gap-6 lg:flex-row">
+			<div className="flex w-full flex-col items-start justify-between gap-6 lg:flex-row">
 				<FormField
 					control={form.control}
 					name="section1.course"
 					render={({ field }) => (
-						<FormItem className="space-y-3">
+						<FormItem className="w-full">
 							<FormLabel>{formTitles.course}</FormLabel>
 							<FormControl>
-								<RadioGroup
-									onValueChange={field.onChange}
-									defaultValue={field.value}
-									className="flex flex-col space-y-2"
-								>
-									<FormItem className="flex items-center space-y-0 space-x-3">
-										<FormControl>
-											<RadioGroupItem value="cc" />
-										</FormControl>
-										<FormLabel className="font-normal">
-											Ciência da Computação
-										</FormLabel>
-									</FormItem>
-									<FormItem className="flex items-center space-y-0 space-x-3">
-										<FormControl>
-											<RadioGroupItem value="ec" />
-										</FormControl>
-										<FormLabel className="font-normal">
-											Engenharia da Computação
-										</FormLabel>
-									</FormItem>
-								</RadioGroup>
+								<Combobox
+									items={courses.map((course) => ({
+										label: course,
+										value: course,
+									}))}
+									value={field.value}
+									onChange={field.onChange}
+									emptyMessage="Nenhum curso encontrado."
+									searchMessage="Pesquise um curso..."
+									placeholder="Selecione um curso"
+								/>
 							</FormControl>
 							<FormMessage />
 						</FormItem>
@@ -108,7 +99,7 @@ export default function JoinForm1({ form }: { form: GenericForm }) {
 					control={form.control}
 					name="section1.registrationId"
 					render={({ field }) => (
-						<FormItem>
+						<FormItem className="w-full">
 							<FormLabel>{formTitles.registrationId}</FormLabel>
 							<FormControl>
 								<Input
@@ -122,36 +113,54 @@ export default function JoinForm1({ form }: { form: GenericForm }) {
 					)}
 				/>
 			</div>
-			<FormField
-				control={form.control}
-				name="section1.period"
-				render={({ field }) => (
-					<FormItem>
-						<FormLabel>{formTitles.period}</FormLabel>
-						<Select
-							onValueChange={field.onChange}
-							defaultValue={field.value}
-						>
+			<div className="flex w-full flex-col items-start justify-between gap-6 lg:flex-row">
+				<FormField
+					control={form.control}
+					name="section1.period"
+					render={({ field }) => (
+						<FormItem className="w-full">
+							<FormLabel>{formTitles.period}</FormLabel>
+							<Select
+								onValueChange={field.onChange}
+								defaultValue={field.value}
+							>
+								<FormControl>
+									<SelectTrigger className="w-full">
+										<SelectValue placeholder="Selecione o período" />
+									</SelectTrigger>
+								</FormControl>
+								<SelectContent>
+									{periods.map((period) => (
+										<SelectItem key={period} value={period}>
+											{period == "0"
+												? "Outro"
+												: `${period}º período`}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+				<FormField
+					control={form.control}
+					name="section1.phoneNumber"
+					render={({ field }) => (
+						<FormItem className="w-full">
+							<FormLabel>{formTitles.phoneNumber}</FormLabel>
 							<FormControl>
-								<SelectTrigger>
-									<SelectValue placeholder="Selecione o período" />
-								</SelectTrigger>
+								<PhoneInput
+									type="tel"
+									placeholder="(xx) xxxxx-xxxx"
+									{...field}
+								/>
 							</FormControl>
-							<SelectContent>
-								<SelectItem value="1">1º período</SelectItem>
-								<SelectItem value="2">2º período</SelectItem>
-								<SelectItem value="3">3º período</SelectItem>
-								<SelectItem value="4">4º período</SelectItem>
-								<SelectItem value="5">5º período</SelectItem>
-								<SelectItem value="6">6º período</SelectItem>
-								<SelectItem value="7">7º período</SelectItem>
-								<SelectItem value="8">8+ período</SelectItem>
-							</SelectContent>
-						</Select>
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+			</div>
 			<SectionFooter />
 		</FormSection>
 	);

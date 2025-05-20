@@ -16,6 +16,10 @@ export const drizzleAuthAdapter: Adapter = {
 			})
 			.returning();
 
+		if (!drizzleUser) {
+			throw new Error("Failed to create user.");
+		}
+
 		return drizzleUser;
 	},
 
@@ -80,6 +84,10 @@ export const drizzleAuthAdapter: Adapter = {
 			.where(eq(user.id, id))
 			.returning();
 
+		if (!drizzleUser) {
+			throw new Error("Failed to update user.");
+		}
+
 		return drizzleUser;
 	},
 
@@ -93,6 +101,10 @@ export const drizzleAuthAdapter: Adapter = {
 			.values(sessionToCreate)
 			.returning();
 
+		if (!drizzleSession) {
+			throw new Error("Failed to create session.");
+		}
+
 		return drizzleSession;
 	},
 
@@ -105,6 +117,10 @@ export const drizzleAuthAdapter: Adapter = {
 			.from(session)
 			.innerJoin(user, eq(user.id, session.userId))
 			.where(eq(session.sessionToken, sessionToken));
+
+		if (!drizzleSession) {
+			throw new Error("Failed to get session.");
+		}
 
 		return drizzleSession;
 	},
