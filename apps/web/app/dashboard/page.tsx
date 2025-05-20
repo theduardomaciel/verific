@@ -12,7 +12,7 @@ import { MetricCard } from "@/components/dashboard/overview/metric-card";
 
 export default function Overview() {
 	return (
-		<main className="container-p py-container flex w-full flex-1 flex-col items-center justify-start gap-8">
+		<main className="container-d py-container-v flex w-full flex-1 flex-col items-center justify-start gap-8">
 			<Tabs
 				defaultValue="overview"
 				className="flex w-full flex-1 space-y-4"

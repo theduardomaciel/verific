@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
 	title: "Atividades",
@@ -24,7 +25,6 @@ import { getActivities, getCategories, getStatuses } from "@/lib/data";
 // Validation
 import type { z } from "zod";
 import { getActivitiesParams } from "@verific/api/routers/activities";
-import Link from "next/link";
 
 type EventsPageParams = z.infer<typeof getActivitiesParams>;
 
@@ -42,7 +42,7 @@ export default async function ActivitiesPage(props: {
 	// const monitors = await getMonitors();
 
 	return (
-		<div className="container-p py-container min-h-screen">
+		<div className="container-d py-container-v min-h-screen">
 			<div className="grid grid-cols-1 gap-6 md:grid-cols-3">
 				<div className="w-full space-y-4 md:col-span-2">
 					<div className="flex flex-col items-start gap-4 md:flex-row md:items-center">

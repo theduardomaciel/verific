@@ -1,11 +1,12 @@
 "use client";
 
-import ColorPicker from "@/components/color-picker";
+// Icons
+import { ImageUp } from "lucide-react";
+
 // Components
 import { SettingsCard } from "@/components/settings/settings-card";
 import { Button } from "@/components/ui/button";
-import { ImageUp } from "lucide-react";
-import { Fragment } from "react";
+import ColorPicker from "@/components/color-picker";
 
 export default function CustomizationSettings() {
 	return (

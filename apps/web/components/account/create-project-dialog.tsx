@@ -47,16 +47,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type UseFormReturn } from "react-hook-form";
 import * as z from "zod";
 
-const placePickerSchema = z.object({
-	address: z.string().min(1, {
-		message: "Por favor, selecione um endereço.",
-	}),
-	latitude: z.number(),
-	longitude: z.number(),
-});
-
-type PlacePickerType = z.infer<typeof placePickerSchema>;
-
 const formSchema = z.object({
 	name: z.string().min(2, {
 		message: "Nome deve conter pelo menos 2 caracteres.",
@@ -69,16 +59,21 @@ const formSchema = z.object({
 		.max(3000, {
 			message: "Descrições devem ter no máximo 3000 caracteres.",
 		}),
-	location: placePickerSchema,
+	location: z.object({
+		address: z.string().min(1, {
+			message: "Por favor, selecione um endereço.",
+		}),
+		latitude: z.number(),
+		longitude: z.number(),
+	}),
 });
+
+type PlacePickerType = z.infer<typeof formSchema>["location"];
 
 export function CreateProjectDialog() {
 	const [open, setOpen] = useState(false);
 	const isDesktop = useMediaQuery("(min-width: 768px)");
 
-	const [formData, setFormData] = useState<z.infer<typeof formSchema> | null>(
-		null,
-	);
 	const [locationValue, setLocationValue] = useState<
 		PlacePickerType | undefined
 	>(undefined);
@@ -103,7 +98,7 @@ export function CreateProjectDialog() {
 
 	// Gerenciamos o envio do formulário
 	function onSubmit(values: z.infer<typeof formSchema>) {
-		setFormData(values);
+		// Use data
 		console.log(values);
 	}
 
