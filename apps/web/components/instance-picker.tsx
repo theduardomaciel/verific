@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 
 import { cn } from "@/lib/utils";
-import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
+import { Check, ChevronsUpDown, Loader2, Plus } from "lucide-react";
 
 // Hooks
 import { useMediaQuery } from "@/hooks/use-media-query";
@@ -28,29 +28,52 @@ import { Button } from "./ui/button";
 
 // Types
 
+type ItemId = string | number;
+
 interface Item {
-	id: string;
+	id: ItemId;
 	label: string;
-	image?: string;
+	image?: string | null;
 }
 
-interface InstancePickerParams {
+interface InstancePickerProps<T extends Item = Item> {
 	className?: string;
-	initialItems?: string[] | string;
-	items: Item[];
-	onSelect?: (ids: string[]) => void;
+	initialItems?: T["id"][] | T["id"];
+	items: T[];
+	maxItems?: number;
+	onSelect?: (ids: T["id"][]) => void;
+	placeholder?: string;
+	emptyText?: string;
+	action?: {
+		label: string;
+		onClick: () => void;
+	};
+	actionButton?: React.ReactNode;
 }
 
-export function InstancePicker({
-	className,
-	onSelect,
-	items,
+interface InstancesListProps<T extends Item = Item> {
+	onSelect: (id: T["id"]) => void;
+	isActive: (id: T["id"]) => boolean;
+	items?: T[];
+	className?: string;
+	action?: InstancePickerProps<T>["action"];
+	actionButton?: InstancePickerProps<T>["actionButton"];
+	placeholder?: string;
+	emptyText?: string;
+}
+
+export function InstancePicker<T extends Item = Item>({
 	initialItems,
-}: InstancePickerParams) {
+	maxItems,
+	onSelect,
+	placeholder = "Selecione um item...",
+	emptyText = "Nenhum item encontrado.",
+	...props
+}: InstancePickerProps<T>) {
 	const [open, setOpen] = useState(false);
 	const isDesktop = useMediaQuery("(min-width: 768px)");
 
-	const [ids, setModeratorsIds] = useState<string[]>(
+	const [ids, setSelectedIds] = useState<T["id"][]>(
 		initialItems
 			? Array.isArray(initialItems)
 				? initialItems
@@ -59,14 +82,17 @@ export function InstancePicker({
 	);
 	const debouncedValue = useDebounce(ids, 750);
 
-	const isActive = (id: string) => ids.includes(id);
-	const filteredItems = items?.filter((mod) => ids.includes(mod.id));
+	const isActive = (id: T["id"]) => ids.includes(id);
+	const filteredItems = props.items?.filter((item) => ids.includes(item.id));
 
-	const handleSelect = (id: string) => {
+	const handleSelect = (id: T["id"]) => {
 		if (ids.includes(id)) {
-			setModeratorsIds(ids.filter((modId) => modId !== id));
+			setSelectedIds(ids.filter((itemId) => itemId !== id));
 		} else {
-			setModeratorsIds([...ids, id]);
+			if (typeof maxItems === "number" && ids.length >= maxItems) {
+				return; // Não permite selecionar mais do que o máximo
+			}
+			setSelectedIds([...ids, id]);
 		}
 	};
 
@@ -78,16 +104,20 @@ export function InstancePicker({
 		return (
 			<Popover>
 				<PopoverTrigger asChild>
-					<PickerTrigger items={filteredItems} />
+					<PickerTrigger
+						items={filteredItems}
+						placeholder={placeholder}
+					/>
 				</PopoverTrigger>
 				<PopoverContent
 					className={"w-[var(--radix-popover-trigger-width)] p-0"}
 				>
-					<ModeratorsList
+					<InstancesList
 						onSelect={handleSelect}
 						isActive={isActive}
-						items={items}
-						className={className}
+						placeholder={placeholder}
+						emptyText={emptyText}
+						{...props}
 					/>
 				</PopoverContent>
 			</Popover>
@@ -97,15 +127,19 @@ export function InstancePicker({
 	return (
 		<Drawer open={open} onOpenChange={setOpen}>
 			<DrawerTrigger asChild>
-				<PickerTrigger items={filteredItems} />
+				<PickerTrigger
+					items={filteredItems}
+					placeholder={placeholder}
+				/>
 			</DrawerTrigger>
 			<DrawerContent>
 				<div className="mt-4 border-t">
-					<ModeratorsList
+					<InstancesList
 						onSelect={handleSelect}
 						isActive={isActive}
-						items={items}
-						className={className}
+						placeholder={placeholder}
+						emptyText={emptyText}
+						{...props}
 					/>
 				</div>
 			</DrawerContent>
@@ -113,7 +147,13 @@ export function InstancePicker({
 	);
 }
 
-function PickerItem({ item, isActive }: { item: Item; isActive: boolean }) {
+function PickerItem<T extends Item = Item>({
+	item,
+	isActive,
+}: {
+	item: T;
+	isActive: boolean;
+}) {
 	return (
 		<div
 			className={cn("flex w-full items-center justify-between", {
@@ -142,12 +182,14 @@ function PickerItem({ item, isActive }: { item: Item; isActive: boolean }) {
 	);
 }
 
-function PickerTrigger({
+function PickerTrigger<T extends Item = Item>({
 	className,
 	items,
+	placeholder = "Selecione um item...",
 	...props
 }: React.ComponentProps<typeof Button> & {
-	items: Item[];
+	items: T[];
+	placeholder?: string;
 }) {
 	return (
 		<Button
@@ -170,14 +212,14 @@ function PickerTrigger({
 				</ul>
 			) : (
 				<p className="overflow-hidden overflow-ellipsis whitespace-nowrap">
-					Selecione um moderador...
+					{placeholder}
 				</p>
 			)}
 			<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
 		</Button>
 	);
 }
-function Tag({ item }: { item: Item }) {
+function Tag<T extends Item = Item>({ item }: { item: T }) {
 	return (
 		<li className="border-primary-200/50 bg-background flex items-center justify-start gap-2 rounded-full border py-1 pr-2 pl-1">
 			<div className="flex items-center gap-3">
@@ -198,46 +240,48 @@ function Tag({ item }: { item: Item }) {
 	);
 }
 
-interface ModeratorsListProps {
-	onSelect: (id: string) => void;
-	isActive: (id: string) => boolean;
-	items?: Item[];
-	className?: string;
-}
-
-function ModeratorsList({
+function InstancesList<T extends Item = Item>({
 	items,
 	className,
 	onSelect,
 	isActive,
-}: ModeratorsListProps) {
+	action,
+	placeholder = "Procurar...",
+	emptyText = "Nenhum item encontrado.",
+}: InstancesListProps<T>) {
 	return (
 		<Command className={className}>
-			<CommandInput placeholder="Procurar moderador..." />
-			<CommandEmpty>Nenhum moderador encontrado.</CommandEmpty>
+			<CommandInput placeholder={placeholder} />
+			<CommandEmpty>{emptyText}</CommandEmpty>
 			<CommandGroup>
-				{
-					// Iterate through the items array
-					// and render a CommandItem for each item
-					items ? (
-						items.map((item) => (
-							<CommandItem
-								key={item.id}
-								className="aria-selected:bg-primary-200/50"
-								onSelect={() => onSelect(item.id)}
-							>
-								<PickerItem
-									item={item}
-									isActive={isActive(item.id)}
-								/>
-							</CommandItem>
-						))
-					) : (
-						<div className="flex flex-1 items-center justify-center py-4">
-							<Loader2 className="h-4 w-4 animate-spin" />
-						</div>
-					)
-				}
+				{items ? (
+					items.map((item) => (
+						<CommandItem
+							key={item.id}
+							className="aria-selected:bg-primary-200/50"
+							onSelect={() => onSelect(item.id)}
+						>
+							<PickerItem
+								item={item}
+								isActive={isActive(item.id)}
+							/>
+						</CommandItem>
+					))
+				) : (
+					<div className="flex flex-1 items-center justify-center py-4">
+						<Loader2 className="h-4 w-4 animate-spin" />
+					</div>
+				)}
+				{action && (
+					<CommandItem
+						key="action-button"
+						className="text-primary justify-center font-semibold"
+						onSelect={action.onClick}
+					>
+						<Plus size={16} />
+						{action.label}
+					</CommandItem>
+				)}
 			</CommandGroup>
 		</Command>
 	);

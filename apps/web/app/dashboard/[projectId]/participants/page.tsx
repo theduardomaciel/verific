@@ -18,23 +18,29 @@ import { Empty } from "@/components/empty";
 import { z } from "zod";
 import { getParticipantsParams } from "@verific/api/routers/participants";
 
-// Data
-import { getParticipants } from "@/lib/data";
+// API
+import { serverClient } from "@/lib/trpc/server";
 
 type ParticipantsPageParams = z.infer<typeof getParticipantsParams>;
 
 export default async function ParticipantsPage(props: {
 	searchParams: Promise<ParticipantsPageParams>;
+	params: Promise<{ projectId: string }>;
 }) {
 	const searchParams = await props.searchParams;
 	const parsedParams = getParticipantsParams.parse(searchParams);
 
-	const participants = await getParticipants(parsedParams);
+	const { projectId } = await props.params;
+
+	const { participants } = await serverClient.getParticipants({
+		projectId,
+		...parsedParams,
+	});
 
 	const domains = Array.from(
 		new Set(
 			participants.map(
-				(participant) => participant.user.email.split("@")[1]!,
+				(participant) => participant.user?.email.split("@")[1]!,
 			),
 		),
 	);

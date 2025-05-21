@@ -17,6 +17,7 @@ import {
 	asc,
 	getTableColumns,
 	countDistinct,
+	count, // <-- Adicionado aqui
 } from "@verific/drizzle/orm";
 import { z } from "zod";
 
@@ -34,25 +35,23 @@ import { activityAudiences } from "@verific/drizzle/enum/audience";
 
 export const activitySort = ["recent", "oldest", "alphabetical"] as const;
 
+export const getActivityParams = z.object({
+	page: z.coerce.number().default(0).optional(),
+	pageSize: z.coerce.number().default(5).optional(),
+	search: z.string().optional(),
+	sortBy: z.enum(["recent", "oldest"]).optional(),
+});
+
 export const getActivitiesParams = z.object({
 	query: z.string().optional(),
 	sort: z.enum(activitySort).optional(),
 	page: z.coerce.number().default(0).optional(),
 	pageSize: z.coerce.number().default(10).optional(),
-	category: z
-		.string()
-		.transform(transformSingleToArray)
-		.pipe(z.array(z.enum(activityCategories)))
-		.optional(),
-	audience: z
-		.string()
-		.transform(transformSingleToArray)
-		.pipe(z.array(z.enum(activityAudiences)))
-		.optional(),
+	category: z.array(z.enum(activityCategories)).optional(),
+	audience: z.array(z.enum(activityAudiences)).optional(),
 	speakerIds: z
-		.string()
+		.union([z.array(z.string()), z.string()])
 		.transform(transformSingleToArray)
-		.pipe(z.array(z.string()))
 		.optional(),
 });
 
@@ -83,32 +82,24 @@ function getParticipantsIdsToMutate(newIds: string[], currentIds: string[]) {
 
 export const activitiesRouter = createTRPCRouter({
 	getActivity: protectedProcedure
-		.input(
-			z.object({
-				activityId: z.string().uuid(),
-				projectId: z.string().uuid(),
-			}),
-		)
+		.input(getActivityParams.extend({ activityId: z.string().uuid() }))
 		.query(async ({ input, ctx }) => {
-			const { activityId, projectId } = input;
+			const {
+				activityId,
+				page = 0,
+				pageSize = 5,
+				search,
+				sortBy,
+			} = input;
+
 			const userId = ctx.session.user.id;
+
 			if (!userId) {
 				throw new TRPCError({
 					message: "User not found.",
 					code: "BAD_REQUEST",
 				});
 			}
-
-			const participantMember = await db.query.participant.findFirst({
-				where(fields) {
-					return and(
-						eq(fields.projectId, projectId),
-						eq(fields.userId, userId),
-					);
-				},
-			});
-
-			// const isModerator = participantMember?.role === "moderator";
 
 			const selectedActivity = await db.query.activity.findFirst({
 				where(fields) {
@@ -117,44 +108,101 @@ export const activitiesRouter = createTRPCRouter({
 				with: {
 					project: true,
 					speaker: true,
-					participantsOnActivity: {
-						with: {
-							participant: { with: { user: true } },
-						},
-					},
 				},
 			});
+
 			if (!selectedActivity) {
 				throw new TRPCError({
 					message: "Activity not found.",
 					code: "BAD_REQUEST",
 				});
 			}
-			if (
-				!participantMember &&
-				selectedActivity.audience === "internal"
-			) {
-				throw new TRPCError({
-					message: "User is not a member of the project.",
-					code: "FORBIDDEN",
-				});
+
+			// Buscar todos os moderadores
+			const moderatorParticipants = await db
+				.select({
+					participantOnActivity,
+					participant,
+					user,
+				})
+				.from(participantOnActivity)
+				.innerJoin(
+					participant,
+					eq(participantOnActivity.participantId, participant.id),
+				)
+				.innerJoin(user, eq(participant.userId, user.id))
+				.where(
+					and(
+						eq(participantOnActivity.activityId, activityId),
+						eq(participant.role, "moderator"),
+					),
+				);
+
+			// Buscar participantes não moderadores com paginação/filtro
+			const nonModeratorWhere = [
+				eq(participantOnActivity.activityId, activityId),
+				eq(participant.role, "participant"),
+			];
+
+			if (search) {
+				nonModeratorWhere.push(ilike(user.name, `%${search}%`));
 			}
-			const { participantsOnActivity, ...rest } = selectedActivity;
-			const allParticipants = participantsOnActivity.map((poa) => {
-				const { participant } = poa;
+
+			const orderBy =
+				sortBy === "recent"
+					? desc(participantOnActivity.joinedAt)
+					: asc(participantOnActivity.joinedAt);
+
+			const nonModeratorParticipants = await db
+				.select({
+					participantOnActivity,
+					participant,
+					user,
+				})
+				.from(participantOnActivity)
+				.innerJoin(
+					participant,
+					eq(participantOnActivity.participantId, participant.id),
+				)
+				.innerJoin(user, eq(participant.userId, user.id))
+				.where(and(...nonModeratorWhere))
+				.orderBy(orderBy)
+				.offset(page * pageSize)
+				.limit(pageSize);
+
+			// Buscar total de participantes não moderadores para paginação
+			const countResult = await db
+				.select({ amount: count() })
+				.from(participantOnActivity)
+				.innerJoin(
+					participant,
+					eq(participantOnActivity.participantId, participant.id),
+				)
+				.innerJoin(user, eq(participant.userId, user.id))
+				.where(and(...nonModeratorWhere));
+
+			const amount = countResult?.[0]?.amount ?? 0;
+			const pageCount = Math.ceil(amount / pageSize);
+
+			const allParticipants = [
+				...moderatorParticipants,
+				...nonModeratorParticipants,
+			].map((row) => {
 				return {
-					...participant,
+					...row.participant,
 					user: {
-						name: participant.user.name,
-						image_url: participant.user.image_url,
+						name: row.user.name,
+						email: row.user.email,
+						image_url: row.user.image_url,
 					},
 				};
 			});
+
 			const formattedActivity = {
-				...rest,
+				...selectedActivity,
 				participants: allParticipants,
 			};
-			return { activity: formattedActivity };
+			return { activity: formattedActivity, pageCount };
 		}),
 
 	getActivities: publicProcedure
@@ -171,14 +219,15 @@ export const activitiesRouter = createTRPCRouter({
 				pageSize = 0,
 				query,
 				sort,
-				participantId,
 				category: rawCategory,
 				audience: rawAudience,
 				speakerIds: rawSpeakerIds,
 			} = input;
+
 			const categories = rawCategory;
 			const audiences = rawAudience;
 			const speakerIds = rawSpeakerIds?.map(Number);
+
 			// Query de atividades
 			const activities = await db
 				.select({
@@ -222,22 +271,6 @@ export const activitiesRouter = createTRPCRouter({
 									ilike(activity.description, `%${query}%`),
 								)
 							: undefined,
-						participantId
-							? inArray(
-									activity.id,
-									db
-										.select({
-											id: participantOnActivity.activityId,
-										})
-										.from(participantOnActivity)
-										.where(
-											eq(
-												participantOnActivity.participantId,
-												participantId,
-											),
-										),
-								)
-							: undefined,
 					),
 				)
 				.orderBy(
@@ -268,22 +301,6 @@ export const activitiesRouter = createTRPCRouter({
 							? or(
 									ilike(activity.name, `%${query}%`),
 									ilike(activity.description, `%${query}%`),
-								)
-							: undefined,
-						participantId
-							? inArray(
-									activity.id,
-									db
-										.select({
-											id: participantOnActivity.activityId,
-										})
-										.from(participantOnActivity)
-										.where(
-											eq(
-												participantOnActivity.participantId,
-												participantId,
-											),
-										),
 								)
 							: undefined,
 					),

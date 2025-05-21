@@ -24,6 +24,7 @@
 		"lint": {},
 		"db:generate": {},
 		"db:drop": {},
+		"db:push": {},
 		"db:migrate": {},
 		"db:studio": {},
 		"db:seed": {}

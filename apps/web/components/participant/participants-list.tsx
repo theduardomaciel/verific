@@ -1,7 +1,11 @@
-import { ParticipantCard } from "../participant-card";
-import { Participant } from "@/lib/types/participant";
-import { Empty } from "@/components/empty";
 import { cn } from "@/lib/utils";
+
+// Components
+import { ParticipantCard } from "../dashboard/participant-card";
+import { Empty } from "@/components/empty";
+
+// Types
+import { RouterOutput } from "@verific/api";
 
 interface Props {
 	className?: string;
@@ -38,7 +42,7 @@ interface ListProps {
 	className?: string;
 	activityId: string;
 	hasActivity?: boolean;
-	participants: Participant[];
+	participants: RouterOutput["getParticipants"]["participants"];
 }
 
 function List({

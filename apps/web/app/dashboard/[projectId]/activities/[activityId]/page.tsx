@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import {
 	BellDot,
 	Calendar,
@@ -9,65 +11,47 @@ import {
 } from "lucide-react";
 
 // Components
-import * as ParticipantsList from "@/components/dashboard/activity/participants-list";
+import * as ParticipantsList from "@/components/participant/participants-list";
 import { DashboardPagination } from "@/components/dashboard/pagination";
 import { SearchBar } from "@/components/dashboard/search-bar";
 import { SortBy } from "@/components/dashboard/sort-by";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { CategoryCard } from "@/components/dashboard/category-card";
 
 // Data
 import { getDateString, getTimeString } from "@/lib/date";
-import { getActivityDetails } from "@/lib/data";
 
 // Validation
 import { z } from "zod";
-import { CategoryCard } from "@/components/dashboard/category-card";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
 
-const activityDetailsPageParams = z.object({
-	id: z.string(),
-});
+// API
+import { serverClient } from "@/lib/trpc/server";
+import { getActivityParams } from "@verific/api/routers/activities";
 
-const activityDetailsPageSearchParams = z.object({
-	page: z.coerce.number().default(0),
-	pageSize: z.coerce.number().default(5),
-	search: z.string().optional(),
-	general_search: z.string().optional(),
-	sortBy: z.enum(["recent", "oldest"]).optional(),
-});
-
-type EventDetailsPageParams = z.infer<typeof activityDetailsPageParams>;
-type EventDetailsPageSearchParams = z.infer<
-	typeof activityDetailsPageSearchParams
->;
+type ActivityPageParams = z.infer<typeof getActivityParams>;
 
 export default async function ActivityPage(props: {
-	params: Promise<EventDetailsPageParams>;
-	searchParams: Promise<EventDetailsPageSearchParams>;
+	params: Promise<{ projectId: string; activityId: string }>;
+	searchParams: Promise<ActivityPageParams>;
 }) {
-	const params = await props.params;
 	const searchParams = await props.searchParams;
+	const parsedParams = getActivityParams.parse(searchParams);
 
-	const { id } = activityDetailsPageParams.parse(params);
-	const { page, pageSize, general_search, sortBy } =
-		activityDetailsPageSearchParams.parse(searchParams);
+	const { activityId, projectId } = await props.params;
 
-	const { activity, pageCount } = await getActivityDetails(id, {
-		page,
-		pageSize,
-		general_search,
-		sortBy,
+	const { activity, pageCount } = await serverClient.getActivity({
+		activityId,
+		...parsedParams,
 	});
 
-	const participants = activity.participantsOnActivity
-		.filter((t) => t.participant.role === "participant")
-		.map((t) => {
-			return {
-				...t.participant,
-				joinedAt: t.joinedAt,
-			};
-		});
+	const moderators = activity.participants.filter(
+		(t) => t.role === "moderator",
+	);
+
+	const participants = activity.participants.filter(
+		(t) => t.role === "participant",
+	);
 
 	const dateString = getDateString(activity);
 	const timeFrom = getTimeString(activity.dateFrom);
@@ -117,9 +101,7 @@ export default async function ActivityPage(props: {
 							variant={"destructive"}
 							className="h-10 min-w-10"
 						>
-							<Link href={`/dashboard/activities/${id}/edit`}>
-								<Trash className="h-5 w-5" />
-							</Link>
+							<Trash className="h-5 w-5" />
 						</Button>
 						<Button
 							size={"icon"}
@@ -135,7 +117,7 @@ export default async function ActivityPage(props: {
 							className="h-10 min-w-10"
 						>
 							<Link
-								href={`/dashboard/activities/${id}/edit`}
+								href={`/dashboard/${projectId}/activities/${activityId}/edit`}
 								className="flex-1"
 							>
 								<Edit className="h-5 w-5" />
@@ -161,7 +143,7 @@ export default async function ActivityPage(props: {
 								placeholder="Pesquisar participantes"
 							/>
 							<SortBy
-								sortBy={sortBy}
+								sortBy={parsedParams.sortBy}
 								items={[
 									{
 										label: "Mais recentes",
@@ -182,7 +164,7 @@ export default async function ActivityPage(props: {
 					</ParticipantsList.Holder>
 					{participants && participants.length > 0 && (
 						<DashboardPagination
-							currentPage={page || 1}
+							currentPage={parsedParams.page || 1}
 							totalPages={pageCount}
 							prefix={`activities/${activity.id}`}
 						/>
@@ -191,9 +173,7 @@ export default async function ActivityPage(props: {
 				<ParticipantsList.Holder className="md:w-2/5">
 					<ParticipantsList.Title>Moderadores</ParticipantsList.Title>
 					<ParticipantsList.List
-						participants={activity.participantsOnActivity
-							.map((t) => t.participant)
-							.filter((t) => t.role === "moderator")}
+						participants={moderators}
 						activityId={activity.id}
 					/>
 				</ParticipantsList.Holder>

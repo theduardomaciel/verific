@@ -12,37 +12,28 @@ import { CategoryLabel } from "@/components/dashboard/category-card";
 
 // Data
 import { formatFriendlyDate, isLive, isStartingSoon } from "@/lib/data";
-import { Activity } from "@/lib/types/activity";
 
-interface SimpleActivityCardProps
-	extends Pick<
-		Activity,
-		"speaker" | "category" | "dateFrom" | "name" | "id"
-	> {
+// Types
+import { RouterOutput } from "@verific/api";
+
+interface ActivityCardProps {
 	className?: string;
-}
-interface ActivityCardProps extends Activity {
-	className?: string;
+	activity: RouterOutput["getActivities"]["activities"][number];
 }
 
-export function SimpleActivityCard({
-	id,
-	name,
-	speaker,
-	category,
-	dateFrom,
-	className,
-}: SimpleActivityCardProps) {
+export function SimpleActivityCard({ activity, className }: ActivityCardProps) {
 	return (
 		<Link
-			href={`/dashboard/activities/${id}`}
+			href={`/dashboard/activities/${activity.id}`}
 			className={cn(
 				"hover:bg-foreground/5 flex flex-col items-start justify-start rounded-md border",
 				className,
 			)}
 		>
 			<div className="text-foreground flex h-full flex-col items-start justify-center gap-1 p-4">
-				<h3 className="font-dashboard font-semibold">{name}</h3>
+				<h3 className="font-dashboard font-semibold">
+					{activity.name}
+				</h3>
 				<span className="flex flex-row items-center justify-center gap-2">
 					<Image
 						className="rounded-full"
@@ -51,45 +42,39 @@ export function SimpleActivityCard({
 						width={14}
 						height={14}
 					/>
-					<p className="text-muted-foreground/80 -mt-0.5 text-sm">
-						{speaker && <span>{speaker.name}</span>}
-					</p>
+					{activity.speaker && (
+						<p className="text-muted-foreground/80 -mt-0.5 text-sm">
+							{activity.speaker.name}
+						</p>
+					)}
 				</span>
 			</div>
 			<div className="bg-input h-[1px] w-full" />
 			<ActivityInfo
-				category={category}
-				dateFrom={dateFrom}
+				category={activity.category}
+				dateFrom={activity.dateFrom}
 				className="p-4"
 			/>
 		</Link>
 	);
 }
 
-export function ActivityCard({
-	id,
-	name,
-	speaker,
-	category,
-	dateFrom,
-	description,
-	participantsOnActivity,
-	className,
-}: ActivityCardProps) {
+export function ActivityCard({ activity, className }: ActivityCardProps) {
 	const monitors =
-		participantsOnActivity
-			?.filter(
-				(onActivity) => onActivity.participant.role === "moderator",
-			)
-			.map((participant) => participant.participant.user.name) || [];
+		activity.participants
+			?.filter((onActivity) => onActivity.role === "moderator")
+			.map((participant) => participant.user.name) || [];
 
 	const participantsAmount =
-		participantsOnActivity?.filter(
-			(onActivity) => onActivity.participant.role === "participant",
+		activity.participants?.filter(
+			(onActivity) => onActivity.role === "participant",
 		).length || 0;
 
 	return (
-		<Link href={`/dashboard/activities/${id}`} className="flex w-full">
+		<Link
+			href={`/dashboard/activities/${activity.id}`}
+			className="flex w-full"
+		>
 			<div
 				className={cn(
 					"bg-card hover:bg-secondary group w-full rounded-md border transition-colors",
@@ -99,25 +84,23 @@ export function ActivityCard({
 				<div className="space-y-4 p-6">
 					<div className="flex items-start justify-between">
 						<h3 className="font-dashboard text-foreground text-xl font-semibold">
-							{name}
+							{activity.name}
 						</h3>
-						{id && (
-							<span className="text-muted-foreground text-sm">
-								#{id}
-							</span>
-						)}
+						<span className="text-muted-foreground text-sm">
+							#{activity.id}
+						</span>
 					</div>
 
-					{description && (
+					{activity.description && (
 						<p className="text-foreground line-clamp-3 text-sm">
-							{description}
+							{activity.description}
 						</p>
 					)}
 
 					<ActivityInfo
-						speaker={speaker}
-						category={category}
-						dateFrom={dateFrom}
+						speaker={activity.speaker}
+						category={activity.category}
+						dateFrom={activity.dateFrom}
 					/>
 
 					{(monitors || participantsAmount) && (
@@ -162,9 +145,11 @@ export function ActivityCard({
 	);
 }
 
-interface InfoProps extends Pick<Activity, "category" | "dateFrom"> {
-	speaker?: Activity["speaker"];
+interface InfoProps {
 	className?: string;
+	speaker?: RouterOutput["getActivities"]["activities"][number]["speaker"];
+	category: RouterOutput["getActivities"]["activities"][number]["category"];
+	dateFrom: Date;
 }
 
 function ActivityInfo({ className, speaker, category, dateFrom }: InfoProps) {

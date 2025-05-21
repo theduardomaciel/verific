@@ -112,6 +112,9 @@ export const projectsRouter = createTRPCRouter({
 		.query(async ({ input }) => {
 			const projectData = await db.query.project.findFirst({
 				where: eq(project.id, input.id),
+				with: {
+					speakers: true,
+				},
 			});
 			if (!projectData) {
 				throw new Error("Project not found");
