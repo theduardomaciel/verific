@@ -9,7 +9,7 @@ import mobileDark from "@/public/images/dashboard-mobile.png";
 export function Screenshots() {
 	return (
 		<section className="px-landing flex w-full justify-center pt-6 pb-8 lg:pb-16">
-			<div className="container flex w-full flex-col gap-6 lg:flex-row">
+			<div className="container-p flex w-full flex-col gap-6 lg:flex-row">
 				<div className="bg-primary hidden h-[472px] w-full items-end justify-center overflow-hidden rounded-2xl px-10 pt-14 md:flex lg:w-[71.4%]">
 					<Image
 						src={desktopDark}

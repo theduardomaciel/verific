@@ -357,7 +357,6 @@ export async function getActivities({
 	sort = "recent",
 	page = 0,
 	pageSize = 10,
-	status = [],
 	category = [],
 	audience = [],
 	speakerIds = [],

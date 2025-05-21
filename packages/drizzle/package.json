@@ -5,26 +5,29 @@
 	"version": "0.0.0",
 	"private": true,
 	"scripts": {
-		"db:generate": "drizzle-kit generate:pg",
-		"db:drop": "drizzle-kit drop",
+		"db:generate": "drizzle-kit generate",
+		"db:push": "drizzle-kit push",
 		"db:migrate": "pnpm tsx ./migrate.ts",
+		"db:drop": "drizzle-kit drop",
 		"db:studio": "drizzle-kit studio",
 		"db:seed": "pnpm tsx ./seed_v2.ts"
 	},
 	"dependencies": {
-		"@faker-js/faker": "^9.7.0",
+		"@faker-js/faker": "^9.8.0",
 		"@neondatabase/serverless": "^1.0.0",
 		"@verific/env": "workspace:*",
-		"tsx": "^4.19.3",
-		"zod": "^3.24.2"
+		"dotenv": "^16.5.0",
+		"drizzle-orm": "^0.43.1",
+		"tsx": "^4.19.4",
+		"ws": "^8.18.2",
+		"zod": "^3.25.7"
 	},
 	"devDependencies": {
+		"@types/ws": "^8.18.1",
 		"@verific/eslint-config": "workspace:*",
 		"@verific/prettier-config": "workspace:*",
 		"@verific/typescript-config": "workspace:*",
-		"drizzle-kit": "^0.30.6",
-		"drizzle-orm": "^0.41.0",
-		"pg": "^8.14.1"
+		"drizzle-kit": "^0.31.1"
 	},
 	"prettier": "@verific/prettier-config"
 }

@@ -1,6 +1,7 @@
 import type * as React from "react";
 
 import { cn } from "@/lib/utils";
+import { formatPhone } from "@/lib/validations/masks/phone";
 
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
 	return (
@@ -40,4 +41,39 @@ function InputWithSuffix({
 	);
 }
 
-export { Input, InputWithSuffix };
+function PhoneInput({
+	onChange,
+	value,
+	...props
+}: React.ComponentProps<"input">) {
+	// Handler para aplicar a máscara manualmente
+	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const formatted = formatPhone(e.target.value);
+		if (onChange) {
+			// Cria um novo evento com o valor formatado
+			const event = {
+				...e,
+				target: {
+					...e.target,
+					value: formatted,
+				},
+			};
+			onChange(event as React.ChangeEvent<HTMLInputElement>);
+		}
+	};
+
+	return (
+		<Input
+			{...props}
+			value={
+				typeof value === "string" ? formatPhone(value) : (value ?? "")
+			}
+			onChange={handleChange}
+			maxLength={15} // (99) 99999-9999
+			inputMode="tel"
+			placeholder="(xx) xxxxx-xxxx"
+		/>
+	);
+}
+
+export { Input, PhoneInput, InputWithSuffix };

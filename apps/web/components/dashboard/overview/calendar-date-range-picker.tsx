@@ -17,11 +17,21 @@ import {
 
 export function CalendarDateRangePicker({
 	className,
-}: React.HTMLAttributes<HTMLDivElement>) {
-	const [date, setDate] = React.useState<DateRange | undefined>({
+	value,
+	onChange,
+}: React.HTMLAttributes<HTMLDivElement> & {
+	value?: DateRange;
+	onChange?: (range: DateRange | undefined) => void;
+}) {
+	const [internalDate, setInternalDate] = React.useState<
+		DateRange | undefined
+	>({
 		from: subDays(new Date(), 3),
 		to: addDays(new Date(), 5),
 	});
+
+	const date = value !== undefined ? value : internalDate;
+	const setDate = onChange !== undefined ? onChange : setInternalDate;
 
 	return (
 		<div className={cn("grid gap-2", className)}>
@@ -39,11 +49,18 @@ export function CalendarDateRangePicker({
 						{date?.from ? (
 							date.to ? (
 								<>
-									{format(date.from, "dd 'de' MMM, yyyy", { locale: ptBR })} -{" "}
-									{format(date.to, "dd 'de' MMM, yyyy", { locale: ptBR })}
+									{format(date.from, "dd 'de' MMM, yyyy", {
+										locale: ptBR,
+									})}{" "}
+									-{" "}
+									{format(date.to, "dd 'de' MMM, yyyy", {
+										locale: ptBR,
+									})}
 								</>
 							) : (
-								format(date.from, "dd 'de' MMM, yyyy", { locale: ptBR })
+								format(date.from, "dd 'de' MMM, yyyy", {
+									locale: ptBR,
+								})
 							)
 						) : (
 							<span>Escolha uma data</span>
@@ -52,7 +69,7 @@ export function CalendarDateRangePicker({
 				</PopoverTrigger>
 				<PopoverContent className="w-auto p-0" align="end">
 					<Calendar
-						initialFocus
+						// initialFocus removido para compatibilidade com Firefox
 						mode="range"
 						defaultMonth={date?.from}
 						selected={date}
