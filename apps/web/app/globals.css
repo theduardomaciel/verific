@@ -7,6 +7,7 @@
 @theme inline {
 	/* Base design tokens */
 	--font-sans: var(--font-hanken-grotesk);
+	--font-dashboard: var(--font-rem);
 	--font-mono: JetBrains Mono, monospace;
 	--font-serif: Source Serif 4, serif;
 
@@ -19,7 +20,8 @@
 
 	/* Spacing */
 	--breakpoint-xs: 20rem;
-	--spacing-container: 2rem;
+	--spacing-container-h: 1.5rem;
+	--spacing-container-v: 2.5rem;
 
 	/* Shadows */
 	--shadow-color: hsl(0 0% 0%);
@@ -63,25 +65,27 @@
 
 .container-p {
 	width: 100%;
-	padding-inline: 0rem;
+	padding-inline: 2rem;
 
-	@media (width >=20rem
 
-		/* 320px */
+
+	@media (width >=36rem
+
+		/* 480px */
 	) {
-		padding-inline: calc((100% - 20rem) / 2);
-	}
-
-	@media (width >=40rem
-
-		/* 640px */
-	) {
-		padding-inline: calc((100% - 40rem) / 2);
+		padding-inline: calc((100% - 30rem) / 2);
 	}
 
 	@media (width >=48rem
 
 		/* 768px */
+	) {
+		padding-inline: calc((100% - 40rem) / 2);
+	}
+
+	@media (width >=56rem
+
+		/* 1024px */
 	) {
 		padding-inline: calc((100% - 48rem) / 2);
 	}
@@ -90,24 +94,49 @@
 
 		/* 1024px */
 	) {
-		padding-inline: calc((100% - 64rem) / 2);
+		padding-inline: calc((100% - 56rem) / 2);
 	}
 
 	@media (width >=80rem
 
 		/* 1280px */
 	) {
-		padding-inline: calc((100% - 80rem) / 2);
+		padding-inline: calc((100% - 64rem) / 2);
 	}
 
 	@media (width >=96rem
 
 		/* 1536px */
 	) {
-		padding-inline: calc((100% - 96rem) / 2);
+		padding-inline: calc((100% - 86rem) / 2);
 	}
 }
 
+.container-d {
+	width: 100%;
+	padding-inline: var(--spacing-container-h);
+
+	@media (width >=64rem
+
+		/* 1024px */
+	) {
+		padding-inline: calc((100% - 60rem) / 2);
+	}
+
+	@media (width >=80rem
+
+		/* 1280px */
+	) {
+		padding-inline: calc((100% - 64rem) / 2);
+	}
+
+	@media (width >=96rem
+
+		/* 1536px */
+	) {
+		padding-inline: calc((100% - 86rem) / 2);
+	}
+}
 
 @layer base {
 	* {

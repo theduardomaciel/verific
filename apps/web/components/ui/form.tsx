@@ -3,6 +3,7 @@
 import * as React from "react";
 import * as LabelPrimitive from "@radix-ui/react-label";
 import { Slot } from "@radix-ui/react-slot";
+
 import {
 	Controller,
 	FormProvider,
@@ -13,8 +14,10 @@ import {
 	type FieldValues,
 } from "react-hook-form";
 
-import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
+import { Panel, type PanelProps } from "../forms";
+
+import { cn } from "@/lib/utils";
 
 const Form = FormProvider;
 
@@ -136,7 +139,17 @@ function FormDescription({ className, ...props }: React.ComponentProps<"p">) {
 	);
 }
 
-function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
+interface FormMessageProps extends React.ComponentProps<"p"> {
+	type?: PanelProps["type"];
+	showIcon?: PanelProps["showIcon"];
+}
+
+function FormMessage({
+	className,
+	type,
+	showIcon,
+	...props
+}: FormMessageProps) {
 	const { error, formMessageId } = useFormField();
 	const body = error ? String(error?.message ?? "") : props.children;
 
@@ -144,15 +157,38 @@ function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
 		return null;
 	}
 
+	if (error?.type === "custom" && type) {
+		return (
+			<Panel
+				type={type}
+				showIcon={showIcon}
+				className={className}
+				{...props}
+			>
+				{body}
+			</Panel>
+		);
+	}
+
 	return (
 		<p
-			data-slot="form-message"
 			id={formMessageId}
-			className={cn("text-destructive text-sm", className)}
+			className={cn(
+				"change_later text-destructive text-sm font-medium",
+				className,
+			)}
 			{...props}
 		>
 			{body}
 		</p>
+	);
+}
+
+function FormWrapper({ children }: { children: React.ReactNode }) {
+	return (
+		<Slot className="container-p flex w-full flex-col items-center justify-start gap-9 py-12 lg:py-24">
+			{children}
+		</Slot>
 	);
 }
 
@@ -165,4 +201,5 @@ export {
 	FormDescription,
 	FormMessage,
 	FormField,
+	FormWrapper,
 };

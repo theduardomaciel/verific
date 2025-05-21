@@ -24,7 +24,6 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { SelectItem, SelectTrigger } from "./ui/select";
 import { Button } from "./ui/button";
 
 // Types
@@ -32,7 +31,7 @@ import { Button } from "./ui/button";
 interface Item {
 	id: string;
 	label: string;
-	image: string;
+	image?: string;
 }
 
 interface InstancePickerParams {
@@ -122,13 +121,15 @@ function PickerItem({ item, isActive }: { item: Item; isActive: boolean }) {
 			})}
 		>
 			<div className="flex items-center gap-3">
-				<Image
-					width={32}
-					height={32}
-					src={item.image}
-					alt={item.label}
-					className="h-8 w-8 rounded-full"
-				/>
+				{item.image && (
+					<Image
+						width={32}
+						height={32}
+						src={item.image}
+						alt={item.label}
+						className="h-8 w-8 rounded-full"
+					/>
+				)}
 				<span>{item.label}</span>
 			</div>
 			<Check
@@ -180,13 +181,15 @@ function Tag({ item }: { item: Item }) {
 	return (
 		<li className="border-primary-200/50 bg-background flex items-center justify-start gap-2 rounded-full border py-1 pr-2 pl-1">
 			<div className="flex items-center gap-3">
-				<Image
-					width={24}
-					height={24}
-					src={item.image}
-					alt={item.label}
-					className="h-6 w-6 rounded-full"
-				/>
+				{item.image && (
+					<Image
+						width={24}
+						height={24}
+						src={item.image}
+						alt={item.label}
+						className="h-6 w-6 rounded-full"
+					/>
+				)}
 				<span className="text-neutral max-w-full overflow-hidden text-xs font-bold overflow-ellipsis whitespace-nowrap">
 					{item.label}
 				</span>

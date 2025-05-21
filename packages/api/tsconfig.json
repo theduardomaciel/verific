@@ -1,12 +1,5 @@
 {
 	"extends": "@verific/typescript-config/base.json",
-	"include": [
-		".",
-		"websockets/verification-code.ts"
-	],
-	"exclude": [
-		"dist",
-		"build",
-		"node_modules"
-	]
+	"include": ["."],
+	"exclude": ["dist", "build", "node_modules"]
 }
