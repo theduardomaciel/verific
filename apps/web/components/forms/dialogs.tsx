@@ -64,6 +64,7 @@ interface SuccessDialogProps extends Props {
 
 export function SuccessDialog({
 	isOpen,
+	onClose,
 	href,
 	title,
 	description,
@@ -98,11 +99,21 @@ export function SuccessDialog({
 					)}
 				</DialogDescription>
 				<DialogFooter>
-					<Link href={href ?? "/"} prefetch={false}>
-						<Button type="button" className="h-11 px-6">
+					{href ? (
+						<Button type="button" className="h-11 px-6" asChild>
+							<Link href={href} prefetch={false}>
+								{buttonText || "Entendi!"}
+							</Link>
+						</Button>
+					) : (
+						<Button
+							type="button"
+							className="h-11 px-6"
+							onClick={onClose}
+						>
 							{buttonText || "Entendi!"}
 						</Button>
-					</Link>
+					)}
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>

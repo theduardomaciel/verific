@@ -88,7 +88,9 @@ export function MutateSpeakerDialog({
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
-			...speaker,
+			name: speaker?.name ?? "",
+			description: speaker?.description ?? "",
+			imageUrl: speaker?.imageUrl ?? "",
 		},
 	});
 
@@ -99,22 +101,21 @@ export function MutateSpeakerDialog({
 	// Gerenciamos o envio do formulário
 	async function onSubmit(data: z.infer<typeof formSchema>) {
 		setCurrentState("submitting");
+
+		console.log("data: ", data);
+
 		try {
 			let speakerId = speaker?.id;
 
 			if (speaker) {
 				await updateMutation.mutateAsync({
 					id: speaker.id,
-					name: data.name,
-					description: data.description,
-					imageUrl: data.imageUrl,
+					...data,
 					projectId,
 				});
 			} else {
 				const { id } = await createMutation.mutateAsync({
-					name: data.name,
-					description: data.description,
-					imageUrl: data.imageUrl,
+					...data,
 					projectId,
 				});
 				speakerId = id;
@@ -129,8 +130,6 @@ export function MutateSpeakerDialog({
 			}
 
 			setCurrentState("submitted");
-
-			router.refresh();
 		} catch (error) {
 			console.error(error);
 			setCurrentState("error");
@@ -144,10 +143,7 @@ export function MutateSpeakerDialog({
 				<DialogContent className="sm:max-w-md">
 					<Form {...form}>
 						<form
-							onSubmit={form.handleSubmit(onSubmit, (error) => {
-								console.log(error);
-								console.log(form.getValues());
-							})}
+							id="mutate-speaker-form"
 							className="flex w-full flex-col space-y-6"
 						>
 							<DialogHeader>
@@ -164,7 +160,27 @@ export function MutateSpeakerDialog({
 										Cancelar
 									</Button>
 								</DialogClose>
-								<Button type="submit">
+								<Button
+									type="button"
+									// TODO: Fazemos o submit do formulário manualmente pois estamos acidentalmente rodando
+									// o formulário da página junto com o do dialog/drawer
+									onClick={async () => {
+										// Manually trigger validation on all fields and wait for it to complete
+										const isValid = await form.trigger();
+
+										if (isValid) {
+											// If valid, get values and submit
+											const values = form.getValues();
+											onSubmit(values);
+										} else {
+											// Log errors for debugging
+											console.log(
+												"Form validation failed:",
+												form.formState.errors,
+											);
+										}
+									}}
+								>
 									{speaker ? "Salvar" : "Criar"}
 								</Button>
 							</DialogFooter>
@@ -173,7 +189,13 @@ export function MutateSpeakerDialog({
 				</DialogContent>
 				<StatusDialogs
 					currentState={currentState}
-					setCurrentState={setCurrentState}
+					onClose={(refresh) => {
+						if (refresh) {
+							router.refresh();
+						}
+						setCurrentState(false);
+						setOpen(false);
+					}}
 				/>
 			</Dialog>
 		);
@@ -185,7 +207,7 @@ export function MutateSpeakerDialog({
 			<DrawerContent>
 				<Form {...form}>
 					<form
-						onSubmit={form.handleSubmit(onSubmit)}
+						id="mutate-speaker-form"
 						className="flex w-full flex-col space-y-6"
 					>
 						<DrawerHeader className="text-left">
@@ -199,9 +221,33 @@ export function MutateSpeakerDialog({
 							<MutateSpeakerForm form={form} />
 						</div>
 						<DrawerFooter className="flex w-full gap-2">
-							<Button>{speaker ? "Atualizar" : "Criar"}</Button>
+							<Button
+								type="button"
+								// TODO: Fazemos o submit do formulário manualmente pois estamos acidentalmente rodando
+								// o formulário da página junto com o do dialog/drawer
+								onClick={async () => {
+									// Manually trigger validation on all fields and wait for it to complete
+									const isValid = await form.trigger();
+
+									if (isValid) {
+										// If valid, get values and submit
+										const values = form.getValues();
+										onSubmit(values);
+									} else {
+										// Log errors for debugging
+										console.log(
+											"Form validation failed:",
+											form.formState.errors,
+										);
+									}
+								}}
+							>
+								{speaker ? "Atualizar" : "Criar"}
+							</Button>
 							<DrawerClose asChild>
-								<Button variant="outline">Cancelar</Button>
+								<Button type="button" variant="outline">
+									Cancelar
+								</Button>
 							</DrawerClose>
 						</DrawerFooter>
 					</form>
@@ -209,7 +255,13 @@ export function MutateSpeakerDialog({
 			</DrawerContent>
 			<StatusDialogs
 				currentState={currentState}
-				setCurrentState={setCurrentState}
+				onClose={(refresh) => {
+					if (refresh) {
+						router.refresh();
+					}
+					setCurrentState(false);
+					setOpen(false);
+				}}
 			/>
 		</Drawer>
 	);
@@ -217,15 +269,16 @@ export function MutateSpeakerDialog({
 
 function StatusDialogs({
 	currentState,
-	setCurrentState,
+	onClose,
 }: {
 	currentState: FormState;
-	setCurrentState: React.Dispatch<React.SetStateAction<FormState>>;
+	onClose: (refresh?: boolean) => void;
 }) {
 	return (
 		<>
 			<SuccessDialog
 				isOpen={currentState === "submitted"}
+				onClose={() => onClose(true)}
 				description={<>O palestrante foi salvo com sucesso!</>}
 			/>
 			<LoadingDialog
@@ -234,9 +287,7 @@ function StatusDialogs({
 			/>
 			<ErrorDialog
 				isOpen={currentState === "error"}
-				onClose={() => {
-					setCurrentState(false);
-				}}
+				onClose={() => onClose()}
 			/>
 		</>
 	);

@@ -18,7 +18,13 @@ const nextConfig: NextConfig = {
 		},
 	},
 	images: {
-		remotePatterns: [new URL("https://github.com/**")],
+		remotePatterns: [
+			{
+				protocol: "https",
+				hostname: "i.imgur.com",
+				pathname: "/**",
+			},
+		],
 	},
 };
 

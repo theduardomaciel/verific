@@ -17,28 +17,10 @@ export async function isMemberAuthenticated({ projectId, userId }: Props) {
 		  }
 		| undefined;
 
-	if (!userId || !projectId) {
+	if (!userId) {
 		error = {
 			message: "Request user not found.",
 			code: "BAD_REQUEST",
-		};
-		return error;
-	}
-
-	const participant = await db.query.participant.findFirst({
-		where(fields) {
-			return and(
-				eq(fields.projectId, projectId),
-				eq(fields.userId, userId),
-				eq(fields.role, "moderator"),
-			);
-		},
-	});
-
-	if (!participant) {
-		error = {
-			message: "User has no permission to access this route.",
-			code: "FORBIDDEN",
 		};
 		return error;
 	}

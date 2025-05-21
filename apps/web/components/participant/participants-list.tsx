@@ -43,6 +43,10 @@ interface ListProps {
 	activityId: string;
 	hasActivity?: boolean;
 	participants: RouterOutput["getParticipants"]["participants"];
+	emptyMessage?: {
+		title: string;
+		description: string;
+	};
 }
 
 function List({
@@ -50,12 +54,16 @@ function List({
 	hasActivity = false,
 	participants,
 	className,
+	emptyMessage,
 }: ListProps) {
 	if (!participants || participants.length === 0) {
 		return (
 			<Empty
-				title="Nenhum participante encontrado"
-				description="Parece que ainda não há participantes nesta atividade."
+				title={emptyMessage?.title ?? "Nenhum participante encontrado"}
+				description={
+					emptyMessage?.description ??
+					"Parece que ainda não há participantes nesta atividade."
+				}
 			/>
 		);
 	}
