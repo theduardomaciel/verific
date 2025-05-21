@@ -1,7 +1,5 @@
 import type {} from "./auth.d.ts";
 
-import { env } from "@verific/env";
-
 import { drizzleAuthAdapter } from "./drizzle-auth-adapter";
 import { googleProvider } from "./google-provider";
 
@@ -16,7 +14,7 @@ export const authConfig = {
 	adapter: drizzleAuthAdapter,
 	providers: [googleProvider],
 	pages: {
-		signIn: "/auth/sign-in",
+		signIn: "/auth",
 		error: "/auth/error",
 	},
 	// debug: true,
@@ -81,7 +79,7 @@ export const authConfig = {
 					token.participant = participant;
 				}
 
-				console.log("JWT User found", user);
+				// console.log("JWT User found", user);
 			}
 
 			function isSessionAvailable(session: unknown): session is Session {
@@ -94,21 +92,21 @@ export const authConfig = {
 				token.participant = session.participant;
 			}
 
-			console.log("JWT", {
+			/* console.log("JWT", {
 				token,
 				user,
 				session,
 				trigger,
-			});
+			}); */
 
 			return token;
 		},
 		session({ session, token, ...params }) {
-			console.log("Session", {
+			/* console.log("Session", {
 				session,
 				token,
 				params,
-			});
+			}); */
 
 			if (session.user) {
 				session.user.id = token.sub as string;
@@ -117,36 +115,21 @@ export const authConfig = {
 				session.participant = token.participant;
 			}
 
-			console.log("Updated session", session);
+			// console.log("Updated session", session);
 
 			return session;
 		},
 		authorized({ auth, request: { nextUrl } }) {
 			const isLoggedIn = !!auth?.user;
-			const isMember = !!auth?.participant?.role;
-			const isAdmin = auth?.participant?.role === "moderator";
+			const isMember = !!auth?.participant;
 
-			console.log("Authorized", { isLoggedIn, isMember, isAdmin });
+			console.log("Authorized", { isLoggedIn, isMember });
 			// console.log("Pathname", nextUrl.pathname);
 
-			const authenticatedPages = ["/auth"];
-			const privatePaths = ["/events/", "/participants/"];
-			// A página de eventos é privada somente para eventos específicos (/events/[id]); a página /events é pública
+			const authenticatedRoutes = ["/dashboard", "/account"];
 
-			const isOnPrivatePages = privatePaths.some((page) =>
-				nextUrl.pathname.startsWith(page),
-			);
-			// privatePages.some((page) => nextUrl.pathname === page)
-			const isOnAuthenticatedPages = authenticatedPages.some(
-				(page) => nextUrl.pathname === page,
-			);
-
-			const isOnDashboard = nextUrl.pathname.startsWith("/dashboard");
-
-			const guestPages = ["/auth/sign-in", "/join"];
-
-			const isOnGuestPages = guestPages.some(
-				(page) => nextUrl.pathname === page,
+			const isOnAuthenticatedRoutes = authenticatedRoutes.some((route) =>
+				nextUrl.pathname.startsWith(route),
 			);
 
 			const isOnPublicAPIRoutes =
@@ -154,46 +137,28 @@ export const authConfig = {
 			const isOnAPIRoutes = nextUrl.pathname.startsWith("/api");
 
 			if (isOnPublicAPIRoutes) {
+				// console.log("Public API route");
 				return true;
 			}
 
 			if (isOnAPIRoutes && !isLoggedIn) {
+				// console.log("User not logged. Preventing API access");
 				return Response.json(
 					{ message: "Unauthorized." },
 					{ status: 401 },
 				);
 			}
 
-			// Páginas públicas que não devem ser acessadas por membros
-			if (isOnGuestPages && isMember) {
-				return Response.redirect(new URL("/", nextUrl));
+			// Usuário está logado e acessando a página de login
+			if (isLoggedIn && nextUrl.pathname.includes("/auth")) {
+				// console.log("User logged. Redirecting to account page");
+				return Response.redirect(new URL("/account", nextUrl));
 			}
 
-			// Páginas exclusivas para usuários autenticados
-			if (isOnAuthenticatedPages && !isLoggedIn) {
+			// Usuário não está logado e acessando uma página autenticada
+			if (isOnAuthenticatedRoutes && !isLoggedIn) {
+				// console.log("User not logged. Redirecting to login");
 				return false;
-			}
-
-			// Páginas exclusivas para membros
-			if ((isOnPrivatePages || isOnDashboard) && !isMember) {
-				if (isLoggedIn) {
-					// Redirect user back to sign in
-					console.log("Redirecting to sign-in page");
-					return Response.redirect(
-						new URL("/auth/error?error=NotAuthenticated", nextUrl),
-					);
-				}
-
-				// Não está autenticado
-				return false;
-			}
-
-			// Páginas exclusivas para administradores
-			if (isOnDashboard && isLoggedIn && !isAdmin) {
-				console.log("Redirecting to error page");
-				return Response.redirect(
-					new URL("/auth/error?error=PermissionLevelError", nextUrl),
-				);
 			}
 
 			return true;

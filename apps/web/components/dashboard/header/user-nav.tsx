@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 
 import { Cloud, LifeBuoy, LogOut, Settings } from "lucide-react";
@@ -15,6 +17,9 @@ import {
 	DropdownMenuShortcut,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { signOutAction } from "@/app/actions";
+
+// Auth
 
 interface Props {
 	showAccountActions?: boolean;
@@ -83,7 +88,7 @@ export function UserNav({ showAccountActions }: Props) {
 					</DropdownMenuItem>
 				</DropdownMenuGroup>
 				<DropdownMenuSeparator />
-				<DropdownMenuItem>
+				<DropdownMenuItem onClick={() => signOutAction()}>
 					<LogOut className="mr-2 h-4 w-4" />
 					Log out
 					<DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>

@@ -18,9 +18,11 @@ import { Logged } from "@/components/auth/LoginStatus";
 import GoogleButton from "@/components/auth/GoogleButton";
 
 export default function JoinForm0({
+	callbackUrl,
 	form,
 	email,
 }: {
+	callbackUrl: string;
 	form: GenericForm;
 	email?: string | null;
 }) {
@@ -42,7 +44,10 @@ export default function JoinForm0({
 				render={() => (
 					<FormItem className="w-full">
 						<FormLabel>E-mail institucional</FormLabel>
-						<GoogleButton className="w-full" />
+						<GoogleButton
+							className="w-full"
+							callbackUrl={callbackUrl}
+						/>
 						{email && <Logged email={email} />}
 						<FormMessage type="warning" showIcon />
 					</FormItem>

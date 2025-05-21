@@ -8,7 +8,7 @@ import GoogleButton, { ContinueRegistrationButton } from "./GoogleButton";
 
 interface NotLoggedProps {
 	className?: string;
-	href?: string;
+	href: string;
 	isAuthenticated?: boolean;
 	children: ReactNode;
 }
@@ -32,7 +32,10 @@ export function NotLogged({
 					"Você precisa estar logado para ver os eventos internos."}
 			</span>
 			{isAuthenticated ? (
-				<ContinueRegistrationButton className="px-8 max-md:w-full" />
+				<ContinueRegistrationButton
+					callbackUrl={href}
+					className="px-8 max-md:w-full"
+				/>
 			) : (
 				<GoogleButton
 					className="px-8 max-md:w-full"

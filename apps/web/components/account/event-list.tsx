@@ -4,25 +4,15 @@ import Link from "next/link";
 import { EventCard } from "./event-card";
 import { CreateProjectDialog } from "./create-project-dialog";
 
-const projects = [
-	{
-		id: 1,
-		name: "SECOMP 2025",
-		createdAt: "12/11/2024",
-	},
-	{
-		id: 2,
-		name: "Escola de Inverno 2024",
-		createdAt: "09/06/2024",
-	},
-	{
-		id: 3,
-		name: "SECOMP 2024",
-		createdAt: "08/11/2023",
-	},
-];
+// Types
+import { RouterOutput } from "@verific/api";
+import { CircleSlash } from "lucide-react";
 
-export function EventList() {
+interface Props {
+	projects?: RouterOutput["getProjects"];
+}
+
+export function EventsList({ projects }: Props) {
 	return (
 		<div className="w-full max-w-md px-4">
 			<h1 className="font-REM text-foreground mb-6 text-center text-2xl font-semibold">
@@ -30,21 +20,27 @@ export function EventList() {
 			</h1>
 
 			<div className="flex w-full flex-col gap-4 p-3 md:rounded-lg md:border md:p-6">
-				<ul className="flex flex-col items-center justify-start gap-3">
-					{projects.map((project) => (
-						<Link
-							href={"dashboard"}
-							key={project.id}
-							className="w-full"
-						>
-							<EventCard
+				{projects?.length ? (
+					<ul className="flex flex-col items-center justify-start gap-3">
+						{projects.map((project) => (
+							<Link
+								href={"dashboard"}
 								key={project.id}
-								name={project.name}
-								createdAt={project.createdAt}
-							/>
-						</Link>
-					))}
-				</ul>
+								className="w-full"
+							>
+								<EventCard key={project.id} project={project} />
+							</Link>
+						))}
+					</ul>
+				) : (
+					<div className="flex flex-col items-center justify-center gap-4 py-8">
+						<CircleSlash size={24} />
+						<p className="max-w-1/2 text-center text-sm">
+							{" "}
+							Nenhum projeto foi criado até o momento.
+						</p>
+					</div>
+				)}
 
 				<CreateProjectDialog />
 			</div>

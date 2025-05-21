@@ -13,10 +13,10 @@ import GoogleLogo from "@/public/icons/google.svg";
 import { Button } from "@/components/ui/button";
 
 // Actions
-import { login } from "@/app/auth/actions";
+import { loginAction } from "@/app/actions";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-	callbackUrl?: string;
+	callbackUrl: string;
 }
 
 export default function GoogleButton({
@@ -29,8 +29,7 @@ export default function GoogleButton({
 
 	async function handleSignIn() {
 		setLoading(true);
-
-		login(callbackUrl);
+		loginAction(callbackUrl);
 	}
 
 	return (
