@@ -23,23 +23,32 @@ interface PlaceData {
 	longitude: number;
 }
 
-interface PlacePickerProps {
+interface PlacePickerProps
+	extends Omit<React.ComponentProps<"button">, "defaultValue" | "value"> {
 	defaultValue?: PlaceData;
+	value?: PlaceData;
 	onPlaceChange?: (place: PlaceData) => void;
-	className?: string;
+	onBlur?: () => void;
 }
 
 export function PlacePicker({
 	defaultValue,
+	value,
 	onPlaceChange,
+	onBlur,
 	className,
+	...rest
 }: PlacePickerProps) {
 	const [open, setOpen] = useState(false);
-	const [address, setAddress] = useState(defaultValue?.address || "");
+	const [address, setAddress] = useState(
+		value?.address ?? defaultValue?.address ?? "",
+	);
 	const [position, setPosition] = useState<[number, number]>(
-		defaultValue
-			? [defaultValue.latitude, defaultValue.longitude]
-			: [-9.669408, -35.721292],
+		value
+			? [value.latitude, value.longitude]
+			: defaultValue
+				? [defaultValue.latitude, defaultValue.longitude]
+				: [-9.669408, -35.721292],
 	);
 	const [searchInput, setSearchInput] = useState("");
 	const [status, setStatus] = useState<{
@@ -162,6 +171,14 @@ export function PlacePicker({
 		}
 	}, [address, position, onPlaceChange]);
 
+	// Sincroniza o estado interno com a prop value
+	useEffect(() => {
+		if (value) {
+			setAddress(value.address);
+			setPosition([value.latitude, value.longitude]);
+		}
+	}, [value]);
+
 	// Geocodifica um endereço para obter as coordenadas
 	const geocodeAddress = async () => {
 		if (!searchInput.trim()) return;
@@ -223,89 +240,89 @@ export function PlacePicker({
 	};
 
 	return (
-		<div className={cn("w-full space-y-2", className)}>
-			<Label htmlFor="location">Localização</Label>
-			<Popover open={open} onOpenChange={setOpen}>
-				<PopoverTrigger asChild>
-					<Button
-						variant="outline"
-						role="combobox"
-						disabled={status.type === "loading"}
-						aria-expanded={open}
-						className="w-full max-w-full justify-between"
-					>
-						{status.type === "error" ? (
-							<span className="text-red-500">
-								{status.message}
-							</span>
-						) : address ? (
-							<div className="grid w-full">
-								<div className="flex w-full items-center gap-2 overflow-hidden">
-									<MapPin className="h-4 w-4 shrink-0 opacity-70" />
-									<span className="truncate">{address}</span>
-								</div>
-							</div>
-						) : (
-							<span>Selecione um local...</span>
-						)}
-					</Button>
-				</PopoverTrigger>
-				<PopoverContent
-					className="w-[var(--radix-popover-trigger-width)] p-0"
-					align="start"
+		<Popover
+			open={open}
+			onOpenChange={(nextOpen) => {
+				setOpen(nextOpen);
+				if (!nextOpen && onBlur) {
+					onBlur();
+				}
+			}}
+		>
+			<PopoverTrigger asChild>
+				<Button
+					variant="outline"
+					role="combobox"
+					disabled={status.type === "loading"}
+					aria-expanded={open}
+					className="w-full max-w-full justify-between"
+					{...rest}
 				>
-					<div className="space-y-4 p-4">
-						<div className="flex gap-2">
-							<Input
-								className={cn("w-full", {
-									"animate-pulse": status.type === "loading",
-									"!border-destructive !ring-destructive/50":
-										status.type === "error",
-								})}
-								placeholder="Pesquisar endereço..."
-								value={searchInput}
-								onChange={(e) => setSearchInput(e.target.value)}
-								onKeyDown={(e) => {
-									if (e.key === "Enter") {
-										e.preventDefault();
-										geocodeAddress();
-									}
-								}}
-							/>
-							<Button
-								size="icon"
-								onClick={geocodeAddress}
-								// TODO: Não podemos colocar a verificação de status == loading,
-								// visto que causa algum tipo de efeito colateral que fecha o popover
-								disabled={!searchInput}
-								className={cn({
-									"pointer-events-none cursor-default opacity-50 select-none":
-										!searchInput ||
-										status.type === "loading",
-								})}
-							>
-								{status.type === "loading" ? (
-									<Loader2 className="h-4 w-4 animate-spin" />
-								) : (
-									<Search className="h-4 w-4" />
-								)}
-							</Button>
+					{status.type === "error" ? (
+						<span className="text-red-500">{status.message}</span>
+					) : address ? (
+						<div className="grid w-full">
+							<div className="flex w-full items-center gap-2 overflow-hidden">
+								<MapPin className="h-4 w-4 shrink-0 opacity-70" />
+								<span className="truncate">{address}</span>
+							</div>
 						</div>
-						<div
-							id="map"
-							className="h-[300px] w-full rounded-md border"
+					) : (
+						<span className="text-muted-foreground">
+							Selecione um local...
+						</span>
+					)}
+				</Button>
+			</PopoverTrigger>
+			<PopoverContent
+				className="w-[var(--radix-popover-trigger-width)] p-0"
+				align="start"
+			>
+				<div className="space-y-4 p-4">
+					<div className="flex gap-2">
+						<Input
+							className={cn("w-full", {
+								"animate-pulse": status.type === "loading",
+								"!border-destructive !ring-destructive/50":
+									status.type === "error",
+							})}
+							placeholder="Pesquisar endereço..."
+							value={searchInput}
+							onChange={(e) => setSearchInput(e.target.value)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") {
+									e.preventDefault();
+									geocodeAddress();
+								}
+							}}
 						/>
-						{/* <div className="text-xs text-muted-foreground">
+						<Button
+							size="icon"
+							onClick={geocodeAddress}
+							// TODO: Não podemos colocar a verificação de status == loading,
+							// visto que causa algum tipo de efeito colateral que fecha o popover
+							disabled={!searchInput}
+							className={cn({
+								"pointer-events-none cursor-default opacity-50 select-none":
+									!searchInput || status.type === "loading",
+							})}
+						>
+							{status.type === "loading" ? (
+								<Loader2 className="h-4 w-4 animate-spin" />
+							) : (
+								<Search className="h-4 w-4" />
+							)}
+						</Button>
+					</div>
+					<div
+						id="map"
+						className="h-[300px] w-full rounded-md border"
+					/>
+					{/* <div className="text-xs text-muted-foreground">
 							Arraste o marcador ou clique no mapa para definir o local
 						</div> */}
-					</div>
-				</PopoverContent>
-			</Popover>
-			{/* {address && (
-				<div className="text-sm text-muted-foreground mt-1">
-					Coordenadas: {position[0].toFixed(6)}, {position[1].toFixed(6)}
 				</div>
-			)} */}
-		</div>
+			</PopoverContent>
+		</Popover>
 	);
 }

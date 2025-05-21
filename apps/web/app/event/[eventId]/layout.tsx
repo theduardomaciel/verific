@@ -46,13 +46,13 @@ export default async function EventLayout({
 	params,
 }: {
 	children: React.ReactNode;
-	params: Promise<{ id: string }>;
+	params: Promise<{ eventId: string }>;
 }) {
 	const fetched = await params;
-	const event = await getEventById(fetched.id);
+	const event = await getEventById(fetched.eventId);
 
 	if (!event) {
-		console.error("Event not found", { eventId: fetched.id });
+		console.error("Event not found", { eventId: fetched.eventId });
 		notFound();
 	}
 
@@ -79,9 +79,9 @@ export default async function EventLayout({
 					"border-none bg-transparent shadow-none text-primary-foreground"
 				}
 				links={EVENT_LINKS}
-				prefix={`/event/${fetched.id}`}
+				prefix={`/event/${fetched.eventId}`}
 				logo={
-					<Link href={`/event/${fetched.id}`}>
+					<Link href={`/event/${fetched.eventId}`}>
 						<Image
 							src={"/images/secomp.png"}
 							width={150}

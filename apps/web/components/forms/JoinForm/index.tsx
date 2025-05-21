@@ -133,6 +133,7 @@ export default function JoinForm({
 					})}
 				>
 					<JoinForm0
+						callbackUrl={`/event/${projectId}/subscribe`}
 						form={form as unknown as GenericForm}
 						email={user?.email}
 					/>

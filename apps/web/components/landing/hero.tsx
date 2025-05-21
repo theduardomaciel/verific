@@ -9,7 +9,7 @@ export function Hero() {
 	return (
 		<section className="container-p mt-8 flex w-full justify-center overflow-hidden">
 			<div className="bg-primary relative w-full overflow-hidden rounded-2xl p-8 md:p-10 lg:p-12">
-				<div className="max-w-2xl">
+				<div className="z-20 max-w-2xl">
 					<h1 className="mb-4 text-3xl font-bold text-white md:text-4xl lg:text-5xl">
 						Seu próximo gerenciador de eventos
 					</h1>
@@ -34,7 +34,7 @@ export function Hero() {
 					</Link>
 				</div>
 				<Ticket
-					className="absolute -right-32 -bottom-48 z-0 hidden rotate-12 text-white lg:block"
+					className="pointer-events-none absolute -right-32 -bottom-48 z-0 hidden rotate-12 text-white select-none lg:block"
 					alt="Ticket"
 				/>
 			</div>

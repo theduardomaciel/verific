@@ -168,7 +168,7 @@ export const activitiesRouter = createTRPCRouter({
 			const {
 				projectId,
 				page,
-				pageSize,
+				pageSize = 0,
 				query,
 				sort,
 				participantId,

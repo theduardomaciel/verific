@@ -6,6 +6,7 @@ import { usersRouter } from "./routers/users";
 /* import { periodsRouter } from "./routers/periods";
 import { membersRouter } from "./routers/members"; */
 import { activitiesRouter } from "./routers/activities";
+import { projectsRouter } from "./routers/projects";
 
 import { createCallerFactory, mergeRouters } from "./trpc";
 
@@ -13,7 +14,11 @@ import { createCallerFactory, mergeRouters } from "./trpc";
 	periodsRouter,
 	membersRouter, */
 
-export const appRouter = mergeRouters(activitiesRouter, usersRouter);
+export const appRouter = mergeRouters(
+	activitiesRouter,
+	usersRouter,
+	projectsRouter,
+);
 
 export { createCallerFactory };
 
