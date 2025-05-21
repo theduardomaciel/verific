@@ -1,4 +1,4 @@
-import { ActivityTicket } from "@/components/event/activity-ticket";
+import { ActivityTicket } from "@/components/activity/activity-ticket";
 import Image from "next/image";
 
 export default function EventAccountPage() {

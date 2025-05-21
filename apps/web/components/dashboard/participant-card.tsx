@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 // Icons
 import { Check, BookUser, Ban, Calendar, User } from "lucide-react";
-import { Participant } from "@/lib/types/participant";
+import { RouterOutput } from "@verific/api";
 
 // API
 interface Props {
@@ -15,7 +15,7 @@ interface Props {
 		id: string;
 		participantJoinedAt: Date;
 	};
-	participant: Participant;
+	participant: RouterOutput["getParticipants"]["participants"][number];
 }
 
 export function ParticipantCard({

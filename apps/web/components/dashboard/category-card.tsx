@@ -11,7 +11,7 @@ interface CategoryCard {
 	className?: string;
 	category: (typeof activityCategories)[number];
 	speakerName: string;
-	hours?: number;
+	hours?: number | null;
 }
 
 export function CategoryCard({

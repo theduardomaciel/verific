@@ -23,27 +23,30 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 
-const projects = [
-	{
-		label: "SECOMP 2025",
-		value: "secomp2025",
-	},
-	{
-		label: "Escola de Inverno 2024",
-		value: "escoladeinverno2024",
-	},
-];
-
-type Project = (typeof projects)[number];
+type Project = {
+	id: string;
+	label: string;
+	image?: string | null;
+};
 
 type PopoverTriggerProps = React.ComponentPropsWithoutRef<
 	typeof PopoverTrigger
 >;
 
-export function ProjectSwitcher({ className }: PopoverTriggerProps) {
+interface Props extends PopoverTriggerProps {
+	selectedProjectId: string;
+	projects: Project[];
+}
+
+export function ProjectSwitcher({
+	className,
+	selectedProjectId,
+	projects,
+}: Props) {
 	const [open, setOpen] = React.useState(false);
 	const [selectedProject, setSelectedProject] = React.useState<Project>(
-		projects[0]!,
+		projects.find((project) => project.id === selectedProjectId) ||
+			projects[0]!,
 	);
 
 	return (
@@ -58,11 +61,13 @@ export function ProjectSwitcher({ className }: PopoverTriggerProps) {
 				>
 					<Avatar className="mr-1 h-5 w-5">
 						<AvatarImage
-							src={`https://avatar.vercel.sh/${selectedProject.value}.png`}
+							src={selectedProject.image || ""}
 							alt={selectedProject.label}
 							className="grayscale"
 						/>
-						<AvatarFallback>SC</AvatarFallback>
+						<AvatarFallback>
+							{selectedProject.label.slice(0, 2)}
+						</AvatarFallback>
 					</Avatar>
 					<span className="line-clamp-1 w-full text-left">
 						{selectedProject.label.slice(0, 15) +
@@ -78,30 +83,39 @@ export function ProjectSwitcher({ className }: PopoverTriggerProps) {
 						<CommandEmpty>Nenhum projeto encontrado.</CommandEmpty>
 						{projects.map((project) => (
 							<CommandItem
-								key={project.value}
+								key={project.id}
 								onSelect={() => {
 									setSelectedProject(project);
 									setOpen(false);
 								}}
 								className="rounded-none py-2 text-sm"
+								asChild
 							>
-								<Avatar className="mr-2 h-5 w-5">
-									<AvatarImage
-										src={`https://avatar.vercel.sh/${project.value}.png`}
-										alt={project.label}
-										className="grayscale"
+								<Link
+									href={`/dashboard/${project.id}`}
+									passHref
+									className="w-full"
+								>
+									<Avatar className="mr-2 h-5 w-5">
+										<AvatarImage
+											src={project.image || ""}
+											alt={project.label}
+											className="grayscale"
+										/>
+										<AvatarFallback>
+											{project.label.slice(0, 2)}
+										</AvatarFallback>
+									</Avatar>
+									{project.label}
+									<Check
+										className={cn(
+											"ml-auto",
+											selectedProject.id === project.id
+												? "opacity-100"
+												: "opacity-0",
+										)}
 									/>
-									<AvatarFallback>LA</AvatarFallback>
-								</Avatar>
-								{project.label}
-								<Check
-									className={cn(
-										"ml-auto",
-										selectedProject.value === project.value
-											? "opacity-100"
-											: "opacity-0",
-									)}
-								/>
+								</Link>
 							</CommandItem>
 						))}
 					</CommandList>

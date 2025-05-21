@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -38,19 +39,33 @@ import { activityCategories } from "@verific/drizzle/enum/category";
 // Data
 import { EVENT_TYPE_LABELS } from "@/lib/data";
 import { InstancePicker } from "@/components/instance-picker";
-import { Participant } from "@/lib/types/participant";
+
+// API
+import { trpc } from "@/lib/trpc/react";
+
+// Types
+import { RouterOutput } from "@verific/api";
 
 interface Props {
 	form: UseFormReturn<MutateActivityFormSchema>;
-	participants: Participant[];
+	projectId: string;
 	isEditing?: boolean;
 }
 
 export function MutateActivityFormContent({
 	form,
-	participants,
+	projectId,
 	isEditing,
 }: Props) {
+	const { data: speakers } = trpc.getSpeakers.useQuery(
+		{
+			projectId,
+		},
+		{
+			staleTime: 5 * 60 * 1000,
+		},
+	);
+
 	return (
 		<div
 			className={
@@ -102,6 +117,7 @@ export function MutateActivityFormContent({
 										type="number"
 										placeholder="10"
 										{...field}
+										value={field.value ?? ""}
 									/>
 								</FormControl>
 								<FormMessage />
@@ -119,7 +135,10 @@ export function MutateActivityFormContent({
 										onValueChange={field.onChange}
 										defaultValue={"0"}
 									>
-										<SelectTrigger className="w-full flex-1">
+										<SelectTrigger
+											className="w-full flex-1"
+											{...field}
+										>
 											<SelectValue placeholder="0" />
 										</SelectTrigger>
 										<SelectContent>
@@ -176,16 +195,27 @@ export function MutateActivityFormContent({
 				/>
 				<FormField
 					control={form.control}
-					name="participantIds"
+					name="speakersIds"
 					render={({ field }) => (
 						<FormItem className="w-full">
-							<FormLabel>Moderadores</FormLabel>
+							<FormLabel>Palestrantes</FormLabel>
 							<InstancePicker
-								items={participants.map((participant) => ({
-									id: participant.id,
-									label: participant.user.name,
-									image: participant.user.image_url,
-								}))}
+								items={
+									speakers
+										? speakers.map((speaker) => ({
+												id: speaker.id.toString(),
+												label: speaker.name,
+												image: speaker.imageUrl,
+											}))
+										: []
+								}
+								maxItems={1}
+								action={{
+									label: "Adicionar novo palestrante",
+									onClick: () => {
+										/* sua lógica */
+									},
+								}}
 								initialItems={field.value}
 								onSelect={field.onChange}
 							/>
@@ -193,25 +223,7 @@ export function MutateActivityFormContent({
 						</FormItem>
 					)}
 				/>
-				{/* <FormField
-					control={form.control}
-					name="participantIds"
-					render={({ field }) => (
-						<FormItem className="w-full">
-							<FormLabel>Moderadores</FormLabel>
-							<InstancePicker
-								items={participants.map((participant) => ({
-									id: participant.id,
-									label: participant.user.name,
-									image: participant.user.image_url,
-								}))}
-								initialItems={field.value}
-								onSelect={field.onChange}
-							/>
-							<FormMessage />
-						</FormItem>
-					)}
-				/> */}
+
 				<div className="flex w-full flex-row items-start justify-start gap-3">
 					<FormField
 						control={form.control}

@@ -21,36 +21,55 @@ import {
 	type MutateActivityFormSchema,
 	mutateActivityFormSchema,
 } from "@/lib/validations/mutate-activity-form";
-import { Activity } from "@/lib/types/activity";
-import { Participant } from "@/lib/types/participant";
 
 // API
+import { trpc } from "@/lib/trpc/react";
+
+// Types
+import { RouterOutput } from "@verific/api";
+import { dateToTimeString } from "@/components/dashboard/time-picker";
 
 interface Props {
-	activity?: Activity;
-	participants: Participant[];
+	projectId: string;
+	activity?: RouterOutput["getActivity"]["activity"];
 }
 
-export default function MutateActivityForm({ activity, participants }: Props) {
+export default function MutateActivityForm({ projectId, activity }: Props) {
 	const [currentState, setCurrentState] = useState<
 		false | "submitting" | "submitted" | "error"
 	>(false);
-	const submittedEventId = useRef<string | null>(null);
+	const submittedActivityId = useRef<string | undefined>(undefined);
 
 	// 1. Define your form.
 	const form = useForm<MutateActivityFormSchema>({
 		resolver: zodResolver(mutateActivityFormSchema),
+		defaultValues: {
+			name: activity?.name || "",
+			description: activity?.description || "",
+			speakerId: activity?.speaker.id,
+			dateFrom: new Date(),
+			tolerance: activity?.tolerance || 0,
+			timeFrom: activity
+				? dateToTimeString(activity.dateFrom)
+				: undefined,
+			timeTo: activity ? dateToTimeString(activity.dateTo) : undefined,
+			category: activity?.category || undefined,
+			audience: activity?.audience || "internal",
+		},
 	});
 
 	// Atenção! O botão de "submit" não funcionará caso existam erros (mesmo que não visíveis) no formulário.
 	// console.log("Errors: ", form.formState.errors);
+
+	const updateMutation = trpc.updateActivity.useMutation();
+	const createMutation = trpc.createActivity.useMutation();
 
 	// 2. Define a submit handler.
 	async function onSubmit(data: MutateActivityFormSchema) {
 		setCurrentState("submitting");
 
 		// console.log(data);
-		const { dateFrom, timeFrom, timeTo, participantIds, ...rest } = data;
+		const { dateFrom, timeFrom, timeTo, ...rest } = data;
 
 		const dateFromWithTime = new Date(dateFrom);
 		setTimeOnDate(dateFromWithTime, timeFrom);
@@ -60,23 +79,50 @@ export default function MutateActivityForm({ activity, participants }: Props) {
 		const dateToWithTime = new Date(dateFrom);
 		setTimeOnDate(dateToWithTime, timeTo);
 
-		await new Promise((resolve) => setTimeout(resolve, 2000));
+		try {
+			if (activity) {
+				await updateMutation.mutateAsync({
+					activityId: activity.id,
+					dateFrom: dateFromWithTime,
+					dateTo: dateToWithTime,
+					speakerId: data.speakerId,
+					...rest,
+				});
 
-		setCurrentState("submitted");
+				submittedActivityId.current = activity.id;
+				setCurrentState("submitted");
+			} else {
+				const { activityId } = await createMutation.mutateAsync({
+					projectId,
+					dateFrom: dateFromWithTime,
+					dateTo: dateToWithTime,
+					participantsIds: participantIds,
+					audience: data.audience || "internal",
+					...rest,
+				});
 
-		submittedEventId.current = "c03281137c42"; // TODO: Pegar o ID do evento criado/atualizado
+				submittedActivityId.current = activityId;
+				setCurrentState("submitted");
+			}
+		} catch (error) {
+			console.error(error);
+			setCurrentState("error");
+		}
 	}
 
 	return (
 		<Form {...form}>
 			<form
-				onSubmit={form.handleSubmit(onSubmit)}
+				onSubmit={form.handleSubmit(onSubmit, () => {
+					console.log(form.getValues());
+					console.log(form.formState.errors);
+				})}
 				className="flex w-full flex-1 flex-col items-center justify-start gap-9"
 			>
 				<MutateActivityFormContent
+					projectId={projectId}
 					form={form}
 					isEditing={!!activity}
-					participants={participants}
 				/>
 			</form>
 			<LoadingDialog
@@ -85,7 +131,7 @@ export default function MutateActivityForm({ activity, participants }: Props) {
 			/>
 			<SuccessDialog
 				isOpen={currentState === "submitted"}
-				href={`/dashboard/activities/${submittedEventId.current}`}
+				href={`/dashboard/${projectId}/activities/${submittedActivityId.current}`}
 				description={
 					<>
 						A atividade foi {activity ? "atualizada" : "criada"} por

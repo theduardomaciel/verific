@@ -28,18 +28,22 @@ import { getActivitiesParams } from "@verific/api/routers/activities";
 
 type EventsPageParams = z.infer<typeof getActivitiesParams>;
 
+// API
+import { serverClient } from "@/lib/trpc/server";
+
 export default async function ActivitiesPage(props: {
 	searchParams: Promise<EventsPageParams>;
+	params: Promise<{ projectId: string }>;
 }) {
 	const searchParams = await props.searchParams;
 	const parsedParams = getActivitiesParams.parse(searchParams);
 
-	// Obtemos os dados de exemplo (serão reais após implementar o back)
-	// Utilizamos funções com um atraso artificial para simular a latência da rede
-	const activities = await getActivities(parsedParams);
-	const categories = await getCategories();
-	const statuses = await getStatuses();
-	// const monitors = await getMonitors();
+	const { projectId } = await props.params;
+
+	const { activities } = await serverClient.getActivities({
+		projectId,
+		...parsedParams,
+	});
 
 	return (
 		<div className="container-d py-container-v min-h-screen">
@@ -70,32 +74,41 @@ export default async function ActivitiesPage(props: {
 							<div className="flex flex-col items-start justify-start gap-4">
 								{activities.map((activity) => (
 									<ActivityCard
-										{...activity}
 										key={activity.id}
+										activity={activity}
 									/>
 								))}
 							</div>
+						) : searchParams.query ? (
+							<Empty
+								href={`/dashboard/${projectId}/activities`}
+							/>
 						) : (
-							<Empty />
+							<Empty
+								title="Nenhuma atividade encontrada"
+								description="Crie uma nova atividade para que ela apareça aqui!"
+							/>
 						)}
 					</Suspense>
 
 					<DashboardPagination
-						currentPage={parsedParams.page || 0}
+						currentPage={parsedParams.page || 1}
 						totalPages={5}
-						prefix="activities"
+						prefix={`/${projectId}/activities`}
 					/>
 				</div>
 
 				<div className="order-first space-y-4 md:order-last md:col-span-1">
 					<Button asChild className="w-full" size="lg">
-						<Link href={"/dashboard/activities/create"}>
+						<Link
+							href={`/dashboard/${projectId}/activities/create`}
+						>
 							<Plus className="mr-2 h-4 w-4" /> Adicionar
 							atividade
 						</Link>
 					</Button>
 
-					<FiltersPanel>
+					{/* <FiltersPanel>
 						<Filter
 							type="checkbox"
 							prefix="category"
@@ -114,7 +127,7 @@ export default async function ActivitiesPage(props: {
 								name: status.label,
 							}))}
 						/>
-					</FiltersPanel>
+					</FiltersPanel> */}
 				</div>
 			</div>
 		</div>

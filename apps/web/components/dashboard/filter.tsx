@@ -13,7 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 
 // Icons
-import { ChevronUp, Loader2 } from "lucide-react";
+import { ChevronUp, CircleOff, Loader2 } from "lucide-react";
 
 // Components
 import { Label } from "@/components/ui/label";
@@ -54,7 +54,7 @@ const FILTERS = {
 	radio: () => {
 		return (
 			<div className="flex w-full flex-col items-start justify-center gap-4">
-				<p className="text-center text-sm font-medium text-foreground">
+				<p className="text-foreground text-center text-sm font-medium">
 					Em desenvolvimento
 				</p>
 			</div>
@@ -76,7 +76,9 @@ export function Filter({
 	const router = useRouter();
 	const { query, toUrl } = useQueryString();
 
-	const [currentFetchingData, setCurrentFetchingData] = useState<string[]>([]);
+	const [currentFetchingData, setCurrentFetchingData] = useState<string[]>(
+		[],
+	);
 	const [isPendingFilterTransition, startTransition] = useTransition();
 
 	const [filters, setFilters] = useState<string[]>(
@@ -91,7 +93,9 @@ export function Filter({
 			router.push(
 				toUrl({
 					[`${prefix}`]:
-						debouncedValue.length === 0 ? undefined : debouncedValue.join(","),
+						debouncedValue.length === 0
+							? undefined
+							: debouncedValue.join(","),
 				}),
 				{
 					scroll: false,
@@ -108,7 +112,7 @@ export function Filter({
 			)}
 		>
 			{title && (
-				<p className="text-nowrap text-center text-sm font-medium text-foreground">
+				<p className="text-foreground text-center text-sm font-medium text-nowrap">
 					{title}
 				</p>
 			)}
@@ -158,18 +162,30 @@ function SelectFilter({
 			</SelectTrigger>
 			<SelectContent>
 				<SelectScrollUpButton />
-				{items.map((item, index) => (
+				{items.length > 0 ? (
+					items.map((item) => (
+						<SelectItem
+							key={item.name}
+							value={item.value}
+							className={cn({
+								"pointer-events-none animate-pulse select-none":
+									isPendingFilterTransition,
+							})}
+						>
+							{item.name}
+						</SelectItem>
+					))
+				) : (
 					<SelectItem
-						key={item.name}
-						value={item.value}
+						value="none"
 						className={cn({
 							"pointer-events-none animate-pulse select-none":
 								isPendingFilterTransition,
 						})}
 					>
-						{item.name}
+						Nenhum item encontrado
 					</SelectItem>
-				))}
+				)}
 				<SelectScrollDownButton />
 			</SelectContent>
 		</Select>
@@ -221,7 +237,8 @@ function CheckboxFilter({
 			const lastVisibleItem = items[items.length - 1] as HTMLElement;
 			const containerTop =
 				itemsContainerRef.current.getBoundingClientRect().top;
-			const lastItemBottom = lastVisibleItem.getBoundingClientRect().bottom;
+			const lastItemBottom =
+				lastVisibleItem.getBoundingClientRect().bottom;
 
 			setCollapsedHeight(lastItemBottom - containerTop);
 		};
@@ -240,7 +257,7 @@ function CheckboxFilter({
 		<>
 			<ul
 				ref={itemsContainerRef}
-				className="flex flex-col items-start justify-start gap-4 overflow-hidden transition-all duration-300 ease-in-out w-full"
+				className="flex w-full flex-col items-start justify-start gap-4 overflow-hidden transition-all duration-300 ease-in-out"
 				style={{
 					maxHeight: isExpanded
 						? `${items.length * 100}px` // Altura suficientemente grande para todos os itens
@@ -249,51 +266,66 @@ function CheckboxFilter({
 							: "auto",
 				}}
 			>
-				{items.map((item, index) => (
-					<li
-						key={item.value}
-						className={cn(
-							"flex w-full items-center justify-start gap-2 relative",
-							{
-								"pointer-events-none animate-pulse select-none":
-									isPendingFilterTransition,
-							},
-						)}
-					>
-						<Checkbox
-							id={item.value}
-							name={item.name}
-							value={item.value}
-							checked={filters.includes(item.value)}
-							onCheckedChange={(checked) => {
-								handleFilterChange(
-									item.value,
-									checked === "indeterminate" ? false : checked,
-								);
-							}}
-						/>
-						<Label
-							className="line-clamp-2 overflow-hidden text-ellipsis leading-tight lg:text-sm"
-							htmlFor={item.value}
-						>
-							{item.name}
-						</Label>
-
-						{isPendingFilterTransition &&
-							currentFetchingData.includes(item.value) && (
-								<Loader2
-									className="ml-2 h-4 w-4 animate-spin text-muted-foreground absolute top-1/2 right-0 translate-y-[-50%]"
-									size={16}
-								/>
+				{items.length > 0 ? (
+					items.map((item, index) => (
+						<li
+							key={item.value}
+							className={cn(
+								"relative flex w-full items-center justify-start gap-2",
+								{
+									"pointer-events-none animate-pulse select-none":
+										isPendingFilterTransition,
+								},
 							)}
+						>
+							<Checkbox
+								id={item.value}
+								name={item.name}
+								value={item.value}
+								checked={filters.includes(item.value)}
+								onCheckedChange={(checked) => {
+									handleFilterChange(
+										item.value,
+										checked === "indeterminate"
+											? false
+											: checked,
+									);
+								}}
+							/>
+							<Label
+								className="line-clamp-2 overflow-hidden leading-tight text-ellipsis lg:text-sm"
+								htmlFor={item.value}
+							>
+								{item.name}
+							</Label>
+
+							{isPendingFilterTransition &&
+								currentFetchingData.includes(item.value) && (
+									<Loader2
+										className="text-muted-foreground absolute top-1/2 right-0 ml-2 h-4 w-4 translate-y-[-50%] animate-spin"
+										size={16}
+									/>
+								)}
+						</li>
+					))
+				) : (
+					// If there are no items, we show a message
+					<li className="text-muted-foreground flex w-full items-center justify-start gap-3">
+						<CircleOff size={14} />
+						<Label className="text-sm font-medium">
+							Nenhum item encontrado
+						</Label>
 					</li>
-				))}
+				)}
 			</ul>
 			{
 				// If the amount of filters is greater than the MAX_VISIBLE_FILTERS
 				// we show the "ExpandMore" button
 				items.length > MAX_VISIBLE_FILTERS && (
-					<ExpandMore isExpanded={isExpanded} setIsExpanded={setIsExpanded} />
+					<ExpandMore
+						isExpanded={isExpanded}
+						setIsExpanded={setIsExpanded}
+					/>
 				)
 			}
 		</>
@@ -314,7 +346,7 @@ function ExpandMore({
 			onClick={() => setIsExpanded((prev) => !prev)}
 		>
 			<ChevronUp
-				className="w-4 h-4 mt-1 transition-transform"
+				className="mt-1 h-4 w-4 transition-transform"
 				style={{
 					transform: isExpanded ? "rotate(0deg)" : "rotate(180deg)",
 				}}

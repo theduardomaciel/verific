@@ -38,26 +38,9 @@ export const getParticipantsParams = z.object({
 	sort: z.enum(participantSort).optional(), // Ordenação por data
 	page: z.coerce.number().default(0), // Paginação: página atual
 	pageSize: z.coerce.number().default(10), // Paginação: tamanho da página,
-	role: z
-		.string()
-		.transform(transformSingleToArray)
-		.pipe(z.array(z.enum(participantRoles)))
-		.optional(), // Funções dos participantes
-	course: z
-		.string()
-		.transform(transformSingleToArray)
-		.pipe(z.array(z.enum(courses)))
-		.optional(), // Cursos dos participantes
-	period: z
-		.string()
-		.transform(transformSingleToArray)
-		.pipe(z.array(z.enum(periods)))
-		.optional(), // Períodos dos participantes
-	projectIds: z
-		.string()
-		.transform(transformSingleToArray)
-		.pipe(z.array(z.string().uuid()))
-		.optional(), // IDs de projetos associados
+	role: z.array(z.enum(participantRoles)).optional(), // Funções dos participantes
+	course: z.array(z.enum(courses)).optional(), // Cursos dos participantes
+	period: z.array(z.enum(periods)).optional(), // Períodos dos participantes
 });
 
 export const participantsRouter = createTRPCRouter({
@@ -146,10 +129,14 @@ export const participantsRouter = createTRPCRouter({
 		}),
 
 	getParticipants: publicProcedure
-		.input(getParticipantsParams)
+		.input(
+			getParticipantsParams.extend({
+				projectId: z.string().uuid(), // ID do projeto
+			}),
+		)
 		.query(async ({ input }) => {
 			const {
-				projectIds,
+				projectId,
 				role,
 				sort,
 				query: search,
@@ -160,9 +147,7 @@ export const participantsRouter = createTRPCRouter({
 			} = input;
 
 			const whereClauses = [
-				projectIds && projectIds.length > 0
-					? inArray(participant.projectId, projectIds)
-					: undefined,
+				eq(participant.projectId, projectId),
 				search
 					? or(
 							ilike(user.name, `%${search}%`),

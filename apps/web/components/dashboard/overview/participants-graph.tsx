@@ -8,6 +8,7 @@ import {
 	ChartTooltip,
 	ChartTooltipContent,
 } from "@/components/ui/chart";
+import { cn } from "@/lib/utils";
 
 const chartData = [
 	{ date: "Nov 21", total: 186, active: 80 },
@@ -18,7 +19,7 @@ const chartData = [
 	{ date: "Nov 26", total: 214, active: 140 },
 ];
 
-const chartConfig = {
+const baseChartConfig = {
 	total: {
 		label: "Total",
 		color: "var(--chart-1)",
@@ -29,11 +30,19 @@ const chartConfig = {
 	},
 } satisfies ChartConfig;
 
-export function ParticipantsGraph() {
+interface ParticipantsGraphProps {
+	chartConfig?: ChartConfig;
+	className?: string;
+}
+
+export function ParticipantsGraph({
+	chartConfig = baseChartConfig,
+	className,
+}: ParticipantsGraphProps) {
 	return (
 		<ChartContainer
 			config={chartConfig}
-			className="min-h-[200px] w-full h-full"
+			className={cn("h-full min-h-[200px] w-full", className)}
 		>
 			<AreaChart
 				accessibilityLayer
@@ -59,7 +68,10 @@ export function ParticipantsGraph() {
 					axisLine={false}
 					tickFormatter={(value) => value}
 				/>
-				<ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+				<ChartTooltip
+					cursor={false}
+					content={<ChartTooltipContent />}
+				/>
 				<defs>
 					<linearGradient id="fillTotal" x1="0" y1="0" x2="0" y2="1">
 						<stop

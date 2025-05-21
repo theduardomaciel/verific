@@ -3,47 +3,45 @@ import { activityAudiences } from "@verific/drizzle/enum/audience";
 import { activityCategories } from "@verific/drizzle/enum/category";
 
 export const mutateActivityFormSchema = z.object({
-	name: z.string({ required_error: "O nome da atividade é obrigatório" }),
+	name: z
+		.string({ required_error: "O nome da atividade é obrigatório" })
+		.min(3, {
+			message: "O nome da atividade deve ter pelo menos 3 caracteres",
+		}),
 	description: z.string().optional(),
 	participantsLimit: z.coerce
 		.number()
 		.optional()
-		.refine((val) => val && val > 0, {
-			message: "O limite de participantes deve ser maior que 0",
-		})
-		.refine((val) => val && val <= 100, {
-			message: "O limite de participantes deve ser menor que 100",
+		.refine((val) => val === undefined || (val >= 0 && val <= 100), {
+			message: "O limite de participantes deve ser entre 0 e 100",
 		}),
 	tolerance: z.coerce
 		.number()
 		.optional()
-		.refine((val) => val && val >= 0, {
+		.refine((val) => val === undefined || val >= 0, {
 			message: "A tolerância deve ser maior ou igual a 0",
 		}),
 	workload: z.coerce
 		.number()
 		.optional()
-		.refine((val) => val && val >= 0, {
-			message: "A carga horária deve ser maior ou igual a 0",
-		})
-		.refine((val) => val && val <= 100, {
-			message: "A carga horária deve ser menor ou igual a 100",
+		.refine((val) => val === undefined || (val >= 0 && val <= 100), {
+			message: "A carga horária deve ser entre 0 e 100",
 		}),
 	audience: z.enum(activityAudiences).default("internal").optional(),
-	participantIds: z.array(z.string()).default([]).optional(),
+	speakerId: z.string(),
 	dateFrom: z.coerce.date({
-		required_error: "É necessário inserir a data de início do evento",
+		required_error: "É necessário inserir a data de início da atividade",
 	}),
 	/* dateTo: z.coerce.date() */
 	timeFrom: z.string({
-		required_error: "É necessário inserir o horário de início do evento",
+		required_error: "É necessário inserir o horário de início da atividade",
 	}),
 	timeTo: z.string({
-		required_error: "É necessário inserir o horário de término do evento",
+		required_error:
+			"É necessário inserir o horário de término da atividade",
 	}),
 	category: z.enum(activityCategories, {
-		required_error:
-			"É necessário informar qual a ACE cumprida pelo evento.",
+		required_error: "É necessário informar qual a categoria da atividade.",
 	}),
 });
 

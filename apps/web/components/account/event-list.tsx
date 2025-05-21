@@ -24,7 +24,7 @@ export function EventsList({ projects }: Props) {
 					<ul className="flex flex-col items-center justify-start gap-3">
 						{projects.map((project) => (
 							<Link
-								href={"dashboard"}
+								href={`/dashboard/${project.id}`}
 								key={project.id}
 								className="w-full"
 							>
