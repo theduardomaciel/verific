@@ -5,6 +5,7 @@ import {
 	Calendar,
 	Clock,
 	Edit,
+	Globe,
 	Megaphone,
 	Share2,
 	Trash,
@@ -28,6 +29,7 @@ import { z } from "zod";
 // API
 import { serverClient } from "@/lib/trpc/server";
 import { getActivityParams } from "@verific/api/routers/activities";
+import { EventDeleteDialog } from "@/components/activity/activity-delete-dialog";
 
 type ActivityPageParams = z.infer<typeof getActivityParams>;
 
@@ -95,20 +97,24 @@ export default async function ActivityPage(props: {
 				/>
 				<div className="flex flex-row items-center gap-3 max-md:w-full max-md:flex-wrap md:justify-between">
 					<div className="flex w-full flex-row items-center gap-3">
-						<Button
-							asChild
-							size={"icon"}
-							variant={"destructive"}
-							className="h-10 min-w-10"
+						<EventDeleteDialog
+							activityId={activityId}
+							projectId={projectId}
 						>
-							<Trash className="h-5 w-5" />
-						</Button>
+							<Button
+								size={"icon"}
+								variant={"destructive"}
+								className="h-10 min-w-10"
+							>
+								<Trash size={20} />
+							</Button>
+						</EventDeleteDialog>
 						<Button
 							size={"icon"}
 							variant={"outline"}
 							className="h-10 min-w-10"
 						>
-							<Share2 className="h-5 w-5" />
+							<Share2 size={20} />
 						</Button>
 						<Button
 							asChild
@@ -120,14 +126,20 @@ export default async function ActivityPage(props: {
 								href={`/dashboard/${projectId}/activities/${activityId}/edit`}
 								className="flex-1"
 							>
-								<Edit className="h-5 w-5" />
+								<Edit size={20} />
 								Editar
 							</Link>
 						</Button>
 					</div>
-					<Button size={"lg"} className="h-10 flex-1">
-						<BellDot className="h-5 w-5" />
+					{/* <Button size={"lg"} className="h-10 flex-1" disabled>
+						<BellDot size={20} />
 						Abrir fila de espera
+					</Button> */}
+					<Button size={"lg"} className="h-10 flex-1" asChild>
+						<Link href={`/event/${activityId}`}>
+							<Globe size={20} />
+							Visitar página do evento
+						</Link>
 					</Button>
 				</div>
 			</div>
@@ -175,6 +187,11 @@ export default async function ActivityPage(props: {
 					<ParticipantsList.List
 						participants={moderators}
 						activityId={activity.id}
+						emptyMessage={{
+							title: "Nenhum moderador encontrado",
+							description:
+								"Não há moderadores nesta atividade. Adicione moderadores para que eles possam gerenciar a fila de espera.",
+						}}
 					/>
 				</ParticipantsList.Holder>
 			</div>

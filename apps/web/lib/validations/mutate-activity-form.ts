@@ -28,7 +28,9 @@ export const mutateActivityFormSchema = z.object({
 			message: "A carga horária deve ser entre 0 e 100",
 		}),
 	audience: z.enum(activityAudiences).default("internal").optional(),
-	speakerId: z.string(),
+	speakerId: z.string({
+		required_error: "É necessário informar o palestrante da atividade",
+	}),
 	dateFrom: z.coerce.date({
 		required_error: "É necessário inserir a data de início da atividade",
 	}),

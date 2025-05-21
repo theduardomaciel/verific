@@ -46,12 +46,13 @@ export default function MutateActivityForm({ projectId, activity }: Props) {
 		defaultValues: {
 			name: activity?.name || "",
 			description: activity?.description || "",
-			speakerId: activity?.speaker.id,
+			speakerId: activity?.speaker.id.toString() || "",
 			dateFrom: new Date(),
 			tolerance: activity?.tolerance || 0,
 			timeFrom: activity
 				? dateToTimeString(activity.dateFrom)
 				: undefined,
+			workload: activity?.workload || undefined,
 			timeTo: activity ? dateToTimeString(activity.dateTo) : undefined,
 			category: activity?.category || undefined,
 			audience: activity?.audience || "internal",
@@ -85,7 +86,6 @@ export default function MutateActivityForm({ projectId, activity }: Props) {
 					activityId: activity.id,
 					dateFrom: dateFromWithTime,
 					dateTo: dateToWithTime,
-					speakerId: data.speakerId,
 					...rest,
 				});
 
@@ -96,7 +96,6 @@ export default function MutateActivityForm({ projectId, activity }: Props) {
 					projectId,
 					dateFrom: dateFromWithTime,
 					dateTo: dateToWithTime,
-					participantsIds: participantIds,
 					audience: data.audience || "internal",
 					...rest,
 				});
@@ -113,6 +112,7 @@ export default function MutateActivityForm({ projectId, activity }: Props) {
 	return (
 		<Form {...form}>
 			<form
+				id="mutate-activity-form"
 				onSubmit={form.handleSubmit(onSubmit, () => {
 					console.log(form.getValues());
 					console.log(form.formState.errors);

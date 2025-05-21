@@ -4,7 +4,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 // Icons
-import { CloudUpload, Edit } from "lucide-react";
+import { CloudUpload, Edit, Plus } from "lucide-react";
 
 // Components
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,8 @@ import { trpc } from "@/lib/trpc/react";
 
 // Types
 import { RouterOutput } from "@verific/api";
+import { MutateSpeakerDialog } from "@/components/mutate-speaker-dialog";
+import { useRouter } from "next/navigation";
 
 interface Props {
 	form: UseFormReturn<MutateActivityFormSchema>;
@@ -57,14 +59,16 @@ export function MutateActivityFormContent({
 	projectId,
 	isEditing,
 }: Props) {
-	const { data: speakers } = trpc.getSpeakers.useQuery(
-		{
-			projectId,
-		},
-		{
-			staleTime: 5 * 60 * 1000,
-		},
-	);
+	const {
+		data: speakers,
+		isLoading,
+		error,
+		refetch,
+	} = trpc.getSpeakers.useQuery({
+		projectId,
+	});
+
+	console.log("speakers", speakers);
 
 	return (
 		<div
@@ -73,7 +77,9 @@ export function MutateActivityFormContent({
 			}
 		>
 			<div className="flex h-full w-full flex-col items-start justify-start gap-9">
-				<h1 className="text-5xl font-extrabold">Nova atividade</h1>
+				<h1 className="text-5xl font-extrabold">
+					{isEditing ? "Editar" : "Nova"} atividade
+				</h1>
 				<FormField
 					control={form.control}
 					name="name"
@@ -195,11 +201,13 @@ export function MutateActivityFormContent({
 				/>
 				<FormField
 					control={form.control}
-					name="speakersIds"
+					name="speakerId"
 					render={({ field }) => (
 						<FormItem className="w-full">
-							<FormLabel>Palestrantes</FormLabel>
+							<FormLabel>Palestrante</FormLabel>
 							<InstancePicker
+								isLoading={isLoading}
+								error={error?.message}
 								items={
 									speakers
 										? speakers.map((speaker) => ({
@@ -210,14 +218,30 @@ export function MutateActivityFormContent({
 										: []
 								}
 								maxItems={1}
-								action={{
-									label: "Adicionar novo palestrante",
-									onClick: () => {
-										/* sua lógica */
-									},
-								}}
+								actionButton={
+									<MutateSpeakerDialog
+										projectId={projectId}
+										trigger={
+											<Button
+												type="button"
+												className="w-full"
+												variant="outline"
+											>
+												<Plus size={16} />
+												Adicionar novo palestrante
+											</Button>
+										}
+										onSuccess={() => {
+											refetch();
+										}}
+									/>
+								}
 								initialItems={field.value}
-								onSelect={field.onChange}
+								onSelect={(items) => {
+									field.onChange(items[0]);
+								}}
+								placeholder="Selecione o palestrante"
+								emptyText="Nenhum palestrante encontrado"
 							/>
 							<FormMessage />
 						</FormItem>

@@ -49,6 +49,8 @@ interface InstancePickerProps<T extends Item = Item> {
 		onClick: () => void;
 	};
 	actionButton?: React.ReactNode;
+	isLoading?: boolean;
+	error?: string | null;
 }
 
 interface InstancesListProps<T extends Item = Item> {
@@ -68,6 +70,8 @@ export function InstancePicker<T extends Item = Item>({
 	onSelect,
 	placeholder = "Selecione um item...",
 	emptyText = "Nenhum item encontrado.",
+	isLoading = false,
+	error = null,
 	...props
 }: InstancePickerProps<T>) {
 	const [open, setOpen] = useState(false);
@@ -100,6 +104,24 @@ export function InstancePicker<T extends Item = Item>({
 		onSelect?.(debouncedValue);
 	}, [debouncedValue, onSelect]);
 
+	const visualContent = (children: React.ReactNode) => {
+		if (isLoading) {
+			return (
+				<div className="flex flex-1 items-center justify-center py-4">
+					<Loader2 className="h-4 w-4 animate-spin" />
+				</div>
+			);
+		}
+		if (error) {
+			return (
+				<div className="text-destructive flex flex-1 items-center justify-center py-4">
+					{error}
+				</div>
+			);
+		}
+		return children;
+	};
+
 	if (isDesktop) {
 		return (
 			<Popover>
@@ -112,13 +134,15 @@ export function InstancePicker<T extends Item = Item>({
 				<PopoverContent
 					className={"w-[var(--radix-popover-trigger-width)] p-0"}
 				>
-					<InstancesList
-						onSelect={handleSelect}
-						isActive={isActive}
-						placeholder={placeholder}
-						emptyText={emptyText}
-						{...props}
-					/>
+					{visualContent(
+						<InstancesList
+							onSelect={handleSelect}
+							isActive={isActive}
+							placeholder={placeholder}
+							emptyText={emptyText}
+							{...props}
+						/>,
+					)}
 				</PopoverContent>
 			</Popover>
 		);
@@ -134,13 +158,15 @@ export function InstancePicker<T extends Item = Item>({
 			</DrawerTrigger>
 			<DrawerContent>
 				<div className="mt-4 border-t">
-					<InstancesList
-						onSelect={handleSelect}
-						isActive={isActive}
-						placeholder={placeholder}
-						emptyText={emptyText}
-						{...props}
-					/>
+					{visualContent(
+						<InstancesList
+							onSelect={handleSelect}
+							isActive={isActive}
+							placeholder={placeholder}
+							emptyText={emptyText}
+							{...props}
+						/>,
+					)}
 				</div>
 			</DrawerContent>
 		</Drawer>
@@ -246,6 +272,7 @@ function InstancesList<T extends Item = Item>({
 	onSelect,
 	isActive,
 	action,
+	actionButton,
 	placeholder = "Procurar...",
 	emptyText = "Nenhum item encontrado.",
 }: InstancesListProps<T>) {
@@ -272,7 +299,12 @@ function InstancesList<T extends Item = Item>({
 						<Loader2 className="h-4 w-4 animate-spin" />
 					</div>
 				)}
-				{action && (
+
+				<hr className="border-muted-foreground/20 my-1 w-full border-t" />
+
+				{actionButton ? (
+					actionButton
+				) : action ? (
 					<CommandItem
 						key="action-button"
 						className="text-primary justify-center font-semibold"
@@ -281,7 +313,7 @@ function InstancesList<T extends Item = Item>({
 						<Plus size={16} />
 						{action.label}
 					</CommandItem>
-				)}
+				) : null}
 			</CommandGroup>
 		</Command>
 	);

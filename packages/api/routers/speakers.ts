@@ -24,7 +24,7 @@ export const speakersRouter = createTRPCRouter({
 				.values({
 					name,
 					description,
-					image_url: imageUrl,
+					imageUrl,
 					projectId,
 				})
 				.returning({ id: speaker.id });
@@ -48,7 +48,7 @@ export const speakersRouter = createTRPCRouter({
 				.set({
 					name,
 					description,
-					image_url: imageUrl,
+					imageUrl,
 					projectId,
 				})
 				.where(eq(speaker.id, id));

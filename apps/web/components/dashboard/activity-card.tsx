@@ -37,7 +37,7 @@ export function SimpleActivityCard({ activity, className }: ActivityCardProps) {
 				<span className="flex flex-row items-center justify-center gap-2">
 					<Image
 						className="rounded-full"
-						src={"https://github.com/mauro-balades.png"}
+						src={activity.speaker?.imageUrl || ""}
 						alt="Logo"
 						width={14}
 						height={14}
@@ -72,7 +72,7 @@ export function ActivityCard({ activity, className }: ActivityCardProps) {
 
 	return (
 		<Link
-			href={`/dashboard/activities/${activity.id}`}
+			href={`/dashboard/${activity.projectId}/activities/${activity.id}`}
 			className="flex w-full"
 		>
 			<div
@@ -87,7 +87,7 @@ export function ActivityCard({ activity, className }: ActivityCardProps) {
 							{activity.name}
 						</h3>
 						<span className="text-muted-foreground text-sm">
-							#{activity.id}
+							#{activity.id.split("-")[0]}
 						</span>
 					</div>
 
@@ -191,7 +191,7 @@ function ActivityInfo({ className, speaker, category, dateFrom }: InfoProps) {
 					) : (
 						<Clock className="mt-[1.2px] h-3 w-3" />
 					)}
-					<p className="text-sm leading-0 overflow-ellipsis">
+					<p className="leading-0 overflow-ellipsis text-sm">
 						{formatFriendlyDate(dateFrom, !!speaker)}
 					</p>
 				</div>

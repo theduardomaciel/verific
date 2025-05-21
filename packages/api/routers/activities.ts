@@ -67,10 +67,6 @@ const mutateActivityParams = z.object({
 	tolerance: z.coerce.number().optional(),
 	workload: z.coerce.number().optional(),
 	projectId: z.string().uuid(),
-	participantsIds: z
-		.union([z.array(z.string()), z.string()])
-		.transform(transformSingleToArray)
-		.optional(),
 });
 
 // Função auxiliar para calcular ids a adicionar/remover
@@ -215,8 +211,8 @@ export const activitiesRouter = createTRPCRouter({
 		.query(async ({ input }) => {
 			const {
 				projectId,
-				page,
-				pageSize = 0,
+				page = 0,
+				pageSize = 5,
 				query,
 				sort,
 				category: rawCategory,
@@ -233,7 +229,11 @@ export const activitiesRouter = createTRPCRouter({
 				.select({
 					...getTableColumns(activity),
 					project: { id: project.id, name: project.name },
-					speaker: { id: speaker.id, name: speaker.name },
+					speaker: {
+						id: speaker.id,
+						name: speaker.name,
+						imageUrl: speaker.imageUrl,
+					},
 					participant: { id: participant.id, role: participant.role },
 					participantOnActivity: {
 						participantId: participantOnActivity.participantId,
@@ -380,8 +380,8 @@ export const activitiesRouter = createTRPCRouter({
 				tolerance,
 				workload,
 				projectId,
-				participantsIds,
 			} = input;
+
 			const inserted = await db
 				.insert(activity)
 				.values({
@@ -398,19 +398,9 @@ export const activitiesRouter = createTRPCRouter({
 					projectId,
 				})
 				.returning({ id: activity.id });
+
 			const insertedActivityId = inserted[0]?.id;
-			if (
-				participantsIds &&
-				participantsIds.length > 0 &&
-				insertedActivityId
-			) {
-				await db.insert(participantOnActivity).values(
-					participantsIds.map((participantId) => ({
-						activityId: insertedActivityId,
-						participantId,
-					})),
-				);
-			}
+
 			return { activityId: insertedActivityId };
 		}),
 
@@ -433,29 +423,15 @@ export const activitiesRouter = createTRPCRouter({
 				participantsLimit,
 				tolerance,
 				workload,
-				participantsIds,
 			} = input;
+
 			const error = await isMemberAuthenticated({
 				projectId: ctx.session.participant?.projectId ?? "",
 				userId: ctx.session.user.id,
 			});
+
 			if (error) throw new TRPCError(error);
-			const currentActivityParticipants = participantsIds
-				? await db.query.participantOnActivity.findMany({
-						where(fields) {
-							return eq(fields.activityId, activityId);
-						},
-					})
-				: undefined;
-			const { idsToAdd, idsToRemove } =
-				currentActivityParticipants && participantsIds
-					? getParticipantsIdsToMutate(
-							participantsIds,
-							currentActivityParticipants.map(
-								(p) => p.participantId,
-							),
-						)
-					: { idsToAdd: [], idsToRemove: [] };
+
 			await db.transaction(async (tx) => {
 				await tx
 					.update(activity)
@@ -472,30 +448,6 @@ export const activitiesRouter = createTRPCRouter({
 						workload,
 					})
 					.where(eq(activity.id, activityId));
-				if (idsToRemove.length > 0) {
-					await tx
-						.delete(participantOnActivity)
-						.where(
-							and(
-								eq(
-									participantOnActivity.activityId,
-									activityId,
-								),
-								inArray(
-									participantOnActivity.participantId,
-									idsToRemove,
-								),
-							),
-						);
-				}
-				if (idsToAdd.length > 0) {
-					await tx.insert(participantOnActivity).values(
-						idsToAdd.map((participantId) => ({
-							activityId,
-							participantId,
-						})),
-					);
-				}
 			});
 			return { success: true };
 		}),
