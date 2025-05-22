@@ -50,6 +50,7 @@ import { trpc } from "@/lib/trpc/react";
 
 // Types
 import { RouterOutput } from "@verific/api";
+import type { FormState } from "@/lib/types/forms";
 
 const formSchema = z.object({
 	name: z.string().min(2, {
@@ -62,8 +63,6 @@ const formSchema = z.object({
 		.string()
 		.url({ message: "Insira uma URL válida para a imagem." }),
 });
-
-type FormState = false | "submitting" | "submitted" | "error";
 
 interface Props {
 	projectId: string;

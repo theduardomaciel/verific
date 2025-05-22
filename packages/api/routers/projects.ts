@@ -12,7 +12,7 @@ export const updateProjectSchema = z.object({
 	name: z.string().optional(),
 	description: z.string().optional(),
 	url: z.string().optional(),
-	address: z.string(),
+	address: z.string().optional(),
 	hasRegistration: z.boolean().optional(),
 	hasResearch: z.boolean().optional(),
 	isArchived: z.boolean().optional(),
@@ -77,41 +77,18 @@ export const projectsRouter = createTRPCRouter({
 	updateProject: protectedProcedure
 		.input(updateProjectSchema)
 		.mutation(async ({ input }) => {
-			const {
-				id,
-				name,
-				description,
-				url,
-				address,
-				hasRegistration = false,
-				hasResearch = false,
-				isArchived = false,
-				coverUrl,
-				thumbnailUrl,
-				primaryColor,
-				secondaryColor,
-				startDate,
-				endDate,
-			} = input;
+			const { id, ...rest } = input;
 
-			await db
-				.update(project)
-				.set({
-					name,
-					description,
-					url,
-					address,
-					hasRegistration,
-					hasResearch,
-					isArchived,
-					coverUrl,
-					thumbnailUrl,
-					primaryColor,
-					secondaryColor,
-					startDate,
-					endDate,
-				})
-				.where(eq(project.id, id));
+			// Remove undefined fields so only provided fields are updated
+			const updateData = Object.fromEntries(
+				Object.entries(rest).filter(([_, v]) => v !== undefined),
+			);
+
+			if (Object.keys(updateData).length === 0) {
+				throw new Error("No fields to update");
+			}
+
+			await db.update(project).set(updateData).where(eq(project.id, id));
 			return { updated: true };
 		}),
 

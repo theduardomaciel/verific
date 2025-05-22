@@ -1,12 +1,9 @@
 "use client";
-import React, { useActionState, useEffect } from "react";
+import { toast } from "sonner";
 
 // Components
 import { Button } from "@/components/ui/button";
-import {
-	SettingsCard,
-	type SettingsCardFooterProps,
-} from "@/components/settings/settings-card";
+import { SettingsCard } from "@/components/settings/settings-card";
 import {
 	Form,
 	FormField,
@@ -19,8 +16,9 @@ import {
 // Validations
 import { ZodTypeAny } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { FormState, useForm } from "react-hook-form";
 import { LoaderCircle } from "lucide-react";
+import { useState } from "react";
 
 interface SettingsFormCardProps<T extends ZodTypeAny> {
 	schema: T;
@@ -29,25 +27,14 @@ interface SettingsFormCardProps<T extends ZodTypeAny> {
 	description: string;
 	label: string;
 	initialState: any;
-	action: (data: any) => void;
-	renderField: (field: any, form: any) => React.ReactNode;
-	footer?:
-		| ((isLoading: boolean) => SettingsCardFooterProps)
-		| SettingsCardFooterProps;
-}
-
-// Função padrão para o footer
-function defaultFooter(isLoading: boolean): SettingsCardFooterProps {
-	return {
-		action: (
-			<Button type="submit" disabled={isLoading}>
-				{isLoading ? (
-					<LoaderCircle size={16} className="animate-spin" />
-				) : (
-					"Salvar"
-				)}
-			</Button>
-		),
+	onSubmit: (data: any) => void;
+	renderField: (field: any) => React.ReactNode;
+	footer?: {
+		text?: string;
+		action?: {
+			label: string;
+			variant: "default" | "destructive";
+		};
 	};
 }
 
@@ -58,69 +45,58 @@ export function SettingsFormCard<T extends ZodTypeAny>({
 	description,
 	label,
 	initialState,
-	action,
+	onSubmit,
 	renderField,
 	footer,
 }: SettingsFormCardProps<T>) {
-	const pending = false;
-
 	const form = useForm({
 		resolver: zodResolver(schema),
+		defaultValues: {
+			[fieldName]: initialState,
+		},
 	});
 
-	const [state, formAction] = useActionState(action, initialState);
-
-	useEffect(() => {
-		if (state.errors) {
-			Object.entries(state.errors).forEach(([field, message]) => {
-				form.setError(field, { message: message as string });
-			});
-		}
-	}, [state.errors]);
-
-	// Permite footer como função, objeto completo ou apenas texto
-	let footerProps: SettingsCardFooterProps;
-	if (typeof footer === "function") {
-		footerProps = footer(pending);
-	} else if (footer && typeof footer === "object") {
-		// Se só tem text, usa action padrão
-		if (footer.text && !footer.action) {
-			footerProps = {
-				action: defaultFooter(pending).action,
-				text: footer.text,
-			};
-		} else {
-			footerProps = footer;
-		}
-	} else {
-		footerProps = defaultFooter(pending);
-	}
+	const { isSubmitting, isDirty } = form.formState;
 
 	return (
-		<SettingsCard
-			title={title}
-			description={description}
-			footer={footerProps}
-		>
-			<Form {...form}>
-				<form action={formAction} className="space-y-0">
+		<Form {...form}>
+			<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-0">
+				<SettingsCard
+					title={title}
+					description={description}
+					footer={{
+						text: footer?.text,
+						action: (
+							<Button
+								type="submit"
+								disabled={isSubmitting || !isDirty}
+								variant={footer?.action?.variant ?? "default"}
+							>
+								{isSubmitting ? (
+									<LoaderCircle
+										size={16}
+										className="animate-spin"
+									/>
+								) : (
+									(footer?.action?.label ?? "Salvar")
+								)}
+							</Button>
+						),
+					}}
+				>
 					<FormField
 						control={form.control}
 						name={fieldName}
 						render={({ field }) => (
 							<FormItem>
 								<FormLabel>{label}</FormLabel>
-								<FormControl>
-									{renderField(field, form)}
-								</FormControl>
-								<FormMessage>
-									{state?.errors?.[fieldName]}
-								</FormMessage>
+								<FormControl>{renderField(field)}</FormControl>
+								<FormMessage />
 							</FormItem>
 						)}
 					/>
-				</form>
-			</Form>
-		</SettingsCard>
+				</SettingsCard>
+			</form>
+		</Form>
 	);
 }
