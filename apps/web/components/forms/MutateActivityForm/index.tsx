@@ -20,7 +20,7 @@ import { MutateActivityFormContent } from "@/components/forms/MutateActivityForm
 import {
 	type MutateActivityFormSchema,
 	mutateActivityFormSchema,
-} from "@/lib/validations/mutate-activity-form";
+} from "@/lib/validations/forms/mutate-activity-form";
 
 // API
 import { trpc } from "@/lib/trpc/react";

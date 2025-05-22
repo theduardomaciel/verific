@@ -15,8 +15,8 @@ export const project = pgTable("projects", {
 	isArchived: boolean("is_archived").default(false),
 	coverUrl: text("cover_url"),
 	thumbnailUrl: text("thumbnail_url"),
-	primaryColor: text("primary_color"),
-	secondaryColor: text("secondary_color"),
+	primaryColor: text("primary_color").default("#3B82F6"),
+	secondaryColor: text("secondary_color").default("#60A8FB"),
 	startDate: timestamp("start_date").notNull(),
 	endDate: timestamp("end_date").notNull(),
 	ownerId: uuid("owner_id")

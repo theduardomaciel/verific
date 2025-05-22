@@ -14,7 +14,7 @@ import {
 	dateSchema,
 	nameSchema,
 	urlSchema,
-} from "@/lib/validations/project-settings-general-form";
+} from "@/lib/validations/forms/settings-form/project/general-form";
 
 // tRPC
 import { trpc } from "@/lib/trpc/react";
@@ -27,24 +27,61 @@ interface Props {
 export function ProjectSettingsGeneral({ project }: Props) {
 	const updateMutation = trpc.updateProject.useMutation();
 
-	const onSubmit = async (data: any, form: UseFormReturn<any>) => {
-		console.log("data", data);
-
-		// Update project data
+	// Função auxiliar para lidar com a submissão do formulário
+	const handleFormSubmit = async (
+		form: UseFormReturn<any>,
+		successMessage: string,
+		errorMessage: string,
+		logContext: string,
+	) => {
+		const data = form.getValues();
 		try {
 			await updateMutation.mutateAsync({
 				id: project.id,
 				...data,
 			});
-			toast.success("Projeto atualizado com sucesso!");
+			toast.success(successMessage);
 			form.reset(data); // Resetar o formulário com os novos dados
 		} catch (error) {
-			toast.error(
-				"Erro ao atualizar o projeto. Tente novamente mais tarde.",
-				{ duration: 2500 },
-			);
-			console.error("Error updating project:", error);
+			toast.error(errorMessage, { duration: 2500 });
+			console.error(`Error ${logContext}:`, error);
 		}
+	};
+
+	const onSubmitName = async (form: UseFormReturn<any>) => {
+		await handleFormSubmit(
+			form,
+			"Nome do evento atualizado com sucesso!",
+			"Erro ao atualizar o nome do evento. Tente novamente mais tarde.",
+			"updating event name",
+		);
+	};
+
+	const onSubmitUrl = async (form: UseFormReturn<any>) => {
+		await handleFormSubmit(
+			form,
+			"URL do evento atualizada com sucesso!",
+			"Erro ao atualizar a URL do evento. Tente novamente mais tarde.",
+			"updating event url",
+		);
+	};
+
+	const onSubmitDate = async (form: UseFormReturn<any>) => {
+		await handleFormSubmit(
+			form,
+			"Data do evento atualizada com sucesso!",
+			"Erro ao atualizar a data do evento. Tente novamente mais tarde.",
+			"updating event date",
+		);
+	};
+
+	const onSubmitAddress = async (form: UseFormReturn<any>) => {
+		await handleFormSubmit(
+			form,
+			"Endereço do evento atualizado com sucesso!",
+			"Erro ao atualizar o endereço do evento. Tente novamente mais tarde.",
+			"updating event address",
+		);
 	};
 
 	return (
@@ -57,7 +94,7 @@ export function ProjectSettingsGeneral({ project }: Props) {
 				label="Nome"
 				renderField={(field) => <Input {...field} autoComplete="off" />}
 				initialState={project.name}
-				onSubmit={onSubmit}
+				onSubmit={onSubmitName}
 				footer={{
 					text: "Por favor, use 32 caracteres no máximo",
 				}}
@@ -69,7 +106,7 @@ export function ProjectSettingsGeneral({ project }: Props) {
 				description="Este é o endereço que os usuários poderão acessar para se inscrever em seu evento"
 				label="URL"
 				initialState={project.url}
-				onSubmit={onSubmit}
+				onSubmit={onSubmitUrl}
 				renderField={(field) => (
 					<div className="flex items-center">
 						<div className="bg-muted flex h-9 items-center rounded-l-md border px-4">
@@ -90,7 +127,7 @@ export function ProjectSettingsGeneral({ project }: Props) {
 			/>
 			<SettingsFormCard
 				schema={dateSchema}
-				fieldName="startDate"
+				fieldName="startDate" // Ajustado para corresponder ao schema que espera 'from' e 'to' indiretamente através do CalendarDateRangePicker
 				title="Data do Evento"
 				description="Esta é a data de duração exibida aos usuários ao se inscrever em seu evento"
 				label="Data"
@@ -98,10 +135,10 @@ export function ProjectSettingsGeneral({ project }: Props) {
 					from: project.startDate,
 					to: project.endDate,
 				}}
-				onSubmit={onSubmit}
+				onSubmit={onSubmitDate}
 				renderField={(field) => (
 					<CalendarDateRangePicker
-						value={field.value}
+						value={field.value} // field.value aqui será { from: Date, to: Date }
 						onChange={field.onChange}
 					/>
 				)}
@@ -110,18 +147,18 @@ export function ProjectSettingsGeneral({ project }: Props) {
 				}}
 			/>
 			<SettingsFormCard
-				schema={addressSchema}
-				fieldName="address"
+				schema={addressSchema} // O schema addressSchema deve lidar com o objeto de endereço
+				fieldName="address" // Ajustado para corresponder ao schema que espera um objeto para o endereço
 				title="Endereço do Evento"
 				description="Este é o local físico utilizado para hospedar seu evento. Ele será exibido aos participantes na página de inscrição."
 				label="Endereço"
 				initialState={{
-					address: project.address,
+					address: project.address, // Passando o objeto esperado pelo PlacePicker
 				}}
-				onSubmit={onSubmit}
+				onSubmit={onSubmitAddress}
 				renderField={(field) => (
 					<PlacePicker
-						defaultValue={field.value}
+						defaultValue={field.value} // field.value aqui será { address: string, latitude: number, longitude: number }
 						onPlaceChange={field.onChange}
 					/>
 				)}

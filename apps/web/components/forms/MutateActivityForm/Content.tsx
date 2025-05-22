@@ -32,7 +32,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { TimePicker } from "@/components/dashboard/time-picker";
 
 // Types
-import type { MutateActivityFormSchema } from "@/lib/validations/mutate-activity-form";
+import type { MutateActivityFormSchema } from "@/lib/validations/forms/mutate-activity-form";
 import type { UseFormReturn } from "react-hook-form";
 import { activityCategories } from "@verific/drizzle/enum/category";
 
