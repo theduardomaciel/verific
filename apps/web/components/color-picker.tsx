@@ -9,9 +9,22 @@ import { Plus } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { PopoverClose } from "@radix-ui/react-popover";
 
-export function ColorPicker() {
-	const [selectedColor, setSelectedColor] = useState<string | null>(null);
-	const [inputColor, setInputColor] = useState("#f857a6");
+const FALLBACK_COLOR = "#f857a6"; // Cor padrão
+
+interface ColorPickerProps {
+	color?: string | null;
+	defaultColor?: string | null;
+	onChange?: (color: string | null) => void;
+}
+
+export function ColorPicker({
+	color,
+	defaultColor,
+	onChange,
+}: ColorPickerProps) {
+	const [inputColor, setInputColor] = useState(
+		color || defaultColor || FALLBACK_COLOR,
+	);
 	const [sliderPosition, setSliderPosition] = useState(50);
 	const [pickerPosition, setPickerPosition] = useState({ x: 200, y: 60 }); // Posição padrão pra #f857a6
 	const [hsl, setHsl] = useState({ h: 0, s: 0, l: 0 });
@@ -175,18 +188,22 @@ export function ColorPicker() {
 
 	// Add or remove color
 	const handleAddColor = () => {
-		setSelectedColor(inputColor);
+		onChange?.(inputColor);
 	};
 
 	const handleRemoveColor = () => {
-		setSelectedColor(null);
-		setInputColor("#f857a6"); // Reset to default color
+		if (defaultColor) {
+			onChange?.(defaultColor);
+		} else {
+			onChange?.(null);
+		}
+		setInputColor(defaultColor ?? FALLBACK_COLOR); // Reset to default color
 		setPickerPosition({ x: 200, y: 60 }); // Reset to default position
 	};
 
 	// Save color
 	const handleSaveColor = () => {
-		setSelectedColor(inputColor);
+		onChange?.(inputColor);
 	};
 
 	// Color conversion utilities
@@ -281,7 +298,7 @@ export function ColorPicker() {
 	return (
 		<Popover>
 			<PopoverTrigger asChild>
-				{!selectedColor ? (
+				{!color && defaultColor ? (
 					<Button onClick={handleAddColor}>
 						<Plus className="h-5 w-5" />
 						<span>Adicionar</span>
@@ -290,10 +307,10 @@ export function ColorPicker() {
 					<Button variant={"outline"} className="hover:bg-muted px-2">
 						<div
 							className="h-4 w-4 rounded-sm"
-							style={{ backgroundColor: selectedColor }}
+							style={{ backgroundColor: color || inputColor }}
 						/>
 						<span className="text-muted-foreground">
-							{selectedColor}
+							{color || inputColor}
 						</span>
 					</Button>
 				)}
@@ -355,13 +372,13 @@ export function ColorPicker() {
 				{/* Action buttons */}
 				<PopoverClose asChild>
 					<div className="flex w-full justify-between gap-2">
-						{selectedColor ? (
+						{color ? (
 							<Button
 								variant="outline"
 								className="flex-1"
 								onClick={handleRemoveColor}
 							>
-								Remover
+								{defaultColor ? "Limpar" : "Remover"}
 							</Button>
 						) : (
 							<Button variant="outline" className="flex-1">

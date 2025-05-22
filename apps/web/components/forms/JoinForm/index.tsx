@@ -22,7 +22,7 @@ import {
 	type JoinFormSchema,
 	JoinFormTypeEnum,
 	joinFormSchema,
-} from "@/lib/validations/JoinForm";
+} from "@/lib/validations/forms/joinForm";
 import { scrollToNextSection } from "@/lib/validations";
 
 // Types

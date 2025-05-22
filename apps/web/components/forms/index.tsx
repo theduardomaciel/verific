@@ -14,7 +14,7 @@ import { FormLabel } from "@/components/ui/form";
 
 // Types
 import type { FieldValues, UseFormReturn } from "react-hook-form";
-import type { JoinFormTypeEnum } from "@/lib/validations/JoinForm";
+import type { JoinFormTypeEnum } from "@/lib/validations/forms/joinForm";
 
 // Utils
 import { scrollToNextSection } from "@/lib/validations";

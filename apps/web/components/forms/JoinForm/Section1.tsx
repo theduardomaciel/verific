@@ -28,7 +28,7 @@ import { isValid } from "@/lib/validations";
 import {
 	type JoinFormSection1Schema,
 	joinFormSection1Schema,
-} from "@/lib/validations/JoinForm/section1";
+} from "@/lib/validations/forms/joinForm/section1";
 import { courses, periods } from "@verific/drizzle/schema";
 
 const section1Keys = Object.keys(

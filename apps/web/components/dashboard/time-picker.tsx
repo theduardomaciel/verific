@@ -22,7 +22,7 @@ import { Command as CommandPrimitive } from "cmdk";
 
 // Types
 import type { UseFormReturn } from "react-hook-form";
-import type { MutateActivityFormSchema } from "@/lib/validations/mutate-activity-form";
+import type { MutateActivityFormSchema } from "@/lib/validations/forms/mutate-activity-form";
 
 const times = [
 	"00:00",
