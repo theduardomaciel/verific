@@ -19,9 +19,6 @@ import { Filter } from "@/components/dashboard/filter";
 import { Empty } from "@/components/empty";
 import { ActivityCard } from "@/components/dashboard/activity-card";
 
-// Data
-import { getActivities, getCategories, getStatuses } from "@/lib/data";
-
 // Validation
 import type { z } from "zod";
 import { getActivitiesParams } from "@verific/api/routers/activities";
@@ -30,6 +27,10 @@ type EventsPageParams = z.infer<typeof getActivitiesParams>;
 
 // API
 import { serverClient } from "@/lib/trpc/server";
+import {
+	activityCategories,
+	activityCategoryLabels,
+} from "@verific/drizzle/schema";
 
 export default async function ActivitiesPage(props: {
 	searchParams: Promise<EventsPageParams>;
@@ -108,17 +109,19 @@ export default async function ActivitiesPage(props: {
 						</Link>
 					</Button>
 
-					{/* <FiltersPanel>
+					<FiltersPanel>
 						<Filter
 							type="checkbox"
 							prefix="category"
 							title="Filtrar por Categoria"
-							items={categories.map((category) => ({
-								value: category.id,
-								name: category.label,
+							items={activityCategories.map((category) => ({
+								value: category,
+								name: activityCategoryLabels[
+									category as keyof typeof activityCategoryLabels
+								],
 							}))}
 						/>
-						<Filter
+						{/* <Filter
 							type="checkbox"
 							prefix="status"
 							title="Filtrar por Status"
@@ -126,8 +129,8 @@ export default async function ActivitiesPage(props: {
 								value: status.id,
 								name: status.label,
 							}))}
-						/>
-					</FiltersPanel> */}
+						/> */}
+					</FiltersPanel>
 				</div>
 			</div>
 		</div>
