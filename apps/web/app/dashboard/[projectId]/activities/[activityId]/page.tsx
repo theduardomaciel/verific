@@ -138,7 +138,9 @@ export default async function ActivityPage(props: {
 						Abrir fila de espera
 					</Button> */}
 					<Button size={"lg"} className="h-10 flex-1" asChild>
-						<Link href={`/event/${projectId}`}>
+						<Link
+							href={`/${activity.project.url}/activities/${activity.id}`}
+						>
 							<Globe size={20} />
 							Visitar página do evento
 						</Link>

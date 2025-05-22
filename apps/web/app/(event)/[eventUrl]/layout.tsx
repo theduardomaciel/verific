@@ -1,15 +1,17 @@
 import Image from "next/image";
-import { REM } from "next/font/google";
+import Link from "next/link";
+
 import { notFound } from "next/navigation";
 
+// Components
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/footer";
-import { getEventById } from "@/lib/data";
 import { MainNavProps } from "@/components/main-nav";
-import Link from "next/link";
-import { serverClient } from "@/lib/trpc/server";
-import { constants } from "node:fs/promises";
 
+// API
+import { serverClient } from "@/lib/trpc/server";
+
+import { REM } from "next/font/google";
 const rem = REM({
 	variable: "--font-rem",
 	subsets: ["latin"],
@@ -48,23 +50,23 @@ export default async function EventLayout({
 	params,
 }: {
 	children: React.ReactNode;
-	params: Promise<{ eventId: string }>;
+	params: Promise<{ eventUrl: string }>;
 }) {
-	const { eventId } = await params;
+	const { eventUrl } = await params;
 
 	let event;
 
 	try {
 		event = await serverClient.getProject({
-			id: eventId,
+			url: eventUrl,
 		});
 
 		if (!event) {
-			console.error("Event not found", { eventId });
+			console.error("Event not found", { eventUrl });
 			notFound();
 		}
 	} catch (error) {
-		console.error("Event not found", { eventId });
+		console.error("Event not found", { eventUrl });
 		notFound();
 	}
 
@@ -91,9 +93,9 @@ export default async function EventLayout({
 					"border-none bg-transparent shadow-none text-primary-foreground"
 				}
 				links={EVENT_LINKS}
-				prefix={`/event/${eventId}`}
+				prefix={`/${eventUrl}`}
 				logo={
-					<Link href={`/event/${eventId}`}>
+					<Link href={`/${eventUrl}`}>
 						<Image
 							src={"/images/secomp.png"}
 							width={150}

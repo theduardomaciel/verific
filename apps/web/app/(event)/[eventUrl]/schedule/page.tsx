@@ -3,21 +3,21 @@ import { Calendar } from "lucide-react";
 import { serverClient } from "@/lib/trpc/server";
 
 // Components
-import { EventCard } from "@/components/landing/event-card";
+import { ActivityCard } from "@/components/landing/activity-card";
 import { SearchBar } from "@/components/dashboard/search-bar";
 import { SortBy } from "@/components/dashboard/sort-by";
 
 export default async function EventSchedulePage({
 	params,
 }: {
-	params: Promise<{ eventId: string }>;
+	params: Promise<{ eventUrl: string }>;
 }) {
-	const { eventId } = await params;
+	const { eventUrl } = await params;
 
-	const event = await serverClient.getProject({ id: eventId });
+	const event = await serverClient.getProject({ url: eventUrl });
 
 	const { activities } = await serverClient.getActivities({
-		projectId: eventId,
+		projectId: event.id,
 		page: 0,
 		pageSize: 20,
 	});
@@ -86,25 +86,9 @@ export default async function EventSchedulePage({
 					<h2 className="mb-4 text-xl font-bold">Atividades</h2>
 					<div className="grid gap-6 md:grid-cols-2">
 						{activities.map((activity) => (
-							<EventCard
+							<ActivityCard
 								key={activity.id}
-								type={activity.category.toUpperCase()}
-								title={activity.name}
-								description={activity.description || ""}
-								presenterName={activity.speaker?.name}
-								presenterDesc={activity.speaker?.description}
-								availableSpots={
-									activity.participantsLimit
-										? `${activity.participantsLimit} vagas disponíveis`
-										: undefined
-								}
-								date={activity.dateFrom.toLocaleDateString()}
-								time={activity.dateFrom.toLocaleTimeString([], {
-									hour: "2-digit",
-									minute: "2-digit",
-								})}
-								buttonColor="bg-[#5b15b5]"
-								buttonHoverColor="hover:bg-[#4a1194]"
+								activity={activity}
 							/>
 						))}
 					</div>

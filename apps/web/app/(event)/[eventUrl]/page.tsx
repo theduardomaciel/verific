@@ -23,11 +23,11 @@ import { serverClient } from "@/lib/trpc/server";
 export default async function EventPage({
 	params,
 }: {
-	params: Promise<{ eventId: string }>;
+	params: Promise<{ eventUrl: string }>;
 }) {
-	const { eventId } = await params;
+	const { eventUrl } = await params;
 
-	const event = await serverClient.getProject({ id: eventId });
+	const event = await serverClient.getProject({ url: eventUrl });
 
 	if (!event) {
 		notFound();
@@ -69,7 +69,7 @@ export default async function EventPage({
 
 						<Button asChild size={"lg"} variant={"secondary"}>
 							<Link
-								href={`/event/${eventId}/subscribe`}
+								href={`/${eventUrl}/subscribe`}
 								className="h-fit !px-12 py-3 text-base font-semibold text-white max-md:w-full"
 							>
 								INSCREVER-SE

@@ -93,10 +93,29 @@ export const projectsRouter = createTRPCRouter({
 		}),
 
 	getProject: protectedProcedure
-		.input(z.object({ id: z.string().uuid() }))
+		.input(
+			z.object({
+				id: z.string().uuid().optional(),
+				url: z.string().optional(),
+			}),
+		)
 		.query(async ({ input }) => {
+			if (!input.id && !input.url) {
+				throw new Error("Project ID or URL is required");
+			}
+
+			const whereClause = input.id
+				? eq(project.id, input.id)
+				: input.url
+					? eq(project.url, input.url)
+					: null;
+
+			if (!whereClause) {
+				throw new Error("Invalid input");
+			}
+
 			const projectData = await db.query.project.findFirst({
-				where: eq(project.id, input.id),
+				where: whereClause,
 				with: {
 					speakers: true,
 					owner: {
@@ -108,9 +127,11 @@ export const projectsRouter = createTRPCRouter({
 					},
 				},
 			});
+
 			if (!projectData) {
 				throw new Error("Project not found");
 			}
+
 			return projectData;
 		}),
 

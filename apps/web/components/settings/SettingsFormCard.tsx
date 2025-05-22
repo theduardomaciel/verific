@@ -27,7 +27,7 @@ interface SettingsFormCardProps<T extends ZodTypeAny> {
 	description: string;
 	label: string;
 	initialState: any;
-	onSubmit: (data: any) => void;
+	onSubmit: (data: any, form: ReturnType<typeof useForm>) => void;
 	renderField: (field: any) => React.ReactNode;
 	footer?: {
 		text?: string;
@@ -60,7 +60,10 @@ export function SettingsFormCard<T extends ZodTypeAny>({
 
 	return (
 		<Form {...form}>
-			<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-0">
+			<form
+				onSubmit={form.handleSubmit((data) => onSubmit(data, form))}
+				className="space-y-0"
+			>
 				<SettingsCard
 					title={title}
 					description={description}
