@@ -24,7 +24,7 @@ interface ActivityCardProps {
 export function SimpleActivityCard({ activity, className }: ActivityCardProps) {
 	return (
 		<Link
-			href={`/dashboard/activities/${activity.id}`}
+			href={`/dashboard/${activity.projectId}/activities/${activity.id}`}
 			className={cn(
 				"hover:bg-foreground/5 flex flex-col items-start justify-start rounded-md border",
 				className,
@@ -49,11 +49,11 @@ export function SimpleActivityCard({ activity, className }: ActivityCardProps) {
 					)}
 				</span>
 			</div>
-			<div className="bg-input h-[1px] w-full" />
+			<div className="bg-input h-[1px] w-full border-t" />
 			<ActivityInfo
+				className="p-4"
 				category={activity.category}
 				dateFrom={activity.dateFrom}
-				className="p-4"
 			/>
 		</Link>
 	);
@@ -124,7 +124,7 @@ export function ActivityCard({ activity, className }: ActivityCardProps) {
 							)}
 
 							{participantsAmount ? (
-								<div className="text-foreground flex items-center gap-1 text-xs">
+								<div className="text-foreground flex items-center gap-1 text-sm">
 									<Users className="h-4 w-4" />
 									<span>
 										{participantsAmount === 1
@@ -133,8 +133,8 @@ export function ActivityCard({ activity, className }: ActivityCardProps) {
 									</span>
 								</div>
 							) : (
-								<div className="text-foreground flex items-center gap-1 text-xs">
-									<span>Sem participantes inscritos</span>
+								<div className="text-foreground mt-2 flex items-center gap-1 text-sm">
+									Nenhum participante inscrito
 								</div>
 							)}
 						</div>
@@ -191,7 +191,7 @@ function ActivityInfo({ className, speaker, category, dateFrom }: InfoProps) {
 					) : (
 						<Clock className="mt-[1.2px] h-3 w-3" />
 					)}
-					<p className="leading-0 overflow-ellipsis text-sm">
+					<p className="text-sm leading-0 overflow-ellipsis">
 						{formatFriendlyDate(dateFrom, !!speaker)}
 					</p>
 				</div>

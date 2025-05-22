@@ -3,6 +3,9 @@ import MainNav, { type MainNavProps } from "@/components/main-nav";
 import { ProjectSwitcher } from "./project-switcher";
 import { UserNav } from "./user-nav";
 
+// API
+import { auth } from "@verific/auth";
+
 // Types
 import { RouterOutput } from "@verific/api";
 
@@ -15,7 +18,7 @@ interface Props {
 	showAccountActions?: boolean;
 }
 
-export function DashboardHeader({
+export async function DashboardHeader({
 	selectedProjectId,
 	projects,
 	prefix,
@@ -23,6 +26,8 @@ export function DashboardHeader({
 	showProjectSwitcher = true,
 	showAccountActions = true,
 }: Props) {
+	const session = await auth();
+
 	return (
 		<div className="px-container-h flex w-full flex-col items-center gap-6 border-b py-4 md:flex-row-reverse">
 			<div className="flex items-center justify-between gap-6 max-md:w-full md:ml-auto">
@@ -36,7 +41,12 @@ export function DashboardHeader({
 						}))}
 					/>
 				)}
-				<UserNav showAccountActions={showAccountActions} />
+				{session?.user ? (
+					<UserNav
+						showAccountActions={showAccountActions}
+						user={session?.user}
+					/>
+				) : null}
 			</div>
 			<MainNav prefix={prefix} links={links} />
 		</div>

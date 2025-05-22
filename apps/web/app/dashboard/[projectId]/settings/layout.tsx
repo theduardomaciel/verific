@@ -10,8 +10,8 @@ const settingsLinks = [
 		label: "Preferências",
 	},
 	{
-		href: "/dashboard/settings/customization",
-		label: "Customização",
+		href: "/dashboard/settings/subscriptions",
+		label: "Inscrições",
 	},
 	{
 		href: "/dashboard/settings/security",

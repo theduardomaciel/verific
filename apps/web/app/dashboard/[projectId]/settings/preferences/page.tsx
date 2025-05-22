@@ -34,23 +34,6 @@ export default function PreferencesSettings() {
 				</div>
 			</Card>
 
-			{/* Manage subscription */}
-			<SettingsCard
-				title="Gerenciar Inscrições"
-				description="Decida se usuários poderão utilizar a página de inscrição para se cadastrarem ou não"
-				footer={{
-					text: "As mudanças podem levar alguns minutos para tomar efeito",
-					action: <Button>Salvar</Button>,
-				}}
-			>
-				<div className="flex items-center space-x-2">
-					<Switch id="subscription_enabled" size={"lg"} />
-					<Label htmlFor="subscription_enabled">
-						Inscrição habilitada
-					</Label>
-				</div>
-			</SettingsCard>
-
 			{/* Enable research */}
 			<SettingsCard
 				title="Realizar Pesquisa"

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+// Icons
 import { Cloud, LifeBuoy, LogOut, Settings } from "lucide-react";
 
 // Components
@@ -17,15 +18,27 @@ import {
 	DropdownMenuShortcut,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+// Actions
 import { signOutAction } from "@/app/actions";
+
+// Types
+import type { User } from "@verific/auth";
 
 // Auth
 
 interface Props {
+	user: User;
 	showAccountActions?: boolean;
 }
 
-export function UserNav({ showAccountActions }: Props) {
+export function UserNav({ user, showAccountActions }: Props) {
+	const initials = user.name
+		?.split(" ")
+		.slice(0, 2)
+		.map((n) => n[0])
+		.join("");
+
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
@@ -34,8 +47,8 @@ export function UserNav({ showAccountActions }: Props) {
 					className="relative h-8 w-8 rounded-full"
 				>
 					<Avatar className="h-8 w-8">
-						<AvatarImage src="/avatars/01.png" alt="@shadcn" />
-						<AvatarFallback>LA</AvatarFallback>
+						<AvatarImage src={user.image || ""} alt={user.id} />
+						<AvatarFallback>{initials}</AvatarFallback>
 					</Avatar>
 				</Button>
 			</DropdownMenuTrigger>
@@ -43,10 +56,10 @@ export function UserNav({ showAccountActions }: Props) {
 				<DropdownMenuLabel className="font-normal">
 					<div className="flex flex-col space-y-1">
 						<p className="text-sm leading-none font-medium">
-							LACOMP
+							{user.name}
 						</p>
 						<p className="text-muted-foreground text-xs leading-none">
-							lacomp@ic.ufal.br
+							{user.email}
 						</p>
 					</div>
 				</DropdownMenuLabel>

@@ -7,12 +7,18 @@ import type { Adapter } from "next-auth/adapters";
 
 export const drizzleAuthAdapter: Adapter = {
 	async createUser(userToCreate) {
+		if (!userToCreate.email || !userToCreate.name) {
+			throw new Error("No data to create user.");
+		}
+
 		const [drizzleUser] = await db
 			.insert(user)
 			.values({
-				...userToCreate,
 				id: crypto.randomUUID(),
 				emailVerified: new Date(),
+				email: userToCreate.email,
+				name: userToCreate.name,
+				image_url: userToCreate.image,
 			})
 			.returning();
 
@@ -74,13 +80,18 @@ export const drizzleAuthAdapter: Adapter = {
 	},
 
 	async updateUser({ id, ...userToUpdate }) {
-		if (!id) {
-			throw new Error("No user id.");
+		if (!id || userToUpdate.email || !userToUpdate.name) {
+			throw new Error("No data to create user.");
 		}
 
 		const [drizzleUser] = await db
 			.update(user)
-			.set(userToUpdate)
+			.set({
+				emailVerified: new Date(),
+				email: userToUpdate.email,
+				name: userToUpdate.name,
+				image_url: userToUpdate.image,
+			})
 			.where(eq(user.id, id))
 			.returning();
 
