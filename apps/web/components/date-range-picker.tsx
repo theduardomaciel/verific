@@ -15,24 +15,13 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 
-export function DateRangePicker({
-	className,
-	value,
-	onChange,
-}: React.HTMLAttributes<HTMLDivElement> & {
+interface Props {
+	className?: string;
 	value?: DateRange;
 	onChange?: (range: DateRange | undefined) => void;
-}) {
-	const [internalDate, setInternalDate] = React.useState<
-		DateRange | undefined
-	>({
-		from: subDays(new Date(), 3),
-		to: addDays(new Date(), 5),
-	});
+}
 
-	const date = value !== undefined ? value : internalDate;
-	const setDate = onChange !== undefined ? onChange : setInternalDate;
-
+export function DateRangePicker({ className, value, onChange }: Props) {
 	return (
 		<div className={cn("grid gap-2", className)}>
 			<Popover>
@@ -42,23 +31,23 @@ export function DateRangePicker({
 						variant={"outline"}
 						className={cn(
 							"justify-start text-left font-normal",
-							!date && "text-muted-foreground",
+							!value && "text-muted-foreground",
 						)}
 					>
 						<CalendarIcon className="mr-2 h-4 w-4" />
-						{date?.from ? (
-							date.to ? (
+						{value?.from ? (
+							value.to ? (
 								<>
-									{format(date.from, "dd 'de' MMM, yyyy", {
+									{format(value.from, "dd 'de' MMM, yyyy", {
 										locale: ptBR,
 									})}{" "}
 									-{" "}
-									{format(date.to, "dd 'de' MMM, yyyy", {
+									{format(value.to, "dd 'de' MMM, yyyy", {
 										locale: ptBR,
 									})}
 								</>
 							) : (
-								format(date.from, "dd 'de' MMM, yyyy", {
+								format(value.from, "dd 'de' MMM, yyyy", {
 									locale: ptBR,
 								})
 							)
@@ -71,9 +60,9 @@ export function DateRangePicker({
 					<Calendar
 						// initialFocus removido para compatibilidade com Firefox
 						mode="range"
-						defaultMonth={date?.from}
-						selected={date}
-						onSelect={setDate}
+						defaultMonth={value?.from}
+						selected={value}
+						onSelect={onChange}
 						numberOfMonths={2}
 						locale={ptBR}
 					/>

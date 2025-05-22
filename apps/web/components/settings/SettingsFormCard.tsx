@@ -1,5 +1,7 @@
 "use client";
-import { toast } from "sonner";
+
+// Icons
+import { LoaderCircle } from "lucide-react";
 
 // Components
 import { Button } from "@/components/ui/button";
@@ -14,11 +16,9 @@ import {
 } from "@/components/ui/form";
 
 // Validations
-import { ZodTypeAny } from "zod";
+import z, { ZodTypeAny } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FormState, useForm } from "react-hook-form";
-import { LoaderCircle } from "lucide-react";
-import { useState } from "react";
+import { useForm, UseFormReturn } from "react-hook-form";
 
 interface SettingsFormCardProps<T extends ZodTypeAny> {
 	schema: T;
@@ -27,7 +27,7 @@ interface SettingsFormCardProps<T extends ZodTypeAny> {
 	description: string;
 	label?: string;
 	initialState: any;
-	onSubmit: (form: ReturnType<typeof useForm>) => void;
+	onSubmit: (form: UseFormReturn<z.infer<T>>) => void;
 	renderField: (field: any) => React.ReactNode;
 	footer?: {
 		text?: string;
