@@ -79,10 +79,12 @@ export default async function ActivityPage(props: {
 						<Clock className="h-4 w-4" />
 						{timeFrom} - {timeTo}
 					</Badge>
-					<Badge variant={"secondary"}>
-						<Megaphone className="h-4 w-4" />
-						15m de tolerância
-					</Badge>
+					{activity.tolerance && activity.tolerance > 0 ? (
+						<Badge variant={"secondary"}>
+							<Megaphone className="h-4 w-4" />
+							{activity.tolerance}m de tolerância
+						</Badge>
+					) : null}
 				</div>
 				<h2 className="text-muted-foreground text-base leading-normal font-medium">
 					{activity.description}
@@ -136,7 +138,7 @@ export default async function ActivityPage(props: {
 						Abrir fila de espera
 					</Button> */}
 					<Button size={"lg"} className="h-10 flex-1" asChild>
-						<Link href={`/event/${activityId}`}>
+						<Link href={`/event/${projectId}`}>
 							<Globe size={20} />
 							Visitar página do evento
 						</Link>
@@ -146,8 +148,20 @@ export default async function ActivityPage(props: {
 			<div className="flex w-full flex-col items-start justify-start gap-12 md:flex-row">
 				<div className="flex w-full flex-col items-center justify-start gap-4 md:w-3/5">
 					<ParticipantsList.Holder>
-						<ParticipantsList.Title>
-							Participantes
+						<ParticipantsList.Title className="flex w-full flex-row items-center justify-between">
+							<p>Participantes</p>
+							<span className="text-muted-foreground text-sm font-medium">
+								{activity.participantsLimit &&
+								activity.participantsLimit > 0
+									? `Vagas disponíveis: ${activity.participantsLimit - participants.length}/${activity.participantsLimit}`
+									: participants.length > 0
+										? `${participants.length} participante${
+												participants.length !== 1
+													? "s"
+													: ""
+											}`
+										: null}
+							</span>
 						</ParticipantsList.Title>
 						<div className="flex w-full flex-col items-start justify-start gap-2 sm:flex-row sm:gap-4">
 							<SearchBar

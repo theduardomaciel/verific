@@ -47,7 +47,9 @@ export default function MutateActivityForm({ projectId, activity }: Props) {
 			name: activity?.name || "",
 			description: activity?.description || "",
 			speakerId: activity?.speaker.id.toString() || "",
-			dateFrom: new Date(),
+			dateFrom: activity?.dateFrom
+				? new Date(activity.dateFrom)
+				: new Date(),
 			tolerance: activity?.tolerance || 0,
 			timeFrom: activity
 				? dateToTimeString(activity.dateFrom)

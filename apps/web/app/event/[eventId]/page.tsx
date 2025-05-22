@@ -1,4 +1,8 @@
+import Link from "next/link";
 import Image from "next/image";
+import { notFound } from "next/navigation";
+
+// Icons
 import {
 	Calendar,
 	MapPin,
@@ -8,17 +12,26 @@ import {
 	Check,
 	TicketCheck,
 } from "lucide-react";
+
+// Icons
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
+
+// API
+import { serverClient } from "@/lib/trpc/server";
 
 export default async function EventPage({
 	params,
 }: {
-	params: Promise<{ id: string }>;
+	params: Promise<{ eventId: string }>;
 }) {
-	const fetched = await params;
-	const id = fetched.id;
+	const { eventId } = await params;
+
+	const event = await serverClient.getProject({ id: eventId });
+
+	if (!event) {
+		notFound();
+	}
 
 	return (
 		<main className="bg-background min-h-screen">
@@ -27,12 +40,13 @@ export default async function EventPage({
 				<div className="container-p z-10 mx-auto flex w-full flex-col gap-8 md:flex-row">
 					<div className="z-10 flex flex-1 flex-col items-start justify-center">
 						<h1 className="mb-4 text-5xl font-bold text-white">
-							SECOMP 2024
+							{event.name}
 						</h1>
 						<div className="mb-6 flex items-center text-lg text-white/90">
 							<Calendar className="mr-2 h-4.5 w-4.5" />
 							<span className="-mt-0.5 text-base">
-								De 18/01/2024 a 27/01/2024
+								De {event.startDate.toLocaleDateString()} a{" "}
+								{event.endDate.toLocaleDateString()}
 							</span>
 						</div>
 
@@ -55,7 +69,7 @@ export default async function EventPage({
 
 						<Button asChild size={"lg"} variant={"secondary"}>
 							<Link
-								href={`/event/${id}/subscribe`}
+								href={`/event/${eventId}/subscribe`}
 								className="h-fit !px-12 py-3 text-base font-semibold text-white max-md:w-full"
 							>
 								INSCREVER-SE
@@ -96,141 +110,14 @@ export default async function EventPage({
 						</h2>
 
 						<div className="space-y-6">
-							<p>
-								A SECOMP 2025 —{" "}
-								<strong>Semana da Computação da UFAL</strong> —
-								é o maior evento acadêmico de tecnologia de
-								Alagoas, reunindo estudantes, professores,
-								profissionais da área e entusiastas da
-								tecnologia para três dias de intensa troca de
-								conhecimento, experiências e networking. Em sua
-								edição deste ano, que acontece de{" "}
-								<strong>6 a 8 de novembro de 2025</strong>, o
-								evento será realizado no Instituto de Computação
-								da UFAL, em Maceió, e promete uma programação
-								diversa, interativa e completamente gratuita.
-							</p>
-
-							<p>
-								Com foco em inovação, aprendizado e
-								desenvolvimento de habilidades técnicas, a
-								SECOMP traz palestras com grandes nomes da
-								tecnologia em Alagoas, minicursos práticos,
-								salas de jogos e competições empolgantes, tudo
-								pensado para ampliar o contato entre a
-								comunidade acadêmica e o mercado de trabalho.
-							</p>
-
-							<p className="font-medium">
-								Entre os destaques da programação:
-							</p>
-
-							<ul className="list-none space-y-6">
-								<li>
-									<div className="flex items-start">
-										<span className="mr-2">🎯</span>
-										<div>
-											<strong>
-												Competições Técnicas e de
-												Raciocínio
-											</strong>
-											<ul className="mt-2 list-disc space-y-3 pl-6">
-												<li>
-													<strong>
-														Maratona de Programação:
-													</strong>{" "}
-													Desafie sua lógica e
-													trabalho em equipe na
-													tradicional competição
-													algorítmica da SECOMP.
-												</li>
-												<li>
-													<strong>
-														Campeonato de Xadrez:
-													</strong>{" "}
-													Promovido pelo grupo de
-													extensão iChess, teste suas
-													habilidades estratégicas
-													frente a outros
-													competidores.
-												</li>
-												<li>
-													<strong>
-														Campeonato de Yu-Gi-Oh!:
-													</strong>{" "}
-													Os duelos de cartas estão de
-													volta! Mostre sua maestria
-													neste clássico universo.
-												</li>
-											</ul>
-										</div>
-									</div>
-								</li>
-
-								<li>
-									<div className="flex items-start">
-										<span className="mr-2">📝</span>
-										<div>
-											<strong>
-												Minicursos e Palestras:
-											</strong>{" "}
-											Aprenda com especialistas sobre
-											temas que vão do desenvolvimento de
-											software à inteligência artificial,
-											passando por segurança da
-											informação, design, startups e muito
-											mais.
-										</div>
-									</div>
-								</li>
-
-								<li>
-									<div className="flex items-start">
-										<span className="mr-2">🎮</span>
-										<div>
-											<strong>Sala de Jogos:</strong> Um
-											espaço descontraído para conhecer
-											novas pessoas, se divertir e relaxar
-											com jogos de tabuleiro, consoles e
-											interações livres.
-										</div>
-									</div>
-								</li>
-							</ul>
-
-							<p>
-								A SECOMP é aberta ao público e indicada para
-								todos os níveis de conhecimento, desde
-								iniciantes até profissionais. Mas atenção:{" "}
-								<strong>
-									as vagas para atividades são limitadas
-								</strong>
-								, então fique de olho nos formulários de
-								inscrição para garantir sua participação!
-							</p>
-
-							<p>
-								<span className="mr-2">📅</span> Data: 6 a 8 de
-								novembro de 2025
-								<br />
-								<span className="mr-2">📍</span> Local:
-								Instituto de Computação, UFAL - Maceió, AL
-							</p>
-
-							<p className="font-medium">
-								Participe da SECOMP 2025 e viva essa experiência
-								única de tecnologia, aprendizado e conexão!
-							</p>
+							<p>{event.description}</p>
 						</div>
 					</div>
 
 					<div className="sticky top-16 right-0 lg:w-1/3">
 						<div className="mb-6 rounded-lg border p-6">
 							<h3 className="mb-4 text-xl font-medium">Local</h3>
-							<p className="mb-4">
-								Av. Lourival Melo Mota, S/N - Cidade
-								Universitária, Maceió - AL, 57072-970
-							</p>
+							<p className="mb-4">{event.address}</p>
 							<Button
 								variant="outline"
 								className="flex w-full items-center justify-center gap-2"
@@ -244,9 +131,7 @@ export default async function EventPage({
 							<h3 className="mb-4 text-xl font-medium">
 								Sobre o produtor
 							</h3>
-							<p className="mb-4">
-								Liga Acadêmica de Computação (LACOMP) - UFAL
-							</p>
+							<p className="mb-4">{event.owner.name}</p>
 							<Button
 								variant="outline"
 								className="flex w-full items-center justify-center gap-2"

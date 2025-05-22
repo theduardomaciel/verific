@@ -1,15 +1,17 @@
 import type React from "react";
 import { cn } from "@/lib/utils";
 
+export interface SettingsCardFooterProps {
+	text?: string | React.ReactNode;
+	action?: React.ReactNode;
+}
+
 interface SettingsCardProps {
 	title: string;
 	description?: React.ReactNode;
 	headerRight?: React.ReactNode;
 	children?: React.ReactNode;
-	footer?: {
-		text?: string | React.ReactNode;
-		action?: React.ReactNode;
-	};
+	footer?: SettingsCardFooterProps;
 	footerClassName?: string;
 	className?: string;
 	borderColor?: string;

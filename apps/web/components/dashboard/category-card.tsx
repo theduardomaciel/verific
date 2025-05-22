@@ -33,14 +33,14 @@ export function CategoryCard({
 					{speakerName}
 				</p>
 			</div>
-			{hours && (
+			{hours ? (
 				<div className="inline-flex items-center justify-end gap-2">
 					<Clock className="h-3.5 w-3.5" />
 					<p className="text-foreground text-left text-sm font-medium">
 						{hours}h
 					</p>
 				</div>
-			)}
+			) : null}
 		</div>
 	);
 }

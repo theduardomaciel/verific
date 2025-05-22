@@ -7,6 +7,23 @@ import { eq } from "@verific/drizzle/orm";
 
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
+export const updateProjectSchema = z.object({
+	id: z.string().uuid(),
+	name: z.string().optional(),
+	description: z.string().optional(),
+	url: z.string().optional(),
+	address: z.string(),
+	hasRegistration: z.boolean().optional(),
+	hasResearch: z.boolean().optional(),
+	isArchived: z.boolean().optional(),
+	coverUrl: z.string().optional(),
+	thumbnailUrl: z.string().optional(),
+	primaryColor: z.string().optional(),
+	secondaryColor: z.string().optional(),
+	startDate: z.coerce.date().optional(),
+	endDate: z.coerce.date().optional(),
+});
+
 export const projectsRouter = createTRPCRouter({
 	createProject: protectedProcedure
 		.input(
@@ -20,7 +37,7 @@ export const projectsRouter = createTRPCRouter({
 				endDate: z.coerce.date(),
 			}),
 		)
-		.mutation(async ({ input }) => {
+		.mutation(async ({ input, ctx }) => {
 			const {
 				name,
 				description,
@@ -30,6 +47,13 @@ export const projectsRouter = createTRPCRouter({
 				startDate,
 				endDate,
 			} = input;
+
+			const userId = ctx.session.user.id;
+			console.log("userId", userId);
+
+			if (!userId) {
+				throw new Error("User not found");
+			}
 
 			const url = name.toLowerCase().replace(/\s+/g, "-");
 
@@ -44,30 +68,14 @@ export const projectsRouter = createTRPCRouter({
 					thumbnailUrl,
 					startDate,
 					endDate,
+					ownerId: userId,
 				})
 				.returning({ id: project.id });
 			return { id: created[0]?.id };
 		}),
 
 	updateProject: protectedProcedure
-		.input(
-			z.object({
-				id: z.string().uuid(),
-				name: z.string(),
-				description: z.string(),
-				url: z.string(),
-				address: z.string(),
-				hasRegistration: z.boolean().optional(),
-				hasResearch: z.boolean().optional(),
-				isArchived: z.boolean().optional(),
-				coverUrl: z.string(),
-				thumbnailUrl: z.string(),
-				primaryColor: z.string(),
-				secondaryColor: z.string(),
-				startDate: z.coerce.date(),
-				endDate: z.coerce.date(),
-			}),
-		)
+		.input(updateProjectSchema)
 		.mutation(async ({ input }) => {
 			const {
 				id,
@@ -114,6 +122,13 @@ export const projectsRouter = createTRPCRouter({
 				where: eq(project.id, input.id),
 				with: {
 					speakers: true,
+					owner: {
+						columns: {
+							id: true,
+							name: true,
+							image_url: true,
+						},
+					},
 				},
 			});
 			if (!projectData) {

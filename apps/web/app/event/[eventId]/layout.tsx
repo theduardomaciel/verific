@@ -7,6 +7,8 @@ import { Footer } from "@/components/footer";
 import { getEventById } from "@/lib/data";
 import { MainNavProps } from "@/components/main-nav";
 import Link from "next/link";
+import { serverClient } from "@/lib/trpc/server";
+import { constants } from "node:fs/promises";
 
 const rem = REM({
 	variable: "--font-rem",
@@ -48,11 +50,21 @@ export default async function EventLayout({
 	children: React.ReactNode;
 	params: Promise<{ eventId: string }>;
 }) {
-	const fetched = await params;
-	const event = await getEventById(fetched.eventId);
+	const { eventId } = await params;
 
-	if (!event) {
-		console.error("Event not found", { eventId: fetched.eventId });
+	let event;
+
+	try {
+		event = await serverClient.getProject({
+			id: eventId,
+		});
+
+		if (!event) {
+			console.error("Event not found", { eventId });
+			notFound();
+		}
+	} catch (error) {
+		console.error("Event not found", { eventId });
 		notFound();
 	}
 
@@ -79,9 +91,9 @@ export default async function EventLayout({
 					"border-none bg-transparent shadow-none text-primary-foreground"
 				}
 				links={EVENT_LINKS}
-				prefix={`/event/${fetched.eventId}`}
+				prefix={`/event/${eventId}`}
 				logo={
-					<Link href={`/event/${fetched.eventId}`}>
+					<Link href={`/event/${eventId}`}>
 						<Image
 							src={"/images/secomp.png"}
 							width={150}

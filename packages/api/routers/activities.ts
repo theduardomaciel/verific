@@ -232,6 +232,7 @@ export const activitiesRouter = createTRPCRouter({
 					speaker: {
 						id: speaker.id,
 						name: speaker.name,
+						description: speaker.description,
 						imageUrl: speaker.imageUrl,
 					},
 					participant: { id: participant.id, role: participant.role },

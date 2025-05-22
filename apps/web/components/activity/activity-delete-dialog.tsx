@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 // Icons
-import { DeleteIcon } from "lucide-react";
+import { Trash } from "lucide-react";
 
 // Components
 import { Button } from "@/components/ui/button";
@@ -58,7 +58,7 @@ export function EventDeleteDialog({ children, activityId, projectId }: Props) {
 						className="flex flex-col items-center justify-center gap-4"
 						hasCloseButton={false}
 					>
-						<DeleteIcon width={56} height={56} />
+						<Trash width={56} height={56} />
 						<DialogTitle className="font-dashboard px-8 text-center text-2xl font-extrabold">
 							Você tem certeza que deseja excluir essa atividade?
 						</DialogTitle>

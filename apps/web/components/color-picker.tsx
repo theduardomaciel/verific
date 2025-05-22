@@ -9,7 +9,7 @@ import { Plus } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { PopoverClose } from "@radix-ui/react-popover";
 
-export default function ColorPicker() {
+export function ColorPicker() {
 	const [selectedColor, setSelectedColor] = useState<string | null>(null);
 	const [inputColor, setInputColor] = useState("#f857a6");
 	const [sliderPosition, setSliderPosition] = useState(50);
