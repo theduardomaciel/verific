@@ -5,7 +5,7 @@ import { z } from "zod";
 import { project } from "@verific/drizzle/schema";
 import { eq } from "@verific/drizzle/orm";
 
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
 export const updateProjectSchema = z.object({
 	id: z.string().uuid(),
@@ -92,7 +92,7 @@ export const projectsRouter = createTRPCRouter({
 			return { updated: true };
 		}),
 
-	getProject: protectedProcedure
+	getProject: publicProcedure
 		.input(
 			z.object({
 				id: z.string().uuid().optional(),
@@ -129,6 +129,7 @@ export const projectsRouter = createTRPCRouter({
 			});
 
 			if (!projectData) {
+				console.log(projectData);
 				throw new Error("Project not found");
 			}
 

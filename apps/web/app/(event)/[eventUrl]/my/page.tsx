@@ -12,7 +12,7 @@ export default function EventAccountPage() {
 		speakerName: "Ranilson Oscar Araujo Paiva",
 		speakerRole:
 			"Docente no Instituto de Matemática e especialista em validação ético jurídica de modelos de inteligência artificial",
-		speakerImage: "/placeholder.svg?height=48&width=48",
+		speakerImage: "https://i.imgur.com/VCaJRG3.jpeg",
 		description:
 			"Descubra novas abordagens para a Matemática Inclusiva. Junte-se a nós para uma discussão enriquecedora sobre práticas...",
 		attendanceTime: "9h15",

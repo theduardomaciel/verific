@@ -47,7 +47,11 @@ export default async function EventSubscribePage({
 					fill
 				/>
 			</section>
-			<JoinForm user={session?.user || undefined} projectId={event.id} />
+			<JoinForm
+				user={session?.user || undefined}
+				projectId={event.id}
+				projectUrl={event.url}
+			/>
 		</main>
 	);
 }

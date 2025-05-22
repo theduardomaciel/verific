@@ -3,7 +3,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 // Icons
-import { Check, BookUser, Ban, Calendar, User } from "lucide-react";
+import { Check, BookUser, Ban, Calendar, User, X } from "lucide-react";
 import { RouterOutput } from "@verific/api";
 
 // API
@@ -24,20 +24,30 @@ export function ParticipantCard({
 	showJoinedAt = true,
 	participant,
 }: Props) {
+	console.log("ParticipantCard", participant);
+
 	return (
 		<li
 			className={cn(
 				"bg-card flex w-full flex-col items-start justify-start gap-4 rounded-lg border px-6 py-4",
 				className,
+				{
+					"border-destructive":
+						participant.role === "participant" &&
+						!participant.joinedAt,
+				},
 			)}
 		>
 			<div className="flex flex-row items-center justify-start gap-4">
 				<Image
-					src={participant.user?.image_url ?? ""}
+					src={
+						participant.user?.image_url ??
+						"https://i.imgur.com/VCaJRG3.jpeg"
+					}
 					width={42}
 					height={42}
 					alt="Participant profile picture"
-					className="rounded-full"
+					className="aspect-square rounded-full object-cover"
 				/>
 				<div className="flex flex-col items-start justify-start">
 					<h3 className="text-left text-base font-bold">
@@ -51,21 +61,29 @@ export function ParticipantCard({
 			<div className="flex w-full flex-row items-center justify-between gap-4">
 				{activity ? (
 					<div className="text-foreground flex flex-row items-center justify-start gap-4">
-						{participant.role === "participant" && (
-							<Check className="h-4 w-4" />
-						)}
-						{participant.role === "participant" && (
-							<p className="text-left text-sm leading-tight font-medium">
-								Marcou presença às{" "}
-								{activity?.participantJoinedAt.toLocaleTimeString(
-									"pt-BR",
-									{
-										hour: "2-digit",
-										minute: "2-digit",
-									},
-								)}
-							</p>
-						)}
+						{participant.role === "participant" &&
+						participant.joinedAt != null ? (
+							<>
+								<Check className="h-4 w-4" />
+								<p className="text-left text-sm leading-tight font-medium">
+									Marcou presença às{" "}
+									{activity?.participantJoinedAt.toLocaleTimeString(
+										"pt-BR",
+										{
+											hour: "2-digit",
+											minute: "2-digit",
+										},
+									)}
+								</p>
+							</>
+						) : participant.role === "participant" ? (
+							<>
+								<X className="h-4 w-4" />
+								<p className="text-left text-sm leading-tight font-medium">
+									Ainda não marcou presença
+								</p>
+							</>
+						) : null}
 					</div>
 				) : (
 					<div className="flex flex-row items-center justify-start gap-3 text-left text-sm leading-tight font-medium">
