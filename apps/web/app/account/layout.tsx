@@ -36,12 +36,6 @@ export default async function AccountLayout({
 		notFound();
 	}
 
-	const projectsIds = projects.map((project) => project.id);
-
-	if (!projectsIds.includes(projectId)) {
-		notFound();
-	}
-
 	return (
 		<div className={`${rem.variable} flex w-full flex-1 flex-col`}>
 			<DashboardHeader
