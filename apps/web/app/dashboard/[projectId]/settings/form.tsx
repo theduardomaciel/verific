@@ -1,5 +1,5 @@
 "use client";
-import { useRouter } from "next/navigation";
+import { UseFormReturn } from "react-hook-form";
 
 // Components
 import { toast } from "sonner";
@@ -27,7 +27,7 @@ interface Props {
 export function ProjectSettingsGeneral({ project }: Props) {
 	const updateMutation = trpc.updateProject.useMutation();
 
-	const onSubmit = async (data: any) => {
+	const onSubmit = async (data: any, form: UseFormReturn<any>) => {
 		console.log("data", data);
 
 		// Update project data
@@ -37,6 +37,7 @@ export function ProjectSettingsGeneral({ project }: Props) {
 				...data,
 			});
 			toast.success("Projeto atualizado com sucesso!");
+			form.reset(data); // Resetar o formulário com os novos dados
 		} catch (error) {
 			toast.error(
 				"Erro ao atualizar o projeto. Tente novamente mais tarde.",
@@ -73,7 +74,7 @@ export function ProjectSettingsGeneral({ project }: Props) {
 					<div className="flex items-center">
 						<div className="bg-muted flex h-9 items-center rounded-l-md border px-4">
 							<span className="text-muted-foreground">
-								verific.com/
+								verific.com/event/
 							</span>
 						</div>
 						<Input

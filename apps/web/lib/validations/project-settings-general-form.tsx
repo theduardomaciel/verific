@@ -7,7 +7,20 @@ const nameSchema = z.object({
 
 // URL
 const urlSchema = z.object({
-	url: z.string().min(1, "URL obrigatória").max(36, "Máximo 36 caracteres"),
+	url: z
+		.string()
+		.min(1, "URL obrigatória")
+		.max(36, "Máximo 36 caracteres")
+		.refine(
+			(val) => {
+				const regex = /^[a-zA-Z0-9-_]+$/;
+				return regex.test(val);
+			},
+			{
+				message:
+					"A URL deve conter apenas letras, números, hífens e sublinhados",
+			},
+		),
 });
 
 // Datas

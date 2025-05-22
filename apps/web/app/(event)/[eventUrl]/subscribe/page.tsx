@@ -13,11 +13,11 @@ import { serverClient } from "@/lib/trpc/server";
 export default async function EventSubscribePage({
 	params,
 }: {
-	params: Promise<{ eventId: string }>;
+	params: Promise<{ eventUrl: string }>;
 }) {
-	const { eventId } = await params;
+	const { eventUrl } = await params;
 
-	const event = await serverClient.getProject({ id: eventId });
+	const event = await serverClient.getProject({ url: eventUrl });
 
 	const session = await auth();
 
@@ -47,7 +47,7 @@ export default async function EventSubscribePage({
 					fill
 				/>
 			</section>
-			<JoinForm user={session?.user || undefined} projectId={eventId} />
+			<JoinForm user={session?.user || undefined} projectId={event.id} />
 		</main>
 	);
 }

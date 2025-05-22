@@ -2,29 +2,29 @@ import { SettingsSidebar } from "@/components/settings/sidebar";
 
 const settingsLinks = [
 	{
-		href: "/dashboard/settings",
+		href: "/settings",
 		label: "Geral",
 	},
 	{
-		href: "/dashboard/settings/preferences",
+		href: "/settings/preferences",
 		label: "Preferências",
 	},
 	{
-		href: "/dashboard/settings/subscriptions",
+		href: "/settings/subscriptions",
 		label: "Inscrições",
 	},
 	{
-		href: "/dashboard/settings/security",
+		href: "/settings/security",
 		label: "Segurança",
 		disabled: true,
 	},
 	{
-		href: "/dashboard/settings/accessibility",
+		href: "/settings/accessibility",
 		label: "Acessibilidade",
 		disabled: true,
 	},
 	{
-		href: "/dashboard/settings/notifications",
+		href: "/settings/notifications",
 		label: "Notificações",
 		disabled: true,
 	},
@@ -35,11 +35,15 @@ export const metadata: Metadata = {
 	title: "Configurações",
 };
 
-export default function AccountSettingsLayout({
+export default async function AccountSettingsLayout({
 	children,
+	params,
 }: {
 	children: React.ReactNode;
+	params: Promise<{ projectId: string }>;
 }) {
+	const { projectId } = await params;
+
 	return (
 		<main className="container-d py-container-v relative mx-auto min-h-screen">
 			<h1 className="text-foreground mb-8 text-3xl font-bold">
@@ -47,7 +51,10 @@ export default function AccountSettingsLayout({
 			</h1>
 
 			<div className="flex h-full flex-col gap-8 md:flex-row">
-				<SettingsSidebar links={settingsLinks} />
+				<SettingsSidebar
+					prefix={`/dashboard/${projectId}`}
+					links={settingsLinks}
+				/>
 				<div className="flex-1">{children}</div>
 			</div>
 		</main>
