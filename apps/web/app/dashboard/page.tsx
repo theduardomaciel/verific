@@ -10,7 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 
-import { DateRangePicker } from "@/components/date-range-picker";
 import { ParticipantsGraph } from "@/components/dashboard/overview/participants-graph";
 import { ActivitiesList } from "@/components/dashboard/overview/activities-list";
 import { MetricCard } from "@/components/dashboard/overview/metric-card";

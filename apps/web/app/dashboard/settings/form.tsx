@@ -16,6 +16,13 @@ import {
 	urlSchema,
 } from "@/lib/validations/forms/settings-form/project/general-form";
 
+// Infer types from schemas
+import z from "zod";
+type NameFormValues = z.infer<typeof nameSchema>;
+type UrlFormValues = z.infer<typeof urlSchema>;
+type DateFormValues = z.infer<typeof dateSchema>;
+type AddressFormValues = z.infer<typeof addressSchema>;
+
 // tRPC
 import { trpc } from "@/lib/trpc/react";
 import { RouterOutput } from "@verific/api";
@@ -35,10 +42,14 @@ export function ProjectSettingsGeneral({ project }: Props) {
 		logContext: string,
 	) => {
 		const data = form.getValues();
+		const { dateRange, ...rest } = data;
+
 		try {
 			await updateMutation.mutateAsync({
 				id: project.id,
-				...data,
+				...rest,
+				startDate: dateRange.startDate,
+				endDate: dateRange.endDate,
 			});
 			toast.success(successMessage);
 			form.reset(data); // Resetar o formulário com os novos dados
@@ -48,7 +59,7 @@ export function ProjectSettingsGeneral({ project }: Props) {
 		}
 	};
 
-	const onSubmitName = async (form: UseFormReturn<any>) => {
+	const onSubmitName = async (form: UseFormReturn<NameFormValues>) => {
 		await handleFormSubmit(
 			form,
 			"Nome do evento atualizado com sucesso!",
@@ -57,7 +68,7 @@ export function ProjectSettingsGeneral({ project }: Props) {
 		);
 	};
 
-	const onSubmitUrl = async (form: UseFormReturn<any>) => {
+	const onSubmitUrl = async (form: UseFormReturn<UrlFormValues>) => {
 		await handleFormSubmit(
 			form,
 			"URL do evento atualizada com sucesso!",
@@ -66,7 +77,7 @@ export function ProjectSettingsGeneral({ project }: Props) {
 		);
 	};
 
-	const onSubmitDate = async (form: UseFormReturn<any>) => {
+	const onSubmitDate = async (form: UseFormReturn<DateFormValues>) => {
 		await handleFormSubmit(
 			form,
 			"Data do evento atualizada com sucesso!",
@@ -75,7 +86,7 @@ export function ProjectSettingsGeneral({ project }: Props) {
 		);
 	};
 
-	const onSubmitAddress = async (form: UseFormReturn<any>) => {
+	const onSubmitAddress = async (form: UseFormReturn<AddressFormValues>) => {
 		await handleFormSubmit(
 			form,
 			"Endereço do evento atualizado com sucesso!",
@@ -127,7 +138,7 @@ export function ProjectSettingsGeneral({ project }: Props) {
 			/>
 			<SettingsFormCard
 				schema={dateSchema}
-				fieldName="startDate" // Ajustado para corresponder ao schema que espera 'from' e 'to' indiretamente através do CalendarDateRangePicker
+				fieldName="dateRange"
 				title="Data do Evento"
 				description="Esta é a data de duração exibida aos usuários ao se inscrever em seu evento"
 				label="Data"
@@ -147,13 +158,13 @@ export function ProjectSettingsGeneral({ project }: Props) {
 				}}
 			/>
 			<SettingsFormCard
-				schema={addressSchema} // O schema addressSchema deve lidar com o objeto de endereço
-				fieldName="address" // Ajustado para corresponder ao schema que espera um objeto para o endereço
+				schema={addressSchema}
+				fieldName="address"
 				title="Endereço do Evento"
 				description="Este é o local físico utilizado para hospedar seu evento. Ele será exibido aos participantes na página de inscrição."
 				label="Endereço"
 				initialState={{
-					address: project.address, // Passando o objeto esperado pelo PlacePicker
+					address: project.address,
 				}}
 				onSubmit={onSubmitAddress}
 				renderField={(field) => (
