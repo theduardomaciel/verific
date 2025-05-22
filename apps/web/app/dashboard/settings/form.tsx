@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { PlacePicker } from "@/components/place-picker";
 import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
-import { CalendarDateRangePicker } from "@/components/dashboard/overview/calendar-date-range-picker";
+import { DateRangePicker } from "@/components/date-range-picker";
 
 // Validations
 import {
@@ -137,7 +137,7 @@ export function ProjectSettingsGeneral({ project }: Props) {
 				}}
 				onSubmit={onSubmitDate}
 				renderField={(field) => (
-					<CalendarDateRangePicker
+					<DateRangePicker
 						value={field.value} // field.value aqui será { from: Date, to: Date }
 						onChange={field.onChange}
 					/>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 
 import {
 	Calendar,
@@ -18,6 +19,7 @@ import { SortBy } from "@/components/dashboard/sort-by";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CategoryCard } from "@/components/dashboard/category-card";
+import { EventDeleteDialog } from "@/components/activity/activity-delete-dialog";
 
 // Data
 import { getDateString, getTimeString } from "@/lib/date";
@@ -28,18 +30,20 @@ import { z } from "zod";
 // API
 import { serverClient } from "@/lib/trpc/server";
 import { getActivityParams } from "@verific/api/routers/activities";
-import { EventDeleteDialog } from "@/components/activity/activity-delete-dialog";
 
 type ActivityPageParams = z.infer<typeof getActivityParams>;
 
 export default async function ActivityPage(props: {
-	params: Promise<{ projectId: string; activityId: string }>;
+	params: Promise<{ activityId: string }>;
 	searchParams: Promise<ActivityPageParams>;
 }) {
+	const cookieStore = await cookies();
+	const projectId = cookieStore.get("projectId")!.value;
+
+	const { activityId } = await props.params;
+
 	const searchParams = await props.searchParams;
 	const parsedParams = getActivityParams.parse(searchParams);
-
-	const { activityId, projectId } = await props.params;
 
 	const { activity, pageCount } = await serverClient.getActivity({
 		activityId,

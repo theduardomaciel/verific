@@ -70,8 +70,13 @@ export const projectsRouter = createTRPCRouter({
 					endDate,
 					ownerId: userId,
 				})
-				.returning({ id: project.id });
-			return { id: created[0]?.id };
+				.returning({ id: project.id, url: project.url });
+
+			if (created.length === 0) {
+				throw new Error("Project creation failed");
+			}
+
+			return { id: created[0]!.id, url: created[0]!.url };
 		}),
 
 	updateProject: protectedProcedure

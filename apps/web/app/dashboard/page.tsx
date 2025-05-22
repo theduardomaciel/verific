@@ -1,11 +1,16 @@
-import { Activity, BarChart3, Clock, Users } from "lucide-react";
+import Link from "next/link";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+
+// Icons
+import { Activity, BarChart3, Clock, Globe, Users } from "lucide-react";
 
 // Components
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 
-import { CalendarDateRangePicker } from "@/components/dashboard/overview/calendar-date-range-picker";
+import { DateRangePicker } from "@/components/date-range-picker";
 import { ParticipantsGraph } from "@/components/dashboard/overview/participants-graph";
 import { ActivitiesList } from "@/components/dashboard/overview/activities-list";
 import { MetricCard } from "@/components/dashboard/overview/metric-card";
@@ -13,12 +18,10 @@ import { MetricCard } from "@/components/dashboard/overview/metric-card";
 // API
 import { serverClient } from "@/lib/trpc/server";
 
-export default async function Overview({
-	params,
-}: {
-	params: Promise<{ projectId: string }>;
-}) {
-	const { projectId } = await params;
+export default async function Overview() {
+	const cookieStore = await cookies();
+	const projectId = cookieStore.get("projectId")!.value;
+	const projectUrl = cookieStore.get("projectUrl")!.value;
 
 	const { activities } = await serverClient.getActivities({
 		projectId,
@@ -88,8 +91,14 @@ export default async function Overview({
 							<CardHeader className="flex flex-row items-center justify-between">
 								<CardTitle>Participantes</CardTitle>
 								<div className="hidden items-center space-x-2 md:flex">
-									<CalendarDateRangePicker className="pointer-events-none opacity-50" />
-									<Button disabled>Gerar relatório</Button>
+									{/* <CalendarDateRangePicker className="pointer-events-none opacity-50" />
+									<Button disabled>Gerar relatório</Button> */}
+									<Button disabled asChild>
+										<Link href={`/${projectUrl}`}>
+											<Globe className="mr-2" size={24} />
+											Acessar página do evento
+										</Link>
+									</Button>
 								</div>
 							</CardHeader>
 							<CardContent className="relative flex flex-1">

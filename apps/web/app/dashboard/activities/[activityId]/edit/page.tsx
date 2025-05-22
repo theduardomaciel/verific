@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import type { Metadata } from "next";
 
 // Components
@@ -13,9 +14,12 @@ export const metadata: Metadata = {
 export default async function EditActivity({
 	params,
 }: {
-	params: Promise<{ projectId: string; activityId: string }>;
+	params: Promise<{ activityId: string }>;
 }) {
-	const { projectId, activityId } = await params;
+	const cookieStore = await cookies();
+	const projectId = cookieStore.get("projectId")!.value;
+
+	const { activityId } = await params;
 
 	const { activity } = await serverClient.getActivity({
 		activityId,

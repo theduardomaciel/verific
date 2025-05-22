@@ -1,8 +1,11 @@
-import { REM } from "next/font/google";
+import { notFound, redirect } from "next/navigation";
+import { cookies } from "next/headers";
 
+// Components
 import { DashboardHeader } from "@/components/dashboard/header";
 import { Footer } from "@/components/footer";
 
+import { REM } from "next/font/google";
 const rem = REM({
 	variable: "--font-rem",
 	subsets: ["latin"],
@@ -15,21 +18,28 @@ const DASHBOARD_LINKS = [
 	{ href: "/settings", label: "Configurações" },
 ];
 
-import type { Metadata } from "next";
+// API
 import { serverClient } from "@/lib/trpc/server";
-import { notFound } from "next/navigation";
+
+// Types
+import type { Metadata } from "next";
+
 export const metadata: Metadata = {
 	title: "Dashboard",
 };
 
 export default async function DashboardLayout({
 	children,
-	params,
 }: Readonly<{
 	children: React.ReactNode;
-	params: Promise<{ projectId: string }>;
 }>) {
-	const { projectId } = await params;
+	const cookieStore = await cookies();
+	const projectId = cookieStore.get("projectId")?.value;
+	const projectUrl = cookieStore.get("projectUrl")?.value;
+
+	if (!projectId || !projectUrl) {
+		redirect("/account");
+	}
 
 	let projects;
 
@@ -51,7 +61,7 @@ export default async function DashboardLayout({
 			className={`${rem.variable} flex w-full flex-1 flex-col items-center`}
 		>
 			<DashboardHeader
-				prefix={`/dashboard/${projectId}`}
+				prefix={`/dashboard`}
 				selectedProjectId={projectId}
 				projects={projects}
 				links={DASHBOARD_LINKS}

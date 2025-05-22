@@ -15,7 +15,7 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 
-export function CalendarDateRangePicker({
+export function DateRangePicker({
 	className,
 	value,
 	onChange,

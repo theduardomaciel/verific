@@ -37,13 +37,9 @@ export const metadata: Metadata = {
 
 export default async function AccountSettingsLayout({
 	children,
-	params,
 }: {
 	children: React.ReactNode;
-	params: Promise<{ projectId: string }>;
 }) {
-	const { projectId } = await params;
-
 	return (
 		<main className="container-d py-container-v relative mx-auto min-h-screen">
 			<h1 className="text-foreground mb-8 text-3xl font-bold">
@@ -51,10 +47,7 @@ export default async function AccountSettingsLayout({
 			</h1>
 
 			<div className="flex h-full flex-col gap-8 md:flex-row">
-				<SettingsSidebar
-					prefix={`/dashboard/${projectId}`}
-					links={settingsLinks}
-				/>
+				<SettingsSidebar prefix={`/dashboard`} links={settingsLinks} />
 				<div className="flex-1">{children}</div>
 			</div>
 		</main>

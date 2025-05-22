@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 
@@ -25,12 +26,12 @@ type ParticipantsPageParams = z.infer<typeof getParticipantsParams>;
 
 export default async function ParticipantsPage(props: {
 	searchParams: Promise<ParticipantsPageParams>;
-	params: Promise<{ projectId: string }>;
 }) {
+	const cookieStore = await cookies();
+	const projectId = cookieStore.get("projectId")!.value;
+
 	const searchParams = await props.searchParams;
 	const parsedParams = getParticipantsParams.parse(searchParams);
-
-	const { projectId } = await props.params;
 
 	const { participants } = await serverClient.getParticipants({
 		projectId,

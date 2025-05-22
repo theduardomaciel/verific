@@ -1,5 +1,5 @@
 // Components
-import { EventsList } from "@/components/account/event-list";
+import { EventsList } from "@/components/account/project-list";
 
 // API
 import { serverClient } from "@/lib/trpc/server";
