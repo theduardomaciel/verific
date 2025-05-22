@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 // Components
-import { ParticipantCard } from "../dashboard/participant-card";
+import { ActivityParticipantCard } from "../dashboard/participant-card";
 import { Empty } from "@/components/empty";
 
 // Types
@@ -42,7 +42,7 @@ interface ListProps {
 	className?: string;
 	activityId: string;
 	hasActivity?: boolean;
-	participants: RouterOutput["getParticipants"]["participants"];
+	participants: RouterOutput["getActivity"]["activity"]["participants"];
 	emptyMessage?: {
 		title: string;
 		description: string;
@@ -75,18 +75,9 @@ function List({
 			)}
 		>
 			{participants.map((participant) => (
-				<ParticipantCard
+				<ActivityParticipantCard
 					key={participant.id}
 					participant={participant}
-					participantCardHref={`/dashboard/events/${activityId}/participant/${participant.id}`}
-					activity={
-						hasActivity
-							? {
-									id: activityId,
-									participantJoinedAt: participant.joinedAt,
-								}
-							: undefined
-					}
 					showJoinedAt={hasActivity}
 				/>
 			))}

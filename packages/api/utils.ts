@@ -1,17 +1,21 @@
-export const transformSingleToArray = (
-	value: string | string[] | undefined,
-): string[] | undefined => {
+export const transformSingleToArray = <T>(
+	value: T | T[] | undefined,
+): T[] | undefined => {
 	if (value && Array.isArray(value)) {
-		console.log("Retornando a própria array", value);
+		// console.log("Retornando a própria array", value);
 		return value;
 	}
 
-	const splitted = value
-		?.toString()
-		.split(",")
-		.map((v) => v.trim());
+	if (typeof value === "string") {
+		const splitted = value.split(",").map((v) => v.trim() as unknown as T);
+		// console.log("Transformando string para array", splitted);
+		return splitted;
+	}
 
-	console.log("Transformando para array", splitted);
+	if (value !== undefined) {
+		// console.log("Transformando valor único para array", value);
+		return [value];
+	}
 
-	return splitted ?? undefined;
+	return undefined;
 };

@@ -47,8 +47,17 @@ export const getActivitiesParams = z.object({
 	sort: z.enum(activitySort).optional(),
 	page: z.coerce.number().default(0).optional(),
 	pageSize: z.coerce.number().default(10).optional(),
-	category: z.array(z.enum(activityCategories)).optional(),
-	audience: z.array(z.enum(activityAudiences)).optional(),
+	category: z
+		.union([
+			z.array(z.enum(activityCategories)),
+			z.enum(activityCategories),
+		])
+		.transform(transformSingleToArray)
+		.optional(),
+	audience: z
+		.union([z.array(z.enum(activityAudiences)), z.enum(activityAudiences)])
+		.transform(transformSingleToArray)
+		.optional(),
 	speakerIds: z
 		.union([z.array(z.string()), z.string()])
 		.transform(transformSingleToArray)
