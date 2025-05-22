@@ -62,7 +62,7 @@ function List({
 				title={emptyMessage?.title ?? "Nenhum participante encontrado"}
 				description={
 					emptyMessage?.description ??
-					"Parece que ainda não há participantes nesta atividade."
+					"Parece que ainda não há participantes inscritos nesta atividade."
 				}
 			/>
 		);

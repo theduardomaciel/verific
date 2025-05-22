@@ -22,7 +22,7 @@ import {
 	type JoinFormSchema,
 	JoinFormTypeEnum,
 	joinFormSchema,
-} from "@/lib/validations/forms/joinForm";
+} from "@/lib/validations/forms/join-form";
 import { scrollToNextSection } from "@/lib/validations";
 
 // Types
@@ -31,14 +31,19 @@ import type { GenericForm } from "..";
 
 // API
 import { trpc } from "@/lib/trpc/react";
+import { useRouter } from "next/navigation";
 
 export default function JoinForm({
 	user,
 	projectId,
+	projectUrl,
 }: {
 	user?: User;
 	projectId: string;
+	projectUrl: string;
 }) {
+	const router = useRouter();
+
 	const [currentState, setCurrentState] = useState<
 		false | "submitting" | "error" | "submitted"
 	>(false);
@@ -147,6 +152,10 @@ export default function JoinForm({
 			/>
 			<SuccessDialog
 				isOpen={currentState === "submitted"}
+				onClose={() => {
+					setCurrentState(false);
+					router.push(`${`/${projectUrl}/schedule`}`);
+				}}
 				description={
 					<>
 						Seu cadastro já foi enviado e está em análise.

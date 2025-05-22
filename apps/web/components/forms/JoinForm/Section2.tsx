@@ -28,7 +28,7 @@ import { isValid } from "@/lib/validations";
 import {
 	type JoinFormSection2Schema,
 	joinFormSection2Schema,
-} from "@/lib/validations/forms/joinForm/section2";
+} from "@/lib/validations/forms/join-form/section2";
 
 const section2Keys = Object.keys(
 	joinFormSection2Schema.shape,
@@ -58,7 +58,7 @@ export default function JoinForm2({ form }: { form: GenericForm }) {
 				render={({ field }) => (
 					<FormItem className="w-full">
 						<ResearchHeader index={1}>
-							&quot;O que fez você se inscrever no IChess?&quot;
+							&quot;O que fez você se inscrever no evento?&quot;
 						</ResearchHeader>
 						<FormControl>
 							<Textarea
@@ -78,7 +78,7 @@ export default function JoinForm2({ form }: { form: GenericForm }) {
 					render={({ field }) => (
 						<FormItem className="w-full">
 							<ResearchHeader index={2}>
-								&quot;Por onde você descobriu o IChess?&quot;
+								&quot;Por onde você descobriu o evento?&quot;
 							</ResearchHeader>
 							<Select
 								onValueChange={field.onChange}

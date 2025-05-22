@@ -77,7 +77,7 @@ function getParticipantsIdsToMutate(newIds: string[], currentIds: string[]) {
 }
 
 export const activitiesRouter = createTRPCRouter({
-	getActivity: protectedProcedure
+	getActivity: publicProcedure
 		.input(getActivityParams.extend({ activityId: z.string().uuid() }))
 		.query(async ({ input, ctx }) => {
 			const {
@@ -88,14 +88,7 @@ export const activitiesRouter = createTRPCRouter({
 				sortBy,
 			} = input;
 
-			const userId = ctx.session.user.id;
-
-			if (!userId) {
-				throw new TRPCError({
-					message: "User not found.",
-					code: "BAD_REQUEST",
-				});
-			}
+			const userId = ctx.session?.user.id;
 
 			const selectedActivity = await db.query.activity.findFirst({
 				where(fields) {
@@ -113,6 +106,16 @@ export const activitiesRouter = createTRPCRouter({
 					code: "BAD_REQUEST",
 				});
 			}
+
+			// Retornamos a atividade básica se o usuário não estiver logado
+			if (!userId)
+				return {
+					activity: {
+						...selectedActivity,
+						participants: [],
+					},
+					pageCount: 0,
+				};
 
 			// Buscar todos os moderadores
 			const moderatorParticipants = await db
@@ -184,8 +187,13 @@ export const activitiesRouter = createTRPCRouter({
 				...moderatorParticipants,
 				...nonModeratorParticipants,
 			].map((row) => {
+				// Removemos a data em que o usuário se inscreveu no evento para que o
+				// "joinedAt" de "participantOnActivity" não seja sobrescrito
+				const { joinedAt, ...rest } = row.participant;
+
 				return {
-					...row.participant,
+					...row.participantOnActivity,
+					...rest,
 					user: {
 						name: row.user.name,
 						email: row.user.email,
@@ -228,7 +236,11 @@ export const activitiesRouter = createTRPCRouter({
 			const activities = await db
 				.select({
 					...getTableColumns(activity),
-					project: { id: project.id, name: project.name },
+					project: {
+						id: project.id,
+						name: project.name,
+						url: project.url,
+					},
 					speaker: {
 						id: speaker.id,
 						name: speaker.name,

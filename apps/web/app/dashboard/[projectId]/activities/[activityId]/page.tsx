@@ -139,7 +139,7 @@ export default async function ActivityPage(props: {
 					</Button> */}
 					<Button size={"lg"} className="h-10 flex-1" asChild>
 						<Link
-							href={`/${activity.project.url}/activities/${activity.id}`}
+							href={`/${activity.project.url}/schedule/${activity.id}`}
 						>
 							<Globe size={20} />
 							Visitar página do evento

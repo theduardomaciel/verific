@@ -3,17 +3,17 @@ import { z } from "zod";
 import {
 	type JoinFormSection0Schema,
 	joinFormSection0Schema,
-} from "@/lib/validations/forms/joinForm/section0";
+} from "@/lib/validations/forms/join-form/section0";
 
 import {
 	type JoinFormSection1Schema,
 	joinFormSection1Schema,
-} from "@/lib/validations/forms/joinForm/section1";
+} from "@/lib/validations/forms/join-form/section1";
 
 import {
 	type JoinFormSection2Schema,
 	joinFormSection2Schema,
-} from "@/lib/validations/forms/joinForm/section2";
+} from "@/lib/validations/forms/join-form/section2";
 
 export enum JoinFormTypeEnum {
 	Section0 = "section0",

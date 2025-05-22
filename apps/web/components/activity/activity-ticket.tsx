@@ -123,7 +123,7 @@ export function ActivityTicket({
 										<Image
 											src={
 												speakerImage ||
-												"/placeholder.svg?height=48&width=48"
+												"https://i.imgur.com/VCaJRG3.jpeg"
 											}
 											alt={""}
 											width={48}
