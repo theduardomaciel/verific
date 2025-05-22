@@ -25,7 +25,7 @@ export function SettingsSidebar({ links }: Props) {
 					return (
 						<Link
 							key={link.href}
-							href={link.href}
+							href={link.disabled ? "#" : link.href}
 							className={cn(
 								"text-muted-foreground border-l-2 border-transparent px-4 py-2 text-left font-medium transition-colors",
 								{

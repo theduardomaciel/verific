@@ -1,9 +1,11 @@
 "use client";
+import { useRouter } from "next/navigation";
 
 // Components
-import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { PlacePicker } from "@/components/place-picker";
+import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
 import { CalendarDateRangePicker } from "@/components/dashboard/overview/calendar-date-range-picker";
 
 // Validations
@@ -13,14 +15,37 @@ import {
 	nameSchema,
 	urlSchema,
 } from "@/lib/validations/project-settings-general-form";
+
+// tRPC
+import { trpc } from "@/lib/trpc/react";
 import { RouterOutput } from "@verific/api";
-import { updateProject } from "@/app/actions";
 
 interface Props {
 	project: RouterOutput["getProject"];
 }
 
 export function ProjectSettingsGeneral({ project }: Props) {
+	const updateMutation = trpc.updateProject.useMutation();
+
+	const onSubmit = async (data: any) => {
+		console.log("data", data);
+
+		// Update project data
+		try {
+			await updateMutation.mutateAsync({
+				id: project.id,
+				...data,
+			});
+			toast.success("Projeto atualizado com sucesso!");
+		} catch (error) {
+			toast.error(
+				"Erro ao atualizar o projeto. Tente novamente mais tarde.",
+				{ duration: 2500 },
+			);
+			console.error("Error updating project:", error);
+		}
+	};
+
 	return (
 		<>
 			<SettingsFormCard
@@ -31,7 +56,7 @@ export function ProjectSettingsGeneral({ project }: Props) {
 				label="Nome"
 				renderField={(field) => <Input {...field} autoComplete="off" />}
 				initialState={project.name}
-				action={updateProject}
+				onSubmit={onSubmit}
 				footer={{
 					text: "Por favor, use 32 caracteres no máximo",
 				}}
@@ -43,7 +68,7 @@ export function ProjectSettingsGeneral({ project }: Props) {
 				description="Este é o endereço que os usuários poderão acessar para se inscrever em seu evento"
 				label="URL"
 				initialState={project.url}
-				action={updateProject}
+				onSubmit={onSubmit}
 				renderField={(field) => (
 					<div className="flex items-center">
 						<div className="bg-muted flex h-9 items-center rounded-l-md border px-4">
@@ -72,7 +97,7 @@ export function ProjectSettingsGeneral({ project }: Props) {
 					from: project.startDate,
 					to: project.endDate,
 				}}
-				action={updateProject}
+				onSubmit={onSubmit}
 				renderField={(field) => (
 					<CalendarDateRangePicker
 						value={field.value}
@@ -80,7 +105,7 @@ export function ProjectSettingsGeneral({ project }: Props) {
 					/>
 				)}
 				footer={{
-					text: "A data inserida deve ser válida",
+					text: "A data inserida deve ser maior que a data atual",
 				}}
 			/>
 			<SettingsFormCard
@@ -92,7 +117,7 @@ export function ProjectSettingsGeneral({ project }: Props) {
 				initialState={{
 					address: project.address,
 				}}
-				action={updateProject}
+				onSubmit={onSubmit}
 				renderField={(field) => (
 					<PlacePicker
 						defaultValue={field.value}

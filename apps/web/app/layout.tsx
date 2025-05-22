@@ -32,10 +32,7 @@ export default function RootLayout({
 				<script src="https://unpkg.com/react-scan/dist/auto.global.js" />
 			</head> */}
 			<body className={`${hankenGrotesk.variable} antialiased`}>
-				<Providers>
-					{children}
-					{/* <Toaster /> */}
-				</Providers>
+				<Providers>{children}</Providers>
 			</body>
 		</html>
 	);
