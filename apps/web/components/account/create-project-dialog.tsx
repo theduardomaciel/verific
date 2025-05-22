@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 
 // Icons
 import { Plus } from "lucide-react";
@@ -20,7 +20,6 @@ import {
 	Drawer,
 	DrawerClose,
 	DrawerContent,
-	DrawerDescription,
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle,
@@ -38,20 +37,21 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlacePicker } from "@/components/place-picker";
+import { DateRangePicker } from "@/components/date-range-picker";
+import { ErrorDialog, LoadingDialog } from "../forms/dialogs";
 
 // Hooks
 import { useMediaQuery } from "@/hooks/use-media-query";
 
 // Form
+import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type UseFormReturn } from "react-hook-form";
-import * as z from "zod";
+import type { FormState } from "@/lib/types/forms";
 
-// tRPC
+// API
 import { trpc } from "@/lib/trpc/react";
-import { CalendarDateRangePicker } from "../dashboard/overview/calendar-date-range-picker";
-import { ErrorDialog, LoadingDialog } from "../forms/dialogs";
-import { useRouter } from "next/navigation";
+import { updateProjectCookies } from "@/app/actions";
 
 const formSchema = z.object({
 	name: z.string().min(2, {
@@ -73,14 +73,10 @@ const formSchema = z.object({
 	}),
 });
 
-type FormState = false | "submitting" | "submitted" | "error";
-
 export function CreateProjectDialog() {
 	const [currentState, setCurrentState] = useState<FormState>(false);
 	const [open, setOpen] = useState(false);
 	const isDesktop = useMediaQuery("(min-width: 768px)");
-
-	const router = useRouter();
 
 	// Inicializamos o formulário com o Zod e o React Hook Form
 	const form = useForm<z.infer<typeof formSchema>>({
@@ -110,17 +106,15 @@ export function CreateProjectDialog() {
 
 		// console.log(data);
 		try {
-			const { id } = await createMutation.mutateAsync({
+			const { id, url } = await createMutation.mutateAsync({
 				startDate: date.from,
 				endDate: date.to,
 				address: location.address,
 				...rest,
 			});
 
-			router.push(`/dashboard/${id}`);
-
-			// submittedEventId.current = eventId;
-			// setCurrentState("submitted");
+			// Atualiza o cookie com as informações do projeto
+			updateProjectCookies(id, url);
 		} catch (error) {
 			console.error(error);
 			setCurrentState("error");
@@ -282,7 +276,7 @@ function CreateProjectForm({ form }: Props) {
 					<FormItem>
 						<FormLabel>Data</FormLabel>
 						<FormControl>
-							<CalendarDateRangePicker
+							<DateRangePicker
 								value={field.value}
 								onChange={field.onChange}
 							/>
@@ -304,6 +298,10 @@ function CreateProjectForm({ form }: Props) {
 								}}
 							/>
 						</FormControl>
+						<FormDescription>
+							Selecione uma localização pesquisando ou clicando no
+							mapa.
+						</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}

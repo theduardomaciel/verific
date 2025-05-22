@@ -1,12 +1,12 @@
-import Link from "next/link";
+// Icons
+import { CircleSlash } from "lucide-react";
 
 // Components
-import { EventCard } from "./event-card";
+import { AccountEventCard } from "./project-card";
 import { CreateProjectDialog } from "./create-project-dialog";
 
 // Types
 import { RouterOutput } from "@verific/api";
-import { CircleSlash } from "lucide-react";
 
 interface Props {
 	projects?: RouterOutput["getProjects"];
@@ -23,13 +23,10 @@ export function EventsList({ projects }: Props) {
 				{projects?.length ? (
 					<ul className="flex flex-col items-center justify-start gap-3">
 						{projects.map((project) => (
-							<Link
-								href={`/dashboard/${project.id}`}
+							<AccountEventCard
 								key={project.id}
-								className="w-full"
-							>
-								<EventCard key={project.id} project={project} />
-							</Link>
+								project={project}
+							/>
 						))}
 					</ul>
 				) : (

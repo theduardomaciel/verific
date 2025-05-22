@@ -1,6 +1,8 @@
+import Link from "next/link";
+
+import { cookies } from "next/headers";
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import Link from "next/link";
 
 export const metadata: Metadata = {
 	title: "Atividades",
@@ -36,10 +38,11 @@ export default async function ActivitiesPage(props: {
 	searchParams: Promise<EventsPageParams>;
 	params: Promise<{ projectId: string }>;
 }) {
+	const cookieStore = await cookies();
+	const projectId = cookieStore.get("projectId")!.value;
+
 	const searchParams = await props.searchParams;
 	const parsedParams = getActivitiesParams.parse(searchParams);
-
-	const { projectId } = await props.params;
 
 	const { activities } = await serverClient.getActivities({
 		projectId,

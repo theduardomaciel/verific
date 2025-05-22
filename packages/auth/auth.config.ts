@@ -27,9 +27,9 @@ export const authConfig = {
 			// console.log("Sign in", { account, profile });
 
 			if (account?.provider === "google") {
-				const googleProfile = profile as GoogleProfile;
-
-				return googleProfile.email.endsWith(icDomain);
+				/* const googleProfile = profile as GoogleProfile;
+				return googleProfile.email.endsWith(icDomain); */
+				return true;
 			}
 
 			return false;
