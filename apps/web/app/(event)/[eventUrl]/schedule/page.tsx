@@ -8,11 +8,14 @@ import { ActivityCard } from "@/components/landing/activity-card";
 import { SearchBar } from "@/components/dashboard/search-bar";
 import { SortBy } from "@/components/dashboard/sort-by";
 import * as EventContainer from "@/components/landing/event-container";
+import { Empty } from "@/components/empty";
 
 // Validation
 import type { z } from "zod";
 import { getActivitiesParams } from "@verific/api/routers/activities";
-import { Empty } from "@/components/empty";
+
+// Auth
+import { auth } from "@verific/auth";
 
 type SchedulePageParams = z.infer<typeof getActivitiesParams>;
 
@@ -31,6 +34,8 @@ export default async function EventSchedulePage(props: {
 		projectId: event.id,
 		...parsedParams,
 	});
+
+	const session = await auth();
 
 	return (
 		<EventContainer.Holder>
@@ -94,6 +99,7 @@ export default async function EventSchedulePage(props: {
 								<ActivityCard
 									key={activity.id}
 									activity={activity}
+									userId={session?.user.id}
 								/>
 							))
 						) : (

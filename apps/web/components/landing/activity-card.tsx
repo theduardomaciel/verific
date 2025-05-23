@@ -2,7 +2,14 @@ import Image from "next/image";
 import Link from "next/link";
 
 // Icons
-import { ArrowRight, Calendar, Clock, Users, BookOpen } from "lucide-react";
+import {
+	ArrowRight,
+	Calendar,
+	Clock,
+	Users,
+	BookOpen,
+	Check,
+} from "lucide-react";
 
 // Components
 import { Button } from "../ui/button";
@@ -13,12 +20,21 @@ import { RouterOutput } from "@verific/api";
 
 // Lib
 import { getDateString, getTimeString } from "../../lib/date";
+import { cn } from "@/lib/utils";
 
 interface EventCardProps {
 	activity: RouterOutput["getActivities"]["activities"][number];
+	userId?: string | null;
 }
 
-export function ActivityCard({ activity }: EventCardProps) {
+export function ActivityCard({ activity, userId }: EventCardProps) {
+	const isParticipant = activity.participants?.some(
+		(participant) => participant.userId === userId,
+	);
+	const hasRemainingSeats = activity.participantsLimit
+		? activity.participantsLimit - activity.participants.length > 0
+		: true;
+
 	return (
 		<div
 			id={activity.id}
@@ -29,15 +45,27 @@ export function ActivityCard({ activity }: EventCardProps) {
 				<Button
 					variant={"default"}
 					size={"lg"}
-					className="w-full"
+					className={cn("w-full", {
+						"pointer-events-none opacity-50":
+							!hasRemainingSeats || isParticipant,
+					})}
 					asChild
 				>
 					<Link
 						href={`/${activity.project?.url}/schedule/${activity.id}`}
 						scroll={false}
 					>
-						Quero participar
-						<ArrowRight className="ml-2 h-4 w-4" />
+						{isParticipant ? (
+							<>
+								<Check className="mr-2 h-4 w-4" />
+								Inscrito
+							</>
+						) : (
+							<>
+								Quero participar
+								<ArrowRight className="ml-2 h-4 w-4" />
+							</>
+						)}
 					</Link>
 				</Button>
 			</div>

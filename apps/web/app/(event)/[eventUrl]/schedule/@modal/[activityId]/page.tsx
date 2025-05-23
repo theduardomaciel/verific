@@ -6,11 +6,15 @@ import { serverClient } from "@/lib/trpc/server";
 export default async function Page({
 	params,
 }: {
-	params: Promise<{ activityId: string }>;
+	params: Promise<{ activityId: string; eventUrl: string }>;
 }) {
-	const { activityId } = await params;
+	const { activityId, eventUrl } = await params;
 
-	const { activity, participantId } = await serverClient.getActivity({
+	const { participantId } = await serverClient.getParticipantIdByProjectUrl({
+		projectUrl: eventUrl,
+	});
+
+	const { activity } = await serverClient.getActivity({
 		activityId,
 	});
 

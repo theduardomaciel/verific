@@ -6,6 +6,7 @@ import * as EventContainer from "@/components/landing/event-container";
 
 // API
 import { serverClient } from "@/lib/trpc/server";
+import { Empty } from "@/components/empty";
 
 export default async function EventAccountPage({
 	params,
@@ -24,22 +25,6 @@ export default async function EventAccountPage({
 		redirect(`/${eventUrl}/subscribe`);
 	}
 
-	const workshopData = {
-		title: "Workshop de Arduino",
-		startTime: "9:10 AM",
-		endTime: "11:50 AM",
-		maxParticipants: 300,
-		currentParticipants: 235,
-		tolerance: "15m",
-		speakerName: "Ranilson Oscar Araujo Paiva",
-		speakerRole:
-			"Docente no Instituto de Matemática e especialista em validação ético jurídica de modelos de inteligência artificial",
-		speakerImage: "https://i.imgur.com/VCaJRG3.jpeg",
-		description:
-			"Descubra novas abordagens para a Matemática Inclusiva. Junte-se a nós para uma discussão enriquecedora sobre práticas...",
-		attendanceTime: "9h15",
-	};
-
 	return (
 		<EventContainer.Holder>
 			<EventContainer.Hero coverUrl={"/images/hero-bg.png"}>
@@ -55,14 +40,21 @@ export default async function EventAccountPage({
 			</EventContainer.Hero>
 			<EventContainer.Content>
 				<ul className="container-p mb-8 flex w-full grid-cols-2 flex-col justify-between gap-4 md:gap-12">
-					{activities.map((onActivity) => (
-						<li key={onActivity.activityId} className="w-full">
-							<ActivityTicket
-								onActivity={onActivity}
-								role={role!}
-							/>
-						</li>
-					))}
+					{activities.length > 0 ? (
+						activities.map((onActivity) => (
+							<li key={onActivity.activityId} className="w-full">
+								<ActivityTicket
+									onActivity={onActivity}
+									role={role!}
+								/>
+							</li>
+						))
+					) : (
+						<Empty
+							title="Nenhuma atividade encontrada"
+							description="Você ainda não se inscreveu em nenhuma atividade."
+						/>
+					)}
 				</ul>
 			</EventContainer.Content>
 		</EventContainer.Holder>

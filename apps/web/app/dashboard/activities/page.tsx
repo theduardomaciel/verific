@@ -84,9 +84,7 @@ export default async function ActivitiesPage(props: {
 								))}
 							</div>
 						) : searchParams.query ? (
-							<Empty
-								href={`/dashboard/${projectId}/activities`}
-							/>
+							<Empty href={`/dashboard/activities`} />
 						) : (
 							<Empty
 								title="Nenhuma atividade encontrada"
@@ -98,15 +96,13 @@ export default async function ActivitiesPage(props: {
 					<DashboardPagination
 						currentPage={parsedParams.page || 1}
 						totalPages={5}
-						prefix={`/${projectId}/activities`}
+						prefix={`/activities`}
 					/>
 				</div>
 
 				<div className="order-first space-y-4 md:order-last md:col-span-1">
 					<Button asChild className="w-full" size="lg">
-						<Link
-							href={`/dashboard/${projectId}/activities/create`}
-						>
+						<Link href={`/dashboard/activities/create`}>
 							<Plus className="mr-2 h-4 w-4" /> Adicionar
 							atividade
 						</Link>

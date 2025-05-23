@@ -24,7 +24,7 @@ interface ActivityCardProps {
 export function SimpleActivityCard({ activity, className }: ActivityCardProps) {
 	return (
 		<Link
-			href={`/dashboard/${activity.projectId}/activities/${activity.id}`}
+			href={`/dashboard/activities/${activity.id}`}
 			className={cn(
 				"hover:bg-foreground/5 flex flex-col items-start justify-start rounded-md border",
 				className,
@@ -72,7 +72,7 @@ export function ActivityCard({ activity, className }: ActivityCardProps) {
 
 	return (
 		<Link
-			href={`/dashboard/${activity.projectId}/activities/${activity.id}`}
+			href={`/dashboard/activities/${activity.id}`}
 			className="flex w-full"
 		>
 			<div

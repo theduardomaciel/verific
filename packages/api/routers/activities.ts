@@ -501,45 +501,68 @@ export const activitiesRouter = createTRPCRouter({
 			const error = await isMemberAuthenticated({
 				userId: ctx.session.user.id,
 			});
-
 			if (error) throw new TRPCError(error);
 
-			const currentActivityParticipants =
-				await db.query.participantOnActivity.findMany({
-					where(fields) {
-						return eq(fields.activityId, activityId);
-					},
-				});
-			const { idsToAdd, idsToRemove } = getParticipantsIdsToMutate(
-				participantsIdsToMutate,
-				currentActivityParticipants.map((p) => p.participantId),
+			// Busca apenas os IDs atuais dos participantes da atividade
+			const current = await db
+				.select({ participantId: participantOnActivity.participantId })
+				.from(participantOnActivity)
+				.where(eq(participantOnActivity.activityId, activityId));
+			const currentIds = current.map((p) => p.participantId);
+
+			// Só adiciona quem ainda não está
+			const toAdd = participantsIdsToMutate.filter(
+				(id) => !currentIds.includes(id),
 			);
-			await db.transaction(async (tx) => {
-				if (idsToRemove.length > 0) {
-					await tx
-						.delete(participantOnActivity)
-						.where(
-							and(
-								eq(
-									participantOnActivity.activityId,
-									activityId,
-								),
-								inArray(
-									participantOnActivity.participantId,
-									idsToRemove,
-								),
-							),
-						);
-				}
-				if (idsToAdd.length > 0) {
-					await tx.insert(participantOnActivity).values(
-						idsToAdd.map((participantId) => ({
+
+			if (toAdd.length > 0) {
+				await db
+					.insert(participantOnActivity)
+					.values(
+						toAdd.map((participantId) => ({
 							activityId,
 							participantId,
 						})),
 					);
-				}
+			}
+
+			return { success: true };
+		}),
+
+	addActivityParticipants: protectedProcedure
+		.input(
+			z.object({
+				activityId: z.string().uuid(),
+				participantsIdsToAdd: z
+					.union([z.array(z.string()), z.string()])
+					.transform(transformSingleToArray),
+			}),
+		)
+		.mutation(async ({ input, ctx }) => {
+			const { activityId, participantsIdsToAdd } = input;
+
+			if (!participantsIdsToAdd) {
+				throw new TRPCError({
+					message: "Participants not found.",
+					code: "BAD_REQUEST",
+				});
+			}
+
+			const error = await isMemberAuthenticated({
+				userId: ctx.session.user.id,
 			});
+			if (error) throw new TRPCError(error);
+
+			await db
+				.insert(participantOnActivity)
+				.values(
+					participantsIdsToAdd.map((participantId) => ({
+						activityId,
+						participantId,
+					})),
+				)
+				.onConflictDoNothing();
+
 			return { success: true };
 		}),
 
