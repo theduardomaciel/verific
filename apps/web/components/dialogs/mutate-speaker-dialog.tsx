@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ErrorDialog, LoadingDialog, SuccessDialog } from "./forms/dialogs";
+import { ErrorDialog, LoadingDialog, SuccessDialog } from "../forms/dialogs";
 
 // Hooks
 import { useMediaQuery } from "@/hooks/use-media-query";

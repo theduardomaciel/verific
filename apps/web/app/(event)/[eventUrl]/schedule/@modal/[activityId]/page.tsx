@@ -1,8 +1,7 @@
-import { JoinActivityDialog } from "@/components/join-activity-dialog";
+import { JoinActivityDialog } from "@/components/dialogs/join-activity-dialog";
 
 // API
 import { serverClient } from "@/lib/trpc/server";
-import { auth } from "@verific/auth";
 
 export default async function Page({
 	params,
@@ -11,16 +10,11 @@ export default async function Page({
 }) {
 	const { activityId } = await params;
 
-	const { activity } = await serverClient.getActivity({
+	const { activity, participantId } = await serverClient.getActivity({
 		activityId,
 	});
 
-	const session = await auth();
-
 	return (
-		<JoinActivityDialog
-			activity={activity}
-			participantId={session?.participant?.id}
-		/>
+		<JoinActivityDialog activity={activity} participantId={participantId} />
 	);
 }

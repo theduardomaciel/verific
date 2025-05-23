@@ -6,7 +6,7 @@ import { ImageUp } from "lucide-react";
 
 // Components
 import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
-import { ColorPicker } from "@/components/color-picker";
+import { ColorPicker } from "@/components/pickers/color-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";

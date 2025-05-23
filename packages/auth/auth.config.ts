@@ -23,6 +23,7 @@ export const authConfig = {
 		updateAge: 60 * 60 * 24, // 24 hours
 	},
 	callbacks: {
+		// signIn: Gerencia o login do usuário pelo Google
 		async signIn({ account, profile }) {
 			// console.log("Sign in", { account, profile });
 
@@ -34,10 +35,8 @@ export const authConfig = {
 
 			return false;
 		},
+		// redirect: Conserva o parâmetro callbackUrl na URL
 		redirect({ url, baseUrl }) {
-			// Previne que usuários não administrados não vejam a mensagem de erro, por exemplo
-			// Sem isso, o callbackUrl embutido em todas as URLs redirecionaria para a página de login novamente
-
 			const isRelativeUrl = url.startsWith("/");
 			if (isRelativeUrl) {
 				return `${baseUrl}${url}`;
@@ -59,57 +58,16 @@ export const authConfig = {
 				return baseUrl;
 			}
 		},
-		async jwt({ token, user, session, trigger }) {
-			if (user && token.participant && token.participant.projectId) {
-				const projectId = token.participant.projectId;
-
-				const participant = await db.query.participant.findFirst({
-					where: (dbMember, { eq, and }) =>
-						and(
-							eq(dbMember.userId, user.id as string),
-							eq(dbMember.projectId, projectId),
-						),
-				});
-
-				// console.log("participant", participant);
-				// console.log("userId", user.id);
-
-				if (participant) {
-					console.log("JWT Member found");
-					token.participant = participant;
-				}
-
-				// console.log("JWT User found", user);
-			}
-
-			function isSessionAvailable(session: unknown): session is Session {
-				return !!session;
-			}
-
-			if (trigger === "update" && isSessionAvailable(session)) {
-				console.log("Session available", session);
-				token.name = session.user?.name;
-				token.participant = session.participant;
-			}
-
-			/* console.log("JWT", {
+		session({ session, token, user, trigger }) {
+			console.log("Session", {
+				session,
 				token,
 				user,
-				session,
 				trigger,
-			}); */
+			});
 
-			return token;
-		},
-		session({ session, token, ...params }) {
-			/* console.log("Session", {
-				session,
-				token,
-				params,
-			}); */
-
-			if (session.user) {
-				session.user.id = token.sub as string;
+			if (session.user && token.sub) {
+				session.user.id = token.sub;
 			}
 			if (token.participant) {
 				session.participant = token.participant;
@@ -121,7 +79,10 @@ export const authConfig = {
 		},
 		authorized({ auth, request: { nextUrl } }) {
 			const isLoggedIn = !!auth?.user;
-			const isMember = !!auth?.participant;
+			const eventUrl = nextUrl.pathname.split("/")[1];
+			const isMember = false; /*  eventUrl
+				? auth?.participant?.projectUrl === eventUrl
+				: false; */
 
 			console.log("Authorized", { isLoggedIn, isMember });
 			// console.log("Pathname", nextUrl.pathname);
@@ -159,6 +120,16 @@ export const authConfig = {
 			if (isOnAuthenticatedRoutes && !isLoggedIn) {
 				// console.log("User not logged. Redirecting to login");
 				return false;
+			}
+
+			// Usuário se inscreveu em um evento e está acessando a página de inscrição
+			if (
+				isLoggedIn &&
+				isMember &&
+				nextUrl.pathname.includes("/subscribe")
+			) {
+				// console.log("User already registered. Redirecting to account page");
+				return Response.redirect(new URL("/account", nextUrl));
 			}
 
 			return true;

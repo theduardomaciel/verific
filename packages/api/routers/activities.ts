@@ -124,6 +124,7 @@ export const activitiesRouter = createTRPCRouter({
 						participants: [],
 					},
 					pageCount: 0,
+					participantId: null,
 				};
 
 			// Buscar todos os moderadores
@@ -215,7 +216,14 @@ export const activitiesRouter = createTRPCRouter({
 				...selectedActivity,
 				participants: allParticipants,
 			};
-			return { activity: formattedActivity, pageCount };
+
+			return {
+				activity: formattedActivity,
+				pageCount,
+				participantId: allParticipants.find(
+					(participant) => participant.userId === userId,
+				)?.id,
+			};
 		}),
 
 	getActivities: publicProcedure

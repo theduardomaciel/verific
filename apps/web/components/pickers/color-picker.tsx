@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { PopoverClose } from "@radix-ui/react-popover";
 
 const FALLBACK_COLOR = "#f857a6"; // Cor padrão

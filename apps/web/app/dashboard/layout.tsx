@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
 
 // Components
-import { DashboardHeader } from "@/components/dashboard/header";
+import { DashboardHeader } from "@/components/header/dashboard-header";
 import { Footer } from "@/components/footer";
 
 import { REM } from "next/font/google";

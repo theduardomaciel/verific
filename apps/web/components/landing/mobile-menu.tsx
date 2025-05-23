@@ -5,7 +5,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 // Components
-import { MainNavProps } from "../main-nav";
+import { MainNavProps } from "../header/main-nav";
 
 interface MobileMenuProps {
 	prefix?: string;
