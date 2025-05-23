@@ -139,7 +139,7 @@ export function ActivityTicket({
 										<Image
 											src={
 												activity.speaker.imageUrl ||
-												"https://i.imgur.com/VCaJRG3.jpeg"
+												"https://i.imgur.com/5Hsj4tJ.jpeg"
 											}
 											alt={""}
 											width={48}

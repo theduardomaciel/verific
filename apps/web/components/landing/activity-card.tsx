@@ -117,7 +117,7 @@ export function ActivityCardSpeaker({
 		<div className="mb-4 flex items-center gap-3 rounded-lg border px-6 py-3">
 			<div className="h-10 w-10 min-w-10 overflow-hidden rounded-full bg-gray-200">
 				<Image
-					src="https://i.imgur.com/VCaJRG3.jpeg" // TODO: Substituir por imagem real do palestrante
+					src="https://i.imgur.com/5Hsj4tJ.jpeg" // TODO: Substituir por imagem real do palestrante
 					alt={speaker.name}
 					width={40}
 					height={40}
