@@ -9,7 +9,6 @@ import AndroidIcon from "@/public/icons/android.svg";
 import AppleIcon from "@/public/icons/apple.svg";
 
 // Components
-import { Button } from "../ui/button";
 import { BadgeScanner } from "@/components/badge-scanner";
 
 // Utils

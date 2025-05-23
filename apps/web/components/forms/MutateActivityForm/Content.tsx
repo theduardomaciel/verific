@@ -1,5 +1,4 @@
 "use client";
-import { useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -24,7 +23,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-// import { ModeratorPicker } from "@/components/dashboard/ModeratorPicker";
+import { InstancePicker } from "@/components/pickers/instance-picker";
 
 // Date and Time
 import { ptBR } from "date-fns/locale";
@@ -34,19 +33,18 @@ import { TimePicker } from "@/components/dashboard/time-picker";
 // Types
 import type { MutateActivityFormSchema } from "@/lib/validations/forms/mutate-activity-form";
 import type { UseFormReturn } from "react-hook-form";
-import { activityCategories } from "@verific/drizzle/enum/category";
+import {
+	activityCategories,
+	activityCategoryLabels,
+} from "@verific/drizzle/enum/category";
 
 // Data
-import { EVENT_TYPE_LABELS } from "@/lib/data";
-import { InstancePicker } from "@/components/pickers/instance-picker";
 
 // API
 import { trpc } from "@/lib/trpc/react";
 
 // Types
-import { RouterOutput } from "@verific/api";
 import { MutateSpeakerDialog } from "@/components/dialogs/mutate-speaker-dialog";
-import { useRouter } from "next/navigation";
 
 interface Props {
 	form: UseFormReturn<MutateActivityFormSchema>;
@@ -268,7 +266,7 @@ export function MutateActivityFormContent({
 														value={category}
 													>
 														{
-															EVENT_TYPE_LABELS[
+															activityCategoryLabels[
 																category
 															]
 														}

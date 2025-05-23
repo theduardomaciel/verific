@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 interface Props {
-	prefix: string;
+	prefix?: string;
 	links: {
 		href: string;
 		label: string;
@@ -14,7 +14,7 @@ interface Props {
 	}[];
 }
 
-export function SettingsSidebar({ prefix, links }: Props) {
+export function SettingsSidebar({ prefix = "", links }: Props) {
 	const pathname = usePathname();
 
 	return (
