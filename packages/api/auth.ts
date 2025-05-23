@@ -9,7 +9,7 @@ interface Props {
 	userId?: string;
 }
 
-export async function isMemberAuthenticated({ projectId, userId }: Props) {
+export async function isMemberAuthenticated({ userId }: Props) {
 	let error:
 		| {
 				message: string;

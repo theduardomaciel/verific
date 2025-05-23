@@ -7,39 +7,36 @@ import AppleIcon from "@/public/icons/apple.svg";
 
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
+import { RouterOutput } from "@verific/api";
+import { formatFriendlyDate } from "@/lib/data";
 
 export interface WorkshopTicketProps {
-	title: string;
-	startTime: string;
-	endTime: string;
-	maxParticipants: number;
-	currentParticipants: number;
-	tolerance: string;
-	speakerName?: string;
-	speakerRole?: string;
-	speakerImage?: string;
-	description?: string;
-	attendanceTime?: string;
-	role: "moderator" | "user";
 	className?: string;
+	onActivity: RouterOutput["getActivitiesFromParticipant"]["activities"][0];
+	role: "moderator" | "participant";
 }
 
 export function ActivityTicket({
-	title,
-	startTime,
-	endTime,
-	maxParticipants,
-	currentParticipants,
-	tolerance,
-	speakerName,
-	speakerRole,
-	speakerImage,
-	description,
-	attendanceTime,
+	onActivity,
 	role,
 	className,
 }: WorkshopTicketProps) {
+	const activity = onActivity.activity;
 	const isModerator = role === "moderator";
+
+	const startTime = activity.dateFrom.toLocaleString("pt-BR", {
+		hour: "2-digit",
+		minute: "2-digit",
+	});
+	const endTime = activity.dateTo.toLocaleString("pt-BR", {
+		hour: "2-digit",
+		minute: "2-digit",
+	});
+
+	const credentialedParticipantsAmount =
+		activity.participantsOnActivity.filter(
+			(participant) => participant.joinedAt !== null,
+		).length;
 
 	return (
 		<div
@@ -55,16 +52,18 @@ export function ActivityTicket({
 					<div className="flex-grow">
 						<div className="mb-6 flex items-start justify-between">
 							<div>
-								<h2 className="text-2xl font-bold">{title}</h2>
+								<h2 className="text-2xl font-bold">
+									{activity.name}
+								</h2>
 							</div>
 							<div className="bg-destructive animate-pulse rounded px-3 py-1 text-xs font-bold !text-white">
 								AGORA
 							</div>
 						</div>
 
-						{description && (
+						{activity.description && (
 							<div className="text-muted-foreground mb-6 text-sm">
-								<p>{description}</p>
+								<p>{activity.description}</p>
 								<button className="mt-1">Ler mais</button>
 							</div>
 						)}
@@ -105,24 +104,34 @@ export function ActivityTicket({
 							<span className="text-xl">{endTime}</span>
 						</div>
 
-						<div className="text-muted-foreground mb-6 flex items-center justify-evenly text-sm">
-							<div className="flex items-center">
-								<User size={16} className="mr-1" />
-								<span>{maxParticipants} máx</span>
+						{activity.participantsLimit || activity.tolerance ? (
+							<div className="text-muted-foreground mb-6 flex items-center justify-evenly text-sm">
+								{activity.participantsLimit && (
+									<div className="flex items-center">
+										<User size={16} className="mr-1" />
+										<span>
+											{activity.participantsLimit} máx
+										</span>
+									</div>
+								)}
+								{activity.tolerance && (
+									<div className="flex items-center">
+										<Clock size={16} className="mr-1" />
+										<span>
+											{activity.tolerance} de tolerância
+										</span>
+									</div>
+								)}
 							</div>
-							<div className="flex items-center">
-								<Clock size={16} className="mr-1" />
-								<span>{tolerance} de tolerância</span>
-							</div>
-						</div>
+						) : null}
 
-						{speakerName && (
+						{activity.speaker && (
 							<div className="bg-card mb-6 rounded-lg border p-4">
 								<div className="flex">
 									<div className="mr-3 h-12 min-h-12 w-12 min-w-12 overflow-hidden rounded-full bg-gray-500">
 										<Image
 											src={
-												speakerImage ||
+												activity.speaker.imageUrl ||
 												"https://i.imgur.com/VCaJRG3.jpeg"
 											}
 											alt={""}
@@ -133,10 +142,10 @@ export function ActivityTicket({
 									</div>
 									<div>
 										<h3 className="font-medium">
-											{speakerName}
+											{activity.speaker.name}
 										</h3>
 										<p className="text-muted-foreground text-sm">
-											{speakerRole}
+											{activity.speaker.description}
 										</p>
 									</div>
 								</div>
@@ -144,6 +153,7 @@ export function ActivityTicket({
 						)}
 					</div>
 
+					{/* TODO: Atualmente, exibindo a quantidade de participantes, não a quantidade de participantes credenciados */}
 					{isModerator && (
 						<div className="mt-auto hidden items-center justify-between border-t pt-4 md:flex">
 							<div className="text-muted-foreground flex items-center">
@@ -151,7 +161,7 @@ export function ActivityTicket({
 								<span>Participantes credenciados</span>
 							</div>
 							<div className="text-2xl font-bold">
-								{currentParticipants}
+								{credentialedParticipantsAmount}
 							</div>
 						</div>
 					)}
@@ -284,25 +294,27 @@ export function ActivityTicket({
 										<span>Participantes credenciados</span>
 									</div>
 									<div className="text-2xl font-bold">
-										{currentParticipants}
+										{credentialedParticipantsAmount}
 									</div>
 								</div>
 							</div>
 						</>
-					) : (
-						<>
-							<div className="flex w-full items-center justify-between py-8 md:flex-col md:items-center md:justify-center md:border-0 md:pt-0">
-								<div className="text-muted-foreground md:text-card-foreground flex items-center md:flex-col md:gap-3 md:text-center">
-									<Check className="mr-2 size-6 md:mr-0 md:size-12" />
-									<span className="md:mb-2">
-										Presença confirmada
-									</span>
-								</div>
-								<div className="text-2xl font-bold md:text-4xl">
-									{attendanceTime}
-								</div>
+					) : onActivity.joinedAt ? (
+						<div className="flex w-full items-center justify-between py-8 md:flex-col md:items-center md:justify-center md:border-0 md:pt-0">
+							<div className="text-muted-foreground md:text-card-foreground flex items-center md:flex-col md:gap-3 md:text-center">
+								<Check className="mr-2 size-6 md:mr-0 md:size-12" />
+								<span className="md:mb-2">
+									Presença confirmada
+								</span>
 							</div>
-						</>
+							<div className="text-2xl font-bold md:text-4xl">
+								{formatFriendlyDate(onActivity.joinedAt)}
+							</div>
+						</div>
+					) : (
+						<div>
+							presença não confirmada - mostrar qrcode aqui depois
+						</div>
 					)}
 				</div>
 			</div>

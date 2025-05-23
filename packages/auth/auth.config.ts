@@ -58,34 +58,46 @@ export const authConfig = {
 				return baseUrl;
 			}
 		},
+		jwt({ token, user, trigger }) {
+			// Atualiza a sessão com os dados do usuário. É triggerado quando o usuário faz login ou atualiza a sessão
+			if (trigger === "update" && !!user) {
+				token.email = user.email;
+				token.sub = user.id;
+				token.picture = user.image;
+				token.name = user.name;
+			}
+
+			return token;
+		},
 		session({ session, token, user, trigger }) {
-			console.log("Session", {
+			/* console.log("Session", {
 				session,
 				token,
 				user,
 				trigger,
-			});
+			}); */
 
-			if (session.user && token.sub) {
-				session.user.id = token.sub;
-			}
-			if (token.participant) {
-				session.participant = token.participant;
-			}
+			// Atualiza a sessão com os dados do token. É triggerado quando o usuário faz login ou atualiza a sessão
+			// Se o usuário não estiver logado, não faz nada
+			if (session.user) {
+				const updatedUser = {
+					...session.user,
+					email: token.email || session.user.email,
+					id: token.sub || session.user.id,
+					image: token.picture || session.user.image,
+					name: token.name || session.user.name,
+				};
 
+				session.user = updatedUser;
+			}
 			// console.log("Updated session", session);
 
 			return session;
 		},
 		authorized({ auth, request: { nextUrl } }) {
 			const isLoggedIn = !!auth?.user;
-			const eventUrl = nextUrl.pathname.split("/")[1];
-			const isMember = false; /*  eventUrl
-				? auth?.participant?.projectUrl === eventUrl
-				: false; */
 
-			console.log("Authorized", { isLoggedIn, isMember });
-			// console.log("Pathname", nextUrl.pathname);
+			console.log("Authorized", { isLoggedIn });
 
 			const authenticatedRoutes = ["/dashboard", "/account"];
 
@@ -120,16 +132,6 @@ export const authConfig = {
 			if (isOnAuthenticatedRoutes && !isLoggedIn) {
 				// console.log("User not logged. Redirecting to login");
 				return false;
-			}
-
-			// Usuário se inscreveu em um evento e está acessando a página de inscrição
-			if (
-				isLoggedIn &&
-				isMember &&
-				nextUrl.pathname.includes("/subscribe")
-			) {
-				// console.log("User already registered. Redirecting to account page");
-				return Response.redirect(new URL("/account", nextUrl));
 			}
 
 			return true;

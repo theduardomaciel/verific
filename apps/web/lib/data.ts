@@ -540,7 +540,7 @@ export function getEventById(id: string): Project | undefined {
 	return projects.find((project) => project.id === id);
 }
 
-export function formatFriendlyDate(date: Date, includeDay: boolean): string {
+export function formatFriendlyDate(date: Date, includeDay?: boolean): string {
 	const now = new Date();
 	const isToday = date.toDateString() === now.toDateString();
 
