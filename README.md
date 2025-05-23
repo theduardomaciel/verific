@@ -14,28 +14,28 @@ Um sistema de credenciamento para eventos acadêmicos
 
 ### 🚧 Features
 
-- [ ] Autenticação
-  - Autenticação de usuários por e-mail institucional
-- [ ] Eventos
-  - Criação e gerenciamento de eventos
-  - Possibilidade de limitar vagas e incluir filas de espera virtuais
-  - Adição de atividades
-  - Gerenciamento de administradores de eventos
-  - Dashboard de acompanhamento de métricas do evento em tempo real
-- [ ] Inscrições
-  - Inscrição de participantes em eventos e atividades
-  - Credenciamento de participantes
-- [ ] Controle de Acesso
-  - Controle de acesso e verificação de presença via QR Code (com tempo de tolerância configurável)
+- [ X ] Autenticação
+    - Autenticação de usuários por e-mail institucional
+- [ X ] Eventos
+    - Criação e gerenciamento de eventos
+    - Possibilidade de limitar vagas e incluir filas de espera virtuais
+    - Adição de atividades
+    - Gerenciamento de administradores de eventos
+    - Dashboard de acompanhamento de métricas do evento em tempo real
+- [ X ] Inscrições
+    - Inscrição de participantes em eventos e atividades
+    - Credenciamento de participantes
+- [ X ] Controle de Acesso
+    - Controle de acesso e verificação de presença via QR Code (com tempo de tolerância configurável)
 - [ ] Certificados
-  - Atribuição de horas por atividade (palestras, workshops, minicursos, etc.)
-  - Geração de crachás personalizados
-  - Emissão de certificados de participação
-  - Envio automatizado de certificados por e-mail
+    - Atribuição de horas por atividade (palestras, workshops, minicursos, etc.)
+    - Geração de crachás personalizados
+    - Emissão de certificados de participação
+    - Envio automatizado de certificados por e-mail
 - [ ] Relatórios
-  - Emissão de relatórios de participação e atividades
+    - Emissão de relatórios de participação e atividades
 - [ ] Extras
-  - Suporte a múltiplos idiomas
+    - Suporte a múltiplos idiomas
 
 <br />
 
@@ -78,6 +78,7 @@ pnpm install --global turbo dotenv-cli
 ```
 
 2. Após instalar as dependências globais, clone o repositório com:
+
 ```
 git clone https://github.com/theduardomaciel/verific.git
 ```
@@ -93,7 +94,7 @@ code .
 ```
 
 4. Com o terminal aberto no repositório, use `pnpm install` para instalar as dependências do projeto
-. Esse comando irá instalar todas as dependências de todos os pacotes e aplicações do monorepo.
+   . Esse comando irá instalar todas as dependências de todos os pacotes e aplicações do monorepo.
 
 ```bash
 pnpm install
@@ -106,6 +107,7 @@ pnpm install
    Esse passo é essencial para o correto funcionamento dos pacotes e aplicações do monorepo.
 
 6. Para dar início ao servidor local de desenvolvimento, utilize
+
 ```bash
 pnpm dev
 ```
