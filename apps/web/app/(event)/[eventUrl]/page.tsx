@@ -29,7 +29,9 @@ export default async function EventPage({
 }) {
 	const { eventUrl } = await params;
 
-	const { project: event } = await serverClient.getProject({ url: eventUrl });
+	const { project: event, isParticipant } = await serverClient.getProject({
+		url: eventUrl,
+	});
 
 	if (!event) {
 		notFound();
@@ -69,10 +71,10 @@ export default async function EventPage({
 					</div>
 					<Button asChild size={"lg"} variant={"secondary"}>
 						<Link
-							href={`/${eventUrl}/subscribe`}
-							className="h-fit !px-12 py-3 text-base font-semibold text-white max-md:w-full"
+							href={`/${eventUrl}/${isParticipant ? "schedule" : "subscribe"}`}
+							className="h-fit !px-12 py-3 text-base font-semibold text-white uppercase max-md:w-full"
 						>
-							INSCREVER-SE
+							{isParticipant ? "Ver programação" : "Inscrever-se"}
 						</Link>
 					</Button>
 				</div>
