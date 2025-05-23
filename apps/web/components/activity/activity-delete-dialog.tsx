@@ -94,7 +94,7 @@ export function EventDeleteDialog({ children, activityId, projectId }: Props) {
 			<SuccessDialog
 				isOpen={currentState === "submitted"}
 				title="Atividade excluída com sucesso!"
-				href={`/dashboard/${projectId}/activities`}
+				href={`/dashboard/activities`}
 				description={
 					<>
 						A atividade foi removida com sucesso! <br />
