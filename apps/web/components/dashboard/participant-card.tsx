@@ -35,7 +35,7 @@ function ParticipantAvatarAndInfo({
 			<Image
 				src={
 					participant.user?.image_url ??
-					"https://i.imgur.com/VCaJRG3.jpeg"
+					"https://i.imgur.com/5Hsj4tJ.jpeg"
 				}
 				width={42}
 				height={42}
