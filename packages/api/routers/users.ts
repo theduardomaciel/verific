@@ -59,22 +59,16 @@ export const usersRouter = createTRPCRouter({
 					period,
 					projectId,
 				})
-				.returning({
+				.returning(/* {
 					id: participant.id,
 					role: participant.role,
-				});
+				} */);
 
 			if (createdMember[0]) {
 				await unstable_update({
 					user: {
 						...ctx.session.user,
 						name,
-					},
-					participant: {
-						id: createdMember[0].id,
-						role: createdMember[0].role,
-						projectId,
-						projectUrl,
 					},
 				});
 			}

@@ -6,6 +6,7 @@ import { activitiesRouter } from "./routers/activities";
 import { projectsRouter } from "./routers/projects";
 import { participantsRouter } from "./routers/participants";
 import { speakersRouter } from "./routers/speakers";
+import { participantOnActivitiesRouter } from "./routers/participantOnActivities";
 
 import { createCallerFactory, mergeRouters } from "./trpc";
 
@@ -15,6 +16,7 @@ export const appRouter = mergeRouters(
 	projectsRouter,
 	participantsRouter,
 	speakersRouter,
+	participantOnActivitiesRouter,
 );
 
 export { createCallerFactory };

@@ -40,7 +40,7 @@ export function Content({ children, className }: HolderProps) {
 	return (
 		<div
 			className={cn(
-				"px-landing mx-auto flex w-full flex-col items-center justify-center pt-16",
+				"container-p mx-auto flex w-full flex-col items-center justify-center pt-16",
 				className,
 			)}
 		>

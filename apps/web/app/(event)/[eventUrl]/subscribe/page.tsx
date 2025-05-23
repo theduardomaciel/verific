@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { redirect } from "next/navigation";
 
 // Icons
@@ -8,7 +7,7 @@ import { Calendar } from "lucide-react";
 import JoinForm from "@/components/forms/JoinForm";
 import * as EventContainer from "@/components/landing/event-container";
 
-// api
+// API
 import { auth } from "@verific/auth";
 import { serverClient } from "@/lib/trpc/server";
 

@@ -63,7 +63,7 @@ export const participantsRouter = createTRPCRouter({
 							image_url: true,
 						},
 					},
-					participantsOnEvent: {
+					participantOnActivity: {
 						with: {
 							activity: {
 								columns: {
@@ -110,9 +110,9 @@ export const participantsRouter = createTRPCRouter({
 			}
 
 			const totalWorkload = Array.isArray(
-				participantData.participantsOnEvent,
+				participantData.participantOnActivity,
 			)
-				? participantData.participantsOnEvent.reduce(
+				? participantData.participantOnActivity.reduce(
 						(
 							total: number,
 							item: { activity: { workload: number | null } },
@@ -211,7 +211,7 @@ export const participantsRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			const { activityId } = input;
+			/* const { activityId } = input;
 			const participantId = ctx.session.participant?.id;
 			const projectId = ctx.session.participant?.projectId;
 
@@ -250,7 +250,7 @@ export const participantsRouter = createTRPCRouter({
 				activityId,
 				participantId,
 				joinedAt: new Date(),
-			});
+			}); */
 
 			return { success: true };
 		}),

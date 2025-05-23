@@ -229,13 +229,14 @@ export const activitiesRouter = createTRPCRouter({
 	getActivities: publicProcedure
 		.input(
 			getActivitiesParams.extend({
-				projectId: z.string().uuid(),
-				participantId: z.string().optional(),
+				projectId: z.string().uuid().optional(),
+				projectUrl: z.string().optional(),
 			}),
 		)
-		.query(async ({ input }) => {
+		.query(async ({ input, ctx }) => {
 			const {
 				projectId,
+				projectUrl,
 				page = 0,
 				pageSize = 5,
 				query,
@@ -248,6 +249,33 @@ export const activitiesRouter = createTRPCRouter({
 			const categories = rawCategory;
 			const audiences = rawAudience;
 			const speakerIds = rawSpeakerIds?.map(Number);
+
+			const projectWhere = projectId
+				? eq(project.id, projectId)
+				: projectUrl
+					? eq(project.url, projectUrl)
+					: undefined;
+
+			if (!projectWhere) {
+				throw new TRPCError({
+					message: "Project ID or URL is required.",
+					code: "BAD_REQUEST",
+				});
+			}
+
+			const activitiesWhere = [
+				categories ? inArray(activity.category, categories) : undefined,
+				audiences ? inArray(activity.audience, audiences) : undefined,
+				speakerIds
+					? inArray(activity.speakerId, speakerIds)
+					: undefined,
+				query
+					? or(
+							ilike(activity.name, `%${query}%`),
+							ilike(activity.description, `%${query}%`),
+						)
+					: undefined,
+			].filter(Boolean);
 
 			// Query de atividades
 			const activities = await db
@@ -264,7 +292,10 @@ export const activitiesRouter = createTRPCRouter({
 						description: speaker.description,
 						imageUrl: speaker.imageUrl,
 					},
-					participant: { id: participant.id, role: participant.role },
+					participant: {
+						role: participant.role,
+						userId: participant.userId,
+					},
 					participantOnActivity: {
 						participantId: participantOnActivity.participantId,
 						activityId: participantOnActivity.activityId,
@@ -283,26 +314,7 @@ export const activitiesRouter = createTRPCRouter({
 				.leftJoin(user, eq(participant.userId, user.id))
 				.leftJoin(speaker, eq(activity.speakerId, speaker.id))
 				.leftJoin(project, eq(activity.projectId, project.id))
-				.where(
-					and(
-						eq(activity.projectId, projectId),
-						categories
-							? inArray(activity.category, categories)
-							: undefined,
-						audiences
-							? inArray(activity.audience, audiences)
-							: undefined,
-						speakerIds
-							? inArray(activity.speakerId, speakerIds)
-							: undefined,
-						query
-							? or(
-									ilike(activity.name, `%${query}%`),
-									ilike(activity.description, `%${query}%`),
-								)
-							: undefined,
-					),
-				)
+				.where(and(...activitiesWhere, projectWhere))
 				.orderBy(
 					sort === "recent"
 						? asc(activity.dateFrom)
@@ -317,22 +329,13 @@ export const activitiesRouter = createTRPCRouter({
 				.from(activity)
 				.where(
 					and(
-						eq(activity.projectId, projectId),
-						categories
-							? inArray(activity.category, categories)
-							: undefined,
-						audiences
-							? inArray(activity.audience, audiences)
-							: undefined,
-						speakerIds
-							? inArray(activity.speakerId, speakerIds)
-							: undefined,
-						query
-							? or(
-									ilike(activity.name, `%${query}%`),
-									ilike(activity.description, `%${query}%`),
-								)
-							: undefined,
+						...activitiesWhere,
+						// Precisa ser diferente de "projectWhere" já que aqui estamos
+						// lidando somente com a tabela "activity" e não com as junções.
+						// Caso necessário ter paginação na página de /[eventUrl]/schedule, adicionar o "projectWhere" aqui também
+						// e fazemos o join com a tabela "project" para pegar o projectId
+						// .leftJoin(project, eq(activity.projectId, project.id)) // Adicione este join
+						projectId ? eq(activity.id, projectId) : undefined,
 					),
 				);
 
@@ -345,8 +348,8 @@ export const activitiesRouter = createTRPCRouter({
 				"participant" | "user" | "participantOnActivity"
 			> & {
 				participants: Array<{
-					id: string;
 					role: string;
+					userId: string;
 					user: {
 						name?: string | null;
 						image_url?: string | null;
@@ -363,8 +366,8 @@ export const activitiesRouter = createTRPCRouter({
 						participants: act.participant
 							? [
 									{
-										id: act.participant.id,
 										role: act.participant.role,
+										userId: act.participant.userId,
 										user: {
 											name: act.user?.name,
 											image_url: act.user?.image_url,
@@ -375,8 +378,8 @@ export const activitiesRouter = createTRPCRouter({
 					};
 				} else if (act.participant) {
 					activityMap[act.id]?.participants.push({
-						id: act.participant.id,
 						role: act.participant.role,
+						userId: act.participant.userId,
 						user: {
 							name: act.user?.name,
 							image_url: act.user?.image_url,
@@ -392,7 +395,10 @@ export const activitiesRouter = createTRPCRouter({
 
 			const pageCount = Math.ceil(amount / pageSize);
 
-			return { activities: formattedActivities, pageCount };
+			return {
+				activities: formattedActivities,
+				pageCount,
+			};
 		}),
 
 	createActivity: protectedProcedure
@@ -456,7 +462,6 @@ export const activitiesRouter = createTRPCRouter({
 			} = input;
 
 			const error = await isMemberAuthenticated({
-				projectId: ctx.session.participant?.projectId ?? "",
 				userId: ctx.session.user.id,
 			});
 
@@ -493,17 +498,20 @@ export const activitiesRouter = createTRPCRouter({
 		)
 		.mutation(async ({ input, ctx }) => {
 			const { activityId, participantsIdsToMutate } = input;
+
 			if (!participantsIdsToMutate) {
 				throw new TRPCError({
 					message: "Participants not found.",
 					code: "BAD_REQUEST",
 				});
 			}
+
 			const error = await isMemberAuthenticated({
-				projectId: ctx.session.participant?.projectId ?? "",
 				userId: ctx.session.user.id,
 			});
+
 			if (error) throw new TRPCError(error);
+
 			const currentActivityParticipants =
 				await db.query.participantOnActivity.findMany({
 					where(fields) {
@@ -547,11 +555,29 @@ export const activitiesRouter = createTRPCRouter({
 		.input(z.object({ activityId: z.string().uuid() }))
 		.mutation(async ({ input, ctx }) => {
 			const { activityId } = input;
+
 			const error = await isMemberAuthenticated({
-				projectId: ctx.session.participant?.projectId ?? "",
 				userId: ctx.session.user.id,
 			});
+
 			if (error) throw new TRPCError(error);
+
+			// Verifica se o usuário é o dono do projeto
+			const project = await db.query.project
+				.findFirst({
+					where(fields) {
+						return eq(fields.id, activityId);
+					},
+				})
+				.then((project) => !!project);
+
+			if (!project) {
+				throw new TRPCError({
+					message: "User not authorized to delete this activity.",
+					code: "FORBIDDEN",
+				});
+			}
+
 			try {
 				await db.delete(activity).where(eq(activity.id, activityId));
 			} catch (error) {

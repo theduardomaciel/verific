@@ -50,5 +50,5 @@ export const participantRelations = relations(participant, ({ one, many }) => ({
 		fields: [participant.projectId],
 		references: [project.id],
 	}),
-	participantsOnEvent: many(participantOnActivity),
+	participantOnActivity: many(participantOnActivity),
 }));

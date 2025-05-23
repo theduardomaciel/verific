@@ -1,7 +1,29 @@
+import { redirect } from "next/navigation";
+
+// Components
 import { ActivityTicket } from "@/components/activity/activity-ticket";
 import * as EventContainer from "@/components/landing/event-container";
 
-export default function EventAccountPage() {
+// API
+import { serverClient } from "@/lib/trpc/server";
+
+export default async function EventAccountPage({
+	params,
+}: {
+	params: Promise<{ eventUrl: string }>;
+}) {
+	const { eventUrl } = await params;
+
+	// TODO: O "role" atualmente é definido por projeto/evento, ao invés de por atividade.
+	const { activities, isParticipant, role } =
+		await serverClient.getActivitiesFromParticipant({
+			projectUrl: eventUrl,
+		});
+
+	if (!isParticipant) {
+		redirect(`/${eventUrl}/subscribe`);
+	}
+
 	const workshopData = {
 		title: "Workshop de Arduino",
 		startTime: "9:10 AM",
@@ -32,10 +54,16 @@ export default function EventAccountPage() {
 				</div>
 			</EventContainer.Hero>
 			<EventContainer.Content>
-				<div className="mb-8 flex grid-cols-2 flex-col justify-between gap-4 md:gap-12">
-					<ActivityTicket {...workshopData} role="user" />
-					<ActivityTicket {...workshopData} role="moderator" />
-				</div>
+				<ul className="mb-8 flex w-full grid-cols-2 flex-col justify-between gap-4 md:gap-12">
+					{activities.map((onActivity) => (
+						<li key={onActivity.activityId} className="w-full">
+							<ActivityTicket
+								onActivity={onActivity}
+								role={role!}
+							/>
+						</li>
+					))}
+				</ul>
 			</EventContainer.Content>
 		</EventContainer.Holder>
 	);
