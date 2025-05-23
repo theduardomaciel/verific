@@ -25,7 +25,7 @@ import { trpc } from "@/lib/trpc/react";
 import { RouterOutput } from "@verific/api";
 
 interface Props {
-	project: RouterOutput["getProject"];
+	project: RouterOutput["getProject"]["project"];
 }
 
 export function ProjectSettingsPreferencesForm({ project }: Props) {

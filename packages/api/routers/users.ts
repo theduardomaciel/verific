@@ -13,6 +13,9 @@ import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { courses } from "@verific/drizzle/enum/course";
 import { periods } from "@verific/drizzle/enum/period";
 
+// API
+import { TRPCError } from "@trpc/server";
+
 export const usersRouter = createTRPCRouter({
 	updateUser: protectedProcedure
 		.input(
@@ -65,4 +68,24 @@ export const usersRouter = createTRPCRouter({
 				});
 			}
 		}),
+	getUser: protectedProcedure.query(async ({ ctx }) => {
+		const { id } = ctx.session.user;
+
+		if (!id) {
+			throw new TRPCError({
+				code: "UNAUTHORIZED",
+				message: "User not found.",
+			});
+		}
+
+		const userData = await db.query.user.findFirst({
+			where: (user, { eq }) => eq(user.id, id),
+		});
+
+		if (!userData) {
+			throw new Error("User not found.");
+		}
+
+		return userData;
+	}),
 });

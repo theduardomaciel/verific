@@ -1,64 +1,15 @@
-import { Fragment } from "react";
-
-import { Image } from "lucide-react";
-
+import { cookies } from "next/headers";
 // Components
-import { SettingsCard } from "@/components/settings/settings-card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { AccountSettingsGeneral } from "@/app/account/settings/form";
+// API
+import { serverClient } from "@/lib/trpc/server";
 
-export default function AccountSettings() {
-	return (
-		<Fragment>
-			{/* Name */}
-			<SettingsCard
-				title="Nome"
-				description="Insira o nome de sua instituição que será exibido para participantes nas páginas de inscrição de seus eventos"
-				footer={{
-					text: "Por favor, use 32 caracteres no máximo",
-					action: <Button>Salvar</Button>,
-				}}
-			>
-				<Input defaultValue="Liga Acadêmica de Computação da UFAL" />
-			</SettingsCard>
+export default async function AccountSettings() {
+	const cookieStore = await cookies();
+	const accountId = cookieStore.get("accountId")?.value;
 
-			{/* Avatar */}
-			<SettingsCard
-				title="Avatar"
-				description="Clique no avatar para enviar uma imagem personalizada dos seus arquivos."
-				headerRight={
-					<div className="flex h-28 w-28 items-center justify-center rounded-full border">
-						<Image className="text-foreground h-8 w-8 opacity-30" />
-					</div>
-				}
-				footer={{
-					text: "Utilizamos a imagem de perfil de sua conta Google, por padrão",
-				}}
-			/>
+	// Buscar dados do usuário do servidor
+	const user = await serverClient.getUser();
 
-			{/* Delete account */}
-			<SettingsCard
-				title="Excluir Conta"
-				description={
-					<>
-						Remova permanentemente a conta da sua instituição e todo
-						o seu conteúdo da plataforma{" "}
-						<span className="font-semibold">verifIC</span>. Todos os
-						seus <span className="font-semibold">20 projetos</span>{" "}
-						e seus conteúdos serão excluídos em cascata. Esta ação é
-						irreversível, portanto, continue com cautela.
-					</>
-				}
-				borderColor="border-[#ef4444]"
-				footer={{
-					action: (
-						<Button className="ml-auto" variant={"destructive"}>
-							Excluir conta
-						</Button>
-					),
-				}}
-				footerClassName="bg-destructive/20 border-destructive"
-			/>
-		</Fragment>
-	);
+	return <AccountSettingsGeneral user={user} />;
 }

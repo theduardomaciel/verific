@@ -27,7 +27,7 @@ import { RouterOutput } from "@verific/api";
 import type { UseFormReturn } from "react-hook-form";
 
 interface Props {
-	project: RouterOutput["getProject"];
+	project: RouterOutput["getProject"]["project"];
 }
 
 export function ProjectSettingsSubscriptionsForm({ project }: Props) {

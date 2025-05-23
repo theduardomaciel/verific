@@ -2,10 +2,12 @@ import { cn } from "@/lib/utils";
 import { Clock } from "lucide-react";
 
 // Types
-import { activityCategories } from "@verific/drizzle/enum/category";
+import {
+	activityCategories,
+	activityCategoryLabels,
+} from "@verific/drizzle/enum/category";
 
 // Data
-import { EVENT_TYPE_LABELS } from "@/lib/data";
 
 interface CategoryCard {
 	className?: string;
@@ -48,7 +50,9 @@ export function CategoryCard({
 export function CategoryLabel({ category }: { category: string }) {
 	return (
 		<span className="text-muted-foreground/80 text-sm font-bold uppercase select-none">
-			{EVENT_TYPE_LABELS[category] || category}
+			{activityCategoryLabels[
+				category as keyof typeof activityCategoryLabels
+			] || category}
 		</span>
 	);
 }

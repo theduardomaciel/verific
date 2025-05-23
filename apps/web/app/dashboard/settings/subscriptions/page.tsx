@@ -11,7 +11,7 @@ export default async function SubscriptionsSettingsPage() {
 	const projectId = cookieStore.get("projectId")!.value;
 
 	// Fetch project data from the server
-	const project = await serverClient.getProject({
+	const { project } = await serverClient.getProject({
 		id: projectId,
 	});
 
