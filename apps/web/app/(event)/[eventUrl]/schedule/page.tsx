@@ -1,25 +1,35 @@
 import { Calendar } from "lucide-react";
 import { serverClient } from "@/lib/trpc/server";
 
+import { cn } from "@/lib/utils";
+
 // Components
 import { ActivityCard } from "@/components/landing/activity-card";
 import { SearchBar } from "@/components/dashboard/search-bar";
 import { SortBy } from "@/components/dashboard/sort-by";
 import * as EventContainer from "@/components/landing/event-container";
 
-export default async function EventSchedulePage({
-	params,
-}: {
+// Validation
+import type { z } from "zod";
+import { getActivitiesParams } from "@verific/api/routers/activities";
+import { Empty } from "@/components/empty";
+
+type SchedulePageParams = z.infer<typeof getActivitiesParams>;
+
+export default async function EventSchedulePage(props: {
 	params: Promise<{ eventUrl: string }>;
+	searchParams: Promise<SchedulePageParams>;
 }) {
-	const { eventUrl } = await params;
+	const { eventUrl } = await props.params;
 
 	const { project: event } = await serverClient.getProject({ url: eventUrl });
 
+	const searchParams = await props.searchParams;
+	const parsedParams = getActivitiesParams.parse(searchParams);
+
 	const { activities } = await serverClient.getActivities({
 		projectId: event.id,
-		page: 0,
-		pageSize: 20,
+		...parsedParams,
 	});
 
 	return (
@@ -74,13 +84,21 @@ export default async function EventSchedulePage({
 
 				<div className="container-p mb-10">
 					<h2 className="mb-4 text-xl font-bold">Atividades</h2>
-					<div className="grid gap-6 md:grid-cols-2">
-						{activities.map((activity) => (
-							<ActivityCard
-								key={activity.id}
-								activity={activity}
-							/>
-						))}
+					<div
+						className={cn("grid gap-6 md:grid-cols-2", {
+							flex: activities.length === 0,
+						})}
+					>
+						{activities.length > 0 ? (
+							activities.map((activity) => (
+								<ActivityCard
+									key={activity.id}
+									activity={activity}
+								/>
+							))
+						) : (
+							<Empty />
+						)}
 					</div>
 				</div>
 			</EventContainer.Content>
