@@ -54,7 +54,7 @@ export default async function EventAccountPage({
 				</div>
 			</EventContainer.Hero>
 			<EventContainer.Content>
-				<ul className="mb-8 flex w-full grid-cols-2 flex-col justify-between gap-4 md:gap-12">
+				<ul className="container-p mb-8 flex w-full grid-cols-2 flex-col justify-between gap-4 md:gap-12">
 					{activities.map((onActivity) => (
 						<li key={onActivity.activityId} className="w-full">
 							<ActivityTicket
