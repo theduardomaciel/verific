@@ -14,18 +14,18 @@ Um sistema de credenciamento para eventos acadêmicos
 
 ### 🚧 Features
 
-- [ X ] Autenticação
+- [x] Autenticação
     - Autenticação de usuários por e-mail institucional
-- [ X ] Eventos
+- [x] Eventos
     - Criação e gerenciamento de eventos
     - Possibilidade de limitar vagas e incluir filas de espera virtuais
     - Adição de atividades
     - Gerenciamento de administradores de eventos
     - Dashboard de acompanhamento de métricas do evento em tempo real
-- [ X ] Inscrições
+- [x] Inscrições
     - Inscrição de participantes em eventos e atividades
     - Credenciamento de participantes
-- [ X ] Controle de Acesso
+- [x] Controle de Acesso
     - Controle de acesso e verificação de presença via QR Code (com tempo de tolerância configurável)
 - [ ] Certificados
     - Atribuição de horas por atividade (palestras, workshops, minicursos, etc.)
