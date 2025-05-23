@@ -4,9 +4,9 @@ import { UseFormReturn } from "react-hook-form";
 // Components
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
-import { PlacePicker } from "@/components/place-picker";
+import { PlacePicker } from "@/components/pickers/place-picker";
 import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
-import { DateRangePicker } from "@/components/date-range-picker";
+import { DateRangePicker } from "@/components/pickers/date-range-picker";
 
 // Validations
 import {

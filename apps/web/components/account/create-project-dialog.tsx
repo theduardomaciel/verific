@@ -36,8 +36,8 @@ import {
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PlacePicker } from "@/components/place-picker";
-import { DateRangePicker } from "@/components/date-range-picker";
+import { PlacePicker } from "@/components/pickers/place-picker";
+import { DateRangePicker } from "@/components/pickers/date-range-picker";
 import { ErrorDialog, LoadingDialog } from "../forms/dialogs";
 
 // Hooks

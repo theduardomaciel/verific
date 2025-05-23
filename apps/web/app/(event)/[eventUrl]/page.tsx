@@ -20,6 +20,8 @@ import { Badge } from "@/components/ui/badge";
 // API
 import { serverClient } from "@/lib/trpc/server";
 
+import * as EventContainer from "@/components/landing/event-container";
+
 export default async function EventPage({
 	params,
 }: {
@@ -27,93 +29,77 @@ export default async function EventPage({
 }) {
 	const { eventUrl } = await params;
 
-	const event = await serverClient.getProject({ url: eventUrl });
+	const { project: event } = await serverClient.getProject({ url: eventUrl });
 
 	if (!event) {
 		notFound();
 	}
 
 	return (
-		<main className="bg-background min-h-screen">
-			{/* Hero Section */}
-			<section className="from-primary bg-primary px-landing border-secondary relative w-full border-b-[10px] py-12">
-				<div className="container-p z-10 mx-auto flex w-full flex-col gap-8 md:flex-row">
-					<div className="z-10 flex flex-1 flex-col items-start justify-center">
-						<h1 className="mb-4 text-5xl font-bold text-white">
-							{event.name}
-						</h1>
-						<div className="mb-6 flex items-center text-lg text-white/90">
-							<Calendar className="mr-2 h-4.5 w-4.5" />
-							<span className="-mt-0.5 text-base">
-								De {event.startDate.toLocaleDateString()} a{" "}
-								{event.endDate.toLocaleDateString()}
-							</span>
-						</div>
-
-						<div className="mb-8 flex flex-wrap gap-3">
-							<Badge
-								variant={"secondary"}
-								className="text-primary rounded-xl bg-white px-4 py-1.5"
-							>
-								<Check className="mr-2 !h-4 !w-4" />
-								<span>Aberto para o público externo</span>
-							</Badge>
-							<Badge
-								variant={"secondary"}
-								className="text-primary rounded-xl bg-white px-4 py-1.5"
-							>
-								<TicketCheck className="mr-2 !h-4 !w-4" />
-								<span>Emite certificado</span>
-							</Badge>
-						</div>
-
-						<Button asChild size={"lg"} variant={"secondary"}>
-							<Link
-								href={`/${eventUrl}/subscribe`}
-								className="h-fit !px-12 py-3 text-base font-semibold text-white max-md:w-full"
-							>
-								INSCREVER-SE
-							</Link>
-						</Button>
+		<EventContainer.Holder>
+			<EventContainer.Hero
+				coverUrl={event.coverUrl || "/images/hero-bg.png"}
+			>
+				<div className="z-10 flex flex-1 flex-col items-start justify-center">
+					<h1 className="mb-4 text-5xl font-bold text-white">
+						{event.name}
+					</h1>
+					<div className="mb-6 flex items-center text-lg text-white/90">
+						<Calendar className="mr-2 h-4.5 w-4.5" />
+						<span className="-mt-0.5 text-base">
+							De {event.startDate.toLocaleDateString()} a{" "}
+							{event.endDate.toLocaleDateString()}
+						</span>
 					</div>
-
-					{/* Share card */}
-					<div className="relative z-20 flex items-center justify-center">
-						<Image
-							src="/images/cover.png"
-							alt="SECOMP24"
-							width={400}
-							height={240}
-							className="border-primary max-w-md overflow-hidden rounded-3xl border-2"
-						/>
-						<Button className="absolute -bottom-4 left-1/2 h-10 -translate-x-1/2 !px-6">
-							<Share2 className="h-5 w-5" />
-							<span>Compartilhar</span>
-						</Button>
+					<div className="mb-8 flex flex-wrap gap-3">
+						<Badge
+							variant={"secondary"}
+							className="text-primary rounded-xl bg-white px-4 py-1.5"
+						>
+							<Check className="mr-2 !h-4 !w-4" />
+							<span>Aberto para o público externo</span>
+						</Badge>
+						<Badge
+							variant={"secondary"}
+							className="text-primary rounded-xl bg-white px-4 py-1.5"
+						>
+							<TicketCheck className="mr-2 !h-4 !w-4" />
+							<span>Emite certificado</span>
+						</Badge>
 					</div>
+					<Button asChild size={"lg"} variant={"secondary"}>
+						<Link
+							href={`/${eventUrl}/subscribe`}
+							className="h-fit !px-12 py-3 text-base font-semibold text-white max-md:w-full"
+						>
+							INSCREVER-SE
+						</Link>
+					</Button>
 				</div>
-
-				<Image
-					src={"/images/hero-bg.png"}
-					className="z-0 object-cover"
-					alt="Background"
-					fill
-				/>
-			</section>
-
-			{/* Content Section */}
-			<section className="px-landing py-12">
+				<div className="relative z-20 flex items-center justify-center">
+					<Image
+						src="/images/cover.png"
+						alt="SECOMP24"
+						width={400}
+						height={240}
+						className="border-primary max-w-md overflow-hidden rounded-3xl border-2"
+					/>
+					<Button className="absolute -bottom-4 left-1/2 h-10 -translate-x-1/2 !px-6">
+						<Share2 className="h-5 w-5" />
+						<span>Compartilhar</span>
+					</Button>
+				</div>
+			</EventContainer.Hero>
+			<EventContainer.Content>
 				<div className="container-p relative mx-auto flex flex-col gap-16 lg:flex-row">
 					<div className="lg:w-2/3">
 						<h2 className="mb-6 text-2xl font-bold">
 							Descrição do Evento
 						</h2>
-
 						<div className="space-y-6">
 							<p>{event.description}</p>
 						</div>
 					</div>
-
 					<div className="sticky top-16 right-0 lg:w-1/3">
 						<div className="mb-6 rounded-lg border p-6">
 							<h3 className="mb-4 text-xl font-medium">Local</h3>
@@ -126,7 +112,6 @@ export default async function EventPage({
 								<span>Ver no mapa</span>
 							</Button>
 						</div>
-
 						<div className="flex flex-col rounded-lg border p-6">
 							<h3 className="mb-4 text-xl font-medium">
 								Sobre o produtor
@@ -140,7 +125,6 @@ export default async function EventPage({
 								<span>Falar com o produtor</span>
 							</Button>
 						</div>
-
 						<span className="flex w-full items-end justify-end">
 							<Button
 								variant={"outline"}
@@ -153,7 +137,7 @@ export default async function EventPage({
 						</span>
 					</div>
 				</div>
-			</section>
-		</main>
+			</EventContainer.Content>
+		</EventContainer.Holder>
 	);
 }

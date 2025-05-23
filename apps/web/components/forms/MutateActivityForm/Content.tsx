@@ -38,14 +38,14 @@ import { activityCategories } from "@verific/drizzle/enum/category";
 
 // Data
 import { EVENT_TYPE_LABELS } from "@/lib/data";
-import { InstancePicker } from "@/components/instance-picker";
+import { InstancePicker } from "@/components/pickers/instance-picker";
 
 // API
 import { trpc } from "@/lib/trpc/react";
 
 // Types
 import { RouterOutput } from "@verific/api";
-import { MutateSpeakerDialog } from "@/components/mutate-speaker-dialog";
+import { MutateSpeakerDialog } from "@/components/dialogs/mutate-speaker-dialog";
 import { useRouter } from "next/navigation";
 
 interface Props {

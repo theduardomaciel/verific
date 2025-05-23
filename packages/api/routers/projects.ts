@@ -104,7 +104,7 @@ export const projectsRouter = createTRPCRouter({
 				url: z.string().optional(),
 			}),
 		)
-		.query(async ({ input }) => {
+		.query(async ({ input, ctx }) => {
 			if (!input.id && !input.url) {
 				throw new Error("Project ID or URL is required");
 			}
@@ -123,6 +123,12 @@ export const projectsRouter = createTRPCRouter({
 				where: whereClause,
 				with: {
 					speakers: true,
+					participants: {
+						columns: {
+							id: true,
+							userId: true,
+						},
+					},
 					owner: {
 						columns: {
 							id: true,
@@ -138,7 +144,16 @@ export const projectsRouter = createTRPCRouter({
 				throw new Error("Project not found");
 			}
 
-			return projectData;
+			const userId = ctx.session?.user.id;
+
+			return {
+				project: projectData,
+				isParticipant: userId
+					? projectData.participants.some(
+							(participant) => participant.userId === userId,
+						)
+					: false,
+			};
 		}),
 
 	getProjects: protectedProcedure.query(async () => {

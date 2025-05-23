@@ -15,16 +15,19 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ActivityCardSpeaker, ActivityCardTags } from "./landing/activity-card";
+import {
+	ActivityCardSpeaker,
+	ActivityCardTags,
+} from "../landing/activity-card";
 
 // API
 import { RouterOutput } from "@verific/api";
 import { trpc } from "@/lib/trpc/react";
 import { FormState } from "@/lib/types/forms";
-import { ErrorDialog, LoadingDialog, SuccessDialog } from "./forms/dialogs";
+import { ErrorDialog, LoadingDialog, SuccessDialog } from "../forms/dialogs";
 
 interface Props {
-	participantId?: string;
+	participantId?: string | null;
 	activity: RouterOutput["getActivity"]["activity"];
 }
 

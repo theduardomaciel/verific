@@ -7,14 +7,13 @@ import NextAuth, {
 import type { AdapterUser as AdapterUserBase } from "next-auth/adapters";
 import { JWT } from "next-auth/jwt";
 
-interface CustomUser {
-	id: string;
-}
+interface CustomUser {}
 
 interface Participant {
 	id: string;
-	projectId: string;
 	role: Role;
+	projectId: string;
+	projectUrl: string;
 }
 
 export interface User extends DefaultUser, CustomUser {}

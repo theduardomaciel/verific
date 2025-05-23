@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 // Components
-import { DashboardHeader } from "@/components/dashboard/header";
+import { DashboardHeader } from "@/components/header/dashboard-header";
 import { Footer } from "@/components/footer";
 
 // API
