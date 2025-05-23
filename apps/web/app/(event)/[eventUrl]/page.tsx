@@ -92,6 +92,7 @@ export default async function EventPage({
 					</Button>
 				</div>
 			</EventContainer.Hero>
+
 			<EventContainer.Content>
 				<div className="container-p relative mx-auto flex flex-col gap-16 lg:flex-row">
 					<div className="lg:w-2/3">

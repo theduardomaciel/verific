@@ -1,14 +1,21 @@
 import Image from "next/image";
+import { QRCodeSVG } from "qrcode.react";
+
+import { cn } from "@/lib/utils";
 
 // Icons
 import { Check, User, Clock, BarcodeIcon } from "lucide-react";
 import AndroidIcon from "@/public/icons/android.svg";
 import AppleIcon from "@/public/icons/apple.svg";
 
-import { cn } from "@/lib/utils";
+// Components
 import { Button } from "../ui/button";
-import { RouterOutput } from "@verific/api";
+
+// Utils
 import { formatFriendlyDate } from "@/lib/data";
+
+// API
+import { RouterOutput } from "@verific/api";
 
 export interface WorkshopTicketProps {
 	className?: string;
@@ -312,8 +319,17 @@ export function ActivityTicket({
 							</div>
 						</div>
 					) : (
-						<div>
-							presença não confirmada - mostrar qrcode aqui depois
+						<div className="flex flex-col items-center justify-center gap-4 pt-6 pb-8">
+							<p className="text-muted-foreground text-center">
+								Confirme sua presença no evento exibindo o QR
+								Code para o moderador
+							</p>
+							<QRCodeSVG
+								className="rounded-sm bg-white p-3"
+								value={onActivity.participantId}
+								width={200}
+								height={200}
+							/>
 						</div>
 					)}
 				</div>
