@@ -128,7 +128,7 @@ export default async function ActivityPage(props: {
 							className="h-10 min-w-10"
 						>
 							<Link
-								href={`/dashboard/${projectId}/activities/${activityId}/edit`}
+								href={`/dashboard/activities/${activityId}/edit`}
 								className="flex-1"
 							>
 								<Edit size={20} />

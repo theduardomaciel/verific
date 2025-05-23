@@ -133,7 +133,7 @@ export default function MutateActivityForm({ projectId, activity }: Props) {
 			/>
 			<SuccessDialog
 				isOpen={currentState === "submitted"}
-				href={`/dashboard/${projectId}/activities/${submittedActivityId.current}`}
+				href={`/dashboard/activities/${submittedActivityId.current}`}
 				description={
 					<>
 						A atividade foi {activity ? "atualizada" : "criada"} por
