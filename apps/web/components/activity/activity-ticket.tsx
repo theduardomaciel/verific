@@ -10,6 +10,7 @@ import AppleIcon from "@/public/icons/apple.svg";
 
 // Components
 import { Button } from "../ui/button";
+import { BadgeScanner } from "@/components/badge-scanner";
 
 // Utils
 import { formatFriendlyDate } from "@/lib/data";
@@ -288,13 +289,7 @@ export function ActivityTicket({
 								</div>
 							</div>
 							<div className="flex w-full flex-col items-center justify-center gap-6 py-6 md:hidden">
-								<Button
-									className="flex w-full md:hidden"
-									size={"lg"}
-								>
-									<BarcodeIcon />
-									Escanear crachás
-								</Button>
+								<BadgeScanner activityId={activity.id} />
 								<div className="flex w-full items-center justify-between">
 									<div className="text-muted-foreground flex items-center">
 										<User size={18} className="mr-2" />

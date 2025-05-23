@@ -4,6 +4,7 @@ import { db } from "@verific/drizzle";
 import {
 	participant,
 	participantOnActivity,
+	project,
 	user,
 } from "@verific/drizzle/schema";
 import {
@@ -203,20 +204,75 @@ export const participantsRouter = createTRPCRouter({
 			};
 		}),
 
+	checkParticipant: publicProcedure
+		.input(
+			z.object({
+				projectUrl: z.string(),
+			}),
+		)
+		.query(async ({ input, ctx }) => {
+			const { projectUrl } = input;
+			const userId = ctx.session?.user?.id;
+
+			if (!userId) {
+				return { isEnrolled: false };
+			}
+
+			// Faz uma única query para verificar se existe o participante no projeto pelo projectUrl
+			const result = await db
+				.select({ exists: count() })
+				.from(participant)
+				.innerJoin(project, eq(participant.projectId, project.id))
+				.where(
+					and(
+						eq(project.url, projectUrl),
+						eq(participant.userId, userId),
+					),
+				);
+
+			return { isEnrolled: (result?.[0]?.exists ?? 0) > 0 };
+		}),
+
+	getParticipantIdByProjectUrl: publicProcedure
+		.input(
+			z.object({
+				projectUrl: z.string(),
+			}),
+		)
+		.query(async ({ input, ctx }) => {
+			const { projectUrl } = input;
+			const userId = ctx.session?.user?.id;
+
+			if (!userId) {
+				return { participantId: null };
+			}
+
+			const result = await db
+				.select({ id: participant.id })
+				.from(participant)
+				.innerJoin(project, eq(participant.projectId, project.id))
+				.where(
+					and(
+						eq(project.url, projectUrl),
+						eq(participant.userId, userId),
+					),
+				);
+
+			return { participantId: result?.[0]?.id ?? null };
+		}),
+
 	updateParticipantPresence: protectedProcedure
 		.input(
 			z.object({
 				activityId: z.string().uuid(),
-				verificationCode: z.string(),
+				participantId: z.string().uuid(),
+				presence: z.boolean().optional(),
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			/* const { activityId } = input;
-			const participantId = ctx.session.participant?.id;
-			const projectId = ctx.session.participant?.projectId;
+			const { activityId, participantId } = input;
 
 			const error = await isMemberAuthenticated({
-				projectId,
 				userId: ctx.session.user.id,
 			});
 
@@ -224,33 +280,23 @@ export const participantsRouter = createTRPCRouter({
 				throw new TRPCError(error);
 			}
 
-			if (!participantId) {
-				throw new TRPCError({
-					message: "Participant not found.",
-					code: "BAD_REQUEST",
+			// Upsert: se já existe, atualiza joinedAt e presence; senão, insere
+			await db
+				.insert(participantOnActivity)
+				.values({
+					activityId,
+					participantId,
+					joinedAt: new Date(),
+				})
+				.onConflictDoUpdate({
+					target: [
+						participantOnActivity.activityId,
+						participantOnActivity.participantId,
+					],
+					set: {
+						joinedAt: new Date(),
+					},
 				});
-			}
-
-			const alreadyPresent =
-				await db.query.participantOnActivity.findFirst({
-					where: and(
-						eq(participantOnActivity.activityId, activityId),
-						eq(participantOnActivity.participantId, participantId),
-					),
-				});
-
-			if (alreadyPresent) {
-				throw new TRPCError({
-					message: "Participant is already present on the activity.",
-					code: "BAD_REQUEST",
-				});
-			}
-
-			await db.insert(participantOnActivity).values({
-				activityId,
-				participantId,
-				joinedAt: new Date(),
-			}); */
 
 			return { success: true };
 		}),

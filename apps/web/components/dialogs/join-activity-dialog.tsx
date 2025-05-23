@@ -37,7 +37,7 @@ export function JoinActivityDialog({ participantId, activity }: Props) {
 
 	const router = useRouter();
 
-	const addMutation = trpc.updateActivityParticipants.useMutation();
+	const addMutation = trpc.addActivityParticipants.useMutation();
 
 	function onDismiss() {
 		router.back();
@@ -54,45 +54,13 @@ export function JoinActivityDialog({ participantId, activity }: Props) {
 		try {
 			await addMutation.mutateAsync({
 				activityId: activity.id,
-				participantsIdsToMutate: [participantId],
+				participantsIdsToAdd: [participantId],
 			});
 			setCurrentState("submitted");
 		} catch (error) {
 			console.error(error);
 			setCurrentState("error");
 		}
-	}
-
-	if (!participantId) {
-		return (
-			<Dialog
-				open={currentState === false}
-				onOpenChange={(open) => !open && onDismiss()}
-			>
-				<DialogContent className="sm:max-w-[425px]">
-					<DialogHeader className="w-full items-center justify-center text-center">
-						<DialogTitle className="w-full text-center">
-							Erro
-						</DialogTitle>
-						<DialogDescription className="w-full text-center">
-							Você não está logado. Faça login para se inscrever
-							neste evento.
-						</DialogDescription>
-					</DialogHeader>
-					<DialogFooter className="w-full">
-						<DialogClose asChild>
-							<Button
-								className="w-full"
-								type="button"
-								variant={"outline"}
-							>
-								Cancelar
-							</Button>
-						</DialogClose>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
-		);
 	}
 
 	return (

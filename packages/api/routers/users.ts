@@ -22,20 +22,12 @@ export const usersRouter = createTRPCRouter({
 				registrationId: z.string(),
 				period: z.enum(periods),
 				projectId: z.string(),
-				projectUrl: z.string(),
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
 			const userId = ctx.session?.user.id;
 
-			const {
-				name,
-				course,
-				registrationId,
-				period,
-				projectId,
-				projectUrl,
-			} = input;
+			const { name, course, registrationId, period, projectId } = input;
 
 			if (!userId) {
 				throw new Error("User not found.");
