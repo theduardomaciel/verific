@@ -25,7 +25,7 @@ import { ActivityCard } from "@/components/dashboard/activity-card";
 import type { z } from "zod";
 import { getActivitiesParams } from "@verific/api/routers/activities";
 
-type EventsPageParams = z.infer<typeof getActivitiesParams>;
+type ActivitiesPageParams = z.infer<typeof getActivitiesParams>;
 
 // API
 import { serverClient } from "@/lib/trpc/server";
@@ -35,7 +35,7 @@ import {
 } from "@verific/drizzle/schema";
 
 export default async function ActivitiesPage(props: {
-	searchParams: Promise<EventsPageParams>;
+	searchParams: Promise<ActivitiesPageParams>;
 	params: Promise<{ projectId: string }>;
 }) {
 	const cookieStore = await cookies();

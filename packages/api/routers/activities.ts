@@ -264,6 +264,7 @@ export const activitiesRouter = createTRPCRouter({
 			}
 
 			const activitiesWhere = [
+				projectWhere,
 				categories ? inArray(activity.category, categories) : undefined,
 				audiences ? inArray(activity.audience, audiences) : undefined,
 				speakerIds
@@ -314,7 +315,7 @@ export const activitiesRouter = createTRPCRouter({
 				.leftJoin(user, eq(participant.userId, user.id))
 				.leftJoin(speaker, eq(activity.speakerId, speaker.id))
 				.leftJoin(project, eq(activity.projectId, project.id))
-				.where(and(...activitiesWhere, projectWhere))
+				.where(and(...activitiesWhere))
 				.orderBy(
 					sort === "recent"
 						? asc(activity.dateFrom)
@@ -327,17 +328,8 @@ export const activitiesRouter = createTRPCRouter({
 			const amountDb = await db
 				.select({ amount: countDistinct(activity.id) })
 				.from(activity)
-				.where(
-					and(
-						...activitiesWhere,
-						// Precisa ser diferente de "projectWhere" já que aqui estamos
-						// lidando somente com a tabela "activity" e não com as junções.
-						// Caso necessário ter paginação na página de /[eventUrl]/schedule, adicionar o "projectWhere" aqui também
-						// e fazemos o join com a tabela "project" para pegar o projectId
-						// .leftJoin(project, eq(activity.projectId, project.id)) // Adicione este join
-						projectId ? eq(activity.id, projectId) : undefined,
-					),
-				);
+				.leftJoin(project, eq(activity.projectId, project.id))
+				.where(and(...activitiesWhere));
 
 			const amount = amountDb[0]?.amount ?? 0;
 
