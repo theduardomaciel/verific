@@ -27,7 +27,7 @@ import { trpc } from "@/lib/trpc/react";
 
 // Types
 import { RouterOutput } from "@verific/api";
-import { dateToTimeString } from "@/components/dashboard/time-picker";
+import { dateToTimeString } from "@/components/pickers/time-picker";
 
 interface Props {
 	projectId: string;

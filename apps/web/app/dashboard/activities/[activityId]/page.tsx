@@ -19,7 +19,7 @@ import { SortBy } from "@/components/dashboard/sort-by";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CategoryCard } from "@/components/dashboard/category-card";
-import { EventDeleteDialog } from "@/components/activity/activity-delete-dialog";
+import { EventDeleteDialog } from "@/components/dialogs/activity-delete-dialog";
 
 // Data
 import { getDateString, getTimeString } from "@/lib/date";
