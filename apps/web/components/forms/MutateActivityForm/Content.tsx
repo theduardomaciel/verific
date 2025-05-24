@@ -28,7 +28,7 @@ import { InstancePicker } from "@/components/pickers/instance-picker";
 // Date and Time
 import { ptBR } from "date-fns/locale";
 import { Calendar } from "@/components/ui/calendar";
-import { TimePicker } from "@/components/dashboard/time-picker";
+import { TimePicker } from "@/components/pickers/time-picker";
 
 // Types
 import type { MutateActivityFormSchema } from "@/lib/validations/forms/mutate-activity-form";

@@ -54,7 +54,11 @@ function ParticipantAvatarAndInfo({
 	);
 }
 
-function ParticipantActions() {
+interface ParticipantActionsProps {
+	participantId: string;
+}
+
+function ParticipantActions({ participantId }: ParticipantActionsProps) {
 	return (
 		<div className="flex flex-row items-center justify-end gap-2 md:gap-4">
 			<button type="button" className="cursor-pointer">
@@ -86,34 +90,35 @@ export function ActivityParticipantCard({
 			)}
 		>
 			<ParticipantAvatarAndInfo participant={participant} />
-			<div className="flex w-full flex-row items-center justify-between gap-4">
-				<div className="text-foreground flex flex-row items-center justify-start gap-4">
-					{participant.role === "participant" &&
-					participant.joinedAt != null ? (
-						<>
-							<Check className="h-4 w-4" />
-							<p className="text-left text-sm leading-tight font-medium">
-								Marcou presença às{" "}
-								{participant.joinedAt.toLocaleTimeString(
-									"pt-BR",
-									{
-										hour: "2-digit",
-										minute: "2-digit",
-									},
-								)}
-							</p>
-						</>
-					) : participant.role === "participant" ? (
-						<>
-							<X className="h-4 w-4" />
-							<p className="text-left text-sm leading-tight font-medium">
-								Ainda não marcou presença
-							</p>
-						</>
-					) : null}
+			{participant.role === "participant" && (
+				<div className="flex w-full flex-row items-center justify-between gap-4">
+					<div className="text-foreground flex flex-row items-center justify-start gap-4">
+						{participant.joinedAt != null ? (
+							<>
+								<Check className="h-4 w-4" />
+								<p className="text-left text-sm leading-tight font-medium">
+									Marcou presença às{" "}
+									{participant.joinedAt.toLocaleTimeString(
+										"pt-BR",
+										{
+											hour: "2-digit",
+											minute: "2-digit",
+										},
+									)}
+								</p>
+							</>
+						) : participant.role === "participant" ? (
+							<>
+								<X className="h-4 w-4" />
+								<p className="text-left text-sm leading-tight font-medium">
+									Ainda não marcou presença
+								</p>
+							</>
+						) : null}
+					</div>
+					<ParticipantActions participantId={participant.id} />
 				</div>
-				{participant.role === "participant" && <ParticipantActions />}
-			</div>
+			)}
 		</li>
 	);
 }
