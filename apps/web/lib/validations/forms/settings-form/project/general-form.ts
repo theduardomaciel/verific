@@ -23,6 +23,15 @@ const urlSchema = z.object({
 		),
 });
 
+// Schema para descrição do evento
+const eventDescriptionSchema = z.object({
+	description: z
+		.string()
+		.min(1, "Descrição obrigatória")
+		.max(3000, "Máximo 3000 caracteres")
+		.default("Insira sua descrição aqui"),
+});
+
 // Datas
 const dateSchema = z.object({
 	startDate: z.coerce.date({
@@ -38,4 +47,10 @@ const addressSchema = z.object({
 	longitude: z.coerce.number(),
 });
 
-export { nameSchema, urlSchema, dateSchema, addressSchema };
+export {
+	nameSchema,
+	eventDescriptionSchema,
+	urlSchema,
+	dateSchema,
+	addressSchema,
+};

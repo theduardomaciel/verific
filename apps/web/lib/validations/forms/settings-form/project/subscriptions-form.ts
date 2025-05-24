@@ -5,15 +5,6 @@ const subscriptionManagementSchema = z.object({
 	enableSubscription: z.boolean().default(true),
 });
 
-// Schema para descrição do evento
-const eventDescriptionSchema = z.object({
-	description: z
-		.string()
-		.min(1, "Descrição obrigatória")
-		.max(3000, "Máximo 3000 caracteres")
-		.default("Insira sua descrição aqui"),
-});
-
 // Schema para branding (simplificado, pode precisar de validação de URL/File)
 const brandingSchema = z.object({
 	logoUrl: z
@@ -33,16 +24,13 @@ const colorSchema = z.object({
 	primaryColor: z
 		.string()
 		.regex(/^#[0-9A-F]{6}$/i, "Cor primária inválida")
-		.default("#000000"),
+		.default("#000000")
+		.nullable(),
 	secondaryColor: z
 		.string()
 		.regex(/^#[0-9A-F]{6}$/i, "Cor secundária inválida")
-		.default("#FFFFFF"),
+		.default("#FFFFFF")
+		.nullable(),
 });
 
-export {
-	subscriptionManagementSchema,
-	eventDescriptionSchema,
-	brandingSchema,
-	colorSchema,
-};
+export { subscriptionManagementSchema, brandingSchema, colorSchema };

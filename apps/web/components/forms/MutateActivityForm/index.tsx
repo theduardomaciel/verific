@@ -57,6 +57,7 @@ export default function MutateActivityForm({ projectId, activity }: Props) {
 			workload: activity?.workload || undefined,
 			timeTo: activity ? dateToTimeString(activity.dateTo) : undefined,
 			category: activity?.category || undefined,
+			participantsLimit: activity?.participantsLimit || 0,
 			audience: activity?.audience || "internal",
 		},
 	});

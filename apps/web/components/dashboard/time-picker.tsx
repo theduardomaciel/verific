@@ -1,28 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 import { cn } from "@/lib/utils";
-
-// Components
 import {
 	Command,
 	CommandEmpty,
 	CommandGroup,
 	CommandItem,
+	CommandInput,
 } from "@/components/ui/command";
-import { FormControl } from "@/components/ui/form";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-
-import { Command as CommandPrimitive } from "cmdk";
-
-// Types
-import type { UseFormReturn } from "react-hook-form";
-import type { MutateActivityFormSchema } from "@/lib/validations/forms/mutate-activity-form";
 
 const times = [
 	"00:00",
@@ -123,146 +115,75 @@ const times = [
 	"23:45",
 ] as const;
 
-interface Props {
-	form: UseFormReturn<MutateActivityFormSchema>;
-	field: {
-		name: string;
-		value: string;
-	};
+interface TimePickerProps {
+	value?: string;
+	onChange?: (value: string) => void;
 	placeholder?: string;
+	className?: string;
 }
 
-export function dateToTimeString(date: Date) {
-	return date.toTimeString().slice(0, 5);
-}
-
-function checkDiscrepancy(form: Props["form"]) {
-	const dateFrom = form.getValues("dateFrom");
-	const dateTo = /* form.getValues("dateTo") ?? */ dateFrom;
-
-	const timeFrom = form.getValues("timeFrom");
-	const timeTo = form.getValues("timeTo");
-
-	const timeFromDate = new Date(
-		`${dateFrom.toISOString().slice(0, 10)}T${timeFrom}:00`,
-	);
-	const timeToDate = new Date(
-		`${dateTo.toISOString().slice(0, 10)}T${timeTo}:00`,
-	);
-
-	if (timeToDate <= timeFromDate) {
-		const formattedTime = `${(
-			(Number.parseInt(timeFrom.slice(0, 2)) + 1) %
-			24
-		)
-			.toString()
-			.padStart(2, "0")}:${timeFrom.slice(3)}`;
-
-		form.setValue("timeTo", formattedTime);
-	}
-}
-
-type TimeFields = "timeFrom" | "timeTo";
-
-export function TimePicker({ form, field, placeholder }: Props) {
+export function TimePicker({
+	value,
+	onChange,
+	placeholder,
+	className,
+}: TimePickerProps) {
 	const [open, setOpen] = useState(false);
+	const [search, setSearch] = useState("");
+
+	const filteredTimes = useMemo(() => {
+		if (!search) return times;
+		const normalized = search.replace(/\D/g, "");
+		let prefix = normalized;
+		if (prefix.length === 1) prefix = "0" + prefix;
+		if (prefix.length > 2) prefix = prefix.slice(0, 2);
+
+		// Prioriza horários que começam com o termo pesquisado
+		const startsWith = times.filter((t) => t.startsWith(prefix));
+		const contains = times.filter(
+			(t) => !t.startsWith(prefix) && t.includes(search),
+		);
+		return [...startsWith, ...contains];
+	}, [search]);
 
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
-			<Command loop>
-				<PopoverTrigger asChild>
-					<FormControl>
-						<CommandPrimitive.Input
-							role="combobox"
-							className={cn(
-								"change_later border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 lg:h-11 lg:px-4 lg:text-base",
-							)}
-							value={field.value}
-							maxLength={5}
-							placeholder={placeholder}
-							onValueChange={(currentValue) => {
-								let newString = currentValue;
-
-								// Removemos caracteres não numéricos
-								newString = newString.replace(/\D/g, "");
-
-								// Formatamos como HH:MM
-								if (newString.length > 2) {
-									newString = `${newString.slice(0, 2)}:${newString.slice(2)}`;
-								}
-
-								form.setValue(
-									field.name as TimeFields,
-									newString,
-								);
-							}}
-							onBlur={() => {
-								if (!field.value || field.value.length === 0)
-									return;
-
-								let newString = field.value;
-
-								// Removemos espaços em branco no início e no final
-								newString = newString.trim();
-
-								// Dividimos a string em partes usando os possíveis delimitadores
-								const timeParts = newString.split(/[\s:.-]+/);
-
-								// Se houver pelo menos uma parte, formatamos as horas e os minutos
-								if (timeParts.length > 0) {
-									let hours =
-										Number.parseInt(timeParts[0]!, 10) || 0;
-									let minutes =
-										Number.parseInt(timeParts[1]!, 10) || 0;
-
-									// Garantimos que as horas estejam no intervalo de 0 a 23
-									hours = Math.min(Math.max(hours, 0), 23);
-
-									// Garantimos que os minutos estejam no intervalo de 0 a 59
-									minutes = Math.min(
-										Math.max(minutes, 0),
-										59,
-									);
-
-									// Formatamos as horas e os minutos como duas casas decimais
-									newString = `${hours.toString().padStart(2, "0")}:${minutes
-										.toString()
-										.padStart(2, "0")}`;
-								}
-
-								// Agora, newString contém o formato corrigido (HH:MM)
-								form.setValue(
-									field.name as TimeFields,
-									newString,
-								);
-
-								// Verificamos se o horário final é menor que o horário inicial
-								checkDiscrepancy(form);
-							}}
-						/>
-					</FormControl>
-				</PopoverTrigger>
-				<PopoverContent
-					className="no-scrollbar max-h-56 w-[var(--radix-popover-trigger-width)] overflow-y-scroll p-0"
-					onOpenAutoFocus={(event) => event.preventDefault()}
-					onCloseAutoFocus={(event) => event.preventDefault()}
+			<PopoverTrigger asChild>
+				<button
+					type="button"
+					className={cn(
+						"file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+						"focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+						"aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+						className,
+						!value && "text-muted-foreground",
+					)}
 				>
+					{value || placeholder || "Selecione o horário"}
+				</button>
+			</PopoverTrigger>
+			<PopoverContent
+				className="no-scrollbar max-h-56 w-[var(--radix-popover-trigger-width)] overflow-y-scroll p-0"
+				onOpenAutoFocus={(e) => e.preventDefault()}
+				onCloseAutoFocus={(e) => e.preventDefault()}
+			>
+				<Command loop>
+					<CommandInput
+						placeholder="Buscar horário..."
+						value={search}
+						onValueChange={setSearch}
+						className="px-3 py-2 text-sm"
+						autoFocus
+					/>
 					<CommandEmpty>Nenhum horário encontrado.</CommandEmpty>
 					<CommandGroup>
-						{times.map((time) => (
+						{filteredTimes.map((time) => (
 							<CommandItem
 								value={time}
 								key={time}
 								className="lg:py-3"
-								onSelect={(currentValue) => {
-									form.setValue(
-										field.name as TimeFields,
-										currentValue,
-									);
-
-									// Verificamos se o horário final é menor que o horário inicial
-									checkDiscrepancy(form);
-
+								onSelect={() => {
+									onChange?.(time);
 									setOpen(false);
 								}}
 							>
@@ -270,8 +191,13 @@ export function TimePicker({ form, field, placeholder }: Props) {
 							</CommandItem>
 						))}
 					</CommandGroup>
-				</PopoverContent>
-			</Command>
+				</Command>
+			</PopoverContent>
 		</Popover>
 	);
+}
+
+// Função utilitária para converter Date em string HH:MM
+export function dateToTimeString(date: Date) {
+	return date.toTimeString().slice(0, 5);
 }

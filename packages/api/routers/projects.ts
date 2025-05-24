@@ -18,8 +18,8 @@ export const updateProjectSchema = z.object({
 	isArchived: z.boolean().optional(),
 	coverUrl: z.string().optional(),
 	thumbnailUrl: z.string().optional(),
-	primaryColor: z.string().optional(),
-	secondaryColor: z.string().optional(),
+	primaryColor: z.string().optional().nullable(),
+	secondaryColor: z.string().optional().nullable(),
 	startDate: z.coerce.date().optional(),
 	endDate: z.coerce.date().optional(),
 });

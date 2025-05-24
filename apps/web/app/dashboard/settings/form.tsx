@@ -4,6 +4,7 @@ import { UseFormReturn } from "react-hook-form";
 // Components
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { PlacePicker } from "@/components/pickers/place-picker";
 import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
 import { DateRangePicker } from "@/components/pickers/date-range-picker";
@@ -12,6 +13,7 @@ import { DateRangePicker } from "@/components/pickers/date-range-picker";
 import {
 	addressSchema,
 	dateSchema,
+	eventDescriptionSchema,
 	nameSchema,
 	urlSchema,
 } from "@/lib/validations/forms/settings-form/project/general-form";
@@ -42,14 +44,11 @@ export function ProjectSettingsGeneral({ project }: Props) {
 		logContext: string,
 	) => {
 		const data = form.getValues();
-		const { dateRange, ...rest } = data;
 
 		try {
 			await updateMutation.mutateAsync({
 				id: project.id,
-				...rest,
-				startDate: dateRange.startDate,
-				endDate: dateRange.endDate,
+				...data,
 			});
 			toast.success(successMessage);
 			form.reset(data); // Resetar o formulário com os novos dados
@@ -65,6 +64,15 @@ export function ProjectSettingsGeneral({ project }: Props) {
 			"Nome do evento atualizado com sucesso!",
 			"Erro ao atualizar o nome do evento. Tente novamente mais tarde.",
 			"updating event name",
+		);
+	};
+
+	const onSubmitEventDescription = async (form: UseFormReturn<any>) => {
+		await handleFormSubmit(
+			form,
+			"Descrição do evento atualizada!",
+			"Erro ao atualizar descrição do evento.",
+			"Error updating event description:",
 		);
 	};
 
@@ -108,6 +116,21 @@ export function ProjectSettingsGeneral({ project }: Props) {
 				onSubmit={onSubmitName}
 				footer={{
 					text: "Por favor, use 32 caracteres no máximo",
+				}}
+			/>
+			<SettingsFormCard
+				schema={eventDescriptionSchema}
+				fieldName="description"
+				title="Descrição do Evento"
+				description="Esta breve descrição será exibida para todos os visitantes e participantes"
+				label="Descrição"
+				initialState={project.description}
+				onSubmit={onSubmitEventDescription}
+				renderField={(field) => (
+					<Textarea {...field} className="min-h-24" />
+				)}
+				footer={{
+					text: "Por favor, use 3000 caracteres no máximo",
 				}}
 			/>
 			<SettingsFormCard

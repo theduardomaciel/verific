@@ -29,10 +29,9 @@ import { trpc } from "@/lib/trpc/react";
 interface Props {
 	children: React.ReactNode;
 	activityId: string;
-	projectId: string;
 }
 
-export function EventDeleteDialog({ children, activityId, projectId }: Props) {
+export function EventDeleteDialog({ children, activityId }: Props) {
 	const [currentState, setCurrentState] = useState<
 		boolean | "submitting" | "submitted" | "error"
 	>(false);
@@ -45,6 +44,7 @@ export function EventDeleteDialog({ children, activityId, projectId }: Props) {
 			await mutation.mutateAsync({ activityId });
 			setCurrentState("submitted");
 		} catch (error) {
+			console.error("Error deleting activity:", error);
 			setCurrentState("error");
 		}
 	}
@@ -104,6 +104,7 @@ export function EventDeleteDialog({ children, activityId, projectId }: Props) {
 			/>
 			<ErrorDialog
 				isOpen={currentState === "error"}
+				onClose={() => setCurrentState(false)}
 				title="Erro ao excluir atividade"
 				description={
 					<>

@@ -121,7 +121,6 @@ export function MutateActivityFormContent({
 										type="number"
 										placeholder="10"
 										{...field}
-										value={field.value ?? ""}
 									/>
 								</FormControl>
 								<FormMessage />
@@ -137,12 +136,9 @@ export function MutateActivityFormContent({
 								<FormControl>
 									<Select
 										onValueChange={field.onChange}
-										defaultValue={"0"}
+										defaultValue={field.value?.toString()}
 									>
-										<SelectTrigger
-											className="w-full flex-1"
-											{...field}
-										>
+										<SelectTrigger className="w-full flex-1">
 											<SelectValue placeholder="0" />
 										</SelectTrigger>
 										<SelectContent>
@@ -254,7 +250,10 @@ export function MutateActivityFormContent({
 							<FormItem className="flex-1">
 								<FormLabel>Categoria</FormLabel>
 								<FormControl>
-									<Select onValueChange={field.onChange}>
+									<Select
+										onValueChange={field.onChange}
+										defaultValue={field.value}
+									>
 										<SelectTrigger className="w-full flex-1">
 											<SelectValue placeholder="Selecione a categoria" />
 										</SelectTrigger>
@@ -345,8 +344,8 @@ export function MutateActivityFormContent({
 								render={({ field }) => (
 									<FormItem className="w-full">
 										<TimePicker
-											form={form}
-											field={field}
+											value={field.value}
+											onChange={field.onChange}
 											placeholder={"HH:MM"}
 										/>
 										<FormMessage />
@@ -361,8 +360,8 @@ export function MutateActivityFormContent({
 									render={({ field }) => (
 										<FormItem className="w-full">
 											<TimePicker
-												form={form}
-												field={field}
+												value={field.value}
+												onChange={field.onChange}
 												placeholder={"HH:MM"}
 											/>
 											<FormMessage />

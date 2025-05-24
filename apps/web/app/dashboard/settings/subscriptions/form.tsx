@@ -7,14 +7,12 @@ import { ImageUp } from "lucide-react";
 // Components
 import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
 import { ColorPicker } from "@/components/pickers/color-picker";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
 // Validations
 import {
 	subscriptionManagementSchema,
-	eventDescriptionSchema,
 	brandingSchema,
 	colorSchema,
 } from "@/lib/validations/forms/settings-form/project/subscriptions-form";
@@ -65,15 +63,6 @@ export function ProjectSettingsSubscriptionsForm({ project }: Props) {
 		);
 	};
 
-	const onSubmitEventDescription = async (form: UseFormReturn<any>) => {
-		await handleFormSubmit(
-			form,
-			"Descrição do evento atualizada!",
-			"Erro ao atualizar descrição do evento.",
-			"Error updating event description:",
-		);
-	};
-
 	const onSubmitBranding = async (form: UseFormReturn<any>) => {
 		await handleFormSubmit(
 			form,
@@ -119,25 +108,6 @@ export function ProjectSettingsSubscriptionsForm({ project }: Props) {
 				)}
 				footer={{
 					text: "As mudanças podem levar alguns minutos para tomar efeito",
-				}}
-			/>
-
-			{/* Description */}
-			<SettingsFormCard
-				schema={eventDescriptionSchema}
-				fieldName="description"
-				title="Descrição do Evento"
-				description="Esta breve descrição será exibida para todos os visitantes e participantes"
-				label="Descrição"
-				initialState={
-					project.description || "Insira sua descrição aqui"
-				} // Assumindo que project tenha essa propriedade
-				onSubmit={onSubmitEventDescription}
-				renderField={(field) => (
-					<Textarea {...field} className="min-h-24" />
-				)}
-				footer={{
-					text: "Por favor, use 3000 caracteres no máximo",
 				}}
 			/>
 
@@ -207,7 +177,6 @@ export function ProjectSettingsSubscriptionsForm({ project }: Props) {
 							<ColorPicker
 								color={field.value.secondaryColor}
 								onChange={(color) => {
-									console.log("color", color);
 									field.onChange({
 										...field.value,
 										secondaryColor: color,
