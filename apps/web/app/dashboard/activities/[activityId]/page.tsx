@@ -102,10 +102,7 @@ export default async function ActivityPage(props: {
 				/>
 				<div className="flex flex-row items-center gap-3 max-md:w-full max-md:flex-wrap md:justify-between">
 					<div className="flex w-full flex-row items-center gap-3">
-						<EventDeleteDialog
-							activityId={activityId}
-							projectId={projectId}
-						>
+						<EventDeleteDialog activityId={activityId}>
 							<Button
 								size={"icon"}
 								variant={"destructive"}

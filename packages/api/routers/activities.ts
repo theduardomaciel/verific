@@ -516,14 +516,12 @@ export const activitiesRouter = createTRPCRouter({
 			);
 
 			if (toAdd.length > 0) {
-				await db
-					.insert(participantOnActivity)
-					.values(
-						toAdd.map((participantId) => ({
-							activityId,
-							participantId,
-						})),
-					);
+				await db.insert(participantOnActivity).values(
+					toAdd.map((participantId) => ({
+						activityId,
+						participantId,
+					})),
+				);
 			}
 
 			return { success: true };
@@ -571,17 +569,20 @@ export const activitiesRouter = createTRPCRouter({
 		.mutation(async ({ input, ctx }) => {
 			const { activityId } = input;
 
-			const error = await isMemberAuthenticated({
-				userId: ctx.session.user.id,
-			});
+			const userId = ctx.session.user.id;
 
-			if (error) throw new TRPCError(error);
+			if (!userId) {
+				throw new TRPCError({
+					message: "User not authenticated.",
+					code: "UNAUTHORIZED",
+				});
+			}
 
 			// Verifica se o usuário é o dono do projeto
 			const project = await db.query.project
 				.findFirst({
 					where(fields) {
-						return eq(fields.id, activityId);
+						return eq(fields.ownerId, userId);
 					},
 				})
 				.then((project) => !!project);

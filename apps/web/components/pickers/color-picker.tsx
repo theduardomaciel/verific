@@ -9,7 +9,7 @@ import { Plus } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { PopoverClose } from "@radix-ui/react-popover";
 
-const FALLBACK_COLOR = "#f857a6"; // Cor padrão
+const FALLBACK_COLOR = "#3B82F6"; // Cor padrão
 
 interface ColorPickerProps {
 	color?: string | null;
