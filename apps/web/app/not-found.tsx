@@ -65,7 +65,7 @@ export default function NotFoundPage() {
 					<h1 className="font-sans text-6xl font-black">404</h1>
 					<div className="flex flex-col items-start justify-start gap-6">
 						<h2 className="text-3xl leading-[95%] font-bold">
-							Ops… esse evento não foi agendado
+							Ops… Não encontramos o que você estava procurando
 						</h2>
 						<p>
 							A página que você procurou (ainda) não existe.
