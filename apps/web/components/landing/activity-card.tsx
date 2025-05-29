@@ -21,6 +21,7 @@ import { RouterOutput } from "@verific/api";
 // Lib
 import { getDateString, getTimeString } from "../../lib/date";
 import { cn } from "@/lib/utils";
+import { activityCategoryLabels } from "@verific/drizzle/schema";
 
 interface EventCardProps {
 	activity: RouterOutput["getActivities"]["activities"][number];
@@ -82,17 +83,17 @@ function ActivityCardContent({
 		<div>
 			<div className="mb-2 flex items-start justify-between">
 				<span className="text-sm font-extrabold uppercase">
-					{activity.category}
+					{activityCategoryLabels[activity.category]}
 				</span>
-				{activity.participantsLimit && (
-					<span className="text-muted-foreground text-xs">
-						{activity.participantsLimit -
-							activity.participants.length >
-						0
+				<span className="text-muted-foreground mt-0.5 text-xs">
+					{activity.participantsLimit
+						? activity.participantsLimit -
+								activity.participants.length >
+							0
 							? `${activity.participantsLimit - activity.participants.length} vagas`
-							: "Vagas esgotadas"}
-					</span>
-				)}
+							: "Vagas esgotadas"
+						: "Vagas Ilimitadas"}
+				</span>
 			</div>
 			<h3 className="mb-2 text-lg font-bold">{activity.name}</h3>
 			<p className="text-muted-foreground mb-4 text-sm">
@@ -147,23 +148,23 @@ export function ActivityCardTags({
 
 	return (
 		<div className="mb-4 flex flex-wrap gap-2">
-			<Badge className="bg-muted text-foreground py-1">
+			<Badge className="bg-muted/50 text-foreground py-1">
 				<Calendar className="mr-2 !h-3.5 !w-3.5" />
 				<span className="-mt-0.5 text-sm">{displayDate}</span>
 			</Badge>
-			<Badge className="bg-muted text-foreground py-1">
+			<Badge className="bg-muted/50 text-foreground py-1">
 				<Clock className="mr-2 !h-3.5 !w-3.5" />
 				<span className="-mt-0.5 text-sm">{displayTime}</span>
 			</Badge>
-			{activity.workload && (
-				<Badge className="bg-muted text-foreground py-1">
+			{activity.workload ? (
+				<Badge className="bg-muted/50 text-foreground py-1">
 					<BookOpen className="mr-2 !h-3.5 !w-3.5" />
 					<span className="-mt-0.5 text-sm">
 						{activity.workload}h
 					</span>
 				</Badge>
-			)}
-			<Badge className="bg-muted text-foreground py-1">
+			) : null}
+			<Badge className="bg-muted/50 text-foreground py-1">
 				<Users className="mr-2 !h-3.5 !w-3.5" />
 				<span className="-mt-0.5 text-sm capitalize">
 					{activity.audience === "internal" ? "Interno" : "Externo"}
