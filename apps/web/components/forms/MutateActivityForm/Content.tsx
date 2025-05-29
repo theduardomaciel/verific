@@ -348,6 +348,7 @@ export function MutateActivityFormContent({
 										locale={ptBR}
 										selected={field.value}
 										onSelect={field.onChange}
+										defaultMonth={field.value}
 										disabled={(date) => {
 											const today = new Date();
 											today.setHours(0, 0, 0, 0);
