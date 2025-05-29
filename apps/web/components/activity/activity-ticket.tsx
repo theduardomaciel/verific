@@ -113,22 +113,22 @@ export function ActivityTicket({
 
 						{activity.participantsLimit || activity.tolerance ? (
 							<div className="text-muted-foreground mb-6 flex items-center justify-evenly text-sm">
-								{activity.participantsLimit && (
+								{activity.participantsLimit ? (
 									<div className="flex items-center">
 										<User size={16} className="mr-1" />
 										<span>
 											{activity.participantsLimit} máx
 										</span>
 									</div>
-								)}
-								{activity.tolerance && (
+								) : null}
+								{activity.tolerance ? (
 									<div className="flex items-center">
 										<Clock size={16} className="mr-1" />
 										<span>
 											{activity.tolerance} de tolerância
 										</span>
 									</div>
-								)}
+								) : null}
 							</div>
 						) : null}
 
@@ -161,7 +161,7 @@ export function ActivityTicket({
 					</div>
 
 					{/* TODO: Atualmente, exibindo a quantidade de participantes, não a quantidade de participantes credenciados */}
-					{isModerator && (
+					{isModerator ? (
 						<div className="mt-auto hidden items-center justify-between border-t pt-4 md:flex">
 							<div className="text-muted-foreground flex items-center">
 								<User size={18} className="mr-2" />
@@ -171,7 +171,7 @@ export function ActivityTicket({
 								{credentialedParticipantsAmount}
 							</div>
 						</div>
-					)}
+					) : null}
 				</div>
 
 				{/* Mobile: full width with fixed height - Desktop: fixed width with full height */}

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { Loader2 } from "lucide-react";
+import { Loader2, BookLock, InfoIcon } from "lucide-react";
 // Components
 import {
 	Dialog,
@@ -25,6 +25,14 @@ import { RouterOutput } from "@verific/api";
 import { trpc } from "@/lib/trpc/react";
 import { FormState } from "@/lib/types/forms";
 import { ErrorDialog, LoadingDialog, SuccessDialog } from "../forms/dialogs";
+import Link from "next/link";
+import { activityCategoryLabels } from "@verific/drizzle/schema";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "../ui/tooltip";
 
 interface Props {
 	participantId?: string | null;
@@ -63,6 +71,45 @@ export function JoinActivityDialog({ participantId, activity }: Props) {
 		}
 	}
 
+	if (!participantId) {
+		return (
+			<Dialog
+				open={true}
+				onOpenChange={(open) => !open && !isLoading && onDismiss()}
+			>
+				<DialogContent className="sm:max-w-[425px]">
+					<DialogHeader className="w-full items-center justify-center text-center">
+						<BookLock size={42} className="mb-2" />
+						<DialogTitle className="w-full text-center">
+							É necessário estar inscrito no evento
+						</DialogTitle>
+						<DialogDescription className="w-full text-center">
+							Faça login na plataforma e inscreva-se no evento
+							para participar dessa e de outras atividades.
+						</DialogDescription>
+					</DialogHeader>
+					<Button asChild>
+						<Link href={`/${activity.project.url}/subscribe`}>
+							Inscrever-se no evento
+						</Link>
+					</Button>
+					<DialogFooter className="w-full">
+						<DialogClose asChild>
+							<Button
+								disabled={isLoading}
+								className="w-full"
+								type="button"
+								variant={"outline"}
+							>
+								Voltar
+							</Button>
+						</DialogClose>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+		);
+	}
+
 	return (
 		<Dialog
 			open={true}
@@ -70,7 +117,9 @@ export function JoinActivityDialog({ participantId, activity }: Props) {
 		>
 			<DialogContent className="sm:max-w-[425px]">
 				<DialogHeader className="w-full items-center justify-center text-center">
-					<Badge className="mb-2">{activity.category}</Badge>
+					<Badge className="mb-2">
+						{activityCategoryLabels[activity.category]}
+					</Badge>
 					<DialogTitle className="w-full text-center">
 						{activity.name}
 					</DialogTitle>
@@ -83,11 +132,26 @@ export function JoinActivityDialog({ participantId, activity }: Props) {
 						<ActivityCardSpeaker speaker={activity.speaker} />
 					) : null}
 					<ActivityCardTags activity={activity} />
-					<span className="text-muted-foreground bg-muted/50 rounded-sm p-4 text-sm">
-						Este evento possui <strong>fila de espera</strong>. Caso
-						não haja confirmação de sua presença, sua vaga será
-						cedida a outra pessoa.
-					</span>
+					<div className="bg-muted/50 flex flex-row items-center justify-between gap-3 rounded-sm p-4 text-sm select-none">
+						<span className="text-muted-foreground text-sm">
+							Este evento possui <strong>fila de espera</strong>.
+						</span>
+						<TooltipProvider>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<InfoIcon className="mt-0.5" size={16} />
+								</TooltipTrigger>
+								<TooltipContent className="max-w-[22rem]">
+									<p>
+										Caso não haja confirmação de sua
+										presença em {activity.tolerance}m a
+										partir do início da atividade, sua vaga
+										será cedida a outra pessoa.
+									</p>
+								</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+					</div>
 				</div>
 				{/* <p className="text-foreground text-sm">
 					Você está prestes a entrar na atividade{" "}
