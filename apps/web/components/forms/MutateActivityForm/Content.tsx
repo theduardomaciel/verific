@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 
 // Icons
-import { CloudUpload, Edit, Plus } from "lucide-react";
+import { ArrowLeft, CloudUpload, Edit, Plus } from "lucide-react";
 
 // Components
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,7 @@ import { trpc } from "@/lib/trpc/react";
 
 // Types
 import { MutateSpeakerDialog } from "@/components/dialogs/mutate-speaker-dialog";
+import { useRouter } from "next/navigation";
 
 interface Props {
 	form: UseFormReturn<MutateActivityFormSchema>;
@@ -66,6 +67,7 @@ export function MutateActivityFormContent({
 		projectId,
 	});
 
+	const router = useRouter();
 	console.log("speakers", speakers);
 
 	return (
@@ -75,6 +77,15 @@ export function MutateActivityFormContent({
 			}
 		>
 			<div className="flex h-full w-full flex-col items-start justify-start gap-9">
+				<Button
+					type="button"
+					variant="secondary"
+					size={"lg"}
+					onClick={() => router.back()}
+				>
+					<ArrowLeft size={24} />
+					Voltar
+				</Button>
 				<h1 className="text-5xl font-extrabold">
 					{isEditing ? "Editar" : "Nova"} atividade
 				</h1>
@@ -119,8 +130,15 @@ export function MutateActivityFormContent({
 										suffix=" vagas"
 										className="w-full flex-1"
 										type="number"
-										placeholder="10"
+										placeholder="Sem limite"
 										{...field}
+										// TODO: Por enquanto, setamos diretamente o value para "" pois o valor "undefined"
+										// não pode ser passado para um input controlado.
+										value={
+											field.value === undefined
+												? ""
+												: field.value
+										}
 									/>
 								</FormControl>
 								<FormMessage />
@@ -290,8 +308,15 @@ export function MutateActivityFormContent({
 										suffix=" horas"
 										className="w-full flex-1"
 										type="number"
-										placeholder="10"
+										placeholder="Sem carga horária"
 										{...field}
+										// TODO: Por enquanto, setamos diretamente o value para "" pois o valor "undefined"
+										// não pode ser passado para um input controlado.
+										value={
+											field.value === undefined
+												? ""
+												: field.value
+										}
 									/>
 								</FormControl>
 								<FormMessage />
