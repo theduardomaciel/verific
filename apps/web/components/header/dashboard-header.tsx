@@ -38,6 +38,7 @@ export async function DashboardHeader({
 							id: project.id,
 							label: project.name,
 							image: project.thumbnailUrl,
+							url: project.url,
 						}))}
 					/>
 				)}

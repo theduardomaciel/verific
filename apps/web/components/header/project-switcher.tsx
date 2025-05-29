@@ -22,9 +22,11 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import { updateProjectCookies } from "@/app/actions";
 
 type Project = {
 	id: string;
+	url: string;
 	label: string;
 	image?: string | null;
 };
@@ -44,10 +46,16 @@ export function ProjectSwitcher({
 	projects,
 }: Props) {
 	const [open, setOpen] = React.useState(false);
-	const [selectedProject, setSelectedProject] = React.useState<Project>(
-		projects.find((project) => project.id === selectedProjectId) ||
-			projects[0]!,
-	);
+	const selectedProject = React.useMemo(() => {
+		return (
+			projects.find((project) => project.id === selectedProjectId) || {
+				id: "",
+				url: "",
+				label: "Nenhum projeto selecionado",
+				image: null,
+			}
+		);
+	}, [selectedProjectId, projects]);
 
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
@@ -85,37 +93,33 @@ export function ProjectSwitcher({
 							<CommandItem
 								key={project.id}
 								onSelect={() => {
-									setSelectedProject(project);
+									updateProjectCookies(
+										project.id,
+										project.url,
+									);
 									setOpen(false);
 								}}
-								className="rounded-none py-2 text-sm"
-								asChild
+								className="w-full rounded-none py-2 text-sm"
 							>
-								<Link
-									href={`/dashboard/${project.id}`}
-									passHref
-									className="w-full"
-								>
-									<Avatar className="mr-2 h-5 w-5">
-										<AvatarImage
-											src={project.image || ""}
-											alt={project.label}
-											className="grayscale"
-										/>
-										<AvatarFallback>
-											{project.label.slice(0, 2)}
-										</AvatarFallback>
-									</Avatar>
-									{project.label}
-									<Check
-										className={cn(
-											"ml-auto",
-											selectedProject.id === project.id
-												? "opacity-100"
-												: "opacity-0",
-										)}
+								<Avatar className="mr-2 h-5 w-5">
+									<AvatarImage
+										src={project.image || ""}
+										alt={project.label}
+										className="grayscale"
 									/>
-								</Link>
+									<AvatarFallback>
+										{project.label.slice(0, 2)}
+									</AvatarFallback>
+								</Avatar>
+								{project.label}
+								<Check
+									className={cn(
+										"ml-auto",
+										selectedProject.id === project.id
+											? "opacity-100"
+											: "opacity-0",
+									)}
+								/>
 							</CommandItem>
 						))}
 					</CommandList>
