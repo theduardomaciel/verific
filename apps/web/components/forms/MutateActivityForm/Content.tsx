@@ -244,7 +244,15 @@ export function MutateActivityFormContent({
 											</Button>
 										}
 										onSuccess={() => {
-											refetch();
+											refetch({
+												throwOnError: true,
+												cancelRefetch: true,
+											}).catch((error) => {
+												console.error(
+													"Error refetching speakers:",
+													error,
+												);
+											});
 										}}
 									/>
 								}
