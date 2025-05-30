@@ -11,6 +11,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { useDebounce } from "@/hooks/use-debounce";
 
 // Components
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import {
 	Command,
 	CommandEmpty,
@@ -18,7 +19,12 @@ import {
 	CommandInput,
 	CommandItem,
 } from "@/components/ui/command";
-import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
+import {
+	Drawer,
+	DrawerContent,
+	DrawerTitle,
+	DrawerTrigger,
+} from "@/components/ui/drawer";
 import {
 	Popover,
 	PopoverContent,
@@ -51,6 +57,7 @@ interface InstancePickerProps<T extends Item = Item> {
 	actionButton?: React.ReactNode;
 	isLoading?: boolean;
 	error?: string | null;
+	overwriteOnMaxSingle?: boolean; // Novo: sobrescrever seleção quando maxItems === 1
 }
 
 interface InstancesListProps<T extends Item = Item> {
@@ -68,6 +75,7 @@ export function InstancePicker<T extends Item = Item>({
 	initialItems,
 	maxItems,
 	onSelect,
+	overwriteOnMaxSingle = true,
 	placeholder = "Selecione um item...",
 	emptyText = "Nenhum item encontrado.",
 	isLoading = false,
@@ -94,9 +102,14 @@ export function InstancePicker<T extends Item = Item>({
 			setSelectedIds(ids.filter((itemId) => itemId !== id));
 		} else {
 			if (typeof maxItems === "number" && ids.length >= maxItems) {
-				return; // Não permite selecionar mais do que o máximo
+				if (maxItems === 1 && overwriteOnMaxSingle) {
+					setSelectedIds([id]); // Sobrescreve o valor anterior
+				} else {
+					return; // Não permite selecionar mais do que o máximo
+				}
+			} else {
+				setSelectedIds([...ids, id]);
 			}
-			setSelectedIds([...ids, id]);
 		}
 	};
 
@@ -157,6 +170,9 @@ export function InstancePicker<T extends Item = Item>({
 				/>
 			</DrawerTrigger>
 			<DrawerContent>
+				<VisuallyHidden>
+					<DrawerTitle>Selecione os itens</DrawerTitle>
+				</VisuallyHidden>
 				<div className="mt-4 border-t">
 					{visualContent(
 						<InstancesList
@@ -165,6 +181,7 @@ export function InstancePicker<T extends Item = Item>({
 							placeholder={placeholder}
 							emptyText={emptyText}
 							{...props}
+							className="bg-transparent"
 						/>,
 					)}
 				</div>
@@ -223,7 +240,7 @@ function PickerTrigger<T extends Item = Item>({
 			role="combobox"
 			type="button"
 			className={cn(
-				"hover:text-neutral h-fit w-full justify-between px-3 text-sm font-normal lg:px-4",
+				"hover:text-neutral h-fit flex-1 justify-between px-3 text-sm font-normal lg:px-4",
 				!items ||
 					(items && items.length === 0 && "text-muted-foreground"),
 				className,

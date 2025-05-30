@@ -11,10 +11,14 @@ export const metadata: Metadata = {
 export default async function AddActivity() {
 	const cookieStore = await cookies();
 	const projectId = cookieStore.get("projectId")!.value;
+	const projectDate = cookieStore.get("projectDate")!.value;
 
 	return (
 		<main className="container-p py-container-v flex min-h-screen flex-col items-center justify-start">
-			<MutateActivityForm projectId={projectId} />
+			<MutateActivityForm
+				projectId={projectId}
+				projectDate={projectDate}
+			/>
 		</main>
 	);
 }

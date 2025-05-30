@@ -19,7 +19,7 @@ import { SortBy } from "@/components/dashboard/sort-by";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CategoryCard } from "@/components/dashboard/category-card";
-import { EventDeleteDialog } from "@/components/dialogs/activity-delete-dialog";
+import { ActivityDeleteDialog } from "@/components/dialogs/delete-dialog";
 
 // Data
 import { getDateString, getTimeString } from "@/lib/date";
@@ -102,7 +102,7 @@ export default async function ActivityPage(props: {
 				/>
 				<div className="flex flex-row items-center gap-3 max-md:w-full max-md:flex-wrap md:justify-between">
 					<div className="flex w-full flex-row items-center gap-3">
-						<EventDeleteDialog activityId={activityId}>
+						<ActivityDeleteDialog activityId={activityId}>
 							<Button
 								size={"icon"}
 								variant={"destructive"}
@@ -110,7 +110,7 @@ export default async function ActivityPage(props: {
 							>
 								<Trash size={20} />
 							</Button>
-						</EventDeleteDialog>
+						</ActivityDeleteDialog>
 						<Button
 							size={"icon"}
 							variant={"outline"}

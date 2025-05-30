@@ -114,7 +114,7 @@ export function CreateProjectDialog() {
 			});
 
 			// Atualiza o cookie com as informações do projeto
-			updateProjectCookies(id, url);
+			updateProjectCookies(id, url, date.from.toISOString());
 		} catch (error) {
 			console.error(error);
 			setCurrentState("error");

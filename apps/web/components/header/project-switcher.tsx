@@ -28,6 +28,7 @@ type Project = {
 	id: string;
 	url: string;
 	label: string;
+	date: string;
 	image?: string | null;
 };
 
@@ -96,6 +97,7 @@ export function ProjectSwitcher({
 									updateProjectCookies(
 										project.id,
 										project.url,
+										project.date,
 									);
 									setOpen(false);
 								}}

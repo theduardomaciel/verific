@@ -39,6 +39,7 @@ export async function DashboardHeader({
 							label: project.name,
 							image: project.thumbnailUrl,
 							url: project.url,
+							date: project.startDate.toISOString(),
 						}))}
 					/>
 				)}
