@@ -20,7 +20,13 @@ export function AccountEventCard({ project }: EventCardProps) {
 	return (
 		<button
 			type="button"
-			onClick={() => updateProjectCookies(project.id, project.url)}
+			onClick={() =>
+				updateProjectCookies(
+					project.id,
+					project.url,
+					project.startDate.toISOString(),
+				)
+			}
 			className="bg-card hover:bg-foreground/5 flex w-full cursor-pointer items-center justify-between rounded-lg p-4 transition-colors"
 		>
 			<div className="flex items-center gap-6">

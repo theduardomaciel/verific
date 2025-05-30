@@ -31,10 +31,15 @@ import { dateToTimeString } from "@/components/pickers/time-picker";
 
 interface Props {
 	projectId: string;
+	projectDate?: string;
 	activity?: RouterOutput["getActivity"]["activity"];
 }
 
-export default function MutateActivityForm({ projectId, activity }: Props) {
+export default function MutateActivityForm({
+	projectId,
+	projectDate,
+	activity,
+}: Props) {
 	const [currentState, setCurrentState] = useState<
 		false | "submitting" | "submitted" | "error"
 	>(false);
@@ -49,7 +54,7 @@ export default function MutateActivityForm({ projectId, activity }: Props) {
 			speakerId: activity?.speaker.id.toString() || "",
 			dateFrom: activity?.dateFrom
 				? new Date(activity.dateFrom)
-				: new Date(),
+				: new Date(projectDate || Date.now()),
 			tolerance: activity?.tolerance || 0,
 			timeFrom: activity
 				? dateToTimeString(activity.dateFrom)

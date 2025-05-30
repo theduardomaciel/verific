@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // Components
 import {
@@ -56,9 +56,14 @@ const formSchema = z.object({
 	name: z.string().min(2, {
 		message: "Nome deve conter pelo menos 2 caracteres.",
 	}),
-	description: z.string().max(3000, {
-		message: "Descrições devem ter no máximo 3000 caracteres.",
-	}),
+	description: z
+		.string()
+		.min(2, {
+			message: "Insira uma descrição válida.",
+		})
+		.max(3000, {
+			message: "Descrições devem ter no máximo 500 caracteres.",
+		}),
 	imageUrl: z
 		.string()
 		.url({ message: "Insira uma URL válida para a imagem." }),
@@ -92,6 +97,16 @@ export function MutateSpeakerDialog({
 			imageUrl: speaker?.imageUrl ?? "",
 		},
 	});
+
+	// Sincroniza o formulário com a prop speaker sempre que ela mudar
+	useEffect(() => {
+		form.reset({
+			name: speaker?.name ?? "",
+			description: speaker?.description ?? "",
+			imageUrl: speaker?.imageUrl ?? "",
+		});
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [speaker]);
 
 	// Trocar para o endpoint correto, pois speakers está na raiz do router
 	const updateMutation = trpc.updateSpeaker.useMutation();
@@ -129,6 +144,7 @@ export function MutateSpeakerDialog({
 			}
 
 			setCurrentState("submitted");
+			form.reset();
 		} catch (error) {
 			console.error(error);
 			setCurrentState("error");
@@ -161,6 +177,10 @@ export function MutateSpeakerDialog({
 								</DialogClose>
 								<Button
 									type="button"
+									disabled={
+										form.formState.isSubmitting ||
+										(speaker && !form.formState.isDirty)
+									}
 									// TODO: Fazemos o submit do formulário manualmente pois estamos acidentalmente rodando
 									// o formulário da página junto com o do dialog/drawer
 									onClick={async () => {
@@ -207,7 +227,7 @@ export function MutateSpeakerDialog({
 				<Form {...form}>
 					<form
 						id="mutate-speaker-form"
-						className="flex w-full flex-col space-y-6"
+						className="flex w-full flex-col"
 					>
 						<DrawerHeader className="text-left">
 							<DrawerTitle>
@@ -216,7 +236,7 @@ export function MutateSpeakerDialog({
 									: "Adicionar palestrante"}
 							</DrawerTitle>
 						</DrawerHeader>
-						<div className="px-4">
+						<div className="space-y-6 px-4">
 							<MutateSpeakerForm form={form} />
 						</div>
 						<DrawerFooter className="flex w-full gap-2">

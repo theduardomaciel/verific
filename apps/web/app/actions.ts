@@ -19,10 +19,12 @@ export async function signOutAction() {
 export async function updateProjectCookies(
 	projectId: string,
 	projectUrl: string,
+	projectDate: string,
 ) {
 	const cookieStore = await cookies();
 	cookieStore.set("projectId", projectId);
 	cookieStore.set("projectUrl", projectUrl);
+	cookieStore.set("projectDate", projectDate);
 
 	redirect("/dashboard");
 }
