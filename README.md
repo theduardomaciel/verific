@@ -119,7 +119,13 @@ pnpm dev
 
 ## 🎲 Dados
 
-Para a migração de um novo esquema para o banco de dados, utilize `pnpm db:generate` para a criação do arquivo `.sql` com a migração, e em seguida `pnpm db:migrate` para enviar os dados para a rede.  
+Para a migração de uma nova versão do esquema para o banco de dados, utilize `pnpm db:push` para enviar os dados para a rede.
+
+> [!WARNING]  
+> Enquanto o comando `pnpm db:push` [é recomendado durante o estágio de desenvolvimento](https://orm.drizzle.team/docs/drizzle-kit-push) por conta de sua simplicidade ao omitir a geração de arquivos `.sql`, em versões de produção o seguinte procedimento deve ser realizado:
+>
+> Para a migração de um novo esquema para o banco de dados, utilize `pnpm db:generate` para criar o arquivo `.sql` com a migração, e em seguida `pnpm db:migrate` para enviar os dados para a rede.
+
 Para a visualização do banco de dados, utilize `pnpm db:studio`
 
 > [!WARNING]
