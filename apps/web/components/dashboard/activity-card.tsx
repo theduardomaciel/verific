@@ -31,7 +31,7 @@ export function SimpleActivityCard({ activity, className }: ActivityCardProps) {
 			)}
 		>
 			<div className="text-foreground flex h-full flex-col items-start justify-center gap-1 p-4">
-				<h3 className="font-dashboard font-semibold">
+				<h3 className="font-dashboard font-semibold first-letter:capitalize">
 					{activity.name}
 				</h3>
 				<span className="flex flex-row items-center justify-center gap-2">
