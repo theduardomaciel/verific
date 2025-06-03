@@ -1,14 +1,15 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { env } from "@verific/env";
 
 import {
 	Calendar,
 	Clock,
 	Edit,
-	Globe,
 	Megaphone,
 	Share2,
 	Trash,
+	UserPlus,
 } from "lucide-react";
 
 // Components
@@ -30,6 +31,7 @@ import { z } from "zod";
 // API
 import { serverClient } from "@/lib/trpc/server";
 import { getActivityParams } from "@verific/api/routers/activities";
+import { ShareActivityDialog } from "@/components/dialogs/share-activity-dialog";
 
 type ActivityPageParams = z.infer<typeof getActivityParams>;
 
@@ -111,13 +113,17 @@ export default async function ActivityPage(props: {
 								<Trash size={20} />
 							</Button>
 						</ActivityDeleteDialog>
-						<Button
-							size={"icon"}
-							variant={"outline"}
-							className="h-10 min-w-10"
+						<ShareActivityDialog
+							url={`https://${env.NEXT_PUBLIC_VERCEL_URL}${activity.project.url}/schedule/${activity.id}`}
 						>
-							<Share2 size={20} />
-						</Button>
+							<Button
+								size={"icon"}
+								variant={"outline"}
+								className="h-10 min-w-10"
+							>
+								<Share2 size={20} />
+							</Button>
+						</ShareActivityDialog>
 						<Button
 							asChild
 							size={"lg"}
@@ -137,13 +143,9 @@ export default async function ActivityPage(props: {
 						<BellDot size={20} />
 						Abrir fila de espera
 					</Button> */}
-					<Button size={"lg"} className="h-10 flex-1" asChild>
-						<Link
-							href={`/${activity.project.url}/schedule/${activity.id}`}
-						>
-							<Globe size={20} />
-							Visitar página do evento
-						</Link>
+					<Button size={"lg"} className="h-10 flex-1">
+						<UserPlus size={20} />
+						Adicionar moderadores
 					</Button>
 				</div>
 			</div>
