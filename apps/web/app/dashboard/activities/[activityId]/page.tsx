@@ -66,14 +66,14 @@ export default async function ActivityPage(props: {
 		<main className="py-container-v container-p flex min-h-screen flex-col items-center justify-start gap-9">
 			<div className="flex w-full flex-col items-start justify-start gap-4">
 				<div className="flex w-full flex-row flex-wrap items-start justify-between gap-4">
-					<h1 className="font-title text-foreground max-w-full text-4xl font-extrabold md:text-5xl lg:max-w-[60%]">
+					<h1 className="font-title text-foreground max-w-full text-4xl font-extrabold first-letter:capitalize md:text-5xl lg:max-w-[60%]">
 						{activity.name}
 					</h1>
 					<span className="text-foreground text-base font-semibold opacity-50">
 						#{activity.id.split("-")[0]}
 					</span>
 				</div>
-				<div className="flex flex-row items-center justify-start gap-4">
+				<div className="flex w-full flex-row flex-wrap items-center justify-start gap-2 md:gap-4">
 					<Badge variant={"secondary"}>
 						<Calendar className="h-4 w-4" />
 						{dateString}
@@ -206,7 +206,7 @@ export default async function ActivityPage(props: {
 						emptyMessage={{
 							title: "Nenhum moderador encontrado",
 							description:
-								"Não há moderadores nesta atividade. Adicione moderadores para que eles possam gerenciar a fila de espera.",
+								"Adicione moderadores para que eles possam gerenciar a fila de espera.",
 						}}
 					/>
 				</ParticipantsList.Holder>

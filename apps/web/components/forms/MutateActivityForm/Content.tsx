@@ -285,7 +285,11 @@ export function MutateActivityFormContent({
 											currentSpeaker,
 										); */
 									}}
-									placeholder="Selecione o palestrante"
+									placeholder={
+										isLoading
+											? "Carregando palestrantes..."
+											: "Selecione um palestrante"
+									}
 									emptyText="Nenhum palestrante encontrado"
 								/>
 								{currentSpeaker ? (
