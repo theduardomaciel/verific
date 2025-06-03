@@ -9,6 +9,16 @@ import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "./schema";
 
+// Extrai ownerId da linha de comando
+const ownerIdArg = process.argv.find((arg) => arg.startsWith("--ownerId="));
+const ownerId = ownerIdArg ? ownerIdArg.split("=")[1] : undefined;
+if (!ownerId) {
+	console.error(
+		"❌ Argumento --ownerId=ID é obrigatório. Exemplo: pnpm tsx seed.ts --ownerId=SEU_ID",
+	);
+	process.exit(1);
+}
+
 const connection = neon(env.DATABASE_URL);
 const db = drizzle(connection as NeonQueryFunction<boolean, boolean>, {
 	schema,
@@ -52,7 +62,7 @@ async function seedProjects(users: any[]) {
 			secondaryColor: "#60A8FB",
 			startDate: faker.date.past(),
 			endDate: faker.date.future(),
-			ownerId: "40172911-a586-4530-b380-3c0b7d19ccb8",
+			ownerId: ownerId!,
 		});
 	}
 	console.log("🌱 Semeando projetos...");
@@ -137,14 +147,22 @@ async function seedParticipantOnActivity(
 	activities: any[],
 ) {
 	const data: (typeof schema.participantOnActivity.$inferInsert)[] = [];
-	for (let i = 0; i < activities.length * 8; i++) {
-		data.push({
-			participantId: participants[i % participants.length].id,
-			activityId: activities[i].id,
-			subscribedAt: faker.date.past(),
-			joinedAt: Math.random() > 0.5 ? faker.date.past() : null,
-			leftAt: null,
-		});
+	for (let i = 0; i < activities.length; i++) {
+		const shuffledParticipants = [...participants].sort(
+			() => Math.random() - 0.5,
+		);
+		const participantCount = Math.floor(
+			Math.random() * Math.min(15, participants.length),
+		);
+		for (let j = 0; j < participantCount; j++) {
+			data.push({
+				participantId: shuffledParticipants[j].id,
+				activityId: activities[i].id,
+				subscribedAt: faker.date.past(),
+				joinedAt: Math.random() > 0.5 ? faker.date.past() : null,
+				leftAt: null,
+			});
+		}
 	}
 	console.log("🌱 Semeando participantes em atividades...");
 	await db.insert(schema.participantOnActivity).values(data);

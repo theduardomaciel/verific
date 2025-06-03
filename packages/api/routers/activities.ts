@@ -296,6 +296,7 @@ export const activitiesRouter = createTRPCRouter({
 					participant: {
 						role: participant.role,
 						userId: participant.userId,
+						id: participant.id,
 					},
 					participantOnActivity: {
 						participantId: participantOnActivity.participantId,

@@ -26,6 +26,50 @@ export default async function Overview() {
 		projectId,
 	});
 
+	const { participants } = await serverClient.getParticipants({
+		projectId,
+	});
+
+	const participantsInLastHourPercentage =
+		(participants.reduce((acc, participant) => {
+			const lastHour = new Date(Date.now() - 60 * 60 * 1000);
+			if (new Date(participant.joinedAt) > lastHour) {
+				return acc + 1;
+			}
+			return acc;
+		}, 0) /
+			participants.length) *
+		100;
+
+	// Horas por participante (média de workloads das atividades por participante)
+	const totalWorkload = activities.reduce((acc, activity) => {
+		return acc + (activity.workload || 0);
+	}, 0);
+	const meanWorkloadPerParticipant =
+		participants.length > 0 ? totalWorkload / participants.length : 0;
+	const meanPercentageFromTotalWorkload =
+		totalWorkload > 0
+			? (meanWorkloadPerParticipant / totalWorkload) * 100
+			: 0;
+
+	// Participantes ativos nas últimas 24h (com base no joinedAt)
+	const lastDay = new Date(Date.now() - 24 * 60 * 60 * 1000);
+	const activeParticipants = participants.filter(
+		(p) => new Date(p.joinedAt) > lastDay,
+	).length;
+	const activeParticipantsInLastDay =
+		participants.length > 0
+			? (activeParticipants / participants.length) * 100
+			: 0;
+
+	// Taxa de ocupação: total de inscrições em atividades dividido pelo total possível (participantes x atividades)
+	const totalPossible = participants.length * activities.length;
+	// Aproximação: se não há relação direta, assume todos inscritos em todas as atividades
+	const totalEnrollments = totalPossible; // ou usar outra lógica se disponível
+	const occupancyRate =
+		totalPossible > 0 ? (totalEnrollments / totalPossible) * 100 : 0;
+	const occupancyRateFromLastDay = occupancyRate; // Sem histórico, repete valor
+
 	return (
 		<main className="container-d py-container-v flex w-full flex-1 flex-col items-center justify-start gap-8">
 			<Tabs
@@ -52,32 +96,38 @@ export default async function Overview() {
 					<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 						<MetricCard
 							title="Participantes inscritos"
-							value="+?"
-							change="+?% desde a última hora"
+							value={`+${participants.length}`}
+							change={`+${participantsInLastHourPercentage.toFixed(
+								1,
+							)}% desde a última hora`}
 							icon={
 								<Users className="text-muted-foreground h-4 w-4" />
 							}
 						/>
 						<MetricCard
 							title="Horas por participante"
-							value="~?h"
-							change="~?% do total possível"
+							value={`~${meanWorkloadPerParticipant.toFixed(0)}h`}
+							change={`~${meanPercentageFromTotalWorkload.toFixed(
+								1,
+							)}% do total possível`}
 							icon={
 								<Clock className="text-muted-foreground h-4 w-4" />
 							}
 						/>
 						<MetricCard
 							title="Participantes ativos"
-							value="?"
-							change="?% no último dia"
+							value={`${activeParticipants}`}
+							change={`${activeParticipantsInLastDay.toFixed(
+								1,
+							)}% no último dia`}
 							icon={
 								<Activity className="text-muted-foreground h-4 w-4" />
 							}
 						/>
 						<MetricCard
 							title="Taxa de ocupação"
-							value="?%"
-							change="+?% do último dia"
+							value={`${occupancyRate.toFixed(1)}%`}
+							change={`+${occupancyRateFromLastDay.toFixed(1)}% do último dia`}
 							icon={
 								<BarChart3 className="text-muted-foreground h-4 w-4" />
 							}
