@@ -4,7 +4,7 @@
 import { ArrowRight, User } from "lucide-react";
 
 // Components
-import { Avatar } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 // Actions
 import { updateProjectCookies } from "@/app/actions";
@@ -31,7 +31,13 @@ export function AccountEventCard({ project }: EventCardProps) {
 		>
 			<div className="flex items-center gap-6">
 				<Avatar className="bg-border flex h-11 w-11 items-center justify-center rounded-full">
-					<User className="h-5 w-5 text-slate-300" />
+					<AvatarImage
+						src={project.thumbnailUrl || undefined}
+						alt={project.name}
+					/>
+					<AvatarFallback>
+						<User className="h-5 w-5 text-slate-300" />
+					</AvatarFallback>
 				</Avatar>
 				<div className="flex flex-col items-start gap-0.5">
 					<h3 className="text-foreground font-semibold">

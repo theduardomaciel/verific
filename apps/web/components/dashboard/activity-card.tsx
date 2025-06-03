@@ -83,7 +83,7 @@ export function ActivityCard({ activity, className }: ActivityCardProps) {
 			>
 				<div className="space-y-4 p-6">
 					<div className="flex items-start justify-between">
-						<h3 className="font-dashboard text-foreground text-xl font-semibold">
+						<h3 className="font-dashboard text-foreground text-xl font-semibold first-letter:capitalize">
 							{activity.name}
 						</h3>
 						<span className="text-muted-foreground text-sm">

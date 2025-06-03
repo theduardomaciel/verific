@@ -11,11 +11,21 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { trpcLinks } from "@/lib/trpc/client";
 import { trpc, TRPCProvider } from "@/lib/trpc/react";
+import { createQueryClient } from "@/lib/trpc/query-client";
+
+let clientQueryClientSingleton: QueryClient | undefined = undefined;
+const getQueryClient = () => {
+	if (typeof window === "undefined") {
+		// Server: always make a new query client
+		return createQueryClient();
+	} else {
+		// Browser: use singleton pattern to keep the same query client
+		return (clientQueryClientSingleton ??= createQueryClient());
+	}
+};
 
 export function Providers({ children }: { children: ReactNode }) {
-	const [queryClient] = useState(() => {
-		return new QueryClient();
-	});
+	const queryClient = getQueryClient();
 
 	const [trpcClient] = useState(() => {
 		return trpc.createClient({

@@ -91,7 +91,7 @@ export function ProjectSettingsSubscriptionsForm({ project }: Props) {
 				title="Gerenciar Inscrições"
 				description="Decida se usuários poderão utilizar a página de inscrição para se cadastrarem ou não"
 				label="Inscrição habilitada"
-				initialState={project.hasRegistration}
+				initialState={project.isRegistrationEnabled}
 				onSubmit={onSubmitSubscriptionManagement}
 				renderField={(field) => (
 					<div className="flex items-center space-x-2">

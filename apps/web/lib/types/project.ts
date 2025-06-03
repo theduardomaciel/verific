@@ -7,8 +7,8 @@ export type Project = {
 	description: string;
 	url: string;
 	address: string;
-	hasRegistration: boolean;
-	hasResearch: boolean;
+	isRegistrationEnabled: boolean;
+	isResearchEnabled: boolean;
 	isArchived: boolean;
 	coverUrl: string;
 	thumbnailUrl: string;

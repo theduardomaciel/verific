@@ -110,7 +110,7 @@ export function ProjectSettingsPreferencesForm({ project }: Props) {
 						<Label htmlFor="enableResearch">Incluir pesquisa</Label>
 					</div>
 				)}
-				initialState={project.hasResearch}
+				initialState={project.isResearchEnabled}
 				onSubmit={onSubmitResearch}
 				footer={{
 					text: "As mudanças podem levar alguns minutos para tomar efeito",
