@@ -26,9 +26,14 @@ export default async function Overview() {
 		projectId,
 	});
 
-	const { participants } = await serverClient.getParticipants({
-		projectId,
-	});
+	const { participants: rawParticipants } =
+		await serverClient.getParticipants({
+			projectId,
+		});
+
+	const participants = rawParticipants.filter(
+		(participant) => participant.role === "participant",
+	);
 
 	const participantsInLastHourPercentage =
 		participants.length > 0

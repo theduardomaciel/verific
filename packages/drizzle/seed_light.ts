@@ -26,8 +26,7 @@ const db = drizzle(connection as NeonQueryFunction<boolean, boolean>, {
 
 async function seedUsers() {
 	const users: (typeof schema.user.$inferInsert)[] = [];
-	const randomAmount = Math.floor(Math.random() * 251) + 250;
-	for (let i = 0; i < randomAmount; i++) {
+	for (let i = 0; i < 10; i++) {
 		const sex = Math.random() > 0.5 ? "male" : "female";
 
 		users.push({
@@ -45,7 +44,7 @@ async function seedUsers() {
 
 async function seedProjects(users: any[]) {
 	const projects: (typeof schema.project.$inferInsert)[] = [];
-	for (let i = 0; i < 2; i++) {
+	for (let i = 0; i < 3; i++) {
 		const name = faker.company.name();
 		projects.push({
 			name: name,
@@ -101,7 +100,7 @@ async function seedParticipants(users: any[], projects: any[]) {
 
 async function seedSpeakers(projects: any[]) {
 	const speakers: (typeof schema.speaker.$inferInsert)[] = [];
-	for (let i = 0; i < 20; i++) {
+	for (let i = 0; i < 15; i++) {
 		speakers.push({
 			name: faker.person.fullName(),
 			description: faker.person.jobTitle(),
@@ -120,8 +119,7 @@ async function seedSpeakers(projects: any[]) {
 
 async function seedActivities(projects: any[], speakers: any[]) {
 	const activities: (typeof schema.activity.$inferInsert)[] = [];
-	const randomAmount = Math.floor(Math.random() * 100) + 50; // Entre 50 e 150 atividades
-	for (let i = 0; i < randomAmount; i++) {
+	for (let i = 0; i < 40; i++) {
 		activities.push({
 			name: faker.lorem.words(3),
 			description: faker.lorem.sentence(),
@@ -156,16 +154,14 @@ async function seedParticipantOnActivity(
 			() => Math.random() - 0.5,
 		);
 		const participantCount = Math.floor(
-			Math.random() *
-				Math.min(participants.length / 2, participants.length),
+			Math.random() * Math.min(15, participants.length),
 		);
 		for (let j = 0; j < participantCount; j++) {
-			const hasJoined = Math.random() > 0.7;
 			data.push({
 				participantId: shuffledParticipants[j].id,
 				activityId: activities[i].id,
 				subscribedAt: faker.date.past(),
-				joinedAt: hasJoined ? faker.date.past() : null,
+				joinedAt: Math.random() > 0.5 ? faker.date.past() : null,
 				leftAt: null,
 			});
 		}
