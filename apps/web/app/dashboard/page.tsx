@@ -62,10 +62,19 @@ export default async function Overview() {
 			? (activeParticipants / participants.length) * 100
 			: 0;
 
-	// Taxa de ocupação: total de inscrições em atividades dividido pelo total possível (participantes x atividades)
-	const totalPossible = participants.length * activities.length;
-	// Aproximação: se não há relação direta, assume todos inscritos em todas as atividades
-	const totalEnrollments = totalPossible; // ou usar outra lógica se disponível
+	const totalPossible = activities.reduce(
+		(acc, activity) => acc + (activity.participantsLimit || 0),
+		0,
+	);
+	const totalEnrollments = participants.reduce((acc, participant) => {
+		const enrolledInActivity = activities.filter((activity) =>
+			activity.participants.some(
+				(p) =>
+					p.userId === participant.userId && p.role === "participant",
+			),
+		);
+		return acc + enrolledInActivity.length;
+	}, 0);
 	const occupancyRate =
 		totalPossible > 0 ? (totalEnrollments / totalPossible) * 100 : 0;
 	const occupancyRateFromLastDay = occupancyRate; // Sem histórico, repete valor
