@@ -79,19 +79,38 @@ function ActivityCardContent({
 }: {
 	activity: EventCardProps["activity"];
 }) {
+	const remainingSeats = activity.participantsLimit
+		? activity.participantsLimit - activity.participants.length
+		: null;
+
+	console.log("ActivityCardContent", {
+		activity,
+		remainingSeats,
+	});
+
 	return (
 		<div>
 			<div className="mb-2 flex items-start justify-between">
 				<span className="text-sm font-extrabold uppercase">
 					{activityCategoryLabels[activity.category]}
 				</span>
-				<span className="text-muted-foreground mt-0.5 text-xs">
-					{activity.participantsLimit
-						? activity.participantsLimit -
-								activity.participants.length >
-							0
-							? `${activity.participantsLimit - activity.participants.length} vagas`
-							: "Vagas esgotadas"
+				<span
+					className={cn("text-muted-foreground text-sm", {
+						"opacity-50": !remainingSeats || remainingSeats <= 0,
+						"animate-pulse":
+							remainingSeats &&
+							remainingSeats > 0 &&
+							remainingSeats <= 2,
+						"text-red-500 uppercase":
+							remainingSeats && remainingSeats === 0,
+					})}
+				>
+					{remainingSeats
+						? remainingSeats <= 2
+							? "Últimas Vagas"
+							: remainingSeats > 4
+								? `${remainingSeats} vagas`
+								: "Vagas Esgotadas"
 						: "Vagas Ilimitadas"}
 				</span>
 			</div>

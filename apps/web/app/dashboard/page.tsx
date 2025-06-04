@@ -31,15 +31,17 @@ export default async function Overview() {
 	});
 
 	const participantsInLastHourPercentage =
-		(participants.reduce((acc, participant) => {
-			const lastHour = new Date(Date.now() - 60 * 60 * 1000);
-			if (new Date(participant.joinedAt) > lastHour) {
-				return acc + 1;
-			}
-			return acc;
-		}, 0) /
-			participants.length) *
-		100;
+		participants.length > 0
+			? (participants.reduce((acc, participant) => {
+					const lastHour = new Date(Date.now() - 60 * 60 * 1000);
+					if (new Date(participant.joinedAt) > lastHour) {
+						return acc + 1;
+					}
+					return acc;
+				}, 0) /
+					participants.length) *
+				100
+			: 0;
 
 	// Horas por participante (média de workloads das atividades por participante)
 	const totalWorkload = activities.reduce((acc, activity) => {

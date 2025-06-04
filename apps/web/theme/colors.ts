@@ -1,3 +1,5 @@
+import twColors from "tailwindcss/colors";
+
 const customColors = {
 	red: {
 		"50": "oklch(0.9705 0.0129 17.38)",
@@ -54,9 +56,11 @@ const customColors = {
 };
 
 const baseColors = {
-	black: "oklch(0 0 0)",
-	white: "oklch(1 0 0)",
-	transparent: "transparent",
+	black: twColors.black,
+	white: twColors.white,
+	transparent: twColors.transparent,
+	green: twColors.green,
+	yellow: twColors.yellow,
 
 	brand: customColors.blue,
 	neutral: customColors.neutral,
