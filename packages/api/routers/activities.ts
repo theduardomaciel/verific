@@ -446,11 +446,30 @@ export const activitiesRouter = createTRPCRouter({
 				});
 			}
 
-			/* // We add the user as a moderator by default
+			// We add the user as a moderator by default
+			const participantFromUser = await db
+				.select({
+					id: participant.id,
+				})
+				.from(participant)
+				.where(
+					and(
+						eq(participant.userId, userId),
+						eq(participant.projectId, projectId),
+					),
+				);
+
+			if (!participantFromUser[0]?.id) {
+				throw new TRPCError({
+					message: "User not found in participants.",
+					code: "NOT_FOUND",
+				});
+			}
+
 			await db.insert(participantOnActivity).values({
 				activityId: insertedActivityId,
-				participantId: userId,
-			}); */
+				participantId: participantFromUser[0]?.id,
+			});
 
 			return { activityId: insertedActivityId };
 		}),

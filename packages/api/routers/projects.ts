@@ -2,7 +2,7 @@ import { db } from "@verific/drizzle";
 
 import { z } from "zod";
 
-import { project } from "@verific/drizzle/schema";
+import { participant, project } from "@verific/drizzle/schema";
 import { eq } from "@verific/drizzle/orm";
 
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
@@ -75,6 +75,13 @@ export const projectsRouter = createTRPCRouter({
 			if (created.length === 0) {
 				throw new Error("Project creation failed");
 			}
+
+			// We create a moderator participant for the owner
+			await db.insert(participant).values({
+				projectId: created[0]!.id,
+				userId: userId,
+				role: "moderator",
+			});
 
 			return { id: created[0]!.id, url: created[0]!.url };
 		}),
