@@ -27,11 +27,13 @@ const db = drizzle(connection as NeonQueryFunction<boolean, boolean>, {
 async function seedUsers() {
 	const users: (typeof schema.user.$inferInsert)[] = [];
 	for (let i = 0; i < 10; i++) {
+		const sex = Math.random() > 0.5 ? "male" : "female";
+
 		users.push({
-			name: faker.person.fullName(),
+			name: faker.person.fullName({ sex: sex }),
 			email: faker.internet.email(),
 			emailVerified: faker.date.past(),
-			image_url: faker.image.personPortrait(),
+			image_url: faker.image.personPortrait({ sex: sex }),
 		});
 	}
 	console.log("🌱 Semeando usuários...");
@@ -58,8 +60,8 @@ async function seedProjects(users: any[]) {
 			logoUrl: faker.image.urlPicsumPhotos(),
 			coverUrl: faker.image.urlPicsumPhotos(),
 			thumbnailUrl: faker.image.urlPicsumPhotos(),
-			primaryColor: "#3B82F6",
-			secondaryColor: "#60A8FB",
+			primaryColor: faker.color.rgb({ format: "hex", casing: "lower" }),
+			secondaryColor: faker.color.rgb({ format: "hex", casing: "lower" }),
 			startDate: faker.date.past(),
 			endDate: faker.date.future(),
 			ownerId: ownerId!,

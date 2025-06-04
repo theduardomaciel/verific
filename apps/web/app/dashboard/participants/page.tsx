@@ -86,7 +86,7 @@ export default async function ParticipantsPage(props: {
 					</Suspense>
 
 					<DashboardPagination
-						currentPage={parsedParams.page || 0}
+						currentPage={parsedParams.page || 1}
 						totalPages={5}
 						prefix="participants"
 					/>
