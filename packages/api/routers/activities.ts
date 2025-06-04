@@ -396,7 +396,16 @@ export const activitiesRouter = createTRPCRouter({
 
 	createActivity: protectedProcedure
 		.input(mutateActivityParams)
-		.mutation(async ({ input }) => {
+		.mutation(async ({ input, ctx }) => {
+			const userId = ctx.session.user.id;
+
+			if (!userId) {
+				throw new TRPCError({
+					message: "User not authenticated.",
+					code: "UNAUTHORIZED",
+				});
+			}
+
 			const {
 				name,
 				description,
@@ -429,6 +438,19 @@ export const activitiesRouter = createTRPCRouter({
 				.returning({ id: activity.id });
 
 			const insertedActivityId = inserted[0]?.id;
+
+			if (!insertedActivityId) {
+				throw new TRPCError({
+					message: "Failed to create activity.",
+					code: "INTERNAL_SERVER_ERROR",
+				});
+			}
+
+			/* // We add the user as a moderator by default
+			await db.insert(participantOnActivity).values({
+				activityId: insertedActivityId,
+				participantId: userId,
+			}); */
 
 			return { activityId: insertedActivityId };
 		}),
