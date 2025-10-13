@@ -197,7 +197,7 @@ export function ProjectSettingsGeneral({ project }: Props) {
 					/>
 				)}
 				footer={{
-					text: "Selecione uma localização pesquisando ou clicando no mapa.",
+					text: "Selecione uma localização pesquisando ou clicando no mapa",
 				}}
 			/>
 		</>

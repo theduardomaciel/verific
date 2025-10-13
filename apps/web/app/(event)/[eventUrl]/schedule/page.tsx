@@ -51,7 +51,7 @@ export default async function EventSchedulePage(props: {
 					<h1 className="mb-4 text-5xl font-bold text-white">
 						Programação
 					</h1>
-					<p className="text-primary-foreground/90 text-base font-semibold md:max-w-md">
+					<p className="text-primary-foreground text-base font-semibold md:max-w-md">
 						Acompanhe as próximas atividades de {event.name}, tanto
 						internas, como externas, e saiba quando participar!
 					</p>

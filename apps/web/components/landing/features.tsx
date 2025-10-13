@@ -23,9 +23,11 @@ export function Features() {
 					Eleve a experiência de todos!
 				</h3>
 				<p className="text-muted-foreground mx-auto max-w-2xl">
-					Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
-					do eiusmod tempor incididunt ut labore et dolore magna
-					aliqua.
+					Organize, comunique e gerencie cada detalhe do seu evento
+					com praticidade. Nossa plataforma reúne tudo o que você
+					precisa — do cadastro de participantes à interação em tempo
+					real — para tornar sua experiência mais simples, eficiente e
+					memorável.
 				</p>
 			</div>
 		</section>

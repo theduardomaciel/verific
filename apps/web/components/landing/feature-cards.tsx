@@ -8,22 +8,22 @@ export function FeatureCards() {
 				<FeatureCard
 					icon={<Settings className="h-8 w-8" />}
 					title="Gerenciamento descomplicado"
-					description="Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque facilisis ex sapien vitae pellentesque sem placerat."
+					description="Centralize todas as etapas do evento em um só lugar: agenda, palestras, inscrições e relatórios — tudo intuitivo e fácil de usar."
 				/>
 				<FeatureCard
 					icon={<Users className="h-8 w-8" />}
 					title="Inscrições automatizadas"
-					description="Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque facilisis ex sapien vitae pellentesque sem placerat."
+					description="Simplifique o cadastro de participantes com formulários dinâmicos e acompanhamento em tempo real das inscrições."
 				/>
 				<FeatureCard
 					icon={<Ticket className="h-8 w-8" />}
 					title="Credenciamento eficiente"
-					description="Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque facilisis ex sapien vitae pellentesque sem placerat."
+					description="Otimize o check-in com QR Code e integração instantânea, garantindo agilidade e uma ótima primeira impressão para o público."
 				/>
 				<FeatureCard
 					icon={<FileCheck className="h-8 w-8" />}
 					title="Certificação com um clique"
-					description="Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque facilisis ex sapien vitae pellentesque sem placerat."
+					description="Emita certificados personalizados de forma automática e segura, reduzindo tempo e eliminando erros manuais."
 				/>
 			</div>
 		</section>

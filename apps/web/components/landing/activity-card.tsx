@@ -83,10 +83,10 @@ function ActivityCardContent({
 		? activity.participantsLimit - activity.participants.length
 		: null;
 
-	console.log("ActivityCardContent", {
+	/* console.log("ActivityCardContent", {
 		activity,
 		remainingSeats,
-	});
+	}); */
 
 	return (
 		<div>
@@ -105,12 +105,12 @@ function ActivityCardContent({
 							remainingSeats && remainingSeats === 0,
 					})}
 				>
-					{remainingSeats
-						? remainingSeats <= 2
-							? "Últimas Vagas"
+					{remainingSeats !== null
+						? remainingSeats === 0
+							? "Vagas Esgotadas"
 							: remainingSeats > 4
 								? `${remainingSeats} vagas`
-								: "Vagas Esgotadas"
+								: "[Últimas vagas!"
 						: "Vagas Ilimitadas"}
 				</span>
 			</div>

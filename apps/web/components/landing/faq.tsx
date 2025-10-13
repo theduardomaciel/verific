@@ -26,9 +26,10 @@ export function Faq() {
 						Deixa que a gente responde!
 					</h3>
 					<p className="text-muted-foreground mb-6">
-						Lorem ipsum dolor sit amet, consectetur adipiscing elit,
-						sed do eiusmod tempor incididunt ut labore et dolore
-						magna aliqua.
+						Tenha respostas rápidas sobre o funcionamento do verifIC
+						e descubra como aproveitar todos os recursos para
+						organizar, gerenciar e certificar seu evento de forma
+						simples e gratuita.
 					</p>
 				</div>
 
