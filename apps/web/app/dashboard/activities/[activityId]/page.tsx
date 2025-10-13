@@ -114,7 +114,7 @@ export default async function ActivityPage(props: {
 							</Button>
 						</ActivityDeleteDialog>
 						<ShareActivityDialog
-							url={`https://${env.NEXT_PUBLIC_VERCEL_URL}${activity.project.url}/schedule/${activity.id}`}
+							url={`${env.NEXT_PUBLIC_VERCEL_URL}${activity.project.url}/schedule/${activity.id}`}
 						>
 							<Button
 								size={"icon"}

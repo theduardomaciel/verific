@@ -43,6 +43,9 @@ export function PlacePicker({
 	const [address, setAddress] = useState(
 		value?.address ?? defaultValue?.address ?? "",
 	);
+
+	console.log(value);
+
 	const [position, setPosition] = useState<[number, number]>(
 		value && value?.latitude && value?.longitude
 			? [value.latitude, value.longitude]

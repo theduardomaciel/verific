@@ -1,7 +1,11 @@
+import Link from "next/link";
+
 // Components
 import MainNav, { type MainNavProps } from "@/components/header/main-nav";
 import { ProjectSwitcher } from "./project-switcher";
 import { UserNav } from "./user-nav";
+
+import Logo from "@/public/logo.svg";
 
 // API
 import { auth } from "@verific/auth";
@@ -51,6 +55,9 @@ export async function DashboardHeader({
 				) : null}
 			</div>
 			<MainNav prefix={prefix} links={links} />
+			{/* <Link href="/">
+				<Logo className="h-6" />
+			</Link> */}
 		</div>
 	);
 }
