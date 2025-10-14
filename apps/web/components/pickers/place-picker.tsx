@@ -115,14 +115,14 @@ export function PlacePicker({
 				marker.on("dragend", () => {
 					const newPos = marker.getLatLng();
 					setPosition([newPos.lat, newPos.lng]);
-					reverseGeocode(newPos.lat, newPos.lng);
+					reverseGeocodeWithOverpass(newPos.lat, newPos.lng);
 				});
 
 				// Atualiza o marcador quando o mapa é clicado
 				map.on("click", (e: any) => {
 					marker.setLatLng(e.latlng);
 					setPosition([e.latlng.lat, e.latlng.lng]);
-					reverseGeocode(e.latlng.lat, e.latlng.lng);
+					reverseGeocodeWithOverpass(e.latlng.lat, e.latlng.lng);
 				});
 
 				mapRef.current = map;
@@ -239,6 +239,57 @@ export function PlacePicker({
 				message: "Erro ao buscar o local.",
 				type: "error",
 			});
+		}
+	};
+
+	const reverseGeocodeWithOverpass = async (lat: number, lon: number) => {
+		if (!lat || !lon) return null;
+
+		setStatus({ type: "loading" });
+
+		try {
+			// Search for any named feature within 20 meters
+			const query = `
+            [out:json];
+            (
+                node(around:20,${lat},${lon})[name];
+                way(around:20,${lat},${lon})[name];
+            );
+            out body 1;
+        `;
+
+			const response = await fetch(
+				"https://overpass-api.de/api/interpreter",
+				{
+					method: "POST",
+					body: query,
+				},
+			);
+
+			const data = await response.json();
+
+			if (data.elements && data.elements.length > 0) {
+				const element = data.elements[0];
+				const name = element.tags?.name;
+				const type =
+					element.tags?.amenity ||
+					element.tags?.building ||
+					element.type;
+
+				setAddress(
+					name || `${type} at ${lat.toFixed(6)}, ${lon.toFixed(6)}`,
+				);
+				setStatus({ type: null });
+
+				return { name, type, tags: element.tags };
+			}
+
+			// Fallback to Nominatim if Overpass returns nothing
+			return reverseGeocode(lat, lon);
+		} catch (error) {
+			console.error("Overpass API error:", error);
+			// Fallback to Nominatim
+			return reverseGeocode(lat, lon);
 		}
 	};
 

@@ -110,6 +110,8 @@ export function CreateProjectDialog() {
 				startDate: date.from,
 				endDate: date.to,
 				address: location.address,
+				latitude: location.latitude,
+				longitude: location.longitude,
 				...rest,
 			});
 

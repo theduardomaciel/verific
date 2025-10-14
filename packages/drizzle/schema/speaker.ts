@@ -6,7 +6,7 @@ import { activity, project } from ".";
 export const speaker = pgTable("speakers", {
 	id: smallserial("id").primaryKey(),
 	name: text("name").notNull(),
-	description: text("description").notNull(),
+	description: text("description"),
 	imageUrl: text("image_url").notNull(),
 	projectId: uuid("project_id")
 		.notNull()

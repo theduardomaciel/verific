@@ -31,6 +31,8 @@ export const projectsRouter = createTRPCRouter({
 				name: z.string(),
 				description: z.string().optional().nullable(),
 				address: z.string(),
+				latitude: z.number(),
+				longitude: z.number(),
 				coverUrl: z.string().optional().nullable(),
 				thumbnailUrl: z.string().optional().nullable(),
 				startDate: z.coerce.date(),
@@ -42,6 +44,8 @@ export const projectsRouter = createTRPCRouter({
 				name,
 				description,
 				address,
+				latitude,
+				longitude,
 				coverUrl,
 				thumbnailUrl,
 				startDate,
@@ -64,6 +68,8 @@ export const projectsRouter = createTRPCRouter({
 					description,
 					url,
 					address,
+					latitude,
+					longitude,
 					coverUrl,
 					thumbnailUrl,
 					startDate,
@@ -157,8 +163,8 @@ export const projectsRouter = createTRPCRouter({
 				project: projectData,
 				isParticipant: userId
 					? projectData.participants.some(
-							(participant) => participant.userId === userId,
-						)
+						(participant) => participant.userId === userId,
+					)
 					: false,
 			};
 		}),
