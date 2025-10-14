@@ -36,6 +36,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ErrorDialog, LoadingDialog, SuccessDialog } from "../forms/dialogs";
+import FilePicker from "@/components/file-picker";
+import { uploadImageToImgur } from "@/lib/upload";
 
 // Hooks
 import { useMediaQuery } from "@/hooks/use-media-query";
@@ -56,14 +58,9 @@ const formSchema = z.object({
 	name: z.string().min(2, {
 		message: "Nome deve conter pelo menos 2 caracteres.",
 	}),
-	description: z
-		.string()
-		.min(2, {
-			message: "Insira uma descrição válida.",
-		})
-		.max(3000, {
-			message: "Descrições devem ter no máximo 500 caracteres.",
-		}),
+	description: z.string().max(3000, {
+		message: "Descrições devem ter no máximo 500 caracteres.",
+	}),
 	imageUrl: z
 		.string()
 		.url({ message: "Insira uma URL válida para a imagem." }),
@@ -118,6 +115,19 @@ export function MutateSpeakerDialog({
 
 		console.log("data: ", data);
 
+		// Se um arquivo foi selecionado, primeiro fazemos upload e substituímos imageUrl
+		let imageUrl = data.imageUrl;
+		if (selectedFiles && selectedFiles.length > 0 && selectedFiles[0]) {
+			try {
+				const result = await uploadImageToImgur(selectedFiles[0]);
+				imageUrl = result.link;
+			} catch (err) {
+				console.error("Falha ao fazer upload da imagem:", err);
+				setCurrentState("error");
+				return;
+			}
+		}
+
 		try {
 			let speakerId = speaker?.id;
 
@@ -125,11 +135,13 @@ export function MutateSpeakerDialog({
 				await updateMutation.mutateAsync({
 					id: speaker.id,
 					...data,
+					imageUrl,
 					projectId,
 				});
 			} else {
 				const { id } = await createMutation.mutateAsync({
 					...data,
+					imageUrl,
 					projectId,
 				});
 				speakerId = id;
@@ -151,6 +163,8 @@ export function MutateSpeakerDialog({
 		}
 	}
 
+	const [selectedFiles, setSelectedFiles] = useState<File[] | null>(null);
+
 	if (isDesktop) {
 		return (
 			<Dialog open={open} onOpenChange={setOpen}>
@@ -168,7 +182,10 @@ export function MutateSpeakerDialog({
 										: "Adicionar palestrante"}
 								</DialogTitle>
 							</DialogHeader>
-							<MutateSpeakerForm form={form} />
+							<MutateSpeakerForm
+								form={form}
+								onFilesChange={setSelectedFiles}
+							/>
 							<DialogFooter className="w-full grid-cols-2 gap-3 md:grid">
 								<DialogClose asChild>
 									<Button type="button" variant={"outline"}>
@@ -185,7 +202,11 @@ export function MutateSpeakerDialog({
 									// o formulário da página junto com o do dialog/drawer
 									onClick={async () => {
 										// Manually trigger validation on all fields and wait for it to complete
-										const isValid = await form.trigger();
+										// Validate only textual fields first — imageUrl may be provided by file upload
+										const isValid = await form.trigger([
+											"name",
+											"description",
+										]);
 
 										if (isValid) {
 											// If valid, get values and submit
@@ -237,7 +258,10 @@ export function MutateSpeakerDialog({
 							</DrawerTitle>
 						</DrawerHeader>
 						<div className="space-y-6 px-4">
-							<MutateSpeakerForm form={form} />
+							<MutateSpeakerForm
+								form={form}
+								onFilesChange={setSelectedFiles}
+							/>
 						</div>
 						<DrawerFooter className="flex w-full gap-2">
 							<Button
@@ -246,7 +270,10 @@ export function MutateSpeakerDialog({
 								// o formulário da página junto com o do dialog/drawer
 								onClick={async () => {
 									// Manually trigger validation on all fields and wait for it to complete
-									const isValid = await form.trigger();
+									const isValid = await form.trigger([
+										"name",
+										"description",
+									]);
 
 									if (isValid) {
 										// If valid, get values and submit
@@ -314,9 +341,10 @@ function StatusDialogs({
 
 interface MutateSpeakerForm {
 	form: UseFormReturn<z.infer<typeof formSchema>>;
+	onFilesChange?: (files: File[] | null) => void;
 }
 
-function MutateSpeakerForm({ form }: MutateSpeakerForm) {
+function MutateSpeakerForm({ form, onFilesChange }: MutateSpeakerForm) {
 	return (
 		<>
 			<FormField
@@ -358,9 +386,15 @@ function MutateSpeakerForm({ form }: MutateSpeakerForm) {
 					<FormItem>
 						<FormLabel>URL da imagem</FormLabel>
 						<FormControl>
-							<Input
-								placeholder="https://exemplo.com/imagem.jpg"
-								{...field}
+							{/* Substituído por FilePicker — mantemos o field para mensagens e integração com o RHF */}
+							<FilePicker
+								initialPreviewUrl={field.value ?? null}
+								onFilesChange={(files) => {
+									onFilesChange?.(files ?? null);
+									// Se o usuário removeu o arquivo selecionado, mantemos o valor antigo no form
+									if (!files) return;
+									// Não atualizamos o campo imageUrl aqui — será atualizado após upload
+								}}
 							/>
 						</FormControl>
 						<FormMessage />
