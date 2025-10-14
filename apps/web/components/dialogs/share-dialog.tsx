@@ -22,15 +22,19 @@ import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
-interface ShareActivityDialogProps {
+interface ShareDialogProps {
 	children: React.ReactNode;
 	url: string;
+	title?: string;
+	description?: string;
 }
 
-export function ShareActivityDialog({
+export function ShareDialog({
 	url,
 	children,
-}: ShareActivityDialogProps) {
+	title = "Compartilhar",
+	description = "Use o QR code ou copie o link para compartilhar",
+}: ShareDialogProps) {
 	const [hasCopied, setHasCopied] = useState(false);
 
 	function copyLink() {
@@ -56,11 +60,8 @@ export function ShareActivityDialog({
 			<DialogTrigger asChild>{children}</DialogTrigger>
 			<DialogContent className="w-full overflow-y-scroll sm:max-w-lg">
 				<DialogHeader className="w-full">
-					<DialogTitle>Compartilhar atividade</DialogTitle>
-					<DialogDescription>
-						O link abaixo permite que os participantes inscritos em
-						seu evento se inscrevam na atividade
-					</DialogDescription>
+					<DialogTitle>{title}</DialogTitle>
+					<DialogDescription>{description}</DialogDescription>
 				</DialogHeader>
 
 				<div className="flex w-full flex-col items-center justify-center gap-6 py-4">
@@ -103,7 +104,7 @@ export function ShareActivityDialog({
 					<DialogClose asChild>
 						<Button className="w-full" type="button" size={"lg"}>
 							<ArrowRightIcon className="-scale-100" />
-							Voltar
+							Fechar
 						</Button>
 					</DialogClose>
 				</DialogFooter>

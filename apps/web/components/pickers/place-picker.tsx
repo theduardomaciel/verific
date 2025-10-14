@@ -216,7 +216,7 @@ export function PlacePicker({
 		}
 	};
 
-	// Reverte a geocodificação das coordenadas para obter o endereço
+	// Reverte a geocodificação das coordenadas para obter o endereço, distrito, cidade e estado
 	const reverseGeocode = async (lat: number, lon: number) => {
 		if (!lat || !lon) return;
 
@@ -228,8 +228,33 @@ export function PlacePicker({
 			);
 			const data = await response.json();
 
-			if (data?.display_name && data.display_name !== address) {
-				setAddress(data.display_name);
+			if (data?.display_name) {
+				const addressObj = data.address || {};
+				const district =
+					addressObj.suburb ||
+					addressObj.neighbourhood ||
+					addressObj.city_district ||
+					"";
+				const city =
+					addressObj.city ||
+					addressObj.town ||
+					addressObj.village ||
+					addressObj.county ||
+					"";
+				const state = addressObj.state || "";
+
+				const fullAddress = [
+					data.display_name,
+					district && `Distrito: ${district}`,
+					city && `Cidade: ${city}`,
+					state && `Estado: ${state}`,
+				]
+					.filter(Boolean)
+					.join(" | ");
+
+				if (fullAddress !== address) {
+					setAddress(fullAddress);
+				}
 			}
 
 			setStatus({ type: null });
@@ -250,13 +275,13 @@ export function PlacePicker({
 		try {
 			// Search for any named feature within 20 meters
 			const query = `
-            [out:json];
-            (
-                node(around:20,${lat},${lon})[name];
-                way(around:20,${lat},${lon})[name];
-            );
-            out body 1;
-        `;
+			[out:json];
+			(
+				node(around:20,${lat},${lon})[name];
+				way(around:20,${lat},${lon})[name];
+			);
+			out body 1;
+		`;
 
 			const response = await fetch(
 				"https://overpass-api.de/api/interpreter",
@@ -276,9 +301,35 @@ export function PlacePicker({
 					element.tags?.building ||
 					element.type;
 
-				setAddress(
-					name || `${type} at ${lat.toFixed(6)}, ${lon.toFixed(6)}`,
+				// Fallback to Nominatim for district/city/state
+				const nominatimResponse = await fetch(
+					`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,
 				);
+				const nominatimData = await nominatimResponse.json();
+				const addressObj = nominatimData.address || {};
+				const district =
+					addressObj.suburb ||
+					addressObj.neighbourhood ||
+					addressObj.city_district ||
+					"";
+				const city =
+					addressObj.city ||
+					addressObj.town ||
+					addressObj.village ||
+					addressObj.county ||
+					"";
+				const state = addressObj.state || "";
+
+				const fullAddress = [
+					name || `${type} at ${lat.toFixed(6)}, ${lon.toFixed(6)}`,
+					district && district,
+					city && city,
+					state && state,
+				]
+					.filter(Boolean)
+					.join(", ");
+
+				setAddress(fullAddress);
 				setStatus({ type: null });
 
 				return { name, type, tags: element.tags };

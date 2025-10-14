@@ -31,7 +31,7 @@ import { z } from "zod";
 // API
 import { serverClient } from "@/lib/trpc/server";
 import { getActivityParams } from "@verific/api/routers/activities";
-import { ShareActivityDialog } from "@/components/dialogs/share-activity-dialog";
+import { ShareDialog } from "@/components/dialogs/share-dialog";
 
 type ActivityPageParams = z.infer<typeof getActivityParams>;
 
@@ -113,8 +113,10 @@ export default async function ActivityPage(props: {
 								<Trash size={20} />
 							</Button>
 						</ActivityDeleteDialog>
-						<ShareActivityDialog
+						<ShareDialog
 							url={`${env.NEXT_PUBLIC_VERCEL_URL}${activity.project.url}/schedule/${activity.id}`}
+							title="Compartilhar atividade"
+							description="O link abaixo permite que os participantes inscritos em seu evento se inscrevam na atividade"
 						>
 							<Button
 								size={"icon"}
@@ -123,7 +125,7 @@ export default async function ActivityPage(props: {
 							>
 								<Share2 size={20} />
 							</Button>
-						</ShareActivityDialog>
+						</ShareDialog>
 						<Button
 							asChild
 							size={"lg"}

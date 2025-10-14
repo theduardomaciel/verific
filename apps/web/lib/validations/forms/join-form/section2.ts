@@ -5,6 +5,10 @@ export const joinFormSection2Schema = z.object({
 		.string()
 		.max(250, { message: "Desculpe, o limite de caracteres é 250 :(" })
 		.optional(),
+	accessibility: z
+		.string()
+		.max(1000, { message: "Desculpe, o limite de caracteres é 1000 :(" })
+		.optional(),
 	discovery: z.enum(["social_media", "friends", "other"]).optional(),
 	discoveryOther: z.string().max(50).optional(),
 });

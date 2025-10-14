@@ -56,17 +56,13 @@ const formSchema = z.object({
 	name: z.string().min(2, {
 		message: "Nome deve conter pelo menos 2 caracteres.",
 	}),
-	description: z
-		.string()
-		.min(2, {
-			message: "Insira uma descrição válida.",
-		})
-		.max(3000, {
-			message: "Descrições devem ter no máximo 500 caracteres.",
-		}),
+	description: z.string().max(3000, {
+		message: "Descrições devem ter no máximo 500 caracteres.",
+	}),
 	imageUrl: z
 		.string()
-		.url({ message: "Insira uma URL válida para a imagem." }),
+		.url({ message: "Insira uma URL válida para a imagem." })
+		.or(z.literal("")),
 });
 
 interface Props {

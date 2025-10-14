@@ -37,6 +37,7 @@ const section2Keys = Object.keys(
 const formTitles = {
 	reason: "Pergunta 1",
 	discovery: "Pergunta 2",
+	accessibility: "Pergunta 3",
 	discoveryOther: undefined,
 };
 
@@ -120,6 +121,27 @@ export default function JoinForm2({ form }: { form: GenericForm }) {
 					/>
 				)}
 			</div>
+			<FormField
+				control={form.control}
+				name="section2.accessibility"
+				render={({ field }) => (
+					<FormItem className="w-full">
+						<ResearchHeader index={1}>
+							&quot;Você tem alguma necessidade especial de
+							acessibilidade? Caso precise, cite-a no campo
+							abaixo: &quot;
+						</ResearchHeader>
+						<FormControl>
+							<Textarea
+								placeholder=""
+								className="resize-y"
+								{...field}
+							/>
+						</FormControl>
+						<FormMessage />
+					</FormItem>
+				)}
+			/>
 			<SectionFooter isFinalSection />
 		</FormSection>
 	);

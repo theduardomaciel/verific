@@ -264,8 +264,8 @@ function PickerTrigger<T extends Item = Item>({
 }
 function Tag<T extends Item = Item>({ item }: { item: T }) {
 	return (
-		<li className="border-primary-200/50 bg-background flex items-center justify-start gap-2 rounded-full border py-1 pr-2 pl-1">
-			<div className="flex items-center gap-3">
+		<li className="border-primary-200/50 bg-background flex items-center justify-start gap-2 rounded-full border py-1 pr-2">
+			<div className="flex items-center gap-3 pl-2">
 				{item.image && (
 					<Image
 						width={24}

@@ -15,6 +15,13 @@
       "when": 1760403062366,
       "tag": "0001_exotic_quasar",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1760411839133,
+      "tag": "0002_charming_wong",
+      "breakpoints": true
     }
   ]
 }

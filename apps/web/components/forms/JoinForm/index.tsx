@@ -67,6 +67,7 @@ export default function JoinForm({
 			section2: {
 				reason: undefined,
 				discovery: undefined,
+				accessibility: undefined,
 				discoveryOther: "",
 			},
 		},
