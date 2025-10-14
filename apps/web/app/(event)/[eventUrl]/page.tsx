@@ -22,7 +22,7 @@ import { serverClient } from "@/lib/trpc/server";
 
 import * as EventContainer from "@/components/landing/event-container";
 import { ReportEventDialog } from "@/components/dialogs/report-event-dialog";
-import { ActivityShare } from "@/components/activity/activity-share";
+import { ShareDialog } from "@/components/dialogs/share-dialog";
 import { env } from "process";
 
 export default async function EventPage({
@@ -89,18 +89,19 @@ export default async function EventPage({
 						height={240}
 						className="border-primary max-w-md overflow-hidden rounded-3xl border-2"
 					/>
-					<ActivityShare
-						shareData={{
-							title: event.name,
-							text: event.description || undefined,
-							url: `${env.NEXT_PUBLIC_VERCEL_URL}/${event.url}`,
-						}}
+					<ShareDialog
+						url={`${env.NEXT_PUBLIC_VERCEL_URL}/${event.url}`}
+						title={event.name}
+						description={
+							event.description ||
+							"Use o QR code ou copie o link para compartilhar"
+						}
 					>
 						<Button className="absolute -bottom-4 left-1/2 h-10 -translate-x-1/2 !px-6">
 							<Share2 className="h-5 w-5" />
 							<span>Compartilhar</span>
 						</Button>
-					</ActivityShare>
+					</ShareDialog>
 				</div>
 			</EventContainer.Hero>
 
@@ -118,13 +119,30 @@ export default async function EventPage({
 						<div className="mb-6 rounded-lg border p-6">
 							<h3 className="mb-4 text-xl font-medium">Local</h3>
 							<p className="mb-4">{event.address}</p>
+							{event.latitude && event.longitude && (
+								<div className="mb-4 overflow-hidden rounded-lg border">
+									<iframe
+										title="Mapa do local"
+										width={400}
+										height={200}
+										style={{
+											border: 0,
+											width: "100%",
+											borderRadius: "0.5rem",
+										}}
+										loading="lazy"
+										allowFullScreen
+										referrerPolicy="no-referrer-when-downgrade"
+										src={`https://www.google.com/maps?q=${event.latitude},${event.longitude}&z=15&output=embed`}
+									/>
+								</div>
+							)}
 							<Button
 								asChild
 								variant="outline"
 								className="flex w-full items-center justify-center gap-2"
 							>
 								<a
-									/* href={`https://www.google.com/maps/search/?api=1&query=${event.latitude},${event.longitude}`} */
 									href={`https://www.google.com/maps/search/${encodeURIComponent(event.address)}`}
 									target="_blank"
 									rel="noopener noreferrer"
