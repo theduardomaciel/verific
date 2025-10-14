@@ -16,6 +16,12 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
+import {
+	FormField,
+	FormItem,
+	FormControl,
+	FormMessage,
+} from "@/components/ui/form";
 
 // Validations
 import { researchSchema } from "@/lib/validations/forms/settings-form/project/preferences-form";
@@ -31,33 +37,19 @@ interface Props {
 export function ProjectSettingsPreferencesForm({ project }: Props) {
 	const updateMutation = trpc.updateProject.useMutation();
 
-	const handleFormSubmit = async (
-		form: UseFormReturn<any>,
-		successMessage: string,
-		errorMessage: string,
-		logMessage: string,
-	) => {
+	const onSubmitResearch = async (form: UseFormReturn<any>) => {
 		const data = form.getValues();
 		try {
 			await updateMutation.mutateAsync({
 				id: project.id,
-				...data,
+				isResearchEnabled: data.enableResearch,
 			});
-			toast.success(successMessage);
+			toast.success("Preferências de pesquisa atualizadas!");
 			form.reset(data);
 		} catch (error) {
-			toast.error(errorMessage);
-			console.error(logMessage, error);
+			toast.error("Erro ao atualizar preferências de pesquisa.");
+			console.error("Error updating research preferences:", error);
 		}
-	};
-
-	const onSubmitResearch = async (form: UseFormReturn<any>) => {
-		await handleFormSubmit(
-			form,
-			"Preferências de pesquisa atualizadas!",
-			"Erro ao atualizar preferências de pesquisa.",
-			"Error updating research preferences:",
-		);
 	};
 
 	const onArchiveProject = async () => {
@@ -95,23 +87,36 @@ export function ProjectSettingsPreferencesForm({ project }: Props) {
 			{/* Enable research */}
 			<SettingsFormCard
 				schema={researchSchema} // Usar o schema criado
-				fieldName="enableResearch" // Nome do campo no schema
 				title="Realizar Pesquisa"
 				description="Decida se irá disponibilizar uma pesquisa opcional na página de inscrição de seu evento"
-				label="Incluir pesquisa"
-				renderField={(field) => (
-					<div className="flex items-center space-x-2">
-						<Switch
-							id="enableResearch"
-							checked={field.value}
-							onCheckedChange={field.onChange}
-							size={"lg"}
-						/>
-						<Label htmlFor="enableResearch">Incluir pesquisa</Label>
-					</div>
-				)}
-				initialState={project.isResearchEnabled}
+				initialState={{
+					enableResearch: project.isResearchEnabled,
+				}}
 				onSubmit={onSubmitResearch}
+				renderField={(form) => (
+					<FormField
+						control={form.control}
+						name="enableResearch"
+						render={({ field }) => (
+							<FormItem>
+								<FormControl>
+									<div className="flex items-center space-x-2">
+										<Switch
+											id="enableResearch"
+											checked={field.value}
+											onCheckedChange={field.onChange}
+											size={"lg"}
+										/>
+										<Label htmlFor="enableResearch">
+											Incluir pesquisa
+										</Label>
+									</div>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+				)}
 				footer={{
 					text: "As mudanças podem levar alguns minutos para tomar efeito",
 				}}

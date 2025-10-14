@@ -39,6 +39,8 @@ export function UserNav({ user, showAccountActions }: Props) {
 		.map((n) => n[0])
 		.join("");
 
+	console.log("UserNav user:", user);
+
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>

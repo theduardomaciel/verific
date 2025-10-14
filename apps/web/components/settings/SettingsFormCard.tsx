@@ -6,29 +6,22 @@ import { LoaderCircle } from "lucide-react";
 // Components
 import { Button } from "@/components/ui/button";
 import { SettingsCard } from "@/components/settings/settings-card";
-import {
-	Form,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormControl,
-	FormMessage,
-} from "@/components/ui/form";
+
+// Forms
+import { useForm, UseFormReturn } from "react-hook-form";
+import { FormProvider } from "react-hook-form";
 
 // Validations
 import z, { ZodTypeAny } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, UseFormReturn } from "react-hook-form";
 
 interface SettingsFormCardProps<T extends ZodTypeAny> {
 	schema: T;
-	fieldName: string;
 	title: string;
 	description: string;
-	label?: string;
 	initialState: any;
 	onSubmit: (form: UseFormReturn<z.infer<T>>) => void;
-	renderField: (field: any) => React.ReactNode;
+	renderField: (form: UseFormReturn<z.infer<T>>) => React.ReactNode;
 	footer?: {
 		text?: string;
 		action?: {
@@ -40,10 +33,8 @@ interface SettingsFormCardProps<T extends ZodTypeAny> {
 
 export function SettingsFormCard<T extends ZodTypeAny>({
 	schema,
-	fieldName,
 	title,
 	description,
-	label,
 	initialState,
 	onSubmit,
 	renderField,
@@ -51,15 +42,13 @@ export function SettingsFormCard<T extends ZodTypeAny>({
 }: SettingsFormCardProps<T>) {
 	const form = useForm({
 		resolver: zodResolver(schema),
-		defaultValues: {
-			[fieldName]: initialState,
-		},
+		defaultValues: initialState,
 	});
 
 	const { isSubmitting, isDirty } = form.formState;
 
 	return (
-		<Form {...form}>
+		<FormProvider {...form}>
 			<form
 				onSubmit={form.handleSubmit(() => onSubmit(form))}
 				className="space-y-0"
@@ -87,19 +76,9 @@ export function SettingsFormCard<T extends ZodTypeAny>({
 						),
 					}}
 				>
-					<FormField
-						control={form.control}
-						name={fieldName}
-						render={({ field }) => (
-							<FormItem>
-								{label ? <FormLabel>{label}</FormLabel> : null}
-								<FormControl>{renderField(field)}</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
+					{renderField(form)}
 				</SettingsCard>
 			</form>
-		</Form>
+		</FormProvider>
 	);
 }

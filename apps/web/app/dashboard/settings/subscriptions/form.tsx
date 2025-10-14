@@ -9,6 +9,12 @@ import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
 import { ColorPicker } from "@/components/pickers/color-picker";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import {
+	FormField,
+	FormItem,
+	FormControl,
+	FormMessage,
+} from "@/components/ui/form";
 
 // Validations
 import {
@@ -23,6 +29,7 @@ import { RouterOutput } from "@verific/api";
 
 // Types
 import type { UseFormReturn } from "react-hook-form";
+import { Input } from "@/components/ui/input";
 
 interface Props {
 	project: RouterOutput["getProject"]["project"];
@@ -31,55 +38,51 @@ interface Props {
 export function ProjectSettingsSubscriptionsForm({ project }: Props) {
 	const updateMutation = trpc.updateProject.useMutation();
 
-	const handleFormSubmit = async (
-		form: UseFormReturn<any>,
-		successMessage: string,
-		errorMessage: string,
-		logMessage: string,
-	) => {
+	const onSubmitSubscriptionManagement = async (form: UseFormReturn<any>) => {
 		const data = form.getValues();
-		const { colors, ...rest } = data;
-
 		try {
 			await updateMutation.mutateAsync({
 				id: project.id,
-				...colors,
-				...rest,
+				isRegistrationEnabled: data.enableSubscription,
 			});
-			toast.success(successMessage);
+			toast.success("Configurações de inscrição atualizadas!");
 			form.reset(data);
 		} catch (error) {
-			toast.error(errorMessage);
-			console.error(logMessage, error);
+			toast.error("Erro ao atualizar configurações de inscrição.");
+			console.error("Error updating subscription management:", error);
 		}
 	};
 
-	const onSubmitSubscriptionManagement = async (form: UseFormReturn<any>) => {
-		await handleFormSubmit(
-			form,
-			"Configurações de inscrição atualizadas!",
-			"Erro ao atualizar configurações de inscrição.",
-			"Error updating subscription management:",
-		);
-	};
-
 	const onSubmitBranding = async (form: UseFormReturn<any>) => {
-		await handleFormSubmit(
-			form,
-			"Configurações de marca atualizadas!",
-			"Erro ao atualizar configurações de marca.",
-			"Error updating branding:",
-		);
+		const data = form.getValues();
+		try {
+			await updateMutation.mutateAsync({
+				id: project.id,
+				logoUrl: data.logoUrl,
+				coverUrl: data.bannerUrl,
+			});
+			toast.success("Configurações de marca atualizadas!");
+			form.reset(data);
+		} catch (error) {
+			toast.error("Erro ao atualizar configurações de marca.");
+			console.error("Error updating branding:", error);
+		}
 	};
 
 	const onSubmitColors = async (form: UseFormReturn<any>) => {
-		console.log("form", form.getValues());
-		await handleFormSubmit(
-			form,
-			"Cores do evento atualizadas!",
-			"Erro ao atualizar cores do evento.",
-			"Error updating colors:",
-		);
+		const data = form.getValues();
+		try {
+			await updateMutation.mutateAsync({
+				id: project.id,
+				primaryColor: data.primaryColor,
+				secondaryColor: data.secondaryColor,
+			});
+			toast.success("Cores do evento atualizadas!");
+			form.reset(data);
+		} catch (error) {
+			toast.error("Erro ao atualizar cores do evento.");
+			console.error("Error updating colors:", error);
+		}
 	};
 
 	return (
@@ -87,53 +90,77 @@ export function ProjectSettingsSubscriptionsForm({ project }: Props) {
 			{/* Manage subscription */}
 			<SettingsFormCard
 				schema={subscriptionManagementSchema}
-				fieldName="enableSubscription"
 				title="Gerenciar Inscrições"
 				description="Decida se usuários poderão utilizar a página de inscrição para se cadastrarem ou não"
-				label="Inscrição habilitada"
-				initialState={project.isRegistrationEnabled}
+				initialState={{
+					enableSubscription: project.isRegistrationEnabled,
+				}}
 				onSubmit={onSubmitSubscriptionManagement}
-				renderField={(field) => (
-					<div className="flex items-center space-x-2">
-						<Switch
-							id="enableSubscription"
-							checked={field.value}
-							onCheckedChange={field.onChange}
-							size={"lg"}
-						/>
-						<Label htmlFor="enableSubscription">
-							Inscrição habilitada
-						</Label>
-					</div>
+				renderField={(form) => (
+					<FormField
+						control={form.control}
+						name="enableSubscription"
+						render={({ field }) => (
+							<FormItem>
+								<FormControl>
+									<div className="flex items-center space-x-2">
+										<Switch
+											id="enableSubscription"
+											checked={field.value}
+											onCheckedChange={field.onChange}
+											size={"lg"}
+										/>
+										<Label htmlFor="enableSubscription">
+											Inscrição habilitada
+										</Label>
+									</div>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
 				)}
 				footer={{
 					text: "As mudanças podem levar alguns minutos para tomar efeito",
 				}}
 			/>
 
-			{/* Branding */}
 			<SettingsFormCard
-				schema={brandingSchema} // Pode precisar de múltiplos fieldNames ou um fieldName de objeto
-				fieldName="branding" // Exemplo, ajuste conforme a estrutura do schema e do formulário
+				schema={brandingSchema}
 				title="Marca do Evento"
 				description="Estes elementos serão utilizados na página de inscrição para customizá-la com a marca de seu evento"
 				initialState={{
+					logoUrl: project.logoUrl || "",
+					bannerUrl: project.coverUrl || "",
 					thumbnailUrl: project.thumbnailUrl || "",
-					coverUrl: project.coverUrl || "",
 				}}
 				onSubmit={onSubmitBranding}
-				renderField={(
-					field, // Este renderField precisará ser ajustado para lidar com uploads/inputs de URL
-				) => (
-					<div className="flex flex-row items-center gap-6">
-						<div className="bg-input flex h-24 w-24 min-w-24 cursor-pointer items-center justify-center rounded-full md:h-32 md:w-32">
-							{/* Input para thumbnailUrl - field.value.thumbnailUrl, field.onChange(...) */}
-							<ImageUp className="text-muted-foreground h-8 w-8" />
-						</div>
-						<div className="bg-input flex h-24 w-96 cursor-pointer items-center justify-center rounded md:h-32">
-							{/* Input para coverUrl - field.value.coverUrl, field.onChange(...) */}
-							<ImageUp className="text-muted-foreground h-8 w-8" />
-						</div>
+				renderField={(form) => (
+					<div className="flex flex-col gap-2">
+						<FormField
+							control={form.control}
+							name="logoUrl"
+							render={({ field }) => (
+								<Input {...field} placeholder="URL da logo" />
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="bannerUrl"
+							render={({ field }) => (
+								<Input {...field} placeholder="URL da capa" />
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="thumbnailUrl"
+							render={({ field }) => (
+								<Input
+									{...field}
+									placeholder="URL da miniatura"
+								/>
+							)}
+						/>
 					</div>
 				)}
 				footer={{
@@ -143,8 +170,7 @@ export function ProjectSettingsSubscriptionsForm({ project }: Props) {
 
 			{/* Colors */}
 			<SettingsFormCard
-				schema={colorSchema} // Pode precisar de múltiplos fieldNames ou um fieldName de objeto
-				fieldName="colors" // Exemplo, ajuste conforme a estrutura do schema e do formulário
+				schema={colorSchema}
 				title="Cores"
 				description="Escolha uma principal e uma cor secundária para uso na página de inscrição"
 				initialState={{
@@ -152,36 +178,36 @@ export function ProjectSettingsSubscriptionsForm({ project }: Props) {
 					secondaryColor: project.secondaryColor,
 				}}
 				onSubmit={onSubmitColors}
-				renderField={(
-					field, // Este renderField precisará ser ajustado para lidar com dois color pickers
-				) => (
+				renderField={(form) => (
 					<div className="flex flex-row flex-wrap items-center justify-start gap-6">
 						<div className="flex flex-row items-center justify-start gap-4">
 							<span className="text-muted-foreground text-sm font-normal">
 								Cor principal
 							</span>
-							<ColorPicker
-								color={field.value.primaryColor}
-								onChange={(color) =>
-									field.onChange({
-										...field.value,
-										primaryColor: color,
-									})
-								}
+							<FormField
+								control={form.control}
+								name="primaryColor"
+								render={({ field }) => (
+									<ColorPicker
+										color={field.value}
+										onChange={field.onChange}
+									/>
+								)}
 							/>
 						</div>
 						<div className="flex flex-row items-center justify-start gap-4">
 							<span className="text-muted-foreground text-sm font-normal">
 								Cor secundária
 							</span>
-							<ColorPicker
-								color={field.value.secondaryColor}
-								onChange={(color) => {
-									field.onChange({
-										...field.value,
-										secondaryColor: color,
-									});
-								}}
+							<FormField
+								control={form.control}
+								name="secondaryColor"
+								render={({ field }) => (
+									<ColorPicker
+										color={field.value}
+										onChange={field.onChange}
+									/>
+								)}
 							/>
 						</div>
 					</div>

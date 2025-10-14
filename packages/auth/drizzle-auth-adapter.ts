@@ -27,7 +27,10 @@ export const drizzleAuthAdapter: Adapter = {
 			throw new Error("Failed to create user.");
 		}
 
-		return drizzleUser;
+		return {
+			...drizzleUser,
+			image: drizzleUser.image_url,
+		};
 	},
 
 	async getUser(id) {
@@ -36,7 +39,10 @@ export const drizzleAuthAdapter: Adapter = {
 		});
 
 		if (authUser) {
-			return authUser;
+			return {
+				...authUser,
+				image: authUser.image_url,
+			};
 		}
 
 		return null;
@@ -48,7 +54,10 @@ export const drizzleAuthAdapter: Adapter = {
 		});
 
 		if (authUser) {
-			return authUser;
+			return {
+				...authUser,
+				image: authUser.image_url,
+			};
 		}
 
 		return null;
@@ -70,7 +79,10 @@ export const drizzleAuthAdapter: Adapter = {
 				);
 
 			if (authUser) {
-				return authUser.user;
+				return {
+					...authUser.user,
+					image: authUser.user.image_url,
+				};
 			}
 		} catch (error) {
 			console.error("getUserByAccount", error);
@@ -100,7 +112,10 @@ export const drizzleAuthAdapter: Adapter = {
 			throw new Error("Failed to update user.");
 		}
 
-		return drizzleUser;
+		return {
+			...drizzleUser,
+			image: drizzleUser.image_url,
+		};
 	},
 
 	async linkAccount(accountToCreate) {
@@ -134,7 +149,13 @@ export const drizzleAuthAdapter: Adapter = {
 			throw new Error("Failed to get session.");
 		}
 
-		return drizzleSession;
+		return {
+			session: drizzleSession.session,
+			user: {
+				...drizzleSession.user,
+				image: drizzleSession.user.image_url,
+			},
+		};
 	},
 
 	async updateSession({ sessionToken, ...sessionToUpdate }) {

@@ -1,4 +1,4 @@
-import type {} from "./auth.d.ts";
+import type { } from "./auth.d.ts";
 import { db } from "@verific/drizzle";
 
 import { drizzleAuthAdapter } from "./drizzle-auth-adapter";
@@ -59,6 +59,8 @@ export const authConfig = {
 			}
 		},
 		jwt({ token, user, trigger }) {
+			// console.log("JWT callback", { trigger, user, token });
+
 			// Atualiza a sessão com os dados do usuário. É triggerado quando o usuário faz login ou atualiza a sessão
 			if (trigger === "update" && !!user) {
 				token.email = user.email;
@@ -67,15 +69,15 @@ export const authConfig = {
 				token.name = user.name;
 			}
 
+			// Define a imagem no token durante o signIn
+			if (trigger === "signIn" && !!user) {
+				token.picture = user.image;
+			}
+
 			return token;
 		},
 		session({ session, token, user, trigger }) {
-			/* console.log("Session", {
-				session,
-				token,
-				user,
-				trigger,
-			}); */
+			// console.log("Session callback", { trigger, user, session, token });
 
 			// Atualiza a sessão com os dados do token. É triggerado quando o usuário faz login ou atualiza a sessão
 			// Se o usuário não estiver logado, não faz nada

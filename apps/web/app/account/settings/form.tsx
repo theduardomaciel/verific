@@ -6,6 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
+import {
+	FormField,
+	FormItem,
+	FormControl,
+	FormMessage,
+} from "@/components/ui/form";
 
 // API
 import { RouterOutput } from "@verific/api";
@@ -49,13 +55,24 @@ export function AccountSettingsGeneral({ user }: Props) {
 			{/* Name */}
 			<SettingsFormCard
 				schema={nameSchema}
-				fieldName="name"
 				title="Nome"
 				description="Insira o nome de sua instituição que será exibido para participantes nas páginas de inscrição de seus eventos"
-				label="Nome"
-				initialState={user.name}
+				initialState={{ name: user.name }}
 				onSubmit={onSubmitName}
-				renderField={(field) => <Input {...field} autoComplete="off" />}
+				renderField={(form) => (
+					<FormField
+						control={form.control}
+						name="name"
+						render={({ field }) => (
+							<FormItem>
+								<FormControl>
+									<Input {...field} autoComplete="off" />
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+				)}
 				footer={{
 					text: "Por favor, use 32 caracteres no máximo",
 				}}

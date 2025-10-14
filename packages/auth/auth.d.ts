@@ -7,9 +7,9 @@ import NextAuth, {
 import type { AdapterUser as AdapterUserBase } from "next-auth/adapters";
 import { JWT } from "next-auth/jwt";
 
-interface CustomUser {}
+interface CustomUser { }
 
-export interface User extends DefaultUser, CustomUser {}
+export interface User extends DefaultUser, CustomUser { }
 
 export interface Session extends DefaultSession {
 	user: User;
@@ -17,12 +17,12 @@ export interface Session extends DefaultSession {
 
 // Extensões para AdapterUser
 declare module "next-auth/adapters" {
-	interface AdapterUser extends AdapterUserBase, CustomUser {}
+	interface AdapterUser extends AdapterUserBase, CustomUser { }
 }
 
 // Extensões para JWT
 declare module "next-auth/jwt" {
-	interface JWT {}
+	interface JWT { }
 }
 
 // Aqui você pode declarar novamente as interfaces, se necessário
