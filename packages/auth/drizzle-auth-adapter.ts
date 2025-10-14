@@ -17,6 +17,7 @@ export const drizzleAuthAdapter: Adapter = {
 				id: crypto.randomUUID(),
 				emailVerified: new Date(),
 				email: userToCreate.email,
+				public_email: userToCreate.email,
 				name: userToCreate.name,
 				image_url: userToCreate.image,
 			})

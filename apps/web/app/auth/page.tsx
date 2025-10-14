@@ -6,7 +6,6 @@ import Ticket from "@/public/ticket.svg";
 
 // Components
 import GoogleButton from "@/components/auth/GoogleButton";
-import Link from "next/link";
 
 export const metadata: Metadata = {
 	title: "Autenticação",
