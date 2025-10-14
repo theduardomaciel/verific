@@ -366,7 +366,7 @@ export function ColorPicker({
 				<Input
 					className="mb-4 w-full"
 					value={inputColor}
-					onChange={(e) => setInputColor(e.target.value)}
+					onChange={(e) => handleHexInput(e.target.value)}
 				/>
 
 				{/* Action buttons */}

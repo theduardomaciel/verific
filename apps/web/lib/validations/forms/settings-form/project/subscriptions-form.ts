@@ -17,6 +17,11 @@ const brandingSchema = z.object({
 		.url("URL do banner inválida")
 		.optional()
 		.or(z.literal("")),
+	thumbnailUrl: z
+		.string()
+		.url("URL da miniatura inválida")
+		.optional()
+		.or(z.literal("")),
 });
 
 // Schema para cores (hexadecimal)

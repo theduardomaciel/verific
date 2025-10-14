@@ -8,6 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { PlacePicker } from "@/components/pickers/place-picker";
 import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
 import { DateRangePicker } from "@/components/pickers/date-range-picker";
+import {
+	FormField,
+	FormItem,
+	FormControl,
+	FormMessage,
+} from "@/components/ui/form";
 
 // Validations
 import {
@@ -36,124 +42,172 @@ interface Props {
 export function ProjectSettingsGeneral({ project }: Props) {
 	const updateMutation = trpc.updateProject.useMutation();
 
-	// Função auxiliar para lidar com a submissão do formulário
-	const handleFormSubmit = async (
-		form: UseFormReturn<any>,
-		successMessage: string,
-		errorMessage: string,
-		logContext: string,
-	) => {
+	const onSubmitName = async (form: UseFormReturn<NameFormValues>) => {
 		const data = form.getValues();
-
 		try {
 			await updateMutation.mutateAsync({
 				id: project.id,
-				...data,
+				name: data.name,
 			});
-			toast.success(successMessage);
-			form.reset(data); // Resetar o formulário com os novos dados
+			toast.success("Nome do evento atualizado com sucesso!");
+			form.reset(data);
 		} catch (error) {
-			toast.error(errorMessage, { duration: 2500 });
-			console.error(`Error ${logContext}:`, error);
+			toast.error(
+				"Erro ao atualizar o nome do evento. Tente novamente mais tarde.",
+			);
+			console.error("updating event name", error);
 		}
 	};
 
-	const onSubmitName = async (form: UseFormReturn<NameFormValues>) => {
-		await handleFormSubmit(
-			form,
-			"Nome do evento atualizado com sucesso!",
-			"Erro ao atualizar o nome do evento. Tente novamente mais tarde.",
-			"updating event name",
-		);
-	};
-
 	const onSubmitEventDescription = async (form: UseFormReturn<any>) => {
-		await handleFormSubmit(
-			form,
-			"Descrição do evento atualizada!",
-			"Erro ao atualizar descrição do evento.",
-			"Error updating event description:",
-		);
+		const data = form.getValues();
+		try {
+			await updateMutation.mutateAsync({
+				id: project.id,
+				description: data.description,
+			});
+			toast.success("Descrição do evento atualizada!");
+			form.reset(data);
+		} catch (error) {
+			toast.error("Erro ao atualizar descrição do evento.");
+			console.error("Error updating event description:", error);
+		}
 	};
 
 	const onSubmitUrl = async (form: UseFormReturn<UrlFormValues>) => {
-		await handleFormSubmit(
-			form,
-			"URL do evento atualizada com sucesso!",
-			"Erro ao atualizar a URL do evento. Tente novamente mais tarde.",
-			"updating event url",
-		);
+		const data = form.getValues();
+		try {
+			await updateMutation.mutateAsync({
+				id: project.id,
+				url: data.url,
+			});
+			toast.success("URL do evento atualizada com sucesso!");
+			form.reset(data);
+		} catch (error) {
+			toast.error(
+				"Erro ao atualizar a URL do evento. Tente novamente mais tarde.",
+			);
+			console.error("updating event url", error);
+		}
 	};
 
 	const onSubmitDate = async (form: UseFormReturn<DateFormValues>) => {
-		await handleFormSubmit(
-			form,
-			"Data do evento atualizada com sucesso!",
-			"Erro ao atualizar a data do evento. Tente novamente mais tarde.",
-			"updating event date",
-		);
+		const data = form.getValues();
+		try {
+			await updateMutation.mutateAsync({
+				id: project.id,
+				startDate: data.startDate,
+				endDate: data.endDate,
+			});
+			toast.success("Data do evento atualizada com sucesso!");
+			form.reset(data);
+		} catch (error) {
+			toast.error(
+				"Erro ao atualizar a data do evento. Tente novamente mais tarde.",
+			);
+			console.error("updating event date", error);
+		}
 	};
 
 	const onSubmitAddress = async (form: UseFormReturn<AddressFormValues>) => {
-		await handleFormSubmit(
-			form,
-			"Endereço do evento atualizado com sucesso!",
-			"Erro ao atualizar o endereço do evento. Tente novamente mais tarde.",
-			"updating event address",
-		);
+		const data = form.getValues();
+		try {
+			await updateMutation.mutateAsync({
+				id: project.id,
+				address: data.address,
+				latitude: data.latitude,
+				longitude: data.longitude,
+			});
+			toast.success("Endereço do evento atualizado com sucesso!");
+			form.reset(data);
+		} catch (error) {
+			toast.error(
+				"Erro ao atualizar o endereço do evento. Tente novamente mais tarde.",
+			);
+			console.error("updating event address", error);
+		}
 	};
 
 	return (
 		<>
 			<SettingsFormCard
 				schema={nameSchema}
-				fieldName="name"
 				title="Nome do Evento"
 				description="Este é o nome da equipe que será exibido para todos os visitantes e participantes"
-				label="Nome"
-				renderField={(field) => <Input {...field} autoComplete="off" />}
-				initialState={project.name}
+				initialState={{ name: project.name }}
 				onSubmit={onSubmitName}
+				renderField={(form) => (
+					<FormField
+						control={form.control}
+						name="name"
+						render={({ field }) => (
+							<FormItem>
+								<FormControl>
+									<Input {...field} autoComplete="off" />
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+				)}
 				footer={{
 					text: "Por favor, use 32 caracteres no máximo",
 				}}
 			/>
 			<SettingsFormCard
 				schema={eventDescriptionSchema}
-				fieldName="description"
 				title="Descrição do Evento"
 				description="Esta breve descrição será exibida para todos os visitantes e participantes"
-				label="Descrição"
-				initialState={project.description}
+				initialState={{ description: project.description }}
 				onSubmit={onSubmitEventDescription}
-				renderField={(field) => (
-					<Textarea {...field} className="min-h-24" />
+				renderField={(form) => (
+					<FormField
+						control={form.control}
+						name="description"
+						render={({ field }) => (
+							<FormItem>
+								<FormControl>
+									<Textarea {...field} className="min-h-24" />
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
 				)}
 				footer={{
-					text: "Por favor, use 3000 caracteres no máximo",
+					text: "Por favor, use 512 caracteres no máximo",
 				}}
 			/>
 			<SettingsFormCard
 				schema={urlSchema}
-				fieldName="url"
 				title="URL do Evento"
 				description="Este é o endereço que os usuários poderão acessar para se inscrever em seu evento"
-				label="URL"
-				initialState={project.url}
+				initialState={{ url: project.url }}
 				onSubmit={onSubmitUrl}
-				renderField={(field) => (
-					<div className="flex items-center">
-						<div className="bg-muted flex h-9 items-center rounded-l-md border px-4">
-							<span className="text-muted-foreground">
-								verific.com/event/
-							</span>
-						</div>
-						<Input
-							{...field}
-							className="rounded-l-none border-l-0"
-							autoComplete="off"
-						/>
-					</div>
+				renderField={(form) => (
+					<FormField
+						control={form.control}
+						name="url"
+						render={({ field }) => (
+							<FormItem>
+								<FormControl>
+									<div className="flex items-center">
+										<div className="bg-muted flex h-9 items-center rounded-l-md border px-4">
+											<span className="text-muted-foreground">
+												verific.com/event/
+											</span>
+										</div>
+										<Input
+											{...field}
+											className="rounded-l-none border-l-0"
+											autoComplete="off"
+										/>
+									</div>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
 				)}
 				footer={{
 					text: "Por favor, use 36 caracteres no máximo",
@@ -161,19 +215,24 @@ export function ProjectSettingsGeneral({ project }: Props) {
 			/>
 			<SettingsFormCard
 				schema={dateSchema}
-				fieldName="dateRange"
 				title="Data do Evento"
 				description="Esta é a data de duração exibida aos usuários ao se inscrever em seu evento"
-				label="Data"
 				initialState={{
-					from: project.startDate,
-					to: project.endDate,
+					startDate: project.startDate,
+					endDate: project.endDate,
 				}}
 				onSubmit={onSubmitDate}
-				renderField={(field) => (
+				renderField={(form) => (
 					<DateRangePicker
-						value={field.value} // field.value aqui será { from: Date, to: Date }
-						onChange={field.onChange}
+						value={{
+							from: form.watch("startDate"),
+							to: form.watch("endDate"),
+						}}
+						onChange={(value) => {
+							if (value?.from)
+								form.setValue("startDate", value.from);
+							if (value?.to) form.setValue("endDate", value.to);
+						}}
 					/>
 				)}
 				footer={{
@@ -182,18 +241,26 @@ export function ProjectSettingsGeneral({ project }: Props) {
 			/>
 			<SettingsFormCard
 				schema={addressSchema}
-				fieldName="address"
 				title="Endereço do Evento"
 				description="Este é o local físico utilizado para hospedar seu evento. Ele será exibido aos participantes na página de inscrição."
-				label="Endereço"
 				initialState={{
 					address: project.address,
+					latitude: project.latitude,
+					longitude: project.longitude,
 				}}
 				onSubmit={onSubmitAddress}
-				renderField={(field) => (
+				renderField={(form) => (
 					<PlacePicker
-						defaultValue={field.value} // field.value aqui será { address: string, latitude: number, longitude: number }
-						onPlaceChange={field.onChange}
+						defaultValue={{
+							address: form.watch("address"),
+							latitude: form.watch("latitude"),
+							longitude: form.watch("longitude"),
+						}}
+						onPlaceChange={(value) => {
+							form.setValue("address", value.address);
+							form.setValue("latitude", value.latitude);
+							form.setValue("longitude", value.longitude);
+						}}
 					/>
 				)}
 				footer={{

@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { notFound } from "next/navigation";
+import Logo from "@/public/logo.svg";
 
 // Components
 import { Header } from "@/components/header/landing-header";
@@ -12,7 +13,7 @@ import { MainNavProps } from "@/components/header/main-nav";
 import { serverClient } from "@/lib/trpc/server";
 
 import { REM } from "next/font/google";
-import { auth } from "@verific/auth";
+
 const rem = REM({
 	variable: "--font-rem",
 	subsets: ["latin"],
@@ -39,6 +40,8 @@ export default async function EventLayout({
 			console.error("Event not found", { eventUrl });
 			notFound();
 		}
+
+		// console.log("Event data:", data);
 
 		event = data.project;
 		isParticipant = data.isParticipant;
@@ -111,12 +114,16 @@ export default async function EventLayout({
 				prefix={`/${eventUrl}`}
 				logo={
 					<Link href={`/${eventUrl}`}>
-						<Image
-							src={"/images/secomp.png"}
-							width={150}
-							height={28}
-							alt="Event logo"
-						/>
+						{event.logoUrl ? (
+							<Image
+								src={event.logoUrl}
+								width={150}
+								height={28}
+								alt="Event logo"
+							/>
+						) : (
+							<Logo className="h-8" />
+						)}
 					</Link>
 				}
 			/>

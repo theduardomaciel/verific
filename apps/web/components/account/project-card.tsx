@@ -11,6 +11,7 @@ import { updateProjectCookies } from "@/app/actions";
 
 // Types
 import { RouterOutput } from "@verific/api";
+import Image from "next/image";
 
 interface EventCardProps {
 	project: RouterOutput["getProjects"][number];
@@ -27,12 +28,15 @@ export function AccountEventCard({ project }: EventCardProps) {
 					project.startDate.toISOString(),
 				)
 			}
-			className="bg-card hover:bg-foreground/5 flex w-full cursor-pointer items-center justify-between rounded-lg p-4 transition-colors"
+			className="bg-card hover:bg-foreground/5 relative flex w-full cursor-pointer items-center justify-between rounded-lg p-4 transition-colors"
 		>
+			{project.thumbnailUrl && (
+				<Image src={project.thumbnailUrl} alt="" fill />
+			)}
 			<div className="flex items-center gap-6">
 				<Avatar className="bg-border flex h-11 w-11 items-center justify-center rounded-full">
 					<AvatarImage
-						src={project.thumbnailUrl || undefined}
+						src={project.logoUrl || undefined}
 						alt={project.name}
 					/>
 					<AvatarFallback>
