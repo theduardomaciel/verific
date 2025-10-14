@@ -251,15 +251,21 @@ export function ProjectSettingsGeneral({ project }: Props) {
 				onSubmit={onSubmitAddress}
 				renderField={(form) => (
 					<PlacePicker
-						defaultValue={{
+						value={{
 							address: form.watch("address"),
 							latitude: form.watch("latitude"),
 							longitude: form.watch("longitude"),
 						}}
 						onPlaceChange={(value) => {
-							form.setValue("address", value.address);
-							form.setValue("latitude", value.latitude);
-							form.setValue("longitude", value.longitude);
+							form.setValue("address", value.address, {
+								shouldDirty: true,
+							});
+							form.setValue("latitude", value.latitude, {
+								shouldDirty: true,
+							});
+							form.setValue("longitude", value.longitude, {
+								shouldDirty: true,
+							});
 						}}
 					/>
 				)}

@@ -7,7 +7,7 @@ export const speaker = pgTable("speakers", {
 	id: smallserial("id").primaryKey(),
 	name: text("name").notNull(),
 	description: text("description"),
-	imageUrl: text("image_url").notNull(),
+	imageUrl: text("image_url"),
 	projectId: uuid("project_id")
 		.notNull()
 		.references(() => project.id, {

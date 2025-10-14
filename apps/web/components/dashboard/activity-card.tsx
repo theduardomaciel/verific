@@ -4,17 +4,15 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 // Icons
-import { Calendar, Clock, Timer, User, Users } from "lucide-react";
+import { User, Users } from "lucide-react";
 
 // Components
-import { Badge } from "@/components/ui/badge";
 import { CategoryLabel } from "@/components/dashboard/category-card";
-
-// Data
-import { formatFriendlyDate, isLive, isStartingSoon } from "@/lib/data";
 
 // Types
 import { RouterOutput } from "@verific/api";
+import { ActivityStatus } from "../activity/activity-status";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 interface ActivityCardProps {
 	className?: string;
@@ -35,13 +33,12 @@ export function SimpleActivityCard({ activity, className }: ActivityCardProps) {
 					{activity.name}
 				</h3>
 				<span className="flex flex-row items-center justify-center gap-2">
-					<Image
-						className="rounded-full"
-						src={activity.speaker?.imageUrl || ""}
-						alt="Logo"
-						width={14}
-						height={14}
-					/>
+					<Avatar className="h-5 w-5">
+						<AvatarImage src={activity.speaker?.imageUrl || ""} />
+						<AvatarFallback className="uppercase">
+							<User className="h-2.5 w-2.5 text-slate-300" />
+						</AvatarFallback>
+					</Avatar>
 					{activity.speaker && (
 						<p className="text-muted-foreground/80 -mt-0.5 text-sm">
 							{activity.speaker.name}
@@ -172,30 +169,7 @@ function ActivityInfo({ className, speaker, category, dateFrom }: InfoProps) {
 				)}
 			</div>
 
-			{isLive(dateFrom) ? (
-				<Badge className="gap-2" variant="destructive">
-					<div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white">
-						<div className="absolute h-1.5 w-1.5 animate-ping rounded-full bg-white" />
-					</div>
-					AGORA
-				</Badge>
-			) : isStartingSoon(dateFrom) ? (
-				<Badge variant="secondary">
-					<Timer className="h-4 w-4" />
-					EM INSTANTES
-				</Badge>
-			) : (
-				<div className="text-foreground flex items-center justify-center gap-2">
-					{speaker ? (
-						<Calendar className="mt-[1.2px] h-4 w-4" />
-					) : (
-						<Clock className="mt-[1.2px] h-3 w-3" />
-					)}
-					<p className="text-sm leading-0 overflow-ellipsis">
-						{formatFriendlyDate(dateFrom, !!speaker)}
-					</p>
-				</div>
-			)}
+			<ActivityStatus dateFrom={dateFrom} speaker={speaker} />
 		</div>
 	);
 }

@@ -150,6 +150,7 @@ export const projectsRouter = createTRPCRouter({
 							id: true,
 							name: true,
 							image_url: true,
+							public_email: true,
 						},
 					},
 				},

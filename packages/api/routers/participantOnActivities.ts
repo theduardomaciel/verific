@@ -26,10 +26,11 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 			const userId = ctx.session?.user.id;
 
 			if (!userId) {
-				throw new TRPCError({
-					code: "UNAUTHORIZED",
-					message: "User not authenticated.",
-				});
+				return {
+					isParticipant: false,
+					activities: [],
+					role: null,
+				};
 			}
 
 			// Busca o projeto e o participante em uma única consulta

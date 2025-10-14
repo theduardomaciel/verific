@@ -4,12 +4,13 @@ import { QRCodeSVG } from "qrcode.react";
 import { cn } from "@/lib/utils";
 
 // Icons
-import { Check, User, Clock, BarcodeIcon } from "lucide-react";
+import { Check, User, Clock } from "lucide-react";
 import AndroidIcon from "@/public/icons/android.svg";
 import AppleIcon from "@/public/icons/apple.svg";
 
 // Components
 import { BadgeScanner } from "@/components/badge-scanner";
+import { ActivityStatus } from "./activity-status";
 
 // Utils
 import { formatFriendlyDate } from "@/lib/data";
@@ -55,17 +56,16 @@ export function ActivityTicket({
 			{/* Main content - flex-col on mobile, flex-row on md+ */}
 			<div className="flex flex-col md:flex-row">
 				{/* Left/Top section */}
-				<div className="bg-card flex flex-1 flex-col p-6">
-					<div className="flex-grow">
-						<div className="mb-6 flex items-start justify-between">
-							<div>
-								<h2 className="text-2xl font-bold">
-									{activity.name}
-								</h2>
-							</div>
-							<div className="bg-destructive animate-pulse rounded px-3 py-1 text-xs font-bold !text-white">
-								AGORA
-							</div>
+				<div className="bg-card flex flex-col p-6 md:max-w-3/5">
+					<div>
+						<div className="mb-6 flex w-full flex-wrap items-center justify-between gap-2">
+							<h2 className="line-clamp-2 text-2xl font-bold break-words">
+								KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+							</h2>
+							<ActivityStatus
+								dateFrom={activity.dateFrom}
+								speaker={activity.speaker}
+							/>
 						</div>
 
 						{activity.description && (
@@ -274,7 +274,7 @@ export function ActivityTicket({
 				</div>
 
 				{/* Right section */}
-				<div className="bg-card flex w-full flex-col items-center justify-center px-6 md:w-64 md:pl-0">
+				<div className="bg-card flex w-full flex-1 flex-col items-center justify-center px-6 md:pl-0">
 					{isModerator ? (
 						<>
 							<div className="hidden w-full flex-col items-center justify-center py-6 md:flex">

@@ -21,6 +21,9 @@ import { Badge } from "@/components/ui/badge";
 import { serverClient } from "@/lib/trpc/server";
 
 import * as EventContainer from "@/components/landing/event-container";
+import { ReportEventDialog } from "@/components/dialogs/report-event-dialog";
+import { ActivityShare } from "@/components/activity/activity-share";
+import { env } from "process";
 
 export default async function EventPage({
 	params,
@@ -86,10 +89,18 @@ export default async function EventPage({
 						height={240}
 						className="border-primary max-w-md overflow-hidden rounded-3xl border-2"
 					/>
-					<Button className="absolute -bottom-4 left-1/2 h-10 -translate-x-1/2 !px-6">
-						<Share2 className="h-5 w-5" />
-						<span>Compartilhar</span>
-					</Button>
+					<ActivityShare
+						shareData={{
+							title: event.name,
+							text: event.description || undefined,
+							url: `${env.NEXT_PUBLIC_VERCEL_URL}/${event.url}`,
+						}}
+					>
+						<Button className="absolute -bottom-4 left-1/2 h-10 -translate-x-1/2 !px-6">
+							<Share2 className="h-5 w-5" />
+							<span>Compartilhar</span>
+						</Button>
+					</ActivityShare>
 				</div>
 			</EventContainer.Hero>
 
@@ -108,11 +119,19 @@ export default async function EventPage({
 							<h3 className="mb-4 text-xl font-medium">Local</h3>
 							<p className="mb-4">{event.address}</p>
 							<Button
+								asChild
 								variant="outline"
 								className="flex w-full items-center justify-center gap-2"
 							>
-								<MapPin className="h-4 w-4" />
-								<span>Ver no mapa</span>
+								<a
+									/* href={`https://www.google.com/maps/search/?api=1&query=${event.latitude},${event.longitude}`} */
+									href={`https://www.google.com/maps/search/${encodeURIComponent(event.address)}`}
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									<MapPin className="h-4 w-4" />
+									<span>Ver no mapa</span>
+								</a>
 							</Button>
 						</div>
 						<div className="flex flex-col rounded-lg border p-6">
@@ -121,22 +140,27 @@ export default async function EventPage({
 							</h3>
 							<p className="mb-4">{event.owner.name}</p>
 							<Button
+								asChild
 								variant="outline"
 								className="flex w-full items-center justify-center gap-2"
 							>
-								<Mail className="h-4 w-4" />
-								<span>Falar com o produtor</span>
+								<a href={`mailto:${event.owner.public_email}`}>
+									<Mail className="h-4 w-4" />
+									<span>Falar com o produtor</span>
+								</a>
 							</Button>
 						</div>
 						<span className="flex w-full items-end justify-end">
-							<Button
-								variant={"outline"}
-								size={"lg"}
-								className="mt-4 max-lg:w-full"
-							>
-								<Flag className="mr-2 h-4 w-4" />
-								<span>Denunciar esse evento</span>
-							</Button>
+							<ReportEventDialog eventId={event.id}>
+								<Button
+									variant={"outline"}
+									size={"lg"}
+									className="mt-4 max-lg:w-full"
+								>
+									<Flag className="mr-2 h-4 w-4" />
+									<span>Denunciar este evento</span>
+								</Button>
+							</ReportEventDialog>
 						</span>
 					</div>
 				</div>

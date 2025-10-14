@@ -1,7 +1,7 @@
 "use client";
 
 // Icons
-import { ArrowRight, User } from "lucide-react";
+import { ArrowRight, Ticket } from "lucide-react";
 
 // Components
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -40,7 +40,7 @@ export function AccountEventCard({ project }: EventCardProps) {
 						alt={project.name}
 					/>
 					<AvatarFallback>
-						<User className="h-5 w-5 text-slate-300" />
+						<Ticket className="h-5 w-5 text-slate-300" />
 					</AvatarFallback>
 				</Avatar>
 				<div className="flex flex-col items-start gap-0.5">
