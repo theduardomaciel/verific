@@ -22,6 +22,13 @@
       "when": 1760411839133,
       "tag": "0002_charming_wong",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1760480887081,
+      "tag": "0003_slimy_lightspeed",
+      "breakpoints": true
     }
   ]
 }

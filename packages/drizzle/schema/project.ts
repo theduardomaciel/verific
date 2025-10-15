@@ -8,6 +8,7 @@ export const project = pgTable("projects", {
 	name: text("name").notNull(),
 	description: text("description"),
 	url: text("url").notNull(),
+	researchUrl: text("research_url"),
 
 	// 📍 Location fields
 	address: text("address").notNull(), // Human-readable address for display

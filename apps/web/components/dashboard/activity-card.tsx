@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 
 import { cn } from "@/lib/utils";
 
@@ -8,11 +7,13 @@ import { User, Users } from "lucide-react";
 
 // Components
 import { CategoryLabel } from "@/components/dashboard/category-card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+// Data
+import { ActivityStatus } from "../activity/activity-status";
 
 // Types
 import { RouterOutput } from "@verific/api";
-import { ActivityStatus } from "../activity/activity-status";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 interface ActivityCardProps {
 	className?: string;
@@ -169,7 +170,13 @@ function ActivityInfo({ className, speaker, category, dateFrom }: InfoProps) {
 				)}
 			</div>
 
-			<ActivityStatus dateFrom={dateFrom} speaker={speaker} />
+			<ActivityStatus
+				date={dateFrom}
+				dateFormat={{
+					includeDay: true,
+					includeHour: true,
+				}}
+			/>
 		</div>
 	);
 }

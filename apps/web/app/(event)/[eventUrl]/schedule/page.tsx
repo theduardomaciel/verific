@@ -4,7 +4,7 @@ import { serverClient } from "@/lib/trpc/server";
 import { cn } from "@/lib/utils";
 
 // Components
-import { ActivityCard } from "@/components/landing/activity-card";
+import { ActivityCard } from "@/components/activity/activity-card";
 import { SearchBar } from "@/components/dashboard/search-bar";
 import { SortBy } from "@/components/dashboard/sort-by";
 import * as EventContainer from "@/components/landing/event-container";
@@ -16,6 +16,9 @@ import { getActivitiesParams } from "@verific/api/routers/activities";
 
 // Auth
 import { auth } from "@verific/auth";
+
+// Utils
+import { categorizeByDate } from "@/lib/date-categorization";
 
 type SchedulePageParams = z.infer<typeof getActivitiesParams>;
 
@@ -36,6 +39,11 @@ export default async function EventSchedulePage(props: {
 	});
 
 	const session = await auth();
+
+	const { grouped, categories } = categorizeByDate(
+		activities,
+		(activity) => activity.dateFrom,
+	);
 
 	return (
 		<EventContainer.Holder>
@@ -88,24 +96,43 @@ export default async function EventSchedulePage(props: {
 				</div>
 
 				<div className="container-p mb-10">
-					<h2 className="mb-4 text-xl font-bold">Atividades</h2>
-					<div
-						className={cn("grid gap-6 md:grid-cols-2", {
-							flex: activities.length === 0,
-						})}
-					>
-						{activities.length > 0 ? (
-							activities.map((activity) => (
-								<ActivityCard
-									key={activity.id}
-									activity={activity}
-									userId={session?.user.id}
-								/>
-							))
-						) : (
-							<Empty />
-						)}
-					</div>
+					{activities.length > 0 ? (
+						categories.map((category) => (
+							<div key={category} className="mb-8">
+								<h3 className="mb-4 text-xl font-bold">
+									{category}
+								</h3>
+								<div className="grid gap-6 md:grid-cols-2">
+									{grouped
+										.get(category)!
+										.map((activity, idx, arr) => {
+											const isLastOdd =
+												arr.length % 2 === 1 &&
+												idx === arr.length - 1;
+											return (
+												<div
+													key={activity.id}
+													className={cn(
+														isLastOdd
+															? "md:col-span-2"
+															: "",
+													)}
+												>
+													<ActivityCard
+														activity={activity}
+														userId={
+															session?.user.id
+														}
+													/>
+												</div>
+											);
+										})}
+								</div>
+							</div>
+						))
+					) : (
+						<Empty />
+					)}
 				</div>
 			</EventContainer.Content>
 		</EventContainer.Holder>

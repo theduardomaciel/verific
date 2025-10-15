@@ -89,6 +89,7 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 					isParticipant: true,
 					activities,
 					role: projectRow.role,
+					participantId: participantId,
 				};
 			}
 

@@ -10,10 +10,13 @@ export async function loginAction(callbackUrl: string) {
 	await signIn("google", { callbackUrl });
 }
 
-export async function signOutAction() {
-	await signOut({
-		redirectTo: "/",
-	});
+/* export async function signOutAction(redirectTo: string = "/") {
+	await signOut({ redirectTo });
+} */
+
+export async function signOutAction(formData: FormData) {
+	const redirectTo = (formData.get("redirectTo") as string) || "/";
+	await signOut({ redirectTo });
 }
 
 export async function updateProjectCookies(

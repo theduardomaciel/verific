@@ -34,8 +34,9 @@ export function AccountEventCard({ project }: EventCardProps) {
 				<Image src={project.thumbnailUrl} alt="" fill />
 			)}
 			<div className="flex items-center gap-6">
-				<Avatar className="bg-border flex h-11 w-11 items-center justify-center rounded-full">
+				<Avatar className="bg-border flex h-11 w-24 items-center justify-center rounded-md px-4">
 					<AvatarImage
+						className="object-contain"
 						src={project.logoUrl || undefined}
 						alt={project.name}
 					/>

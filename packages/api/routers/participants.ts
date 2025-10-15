@@ -87,8 +87,8 @@ export const participantsRouter = createTRPCRouter({
 
 			const requestParticipant = requestUserId
 				? await db.query.participant.findFirst({
-						where: eq(participant.userId, requestUserId),
-					})
+					where: eq(participant.userId, requestUserId),
+				})
 				: undefined;
 
 			if (!requestUserId || !requestParticipant) {
@@ -114,18 +114,24 @@ export const participantsRouter = createTRPCRouter({
 				participantData.participantOnActivity,
 			)
 				? participantData.participantOnActivity.reduce(
-						(
-							total: number,
-							item: { activity: { workload: number | null } },
-						) => total + (item.activity?.workload || 0),
-						0,
-					)
+					(
+						total: number,
+						item: { activity: { workload: number | null } },
+					) => total + (item.activity?.workload || 0),
+					0,
+				)
 				: 0;
 
 			return {
 				participant: participantData,
+				isUser: requestUserId === participantData.userId,
 				hours: totalWorkload,
-				requestClientRole: requestParticipant.role,
+				totalEventsAttended: Array.isArray(
+					participantData.participantOnActivity,
+				)
+					? participantData.participantOnActivity.length
+					: 0,
+				clientRole: requestParticipant.role,
 			};
 		}),
 
@@ -151,9 +157,9 @@ export const participantsRouter = createTRPCRouter({
 				eq(participant.projectId, projectId),
 				search
 					? or(
-							ilike(user.name, `%${search}%`),
-							ilike(user.email, `%${search}%`),
-						)
+						ilike(user.name, `%${search}%`),
+						ilike(user.email, `%${search}%`),
+					)
 					: undefined,
 				periodsFilter && periodsFilter.length > 0
 					? inArray(participant.period, periodsFilter)

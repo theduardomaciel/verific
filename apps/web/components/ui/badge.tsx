@@ -22,6 +22,7 @@ const badgeVariants = cva(
 				default: "text-sm",
 				sm: "text-xs",
 				lg: "text-base",
+				xl: "text-lg",
 			},
 		},
 		defaultVariants: {

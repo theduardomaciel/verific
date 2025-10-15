@@ -17,6 +17,7 @@ import { formatFriendlyDate } from "@/lib/data";
 
 // API
 import { RouterOutput } from "@verific/api";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 export interface WorkshopTicketProps {
 	className?: string;
@@ -58,13 +59,17 @@ export function ActivityTicket({
 				{/* Left/Top section */}
 				<div className="bg-card flex flex-col p-6 md:max-w-3/5">
 					<div>
-						<div className="mb-6 flex w-full flex-wrap items-center justify-between gap-2">
-							<h2 className="line-clamp-2 text-2xl font-bold break-words">
-								KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+						<div className="mb-6 flex w-full flex-wrap items-center justify-between gap-6">
+							<h2 className="line-clamp-2 text-2xl leading-tight font-bold break-words">
+								{activity.name}
 							</h2>
 							<ActivityStatus
-								dateFrom={activity.dateFrom}
-								speaker={activity.speaker}
+								className="mt-1"
+								date={activity.dateFrom}
+								dateFormat={{
+									includeDay: true,
+									includeHour: false,
+								}}
 							/>
 						</div>
 
@@ -134,19 +139,35 @@ export function ActivityTicket({
 
 						{activity.speaker && (
 							<div className="bg-card mb-6 rounded-lg border p-4">
-								<div className="flex">
-									<div className="mr-3 h-12 min-h-12 w-12 min-w-12 overflow-hidden rounded-full bg-gray-500">
-										<Image
+								<div className="flex flex-row items-start gap-4">
+									<Avatar
+										className={cn(
+											"aspect-square h-12 w-12 object-cover",
+											{
+												"h-7 w-7":
+													!activity.speaker.imageUrl,
+											},
+										)}
+									>
+										<AvatarImage
 											src={
 												activity.speaker.imageUrl ||
-												"https://i.imgur.com/5Hsj4tJ.jpeg"
+												undefined
 											}
-											alt={""}
-											width={48}
-											height={48}
-											className="aspect-square object-cover"
 										/>
-									</div>
+										<AvatarFallback>
+											<User
+												className={cn(
+													"h-6 w-6 text-white",
+													{
+														"h-4 w-4":
+															!activity.speaker
+																.imageUrl,
+													},
+												)}
+											/>
+										</AvatarFallback>
+									</Avatar>
 									<div>
 										<h3 className="font-medium">
 											{activity.speaker.name}

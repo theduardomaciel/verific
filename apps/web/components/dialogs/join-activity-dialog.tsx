@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import {
 	ActivityCardSpeaker,
 	ActivityCardTags,
-} from "../landing/activity-card";
+} from "../activity/activity-card";
 
 // API
 import { RouterOutput } from "@verific/api";
@@ -88,23 +88,25 @@ export function JoinActivityDialog({ participantId, activity }: Props) {
 							para participar dessa e de outras atividades.
 						</DialogDescription>
 					</DialogHeader>
-					<Button asChild>
-						<Link href={`/${activity.project.url}/subscribe`}>
-							Inscrever-se no evento
-						</Link>
-					</Button>
-					<DialogFooter className="w-full">
-						<DialogClose asChild>
-							<Button
-								disabled={isLoading}
-								className="w-full"
-								type="button"
-								variant={"outline"}
-							>
-								Voltar
-							</Button>
-						</DialogClose>
-					</DialogFooter>
+					<div className="flex flex-col items-center justify-center gap-2">
+						<Button className="w-full" asChild>
+							<Link href={`/${activity.project.url}/subscribe`}>
+								Inscrever-se no evento
+							</Link>
+						</Button>
+						<DialogFooter className="w-full">
+							<DialogClose asChild>
+								<Button
+									disabled={isLoading}
+									className="w-full"
+									type="button"
+									variant={"outline"}
+								>
+									Voltar
+								</Button>
+							</DialogClose>
+						</DialogFooter>
+					</div>
 				</DialogContent>
 			</Dialog>
 		);
