@@ -98,8 +98,8 @@ export default async function EventPage({
 					<div className="mb-6 flex items-center text-lg text-white/90">
 						<Calendar className="mr-2 h-4.5 w-4.5" />
 						<span className="-mt-0.5 text-base">
-							De {event.startDate.toLocaleDateString()} a{" "}
-							{event.endDate.toLocaleDateString()}
+							De {event.startDate.toLocaleDateString("pt-BR")} a{" "}
+							{event.endDate.toLocaleDateString("pt-BR")}
 						</span>
 					</div>
 					<div className="mb-8 flex flex-wrap gap-3">
