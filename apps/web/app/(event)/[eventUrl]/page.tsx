@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import { env } from "@verific/env";
 
 // Icons
 import {
@@ -12,18 +13,19 @@ import {
 	Check,
 	TicketCheck,
 } from "lucide-react";
-
-// Icons
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+
+// Components
+import * as EventContainer from "@/components/landing/event-container";
+import { ShareDialog } from "@/components/dialogs/share-dialog";
+import { ReportEventDialog } from "@/components/dialogs/report-event-dialog";
 
 // API
 import { serverClient } from "@/lib/trpc/server";
 
-import * as EventContainer from "@/components/landing/event-container";
-import { ReportEventDialog } from "@/components/dialogs/report-event-dialog";
-import { ShareDialog } from "@/components/dialogs/share-dialog";
-import { env } from "process";
+// Utils
+import { isAfterEnd, isBeforeStart } from "@/lib/date";
 
 export default async function EventPage({
 	params,
@@ -38,6 +40,39 @@ export default async function EventPage({
 
 	if (!event) {
 		notFound();
+	}
+
+	const beforeStart = isBeforeStart(event.startDate);
+	const afterEnd = isAfterEnd(event.endDate);
+
+	const isArchived = event.isArchived;
+	const isRegistrationEnabled = event.isRegistrationEnabled;
+
+	let disabled = false;
+	let buttonText = "";
+	let href = `/${eventUrl}/schedule`;
+
+	if (isParticipant) {
+		buttonText = "Ver programação";
+		disabled = isArchived || afterEnd;
+	} else {
+		href = `/${eventUrl}/subscribe`;
+		if (isArchived) {
+			buttonText = "Evento arquivado";
+			disabled = true;
+		} else if (afterEnd) {
+			buttonText = "Evento encerrado";
+			disabled = true;
+		} else if (beforeStart) {
+			buttonText = "Inscrições ainda não abertas";
+			disabled = true;
+		} else if (!isRegistrationEnabled) {
+			buttonText = "Inscrições fechadas";
+			disabled = true;
+		} else {
+			buttonText = "Inscrever-se";
+			disabled = false;
+		}
 	}
 
 	return (
@@ -72,13 +107,18 @@ export default async function EventPage({
 							<span>Emite certificado</span>
 						</Badge>
 					</div>
-					<Button asChild size={"lg"} variant={"secondary"}>
-						<Link
-							href={`/${eventUrl}/${isParticipant ? "schedule" : "subscribe"}`}
-							className="h-fit !px-12 py-3 text-base font-semibold text-white uppercase max-md:w-full"
-						>
-							{isParticipant ? "Ver programação" : "Inscrever-se"}
-						</Link>
+					<Button
+						asChild={!disabled}
+						size={"lg"}
+						variant={"secondary"}
+						disabled={disabled}
+						className="px-12 py-6 text-base font-semibold text-white uppercase max-md:w-full"
+					>
+						{disabled ? (
+							buttonText
+						) : (
+							<Link href={href}>{buttonText}</Link>
+						)}
 					</Button>
 				</div>
 				<div className="relative z-20 flex items-center justify-center">

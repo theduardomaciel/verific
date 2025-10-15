@@ -37,8 +37,8 @@ const section2Keys = Object.keys(
 const formTitles = {
 	reason: "Pergunta 1",
 	discovery: "Pergunta 2",
-	accessibility: "Pergunta 3",
 	discoveryOther: undefined,
+	accessibility: "Pergunta 3",
 };
 
 export default function JoinForm2({ form }: { form: GenericForm }) {
@@ -59,7 +59,7 @@ export default function JoinForm2({ form }: { form: GenericForm }) {
 				render={({ field }) => (
 					<FormItem className="w-full">
 						<ResearchHeader index={1}>
-							&quot;O que fez você se inscrever no evento?&quot;
+							O que fez você se inscrever no evento?
 						</ResearchHeader>
 						<FormControl>
 							<Textarea
@@ -79,7 +79,7 @@ export default function JoinForm2({ form }: { form: GenericForm }) {
 					render={({ field }) => (
 						<FormItem className="w-full">
 							<ResearchHeader index={2}>
-								&quot;Por onde você descobriu o evento?&quot;
+								Por onde você descobriu o evento?
 							</ResearchHeader>
 							<Select
 								onValueChange={field.onChange}
@@ -126,10 +126,10 @@ export default function JoinForm2({ form }: { form: GenericForm }) {
 				name="section2.accessibility"
 				render={({ field }) => (
 					<FormItem className="w-full">
-						<ResearchHeader index={1}>
-							&quot;Você tem alguma necessidade especial de
+						<ResearchHeader index={3}>
+							Você tem alguma necessidade especial de
 							acessibilidade? Caso precise, cite-a no campo
-							abaixo: &quot;
+							abaixo:
 						</ResearchHeader>
 						<FormControl>
 							<Textarea

@@ -12,15 +12,14 @@ export const getDateString = (event: { dateFrom: Date; dateTo: Date }) => {
 		month: "2-digit",
 		day: "2-digit",
 		year: event.dateTo ? undefined : "numeric",
-	})}${
-		isDateDifferent(event.dateFrom, event.dateTo)
+	})}${isDateDifferent(event.dateFrom, event.dateTo)
 			? ` - ${event.dateTo.toLocaleDateString("pt-BR", {
-					year: "numeric",
-					month: "2-digit",
-					day: "2-digit",
-				})}`
+				year: "numeric",
+				month: "2-digit",
+				day: "2-digit",
+			})}`
 			: ""
-	}`;
+		}`;
 
 	return dateString;
 };
@@ -31,3 +30,11 @@ export const getTimeString = (date: Date) => {
 		minute: "2-digit",
 	});
 };
+
+export const isBeforeStart = (startDate: Date) => {
+	return new Date() < startDate;
+}
+
+export const isAfterEnd = (endDate: Date) => {
+	return new Date() > endDate;
+}

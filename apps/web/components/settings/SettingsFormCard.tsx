@@ -5,7 +5,10 @@ import { LoaderCircle } from "lucide-react";
 
 // Components
 import { Button } from "@/components/ui/button";
-import { SettingsCard } from "@/components/settings/settings-card";
+import {
+	SettingsCard,
+	SettingsCardFooterProps,
+} from "@/components/settings/settings-card";
 
 // Forms
 import { useForm, UseFormReturn } from "react-hook-form";
@@ -23,7 +26,7 @@ interface SettingsFormCardProps<T extends ZodTypeAny> {
 	onSubmit: (form: UseFormReturn<z.infer<T>>) => void;
 	renderField: (form: UseFormReturn<z.infer<T>>) => React.ReactNode;
 	footer?: {
-		text?: string;
+		text?: SettingsCardFooterProps["text"];
 		action?: {
 			label: string;
 			variant: "default" | "destructive";

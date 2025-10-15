@@ -28,6 +28,10 @@ export default async function EventSubscribePage({
 		redirect(`/${eventUrl}/my`);
 	}
 
+	if (!event.isRegistrationEnabled) {
+		redirect(`/${eventUrl}`);
+	}
+
 	const session = await auth();
 
 	return (

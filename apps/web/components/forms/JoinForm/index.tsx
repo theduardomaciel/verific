@@ -67,8 +67,8 @@ export default function JoinForm({
 			section2: {
 				reason: undefined,
 				discovery: undefined,
-				accessibility: undefined,
 				discoveryOther: "",
+				accessibility: undefined,
 			},
 		},
 	});
@@ -100,6 +100,10 @@ export default function JoinForm({
 				registrationId: values.section1.registrationId,
 				period: values.section1.period,
 				projectId,
+				reason: values.section2.reason,
+				accessibility: values.section2.accessibility,
+				discovery: values.section2.discovery,
+				discoveryOther: values.section2.discoveryOther,
 			});
 		} catch (error) {
 			console.error(error);

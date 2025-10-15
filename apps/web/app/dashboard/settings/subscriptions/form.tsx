@@ -111,7 +111,7 @@ export function ProjectSettingsSubscriptionsForm({ project }: Props) {
 											size={"lg"}
 										/>
 										<Label htmlFor="enableSubscription">
-											Inscrição habilitada
+											Habilitar Inscrições
 										</Label>
 									</div>
 								</FormControl>

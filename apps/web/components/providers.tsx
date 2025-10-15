@@ -44,7 +44,7 @@ export function Providers({ children }: { children: ReactNode }) {
 				<QueryClientProvider client={queryClient}>
 					<NextTopLoader showSpinner={false} color="var(--primary)" />
 					{children}
-					<Toaster richColors />
+					<Toaster richColors closeButton />
 				</QueryClientProvider>
 			</TRPCProvider>
 		</ThemeProvider>
