@@ -100,4 +100,71 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 				role: null,
 			};
 		}),
+	deleteParticipantFromActivity: publicProcedure
+		.input(
+			z.object({
+				activityId: z.string(),
+			}),
+		)
+		.mutation(async ({ input, ctx }) => {
+			const { activityId } = input;
+			const userId = ctx.session?.user.id;
+
+			if (!userId) {
+				throw new TRPCError({
+					code: "UNAUTHORIZED",
+					message: "Usuário não autenticado",
+				});
+			}
+
+			// Busca o participante pelo userId
+			const participantData = await db.query.participant.findFirst({
+				where: (participant, { eq }) => eq(participant.userId, userId),
+				columns: { id: true, projectId: true },
+			});
+
+			if (!participantData) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Participante não encontrado",
+				});
+			}
+
+			const participantId = participantData.id;
+
+			// Verifica se a atividade existe e pertence ao mesmo projeto que o participante
+			const activityData = await db.query.activity.findFirst({
+				where: (activity, { eq }) =>
+					and(
+						eq(activity.id, activityId),
+						eq(activity.projectId, participantData.projectId),
+					),
+				columns: { id: true },
+			});
+
+			if (!activityData) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Atividade não encontrada",
+				});
+			}
+
+			// Deleta a inscrição do participante na atividade
+			const deleteCount = await db
+				.delete(participantOnActivity)
+				.where(and(
+					eq(participantOnActivity.participantId, participantId),
+					eq(participantOnActivity.activityId, activityId),
+				))
+				.returning({ id: participantOnActivity.participantId });
+
+			if (!deleteCount.length) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Inscrição na atividade não encontrada",
+				});
+			}
+
+			return { success: true };
+		}),
 });

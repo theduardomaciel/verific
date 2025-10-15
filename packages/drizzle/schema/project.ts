@@ -7,6 +7,8 @@ export const project = pgTable("projects", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	name: text("name").notNull(),
 	description: text("description"),
+	welcomeMessage: text("welcome_message"),
+
 	url: text("url").notNull(),
 	researchUrl: text("research_url"),
 

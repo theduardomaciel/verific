@@ -159,10 +159,10 @@ export default function JoinForm({
 				title="Estamos realizando seu cadastro..."
 			/>
 			<SuccessDialog
-				isOpen={true}
+				isOpen={currentState === "submitted"}
 				onClose={() => {
 					setCurrentState(false);
-					router.push(`${`/${projectUrl}/schedule`}`);
+					router.push(`${`/${projectUrl}/my`}`);
 				}}
 				className="py-8 sm:!max-w-[40vw]"
 				title={

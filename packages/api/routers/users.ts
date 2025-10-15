@@ -25,9 +25,9 @@ export const usersRouter = createTRPCRouter({
 		.input(
 			z.object({
 				name: z.string(),
-				course: z.enum(courses),
-				registrationId: z.string(),
-				period: z.enum(periods),
+				course: z.enum(courses).optional(),
+				registrationId: z.string().optional(),
+				period: z.enum(periods).optional(),
 				projectId: z.string(),
 				reason: z.string().optional(),
 				accessibility: z.string().optional(),
@@ -89,7 +89,6 @@ export const usersRouter = createTRPCRouter({
 			// Submit research answers to Google Sheets if enabled
 			if (projectData?.isResearchEnabled && projectData.researchUrl && (reason || accessibility || discovery)) {
 				try {
-					/* 
 					const auth = new google.auth.GoogleAuth({
 						credentials: {
 							client_email: env.NEXT_PUBLIC_GOOGLE_SHEET_CLIENT_EMAIL,
@@ -97,14 +96,14 @@ export const usersRouter = createTRPCRouter({
 						},
 						scopes: ['https://www.googleapis.com/auth/spreadsheets'],
 					});
-					*/
-					const auth = new google.auth.GoogleAuth({
+
+					/* const auth = new google.auth.GoogleAuth({
 						scopes: ['https://www.googleapis.com/auth/spreadsheets'],
 					});
 
 					// Set environment variables for authentication
 					process.env.GOOGLE_CLIENT_EMAIL = env.NEXT_PUBLIC_GOOGLE_SHEET_CLIENT_EMAIL;
-					process.env.GOOGLE_PRIVATE_KEY = env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n');
+					process.env.GOOGLE_PRIVATE_KEY = env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'); */
 
 					const sheets = google.sheets({ version: 'v4', auth });
 

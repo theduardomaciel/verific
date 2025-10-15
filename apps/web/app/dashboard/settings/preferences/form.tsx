@@ -53,8 +53,10 @@ export function ProjectSettingsPreferencesForm({ project }: Props) {
 			});
 			toast.success("Preferências de pesquisa atualizadas!");
 			form.reset(data);
-		} catch (error) {
-			toast.error("Erro ao atualizar preferências de pesquisa.");
+		} catch (error: any) {
+			toast.error("Erro ao atualizar preferências de pesquisa:", {
+				description: error.message,
+			});
 			console.error("Error updating research preferences:", error);
 		}
 	};

@@ -6,7 +6,7 @@ import { CircleOff } from "lucide-react";
 interface Props {
 	href?: string;
 	title?: string;
-	description?: string;
+	description?: string | React.ReactNode;
 	className?: string;
 }
 
@@ -20,10 +20,14 @@ export function Empty({ href, title, description }: Props) {
 				{title ??
 					"Parece que não encontramos nada com base em sua pesquisa e filtros :("}
 			</p>
-			<p className="text-foreground text-center text-sm font-normal sm:w-[60%]">
-				{description ??
-					"Tente procurar por algo com outras palavras, ou remover alguns filtros pra ver se você acha dessa vez!"}
-			</p>
+			{typeof description === "string" || description === undefined ? (
+				<p className="text-foreground text-center text-sm font-normal sm:w-[60%]">
+					{description ??
+						"Tente procurar por algo com outras palavras, ou remover alguns filtros pra ver se você acha dessa vez!"}
+				</p>
+			) : (
+				description
+			)}
 			{href && (
 				<Link
 					href={`${href}?r=${randomId}`}

@@ -80,10 +80,13 @@ export default function JoinForm1({ form }: { form: GenericForm }) {
 							<FormLabel>{formTitles.course}</FormLabel>
 							<FormControl>
 								<Combobox
-									items={courses.map((course) => ({
-										label: course,
-										value: course,
-									}))}
+									items={[
+										{ label: "Nenhum", value: "" },
+										...courses.map((course) => ({
+											label: course,
+											value: course,
+										})),
+									]}
 									emptyMessage="Nenhum curso encontrado."
 									searchMessage="Pesquise um curso..."
 									placeholder="Selecione um curso"

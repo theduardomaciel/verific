@@ -31,9 +31,9 @@ export const activity = pgTable("activities", {
 	workload: integer("workload"),
 
 	// 📍 Location fields
-	/* address: text("address").notNull(), // Human-readable address for display
+	address: text("address"), // Human-readable address for display
 	latitude: doublePrecision("latitude"),
-	longitude: doublePrecision("longitude"), */
+	longitude: doublePrecision("longitude"),
 
 	projectId: uuid("project_id")
 		.notNull()

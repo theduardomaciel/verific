@@ -23,14 +23,20 @@ import { LogoutForm } from "@/components/ui/logout-form";
 
 // API
 import { serverClient } from "@/lib/trpc/server";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 interface Props {
 	id: string;
+	eventUrl?: string;
 }
 
-export async function ParticipantCard({ id: participantId }: Props) {
-	const cookieStore = await cookies();
-	const projectUrl = cookieStore.get("projectUrl")!.value;
+export async function ParticipantCard({ id: participantId, eventUrl }: Props) {
+	const projectUrl =
+		eventUrl ??
+		(await (async () => {
+			const cookieStore = await cookies();
+			return cookieStore.get("projectUrl")?.value ?? "";
+		})());
 
 	const { participant, hours, totalEventsAttended, clientRole, isUser } =
 		await serverClient.getParticipant({
@@ -40,16 +46,16 @@ export async function ParticipantCard({ id: participantId }: Props) {
 	return (
 		<Suspense fallback={<ParticipantCardSkeleton />}>
 			<DialogHeader className="flex flex-col items-center justify-start gap-6">
-				<Image
-					src={
-						participant.user.image_url ||
-						"https://github.com/juquinha.png"
-					}
-					alt={participant.user.name || "User profile image"}
-					className="overflow-hidden rounded-2xl"
-					width={128}
-					height={128}
-				/>
+				<Avatar className="h-32 w-32 rounded-2xl">
+					<AvatarImage src={participant.user.image_url || ""} />
+					<AvatarFallback>
+						{participant.user.name
+							?.split(" ")
+							.map((n) => n[0])
+							.join("")
+							.toUpperCase()}
+					</AvatarFallback>
+				</Avatar>
 				<div className="flex flex-col items-center justify-start gap-1">
 					<DialogTitle>{participant.user.name}</DialogTitle>
 					<DialogDescription>
@@ -102,7 +108,10 @@ export async function ParticipantCard({ id: participantId }: Props) {
 							</Link>
 						</Button>
 					) : (
-						<LogoutForm redirectTo={`/${projectUrl}`}>
+						<LogoutForm
+							className="w-full"
+							redirectTo={`/${projectUrl}`}
+						>
 							<Button type="submit" className="w-full">
 								<LogOut width={24} height={24} />
 								Log-out
