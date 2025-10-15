@@ -45,6 +45,7 @@ export const mutateActivityFormSchema = z.object({
 	category: z.enum(activityCategories, {
 		required_error: "É necessário informar qual a categoria da atividade.",
 	}),
+	address: z.string().optional(),
 });
 
 export type MutateActivityFormSchema = z.infer<typeof mutateActivityFormSchema>;

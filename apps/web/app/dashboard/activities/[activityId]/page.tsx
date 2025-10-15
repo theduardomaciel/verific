@@ -7,9 +7,9 @@ import {
 	Clock,
 	Edit,
 	Megaphone,
+	MapPin,
 	Share2,
 	Trash,
-	UserPlus,
 } from "lucide-react";
 
 // Components
@@ -89,6 +89,12 @@ export default async function ActivityPage(props: {
 						<Badge variant={"secondary"}>
 							<Megaphone className="h-4 w-4" />
 							{activity.tolerance}m de tolerância
+						</Badge>
+					) : null}
+					{activity.address ? (
+						<Badge variant={"secondary"}>
+							<MapPin className="h-4 w-4" />
+							{activity.address}
 						</Badge>
 					) : null}
 				</div>

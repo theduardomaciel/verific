@@ -9,6 +9,7 @@ import {
 	BookOpen,
 	Check,
 	User,
+	MapPin,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -134,6 +135,30 @@ function ActivityCardContent({
 			{activity.speaker && (
 				<ActivityCardSpeaker speaker={activity.speaker} />
 			)}
+
+			{activity.address ? (
+				<ActivityCardAddress address={activity.address} />
+			) : null}
+		</div>
+	);
+}
+
+function ActivityCardAddress({
+	address,
+	className,
+}: {
+	address: string;
+	className?: string;
+}) {
+	return (
+		<div
+			className={cn(
+				"mb-4 flex flex-row items-center justify-start gap-4 rounded-lg border px-4 py-3",
+				className,
+			)}
+		>
+			<MapPin className="h-4 w-4" />
+			<span className="text-sm font-medium">{address}</span>
 		</div>
 	);
 }
@@ -146,30 +171,19 @@ export function ActivityCardSpeaker({
 	return (
 		<div
 			className={cn(
-				"mb-4 flex items-center gap-3 rounded-lg border px-6 py-3",
-				{
-					"px-3": !speaker.imageUrl,
-				},
+				"mb-4 flex items-center gap-6 rounded-lg border px-6 py-4",
 			)}
 		>
-			<Avatar
-				className={cn("aspect-square h-10 w-10 object-cover", {
-					"h-6 w-6": !speaker.imageUrl,
-				})}
-			>
+			<Avatar className={cn("aspect-square h-10 w-10 object-cover")}>
 				<AvatarImage src={speaker.imageUrl || undefined} />
-				<AvatarFallback>
-					<User
-						className={cn("h-6 w-6 text-white", {
-							"h-4 w-4": !speaker.imageUrl,
-						})}
-					/>
+				<AvatarFallback className="cursor-default">
+					<User className={cn("h-6 w-6 text-white")} />
 				</AvatarFallback>
 			</Avatar>
-			<div>
-				<p className="text-sm font-medium">{speaker.name}</p>
-				<p className="text-muted-foreground text-xs">
-					{speaker.description}
+			<div className="flex flex-col items-start justify-start gap-0.5">
+				<p className="font-bold">{speaker.name}</p>
+				<p className="text-muted-foreground font-medium">
+					{speaker.description || "Palestrante"}
 				</p>
 			</div>
 		</div>

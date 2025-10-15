@@ -64,6 +64,7 @@ export default function MutateActivityForm({
 			category: activity?.category || undefined,
 			participantsLimit: activity?.participantsLimit || undefined,
 			audience: activity?.audience || "internal",
+			address: activity?.address || "",
 		},
 	});
 
