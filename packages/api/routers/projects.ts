@@ -12,6 +12,7 @@ export const updateProjectSchema = z.object({
 	name: z.string().optional(),
 	description: z.string().optional(),
 	url: z.string().optional(),
+	researchUrl: z.string().optional().nullable(),
 	address: z.string().optional(),
 	latitude: z.number().optional(),
 	longitude: z.number().optional(),

@@ -230,8 +230,13 @@ export function ProjectSettingsGeneral({ project }: Props) {
 						}}
 						onChange={(value) => {
 							if (value?.from)
-								form.setValue("startDate", value.from);
-							if (value?.to) form.setValue("endDate", value.to);
+								form.setValue("startDate", value.from, {
+									shouldDirty: true,
+								});
+							if (value?.to)
+								form.setValue("endDate", value.to, {
+									shouldDirty: true,
+								});
 						}}
 					/>
 				)}

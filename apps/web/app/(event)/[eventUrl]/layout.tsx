@@ -13,6 +13,7 @@ import { MainNavProps } from "@/components/header/main-nav";
 import { serverClient } from "@/lib/trpc/server";
 
 import { REM } from "next/font/google";
+import { isAfterEnd, isBeforeStart } from "@/lib/date";
 
 const rem = REM({
 	variable: "--font-rem",
@@ -77,7 +78,10 @@ export default async function EventLayout({
 					mobileClassName:
 						"text-primary-foreground uppercase py-3 border border-secondary w-full rounded text-center items-center text-sm bg-secondary",
 				}
-			: {
+			: event.isRegistrationEnabled &&
+				!event.isArchived &&
+				!isAfterEnd(event.endDate) &&
+				!isBeforeStart(event.startDate) && {
 					href: "/subscribe",
 					label: "Inscrições",
 					className:
@@ -86,7 +90,7 @@ export default async function EventLayout({
 					mobileClassName:
 						"text-primary-foreground uppercase py-3 border border-secondary w-full rounded text-center items-center text-sm bg-secondary",
 				},
-	] as MainNavProps["links"];
+	].filter(Boolean) as MainNavProps["links"];
 
 	return (
 		<div
