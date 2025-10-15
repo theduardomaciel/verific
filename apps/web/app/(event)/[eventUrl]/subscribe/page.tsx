@@ -22,7 +22,7 @@ export default async function EventSubscribePage({
 		url: eventUrl,
 	});
 
-	console.log("isParticipant", isParticipant);
+	// console.log("isParticipant", isParticipant);
 
 	if (isParticipant) {
 		redirect(`/${eventUrl}/my`);

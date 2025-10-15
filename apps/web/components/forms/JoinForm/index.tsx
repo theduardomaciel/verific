@@ -1,6 +1,7 @@
 "use client";
+import Image from "next/image";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -32,7 +33,6 @@ import type { GenericForm } from "..";
 // API
 import { trpc } from "@/lib/trpc/react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 
 export default function JoinForm({
 	user,
@@ -137,6 +137,15 @@ export default function JoinForm({
 		}
 	}
 
+	// GAMBIARRA: Caso o usuário logue e deslogue em seguida, os campos continuam com os valores preenchidos.
+	// Isso permitia que o usuário deslogado prosseguisse com o formulário.
+	useEffect(() => {
+		if (!user) {
+			form.setValue("section0.email", "");
+			form.setValue("section1.name", "");
+		}
+	}, [user]);
+
 	return (
 		<Form {...form}>
 			<FormWrapper>
@@ -146,7 +155,7 @@ export default function JoinForm({
 					})}
 				>
 					<JoinForm0
-						callbackUrl={`/event/${projectId}/subscribe`}
+						projectUrl={projectUrl}
 						form={form as unknown as GenericForm}
 						email={user?.email}
 					/>

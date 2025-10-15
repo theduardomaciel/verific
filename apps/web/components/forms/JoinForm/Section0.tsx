@@ -17,15 +17,13 @@ import { Logged } from "@/components/auth/LoginStatus";
 
 import GoogleButton from "@/components/auth/GoogleButton";
 
-export default function JoinForm0({
-	callbackUrl,
-	form,
-	email,
-}: {
-	callbackUrl: string;
+interface JoinForm0Props {
+	projectUrl: string;
 	form: GenericForm;
 	email?: string | null;
-}) {
+}
+
+export default function JoinForm0({ projectUrl, form, email }: JoinForm0Props) {
 	return (
 		<FormSection
 			title="Identificação"
@@ -44,11 +42,17 @@ export default function JoinForm0({
 				render={() => (
 					<FormItem className="w-full">
 						<FormLabel>E-mail institucional</FormLabel>
-						<GoogleButton
-							className="w-full"
-							callbackUrl={callbackUrl}
-						/>
-						{email && <Logged email={email} />}
+						{!email ? (
+							<GoogleButton
+								className="w-full"
+								callbackUrl={`/${projectUrl}/subscribe`}
+							/>
+						) : (
+							<Logged
+								email={email}
+								callbackUrl={`/${projectUrl}/subscribe`}
+							/>
+						)}
 						<FormMessage type="warning" showIcon />
 					</FormItem>
 				)}
