@@ -19,16 +19,11 @@ export const joinFormSection1Schema = z.object({
 				})
 				.join(" ");
 		}),
-	course: z.enum(courses, { required_error: "Selecione uma opção" }),
+	course: z.enum(courses).optional(),
 	registrationId: z
-		.string({ required_error: "Obrigatório" })
-		.min(7, {
-			message: "O número de matrícula é inválido.",
-		})
-		.max(9, { message: "O número de matrícula é inválido" }),
-	period: z.enum(periods, {
-		required_error: "Selecione uma opção",
-	}),
+		.string()
+		.max(9, { message: "O número de matrícula é inválido" }).optional(),
+	period: z.enum(periods).optional(),
 	phoneNumber: z
 		.string({ required_error: "Obrigatório" })
 		.regex(/^\(\d{2}\) \d{5}-\d{4}$/, {

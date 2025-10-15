@@ -157,7 +157,7 @@ export function ProjectSettingsGeneral({ project }: Props) {
 			<SettingsFormCard
 				schema={eventDescriptionSchema}
 				title="Descrição do Evento"
-				description="Esta breve descrição será exibida para todos os visitantes e participantes"
+				description="Esta breve descrição será exibida para todos os visitantes e participantes. Suporte a Markdown."
 				initialState={{ description: project.description }}
 				onSubmit={onSubmitEventDescription}
 				renderField={(form) => (
@@ -175,7 +175,7 @@ export function ProjectSettingsGeneral({ project }: Props) {
 					/>
 				)}
 				footer={{
-					text: "Por favor, use 512 caracteres no máximo",
+					text: "Por favor, use 3000 caracteres no máximo. Markdown é suportado.",
 				}}
 			/>
 			<SettingsFormCard

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 // Components
-import { Settings } from "lucide-react";
+import { ExternalLinkIcon, Settings } from "lucide-react";
 
 // Components
 import * as EventContainer from "@/components/landing/event-container";
@@ -61,7 +61,10 @@ export default async function EventAccountPage({
 							</Button>
 						}
 					>
-						<ParticipantCard id={participantId} />
+						<ParticipantCard
+							id={participantId}
+							eventUrl={eventUrl}
+						/>
 					</ParticipantCardDialog>
 				)}
 			</EventContainer.Hero>
@@ -101,7 +104,20 @@ export default async function EventAccountPage({
 					) : (
 						<Empty
 							title="Nenhuma atividade encontrada"
-							description="Você ainda não se inscreveu em nenhuma atividade."
+							description={
+								<div className="flex flex-col items-center justify-center gap-4">
+									Você ainda não se inscreveu em nenhuma
+									atividade.
+									<Button size={"lg"} asChild>
+										<Link href={`/${eventUrl}/schedule`}>
+											Explore a programação e inscreva-se
+											<span className="text-xs">
+												<ExternalLinkIcon className="ml-2" />
+											</span>
+										</Link>
+									</Button>
+								</div>
+							}
 						/>
 					)}
 				</div>

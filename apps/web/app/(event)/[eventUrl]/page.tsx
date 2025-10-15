@@ -2,6 +2,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { env } from "@verific/env";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 // Icons
 import {
@@ -26,6 +28,19 @@ import { serverClient } from "@/lib/trpc/server";
 
 // Utils
 import { isAfterEnd, isBeforeStart } from "@/lib/date";
+
+const markdownComponents = {
+	img: ({ src, alt, ...props }: any) => (
+		<Image
+			src={src || ""}
+			alt={alt || ""}
+			width={800}
+			height={600}
+			className="rounded-lg"
+			{...props}
+		/>
+	),
+};
 
 export default async function EventPage({
 	params,
@@ -147,7 +162,14 @@ export default async function EventPage({
 							Descrição do Evento
 						</h2>
 						<div className="space-y-6">
-							<p>{event.description}</p>
+							<div className="prose prose-lg dark:prose-invert max-w-none">
+								<ReactMarkdown
+									remarkPlugins={[remarkGfm]}
+									components={markdownComponents}
+								>
+									{event.description || ""}
+								</ReactMarkdown>
+							</div>
 						</div>
 					</div>
 					<div className="sticky top-16 right-0 lg:w-1/3">

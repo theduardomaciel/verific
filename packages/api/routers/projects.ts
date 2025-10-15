@@ -121,19 +121,53 @@ export const projectsRouter = createTRPCRouter({
 			if (updateData.researchUrl && typeof updateData.researchUrl === 'string') {
 				try {
 					const auth = new google.auth.GoogleAuth({
-						scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+						credentials: {
+							client_email: env.NEXT_PUBLIC_GOOGLE_SHEET_CLIENT_EMAIL,
+							private_key: env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+						},
+						scopes: ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.readonly'],
 					});
 
-					// Set environment variables for authentication
-					process.env.GOOGLE_CLIENT_EMAIL = env.NEXT_PUBLIC_GOOGLE_SHEET_CLIENT_EMAIL;
-					process.env.GOOGLE_PRIVATE_KEY = env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n');
+					const drive = google.drive({ version: 'v3', auth });
 
+					// First, check if the spreadsheet exists
 					const sheets = google.sheets({ version: 'v4', auth });
-
-					await sheets.spreadsheets.get({
+					const test = await sheets.spreadsheets.get({
 						spreadsheetId: updateData.researchUrl,
 					});
+
+					console.log('Spreadsheet exists.', test.data);
+
+					try {
+						// Then, check if the service account has editor permission
+						const permissions = await drive.permissions.list({
+							fileId: updateData.researchUrl,
+							fields: 'permissions(emailAddress,role)',
+						});
+
+						console.log(permissions.data.permissions);
+
+						const hasEditorPermission = permissions.data.permissions?.some(
+							(perm) =>
+								perm.emailAddress === env.NEXT_PUBLIC_GOOGLE_SHEET_CLIENT_EMAIL &&
+								(perm.role === 'writer' || perm.role === 'owner'),
+						);
+
+						console.log('Has editor permission:', hasEditorPermission);
+
+						if (!hasEditorPermission) {
+							throw new Error()
+						}
+					} catch (error) {
+						throw new TRPCError({
+							code: 'BAD_REQUEST',
+							message: 'A conta de serviço não tem permissão de editor na planilha. Compartilhe a planilha com o email do serviço com permissão de edição.',
+						});
+					}
 				} catch (error) {
+					if (error instanceof TRPCError) {
+						throw error;
+					}
 					throw new TRPCError({
 						code: 'BAD_REQUEST',
 						message: 'Não foi possível acessar a planilha. Verifique se o link está correto e se a planilha está compartilhada com o email do serviço.',

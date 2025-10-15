@@ -133,27 +133,36 @@ export function JoinActivityDialog({ participantId, activity }: Props) {
 					{activity.speaker ? (
 						<ActivityCardSpeaker speaker={activity.speaker} />
 					) : null}
-					<ActivityCardTags activity={activity} />
-					<div className="bg-muted/50 flex flex-row items-center justify-between gap-3 rounded-sm p-4 text-sm select-none">
-						<span className="text-muted-foreground text-sm">
-							Este evento possui <strong>fila de espera</strong>.
-						</span>
-						<TooltipProvider>
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<InfoIcon className="mt-0.5" size={16} />
-								</TooltipTrigger>
-								<TooltipContent className="max-w-[22rem]">
-									<p>
-										Caso não haja confirmação de sua
-										presença em {activity.tolerance}m a
-										partir do início da atividade, sua vaga
-										será cedida a outra pessoa.
-									</p>
-								</TooltipContent>
-							</Tooltip>
-						</TooltipProvider>
-					</div>
+					<ActivityCardTags
+						tagsClassName="bg-muted"
+						activity={activity}
+					/>
+					{activity?.tolerance ? (
+						<div className="bg-muted/50 flex flex-row items-center justify-between gap-3 rounded-sm p-4 text-sm select-none">
+							<span className="text-muted-foreground text-sm">
+								Este evento possui{" "}
+								<strong>fila de espera</strong>.
+							</span>
+							<TooltipProvider>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<InfoIcon
+											className="mt-0.5"
+											size={16}
+										/>
+									</TooltipTrigger>
+									<TooltipContent className="max-w-[22rem]">
+										<p>
+											Caso não haja confirmação de sua
+											presença em {activity.tolerance}m a
+											partir do início da atividade, sua
+											vaga será cedida a outra pessoa.
+										</p>
+									</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
+						</div>
+					) : null}
 				</div>
 				{/* <p className="text-foreground text-sm">
 					Você está prestes a entrar na atividade{" "}

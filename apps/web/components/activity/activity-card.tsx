@@ -11,16 +11,18 @@ import {
 	User,
 } from "lucide-react";
 
+import { cn } from "@/lib/utils";
+
 // Components
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { ParticipantQuitButton } from "../participant/participant-quit-button";
 
 // Types
 import { RouterOutput } from "@verific/api";
 
 // Lib
-import { cn } from "@/lib/utils";
 import { getDateString, getTimeString } from "@/lib/date";
 import { activityCategoryLabels } from "@verific/drizzle/schema";
 
@@ -45,32 +47,40 @@ export function ActivityCard({ activity, userId }: EventCardProps) {
 			<ActivityCardContent activity={activity} />
 			<div className="mt-auto flex flex-col flex-wrap items-start justify-center gap-4 md:flex-row-reverse md:items-center md:justify-between">
 				<ActivityCardTags activity={activity} />
-				<Button
-					variant={"default"}
-					size={"lg"}
-					className={cn({
-						"pointer-events-none opacity-50":
-							!hasRemainingSeats || isParticipant,
-					})}
-					asChild
-				>
-					<Link
-						href={`/${activity.project?.url}/schedule/${activity.id}`}
-						scroll={false}
+				<div className="flex flex-row items-center justify-start gap-4">
+					<Button
+						variant={"default"}
+						size={"lg"}
+						className={cn({
+							"pointer-events-none opacity-50":
+								!hasRemainingSeats || isParticipant,
+						})}
+						asChild
 					>
-						{isParticipant ? (
-							<>
-								<Check className="mr-2 h-4 w-4" />
-								Inscrito
-							</>
-						) : (
-							<>
-								Quero participar
-								<ArrowRight className="ml-2 h-4 w-4" />
-							</>
-						)}
-					</Link>
-				</Button>
+						<Link
+							href={`/${activity.project?.url}/schedule/${activity.id}`}
+							scroll={false}
+						>
+							{isParticipant ? (
+								<>
+									<Check className="mr-2 h-4 w-4" />
+									Inscrito
+								</>
+							) : (
+								<>
+									Quero participar
+									<ArrowRight className="ml-2 h-4 w-4" />
+								</>
+							)}
+						</Link>
+					</Button>
+					{isParticipant && (
+						<ParticipantQuitButton
+							activityId={activity.id}
+							eventUrl={activity.project?.url}
+						/>
+					)}
+				</div>
 			</div>
 		</div>
 	);
@@ -166,36 +176,60 @@ export function ActivityCardSpeaker({
 	);
 }
 
-export function ActivityCardTags({
-	activity,
-}: {
+interface ActivityCardTagsProps {
 	activity: Omit<
 		EventCardProps["activity"],
 		"participants" | "project" | "speaker"
 	>;
-}) {
+	tagsClassName?: string;
+}
+
+export function ActivityCardTags({
+	activity,
+	tagsClassName,
+}: ActivityCardTagsProps) {
 	const displayDate = getDateString(activity);
 	const displayTime = getTimeString(activity.dateFrom);
 
 	return (
 		<div className="flex flex-wrap gap-2">
-			<Badge className="bg-background text-foreground py-1 brightness-95">
+			<Badge
+				className={cn(
+					"bg-background text-foreground py-1 brightness-95",
+					tagsClassName,
+				)}
+			>
 				<Calendar className="mr-2 !h-3.5 !w-3.5" />
 				<span className="-mt-0.5 text-sm">{displayDate}</span>
 			</Badge>
-			<Badge className="bg-background text-foreground py-1 brightness-95">
+			<Badge
+				className={cn(
+					"bg-background text-foreground py-1 brightness-95",
+					tagsClassName,
+				)}
+			>
 				<Clock className="mr-2 !h-3.5 !w-3.5" />
 				<span className="-mt-0.5 text-sm">{displayTime}</span>
 			</Badge>
 			{activity.workload ? (
-				<Badge className="bg-background text-foreground py-1 brightness-95">
+				<Badge
+					className={cn(
+						"bg-background text-foreground py-1 brightness-95",
+						tagsClassName,
+					)}
+				>
 					<BookOpen className="mr-2 !h-3.5 !w-3.5" />
 					<span className="-mt-0.5 text-sm">
 						{activity.workload}h
 					</span>
 				</Badge>
 			) : null}
-			<Badge className="bg-background text-foreground py-1 brightness-95">
+			<Badge
+				className={cn(
+					"bg-background text-foreground py-1 brightness-95",
+					tagsClassName,
+				)}
+			>
 				<Users className="mr-2 !h-3.5 !w-3.5" />
 				<span className="-mt-0.5 text-sm capitalize">
 					{activity.audience === "internal" ? "Interno" : "Externo"}
