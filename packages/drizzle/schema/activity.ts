@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+	doublePrecision,
 	integer,
 	pgTable,
 	smallserial,
@@ -28,6 +29,12 @@ export const activity = pgTable("activities", {
 	participantsLimit: integer("participants_limit"),
 	tolerance: integer("tolerance"),
 	workload: integer("workload"),
+
+	// 📍 Location fields
+	/* address: text("address").notNull(), // Human-readable address for display
+	latitude: doublePrecision("latitude"),
+	longitude: doublePrecision("longitude"), */
+
 	projectId: uuid("project_id")
 		.notNull()
 		.references(() => project.id, {

@@ -31,7 +31,17 @@ export const usersRouter = createTRPCRouter({
 				projectId: z.string(),
 				reason: z.string().optional(),
 				accessibility: z.string().optional(),
-				discovery: z.enum(["social_media", "friends", "other"]).optional(),
+				discovery: z.enum(["instagram",
+					"facebook",
+					"twitter",
+					"tiktok",
+					"linkedin",
+					"friends",
+					"family",
+					"event",
+					"online_ad",
+					"search_engine",
+					"other"]).optional(),
 				discoveryOther: z.string().optional(),
 			}),
 		)
@@ -97,6 +107,28 @@ export const usersRouter = createTRPCRouter({
 					process.env.GOOGLE_PRIVATE_KEY = env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n');
 
 					const sheets = google.sheets({ version: 'v4', auth });
+
+					// Check if the sheet is empty and add headers if needed
+					try {
+						const response = await sheets.spreadsheets.values.get({
+							spreadsheetId: projectData.researchUrl,
+							range: 'A:A',
+						});
+						if (!response.data.values || response.data.values.length === 0) {
+							const headers = ['Timestamp', 'Name', 'Email', 'Course', 'Registration ID', 'Period', 'Reason', 'Accessibility', 'Discovery', 'Discovery Other'];
+							await sheets.spreadsheets.values.append({
+								spreadsheetId: projectData.researchUrl,
+								range: 'A:A',
+								valueInputOption: 'RAW',
+								requestBody: {
+									values: [headers],
+								},
+							});
+						}
+					} catch (headerError) {
+						console.error('Failed to check or add headers:', headerError);
+						// Continue without headers if check fails
+					}
 
 					const values = [
 						new Date().toISOString(),

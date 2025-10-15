@@ -80,8 +80,7 @@ export default async function EventLayout({
 				}
 			: event.isRegistrationEnabled &&
 				!event.isArchived &&
-				!isAfterEnd(event.endDate) &&
-				!isBeforeStart(event.startDate) && {
+				!isAfterEnd(event.endDate) && {
 					href: "/subscribe",
 					label: "Inscrições",
 					className:

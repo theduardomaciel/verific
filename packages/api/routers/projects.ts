@@ -7,6 +7,13 @@ import { eq } from "@verific/drizzle/orm";
 
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
+// API
+import { TRPCError } from "@trpc/server";
+
+// Google Sheets
+import { google } from "googleapis";
+import { env } from "@verific/env";
+
 export const updateProjectSchema = z.object({
 	id: z.string().uuid(),
 	name: z.string().optional(),
@@ -108,6 +115,30 @@ export const projectsRouter = createTRPCRouter({
 
 			if (Object.keys(updateData).length === 0) {
 				throw new Error("No fields to update");
+			}
+
+			// Check if the given sheet exists and has permissions
+			if (updateData.researchUrl && typeof updateData.researchUrl === 'string') {
+				try {
+					const auth = new google.auth.GoogleAuth({
+						scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+					});
+
+					// Set environment variables for authentication
+					process.env.GOOGLE_CLIENT_EMAIL = env.NEXT_PUBLIC_GOOGLE_SHEET_CLIENT_EMAIL;
+					process.env.GOOGLE_PRIVATE_KEY = env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n');
+
+					const sheets = google.sheets({ version: 'v4', auth });
+
+					await sheets.spreadsheets.get({
+						spreadsheetId: updateData.researchUrl,
+					});
+				} catch (error) {
+					throw new TRPCError({
+						code: 'BAD_REQUEST',
+						message: 'Não foi possível acessar a planilha. Verifique se o link está correto e se a planilha está compartilhada com o email do serviço.',
+					});
+				}
 			}
 
 			await db.update(project).set(updateData).where(eq(project.id, id));

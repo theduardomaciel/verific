@@ -60,8 +60,8 @@ export default async function EventSchedulePage(props: {
 						Programação
 					</h1>
 					<p className="text-primary-foreground text-base font-semibold md:max-w-md">
-						Acompanhe as próximas atividades de {event.name}, tanto
-						internas, como externas, e saiba quando participar!
+						Acompanhe as próximas atividades de {event.name} e saiba
+						como e quando participar!
 					</p>
 				</div>
 			</EventContainer.Hero>

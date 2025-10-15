@@ -15,14 +15,16 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Check, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // Icons
 
 interface Props {
 	isOpen: boolean;
 	onClose?: () => void;
-	title?: string;
+	title?: string | React.ReactNode;
 	description?: React.ReactNode;
+	className?: string;
 }
 
 interface LoadingDialogProps extends Props {}
@@ -31,11 +33,15 @@ export function LoadingDialog({
 	isOpen,
 	title,
 	description,
+	className,
 }: LoadingDialogProps) {
 	return (
 		<Dialog open={isOpen}>
 			<DialogContent
-				className="flex flex-col items-center justify-center pb-16 sm:max-w-[450px]"
+				className={cn(
+					"flex flex-col items-center justify-center overflow-y-auto pb-16 sm:max-w-[450px]",
+					className,
+				)}
 				onInteractOutside={(event) => {
 					event.preventDefault();
 				}}
@@ -44,11 +50,11 @@ export function LoadingDialog({
 				}}
 			>
 				<DialogHeader hasCloseButton={false}>
-					<DialogTitle className="font-title text-center text-2xl font-extrabold">
+					<DialogTitle className="font-title text-center text-2xl font-extrabold break-words">
 						{title || "Estamos quase lá!"}
 					</DialogTitle>
 				</DialogHeader>
-				<DialogDescription className="max-w-[80%] text-center text-lg font-medium">
+				<DialogDescription className="max-w-[80%] text-center text-lg font-medium break-words">
 					{description ||
 						"Aguarde um pouquinho enquanto processamos tudo!"}
 				</DialogDescription>
@@ -69,11 +75,15 @@ export function SuccessDialog({
 	title,
 	description,
 	buttonText,
+	className,
 }: SuccessDialogProps) {
 	return (
 		<Dialog open={isOpen}>
 			<DialogContent
-				className="flex flex-col items-center justify-center py-16 sm:max-w-[450px]"
+				className={cn(
+					"flex max-h-[90vh] flex-col items-center justify-start overflow-y-auto py-16",
+					className,
+				)}
 				onInteractOutside={(event) => {
 					event.preventDefault();
 				}}
@@ -130,7 +140,7 @@ export function ErrorDialog({ isOpen, onClose, title, description }: Props) {
 				}
 			}}
 		>
-			<DialogContent className="flex flex-col items-center justify-center py-16 sm:max-w-[450px]">
+			<DialogContent className="flex flex-col items-center justify-center overflow-y-auto py-16 sm:max-w-[450px]">
 				<DialogHeader
 					className="flex flex-col items-center justify-center gap-4"
 					hasCloseButton={false}
@@ -140,7 +150,7 @@ export function ErrorDialog({ isOpen, onClose, title, description }: Props) {
 						{title || "Ops! Algo deu errado!"}
 					</DialogTitle>
 				</DialogHeader>
-				<DialogDescription className="max-w-[80%] text-center text-lg font-medium">
+				<DialogDescription className="max-w-[80%] text-center text-lg font-medium whitespace-pre-line">
 					{description || (
 						<>
 							Algo deu errado ao enviar seu cadastro. <br />
