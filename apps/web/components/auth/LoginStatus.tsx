@@ -1,10 +1,18 @@
 import type { ReactNode } from "react";
+import { useTransition } from "react";
 
 import { cn } from "@/lib/utils";
 
 // Components
 import { Panel } from "@/components/forms";
 import GoogleButton, { ContinueRegistrationButton } from "./GoogleButton";
+
+// Icons
+import { LoaderCircle, LogOut } from "lucide-react";
+import { Button } from "../ui/button";
+
+// Actions
+import { signOutAction } from "@/app/actions";
 
 interface NotLoggedProps {
 	className?: string;
@@ -48,12 +56,37 @@ export function NotLogged({
 
 interface LoggedProps {
 	email: string;
+	callbackUrl?: string;
 }
 
-export function Logged({ email }: LoggedProps) {
+export function Logged({ email, callbackUrl }: LoggedProps) {
+	const [isPending, startTransition] = useTransition();
+
 	return (
 		<Panel type="success" showIcon>
-			Você está logado como <strong>{email}</strong>.
+			<div className="flex items-center justify-between">
+				<span>
+					Você está logado como <strong>{email}</strong>.
+				</span>
+				<Button
+					variant="ghost"
+					size={"icon"}
+					type="button"
+					onClick={() =>
+						startTransition(async () => {
+							await signOutAction(callbackUrl);
+						})
+					}
+					disabled={isPending}
+					title="Sair"
+				>
+					{isPending ? (
+						<LoaderCircle className="h-4 w-4 animate-spin" />
+					) : (
+						<LogOut className="h-4 w-4" />
+					)}
+				</Button>
+			</div>
 		</Panel>
 	);
 }

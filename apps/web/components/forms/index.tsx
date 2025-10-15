@@ -143,7 +143,7 @@ function Panel({
 					info: <InfoIcon size={16} />,
 					success: <CheckCircleIcon size={16} />,
 				}[type]}
-			<p
+			<div
 				className={cn(
 					"w-full shrink grow basis-0 text-left text-sm font-medium whitespace-pre-wrap",
 					className,
@@ -151,7 +151,7 @@ function Panel({
 				{...rest}
 			>
 				{children}
-			</p>
+			</div>
 		</div>
 	);
 }

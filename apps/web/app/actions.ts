@@ -6,15 +6,14 @@ import { redirect } from "next/navigation";
 
 export async function loginAction(callbackUrl: string) {
 	console.log("Login action", { callbackUrl });
-
 	await signIn("google", { callbackUrl });
 }
 
-/* export async function signOutAction(redirectTo: string = "/") {
+export async function signOutAction(redirectTo: string = "/") {
 	await signOut({ redirectTo });
-} */
+}
 
-export async function signOutAction(formData: FormData) {
+export async function signOutFormAction(formData: FormData) {
 	const redirectTo = (formData.get("redirectTo") as string) || "/";
 	await signOut({ redirectTo });
 }

@@ -1,4 +1,4 @@
-import { signOutAction } from "@/app/actions";
+import { signOutFormAction } from "@/app/actions";
 
 interface LogoutFormProps {
 	children: React.ReactNode;
@@ -12,7 +12,7 @@ export function LogoutForm({
 	redirectTo = "/",
 }: LogoutFormProps) {
 	return (
-		<form action={signOutAction} className={className}>
+		<form action={signOutFormAction} className={className}>
 			<input type="hidden" name="redirectTo" value={redirectTo} />
 			{children}
 		</form>
