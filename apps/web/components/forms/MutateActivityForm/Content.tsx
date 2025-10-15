@@ -1,7 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
 
-import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 // Icons
@@ -200,34 +199,53 @@ export function MutateActivityFormContent({
 						)}
 					/>
 				</div>
-				<FormField
-					control={form.control}
-					name="audience"
-					render={({ field }) => (
-						<FormItem className="w-full">
-							<FormLabel>Público</FormLabel>
-							<Select
-								onValueChange={field.onChange}
-								defaultValue={"internal"}
-							>
+
+				<div className="flex w-full flex-row items-start justify-start gap-3">
+					<FormField
+						control={form.control}
+						name="audience"
+						render={({ field }) => (
+							<FormItem className="w-full">
+								<FormLabel>Público</FormLabel>
+								<Select
+									onValueChange={field.onChange}
+									defaultValue={"external"}
+								>
+									<FormControl>
+										<SelectTrigger className="w-full">
+											<SelectValue placeholder="Selecione o público" />
+										</SelectTrigger>
+									</FormControl>
+									<SelectContent>
+										<SelectItem value="internal">
+											Interno
+										</SelectItem>
+										<SelectItem value="external">
+											Externo
+										</SelectItem>
+									</SelectContent>
+								</Select>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+					<FormField
+						control={form.control}
+						name="address"
+						render={({ field }) => (
+							<FormItem className="w-full">
+								<FormLabel>Local</FormLabel>
 								<FormControl>
-									<SelectTrigger className="w-full">
-										<SelectValue placeholder="Selecione o público" />
-									</SelectTrigger>
+									<Input
+										placeholder="Laboratório de Informática - IC"
+										{...field}
+									/>
 								</FormControl>
-								<SelectContent>
-									<SelectItem value="internal">
-										Interno
-									</SelectItem>
-									<SelectItem value="external">
-										Externo
-									</SelectItem>
-								</SelectContent>
-							</Select>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+				</div>
 
 				<FormField
 					control={form.control}

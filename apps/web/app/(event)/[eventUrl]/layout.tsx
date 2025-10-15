@@ -13,7 +13,7 @@ import { MainNavProps } from "@/components/header/main-nav";
 import { serverClient } from "@/lib/trpc/server";
 
 import { REM } from "next/font/google";
-import { isAfterEnd, isBeforeStart } from "@/lib/date";
+import { isAfterEnd } from "@/lib/date";
 
 const rem = REM({
 	variable: "--font-rem",

@@ -73,6 +73,9 @@ const mutateActivityParams = z.object({
 	audience: z.enum(activityAudiences),
 	speakerId: z.string().optional(),
 	participantsLimit: z.coerce.number().optional(),
+	address: z.string().optional(),
+	latitude: z.number().optional(),
+	longitude: z.number().optional(),
 	tolerance: z.coerce.number().optional(),
 	workload: z.coerce.number().optional(),
 	projectId: z.string().uuid(),
@@ -417,6 +420,9 @@ export const activitiesRouter = createTRPCRouter({
 				participantsLimit,
 				tolerance,
 				workload,
+				address,
+				latitude,
+				longitude,
 				projectId,
 			} = input;
 
@@ -433,6 +439,9 @@ export const activitiesRouter = createTRPCRouter({
 					participantsLimit,
 					tolerance,
 					workload,
+					address,
+					latitude,
+					longitude,
 					projectId,
 				})
 				.returning({ id: activity.id });
@@ -493,6 +502,9 @@ export const activitiesRouter = createTRPCRouter({
 				participantsLimit,
 				tolerance,
 				workload,
+				address,
+				latitude,
+				longitude,
 			} = input;
 
 			const error = await isMemberAuthenticated({
@@ -515,6 +527,9 @@ export const activitiesRouter = createTRPCRouter({
 						participantsLimit,
 						tolerance,
 						workload,
+						address,
+						latitude,
+						longitude,
 					})
 					.where(eq(activity.id, activityId));
 			});
