@@ -73,6 +73,19 @@ const baseColors = {
 const allColors = {
 	...baseColors,
 
+	"$success-bg": {
+		light: "hsl(143, 85%, 96%)",
+		dark: "hsl(150, 100%, 6%)",
+	},
+	"$success-border": {
+		light: "hsl(145, 92%, 87%)",
+		dark: "hsl(147, 100%, 12%)",
+	},
+	"$success-text": {
+		light: "hsl(140, 100%, 27%)",
+		dark: "hsl(150, 86%, 65%)",
+	},
+
 	/***********************************************************/
 	/* Semantic, light/dark color groups are prefixed with `$` */
 	/***********************************************************/

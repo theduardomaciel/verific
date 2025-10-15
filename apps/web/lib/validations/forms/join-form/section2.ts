@@ -9,7 +9,19 @@ export const joinFormSection2Schema = z.object({
 		.string()
 		.max(1000, { message: "Desculpe, o limite de caracteres é 1000 :(" })
 		.optional(),
-	discovery: z.enum(["social_media", "friends", "other"]).optional(),
+	discovery: z.enum([
+		"instagram",
+		"facebook",
+		"twitter",
+		"tiktok",
+		"linkedin",
+		"friends",
+		"family",
+		"event",
+		"online_ad",
+		"search_engine",
+		"other"
+	]).optional(),
 	discoveryOther: z.string().max(50).optional(),
 });
 

@@ -58,6 +58,7 @@ export default async function EventSubscribePage({
 					user={session?.user || undefined}
 					projectId={event.id}
 					projectUrl={event.url}
+					projectLogo={event.logoUrl || undefined}
 				/>
 			</EventContainer.Content>
 		</EventContainer.Holder>

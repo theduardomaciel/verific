@@ -32,15 +32,18 @@ import type { GenericForm } from "..";
 // API
 import { trpc } from "@/lib/trpc/react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function JoinForm({
 	user,
 	projectId,
 	projectUrl,
+	projectLogo,
 }: {
 	user?: User;
 	projectId: string;
 	projectUrl: string;
+	projectLogo?: string;
 }) {
 	const router = useRouter();
 
@@ -156,17 +159,53 @@ export default function JoinForm({
 				title="Estamos realizando seu cadastro..."
 			/>
 			<SuccessDialog
-				isOpen={currentState === "submitted"}
+				isOpen={true}
 				onClose={() => {
 					setCurrentState(false);
 					router.push(`${`/${projectUrl}/schedule`}`);
 				}}
+				className="py-8 sm:!max-w-[40vw]"
+				title={
+					<div className="flex flex-col items-center justify-center gap-4">
+						{/* {projectLogo && (
+							<Image
+								src={projectLogo}
+								alt="Logo do evento"
+								width={200}
+								height={50}
+							/>
+						)} */}
+						<span className="flex w-full sm:px-12">
+							🎉 Parabéns! <br /> Sua inscrição na Secomp 2025 foi
+							confirmada com sucesso!
+						</span>
+					</div>
+				}
 				description={
 					<>
-						Seu cadastro já foi enviado e está em análise.
+						Bem-vindo à Semana da Computação da UFAL! Prepare-se
+						para mergulhar em 5 dias incríveis de aprendizado,
+						diversão e conexões.
 						<br />
-						Uma resposta será enviada ao seu e-mail institucional em
-						breve!
+						<br />
+						<strong>O que te espera:</strong>
+						<br />• 📚 <strong>Minicursos e Palestras:</strong>{" "}
+						Aprenda sobre os mais diversos assuntos com instrutores
+						e palestrantes especializados.
+						<br />• 🏆 <strong>Competições:</strong> Conquiste
+						prêmios, conheça pessoas incríveis e fortaleça suas
+						habilidades em nossos campeonatos emocionantes.
+						<br />• 🎮 <strong>Sala de Jogos:</strong> Divirta-se e
+						conecte-se com outros estudantes em momentos de
+						interação na nossa sala de jogos.
+						<br />
+						<br />
+						📅 <strong>Data:</strong> 20 a 24 de outubro
+						<br />
+						📍 <strong>Local:</strong> Instituto de Computação, UFAL
+						<br />
+						<br />O evento é gratuito e aberto a todos. Estamos
+						ansiosos para te ver lá! 🚀
 					</>
 				}
 			/>

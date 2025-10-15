@@ -91,11 +91,35 @@ export default function JoinForm2({ form }: { form: GenericForm }) {
 									</SelectTrigger>
 								</FormControl>
 								<SelectContent>
-									<SelectItem value="social_media">
-										Redes sociais
+									<SelectItem value="instagram">
+										Instagram
+									</SelectItem>
+									<SelectItem value="facebook">
+										Facebook
+									</SelectItem>
+									<SelectItem value="twitter">
+										Twitter
+									</SelectItem>
+									<SelectItem value="tiktok">
+										TikTok
+									</SelectItem>
+									<SelectItem value="linkedin">
+										LinkedIn
 									</SelectItem>
 									<SelectItem value="friends">
 										Amigos
+									</SelectItem>
+									<SelectItem value="family">
+										Família
+									</SelectItem>
+									<SelectItem value="event">
+										Evento
+									</SelectItem>
+									<SelectItem value="online_ad">
+										Anúncio online
+									</SelectItem>
+									<SelectItem value="search_engine">
+										Motor de busca
 									</SelectItem>
 									<SelectItem value="other">Outro</SelectItem>
 								</SelectContent>

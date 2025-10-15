@@ -42,7 +42,6 @@ export default async function EventPage({
 		notFound();
 	}
 
-	const beforeStart = isBeforeStart(event.startDate);
 	const afterEnd = isAfterEnd(event.endDate);
 
 	const isArchived = event.isArchived;
@@ -62,9 +61,6 @@ export default async function EventPage({
 			disabled = true;
 		} else if (afterEnd) {
 			buttonText = "Evento encerrado";
-			disabled = true;
-		} else if (beforeStart) {
-			buttonText = "Inscrições ainda não abertas";
 			disabled = true;
 		} else if (!isRegistrationEnabled) {
 			buttonText = "Inscrições fechadas";
