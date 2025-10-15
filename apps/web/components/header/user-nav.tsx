@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 
 // Icons
@@ -18,9 +16,10 @@ import {
 	DropdownMenuShortcut,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { LogoutForm } from "@/components/ui/logout-form";
 
 // Actions
-import { signOutAction } from "@/app/actions";
+// import { signOutAction } from "@/app/actions";
 
 // Types
 import type { User } from "@verific/auth";
@@ -105,11 +104,18 @@ export function UserNav({ user, showAccountActions }: Props) {
 					</DropdownMenuItem>
 				</DropdownMenuGroup>
 				<DropdownMenuSeparator />
-				<DropdownMenuItem onClick={() => signOutAction()}>
-					<LogOut className="mr-2 h-4 w-4" />
-					Log out
-					<DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
-				</DropdownMenuItem>
+				<LogoutForm>
+					<DropdownMenuItem asChild>
+						<button
+							type="submit"
+							className="flex w-full items-center justify-between"
+						>
+							<LogOut className="mr-2 h-4 w-4" />
+							<span>Log out</span>
+							<DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
+						</button>
+					</DropdownMenuItem>
+				</LogoutForm>
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

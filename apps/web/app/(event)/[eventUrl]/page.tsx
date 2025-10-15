@@ -93,8 +93,7 @@ export default async function EventPage({
 						url={`${env.NEXT_PUBLIC_VERCEL_URL}/${event.url}`}
 						title={event.name}
 						description={
-							event.description ||
-							"Use o QR code ou copie o link para compartilhar"
+							"Use o QR code ou copie o link para compartilhar o evento!"
 						}
 					>
 						<Button className="absolute -bottom-4 left-1/2 h-10 -translate-x-1/2 !px-6">

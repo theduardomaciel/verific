@@ -12,7 +12,7 @@ import { FiltersPanel } from "@/components/dashboard/filters-panel";
 import { SearchBar } from "@/components/dashboard/search-bar";
 import { SortBy } from "@/components/dashboard/sort-by";
 import { Filter } from "@/components/dashboard/filter";
-import { GeneralParticipantCard } from "@/components/dashboard/participant-card";
+import { ParticipantListItem } from "@/components/participant/participant-item";
 import { Empty } from "@/components/empty";
 
 // Validation
@@ -74,9 +74,10 @@ export default async function ParticipantsPage(props: {
 						{participants && participants.length > 0 ? (
 							<div className="flex flex-col items-start justify-start gap-4">
 								{participants.map((participant) => (
-									<GeneralParticipantCard
+									<ParticipantListItem.General
 										key={participant.id}
 										participant={participant}
+										url="/dashboard/participants"
 									/>
 								))}
 							</div>

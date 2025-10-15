@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 // Components
-import { ActivityParticipantCard } from "../dashboard/participant-card";
+import { ParticipantListItem } from "./participant-item";
 import { Empty } from "@/components/empty";
 
 // Types
@@ -75,10 +75,11 @@ function List({
 			)}
 		>
 			{participants.map((participant) => (
-				<ActivityParticipantCard
+				<ParticipantListItem.Activity
 					key={participant.id}
 					participant={participant}
 					showJoinedAt={hasActivity}
+					url={`/dashboard/participants`}
 				/>
 			))}
 		</ul>

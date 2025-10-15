@@ -21,6 +21,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CategoryCard } from "@/components/dashboard/category-card";
 import { ActivityDeleteDialog } from "@/components/dialogs/delete-dialog";
+import { ShareDialog } from "@/components/dialogs/share-dialog";
+import { AddModeratorDialog } from "@/components/dialogs/add-moderator-dialog";
 
 // Data
 import { getDateString, getTimeString } from "@/lib/date";
@@ -31,7 +33,6 @@ import { z } from "zod";
 // API
 import { serverClient } from "@/lib/trpc/server";
 import { getActivityParams } from "@verific/api/routers/activities";
-import { ShareDialog } from "@/components/dialogs/share-dialog";
 
 type ActivityPageParams = z.infer<typeof getActivityParams>;
 
@@ -145,10 +146,11 @@ export default async function ActivityPage(props: {
 						<BellDot size={20} />
 						Abrir fila de espera
 					</Button> */}
-					<Button size={"lg"} className="h-10 flex-1">
-						<UserPlus size={20} />
-						Adicionar moderadores
-					</Button>
+					<AddModeratorDialog
+						projectId={projectId}
+						activityId={activityId}
+						alreadyAdded={activity.participants.map((p) => p.id)}
+					/>
 				</div>
 			</div>
 			<div className="flex w-full flex-col items-start justify-start gap-12 md:flex-row">

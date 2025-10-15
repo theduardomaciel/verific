@@ -1,0 +1,1 @@
+ALTER TABLE "projects" ADD COLUMN "research_url" text;

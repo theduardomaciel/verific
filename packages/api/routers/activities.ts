@@ -272,9 +272,9 @@ export const activitiesRouter = createTRPCRouter({
 					: undefined,
 				query
 					? or(
-							ilike(activity.name, `%${query}%`),
-							ilike(activity.description, `%${query}%`),
-						)
+						ilike(activity.name, `%${query}%`),
+						ilike(activity.description, `%${query}%`),
+					)
 					: undefined,
 			].filter(Boolean);
 
@@ -358,15 +358,15 @@ export const activitiesRouter = createTRPCRouter({
 						...act,
 						participants: act.participant
 							? [
-									{
-										role: act.participant.role,
-										userId: act.participant.userId,
-										user: {
-											name: act.user?.name,
-											image_url: act.user?.image_url,
-										},
+								{
+									role: act.participant.role,
+									userId: act.participant.userId,
+									user: {
+										name: act.user?.name,
+										image_url: act.user?.image_url,
 									},
-								]
+								},
+							]
 							: [],
 					};
 				} else if (act.participant) {
@@ -593,6 +593,50 @@ export const activitiesRouter = createTRPCRouter({
 			});
 			if (error) throw new TRPCError(error);
 
+			await db
+				.insert(participantOnActivity)
+				.values(
+					participantsIdsToAdd.map((participantId) => ({
+						activityId,
+						participantId,
+					})),
+				)
+				.onConflictDoNothing();
+
+			return { success: true };
+		}),
+
+	addModeratorsToActivity: protectedProcedure
+		.input(
+			z.object({
+				activityId: z.string().uuid(),
+				participantsIdsToAdd: z
+					.union([z.array(z.string()), z.string()])
+					.transform(transformSingleToArray),
+			}),
+		)
+		.mutation(async ({ input, ctx }) => {
+			const { activityId, participantsIdsToAdd } = input;
+
+			if (!participantsIdsToAdd) {
+				throw new TRPCError({
+					message: "Participants not found.",
+					code: "BAD_REQUEST",
+				});
+			}
+
+			const error = await isMemberAuthenticated({
+				userId: ctx.session.user.id,
+			});
+			if (error) throw new TRPCError(error);
+
+			// Update roles to moderator
+			await db
+				.update(participant)
+				.set({ role: "moderator" })
+				.where(inArray(participant.id, participantsIdsToAdd));
+
+			// Add to activity
 			await db
 				.insert(participantOnActivity)
 				.values(
