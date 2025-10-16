@@ -18,7 +18,7 @@ import { getActivitiesParams } from "@verific/api/routers/activities";
 import { auth } from "@verific/auth";
 
 // Utils
-import { categorizeByDate } from "@/lib/date-categorization";
+import { categorizeByDate } from "@/lib/date";
 
 type SchedulePageParams = z.infer<typeof getActivitiesParams>;
 

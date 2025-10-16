@@ -13,7 +13,7 @@ import { BadgeScanner } from "@/components/badge-scanner";
 import { ActivityStatus } from "./activity-status";
 
 // Utils
-import { formatFriendlyDate } from "@/lib/data";
+import { formatFriendlyDate } from "@/lib/date";
 import { getTimeString } from "@/lib/date";
 
 // API
