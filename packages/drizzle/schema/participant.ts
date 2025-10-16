@@ -23,8 +23,7 @@ export const participant = pgTable(
 			.references(() => user.id, {
 				onDelete: "cascade",
 				onUpdate: "cascade",
-			})
-			.unique(),
+			}),
 		projectId: uuid("project_id")
 			.notNull()
 			.references(() => project.id, {

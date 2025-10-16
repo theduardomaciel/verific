@@ -226,6 +226,8 @@ export const activitiesRouter = createTRPCRouter({
 				participantId: allParticipants.find(
 					(participant) => participant.userId === userId,
 				)?.id,
+				projectStartDate: selectedActivity.project.startDate,
+				projectEndDate: selectedActivity.project.endDate,
 			};
 		}),
 

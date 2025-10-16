@@ -21,13 +21,19 @@ export default async function EditActivity({
 
 	const { activityId } = await params;
 
-	const { activity } = await serverClient.getActivity({
-		activityId,
-	});
+	const { activity, projectStartDate, projectEndDate } =
+		await serverClient.getActivity({
+			activityId,
+		});
 
 	return (
 		<main className="container-p py-container-v flex min-h-screen flex-col items-center justify-start">
-			<MutateActivityForm projectId={projectId} activity={activity} />
+			<MutateActivityForm
+				projectId={projectId}
+				activity={activity}
+				startDate={projectStartDate!}
+				endDate={projectEndDate!}
+			/>
 		</main>
 	);
 }

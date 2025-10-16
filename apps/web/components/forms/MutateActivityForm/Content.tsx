@@ -56,6 +56,7 @@ import { useWatch, type UseFormReturn } from "react-hook-form";
 interface Props {
 	form: UseFormReturn<MutateActivityFormSchema>;
 	projectId: string;
+	endDate?: Date;
 	isEditing?: boolean;
 }
 
@@ -64,6 +65,7 @@ type Speaker = RouterOutput["getSpeakers"][number];
 export function MutateActivityFormContent({
 	form,
 	projectId,
+	endDate,
 	isEditing,
 }: Props) {
 	const {
@@ -467,7 +469,10 @@ export function MutateActivityFormContent({
 										disabled={(date) => {
 											const today = new Date();
 											today.setHours(0, 0, 0, 0);
-											return date < today;
+											return (
+												date <
+												today /* || date > endDate */
+											);
 										}}
 										className="w-full rounded-md border"
 									/>
