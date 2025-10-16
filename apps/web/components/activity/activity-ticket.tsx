@@ -14,6 +14,7 @@ import { ActivityStatus } from "./activity-status";
 
 // Utils
 import { formatFriendlyDate } from "@/lib/data";
+import { getTimeString } from "@/lib/date";
 
 // API
 import { RouterOutput } from "@verific/api";
@@ -33,14 +34,8 @@ export function ActivityTicket({
 	const activity = onActivity.activity;
 	const isModerator = role === "moderator";
 
-	const startTime = activity.dateFrom.toLocaleString("pt-BR", {
-		hour: "2-digit",
-		minute: "2-digit",
-	});
-	const endTime = activity.dateTo.toLocaleString("pt-BR", {
-		hour: "2-digit",
-		minute: "2-digit",
-	});
+	const startTime = getTimeString(activity.dateFrom);
+	const endTime = getTimeString(activity.dateTo);
 
 	const credentialedParticipantsAmount =
 		activity.participantsOnActivity.filter(
