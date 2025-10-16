@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 // Components
@@ -7,16 +8,15 @@ import { ExternalLinkIcon, Settings } from "lucide-react";
 import * as EventContainer from "@/components/landing/event-container";
 import { ActivityTicket } from "@/components/activity/activity-ticket";
 import { Button } from "@/components/ui/button";
+import { ParticipantCardDialog } from "@/components/dialogs/participant-card-dialog";
+import { ParticipantCard } from "@/components/participant/participant-card";
 
 // API
 import { serverClient } from "@/lib/trpc/server";
 import { Empty } from "@/components/empty";
 
 // Utils
-import { categorizeByDate } from "@/lib/date-categorization";
-import Link from "next/link";
-import { ParticipantCardDialog } from "@/components/dialogs/participant-card-dialog";
-import { ParticipantCard } from "@/components/participant/participant-card";
+import { categorizeByDate } from "@/lib/date";
 
 export default async function EventAccountPage({
 	params,

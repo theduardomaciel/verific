@@ -9,7 +9,8 @@ import {
 	FriendlyDateOptions,
 	isLive,
 	isStartingSoon,
-} from "@/lib/data";
+} from "@/lib/date";
+
 import { cn } from "@/lib/utils";
 
 interface Props {
