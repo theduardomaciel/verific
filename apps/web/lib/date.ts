@@ -1,4 +1,10 @@
 // Date and time functions
+const saoPauloFormatter = new Intl.DateTimeFormat("pt-BR", {
+	timeZone: "America/Sao_Paulo",
+	dateStyle: "short",
+	timeStyle: "short",
+});
+
 export const isDateDifferent = (date1: Date, date2: Date) => {
 	return (
 		date1.getDate() !== date2.getDate() ||
@@ -8,27 +14,16 @@ export const isDateDifferent = (date1: Date, date2: Date) => {
 };
 
 export const getDateString = (event: { dateFrom: Date; dateTo: Date }) => {
-	const dateString = `${event.dateFrom.toLocaleDateString("pt-BR", {
-		month: "2-digit",
-		day: "2-digit",
-		year: event.dateTo ? undefined : "numeric",
-	})}${isDateDifferent(event.dateFrom, event.dateTo)
-			? ` - ${event.dateTo.toLocaleDateString("pt-BR", {
-				year: "numeric",
-				month: "2-digit",
-				day: "2-digit",
-			})}`
-			: ""
+	const dateString = `${saoPauloFormatter.format(event.dateFrom).split(' ')[0]}${isDateDifferent(event.dateFrom, event.dateTo)
+		? ` - ${saoPauloFormatter.format(event.dateTo).split(' ')[0]}`
+		: ""
 		}`;
 
 	return dateString;
 };
 
 export const getTimeString = (date: Date) => {
-	return date.toLocaleTimeString("pt-BR", {
-		hour: "2-digit",
-		minute: "2-digit",
-	});
+	return saoPauloFormatter.format(date).split(' ')[1];
 };
 
 export const isBeforeStart = (startDate: Date) => {

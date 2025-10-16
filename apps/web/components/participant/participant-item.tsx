@@ -8,10 +8,13 @@ import { Check, BookUser, Ban, Calendar, User, X } from "lucide-react";
 
 // Components
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Button } from "../ui/button";
 
 // API
 import { RouterOutput } from "@verific/api";
-import { Button } from "../ui/button";
+
+// Utils
+import { getTimeString } from "../../lib/date";
 
 type ActivityParticipant =
 	RouterOutput["getActivity"]["activity"]["participants"][number];
@@ -103,12 +106,8 @@ export const ParticipantListItem = {
 										<Check className="h-4 w-4" />
 										<p className="text-left text-sm leading-tight font-medium">
 											Marcou presença às{" "}
-											{participant.joinedAt.toLocaleTimeString(
-												"pt-BR",
-												{
-													hour: "2-digit",
-													minute: "2-digit",
-												},
+											{getTimeString(
+												participant.joinedAt,
 											)}
 										</p>
 									</>

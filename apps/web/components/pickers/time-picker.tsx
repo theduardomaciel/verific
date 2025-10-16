@@ -219,8 +219,5 @@ export function TimePicker({
 
 // Função utilitária para converter Date em string HH:MM
 export function dateToTimeString(date: Date) {
-	const utcHours = date.getUTCHours();
-	const localHours = (utcHours - 3 + 24) % 24;
-	const minutes = date.getUTCMinutes();
-	return `${localHours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+	return date.toTimeString().slice(0, 5);
 }
