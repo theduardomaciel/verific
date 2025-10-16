@@ -31,13 +31,15 @@ import { dateToTimeString } from "@/components/pickers/time-picker";
 
 interface Props {
 	projectId: string;
-	projectDate?: string;
+	startDate?: Date;
+	endDate?: Date;
 	activity?: RouterOutput["getActivity"]["activity"];
 }
 
 export default function MutateActivityForm({
 	projectId,
-	projectDate,
+	startDate,
+	endDate,
 	activity,
 }: Props) {
 	const [currentState, setCurrentState] = useState<
@@ -54,7 +56,7 @@ export default function MutateActivityForm({
 			speakerId: activity?.speaker.id.toString() || "",
 			dateFrom: activity?.dateFrom
 				? new Date(activity.dateFrom)
-				: new Date(projectDate || Date.now()),
+				: new Date(startDate || Date.now()),
 			tolerance: activity?.tolerance || 0,
 			timeFrom: activity
 				? dateToTimeString(activity.dateFrom)
@@ -63,7 +65,7 @@ export default function MutateActivityForm({
 			timeTo: activity ? dateToTimeString(activity.dateTo) : undefined,
 			category: activity?.category || undefined,
 			participantsLimit: activity?.participantsLimit || undefined,
-			audience: activity?.audience || "internal",
+			audience: activity?.audience || "external",
 			address: activity?.address || "",
 		},
 	});
@@ -130,6 +132,7 @@ export default function MutateActivityForm({
 			>
 				<MutateActivityFormContent
 					projectId={projectId}
+					endDate={endDate}
 					form={form}
 					isEditing={!!activity}
 				/>
@@ -164,5 +167,5 @@ export default function MutateActivityForm({
 
 const setTimeOnDate = (date: Date, time: string) => {
 	const timeParts = time.split(":");
-	date.setHours(Number(timeParts[0]), Number(timeParts[1]));
+	date.setUTCHours(Number(timeParts[0]) + 3, Number(timeParts[1]));
 };

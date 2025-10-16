@@ -127,8 +127,9 @@ function ActivityCardContent({
 						: "Vagas Ilimitadas"}
 				</span>
 			</div>
+
 			<h3 className="mb-2 text-lg font-bold">{activity.name}</h3>
-			<p className="text-muted-foreground mb-4 text-sm">
+			<p className="text-muted-foreground leading-relaxe mb-4 line-clamp-3 text-base text-ellipsis">
 				{activity.description}
 			</p>
 
@@ -136,9 +137,9 @@ function ActivityCardContent({
 				<ActivityCardSpeaker speaker={activity.speaker} />
 			)}
 
-			{activity.address ? (
+			{/* {activity.address ? (
 				<ActivityCardAddress address={activity.address} />
-			) : null}
+			) : null} */}
 		</div>
 	);
 }
@@ -182,7 +183,7 @@ export function ActivityCardSpeaker({
 			</Avatar>
 			<div className="flex flex-col items-start justify-start gap-0.5">
 				<p className="font-bold">{speaker.name}</p>
-				<p className="text-muted-foreground font-medium">
+				<p className="text-muted-foreground text-sm font-medium">
 					{speaker.description || "Palestrante"}
 				</p>
 			</div>
@@ -238,7 +239,18 @@ export function ActivityCardTags({
 					</span>
 				</Badge>
 			) : null}
-			<Badge
+			{activity.address ? (
+				<Badge
+					className={cn(
+						"bg-background text-foreground py-1 brightness-95",
+						tagsClassName,
+					)}
+				>
+					<MapPin className="mr-2 !h-3.5 !w-3.5" />
+					<span className="-mt-0.5 text-sm">{activity.address}</span>
+				</Badge>
+			) : null}
+			{/* <Badge
 				className={cn(
 					"bg-background text-foreground py-1 brightness-95",
 					tagsClassName,
@@ -248,7 +260,7 @@ export function ActivityCardTags({
 				<span className="-mt-0.5 text-sm capitalize">
 					{activity.audience === "internal" ? "Interno" : "Externo"}
 				</span>
-			</Badge>
+			</Badge> */}
 		</div>
 	);
 }

@@ -132,19 +132,26 @@ export function TimePicker({
 	const [search, setSearch] = useState("");
 
 	const filteredTimes = useMemo(() => {
-		if (!search) return times;
-		const normalized = search.replace(/\D/g, "");
-		let prefix = normalized;
-		if (prefix.length === 1) prefix = "0" + prefix;
-		if (prefix.length > 2) prefix = prefix.slice(0, 2);
+		let results: readonly string[] = times;
+		if (search) {
+			const normalized = search.replace(/\D/g, "");
+			let prefix = normalized;
+			if (prefix.length === 1) prefix = "0" + prefix;
+			if (prefix.length > 2) prefix = prefix.slice(0, 2);
 
-		// Prioriza horários que começam com o termo pesquisado
-		const startsWith = times.filter((t) => t.startsWith(prefix));
-		const contains = times.filter(
-			(t) => !t.startsWith(prefix) && t.includes(search),
-		);
-		return [...startsWith, ...contains];
+			// Prioriza horários que começam com o termo pesquisado
+			const startsWith = times.filter((t) => t.startsWith(prefix));
+			const contains = times.filter(
+				(t) => !t.startsWith(prefix) && t.includes(search),
+			);
+			results = [...startsWith, ...contains];
+		}
+		return results;
 	}, [search]);
+
+	const isValidTime = /^([01]\d|2[0-3]):[0-5]\d$/.test(search);
+	const customTime =
+		isValidTime && !filteredTimes.includes(search) ? search : null;
 
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
@@ -177,6 +184,19 @@ export function TimePicker({
 					/>
 					<CommandEmpty>Nenhum horário encontrado.</CommandEmpty>
 					<CommandGroup>
+						{customTime && (
+							<CommandItem
+								value={customTime}
+								key={customTime}
+								className="lg:py-3"
+								onSelect={() => {
+									onChange?.(customTime);
+									setOpen(false);
+								}}
+							>
+								{customTime} (personalizado)
+							</CommandItem>
+						)}
 						{filteredTimes.map((time) => (
 							<CommandItem
 								value={time}
@@ -199,5 +219,8 @@ export function TimePicker({
 
 // Função utilitária para converter Date em string HH:MM
 export function dateToTimeString(date: Date) {
-	return date.toTimeString().slice(0, 5);
+	const utcHours = date.getUTCHours();
+	const localHours = (utcHours - 3 + 24) % 24;
+	const minutes = date.getUTCMinutes();
+	return `${localHours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
 }

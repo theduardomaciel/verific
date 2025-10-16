@@ -15,10 +15,7 @@ export default async function AddActivity() {
 
 	return (
 		<main className="container-p py-container-v flex min-h-screen flex-col items-center justify-start">
-			<MutateActivityForm
-				projectId={projectId}
-				projectDate={projectDate}
-			/>
+			<MutateActivityForm projectId={projectId} />
 		</main>
 	);
 }
