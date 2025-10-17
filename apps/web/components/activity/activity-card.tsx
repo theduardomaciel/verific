@@ -37,9 +37,9 @@ export function ActivityCard({ activity, userId }: EventCardProps) {
 	return (
 		<div
 			id={activity.id}
-			className={`bg-card flex h-full flex-col justify-between rounded-lg border p-6`}
+			className={`bg-card flex h-full flex-col justify-between gap-2 rounded-lg border p-6`}
 		>
-			<div className="mb-2 flex items-start justify-between">
+			<div className="flex items-start justify-between">
 				<span className="text-sm font-extrabold uppercase">
 					{activityCategoryLabels[activity.category]}
 				</span>
@@ -64,7 +64,7 @@ export function ActivityCard({ activity, userId }: EventCardProps) {
 				</span>
 			</div>
 
-			<h3 className="mb-2 text-lg font-bold">{activity.name}</h3>
+			<h3 className="text-lg font-bold">{activity.name}</h3>
 			{activity.description && (
 				<p className="text-muted-foreground leading-relaxe mb-4 line-clamp-3 text-base text-ellipsis">
 					{activity.description}

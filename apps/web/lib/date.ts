@@ -5,6 +5,12 @@ const saoPauloFormatter = new Intl.DateTimeFormat("pt-BR", {
 	timeStyle: "short",
 });
 
+const saoPauloDateFormatter = new Intl.DateTimeFormat("pt-BR", {
+	timeZone: "America/Sao_Paulo",
+	day: "2-digit",
+	month: "2-digit",
+});
+
 export const isDateDifferent = (date1: Date, date2: Date) => {
 	return (
 		date1.getDate() !== date2.getDate() ||
@@ -14,8 +20,8 @@ export const isDateDifferent = (date1: Date, date2: Date) => {
 };
 
 export const getDateString = (dateFrom: Date, dateTo: Date) => {
-	const dateString = `${saoPauloFormatter.format(dateFrom).split(' ')[0]}${isDateDifferent(dateFrom, dateTo)
-		? ` - ${saoPauloFormatter.format(dateTo).split(' ')[0]}`
+	const dateString = `${saoPauloDateFormatter.format(dateFrom)}${isDateDifferent(dateFrom, dateTo)
+		? ` - ${saoPauloDateFormatter.format(dateTo)}`
 		: ""
 		}`;
 
