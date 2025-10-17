@@ -107,7 +107,9 @@ export default async function ActivityPage(props: {
 					className="w-full"
 					category={activity.category}
 					hours={activity.workload}
-					speakerName={activity.speaker.name}
+					speakersName={activity.speakersOnActivity.map(
+						(speakerOnActivity) => speakerOnActivity.speaker.name,
+					)}
 				/>
 				<div className="flex flex-row items-center gap-3 max-md:w-full max-md:flex-wrap md:justify-between">
 					<div className="flex w-full flex-row items-center gap-3">

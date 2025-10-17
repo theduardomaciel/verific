@@ -43,6 +43,13 @@
       "when": 1760634879611,
       "tag": "0005_icy_paladin",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1760715079328,
+      "tag": "0006_productive_vulture",
+      "breakpoints": true
     }
   ]
 }

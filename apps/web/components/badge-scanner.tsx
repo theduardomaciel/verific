@@ -5,7 +5,7 @@ import { IDetectedBarcode, Scanner } from "@yudiel/react-qr-scanner";
 import { toast } from "sonner";
 
 // Icons
-import { BarcodeIcon, Loader, Loader2, XIcon } from "lucide-react";
+import { BarcodeIcon, Loader2, XIcon } from "lucide-react";
 
 // Components
 import { FullScreenDrawer } from "@/components/ui/fullscreen-drawer";

@@ -1,7 +1,7 @@
 import { db } from "@verific/drizzle";
 import {
 	activity,
-	speaker,
+	speakersOnActivity,
 	participant,
 	participantOnActivity,
 	project,
@@ -10,14 +10,13 @@ import {
 import {
 	and,
 	desc,
-	eq,
 	inArray,
 	or,
 	ilike,
 	asc,
-	getTableColumns,
+	eq,
 	countDistinct,
-	count, // <-- Adicionado aqui
+	count,
 } from "@verific/drizzle/orm";
 import { z } from "zod";
 
@@ -58,10 +57,6 @@ export const getActivitiesParams = z.object({
 		.union([z.array(z.enum(activityAudiences)), z.enum(activityAudiences)])
 		.transform(transformSingleToArray)
 		.optional(),
-	speakerIds: z
-		.union([z.array(z.string()), z.string()])
-		.transform(transformSingleToArray)
-		.optional(),
 });
 
 const mutateActivityParams = z.object({
@@ -71,7 +66,7 @@ const mutateActivityParams = z.object({
 	dateTo: z.coerce.date(),
 	category: z.enum(activityCategories),
 	audience: z.enum(activityAudiences),
-	speakerId: z.string().optional(),
+	speakerIds: z.array(z.coerce.number()).optional(),
 	participantsLimit: z.coerce.number().optional(),
 	address: z.string().optional(),
 	latitude: z.number().optional(),
@@ -108,7 +103,11 @@ export const activitiesRouter = createTRPCRouter({
 				},
 				with: {
 					project: true,
-					speaker: true,
+					speakersOnActivity: {
+						with: {
+							speaker: true,
+						},
+					},
 				},
 			});
 
@@ -248,12 +247,10 @@ export const activitiesRouter = createTRPCRouter({
 				sort,
 				category: rawCategory,
 				audience: rawAudience,
-				speakerIds: rawSpeakerIds,
 			} = input;
 
 			const categories = rawCategory;
 			const audiences = rawAudience;
-			const speakerIds = rawSpeakerIds?.map(Number);
 
 			const projectWhere = projectId
 				? eq(project.id, projectId)
@@ -272,9 +269,6 @@ export const activitiesRouter = createTRPCRouter({
 				projectWhere,
 				categories ? inArray(activity.category, categories) : undefined,
 				audiences ? inArray(activity.audience, audiences) : undefined,
-				speakerIds
-					? inArray(activity.speakerId, speakerIds)
-					: undefined,
 				query
 					? or(
 						ilike(activity.name, `%${query}%`),
@@ -284,51 +278,46 @@ export const activitiesRouter = createTRPCRouter({
 			].filter(Boolean);
 
 			// Query de atividades
-			const activities = await db
-				.select({
-					...getTableColumns(activity),
-					project: {
-						id: project.id,
-						name: project.name,
-						url: project.url,
+			const activities = await db.query.activity.findMany({
+				where: (activity, { eq, and, or, ilike, inArray }) =>
+					and(
+						categories
+							? inArray(activity.category, categories)
+							: undefined,
+						audiences
+							? inArray(activity.audience, audiences)
+							: undefined,
+						query
+							? or(
+								ilike(activity.name, `%${query}%`),
+								ilike(activity.description, `%${query}%`),
+							)
+							: undefined,
+					),
+				with: {
+					project: true,
+					speakersOnActivity: {
+						with: {
+							speaker: true,
+						},
 					},
-					speaker: {
-						id: speaker.id,
-						name: speaker.name,
-						description: speaker.description,
-						imageUrl: speaker.imageUrl,
+					participantsOnActivity: {
+						with: {
+							participant: {
+								with: {
+									user: true,
+								},
+							},
+						},
 					},
-					participant: {
-						role: participant.role,
-						userId: participant.userId,
-						id: participant.id,
-					},
-					participantOnActivity: {
-						participantId: participantOnActivity.participantId,
-						activityId: participantOnActivity.activityId,
-					},
-					user: { name: user.name, image_url: user.image_url },
-				})
-				.from(activity)
-				.leftJoin(
-					participantOnActivity,
-					eq(activity.id, participantOnActivity.activityId),
-				)
-				.leftJoin(
-					participant,
-					eq(participantOnActivity.participantId, participant.id),
-				)
-				.leftJoin(user, eq(participant.userId, user.id))
-				.leftJoin(speaker, eq(activity.speakerId, speaker.id))
-				.leftJoin(project, eq(activity.projectId, project.id))
-				.where(and(...activitiesWhere))
-				.orderBy(
+				},
+				orderBy:
 					sort === "recent"
 						? asc(activity.dateFrom)
 						: desc(activity.dateFrom),
-				)
-				.offset(page ? (page - 1) * pageSize : 0)
-				.limit(pageSize);
+				offset: page ? (page - 1) * pageSize : 0,
+				limit: pageSize,
+			});
 
 			// Query de contagem
 			const amountDb = await db
@@ -339,57 +328,24 @@ export const activitiesRouter = createTRPCRouter({
 
 			const amount = amountDb[0]?.amount ?? 0;
 
-			// Agregação dos participantes por atividade
-			// Use a Record to aggregate by activity id for better performance and type safety
-			type ActivityWithParticipants = Omit<
-				(typeof activities)[number],
-				"participant" | "user" | "participantOnActivity"
-			> & {
-				participants: Array<{
-					role: string;
-					userId: string;
+			// Since findMany returns nested data, no aggregation needed
+			const formattedActivities = activities.map((act) => ({
+				...act,
+				participants: act.participantsOnActivity.map((p) => ({
+					role: p.participant.role,
+					userId: p.participant.userId,
 					user: {
-						name?: string | null;
-						image_url?: string | null;
-					};
-				}>;
-			};
-
-			const activityMap: Record<string, ActivityWithParticipants> = {};
-
-			for (const act of activities) {
-				if (!activityMap[act.id]) {
-					activityMap[act.id] = {
-						...act,
-						participants: act.participant
-							? [
-								{
-									role: act.participant.role,
-									userId: act.participant.userId,
-									user: {
-										name: act.user?.name,
-										image_url: act.user?.image_url,
-									},
-								},
-							]
-							: [],
-					};
-				} else if (act.participant) {
-					activityMap[act.id]?.participants.push({
-						role: act.participant.role,
-						userId: act.participant.userId,
-						user: {
-							name: act.user?.name,
-							image_url: act.user?.image_url,
-						},
-					});
-				}
-			}
-
-			const aggregatedActivities = Object.values(activityMap);
-			const formattedActivities = aggregatedActivities.map((act) => {
-				return { ...act, participants: act.participants };
-			});
+						name: p.participant.user?.name,
+						image_url: p.participant.user?.image_url,
+					},
+				})),
+				speakers: act.speakersOnActivity.map((s) => ({
+					id: s.speaker.id,
+					name: s.speaker.name,
+					description: s.speaker.description,
+					imageUrl: s.speaker.imageUrl,
+				})),
+			}));
 
 			const pageCount = Math.ceil(amount / pageSize);
 
@@ -418,7 +374,7 @@ export const activitiesRouter = createTRPCRouter({
 				dateTo,
 				category,
 				audience,
-				speakerId,
+				speakerIds,
 				participantsLimit,
 				tolerance,
 				workload,
@@ -437,7 +393,6 @@ export const activitiesRouter = createTRPCRouter({
 					dateTo,
 					category,
 					audience,
-					speakerId: speakerId ? Number(speakerId) : undefined,
 					participantsLimit,
 					tolerance,
 					workload,
@@ -482,6 +437,15 @@ export const activitiesRouter = createTRPCRouter({
 				participantId: participantFromUser[0]?.id,
 			});
 
+			if (speakerIds && speakerIds.length > 0) {
+				await db.insert(speakersOnActivity).values(
+					speakerIds.map((speakerId) => ({
+						activityId: insertedActivityId,
+						speakerId,
+					})),
+				);
+			}
+
 			return { activityId: insertedActivityId };
 		}),
 
@@ -500,7 +464,7 @@ export const activitiesRouter = createTRPCRouter({
 				dateTo,
 				category,
 				audience,
-				speakerId,
+				speakerIds,
 				participantsLimit,
 				tolerance,
 				workload,
@@ -525,7 +489,6 @@ export const activitiesRouter = createTRPCRouter({
 						dateTo,
 						category,
 						audience,
-						speakerId: speakerId ? Number(speakerId) : undefined,
 						participantsLimit,
 						tolerance,
 						workload,
@@ -534,6 +497,23 @@ export const activitiesRouter = createTRPCRouter({
 						longitude,
 					})
 					.where(eq(activity.id, activityId));
+
+				// Update speakers
+				if (speakerIds !== undefined) {
+					// Delete existing
+					await tx
+						.delete(speakersOnActivity)
+						.where(eq(speakersOnActivity.activityId, activityId));
+					// Insert new
+					if (speakerIds.length > 0) {
+						await tx.insert(speakersOnActivity).values(
+							speakerIds.map((speakerId) => ({
+								activityId,
+								speakerId,
+							})),
+						);
+					}
+				}
 			});
 			return { success: true };
 		}),
