@@ -61,7 +61,7 @@ export default async function ActivityPage(props: {
 		(t) => t.role === "participant",
 	);
 
-	const dateString = getDateString(activity);
+	const dateString = getDateString(activity.dateFrom, activity.dateTo);
 	const timeFrom = getTimeString(activity.dateFrom);
 	const timeTo = getTimeString(activity.dateTo);
 

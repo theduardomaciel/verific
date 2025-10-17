@@ -242,7 +242,7 @@ export const activitiesRouter = createTRPCRouter({
 				projectId,
 				projectUrl,
 				page = 0,
-				pageSize = 5,
+				pageSize = 10,
 				query,
 				sort,
 				category: rawCategory,
@@ -252,18 +252,40 @@ export const activitiesRouter = createTRPCRouter({
 			const categories = rawCategory;
 			const audiences = rawAudience;
 
-			const projectWhere = projectId
-				? eq(project.id, projectId)
-				: projectUrl
-					? eq(project.url, projectUrl)
-					: undefined;
+			/* console.log("Fetching activities with params:", {
+				projectId,
+				projectUrl,
+				page,
+				pageSize,
+				query,
+				sort,
+				categories,
+				audiences,
+			}); */
 
-			if (!projectWhere) {
+			let projectIdToUse = projectId;
+
+			if (projectUrl && !projectId) {
+				const proj = await db.query.project.findFirst({
+					where: eq(project.url, projectUrl),
+				});
+				if (!proj) {
+					throw new TRPCError({
+						message: "Project not found.",
+						code: "NOT_FOUND",
+					});
+				}
+				projectIdToUse = proj.id;
+			}
+
+			if (!projectIdToUse) {
 				throw new TRPCError({
 					message: "Project ID or URL is required.",
 					code: "BAD_REQUEST",
 				});
 			}
+
+			const projectWhere = eq(activity.projectId, projectIdToUse);
 
 			const activitiesWhere = [
 				projectWhere,
@@ -278,22 +300,10 @@ export const activitiesRouter = createTRPCRouter({
 			].filter(Boolean);
 
 			// Query de atividades
+			// Use the prebuilt activitiesWhere (which includes the required projectWhere)
+			// so both the listing and the count use the same filters.
 			const activities = await db.query.activity.findMany({
-				where: (activity, { eq, and, or, ilike, inArray }) =>
-					and(
-						categories
-							? inArray(activity.category, categories)
-							: undefined,
-						audiences
-							? inArray(activity.audience, audiences)
-							: undefined,
-						query
-							? or(
-								ilike(activity.name, `%${query}%`),
-								ilike(activity.description, `%${query}%`),
-							)
-							: undefined,
-					),
+				where: and(...activitiesWhere),
 				with: {
 					project: true,
 					speakersOnActivity: {
@@ -323,10 +333,12 @@ export const activitiesRouter = createTRPCRouter({
 			const amountDb = await db
 				.select({ amount: countDistinct(activity.id) })
 				.from(activity)
-				.leftJoin(project, eq(activity.projectId, project.id))
 				.where(and(...activitiesWhere));
 
 			const amount = amountDb[0]?.amount ?? 0;
+
+			// console.log(activities.map(a => a.id))
+			// console.log("Total activities found:", amount);
 
 			// Since findMany returns nested data, no aggregation needed
 			const formattedActivities = activities.map((act) => ({
