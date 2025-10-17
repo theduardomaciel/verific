@@ -32,13 +32,13 @@ import { transformSingleToArray } from "../utils";
 import { activityCategories } from "@verific/drizzle/enum/category";
 import { activityAudiences } from "@verific/drizzle/enum/audience";
 
-export const activitySort = ["recent", "oldest", "alphabetical"] as const;
+export const activitySort = ["asc", "desc", "name_asc", "name_desc"] as const;
 
 export const getActivityParams = z.object({
 	page: z.coerce.number().default(0).optional(),
 	pageSize: z.coerce.number().default(5).optional(),
 	search: z.string().optional(),
-	sortBy: z.enum(["recent", "oldest"]).optional(),
+	sortBy: z.enum(["asc", "desc"]).optional(),
 });
 
 export const getActivitiesParams = z.object({
@@ -160,7 +160,7 @@ export const activitiesRouter = createTRPCRouter({
 			}
 
 			const orderBy =
-				sortBy === "recent"
+				sortBy === "desc"
 					? desc(participantOnActivity.joinedAt)
 					: asc(participantOnActivity.joinedAt);
 
@@ -242,7 +242,7 @@ export const activitiesRouter = createTRPCRouter({
 				projectId,
 				projectUrl,
 				page = 0,
-				pageSize = 10,
+				pageSize = 5,
 				query,
 				sort,
 				category: rawCategory,
@@ -299,6 +299,26 @@ export const activitiesRouter = createTRPCRouter({
 					: undefined,
 			].filter(Boolean);
 
+			let orderByClause;
+
+			switch (sort) {
+				case "desc":
+					orderByClause = desc(activity.dateFrom);
+					break;
+				case "asc":
+					orderByClause = asc(activity.dateFrom);
+					break;
+				case "name_asc":
+					orderByClause = asc(activity.name);
+					break;
+				case "name_desc":
+					orderByClause = desc(activity.name);
+					break;
+				default:
+					// "recent"
+					orderByClause = desc(activity.dateFrom);
+			}
+
 			// Query de atividades
 			// Use the prebuilt activitiesWhere (which includes the required projectWhere)
 			// so both the listing and the count use the same filters.
@@ -321,10 +341,7 @@ export const activitiesRouter = createTRPCRouter({
 						},
 					},
 				},
-				orderBy:
-					sort === "recent"
-						? asc(activity.dateFrom)
-						: desc(activity.dateFrom),
+				orderBy: orderByClause,
 				offset: page ? (page - 1) * pageSize : 0,
 				limit: pageSize,
 			});
