@@ -29,8 +29,9 @@ export function ActivityCardSpeakers({ speakers }: Props) {
 	return speakers.length > 1 ? (
 		<Carousel
 			className="w-full"
-			plugins={[Autoplay({ delay: 2000 })]}
+			plugins={[Autoplay({ delay: 5000 })]}
 			showDots
+			slideCount={speakers.length}
 			opts={{
 				loop: true,
 			}}
