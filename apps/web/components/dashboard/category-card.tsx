@@ -7,7 +7,8 @@ import {
 	activityCategoryLabels,
 } from "@verific/drizzle/enum/category";
 
-// Data
+// Lib
+import { listToString } from "@/lib/i18n";
 
 interface CategoryCard {
 	className?: string;
@@ -32,7 +33,7 @@ export function CategoryCard({
 			<div className="inline-flex items-center justify-start gap-4">
 				<CategoryLabel category={category} />
 				<p className="text-foreground shrink grow basis-0 text-base font-medium">
-					{speakersName.join(", ")}
+					{listToString(speakersName)}
 				</p>
 			</div>
 			{hours ? (

@@ -250,7 +250,7 @@ export function PlacePicker({
 					state && `Estado: ${state}`,
 				]
 					.filter(Boolean)
-					.join(" | ");
+					.join(", ");
 
 				if (fullAddress !== address) {
 					setAddress(fullAddress);
