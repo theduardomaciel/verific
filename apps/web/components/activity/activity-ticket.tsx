@@ -19,6 +19,7 @@ import { getTimeString } from "@/lib/date";
 // API
 import { RouterOutput } from "@verific/api";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { ActivityCardSpeakers } from "./activity-card/speakers";
 
 export interface WorkshopTicketProps {
 	className?: string;
@@ -52,129 +53,92 @@ export function ActivityTicket({
 			{/* Main content - flex-col on mobile, flex-row on md+ */}
 			<div className="flex flex-col md:flex-row">
 				{/* Left/Top section */}
-				<div className="bg-card flex flex-col p-6 md:max-w-3/5">
-					<div>
-						<div className="mb-6 flex w-full flex-wrap items-center justify-between gap-6">
-							<h2 className="line-clamp-2 text-2xl leading-tight font-bold break-words">
-								{activity.name}
-							</h2>
-							<ActivityStatus
-								className="mt-1"
-								date={activity.dateFrom}
-								dateFormat={{
-									includeDay: true,
-									includeHour: false,
-								}}
-							/>
-						</div>
-
-						{activity.description && (
-							<div className="text-muted-foreground mb-6 text-sm">
-								<p>{activity.description}</p>
-								<button className="mt-1">Ler mais</button>
-							</div>
-						)}
-
-						<div className="mb-6 flex w-full items-center justify-between">
-							<span className="text-xl">{startTime}</span>
-							<div className="mx-4 flex flex-1 items-center justify-center md:mx-8">
-								<div className="relative flex h-4 w-full items-center">
-									<div className="bg-foreground absolute top-1/2 left-0 h-0.5 w-full -translate-y-1/2" />
-									<span className="block md:hidden">
-										{Array(3)
-											.fill(0)
-											.map((_, i) => (
-												<div
-													key={`dot-${i}`}
-													className="bg-foreground absolute top-1/2 h-2 w-2 -translate-y-1/2 rounded-full"
-													style={{
-														left: `${(i / 2) * 100}%`,
-													}}
-												/>
-											))}
-									</span>
-									<span className="hidden md:block">
-										{Array(7)
-											.fill(0)
-											.map((_, i) => (
-												<div
-													key={`dot-${i}`}
-													className="bg-foreground absolute top-1/2 h-2 w-2 -translate-y-1/2 rounded-full"
-													style={{
-														left: `${(i / 6) * 100}%`,
-													}}
-												/>
-											))}
-									</span>
-								</div>
-							</div>
-							<span className="text-xl">{endTime}</span>
-						</div>
-
-						{activity.participantsLimit || activity.tolerance ? (
-							<div className="text-muted-foreground mb-6 flex items-center justify-evenly text-sm">
-								{activity.participantsLimit ? (
-									<div className="flex items-center">
-										<User size={16} className="mr-1" />
-										<span>
-											{activity.participantsLimit} máx
-										</span>
-									</div>
-								) : null}
-								{activity.tolerance ? (
-									<div className="flex items-center">
-										<Clock size={16} className="mr-1" />
-										<span>
-											{activity.tolerance} de tolerância
-										</span>
-									</div>
-								) : null}
-							</div>
-						) : null}
-
-						{activity.speaker && (
-							<div className="bg-card mb-6 rounded-lg border p-4">
-								<div className="flex flex-row items-start gap-4">
-									<Avatar
-										className={cn(
-											"aspect-square h-12 w-12 object-cover",
-											{
-												"h-7 w-7":
-													!activity.speaker.imageUrl,
-											},
-										)}
-									>
-										<AvatarImage
-											src={
-												activity.speaker.imageUrl ||
-												undefined
-											}
-										/>
-										<AvatarFallback>
-											<User
-												className={cn(
-													"h-6 w-6 text-white",
-													{
-														"h-4 w-4":
-															!activity.speaker
-																.imageUrl,
-													},
-												)}
-											/>
-										</AvatarFallback>
-									</Avatar>
-									<div>
-										<h3 className="font-medium">
-											{activity.speaker.name}
-										</h3>
-										<p className="text-muted-foreground text-sm">
-											{activity.speaker.description}
-										</p>
-									</div>
-								</div>
-							</div>
-						)}
+				<div className="bg-card flex flex-col gap-4 p-6 md:max-w-3/5">
+					<div className="flex w-full flex-wrap items-center justify-between gap-2">
+						<h2 className="line-clamp-2 text-2xl leading-tight font-bold break-words">
+							{activity.name}
+						</h2>
+						<ActivityStatus
+							className="mt-1"
+							date={activity.dateFrom}
+							dateFormat={{
+								includeDay: true,
+								includeHour: false,
+							}}
+						/>
 					</div>
+
+					{activity.description && (
+						<div className="text-muted-foreground text-sm">
+							<p>{activity.description}</p>
+							<button className="mt-1">Ler mais</button>
+						</div>
+					)}
+
+					<div className="flex w-full items-center justify-between">
+						<span className="text-xl">{startTime}</span>
+						<div className="mx-4 flex flex-1 items-center justify-center md:mx-8">
+							<div className="relative flex h-4 w-full items-center">
+								<div className="bg-foreground absolute top-1/2 left-0 h-0.5 w-full -translate-y-1/2" />
+								<span className="block md:hidden">
+									{Array(3)
+										.fill(0)
+										.map((_, i) => (
+											<div
+												key={`dot-${i}`}
+												className="bg-foreground absolute top-1/2 h-2 w-2 -translate-y-1/2 rounded-full"
+												style={{
+													left: `${(i / 2) * 100}%`,
+												}}
+											/>
+										))}
+								</span>
+								<span className="hidden md:block">
+									{Array(7)
+										.fill(0)
+										.map((_, i) => (
+											<div
+												key={`dot-${i}`}
+												className="bg-foreground absolute top-1/2 h-2 w-2 -translate-y-1/2 rounded-full"
+												style={{
+													left: `${(i / 6) * 100}%`,
+												}}
+											/>
+										))}
+								</span>
+							</div>
+						</div>
+						<span className="text-xl">{endTime}</span>
+					</div>
+
+					{activity.participantsLimit || activity.tolerance ? (
+						<div className="text-muted-foreground flex items-center justify-evenly text-sm">
+							{activity.participantsLimit ? (
+								<div className="flex items-center">
+									<User size={16} className="mr-1" />
+									<span>
+										{activity.participantsLimit} máx
+									</span>
+								</div>
+							) : null}
+							{activity.tolerance ? (
+								<div className="flex items-center">
+									<Clock size={16} className="mr-1" />
+									<span>
+										{activity.tolerance} de tolerância
+									</span>
+								</div>
+							) : null}
+						</div>
+					) : null}
+
+					{activity.speakersOnActivity && (
+						<ActivityCardSpeakers
+							speakers={activity.speakersOnActivity.map(
+								(s) => s.speaker,
+							)}
+						/>
+					)}
 
 					{/* TODO: Atualmente, exibindo a quantidade de participantes, não a quantidade de participantes credenciados */}
 					{isModerator ? (
