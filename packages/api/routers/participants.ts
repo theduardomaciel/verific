@@ -32,7 +32,7 @@ import { transformSingleToArray } from "../utils";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
-export const participantSort = ["recent", "oldest", "alphabetical"] as const; // Ordenação de participantes
+export const participantSort = ["asc", "desc", "name_asc", "name_desc"] as const;
 
 export const getParticipantsParams = z.object({
 	query: z.string().optional(), // Para busca por nome ou e-mail
@@ -172,6 +172,26 @@ export const participantsRouter = createTRPCRouter({
 					: undefined,
 			];
 
+			let orderByClause;
+
+			switch (sort) {
+				case "asc":
+					orderByClause = asc(participant.joinedAt);
+					break;
+				case "desc":
+					orderByClause = desc(participant.joinedAt);
+					break;
+				case "name_asc":
+					orderByClause = asc(user.name);
+					break;
+				case "name_desc":
+					orderByClause = desc(user.name);
+					break;
+				default:
+					// "recent"
+					orderByClause = desc(participant.joinedAt);
+			}
+
 			const [participants, countResult] = await Promise.all([
 				db
 					.select({
@@ -185,13 +205,7 @@ export const participantsRouter = createTRPCRouter({
 					.from(participant)
 					.leftJoin(user, eq(participant.userId, user.id))
 					.where(and(...whereClauses.filter(Boolean)))
-					.orderBy(
-						sort === "alphabetical"
-							? asc(user.name)
-							: sort === "oldest"
-								? asc(participant.joinedAt)
-								: desc(participant.joinedAt),
-					)
+					.orderBy(orderByClause)
 					.limit(pageSize)
 					.offset(pageIndex ? pageIndex * pageSize : 0),
 				db
