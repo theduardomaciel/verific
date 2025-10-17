@@ -97,7 +97,7 @@ export const projectsRouter = createTRPCRouter({
 			await db.insert(participant).values({
 				projectId: created[0]!.id,
 				userId: userId,
-				role: "moderator",
+				role: "monitor",
 			});
 
 			return { id: created[0]!.id, url: created[0]!.url };

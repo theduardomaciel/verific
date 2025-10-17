@@ -1,7 +1,7 @@
 import { db } from "@verific/drizzle";
 import {
 	activity,
-	speakersOnActivity,
+	speakerOnActivity,
 	participant,
 	participantOnActivity,
 	project,
@@ -103,7 +103,7 @@ export const activitiesRouter = createTRPCRouter({
 				},
 				with: {
 					project: true,
-					speakersOnActivity: {
+					speakerOnActivity: {
 						with: {
 							speaker: true,
 						},
@@ -145,7 +145,7 @@ export const activitiesRouter = createTRPCRouter({
 				.where(
 					and(
 						eq(participantOnActivity.activityId, activityId),
-						eq(participant.role, "moderator"),
+						eq(participant.role, "monitor"),
 					),
 				);
 
@@ -326,12 +326,12 @@ export const activitiesRouter = createTRPCRouter({
 				where: and(...activitiesWhere),
 				with: {
 					project: true,
-					speakersOnActivity: {
+					speakerOnActivity: {
 						with: {
 							speaker: true,
 						},
 					},
-					participantsOnActivity: {
+					participantOnActivity: {
 						with: {
 							participant: {
 								with: {
@@ -360,7 +360,7 @@ export const activitiesRouter = createTRPCRouter({
 			// Since findMany returns nested data, no aggregation needed
 			const formattedActivities = activities.map((act) => ({
 				...act,
-				participants: act.participantsOnActivity.map((p) => ({
+				participants: act.participantOnActivity.map((p) => ({
 					role: p.participant.role,
 					userId: p.participant.userId,
 					user: {
@@ -368,7 +368,7 @@ export const activitiesRouter = createTRPCRouter({
 						image_url: p.participant.user?.image_url,
 					},
 				})),
-				speakers: act.speakersOnActivity.map((s) => ({
+				speakers: act.speakerOnActivity.map((s) => ({
 					id: s.speaker.id,
 					name: s.speaker.name,
 					description: s.speaker.description,
@@ -467,7 +467,7 @@ export const activitiesRouter = createTRPCRouter({
 			});
 
 			if (speakerIds && speakerIds.length > 0) {
-				await db.insert(speakersOnActivity).values(
+				await db.insert(speakerOnActivity).values(
 					speakerIds.map((speakerId) => ({
 						activityId: insertedActivityId,
 						speakerId,
@@ -531,11 +531,11 @@ export const activitiesRouter = createTRPCRouter({
 				if (speakerIds !== undefined) {
 					// Delete existing
 					await tx
-						.delete(speakersOnActivity)
-						.where(eq(speakersOnActivity.activityId, activityId));
+						.delete(speakerOnActivity)
+						.where(eq(speakerOnActivity.activityId, activityId));
 					// Insert new
 					if (speakerIds.length > 0) {
-						await tx.insert(speakersOnActivity).values(
+						await tx.insert(speakerOnActivity).values(
 							speakerIds.map((speakerId) => ({
 								activityId,
 								speakerId,
@@ -632,7 +632,7 @@ export const activitiesRouter = createTRPCRouter({
 			return { success: true };
 		}),
 
-	addModeratorsToActivity: protectedProcedure
+	addMonitorsToActivity: protectedProcedure
 		.input(
 			z.object({
 				activityId: z.string().uuid(),
@@ -656,10 +656,10 @@ export const activitiesRouter = createTRPCRouter({
 			});
 			if (error) throw new TRPCError(error);
 
-			// Update roles to moderator
+			// Update roles to monitor
 			await db
 				.update(participant)
-				.set({ role: "moderator" })
+				.set({ role: "monitor" })
 				.where(inArray(participant.id, participantsIdsToAdd));
 
 			// Add to activity

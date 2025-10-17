@@ -6,7 +6,7 @@ import {
 	participant,
 	participantOnActivity,
 	project,
-	speakersOnActivity,
+	speakerOnActivity,
 	user,
 } from "@verific/drizzle/schema";
 import { and, eq, getTableColumns } from "@verific/drizzle/orm";
@@ -79,12 +79,12 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 						with: {
 							activity: {
 								with: {
-									speakersOnActivity: {
+									speakerOnActivity: {
 										with: {
 											speaker: true,
 										},
 									},
-									participantsOnActivity: true,
+									participantOnActivity: true,
 								},
 							},
 						},

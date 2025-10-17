@@ -7,6 +7,7 @@ export * from "./project";
 export * from "./session";
 export * from "./speaker";
 export * from "./speaker-on-activity";
+export * from "./project-moderator";
 export * from "./template";
 export * from "./user";
 

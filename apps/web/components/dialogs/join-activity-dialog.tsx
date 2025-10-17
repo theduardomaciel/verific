@@ -29,7 +29,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "../ui/tooltip";
-import { ActivityCardSpeakers } from "../activity/activity-card/speakers";
+import { ActivitySpeakers } from "../activity/activity-card/speakers";
 import { ActivityCardTags } from "../activity/activity-card/tags";
 
 interface Props {
@@ -128,9 +128,9 @@ export function JoinActivityDialog({ participantId, activity }: Props) {
 					</DialogDescription>
 				</DialogHeader>
 				<div className="flex flex-col">
-					{activity.speakersOnActivity ? (
-						<ActivityCardSpeakers
-							speakers={activity.speakersOnActivity.map(
+					{activity.speakerOnActivity ? (
+						<ActivitySpeakers
+							speakers={activity.speakerOnActivity.map(
 								(s) => s.speaker,
 							)}
 						/>
