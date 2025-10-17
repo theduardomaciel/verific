@@ -17,5 +17,5 @@ export type Activity = {
 	createdAt: Date;
 	project?: Project;
 	speaker: Speaker;
-	participantsOnActivity: ParticipantOnActivity[];
+	participantOnActivity: ParticipantOnActivity[];
 };

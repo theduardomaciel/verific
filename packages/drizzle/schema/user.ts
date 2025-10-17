@@ -7,7 +7,7 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 
-import { account, session, participant, project } from ".";
+import { account, session, participant, project, projectModerator } from ".";
 
 export const user = pgTable(
 	"users",
@@ -28,4 +28,5 @@ export const userRelations = relations(user, ({ many }) => ({
 	sessions: many(session),
 	participants: many(participant),
 	projects: many(project),
+	moderatedProjects: many(projectModerator),
 }));
