@@ -12,14 +12,14 @@ import {
 interface CategoryCard {
 	className?: string;
 	category: (typeof activityCategories)[number];
-	speakerName: string;
+	speakersName: string[];
 	hours?: number | null;
 }
 
 export function CategoryCard({
 	className,
 	category,
-	speakerName,
+	speakersName,
 	hours,
 }: CategoryCard) {
 	return (
@@ -32,7 +32,7 @@ export function CategoryCard({
 			<div className="inline-flex items-center justify-start gap-4">
 				<CategoryLabel category={category} />
 				<p className="text-foreground shrink grow basis-0 text-base font-medium">
-					{speakerName}
+					{speakersName.join(", ")}
 				</p>
 			</div>
 			{hours ? (
