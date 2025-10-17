@@ -1,4 +1,5 @@
 "use client";
+import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
@@ -256,8 +257,9 @@ export function MutateActivityFormContent({
 					render={({ field }) => (
 						<FormItem className="w-full">
 							<FormLabel>Palestrantes</FormLabel>
-							<div className="flex w-full flex-row items-center justify-between gap-3">
+							<div className="flex w-full flex-col items-center justify-between gap-3">
 								<InstancePicker
+									className="w-full"
 									isLoading={isLoading}
 									error={error?.message}
 									items={
@@ -303,11 +305,14 @@ export function MutateActivityFormContent({
 											id.toString(),
 										) || []
 									}
-									onSelect={(items) => {
-										field.onChange(
-											items.map((id) => parseInt(id)),
-										);
-									}}
+									onSelect={useCallback(
+										(items: string[]) => {
+											field.onChange(
+												items.map((id) => parseInt(id)),
+											);
+										},
+										[field.onChange],
+									)}
 									placeholder={
 										isLoading
 											? "Carregando palestrantes..."
@@ -320,7 +325,7 @@ export function MutateActivityFormContent({
 										{currentSpeakers.map((speaker) => (
 											<div
 												key={speaker.id}
-												className="flex items-center justify-between rounded-md border p-2"
+												className="flex items-center justify-between rounded-md border px-4 py-2.5"
 											>
 												<div className="flex items-center gap-2">
 													{speaker.imageUrl && (
