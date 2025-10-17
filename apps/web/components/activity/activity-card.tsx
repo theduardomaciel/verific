@@ -1,31 +1,22 @@
 import Link from "next/link";
 
 // Icons
-import {
-	ArrowRight,
-	Calendar,
-	Clock,
-	Users,
-	BookOpen,
-	Check,
-	User,
-	MapPin,
-} from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 // Components
 import { Button } from "../ui/button";
-import { Badge } from "../ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+
 import { ParticipantQuitButton } from "../participant/participant-quit-button";
 
 // Types
 import { RouterOutput } from "@verific/api";
 
 // Lib
-import { getDateString, getTimeString } from "@/lib/date";
 import { activityCategoryLabels } from "@verific/drizzle/schema";
+import { ActivityCardSpeakers } from "./activity-card/speakers";
+import { ActivityCardTags } from "./activity-card/tags";
 
 interface EventCardProps {
 	activity: RouterOutput["getActivities"]["activities"][number];
@@ -33,77 +24,22 @@ interface EventCardProps {
 }
 
 export function ActivityCard({ activity, userId }: EventCardProps) {
-	const isParticipant = activity.participants?.some(
+	const participantRole = activity.participants.find(
 		(participant) => participant.userId === userId,
-	);
-	const hasRemainingSeats = activity.participantsLimit
-		? activity.participantsLimit - activity.participants.length > 0
-		: true;
+	)?.role;
 
-	return (
-		<div
-			id={activity.id}
-			className={`bg-card flex h-full flex-col justify-between rounded-lg border p-6`}
-		>
-			<ActivityCardContent activity={activity} />
-			<div className="mt-auto flex flex-col flex-wrap items-start justify-center gap-4 md:flex-row-reverse md:items-center md:justify-between">
-				<ActivityCardTags activity={activity} />
-				<div className="flex flex-row items-center justify-start gap-4">
-					<Button
-						variant={"default"}
-						size={"lg"}
-						className={cn({
-							"pointer-events-none opacity-50":
-								!hasRemainingSeats || isParticipant,
-						})}
-						asChild
-					>
-						<Link
-							href={`/${activity.project?.url}/schedule/${activity.id}`}
-							scroll={false}
-						>
-							{isParticipant ? (
-								<>
-									<Check className="mr-2 h-4 w-4" />
-									Inscrito
-								</>
-							) : (
-								<>
-									Quero participar
-									<ArrowRight className="ml-2 h-4 w-4" />
-								</>
-							)}
-						</Link>
-					</Button>
-					{isParticipant && (
-						<ParticipantQuitButton
-							activityId={activity.id}
-							eventUrl={activity.project?.url}
-						/>
-					)}
-				</div>
-			</div>
-		</div>
-	);
-}
-
-function ActivityCardContent({
-	activity,
-}: {
-	activity: EventCardProps["activity"];
-}) {
 	const remainingSeats = activity.participantsLimit
 		? activity.participantsLimit - activity.participants.length
 		: null;
 
-	/* console.log("ActivityCardContent", {
-		activity,
-		remainingSeats,
-	}); */
+	const hasRemainingSeats = remainingSeats === null || remainingSeats > 0;
 
 	return (
-		<div>
-			<div className="mb-2 flex items-start justify-between">
+		<div
+			id={activity.id}
+			className={`bg-card flex h-full flex-col justify-between gap-2 rounded-lg border p-6`}
+		>
+			<div className="flex items-start justify-between">
 				<span className="text-sm font-extrabold uppercase">
 					{activityCategoryLabels[activity.category]}
 				</span>
@@ -128,139 +64,54 @@ function ActivityCardContent({
 				</span>
 			</div>
 
-			<h3 className="mb-2 text-lg font-bold">{activity.name}</h3>
-			<p className="text-muted-foreground leading-relaxe mb-4 line-clamp-3 text-base text-ellipsis">
-				{activity.description}
-			</p>
-
-			{activity.speaker && (
-				<ActivityCardSpeaker speaker={activity.speaker} />
-			)}
-
-			{/* {activity.address ? (
-				<ActivityCardAddress address={activity.address} />
-			) : null} */}
-		</div>
-	);
-}
-
-function ActivityCardAddress({
-	address,
-	className,
-}: {
-	address: string;
-	className?: string;
-}) {
-	return (
-		<div
-			className={cn(
-				"mb-4 flex flex-row items-center justify-start gap-4 rounded-lg border px-4 py-3",
-				className,
-			)}
-		>
-			<MapPin className="h-4 w-4" />
-			<span className="text-sm font-medium">{address}</span>
-		</div>
-	);
-}
-
-export function ActivityCardSpeaker({
-	speaker,
-}: {
-	speaker: NonNullable<EventCardProps["activity"]["speaker"]>;
-}) {
-	return (
-		<div
-			className={cn(
-				"mb-4 flex items-center gap-6 rounded-lg border px-6 py-4",
-			)}
-		>
-			<Avatar className={cn("aspect-square h-10 w-10 object-cover")}>
-				<AvatarImage src={speaker.imageUrl || undefined} />
-				<AvatarFallback className="cursor-default">
-					<User className={cn("h-6 w-6 text-white")} />
-				</AvatarFallback>
-			</Avatar>
-			<div className="flex flex-col items-start justify-start gap-0.5">
-				<p className="font-bold">{speaker.name}</p>
-				<p className="text-muted-foreground text-sm font-medium">
-					{speaker.description || "Palestrante"}
+			<h3 className="text-lg font-bold">{activity.name}</h3>
+			{activity.description && (
+				<p className="text-muted-foreground leading-relaxe mb-4 line-clamp-3 text-base text-ellipsis">
+					{activity.description}
 				</p>
+			)}
+
+			{activity.speakers.length && (
+				<ActivityCardSpeakers speakers={activity.speakers} />
+			)}
+
+			<div className="mt-auto flex flex-col flex-wrap items-start justify-center gap-4 md:flex-row-reverse md:items-center md:justify-between">
+				<ActivityCardTags activity={activity} />
+				<div className="flex flex-row items-center justify-start gap-4">
+					<Button
+						variant={"default"}
+						size={"lg"}
+						className={cn({
+							"pointer-events-none opacity-50":
+								!hasRemainingSeats || !!participantRole,
+						})}
+						asChild
+					>
+						<Link
+							href={`/${activity.project?.url}/schedule/${activity.id}`}
+							scroll={false}
+						>
+							{!!participantRole ? (
+								<>
+									<Check className="mr-2 h-4 w-4" />
+									Inscrito
+								</>
+							) : (
+								<>
+									Quero participar
+									<ArrowRight className="ml-2 h-4 w-4" />
+								</>
+							)}
+						</Link>
+					</Button>
+					{participantRole === "participant" && (
+						<ParticipantQuitButton
+							activityId={activity.id}
+							eventUrl={activity.project?.url}
+						/>
+					)}
+				</div>
 			</div>
-		</div>
-	);
-}
-
-interface ActivityCardTagsProps {
-	activity: Omit<
-		EventCardProps["activity"],
-		"participants" | "project" | "speaker"
-	>;
-	tagsClassName?: string;
-}
-
-export function ActivityCardTags({
-	activity,
-	tagsClassName,
-}: ActivityCardTagsProps) {
-	const displayDate = getDateString(activity);
-	const displayTime = getTimeString(activity.dateFrom);
-
-	return (
-		<div className="flex flex-wrap gap-2">
-			<Badge
-				className={cn(
-					"bg-background text-foreground py-1 brightness-95",
-					tagsClassName,
-				)}
-			>
-				<Calendar className="mr-2 !h-3.5 !w-3.5" />
-				<span className="-mt-0.5 text-sm">{displayDate}</span>
-			</Badge>
-			<Badge
-				className={cn(
-					"bg-background text-foreground py-1 brightness-95",
-					tagsClassName,
-				)}
-			>
-				<Clock className="mr-2 !h-3.5 !w-3.5" />
-				<span className="-mt-0.5 text-sm">{displayTime}</span>
-			</Badge>
-			{activity.workload ? (
-				<Badge
-					className={cn(
-						"bg-background text-foreground py-1 brightness-95",
-						tagsClassName,
-					)}
-				>
-					<BookOpen className="mr-2 !h-3.5 !w-3.5" />
-					<span className="-mt-0.5 text-sm">
-						{activity.workload}h
-					</span>
-				</Badge>
-			) : null}
-			{activity.address ? (
-				<Badge
-					className={cn(
-						"bg-background text-foreground py-1 brightness-95",
-						tagsClassName,
-					)}
-				>
-					<MapPin className="mr-2 !h-3.5 !w-3.5" />
-					<span className="-mt-0.5 text-sm">{activity.address}</span>
-				</Badge>
-			) : null}
-			{/* <Badge
-				className={cn(
-					"bg-background text-foreground py-1 brightness-95",
-					tagsClassName,
-				)}
-			>
-				<Users className="mr-2 !h-3.5 !w-3.5" />
-				<span className="-mt-0.5 text-sm capitalize">
-					{activity.audience === "internal" ? "Interno" : "Externo"}
-				</span>
-			</Badge> */}
 		</div>
 	);
 }

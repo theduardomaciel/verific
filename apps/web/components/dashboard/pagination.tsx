@@ -20,8 +20,6 @@ interface DashboardPaginationProps {
 	prefix: string;
 }
 
-const PAGE_SIZE = 5; // Define o tamanho da página
-
 export function DashboardPagination({
 	currentPage,
 	totalPages,
@@ -43,8 +41,7 @@ export function DashboardPagination({
 
 	// Navega para uma página específica
 	const goToPage = (page: number) => {
-		if (page < 1 || page > Math.max(1, Math.ceil(totalPages / PAGE_SIZE)))
-			return;
+		if (page < 1 || page > totalPages) return;
 
 		const queryString = createQueryString("page", page.toString());
 		router.push(`/dashboard/${prefix}?${queryString}`);
@@ -53,7 +50,7 @@ export function DashboardPagination({
 	// Gera os números de página para exibição
 	const getPageNumbers = () => {
 		const pages = [];
-		const totalPageCount = Math.max(1, Math.ceil(totalPages / PAGE_SIZE));
+		const totalPageCount = totalPages;
 
 		// Sempre mostra a primeira página
 		pages.push(1);
@@ -139,8 +136,7 @@ export function DashboardPagination({
 							goToPage(currentPage + 1);
 						}}
 						className={
-							currentPage >=
-							Math.max(1, Math.ceil(totalPages / PAGE_SIZE))
+							currentPage >= totalPages
 								? "pointer-events-none opacity-50"
 								: ""
 						}

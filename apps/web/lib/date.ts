@@ -5,6 +5,12 @@ const saoPauloFormatter = new Intl.DateTimeFormat("pt-BR", {
 	timeStyle: "short",
 });
 
+const saoPauloDateFormatter = new Intl.DateTimeFormat("pt-BR", {
+	timeZone: "America/Sao_Paulo",
+	day: "2-digit",
+	month: "2-digit",
+});
+
 export const isDateDifferent = (date1: Date, date2: Date) => {
 	return (
 		date1.getDate() !== date2.getDate() ||
@@ -13,9 +19,9 @@ export const isDateDifferent = (date1: Date, date2: Date) => {
 	);
 };
 
-export const getDateString = (event: { dateFrom: Date; dateTo: Date }) => {
-	const dateString = `${saoPauloFormatter.format(event.dateFrom).split(' ')[0]}${isDateDifferent(event.dateFrom, event.dateTo)
-		? ` - ${saoPauloFormatter.format(event.dateTo).split(' ')[0]}`
+export const getDateString = (dateFrom: Date, dateTo: Date) => {
+	const dateString = `${saoPauloDateFormatter.format(dateFrom)}${isDateDifferent(dateFrom, dateTo)
+		? ` - ${saoPauloDateFormatter.format(dateTo)}`
 		: ""
 		}`;
 
@@ -34,15 +40,34 @@ export const isAfterEnd = (endDate: Date) => {
 	return new Date() > endDate;
 }
 
+/* 
+	Uma atividade está "ao vivo" se a data atual estiver entre a data de início e a data de término da atividade.
+*/
 export const isLive = (date: Date): boolean => {
-	return date.getTime() <= Date.now();
+	const now = Date.now();
+	const startTime = date.getTime();
+	const endTime = startTime + 60 * 60 * 1000; // 1 hora de duração
+	return now >= startTime && now <= endTime;
 };
+
+/* 
+	Uma atividade está "começando em instantes" se estiver para começar nos próximos 15 minutos.
+*/
 export const isStartingSoon = (date: Date): boolean => {
-	return !isLive(date) && date.getTime() - Date.now() <= 5 * 60 * 1000; // 5 minutos
+	const now = Date.now();
+	const startTime = date.getTime();
+	return startTime > now && startTime - now <= 15 * 60 * 1000;
 };
+
 export const isToday = (date: Date): boolean => {
 	return date.toDateString() === new Date().toDateString();
 };
+
+export const isTomorrow = (date: Date): boolean => {
+	const tomorrow = new Date();
+	tomorrow.setDate(tomorrow.getDate() + 1);
+	return date.toDateString() === tomorrow.toDateString();
+}
 
 export function categorizeByDate<T>(
 	items: T[],
@@ -95,6 +120,24 @@ export interface FriendlyDateOptions {
 	locale?: string;
 }
 
+/**
+ * Formats a Date into a human-friendly, localized string.
+ *
+ * Behavior:
+ * - If the date is today, returns "Hoje" or "Hoje, HH:mm" when includeHour is true.
+ * - If the date is tomorrow, returns "Amanhã" or "Amanhã, HH:mm" when includeHour is true.
+ * - Otherwise formats the date using Intl.DateTimeFormat with the provided locale (default "pt-BR")
+ *   and the fixed timezone "America/Sao_Paulo". When both date and time are present, the output
+ *   will insert "às" before the time (e.g. "12 de abril, às 14:30" -> "12 de abril, às 14:30").
+ *
+ * @param date - The Date instance to format.
+ * @param options - Optional formatting flags.
+ * @param options.includeDay - Whether to include day and month in the output. Default: true.
+ * @param options.includeHour - Whether to include hour and minute in the output. Default: false.
+ * @param options.longMonth - When includeDay is true, use the full month name (e.g. "abril") instead of numeric month. Default: false.
+ * @param options.locale - Locale identifier passed to Intl.DateTimeFormat (affects language and numeric formatting). Default: "pt-BR".
+ * @returns A localized, human-friendly string representing the given date (examples: "Hoje", "Amanhã, 14:30", "12/04, às 14:30", "12 de abril, às 14:30").
+ */
 export function formatFriendlyDate(date: Date, options?: FriendlyDateOptions): string {
 	const {
 		includeDay = true,
@@ -104,11 +147,10 @@ export function formatFriendlyDate(date: Date, options?: FriendlyDateOptions): s
 	} = options || {};
 
 	const now = new Date();
-	const isToday = date.toDateString() === now.toDateString();
-	const isTomorrow =
-		date.toDateString() === new Date(now.getTime() + 24 * 60 * 60 * 1000).toDateString();
+	const today = isToday(date);
+	const tomorrow = isTomorrow(date);
 
-	if (isToday) {
+	if (today) {
 		return includeHour
 			? `Hoje, ${new Intl.DateTimeFormat("pt-BR", {
 				timeZone: "America/Sao_Paulo",
@@ -118,7 +160,7 @@ export function formatFriendlyDate(date: Date, options?: FriendlyDateOptions): s
 			: "Hoje";
 	}
 
-	if (isTomorrow) {
+	if (tomorrow) {
 		return includeHour
 			? `Amanhã, ${new Intl.DateTimeFormat("pt-BR", {
 				timeZone: "America/Sao_Paulo",

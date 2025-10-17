@@ -3,29 +3,30 @@ import {
 	doublePrecision,
 	integer,
 	pgTable,
-	smallserial,
 	text,
 	timestamp,
 	uuid,
 } from "drizzle-orm/pg-core";
 
-import { speaker, participantOnActivity, project } from ".";
+import { participantOnActivity, project } from ".";
 
 import { categoryEnum } from "../enum/category";
 import { audienceEnum } from "../enum/audience";
+import { speakersOnActivity } from "./speaker-on-activity";
+import { activityExclusion } from "./activity-exclusion";
 
 export const activity = pgTable("activities", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	name: text("name").notNull(),
 	description: text("description"),
+	banner_url: text("banner_url"),
+
 	dateFrom: timestamp("date_from").notNull(),
 	dateTo: timestamp("date_to").notNull(),
+
 	audience: audienceEnum("audience").notNull().default("internal"),
 	category: categoryEnum("category").notNull().default("other"),
-	speakerId: smallserial("speaker_id").references(() => speaker.id, {
-		onDelete: "set null",
-		onUpdate: "cascade",
-	}),
+
 	participantsLimit: integer("participants_limit"),
 	tolerance: integer("tolerance"),
 	workload: integer("workload"),
@@ -41,6 +42,7 @@ export const activity = pgTable("activities", {
 			onDelete: "restrict",
 			onUpdate: "cascade",
 		}),
+
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -49,9 +51,12 @@ export const activityRelations = relations(activity, ({ one, many }) => ({
 		fields: [activity.projectId],
 		references: [project.id],
 	}),
-	speaker: one(speaker, {
-		fields: [activity.speakerId],
-		references: [speaker.id],
-	}),
 	participantsOnActivity: many(participantOnActivity),
+	speakersOnActivity: many(speakersOnActivity),
+	excludedActivities: many(activityExclusion, {
+		relationName: "activityExclusions",
+	}),
+	excludingActivities: many(activityExclusion, {
+		relationName: "excludingActivities",
+	}),
 }));

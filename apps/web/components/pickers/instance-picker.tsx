@@ -140,6 +140,7 @@ export function InstancePicker<T extends Item = Item>({
 			<Popover>
 				<PopoverTrigger asChild>
 					<PickerTrigger
+						className="w-full"
 						items={filteredItems}
 						placeholder={placeholder}
 					/>

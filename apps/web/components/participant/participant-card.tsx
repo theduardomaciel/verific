@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { cookies } from "next/headers";
 
 // Utils
-import { pluralize } from "@/lib/i18n";
+import { getInitials, pluralize } from "@/lib/i18n";
 
 // Icons
 import { Hash, Hourglass, LogOut, Mail, Settings, User } from "lucide-react";
@@ -19,11 +19,11 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { LogoutForm } from "@/components/ui/logout-form";
 
 // API
 import { serverClient } from "@/lib/trpc/server";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 interface Props {
 	id: string;
@@ -49,11 +49,7 @@ export async function ParticipantCard({ id: participantId, eventUrl }: Props) {
 				<Avatar className="h-32 w-32 rounded-2xl">
 					<AvatarImage src={participant.user.image_url || ""} />
 					<AvatarFallback>
-						{participant.user.name
-							?.split(" ")
-							.map((n) => n[0])
-							.join("")
-							.toUpperCase()}
+						{getInitials(participant.user.name)}
 					</AvatarFallback>
 				</Avatar>
 				<div className="flex flex-col items-center justify-start gap-1">

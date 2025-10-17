@@ -1,4 +1,5 @@
 "use client";
+import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
@@ -79,14 +80,15 @@ export function MutateActivityFormContent({
 
 	const router = useRouter();
 
-	const formSpeakerId = useWatch({
+	const formSpeakerIds = useWatch({
 		control: form.control,
-		name: "speakerId",
+		name: "speakerIds",
 	});
 
-	const currentSpeaker = speakers?.find(
-		(speaker: Speaker) => speaker.id.toString() === formSpeakerId,
-	);
+	const currentSpeakers =
+		speakers?.filter((speaker: Speaker) =>
+			formSpeakerIds?.includes(speaker.id),
+		) || [];
 
 	return (
 		<div
@@ -251,12 +253,13 @@ export function MutateActivityFormContent({
 
 				<FormField
 					control={form.control}
-					name="speakerId"
+					name="speakerIds"
 					render={({ field }) => (
 						<FormItem className="w-full">
-							<FormLabel>Palestrante</FormLabel>
-							<div className="flex w-full flex-row items-center justify-between gap-3">
+							<FormLabel>Palestrantes</FormLabel>
+							<div className="flex w-full flex-col items-center justify-between gap-3">
 								<InstancePicker
+									className="w-full"
 									isLoading={isLoading}
 									error={error?.message}
 									items={
@@ -268,7 +271,7 @@ export function MutateActivityFormContent({
 												}))
 											: []
 									}
-									maxItems={1}
+									maxItems={undefined}
 									actionButton={
 										<MutateSpeakerDialog
 											projectId={projectId}
@@ -292,85 +295,132 @@ export function MutateActivityFormContent({
 														);
 													})
 													.then(() => {
-														field.onChange(""); // Resetar campo após adicionar/excluir
+														// Keep existing speakers after adding new one
 													});
 											}}
 										/>
 									}
-									initialItems={field.value}
-									onSelect={(items) => {
-										field.onChange(items[0]);
-										/* console.log(
-											"Current speaker:",
-											currentSpeaker,
-										); */
-									}}
+									initialItems={
+										field.value?.map((id) =>
+											id.toString(),
+										) || []
+									}
+									onSelect={useCallback(
+										(items: string[]) => {
+											field.onChange(
+												items.map((id) => parseInt(id)),
+											);
+										},
+										[field.onChange],
+									)}
 									placeholder={
 										isLoading
 											? "Carregando palestrantes..."
-											: "Selecione um palestrante"
+											: "Selecione os palestrantes"
 									}
 									emptyText="Nenhum palestrante encontrado"
 								/>
-								{currentSpeaker ? (
-									<>
-										<MutateSpeakerDialog
-											projectId={projectId}
-											speaker={currentSpeaker}
-											trigger={
-												<Button
-													type="button"
-													size={"icon"}
-													variant={"outline"}
-													className="h-full px-6"
-												>
-													<EditIcon size={16} />
-												</Button>
-											}
-											onSuccess={() => {
-												refetch()
-													.catch((error) => {
-														console.error(
-															"Error refetching speakers:",
-															error,
-														);
-													})
-													.then(() => {
-														toast.success(
-															"Palestrante atualizado com sucesso!",
-														);
-													});
-											}}
-										/>
-										<SpeakerDeleteDialog
-											speakerId={currentSpeaker.id}
-											onSuccess={() => {
-												refetch()
-													.catch((error) => {
-														console.error(
-															"Error refetching speakers:",
-															error,
-														);
-													})
-													.then(() => {
-														toast.success(
-															"Palestrante excluído com sucesso!",
-														);
-														field.onChange(""); // Resetar campo após adicionar/excluir
-													});
-											}}
-										>
-											<Button
-												type="button"
-												size={"icon"}
-												variant={"outline"}
-												className="h-full px-6"
+								{currentSpeakers.length > 0 && (
+									<div className="flex w-full flex-col gap-2">
+										{currentSpeakers.map((speaker) => (
+											<div
+												key={speaker.id}
+												className="flex items-center justify-between rounded-md border px-4 py-2.5"
 											>
-												<TrashIcon size={16} />
-											</Button>
-										</SpeakerDeleteDialog>
-									</>
-								) : null}
+												<div className="flex items-center gap-2">
+													{speaker.imageUrl && (
+														<img
+															src={
+																speaker.imageUrl
+															}
+															alt={speaker.name}
+															className="h-8 w-8 rounded-full"
+														/>
+													)}
+													<span className="text-sm font-medium">
+														{speaker.name}
+													</span>
+												</div>
+												<div className="flex gap-1">
+													<MutateSpeakerDialog
+														projectId={projectId}
+														speaker={speaker}
+														trigger={
+															<Button
+																type="button"
+																size={"icon"}
+																variant={
+																	"outline"
+																}
+																className="h-8 w-8"
+															>
+																<EditIcon
+																	size={14}
+																/>
+															</Button>
+														}
+														onSuccess={() => {
+															refetch()
+																.catch(
+																	(error) => {
+																		console.error(
+																			"Error refetching speakers:",
+																			error,
+																		);
+																	},
+																)
+																.then(() => {
+																	toast.success(
+																		"Palestrante atualizado com sucesso!",
+																	);
+																});
+														}}
+													/>
+													<SpeakerDeleteDialog
+														speakerId={speaker.id}
+														onSuccess={() => {
+															refetch()
+																.catch(
+																	(error) => {
+																		console.error(
+																			"Error refetching speakers:",
+																			error,
+																		);
+																	},
+																)
+																.then(() => {
+																	toast.success(
+																		"Palestrante excluído com sucesso!",
+																	);
+																	// Remove this speaker from the selected list
+																	field.onChange(
+																		field.value?.filter(
+																			(
+																				id,
+																			) =>
+																				id !==
+																				speaker.id,
+																		) || [],
+																	);
+																});
+														}}
+													>
+														<Button
+															type="button"
+															size={"icon"}
+															variant={"outline"}
+															className="h-8 w-8"
+														>
+															<TrashIcon
+																size={14}
+															/>
+														</Button>
+													</SpeakerDeleteDialog>
+												</div>
+											</div>
+										))}
+									</div>
+								)}
 							</div>
 							<FormMessage />
 						</FormItem>

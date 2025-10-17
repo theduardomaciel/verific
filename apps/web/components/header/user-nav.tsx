@@ -24,6 +24,9 @@ import { LogoutForm } from "@/components/ui/logout-form";
 // Types
 import type { User } from "@verific/auth";
 
+// Lib
+import { getInitials } from "@/lib/i18n";
+
 // Auth
 
 interface Props {
@@ -32,13 +35,7 @@ interface Props {
 }
 
 export function UserNav({ user, showAccountActions }: Props) {
-	const initials = user.name
-		?.replace(/[^a-zA-Z0-9 ]/g, "") // Remove non-alphanumerical except spaces
-		.split(" ")
-		.filter(Boolean)
-		.slice(0, 2)
-		.map((n) => n[0])
-		.join("");
+	const initials = getInitials(user.name);
 
 	// console.log("UserNav user:", user);
 
