@@ -15,10 +15,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-	ActivityCardSpeaker,
-	ActivityCardTags,
-} from "../activity/activity-card";
 
 // API
 import { RouterOutput } from "@verific/api";
@@ -33,6 +29,8 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "../ui/tooltip";
+import { ActivityCardSpeakers } from "../activity/activity-card/speakers";
+import { ActivityCardTags } from "../activity/activity-card/tags";
 
 interface Props {
 	participantId?: string | null;
@@ -130,8 +128,12 @@ export function JoinActivityDialog({ participantId, activity }: Props) {
 					</DialogDescription>
 				</DialogHeader>
 				<div className="flex flex-col">
-					{activity.speaker ? (
-						<ActivityCardSpeaker speaker={activity.speaker} />
+					{activity.speakersOnActivity ? (
+						<ActivityCardSpeakers
+							speakers={activity.speakersOnActivity.map(
+								(s) => s.speaker,
+							)}
+						/>
 					) : null}
 					<ActivityCardTags
 						tagsClassName="bg-muted"
