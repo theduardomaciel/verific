@@ -20,6 +20,7 @@ type CarouselProps = {
 	orientation?: "horizontal" | "vertical";
 	setApi?: (api: CarouselApi) => void;
 	showDots?: boolean;
+	slideCount?: number;
 };
 
 type CarouselContextProps = {
@@ -30,6 +31,7 @@ type CarouselContextProps = {
 	canScrollPrev: boolean;
 	canScrollNext: boolean;
 	showDots?: boolean;
+	slideCount?: number;
 } & CarouselProps;
 
 const CarouselContext = React.createContext<CarouselContextProps | null>(null);
@@ -52,6 +54,7 @@ function Carousel({
 	className,
 	children,
 	showDots = false,
+	slideCount,
 	...props
 }: React.ComponentProps<"div"> & CarouselProps) {
 	const [carouselRef, api] = useEmblaCarousel(
@@ -121,6 +124,7 @@ function Carousel({
 				canScrollPrev,
 				canScrollNext,
 				showDots,
+				slideCount,
 			}}
 		>
 			<div
@@ -245,9 +249,12 @@ type UseDotButtonType = {
 
 export const useDotButton = (
 	emblaApi: CarouselApi | undefined,
+	slideCount?: number,
 ): UseDotButtonType => {
 	const [selectedIndex, setSelectedIndex] = React.useState(0);
-	const [scrollSnaps, setScrollSnaps] = React.useState<number[]>([]);
+	const [scrollSnaps, setScrollSnaps] = React.useState<number[]>(
+		slideCount ? Array.from({ length: slideCount }, (_, i) => i) : [],
+	);
 
 	const onDotButtonClick = React.useCallback(
 		(index: number) => {
@@ -298,8 +305,11 @@ const CarouselDotButton: React.FC<PropType> = (props) => {
 };
 
 function CarouselDots({ className }: { className?: string }) {
-	const { api } = useCarousel();
-	const { selectedIndex, scrollSnaps, onDotButtonClick } = useDotButton(api);
+	const { api, slideCount } = useCarousel();
+	const { selectedIndex, scrollSnaps, onDotButtonClick } = useDotButton(
+		api,
+		slideCount,
+	);
 
 	return (
 		<div className={cn("flex justify-center space-x-2", className)}>
