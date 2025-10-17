@@ -1,5 +1,12 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, uuid, doublePrecision, boolean } from "drizzle-orm/pg-core";
+import {
+	pgTable,
+	text,
+	timestamp,
+	uuid,
+	doublePrecision,
+	boolean,
+} from "drizzle-orm/pg-core";
 
 import { activity, participant, speaker, user } from ".";
 
@@ -22,6 +29,7 @@ export const project = pgTable("projects", {
 	isArchived: boolean("is_archived").default(false),
 
 	logoUrl: text("logo_url"),
+	largeLogoUrl: text("large_logo_url"),
 	coverUrl: text("cover_url"),
 	thumbnailUrl: text("thumbnail_url"),
 

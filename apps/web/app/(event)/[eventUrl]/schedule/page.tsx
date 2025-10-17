@@ -31,10 +31,12 @@ export default async function EventSchedulePage(props: {
 	const { project: event } = await serverClient.getProject({ url: eventUrl });
 
 	const searchParams = await props.searchParams;
-	const parsedParams = getActivitiesParams.parse(searchParams);
+	const { sort, ...parsedParams } = getActivitiesParams.parse(searchParams);
 
 	const { activities } = await serverClient.getActivities({
 		projectId: event.id,
+		pageSize: 50,
+		sort: sort || "asc",
 		...parsedParams,
 	});
 
@@ -84,11 +86,12 @@ export default async function EventSchedulePage(props: {
 					<SearchBar placeholder="Pesquisar atividades" />
 					<div className="flex gap-4">
 						<SortBy
-							sortBy={"recent"}
+							sortBy={"oldest"}
 							items={[
 								{ value: "recent", label: "Mais recentes" },
 								{ value: "oldest", label: "Mais antigas" },
-								{ value: "alphabetical", label: "Alfabética" },
+								{ value: "name_asc", label: "Nome A-Z" },
+								{ value: "name_desc", label: "Nome Z-A" },
 							]}
 						/>
 						<SortBy

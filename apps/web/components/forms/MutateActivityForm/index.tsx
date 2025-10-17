@@ -53,7 +53,10 @@ export default function MutateActivityForm({
 		defaultValues: {
 			name: activity?.name || "",
 			description: activity?.description || "",
-			speakerId: activity?.speaker.id.toString() || "",
+			speakerIds:
+				activity?.speakersOnActivity.map(
+					(speakerOnActivity) => speakerOnActivity.speaker.id,
+				) || [],
 			dateFrom: activity?.dateFrom
 				? new Date(activity.dateFrom)
 				: new Date(startDate || Date.now()),

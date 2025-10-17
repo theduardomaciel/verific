@@ -26,6 +26,11 @@ const nextConfig: NextConfig = {
 			},
 			{
 				protocol: "https",
+				hostname: "mail.google.com",
+				pathname: "/**",
+			},
+			{
+				protocol: "https",
 				hostname: "maps.googleapis.com",
 				pathname: "/**",
 			},

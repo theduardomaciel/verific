@@ -1,7 +1,8 @@
 import { pgTable, smallserial, text, uuid } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
-import { activity, project } from ".";
+import { project } from ".";
+import { speakersOnActivity } from "./speaker-on-activity";
 
 export const speaker = pgTable("speakers", {
 	id: smallserial("id").primaryKey(),
@@ -21,5 +22,5 @@ export const speakerRelations = relations(speaker, ({ one, many }) => ({
 		fields: [speaker.projectId],
 		references: [project.id],
 	}),
-	activities: many(activity),
+	activities: many(speakersOnActivity),
 }));

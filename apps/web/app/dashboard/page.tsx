@@ -24,6 +24,8 @@ export default async function Overview() {
 
 	const { activities } = await serverClient.getActivities({
 		projectId,
+		sort: "asc",
+		pageSize: 5,
 	});
 
 	const { participants: rawParticipants } =

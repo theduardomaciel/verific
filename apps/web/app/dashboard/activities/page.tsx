@@ -44,7 +44,7 @@ export default async function ActivitiesPage(props: {
 	const searchParams = await props.searchParams;
 	const parsedParams = getActivitiesParams.parse(searchParams);
 
-	const { activities } = await serverClient.getActivities({
+	const { activities, pageCount } = await serverClient.getActivities({
 		projectId,
 		...parsedParams,
 	});
@@ -60,9 +60,10 @@ export default async function ActivitiesPage(props: {
 						<SortBy
 							sortBy={parsedParams.sort}
 							items={[
-								{ value: "recent", label: "Mais recentes" },
-								{ value: "oldest", label: "Mais antigas" },
-								{ value: "alphabetical", label: "Alfabética" },
+								{ value: "desc", label: "Mais recentes" },
+								{ value: "asc", label: "Mais antigas" },
+								{ value: "name_asc", label: "Nome A-Z" },
+								{ value: "name_desc", label: "Nome Z-A" },
 							]}
 						/>
 					</div>
@@ -95,7 +96,7 @@ export default async function ActivitiesPage(props: {
 
 					<DashboardPagination
 						currentPage={parsedParams.page || 1}
-						totalPages={5}
+						totalPages={pageCount}
 						prefix={`/activities`}
 					/>
 				</div>

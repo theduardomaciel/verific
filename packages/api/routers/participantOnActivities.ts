@@ -6,6 +6,7 @@ import {
 	participant,
 	participantOnActivity,
 	project,
+	speakersOnActivity,
 	user,
 } from "@verific/drizzle/schema";
 import { and, eq, getTableColumns } from "@verific/drizzle/orm";
@@ -78,7 +79,11 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 						with: {
 							activity: {
 								with: {
-									speaker: true,
+									speakersOnActivity: {
+										with: {
+											speaker: true,
+										},
+									},
 									participantsOnActivity: true,
 								},
 							},
@@ -152,10 +157,12 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 			// Deleta a inscrição do participante na atividade
 			const deleteCount = await db
 				.delete(participantOnActivity)
-				.where(and(
-					eq(participantOnActivity.participantId, participantId),
-					eq(participantOnActivity.activityId, activityId),
-				))
+				.where(
+					and(
+						eq(participantOnActivity.participantId, participantId),
+						eq(participantOnActivity.activityId, activityId),
+					),
+				)
 				.returning({ id: participantOnActivity.participantId });
 
 			if (!deleteCount.length) {

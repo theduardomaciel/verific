@@ -57,9 +57,10 @@ export default async function ParticipantsPage(props: {
 						<SortBy
 							sortBy={parsedParams.sort}
 							items={[
-								{ value: "recent", label: "Mais recentes" },
-								{ value: "oldest", label: "Mais antigas" },
-								{ value: "alphabetical", label: "Alfabética" },
+								{ value: "desc", label: "Mais recentes" },
+								{ value: "asc", label: "Mais antigas" },
+								{ value: "name_asc", label: "Nome A-Z" },
+								{ value: "name_desc", label: "Nome Z-A" },
 							]}
 						/>
 					</div>

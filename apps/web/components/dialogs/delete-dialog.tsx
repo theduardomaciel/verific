@@ -175,8 +175,8 @@ export function SpeakerDeleteDialog({
 			title="Você tem certeza que deseja excluir este palestrante?"
 			description={
 				<>
-					A exclusão do palestrante removerá todas as informações
-					anexadas. <br />
+					A exclusão do palestrante removerá esse palestrante de TODAS
+					as atividades às quais ele esteja vinculado. <br />
 					Cuidado, pois essa ação não poderá ser desfeita.
 				</>
 			}

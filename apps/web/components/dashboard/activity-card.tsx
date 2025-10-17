@@ -8,9 +8,10 @@ import { User, Users } from "lucide-react";
 // Components
 import { CategoryLabel } from "@/components/dashboard/category-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-// Data
 import { ActivityStatus } from "../activity/activity-status";
+
+// Lib
+import { listToString } from "@/lib/i18n";
 
 // Types
 import { RouterOutput } from "@verific/api";
@@ -33,19 +34,28 @@ export function SimpleActivityCard({ activity, className }: ActivityCardProps) {
 				<h3 className="font-dashboard font-semibold first-letter:capitalize">
 					{activity.name}
 				</h3>
-				<span className="flex flex-row items-center justify-center gap-2">
-					<Avatar className="h-5 w-5">
-						<AvatarImage src={activity.speaker?.imageUrl || ""} />
-						<AvatarFallback className="uppercase">
-							<User className="h-2.5 w-2.5 text-slate-300" />
-						</AvatarFallback>
-					</Avatar>
-					{activity.speaker && (
+				{activity.speakers && (
+					<span className="flex flex-row items-center justify-center gap-2">
+						<div className="flex flex-row items-center justify-start -space-x-2">
+							{activity.speakers.map((speaker) => (
+								<Avatar
+									className={cn("h-5 w-5")}
+									key={speaker.id}
+								>
+									<AvatarImage
+										src={speaker?.imageUrl || ""}
+									/>
+									<AvatarFallback className="bg-primary uppercase">
+										<User className="text-primary-foreground h-3 w-3" />
+									</AvatarFallback>
+								</Avatar>
+							))}
+						</div>
 						<p className="text-muted-foreground/80 -mt-0.5 text-sm">
-							{activity.speaker.name}
+							{listToString(activity.speakers.map((s) => s.name))}
 						</p>
-					)}
-				</span>
+					</span>
+				)}
 			</div>
 			<div className="bg-input h-[1px] w-full border-t" />
 			<ActivityInfo
@@ -96,7 +106,7 @@ export function ActivityCard({ activity, className }: ActivityCardProps) {
 					)}
 
 					<ActivityInfo
-						speaker={activity.speaker}
+						speakers={activity.speakers}
 						category={activity.category}
 						dateFrom={activity.dateFrom}
 					/>
@@ -116,7 +126,7 @@ export function ActivityCard({ activity, className }: ActivityCardProps) {
 										))}
 									</div>
 									<span className="text-foreground text-xs">
-										Monitorado por {monitors.join(", ")}
+										Monitorado por {listToString(monitors)}
 									</span>
 								</div>
 							)}
@@ -145,27 +155,27 @@ export function ActivityCard({ activity, className }: ActivityCardProps) {
 
 interface InfoProps {
 	className?: string;
-	speaker?: RouterOutput["getActivities"]["activities"][number]["speaker"];
+	speakers?: RouterOutput["getActivities"]["activities"][number]["speakers"];
 	category: RouterOutput["getActivities"]["activities"][number]["category"];
 	dateFrom: Date;
 }
 
-function ActivityInfo({ className, speaker, category, dateFrom }: InfoProps) {
+function ActivityInfo({ className, speakers, category, dateFrom }: InfoProps) {
 	return (
 		<div
 			className={cn(
 				"flex flex-wrap items-center justify-between gap-2",
 				className,
 				{
-					"w-full": !speaker,
+					"w-full": !speakers,
 				},
 			)}
 		>
 			<div className="flex items-center gap-2">
 				<CategoryLabel category={category} />
-				{speaker && (
+				{speakers && (
 					<span className="text-foreground font-medium">
-						{speaker.name}
+						{listToString(speakers.map((speaker) => speaker.name))}
 					</span>
 				)}
 			</div>
