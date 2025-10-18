@@ -35,6 +35,8 @@ export function ActivityCard({ activity, userId }: EventCardProps) {
 		: null;
 
 	const hasRemainingSeats = remainingSeats === null || remainingSeats > 0;
+	const hasFewRemainingSeats =
+		remainingSeats !== null && remainingSeats > 0 && remainingSeats <= 2;
 
 	return (
 		<div
@@ -49,22 +51,20 @@ export function ActivityCard({ activity, userId }: EventCardProps) {
 					<span
 						className={cn("text-muted-foreground text-sm", {
 							"opacity-50":
-								!remainingSeats || remainingSeats <= 0,
+								remainingSeats !== null && remainingSeats <= 0,
 							"animate-pulse":
-								remainingSeats &&
+								remainingSeats !== null &&
 								remainingSeats > 0 &&
 								remainingSeats <= 2,
 							"text-red-500 uppercase":
-								remainingSeats && remainingSeats === 0,
+								remainingSeats !== null && remainingSeats === 0,
 						})}
 					>
-						{remainingSeats !== null
-							? remainingSeats === 0
-								? "Vagas Esgotadas"
-								: remainingSeats > 4
-									? `${remainingSeats} vagas`
-									: "[Últimas vagas!"
-							: "Vagas Ilimitadas"}
+						{remainingSeats === null
+							? "Vagas ilimitadas"
+							: remainingSeats > 0
+								? `${remainingSeats} vagas restantes`
+								: "Esgotado"}
 					</span>
 				</div>
 

@@ -617,7 +617,36 @@ export const activitiesRouter = createTRPCRouter({
 			const error = await isMemberAuthenticated({
 				userId: ctx.session.user.id,
 			});
+
 			if (error) throw new TRPCError(error);
+
+			const foundActivity = await db.query.activity.findFirst({
+				where: eq(activity.id, activityId),
+			});
+
+			if (!foundActivity) {
+				throw new TRPCError({
+					message: "Activity not found.",
+					code: "BAD_REQUEST",
+				});
+			}
+
+			if (foundActivity.participantsLimit) {
+				const currentCountResult = await db
+					.select({ amount: count() })
+					.from(participantOnActivity)
+					.where(eq(participantOnActivity.activityId, activityId));
+
+				const currentCount = currentCountResult?.[0]?.amount ?? 0;
+				const availableSpots = foundActivity.participantsLimit - currentCount;
+
+				if (participantsIdsToAdd.length > availableSpots) {
+					throw new TRPCError({
+						message: "Adding these participants exceeds the activity limit.",
+						code: "BAD_REQUEST",
+					});
+				}
+			}
 
 			await db
 				.insert(participantOnActivity)
