@@ -1,11 +1,36 @@
 import { z } from "zod";
 
-// Schema para habilitar pesquisa
-const researchSchema = z.object({
-	enableResearch: z.boolean().default(false),
-	researchUrl: z.string().url("URL inválida").optional().or(z.literal("")),
+// Schema para branding (simplificado, pode precisar de validação de URL/File)
+const brandingSchema = z.object({
+	logoUrl: z
+		.string()
+		.url("URL do logo inválida")
+		.optional()
+		.or(z.literal("")),
+	bannerUrl: z
+		.string()
+		.url("URL do banner inválida")
+		.optional()
+		.or(z.literal("")),
+	thumbnailUrl: z
+		.string()
+		.url("URL da miniatura inválida")
+		.optional()
+		.or(z.literal("")),
 });
 
-// Outros schemas podem ser adicionados aqui conforme necessário
+// Schema para cores (hexadecimal)
+const colorSchema = z.object({
+	primaryColor: z
+		.string()
+		.regex(/^#[0-9A-F]{6}$/i, "Cor primária inválida")
+		.default("#000000")
+		.nullable(),
+	secondaryColor: z
+		.string()
+		.regex(/^#[0-9A-F]{6}$/i, "Cor secundária inválida")
+		.default("#FFFFFF")
+		.nullable(),
+});
 
-export { researchSchema };
+export { brandingSchema, colorSchema };
