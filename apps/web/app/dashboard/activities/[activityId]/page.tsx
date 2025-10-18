@@ -15,8 +15,8 @@ import {
 // Components
 import * as ParticipantsList from "@/components/participant/participants-list";
 import { DashboardPagination } from "@/components/dashboard/pagination";
-import { SearchBar } from "@/components/dashboard/search-bar";
-import { SortBy } from "@/components/dashboard/sort-by";
+import { SearchBar } from "@/components/search-bar";
+import { SortBy } from "@/components/sort-by";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CategoryCard } from "@/components/dashboard/category-card";
@@ -211,14 +211,14 @@ export default async function ActivityPage(props: {
 					)}
 				</div>
 				<ParticipantsList.Holder className="md:w-2/5">
-					<ParticipantsList.Title>Moderadores</ParticipantsList.Title>
+					<ParticipantsList.Title>Monitores</ParticipantsList.Title>
 					<ParticipantsList.List
 						participants={monitors}
 						activityId={activity.id}
 						emptyMessage={{
-							title: "Nenhum moderador encontrado",
+							title: "Nenhum monitor encontrado",
 							description:
-								"Adicione moderadores para que eles possam gerenciar a fila de espera.",
+								"Adicione monitores para que eles possam gerenciar a fila de espera.",
 						}}
 					/>
 				</ParticipantsList.Holder>
