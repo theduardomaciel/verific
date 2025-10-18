@@ -28,7 +28,10 @@ export function ActivityCard({ activity, userId }: EventCardProps) {
 	)?.role;
 
 	const remainingSeats = activity.participantsLimit
-		? activity.participantsLimit - activity.participants.length
+		? activity.participantsLimit -
+			activity.participants.filter(
+				(participant) => participant.role === "participant",
+			).length
 		: null;
 
 	const hasRemainingSeats = remainingSeats === null || remainingSeats > 0;
@@ -73,39 +76,43 @@ export function ActivityCard({ activity, userId }: EventCardProps) {
 				)}
 			</div>
 
-			{activity.speakers.length && (
+			{activity.speakers.length ? (
 				<ActivitySpeakers speakers={activity.speakers} />
-			)}
+			) : null}
 
 			<div className="mt-auto flex flex-col flex-wrap items-start justify-center gap-4 md:flex-row-reverse md:items-center md:justify-between">
 				<ActivityCardTags activity={activity} />
 				<div className="flex flex-row items-center justify-start gap-4">
-					<Button
-						variant={"default"}
-						size={"lg"}
-						className={cn({
-							"pointer-events-none opacity-50":
-								!hasRemainingSeats || !!participantRole,
-						})}
-						asChild
-					>
-						<Link
-							href={`/${activity.project?.url}/schedule/${activity.id}`}
-							scroll={false}
+					{activity.workload &&
+					activity.workload > 0 &&
+					activity.isRegistrationOpen ? (
+						<Button
+							variant={"default"}
+							size={"lg"}
+							className={cn({
+								"pointer-events-none opacity-50":
+									!hasRemainingSeats || !!participantRole,
+							})}
+							asChild
 						>
-							{!!participantRole ? (
-								<>
-									<Check className="mr-2 h-4 w-4" />
-									Inscrito
-								</>
-							) : (
-								<>
-									Quero participar
-									<ArrowRight className="ml-2 h-4 w-4" />
-								</>
-							)}
-						</Link>
-					</Button>
+							<Link
+								href={`/${activity.project?.url}/schedule/${activity.id}`}
+								scroll={false}
+							>
+								{!!participantRole ? (
+									<>
+										<Check className="mr-2 h-4 w-4" />
+										Inscrito
+									</>
+								) : (
+									<>
+										Quero participar
+										<ArrowRight className="ml-2 h-4 w-4" />
+									</>
+								)}
+							</Link>
+						</Button>
+					) : null}
 					{participantRole === "participant" && (
 						<ParticipantQuitButton
 							activityId={activity.id}
