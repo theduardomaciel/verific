@@ -1,5 +1,3 @@
-"use cache";
-
 import { Calendar } from "lucide-react";
 import { serverClient } from "@/lib/trpc/server";
 
@@ -21,6 +19,7 @@ import { auth } from "@verific/auth";
 
 // Utils
 import { categorizeByDate } from "@/lib/date";
+import { getProject } from "@/lib/data";
 
 type SchedulePageParams = z.infer<typeof getActivitiesParams>;
 
@@ -29,8 +28,7 @@ export default async function EventSchedulePage(props: {
 	searchParams: Promise<SchedulePageParams>;
 }) {
 	const { eventUrl } = await props.params;
-
-	const { project: event } = await serverClient.getProject({ url: eventUrl });
+	const { project: event } = await getProject(eventUrl);
 
 	const searchParams = await props.searchParams;
 	const { sort, ...parsedParams } = getActivitiesParams.parse(searchParams);

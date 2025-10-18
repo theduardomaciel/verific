@@ -121,7 +121,7 @@ export default async function ActivityPage(props: {
 							</Button>
 						</ActivityDeleteDialog>
 						<ShareDialog
-							url={`${env.NEXT_PUBLIC_VERCEL_URL}${activity.project.url}/schedule/${activity.id}`}
+							url={`${env.NEXT_PUBLIC_VERCEL_URL}/${activity.project.url}/schedule/${activity.id}`}
 							title="Compartilhar atividade"
 							description="O link abaixo permite que os participantes inscritos em seu evento se inscrevam na atividade"
 						>

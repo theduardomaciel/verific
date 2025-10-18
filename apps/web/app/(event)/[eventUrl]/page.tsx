@@ -1,5 +1,3 @@
-"use cache";
-
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -30,6 +28,7 @@ import { serverClient } from "@/lib/trpc/server";
 
 // Utils
 import { isAfterEnd, isBeforeStart } from "@/lib/date";
+import { getProject } from "@/lib/data";
 
 const markdownComponents = {
 	img: ({ src, alt, ...props }: any) => (
@@ -51,9 +50,7 @@ export default async function EventPage({
 }) {
 	const { eventUrl } = await params;
 
-	const { project: event, isParticipant } = await serverClient.getProject({
-		url: eventUrl,
-	});
+	const { project: event, isParticipant } = await getProject(eventUrl);
 
 	if (!event) {
 		notFound();
