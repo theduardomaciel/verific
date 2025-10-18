@@ -157,7 +157,7 @@ async function seedParticipantOnActivity(
 		);
 		const participantCount = Math.floor(
 			Math.random() *
-				Math.min(participants.length / 2, participants.length),
+			Math.min(participants.length / 2, participants.length),
 		);
 		for (let j = 0; j < participantCount; j++) {
 			const hasJoined = Math.random() > 0.7;

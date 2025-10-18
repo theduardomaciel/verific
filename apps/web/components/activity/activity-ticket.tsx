@@ -19,7 +19,7 @@ import { getTimeString } from "@/lib/date";
 // API
 import { RouterOutput } from "@verific/api";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { ActivityCardSpeakers } from "./activity-card/speakers";
+import { ActivitySpeakers } from "./activity-card/speakers";
 
 export interface WorkshopTicketProps {
 	className?: string;
@@ -39,7 +39,7 @@ export function ActivityTicket({
 	const endTime = getTimeString(activity.dateTo);
 
 	const credentialedParticipantsAmount =
-		activity.participantsOnActivity.filter(
+		activity.participantOnActivity.filter(
 			(participant) => participant.joinedAt !== null,
 		).length;
 
@@ -132,9 +132,9 @@ export function ActivityTicket({
 						</div>
 					) : null}
 
-					{activity.speakersOnActivity && (
-						<ActivityCardSpeakers
-							speakers={activity.speakersOnActivity.map(
+					{activity.speakerOnActivity && (
+						<ActivitySpeakers
+							speakers={activity.speakerOnActivity.map(
 								(s) => s.speaker,
 							)}
 						/>

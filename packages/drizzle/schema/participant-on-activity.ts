@@ -3,6 +3,9 @@ import { pgTable, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { participant, activity } from ".";
 
+// Enums
+import { roleEnum } from "../enum/role";
+
 export const participantOnActivity = pgTable(
 	"participant_activities",
 	{
@@ -18,6 +21,7 @@ export const participantOnActivity = pgTable(
 				onDelete: "cascade",
 				onUpdate: "cascade",
 			}),
+		role: roleEnum("role").notNull().default("participant"),
 		subscribedAt: timestamp("subscribedAt").notNull().defaultNow(),
 		joinedAt: timestamp("joined_at"),
 		leftAt: timestamp("left_at"),

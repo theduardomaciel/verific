@@ -1,0 +1,1 @@
+ALTER TABLE "participant_activities" ADD COLUMN "role" "role" DEFAULT 'participant' NOT NULL;

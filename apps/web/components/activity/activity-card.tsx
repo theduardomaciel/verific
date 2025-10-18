@@ -15,7 +15,7 @@ import { RouterOutput } from "@verific/api";
 
 // Lib
 import { activityCategoryLabels } from "@verific/drizzle/schema";
-import { ActivityCardSpeakers } from "./activity-card/speakers";
+import { ActivitySpeakers } from "./activity-card/speakers";
 import { ActivityCardTags } from "./activity-card/tags";
 
 interface EventCardProps {
@@ -37,42 +37,45 @@ export function ActivityCard({ activity, userId }: EventCardProps) {
 	return (
 		<div
 			id={activity.id}
-			className={`bg-card flex h-full flex-col justify-between gap-2 rounded-lg border p-6`}
+			className={`bg-card flex h-full flex-col justify-between gap-4 rounded-lg border p-6`}
 		>
-			<div className="flex items-start justify-between">
-				<span className="text-sm font-extrabold uppercase">
-					{activityCategoryLabels[activity.category]}
-				</span>
-				<span
-					className={cn("text-muted-foreground text-sm", {
-						"opacity-50": !remainingSeats || remainingSeats <= 0,
-						"animate-pulse":
-							remainingSeats &&
-							remainingSeats > 0 &&
-							remainingSeats <= 2,
-						"text-red-500 uppercase":
-							remainingSeats && remainingSeats === 0,
-					})}
-				>
-					{remainingSeats !== null
-						? remainingSeats === 0
-							? "Vagas Esgotadas"
-							: remainingSeats > 4
-								? `${remainingSeats} vagas`
-								: "[Últimas vagas!"
-						: "Vagas Ilimitadas"}
-				</span>
+			<div className="flex flex-col gap-2">
+				<div className="flex items-start justify-between">
+					<span className="text-sm font-extrabold uppercase">
+						{activityCategoryLabels[activity.category]}
+					</span>
+					<span
+						className={cn("text-muted-foreground text-sm", {
+							"opacity-50":
+								!remainingSeats || remainingSeats <= 0,
+							"animate-pulse":
+								remainingSeats &&
+								remainingSeats > 0 &&
+								remainingSeats <= 2,
+							"text-red-500 uppercase":
+								remainingSeats && remainingSeats === 0,
+						})}
+					>
+						{remainingSeats !== null
+							? remainingSeats === 0
+								? "Vagas Esgotadas"
+								: remainingSeats > 4
+									? `${remainingSeats} vagas`
+									: "[Últimas vagas!"
+							: "Vagas Ilimitadas"}
+					</span>
+				</div>
+
+				<h3 className="text-lg font-bold">{activity.name}</h3>
+				{activity.description && (
+					<p className="text-muted-foreground leading-relaxe line-clamp-3 text-base text-ellipsis">
+						{activity.description}
+					</p>
+				)}
 			</div>
 
-			<h3 className="text-lg font-bold">{activity.name}</h3>
-			{activity.description && (
-				<p className="text-muted-foreground leading-relaxe mb-4 line-clamp-3 text-base text-ellipsis">
-					{activity.description}
-				</p>
-			)}
-
 			{activity.speakers.length && (
-				<ActivityCardSpeakers speakers={activity.speakers} />
+				<ActivitySpeakers speakers={activity.speakers} />
 			)}
 
 			<div className="mt-auto flex flex-col flex-wrap items-start justify-center gap-4 md:flex-row-reverse md:items-center md:justify-between">

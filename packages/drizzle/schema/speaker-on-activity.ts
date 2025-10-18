@@ -3,8 +3,8 @@ import { activity } from "./activity";
 import { speaker } from "./speaker";
 import { relations } from "drizzle-orm";
 
-export const speakersOnActivity = pgTable(
-	"speakers_on_activities",
+export const speakerOnActivity = pgTable(
+	"speaker_activities",
 	{
 		activityId: uuid("activity_id")
 			.notNull()
@@ -24,15 +24,15 @@ export const speakersOnActivity = pgTable(
 	}),
 );
 
-export const speakersOnActivityRelations = relations(
-	speakersOnActivity,
+export const speakerOnActivityRelations = relations(
+	speakerOnActivity,
 	({ one }) => ({
 		activity: one(activity, {
-			fields: [speakersOnActivity.activityId],
+			fields: [speakerOnActivity.activityId],
 			references: [activity.id],
 		}),
 		speaker: one(speaker, {
-			fields: [speakersOnActivity.speakerId],
+			fields: [speakerOnActivity.speakerId],
 			references: [speaker.id],
 		}),
 	}),
