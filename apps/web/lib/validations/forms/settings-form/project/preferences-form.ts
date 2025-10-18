@@ -7,6 +7,11 @@ const brandingSchema = z.object({
 		.url("URL do logo inválida")
 		.optional()
 		.or(z.literal("")),
+	largeLogoUrl: z
+		.string()
+		.url("URL do logo horizontal inválida")
+		.optional()
+		.or(z.literal("")),
 	bannerUrl: z
 		.string()
 		.url("URL do banner inválida")
