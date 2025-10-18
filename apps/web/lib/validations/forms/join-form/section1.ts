@@ -21,8 +21,7 @@ export const joinFormSection1Schema = z.object({
 		}),
 	course: z.enum(courses).optional(),
 	registrationId: z
-		.string()
-		.max(12, { message: "O número de matrícula é inválido" }).optional(),
+		.string().optional(),
 	period: z.enum(periods).optional(),
 	phoneNumber: z
 		.string({ required_error: "Obrigatório" })
