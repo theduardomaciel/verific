@@ -6,35 +6,27 @@ import { type UseFormReturn } from "react-hook-form";
 import CertificatePlaceholder from "@/public/images/certificate-placeholder.png";
 
 // Icons
-import { ExternalLink, LinkIcon, Mail } from "lucide-react";
+import { ExternalLink, Mail } from "lucide-react";
 
 // Components
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
-import {
-	FormField,
-	FormItem,
-	FormControl,
-	FormMessage,
-	FormLabel,
-} from "@/components/ui/form";
+import { FormField } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { ResearchGuideDialog } from "@/components/dialogs/research-guide-dialog";
+import { ColorPicker } from "@/components/pickers/color-picker";
 
 // Validations
-import { researchSchema } from "@/lib/validations/forms/settings-form/project/preferences-form";
+import {
+	brandingSchema,
+	colorSchema,
+} from "@/lib/validations/forms/settings-form/project/preferences-form";
 
 // tRPC
 import { trpc } from "@/lib/trpc/react";
 import { RouterOutput } from "@verific/api";
-
-// Utils
-import { extractGoogleSheetId } from "@/lib/utils";
 
 interface Props {
 	project: RouterOutput["getProject"]["project"];
@@ -43,21 +35,35 @@ interface Props {
 export function ProjectSettingsPreferencesForm({ project }: Props) {
 	const updateMutation = trpc.updateProject.useMutation();
 
-	const onSubmitResearch = async (form: UseFormReturn<any>) => {
+	const onSubmitBranding = async (form: UseFormReturn<any>) => {
 		const data = form.getValues();
 		try {
 			await updateMutation.mutateAsync({
 				id: project.id,
-				isResearchEnabled: data.enableResearch,
-				researchUrl: extractGoogleSheetId(data.researchUrl) || null,
+				logoUrl: data.logoUrl,
+				coverUrl: data.bannerUrl,
 			});
-			toast.success("Preferências de pesquisa atualizadas!");
+			toast.success("Configurações de marca atualizadas!");
 			form.reset(data);
-		} catch (error: any) {
-			toast.error("Erro ao atualizar preferências de pesquisa:", {
-				description: error.message,
+		} catch (error) {
+			toast.error("Erro ao atualizar configurações de marca.");
+			console.error("Error updating branding:", error);
+		}
+	};
+
+	const onSubmitColors = async (form: UseFormReturn<any>) => {
+		const data = form.getValues();
+		try {
+			await updateMutation.mutateAsync({
+				id: project.id,
+				primaryColor: data.primaryColor,
+				secondaryColor: data.secondaryColor,
 			});
-			console.error("Error updating research preferences:", error);
+			toast.success("Cores do evento atualizadas!");
+			form.reset(data);
+		} catch (error) {
+			toast.error("Erro ao atualizar cores do evento.");
+			console.error("Error updating colors:", error);
 		}
 	};
 
@@ -93,74 +99,95 @@ export function ProjectSettingsPreferencesForm({ project }: Props) {
 				</div>
 			</Card>
 
-			{/* Enable research */}
 			<SettingsFormCard
-				schema={researchSchema}
-				title="Realizar Pesquisa"
-				description="Decida se irá disponibilizar uma pesquisa opcional na página de inscrição de seu evento"
+				schema={brandingSchema}
+				title="Marca do Evento"
+				description="Estes elementos serão utilizados na página de inscrição para customizá-la com a marca de seu evento"
 				initialState={{
-					enableResearch: project.isResearchEnabled,
-					researchUrl: project.researchUrl || "",
+					logoUrl: project.logoUrl || "",
+					bannerUrl: project.coverUrl || "",
+					thumbnailUrl: project.thumbnailUrl || "",
 				}}
-				onSubmit={onSubmitResearch}
+				onSubmit={onSubmitBranding}
 				renderField={(form) => (
-					<div className="flex flex-col gap-4">
+					<div className="flex w-full flex-row gap-2">
 						<FormField
 							control={form.control}
-							name="researchUrl"
+							name="logoUrl"
 							render={({ field }) => (
-								<FormItem className="flex w-full flex-col">
-									<FormLabel htmlFor="researchUrl">
-										Link da planilha de respostas
-									</FormLabel>
-									<FormControl>
-										<Input
-											placeholder="https://docs.google.com/spreadsheets/d/..."
-											{...field}
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
+								<Input {...field} placeholder="URL da logo" />
 							)}
 						/>
 						<FormField
 							control={form.control}
-							name="enableResearch"
+							name="bannerUrl"
 							render={({ field }) => (
-								<FormItem>
-									<FormControl>
-										<div className="flex items-center space-x-2">
-											<Switch
-												onCheckedChange={field.onChange}
-												checked={field.value}
-												size={"lg"}
-												disabled={
-													!form.watch("researchUrl")
-												}
-											/>
-											<Label htmlFor="enableResearch">
-												Incluir pesquisa
-											</Label>
-										</div>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
+								<Input {...field} placeholder="URL da capa" />
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="thumbnailUrl"
+							render={({ field }) => (
+								<Input
+									{...field}
+									placeholder="URL da miniatura"
+								/>
 							)}
 						/>
 					</div>
 				)}
 				footer={{
-					text: (
-						<span className="flex flex-row gap-1.5">
-							Saiba mais sobre o{" "}
-							<ResearchGuideDialog>
-								<span className="text-primary hover:text-primary/80 flex cursor-pointer flex-row items-center underline">
-									Uso de Pesquisas
-									<LinkIcon className="ml-2 h-3 w-3" />
-								</span>
-							</ResearchGuideDialog>
-						</span>
-					),
+					text: "Para inserir uma imagem, clique no elemento correspondente",
+				}}
+			/>
+
+			{/* Colors */}
+			<SettingsFormCard
+				schema={colorSchema}
+				title="Cores"
+				description="Escolha uma principal e uma cor secundária para uso na página de inscrição"
+				initialState={{
+					primaryColor: project.primaryColor,
+					secondaryColor: project.secondaryColor,
+				}}
+				onSubmit={onSubmitColors}
+				renderField={(form) => (
+					<div className="flex flex-row flex-wrap items-center justify-start gap-6">
+						<div className="flex flex-row items-center justify-start gap-4">
+							<span className="text-muted-foreground text-sm font-normal">
+								Cor principal
+							</span>
+							<FormField
+								control={form.control}
+								name="primaryColor"
+								render={({ field }) => (
+									<ColorPicker
+										color={field.value}
+										onChange={field.onChange}
+									/>
+								)}
+							/>
+						</div>
+						<div className="flex flex-row items-center justify-start gap-4">
+							<span className="text-muted-foreground text-sm font-normal">
+								Cor secundária
+							</span>
+							<FormField
+								control={form.control}
+								name="secondaryColor"
+								render={({ field }) => (
+									<ColorPicker
+										color={field.value}
+										onChange={field.onChange}
+									/>
+								)}
+							/>
+						</div>
+					</div>
+				)}
+				footer={{
+					text: "As mudanças podem levar alguns minutos para tomar efeito",
 				}}
 			/>
 
