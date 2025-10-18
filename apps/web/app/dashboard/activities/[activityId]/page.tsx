@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { CategoryCard } from "@/components/dashboard/category-card";
 import { ActivityDeleteDialog } from "@/components/dialogs/delete-dialog";
 import { ShareDialog } from "@/components/dialogs/share-dialog";
-import { AddModeratorDialog } from "@/components/dialogs/add-moderator-dialog";
+import { AddMonitorDialog } from "@/components/dialogs/add-monitor-dialog";
 
 // Data
 import { getDateString, getTimeString } from "@/lib/date";
@@ -53,9 +53,7 @@ export default async function ActivityPage(props: {
 		...parsedParams,
 	});
 
-	const moderators = activity.participants.filter(
-		(t) => t.role === "moderator",
-	);
+	const monitors = activity.participants.filter((t) => t.role === "monitor");
 
 	const participants = activity.participants.filter(
 		(t) => t.role === "participant",
@@ -154,7 +152,7 @@ export default async function ActivityPage(props: {
 						<BellDot size={20} />
 						Abrir fila de espera
 					</Button> */}
-					<AddModeratorDialog
+					<AddMonitorDialog
 						projectId={projectId}
 						activityId={activityId}
 						alreadyAdded={activity.participants.map((p) => p.id)}
@@ -215,7 +213,7 @@ export default async function ActivityPage(props: {
 				<ParticipantsList.Holder className="md:w-2/5">
 					<ParticipantsList.Title>Moderadores</ParticipantsList.Title>
 					<ParticipantsList.List
-						participants={moderators}
+						participants={monitors}
 						activityId={activity.id}
 						emptyMessage={{
 							title: "Nenhum moderador encontrado",

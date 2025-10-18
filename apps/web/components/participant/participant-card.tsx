@@ -96,7 +96,7 @@ export async function ParticipantCard({ id: participantId, eventUrl }: Props) {
 			</div>
 			<DialogFooter>
 				{isUser ? (
-					clientRole === "moderator" ? (
+					clientRole === "monitor" ? (
 						<Button className="w-full" asChild>
 							<Link href={"/auth"} className="w-full">
 								<Settings width={24} height={24} />
@@ -115,7 +115,7 @@ export async function ParticipantCard({ id: participantId, eventUrl }: Props) {
 						</LogoutForm>
 					)
 				) : (
-					clientRole === "moderator" && (
+					clientRole === "monitor" && (
 						<Button className="w-full" asChild>
 							<Link href={"/auth"} className="w-full">
 								<Settings width={24} height={24} />

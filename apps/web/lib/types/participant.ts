@@ -11,7 +11,7 @@ export type Participant = {
 	period: string;
 	joinedAt: Date;
 	user: User;
-	role: "participant" | "moderator";
+	role: "participant" | "monitor";
 	project: Project;
 	participantsOnEvent: ParticipantOnActivity[];
 };

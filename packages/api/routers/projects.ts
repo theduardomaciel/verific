@@ -93,7 +93,7 @@ export const projectsRouter = createTRPCRouter({
 				throw new Error("Project creation failed");
 			}
 
-			// We create a moderator participant for the owner
+			// We create a monitor participant for the owner
 			await db.insert(participant).values({
 				projectId: created[0]!.id,
 				userId: userId,

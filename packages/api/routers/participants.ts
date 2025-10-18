@@ -106,7 +106,7 @@ export const participantsRouter = createTRPCRouter({
 				throw new TRPCError({
 					code: "FORBIDDEN",
 					message: "You are not authorized to view this participant",
-					cause: "You are not the requested participant or a moderator of this project",
+					cause: "You are not the requested participant or a monitor of this project",
 				});
 			}
 
