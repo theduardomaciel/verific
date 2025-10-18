@@ -105,17 +105,28 @@ export function ProjectSettingsPreferencesForm({ project }: Props) {
 				description="Estes elementos serão utilizados na página de inscrição para customizá-la com a marca de seu evento"
 				initialState={{
 					logoUrl: project.logoUrl || "",
+					largeLogoUrl: project.largeLogoUrl || "",
 					bannerUrl: project.coverUrl || "",
 					thumbnailUrl: project.thumbnailUrl || "",
 				}}
 				onSubmit={onSubmitBranding}
 				renderField={(form) => (
-					<div className="flex w-full flex-row gap-2">
+					<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 						<FormField
 							control={form.control}
 							name="logoUrl"
 							render={({ field }) => (
 								<Input {...field} placeholder="URL da logo" />
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="largeLogoUrl"
+							render={({ field }) => (
+								<Input
+									{...field}
+									placeholder="URL da logo horizontal"
+								/>
 							)}
 						/>
 						<FormField

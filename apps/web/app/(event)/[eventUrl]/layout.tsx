@@ -1,24 +1,78 @@
 import Image from "next/image";
 import Link from "next/link";
-
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+
+// Icons
 import Logo from "@/public/logo.svg";
+
+// Fonts
+import { REM } from "next/font/google";
+const rem = REM({
+	variable: "--font-rem",
+	subsets: ["latin"],
+});
 
 // Components
 import { Header } from "@/components/header/landing-header";
 import { Footer } from "@/components/footer";
 import { MainNavProps } from "@/components/header/main-nav";
 
-// API
-import { serverClient } from "@/lib/trpc/server";
-
-import { REM } from "next/font/google";
+// Lib
 import { isAfterEnd } from "@/lib/date";
+import { getProject } from "@/lib/data";
+import { env } from "@verific/env";
 
-const rem = REM({
-	variable: "--font-rem",
-	subsets: ["latin"],
-});
+export async function generateMetadata({
+	params,
+}: {
+	params: Promise<{ eventUrl: string }>;
+}): Promise<Metadata> {
+	const { eventUrl } = await params;
+	const { project } = await getProject(eventUrl);
+
+	const baseUrl = env.NEXT_PUBLIC_VERCEL_URL;
+	const imageUrl =
+		project.coverUrl ||
+		project.largeLogoUrl ||
+		project.logoUrl ||
+		project.thumbnailUrl;
+	const fullImageUrl = imageUrl ? `${baseUrl}${imageUrl}` : undefined;
+
+	return {
+		title: project.name,
+		description: project.description || undefined,
+		robots: {
+			index: true,
+			follow: true,
+			googleBot: {
+				index: true,
+				follow: true,
+				"max-video-preview": -1,
+				"max-image-preview": "large",
+				"max-snippet": -1,
+			},
+		},
+		icons: project.logoUrl ? { icon: project.logoUrl } : undefined,
+		openGraph: {
+			title: project.name,
+			description: project.description || undefined,
+			url: `${baseUrl}/${eventUrl}`,
+			siteName: "verifIC",
+			images: fullImageUrl
+				? [{ url: fullImageUrl, alt: `${project.name} image` }]
+				: [],
+			locale: "pt_BR",
+			type: "website",
+		},
+		twitter: {
+			card: "summary_large_image",
+			title: project.name,
+			description: project.description || undefined,
+			images: fullImageUrl ? [fullImageUrl] : [],
+		},
+	};
+}
 
 export default async function EventLayout({
 	children,
@@ -29,24 +83,9 @@ export default async function EventLayout({
 }) {
 	const { eventUrl } = await params;
 
-	let event;
-	let isParticipant = false;
+	const { project, isParticipant } = await getProject(eventUrl);
 
-	try {
-		const data = await serverClient.getProject({
-			url: eventUrl,
-		});
-
-		if (!data) {
-			console.error("Event not found", { eventUrl });
-			notFound();
-		}
-
-		// console.log("Event data:", data);
-
-		event = data.project;
-		isParticipant = data.isParticipant;
-	} catch (error) {
+	if (!project) {
 		console.error("Event not found", { eventUrl });
 		notFound();
 	}
@@ -78,9 +117,9 @@ export default async function EventLayout({
 					mobileClassName:
 						"text-primary-foreground uppercase py-3 border border-secondary w-full rounded text-center items-center text-sm bg-secondary",
 				}
-			: event.isRegistrationEnabled &&
-				!event.isArchived &&
-				!isAfterEnd(event.endDate) && {
+			: project.isRegistrationEnabled &&
+				!project.isArchived &&
+				!isAfterEnd(project.endDate) && {
 					href: "/subscribe",
 					label: "Inscrições",
 					className:
@@ -96,10 +135,10 @@ export default async function EventLayout({
 			className={`${rem.variable} flex w-full flex-1 flex-col`}
 			style={
 				{
-					"--primary": event.primaryColor,
-					"--secondary": event.secondaryColor,
-					"--ring": event.primaryColor,
-					"--muted": event.secondaryColor,
+					"--primary": project.primaryColor,
+					"--secondary": project.secondaryColor,
+					"--ring": project.primaryColor,
+					"--muted": project.secondaryColor,
 					"--accent":
 						"color-mix(in oklab, var(--foreground) 2%, transparent)",
 					"--accent-foreground": "var(--foreground)",
@@ -117,9 +156,9 @@ export default async function EventLayout({
 				prefix={`/${eventUrl}`}
 				logo={
 					<Link href={`/${eventUrl}`}>
-						{event.logoUrl ? (
+						{project.largeLogoUrl || project.logoUrl ? (
 							<Image
-								src={event.logoUrl}
+								src={project.largeLogoUrl || project.logoUrl!}
 								width={150}
 								height={28}
 								alt="Event logo"

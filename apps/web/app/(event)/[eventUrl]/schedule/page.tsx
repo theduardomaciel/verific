@@ -1,3 +1,5 @@
+"use cache";
+
 import { Calendar } from "lucide-react";
 import { serverClient } from "@/lib/trpc/server";
 
