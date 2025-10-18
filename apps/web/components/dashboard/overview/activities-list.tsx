@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 
 // Components
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SimpleActivityCard } from "@/components/dashboard/activity-card";
+import { SimpleActivityCard } from "@/components/activity/activity-card/dashboard";
 
 // Types
 import { RouterOutput } from "@verific/api";

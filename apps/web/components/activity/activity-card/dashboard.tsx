@@ -8,7 +8,7 @@ import { User, Users } from "lucide-react";
 // Components
 import { CategoryLabel } from "@/components/dashboard/category-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ActivityStatus } from "../activity/activity-status";
+import { ActivityStatus } from "../activity-status";
 
 // Lib
 import { listToString } from "@/lib/i18n";

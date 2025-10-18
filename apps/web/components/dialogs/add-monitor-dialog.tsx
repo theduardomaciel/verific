@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 // Icons
-import { Loader2, UserPlus, Search } from "lucide-react";
+import { Loader2, UserPlus, Search, User } from "lucide-react";
 
 // Components
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 
 // Types
 import { trpc } from "@/lib/trpc/react";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 interface AddMonitorDialogProps {
 	projectId: string;
@@ -73,7 +74,7 @@ export function AddMonitorDialog({
 			(key) => formData.get(key) === "on",
 		);
 
-		console.log("Moderadores selecionados: ", selectedParticipants);
+		console.log("Monitores selecionados: ", selectedParticipants);
 
 		if (selectedParticipants.length === 0) {
 			toast.warning(
@@ -93,9 +94,9 @@ export function AddMonitorDialog({
 			});
 		} catch (error) {
 			console.error(error);
-			toast.error("Erro ao adicionar moderador", {
+			toast.error("Erro ao adicionar monitor", {
 				description:
-					"Ocorreu um erro ao adicionar o moderador. Tente novamente mais tarde.",
+					"Ocorreu um erro ao adicionar o monitor. Tente novamente mais tarde.",
 			});
 		}
 	}
@@ -108,12 +109,12 @@ export function AddMonitorDialog({
 
 			const title =
 				addedUsersAmount > 1
-					? "Moderadores adicionados!"
-					: "Moderador adicionado!";
+					? "Monitores adicionados!"
+					: "Monitor adicionado!";
 			const description =
 				addedUsersAmount > 1
-					? "Os moderadores foram adicionados com sucesso."
-					: "O moderador foi adicionado com sucesso.";
+					? "Os monitores foram adicionados com sucesso."
+					: "O monitor foi adicionado com sucesso.";
 
 			toast.success(title, {
 				description,
@@ -132,12 +133,12 @@ export function AddMonitorDialog({
 			<DialogTrigger asChild>
 				<Button size={"lg"} className="h-10 flex-1">
 					<UserPlus size={20} />
-					Adicionar moderadores
+					Adicionar monitores
 				</Button>
 			</DialogTrigger>
 			<DialogContent className="w-full sm:max-w-lg">
 				<DialogHeader>
-					<DialogTitle>Adicionar moderadores</DialogTitle>
+					<DialogTitle>Adicionar monitores</DialogTitle>
 					<DialogDescription>
 						{currentDate.toLocaleString("pt-BR", {
 							weekday: "long",
@@ -156,7 +157,7 @@ export function AddMonitorDialog({
 							<Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
 							<Input
 								className="w-full pl-10"
-								placeholder="Pesquisar moderadores"
+								placeholder="Pesquisar participantes"
 								value={search}
 								onChange={(e) => setSearch(e.target.value)}
 							/>
@@ -170,17 +171,18 @@ export function AddMonitorDialog({
 											className="flex w-full flex-row items-center justify-between"
 										>
 											<div className="flex flex-row items-center justify-start gap-4">
-												<Image
-													src={
-														participant.user
-															?.image_url ??
-														"https://github.com/marquinhos.png"
-													}
-													width={36}
-													height={36}
-													className="rounded-full"
-													alt="Profile picture"
-												/>
+												<Avatar className="h-9 w-9">
+													<AvatarImage
+														src={
+															participant.user
+																?.image_url ||
+															undefined
+														}
+													/>
+													<AvatarFallback>
+														<User className="h-5 w-5" />
+													</AvatarFallback>
+												</Avatar>
 												<span className="text-neutral text-left text-base leading-tight font-semibold">
 													{participant.user?.name ??
 														`@${participant.id}`}
@@ -244,7 +246,7 @@ export function AddMonitorDialog({
 						) : isFetching ? (
 							<Loader2 className="origin-center animate-spin" />
 						) : (
-							<p>Nenhum moderador encontrado.</p>
+							<p>Nenhum participante encontrado.</p>
 						)}
 					</div>
 					<DialogFooter className="w-full gap-2 sm:justify-start">

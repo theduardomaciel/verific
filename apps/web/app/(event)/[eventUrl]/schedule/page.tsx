@@ -5,8 +5,8 @@ import { cn } from "@/lib/utils";
 
 // Components
 import { ActivityCard } from "@/components/activity/activity-card";
-import { SearchBar } from "@/components/dashboard/search-bar";
-import { SortBy } from "@/components/dashboard/sort-by";
+import { SearchBar } from "@/components/search-bar";
+import { SortBy } from "@/components/sort-by";
 import * as EventContainer from "@/components/landing/event-container";
 import { Empty } from "@/components/empty";
 

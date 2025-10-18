@@ -14,12 +14,12 @@ import { Plus } from "lucide-react";
 // Components
 import { Button } from "@/components/ui/button";
 import { DashboardPagination } from "@/components/dashboard/pagination";
-import { SearchBar } from "@/components/dashboard/search-bar";
-import { SortBy } from "@/components/dashboard/sort-by";
+import { SearchBar } from "@/components/search-bar";
+import { SortBy } from "@/components/sort-by";
 import { FiltersPanel } from "@/components/dashboard/filters-panel";
 import { Filter } from "@/components/dashboard/filter";
 import { Empty } from "@/components/empty";
-import { ActivityCard } from "@/components/dashboard/activity-card";
+import { ActivityCard } from "@/components/activity/activity-card/dashboard";
 
 // Validation
 import type { z } from "zod";

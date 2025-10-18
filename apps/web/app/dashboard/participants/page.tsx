@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 // Components
 import { DashboardPagination } from "@/components/dashboard/pagination";
 import { FiltersPanel } from "@/components/dashboard/filters-panel";
-import { SearchBar } from "@/components/dashboard/search-bar";
-import { SortBy } from "@/components/dashboard/sort-by";
+import { SearchBar } from "@/components/search-bar";
+import { SortBy } from "@/components/sort-by";
 import { Filter } from "@/components/dashboard/filter";
 import { ParticipantListItem } from "@/components/participant/participant-item";
 import { Empty } from "@/components/empty";
