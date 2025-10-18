@@ -26,17 +26,17 @@ import { Input } from "@/components/ui/input";
 // Types
 import { trpc } from "@/lib/trpc/react";
 
-interface AddModeratorDialogProps {
+interface AddMonitorDialogProps {
 	projectId: string;
 	activityId: string;
 	alreadyAdded: string[];
 }
 
-export function AddModeratorDialog({
+export function AddMonitorDialog({
 	projectId,
 	activityId,
 	alreadyAdded,
-}: AddModeratorDialogProps) {
+}: AddMonitorDialogProps) {
 	const router = useRouter();
 	const currentDate = new Date();
 
@@ -63,7 +63,7 @@ export function AddModeratorDialog({
 
 	const pageCount = data?.pageCount || 0;
 
-	const mutations = trpc.addModeratorsToActivity.useMutation();
+	const mutations = trpc.addMonitorsToActivity.useMutation();
 
 	async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
 		event.preventDefault();

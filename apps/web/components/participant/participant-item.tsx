@@ -146,7 +146,7 @@ export const ParticipantListItem = {
 					<div className="flex w-full flex-row flex-wrap items-center justify-between gap-4">
 						<div className="flex flex-row items-center justify-start gap-3 text-left text-sm leading-tight font-medium">
 							<User className="h-4 w-4" />
-							{participant.role === "moderator"
+							{participant.role === "monitor"
 								? "Moderador"
 								: "Membro"}
 							<div className="bg-foreground h-1 w-1 rounded-full" />

@@ -24,7 +24,7 @@ import { ActivitySpeakers } from "./activity-card/speakers";
 export interface WorkshopTicketProps {
 	className?: string;
 	onActivity: RouterOutput["getActivitiesFromParticipant"]["activities"][0];
-	role: "moderator" | "participant";
+	role: "monitor" | "participant";
 }
 
 export function ActivityTicket({
@@ -33,7 +33,7 @@ export function ActivityTicket({
 	className,
 }: WorkshopTicketProps) {
 	const activity = onActivity.activity;
-	const isModerator = role === "moderator";
+	const isMonitor = role === "monitor";
 
 	const startTime = getTimeString(activity.dateFrom);
 	const endTime = getTimeString(activity.dateTo);
@@ -141,7 +141,7 @@ export function ActivityTicket({
 					)}
 
 					{/* TODO: Atualmente, exibindo a quantidade de participantes, não a quantidade de participantes credenciados */}
-					{isModerator ? (
+					{isMonitor ? (
 						<div className="mt-auto hidden items-center justify-between border-t pt-4 md:flex">
 							<div className="text-muted-foreground flex items-center">
 								<User size={18} className="mr-2" />
@@ -255,7 +255,7 @@ export function ActivityTicket({
 
 				{/* Right section */}
 				<div className="bg-card flex w-full flex-1 flex-col items-center justify-center px-6 md:pl-0">
-					{isModerator ? (
+					{isMonitor ? (
 						<>
 							<div className="hidden w-full flex-col items-center justify-center py-6 md:flex">
 								<p className="mb-6 text-center">

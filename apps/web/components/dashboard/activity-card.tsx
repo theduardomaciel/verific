@@ -70,7 +70,7 @@ export function SimpleActivityCard({ activity, className }: ActivityCardProps) {
 export function ActivityCard({ activity, className }: ActivityCardProps) {
 	const monitors =
 		activity.participants
-			?.filter((onActivity) => onActivity.role === "moderator")
+			?.filter((onActivity) => onActivity.role === "monitor")
 			.map((participant) => participant.user.name) || [];
 
 	const participantsAmount =

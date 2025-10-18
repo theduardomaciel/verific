@@ -130,7 +130,7 @@ export const activitiesRouter = createTRPCRouter({
 				};
 
 			// Buscar todos os moderadores
-			const moderatorParticipants = await db
+			const monitorParticipants = await db
 				.select({
 					participantOnActivity,
 					participant,
@@ -150,13 +150,13 @@ export const activitiesRouter = createTRPCRouter({
 				);
 
 			// Buscar participantes não moderadores com paginação/filtro
-			const nonModeratorWhere = [
+			const nonMonitorWhere = [
 				eq(participantOnActivity.activityId, activityId),
 				eq(participant.role, "participant"),
 			];
 
 			if (search) {
-				nonModeratorWhere.push(ilike(user.name, `%${search}%`));
+				nonMonitorWhere.push(ilike(user.name, `%${search}%`));
 			}
 
 			const orderBy =
@@ -164,7 +164,7 @@ export const activitiesRouter = createTRPCRouter({
 					? desc(participantOnActivity.joinedAt)
 					: asc(participantOnActivity.joinedAt);
 
-			const nonModeratorParticipants = await db
+			const nonMonitorParticipants = await db
 				.select({
 					participantOnActivity,
 					participant,
@@ -176,7 +176,7 @@ export const activitiesRouter = createTRPCRouter({
 					eq(participantOnActivity.participantId, participant.id),
 				)
 				.innerJoin(user, eq(participant.userId, user.id))
-				.where(and(...nonModeratorWhere))
+				.where(and(...nonMonitorWhere))
 				.orderBy(orderBy)
 				.offset(page * pageSize)
 				.limit(pageSize);
@@ -190,14 +190,14 @@ export const activitiesRouter = createTRPCRouter({
 					eq(participantOnActivity.participantId, participant.id),
 				)
 				.innerJoin(user, eq(participant.userId, user.id))
-				.where(and(...nonModeratorWhere));
+				.where(and(...nonMonitorWhere));
 
 			const amount = countResult?.[0]?.amount ?? 0;
 			const pageCount = Math.ceil(amount / pageSize);
 
 			const allParticipants = [
-				...moderatorParticipants,
-				...nonModeratorParticipants,
+				...monitorParticipants,
+				...nonMonitorParticipants,
 			].map((row) => {
 				// Removemos a data em que o usuário se inscreveu no evento para que o
 				// "joinedAt" de "participantOnActivity" não seja sobrescrito
@@ -441,7 +441,7 @@ export const activitiesRouter = createTRPCRouter({
 				});
 			}
 
-			// We add the user as a moderator by default
+			// We add the user as a monitor by default
 			const participantFromUser = await db
 				.select({
 					id: participant.id,
