@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+	boolean,
 	doublePrecision,
 	integer,
 	pgTable,
@@ -12,14 +13,16 @@ import { participantOnActivity, project } from ".";
 
 import { categoryEnum } from "../enum/category";
 import { audienceEnum } from "../enum/audience";
-import { speakersOnActivity } from "./speaker-on-activity";
-import { activityExclusion } from "./activity-exclusion";
+import { speakerOnActivity } from "./speaker-on-activity";
+import { activityConflict } from "./activity-conflict";
 
 export const activity = pgTable("activities", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	name: text("name").notNull(),
 	description: text("description"),
-	banner_url: text("banner_url"),
+	bannerUrl: text("banner_url"),
+	isPublished: boolean("is_published").notNull().default(true),  // Controls if the activity is visible/discoverable to users
+	isRegistrationOpen: boolean("is_registration_open").notNull().default(true),  // Controls if users can sign up
 
 	dateFrom: timestamp("date_from").notNull(),
 	dateTo: timestamp("date_to").notNull(),
@@ -51,12 +54,12 @@ export const activityRelations = relations(activity, ({ one, many }) => ({
 		fields: [activity.projectId],
 		references: [project.id],
 	}),
-	participantsOnActivity: many(participantOnActivity),
-	speakersOnActivity: many(speakersOnActivity),
-	excludedActivities: many(activityExclusion, {
-		relationName: "activityExclusions",
+	participantOnActivity: many(participantOnActivity),
+	speakerOnActivity: many(speakerOnActivity),
+	conflictsAsBlocking: many(activityConflict, {
+		relationName: "blockingActivities",
 	}),
-	excludingActivities: many(activityExclusion, {
-		relationName: "excludingActivities",
+	conflictsAsBlocked: many(activityConflict, {
+		relationName: "blockedActivities",
 	}),
 }));

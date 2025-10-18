@@ -35,7 +35,7 @@ export default async function EventSchedulePage(props: {
 
 	const { activities } = await serverClient.getActivities({
 		projectId: event.id,
-		pageSize: 50,
+		pageSize: 100, // Fetch all activities for the schedule (placeholder value)
 		sort: sort || "asc",
 		...parsedParams,
 	});

@@ -54,7 +54,7 @@ export default function MutateActivityForm({
 			name: activity?.name || "",
 			description: activity?.description || "",
 			speakerIds:
-				activity?.speakersOnActivity.map(
+				activity?.speakerOnActivity.map(
 					(speakerOnActivity) => speakerOnActivity.speaker.id,
 				) || [],
 			dateFrom: activity?.dateFrom

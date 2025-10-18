@@ -312,7 +312,9 @@ function CarouselDots({ className }: { className?: string }) {
 	);
 
 	return (
-		<div className={cn("flex justify-center space-x-2", className)}>
+		<div
+			className={cn("mt-4 mb-2 flex justify-center space-x-2", className)}
+		>
 			{scrollSnaps.map((_, index) => (
 				<CarouselDotButton
 					key={index}

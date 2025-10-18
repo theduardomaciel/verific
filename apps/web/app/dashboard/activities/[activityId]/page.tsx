@@ -107,7 +107,7 @@ export default async function ActivityPage(props: {
 					className="w-full"
 					category={activity.category}
 					hours={activity.workload}
-					speakersName={activity.speakersOnActivity.map(
+					speakersName={activity.speakerOnActivity.map(
 						(speakerOnActivity) => speakerOnActivity.speaker.name,
 					)}
 				/>
