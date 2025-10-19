@@ -31,7 +31,7 @@ export function ActivitySpeakers({ speakers }: Props) {
 	return speakers.length > 1 ? (
 		<Carousel
 			className="w-full"
-			plugins={[Autoplay({ delay: 5000 })]}
+			plugins={[Autoplay({ delay: 3000 })]}
 			slideCount={speakers.length}
 			opts={{
 				loop: true,

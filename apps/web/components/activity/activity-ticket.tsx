@@ -1,8 +1,6 @@
 import { QRCodeSVG } from "qrcode.react";
 
 import { cn } from "@/lib/utils";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 
 // Icons
 import { Check, User, Clock } from "lucide-react";
@@ -13,6 +11,7 @@ import AppleIcon from "@/public/icons/apple.svg";
 import { BadgeScanner } from "@/components/badge-scanner";
 import { ActivityStatus } from "./activity-status";
 import { ActivitySpeakers } from "./activity-card/speakers";
+import { ExpandableDescription } from "@/components/shared/expandable-description";
 
 // Utils
 import { formatFriendlyDate } from "@/lib/date";
@@ -53,7 +52,7 @@ export function ActivityTicket({
 			{/* Main content - flex-col on mobile, flex-row on md+ */}
 			<div className="flex flex-1 flex-col md:flex-row">
 				{/* Activity Details Section */}
-				<div className="bg-card flex flex-col gap-4 p-6 flex-1">
+				<div className="bg-card flex flex-1 flex-col gap-4 p-6">
 					{/* Header */}
 					<div className="flex w-full flex-wrap items-center justify-between gap-2">
 						<h2 className="line-clamp-2 text-2xl leading-tight font-bold break-words">
@@ -71,12 +70,7 @@ export function ActivityTicket({
 
 					{/* Description */}
 					{activity.description && (
-						<div className="prose prose-sm dark:prose-invert text-muted-foreground max-w-none text-sm">
-							<ReactMarkdown remarkPlugins={[remarkGfm]}>
-								{activity.description}
-							</ReactMarkdown>
-							<button className="mt-1">Ler mais</button>
-						</div>
+						<ExpandableDescription activity={activity} />
 					)}
 
 					{/* Time Display */}
@@ -139,7 +133,7 @@ export function ActivityTicket({
 					) : null}
 
 					{/* Speakers */}
-					{activity.speakerOnActivity && (
+					{activity.speakerOnActivity && role === "participant" && (
 						<ActivitySpeakers
 							speakers={activity.speakerOnActivity.map(
 								(s) => s.speaker,
@@ -261,7 +255,7 @@ export function ActivityTicket({
 				</div>
 
 				{/* Action/QR Section */}
-				<div className="bg-card flex flex-col items-center justify-center px-6 md:pl-0 md:w-80">
+				<div className="bg-card flex flex-col items-center justify-center px-6 md:w-80 md:pl-0">
 					{isMonitor ? (
 						<>
 							{/* Desktop: App Download Info */}
