@@ -45,6 +45,32 @@ export const isAfterEnd = (endDate: Date) => {
 	return new Date() > endDate;
 }
 
+export const calculateWorkloadFromTimes = (
+	timeFrom: string | undefined,
+	timeTo: string | undefined
+): number | undefined => {
+	if (timeFrom && timeTo) {
+		const [fromHoursStr, fromMinutesStr] = timeFrom.split(":");
+		const [toHoursStr, toMinutesStr] = timeTo.split(":");
+
+		const fromHours: number = Number(fromHoursStr ?? "0");
+		const fromMinutes: number = Number(fromMinutesStr ?? "0");
+
+		const toHours: number = Number(toHoursStr ?? "0");
+		const toMinutes: number = Number(toMinutesStr ?? "0");
+
+		let workload: number = toHours - fromHours + (toMinutes - fromMinutes) / 60;
+
+		if (workload < 0) {
+			workload = 0;
+		}
+
+		return Math.round(workload * 100) / 100;
+	}
+
+	return undefined;
+}
+
 /* 
 	Uma atividade está "ao vivo" se a data atual estiver entre a data de início e a data de término da atividade.
 */

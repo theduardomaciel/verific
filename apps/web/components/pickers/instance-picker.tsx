@@ -142,7 +142,7 @@ export function InstancePicker<T extends Item = Item>({
 			<Popover>
 				<PopoverTrigger asChild>
 					<PickerTrigger
-						className="w-full"
+						className={props.className}
 						items={filteredItems}
 						placeholder={placeholder}
 					/>
@@ -170,6 +170,7 @@ export function InstancePicker<T extends Item = Item>({
 		<Drawer open={open} onOpenChange={setOpen}>
 			<DrawerTrigger asChild>
 				<PickerTrigger
+					className={props.className}
 					items={filteredItems}
 					placeholder={placeholder}
 				/>
