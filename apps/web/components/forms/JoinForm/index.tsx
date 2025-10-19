@@ -174,7 +174,7 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 				title="Estamos realizando seu cadastro..."
 			/>
 			<SuccessDialog
-				isOpen={true /* currentState === "submitted" */}
+				isOpen={currentState === "submitted"}
 				onClose={() => {
 					setCurrentState(false);
 					router.push(`${`/${project.url}/my`}`);
