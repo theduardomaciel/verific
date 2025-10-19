@@ -76,20 +76,19 @@ export function Filter({
 	const router = useRouter();
 	const { query, toUrl } = useQueryString();
 
-	const [currentFetchingData, setCurrentFetchingData] = useState<string[]>(
-		[],
-	);
 	const [isPendingFilterTransition, startTransition] = useTransition();
 
+	// State for immediate UI feedback
 	const [filters, setFilters] = useState<string[]>(
 		query.get(prefix)?.split(",") ?? [],
 	);
 
+	// Debounce for optimized server calls
 	const debouncedValue = useDebounce(filters, 750);
 
+	// Update URL when debounced value changes
 	useEffect(() => {
 		startTransition(() => {
-			setCurrentFetchingData(debouncedValue);
 			router.push(
 				toUrl({
 					[`${prefix}`]:
@@ -103,6 +102,14 @@ export function Filter({
 			);
 		});
 	}, [debouncedValue, prefix, toUrl, router]);
+
+	// Sync filters with external URL changes
+	useEffect(() => {
+		const urlFilters = query.get(prefix)?.split(",") ?? [];
+		if (JSON.stringify(urlFilters) !== JSON.stringify(filters)) {
+			setFilters(urlFilters);
+		}
+	}, [query, prefix]);
 
 	return (
 		<div
@@ -122,7 +129,6 @@ export function Filter({
 				setFilters,
 				config,
 				isPendingFilterTransition,
-				currentFetchingData,
 			})}
 		</div>
 	);
@@ -194,7 +200,6 @@ function SelectFilter({
 
 interface CheckboxItemsProps extends ItemsProps {
 	isPendingFilterTransition: boolean;
-	currentFetchingData: string[];
 }
 
 const MAX_VISIBLE_FILTERS = 2;
@@ -205,7 +210,6 @@ function CheckboxFilter({
 	filters,
 	setFilters,
 	isPendingFilterTransition,
-	currentFetchingData,
 }: CheckboxItemsProps) {
 	const [isExpanded, setIsExpanded] = useState(false);
 	const itemsContainerRef = useRef<HTMLUListElement>(null);
@@ -299,13 +303,12 @@ function CheckboxFilter({
 								{item.name}
 							</Label>
 
-							{isPendingFilterTransition &&
-								currentFetchingData.includes(item.value) && (
-									<Loader2
-										className="text-muted-foreground absolute top-1/2 right-0 ml-2 h-4 w-4 translate-y-[-50%] animate-spin"
-										size={16}
-									/>
-								)}
+							{isPendingFilterTransition && (
+								<Loader2
+									className="text-muted-foreground absolute top-1/2 right-0 ml-2 h-4 w-4 translate-y-[-50%] animate-spin"
+									size={16}
+								/>
+							)}
 						</li>
 					))
 				) : (

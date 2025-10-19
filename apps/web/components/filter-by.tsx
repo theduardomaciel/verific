@@ -1,10 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect, useState, useTransition, useCallback } from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useQueryString } from "@/hooks/use-query-string";
+import { useDebounce } from "@/hooks/use-debounce";
 
 // Components
 import { Button } from "@/components/ui/button";
@@ -27,7 +29,7 @@ import { listToString } from "@/lib/i18n";
 interface FilterByProps {
 	name: string;
 	placeholder?: string;
-	filterBy?: string | string[];
+	filterBy?: string[];
 	items: Array<{ value: string; label: string }>;
 }
 
@@ -40,26 +42,50 @@ export function FilterBy({
 	const router = useRouter();
 	const { toUrl } = useQueryString();
 
-	const handleSelect = (value: string) => {
-		const newSelected = Array.isArray(filterBy)
-			? filterBy.includes(value)
-				? filterBy.filter((s) => s !== value)
-				: [...filterBy, value]
-			: filterBy === value
-				? []
-				: [value];
-		router.push(toUrl({ [name]: newSelected.join(",") }));
-	};
+	const [isPending, startTransition] = useTransition();
+
+	// State for immediate UI feedback
+	const [selected, setSelected] = useState<string[]>(filterBy || []);
+
+	// Debounce changes to optimize server calls
+	const debouncedSelected = useDebounce(selected, 750);
+
+	// Update URL when debounced selection changes
+	useEffect(() => {
+		startTransition(() => {
+			router.replace(
+				toUrl({
+					[`${name}`]:
+						debouncedSelected.length === 0
+							? undefined
+							: debouncedSelected.join(","),
+				}),
+				{
+					scroll: false,
+				},
+			);
+		});
+	}, [debouncedSelected, name, toUrl, router]);
+
+	// Sync selected with external URL changes
+	useEffect(() => {
+		const urlFilters = filterBy || [];
+		if (JSON.stringify(urlFilters) !== JSON.stringify(selected)) {
+			setSelected(urlFilters);
+		}
+	}, [filterBy]);
+
+	const handleSelect = useCallback((value: string) => {
+		setSelected((prevSelected) =>
+			prevSelected.includes(value)
+				? prevSelected.filter((s) => s !== value)
+				: [...prevSelected, value],
+		);
+	}, []);
 
 	// Get selected labels
-	const selectedValues = Array.isArray(filterBy)
-		? filterBy
-		: filterBy
-			? [filterBy]
-			: [];
-
 	const selectedLabels = items
-		.filter((item) => selectedValues.includes(item.value))
+		.filter((item) => selected.includes(item.value))
 		.map((item) => item.label);
 
 	return (
@@ -68,7 +94,8 @@ export function FilterBy({
 				<Button
 					variant="outline"
 					role="combobox"
-					className="justify-between font-normal"
+					disabled={isPending}
+					className="flex flex-1 justify-between overflow-hidden font-normal text-ellipsis"
 				>
 					{selectedLabels.length > 0
 						? listToString(selectedLabels)
@@ -85,12 +112,13 @@ export function FilterBy({
 							{items.map((item) => (
 								<CommandItem
 									key={item.value}
+									value={item.value}
 									onSelect={() => handleSelect(item.value)}
 								>
 									<Check
 										className={cn(
 											"mr-2 h-4 w-4",
-											filterBy?.includes(item.value)
+											selected.includes(item.value)
 												? "opacity-100"
 												: "opacity-0",
 										)}
