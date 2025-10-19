@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 // Types
 import { trpc } from "@/lib/trpc/react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { useDebounce } from "@/hooks/use-debounce";
 
 interface AddMonitorDialogProps {
 	projectId: string;
@@ -55,12 +56,16 @@ export function AddMonitorDialog({
 		number | undefined
 	>(undefined);
 	const [isMutating, startTransition] = useTransition();
+	const [selectedParticipants, setSelectedParticipants] = useState<any[]>([]);
+
+	const debouncedSearch = useDebounce(search, 750);
+	const isDebouncing = search !== debouncedSearch;
 
 	const { data, isFetching, refetch } = trpc.getParticipants.useQuery({
 		projectId,
 		page,
 		pageSize: 10,
-		query: search,
+		query: debouncedSearch,
 		sort: "name_asc",
 	});
 
@@ -91,7 +96,7 @@ export function AddMonitorDialog({
 		}
 	}, [data?.participants, page]);
 
-	// Resetar quando search muda
+	// Resetar quando debouncedSearch muda
 	useEffect(() => {
 		if (isOpen) {
 			setPage(0);
@@ -99,25 +104,31 @@ export function AddMonitorDialog({
 			setIsSearching(true);
 			refetch();
 		}
-	}, [search, isOpen, refetch]);
+	}, [debouncedSearch, isOpen, refetch]);
 
 	const filteredParticipants = allParticipants.filter(
 		(participant) => !alreadyAdded.includes(participant.id),
 	);
+
+	const unselectedParticipants = filteredParticipants.filter(
+		(p) => !selectedParticipants.find((sp) => sp.id === p.id),
+	);
+
+	const displayedParticipants = [
+		...selectedParticipants,
+		...unselectedParticipants,
+	];
 
 	const mutations = trpc.addMonitorsToActivity.useMutation();
 
 	async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 
-		const formData = new FormData(event.currentTarget);
-		const selectedParticipants = Array.from(formData.keys()).filter(
-			(key) => formData.get(key) === "on",
-		);
+		const selectedParticipantsIds = selectedParticipants.map((p) => p.id);
 
-		console.log("Monitores selecionados: ", selectedParticipants);
+		console.log("Monitores selecionados: ", selectedParticipantsIds);
 
-		if (selectedParticipants.length === 0) {
+		if (selectedParticipantsIds.length === 0) {
 			toast.warning(
 				"Nenhum monitor selecionado. Selecione ao menos um monitor para adicionar.",
 			);
@@ -128,9 +139,9 @@ export function AddMonitorDialog({
 			startTransition(async () => {
 				await mutations.mutateAsync({
 					activityId,
-					participantsIdsToAdd: selectedParticipants,
+					participantsIdsToAdd: selectedParticipantsIds,
 				});
-				setAddedUsersAmount(selectedParticipants.length);
+				setAddedUsersAmount(selectedParticipantsIds.length);
 				router.refresh();
 			});
 		} catch (error) {
@@ -174,6 +185,7 @@ export function AddMonitorDialog({
 			setPage(0);
 			setSearch("");
 			setAllParticipants([]);
+			setSelectedParticipants([]);
 
 			const title =
 				addedUsersAmount > 1
@@ -223,15 +235,15 @@ export function AddMonitorDialog({
 								value={search}
 								onChange={(e) => setSearch(e.target.value)}
 							/>
-							{isSearching && (
+							{(isSearching || isDebouncing) && (
 								<Loader2 className="text-muted-foreground absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 animate-spin" />
 							)}
 						</div>
-						{filteredParticipants &&
-						filteredParticipants.length > 0 ? (
+						{displayedParticipants &&
+						displayedParticipants.length > 0 ? (
 							<div className="flex h-[32.5vh] w-full flex-col items-center justify-start lg:h-[40vh]">
 								<ul className="no-scrollbar flex h-full w-full flex-col items-start justify-start gap-4 overflow-y-scroll">
-									{filteredParticipants.map(
+									{displayedParticipants.map(
 										(participant: any) => (
 											<li
 												key={participant.id}
@@ -271,6 +283,34 @@ export function AddMonitorDialog({
 														id={participant.id}
 														name={participant.id}
 														className="h-6 w-6"
+														checked={selectedParticipants.some(
+															(p) =>
+																p.id ===
+																participant.id,
+														)}
+														onCheckedChange={(
+															checked,
+														) => {
+															if (checked) {
+																setSelectedParticipants(
+																	(prev) => [
+																		...prev,
+																		participant,
+																	],
+																);
+															} else {
+																setSelectedParticipants(
+																	(prev) =>
+																		prev.filter(
+																			(
+																				p,
+																			) =>
+																				p.id !==
+																				participant.id,
+																		),
+																);
+															}
+														}}
 													/>
 												</div>
 											</li>
