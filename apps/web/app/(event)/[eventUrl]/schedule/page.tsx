@@ -20,6 +20,7 @@ import { auth } from "@verific/auth";
 // Utils
 import { categorizeByDate } from "@/lib/date";
 import { getProject } from "@/lib/data";
+import { FilterBy } from "@/components/filter-by";
 
 type SchedulePageParams = z.infer<typeof getActivitiesParams>;
 
@@ -51,7 +52,6 @@ export default async function EventSchedulePage(props: {
 		// Skip defaults: page=0, pageSize=10, sort='recent' (assuming 'recent' is the default based on SortBy component)
 		if (key === "page" && value === 0) return false;
 		if (key === "pageSize" && value === 10) return false;
-		if (key === "sort" && value === "recent") return false;
 		// Check for non-empty, non-null, non-undefined values (handles strings, arrays, etc.)
 		return (
 			value !== undefined &&
@@ -86,26 +86,26 @@ export default async function EventSchedulePage(props: {
 					<SearchBar placeholder="Pesquisar atividades" />
 					<div className="flex gap-4">
 						<SortBy
-							sortBy={"oldest"}
+							sortBy={sort}
 							items={[
-								{ value: "recent", label: "Mais recentes" },
-								{ value: "oldest", label: "Mais antigas" },
+								{ value: "asc", label: "Mais antigas" },
+								{ value: "desc", label: "Mais recentes" },
 								{ value: "name_asc", label: "Nome A-Z" },
 								{ value: "name_desc", label: "Nome Z-A" },
 							]}
 						/>
-						<SortBy
-							sortBy={"all"}
+						<FilterBy
+							name="category"
+							filterBy={parsedParams.category}
 							items={[
-								{ value: "all", label: "Todas as categorias" },
-								{ value: "workshop", label: "Workshop" },
-								{ value: "seminar", label: "Seminário" },
 								{ value: "lecture", label: "Palestra" },
+								{ value: "workshop", label: "Workshop" },
 								{
 									value: "round-table",
 									label: "Roda de conversa",
 								},
-								{ value: "championship", label: "Campeonato" },
+								{ value: "course", label: "Curso" },
+								{ value: "other", label: "Outros" },
 							]}
 						/>
 					</div>
@@ -118,7 +118,7 @@ export default async function EventSchedulePage(props: {
 								<h3 className="mb-4 text-xl font-bold">
 									{category}
 								</h3>
-								<div className="grid gap-6 md:grid-cols-2">
+								<div className="flex flex-col gap-6 md:grid md:grid-cols-2">
 									{grouped
 										.get(category)!
 										.map((activity, idx, arr) => {
@@ -126,21 +126,16 @@ export default async function EventSchedulePage(props: {
 												arr.length % 2 === 1 &&
 												idx === arr.length - 1;
 											return (
-												<div
+												<ActivityCard
 													key={activity.id}
-													className={cn(
+													className={
 														isLastOdd
 															? "md:col-span-2"
-															: "",
-													)}
-												>
-													<ActivityCard
-														activity={activity}
-														userId={
-															session?.user.id
-														}
-													/>
-												</div>
+															: undefined
+													}
+													activity={activity}
+													userId={session?.user.id}
+												/>
 											);
 										})}
 								</div>

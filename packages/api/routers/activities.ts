@@ -26,7 +26,7 @@ import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
 // Utils
 import { isMemberAuthenticated } from "../auth";
-import { transformSingleToArray } from "../utils";
+import { createEnumArraySchema, transformSingleToArray } from "../utils";
 
 // Enums
 import { activityCategories } from "@verific/drizzle/enum/category";
@@ -46,17 +46,8 @@ export const getActivitiesParams = z.object({
 	sort: z.enum(activitySort).optional(),
 	page: z.coerce.number().default(0).optional(),
 	pageSize: z.coerce.number().default(10).optional(),
-	category: z
-		.union([
-			z.array(z.enum(activityCategories)),
-			z.enum(activityCategories),
-		])
-		.transform(transformSingleToArray)
-		.optional(),
-	audience: z
-		.union([z.array(z.enum(activityAudiences)), z.enum(activityAudiences)])
-		.transform(transformSingleToArray)
-		.optional(),
+	category: createEnumArraySchema(activityCategories),
+	audience: createEnumArraySchema(activityAudiences),
 });
 
 const mutateActivityParams = z.object({
@@ -249,8 +240,8 @@ export const activitiesRouter = createTRPCRouter({
 				audience: rawAudience,
 			} = input;
 
-			const categories = rawCategory;
-			const audiences = rawAudience;
+			const categories = rawCategory as (typeof activityCategories)[number][] | undefined;
+			const audiences = rawAudience as (typeof activityAudiences)[number][] | undefined;
 
 			/* console.log("Fetching activities with params:", {
 				projectId,
