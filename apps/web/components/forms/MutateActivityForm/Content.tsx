@@ -20,7 +20,7 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input, InputWithSuffix } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { MarkdownTextarea } from "@/components/ui/markdown-textarea";
 import {
 	FormControl,
 	FormDescription,
@@ -144,7 +144,10 @@ export function MutateActivityFormContent({
 						<FormItem className="w-full">
 							<FormLabel>Descrição</FormLabel>
 							<FormControl>
-								<Textarea {...field} />
+								<MarkdownTextarea
+									value={field.value}
+									onChange={field.onChange}
+								/>
 							</FormControl>
 							<FormDescription>
 								Suporte a Markdown.
@@ -256,7 +259,7 @@ export function MutateActivityFormContent({
 								<FormLabel>Local</FormLabel>
 								<FormControl>
 									<Input
-										placeholder="Laboratório de Informática - IC"
+										placeholder="Laboratório de Informática"
 										{...field}
 									/>
 								</FormControl>
