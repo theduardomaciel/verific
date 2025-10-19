@@ -1,12 +1,11 @@
 "use client";
 
-import Image from "next/image";
-import { useEffect, useState, useTransition, useRef, useCallback } from "react";
+import { useEffect, useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 // Icons
-import { Loader2, UserPlus, Search, User } from "lucide-react";
+import { Loader2, UserPlus, Search } from "lucide-react";
 
 // Components
 import { Button } from "@/components/ui/button";
@@ -20,13 +19,16 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { ParticipantItem } from "../participant-item";
+
+// Hooks
+import { useParticipantSearch } from "@/hooks/participant/use-participant-search";
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
+import { useParticipantSelection } from "@/hooks/participant/use-participant-selection";
 
 // Types
 import { trpc } from "@/lib/trpc/react";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { useDebounce } from "@/hooks/use-debounce";
 
 interface AddMonitorDialogProps {
 	projectId: string;
@@ -42,85 +44,96 @@ export function AddMonitorDialog({
 	const router = useRouter();
 	const currentDate = new Date();
 
+	// Dialog state
 	const [isOpen, setIsOpen] = useState(false);
-	const [page, setPage] = useState(0);
-	const [search, setSearch] = useState("");
-	const [allParticipants, setAllParticipants] = useState<
-		typeof undefined extends undefined ? any[] : unknown[]
-	>([]);
-	const [hasMore, setHasMore] = useState(true);
-	const [isSearching, setIsSearching] = useState(false);
-	const observerTarget = useRef<HTMLDivElement>(null);
 
+	// Mutation state
 	const [addedUsersAmount, setAddedUsersAmount] = useState<
 		number | undefined
 	>(undefined);
 	const [isMutating, startTransition] = useTransition();
-	const [selectedParticipants, setSelectedParticipants] = useState<any[]>([]);
 
-	const debouncedSearch = useDebounce(search, 750);
-	const isDebouncing = search !== debouncedSearch;
-
-	const { data, isFetching, refetch } = trpc.getParticipants.useQuery({
-		projectId,
+	// Custom hooks
+	const {
 		page,
-		pageSize: 10,
-		query: debouncedSearch,
-		sort: "name_asc",
-	});
+		setPage,
+		search,
+		setSearch,
+		hasMore,
+		setHasMore,
+		isSearching,
+		setIsSearching,
+		isDebouncing,
+		data,
+		isFetching,
+	} = useParticipantSearch({ projectId, isOpen });
+	const {
+		selectedParticipants,
+		toggleSelection,
+		isSelected,
+		clearSelection,
+	} = useParticipantSelection();
 
-	// Atualizar lista quando novos dados chegam
+	// Participants data management
+	const [allParticipants, setAllParticipants] = useState<any[]>([]);
+
+	// Update participants list when new data arrives
 	useEffect(() => {
-		if (data?.participants) {
-			console.log("Novos participantes recebidos: ", data.participants);
-
+		if (data && data.participants) {
 			setAllParticipants((prev) => {
-				// Se é a primeira página (nova busca), substituir completamente
+				// If first page (new search), replace completely
 				if (page === 0) {
 					return data.participants;
 				}
-				// Caso contrário, adicionar à lista existente (infinite scroll)
+				// Otherwise, add to existing list (infinite scroll)
 				const newParticipants = data.participants.filter(
-					(p) => !prev.find((existing) => existing.id === p.id),
+					(p: any) => !prev.find((existing) => existing.id === p.id),
 				);
 				return [...prev, ...newParticipants];
 			});
 
-			// Verificar se há mais páginas
+			// Check if there are more pages
 			if (data.pageCount && page >= data.pageCount - 1) {
 				setHasMore(false);
 			}
 
-			// Marcar que a busca terminou
+			// Mark search as finished
 			setIsSearching(false);
 		}
-	}, [data?.participants, page]);
+	}, [data, page]);
 
-	// Resetar quando debouncedSearch muda
-	useEffect(() => {
-		if (isOpen) {
-			setPage(0);
-			setHasMore(true);
-			setIsSearching(true);
-			refetch();
-		}
-	}, [debouncedSearch, isOpen, refetch]);
-
-	const filteredParticipants = allParticipants.filter(
-		(participant) => !alreadyAdded.includes(participant.id),
+	// Computed values
+	const filteredParticipants = useMemo(
+		() =>
+			allParticipants.filter(
+				(participant) => !alreadyAdded.includes(participant.id),
+			),
+		[allParticipants, alreadyAdded],
 	);
 
-	const unselectedParticipants = filteredParticipants.filter(
-		(p) => !selectedParticipants.find((sp) => sp.id === p.id),
+	const unselectedParticipants = useMemo(
+		() => filteredParticipants.filter((p) => !isSelected(p.id)),
+		[filteredParticipants, isSelected],
 	);
 
-	const displayedParticipants = [
-		...selectedParticipants,
-		...unselectedParticipants,
-	];
+	const displayedParticipants = useMemo(
+		() => [...selectedParticipants, ...unselectedParticipants],
+		[selectedParticipants, unselectedParticipants],
+	);
 
+	// Infinite scroll
+	const observerTarget = useInfiniteScroll({
+		isFetching,
+		isSearching,
+		hasMore,
+		allParticipantsLength: allParticipants.length,
+		setPage,
+	});
+
+	// Mutations
 	const mutations = trpc.addMonitorsToActivity.useMutation();
 
+	// Handlers
 	async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 
@@ -153,39 +166,14 @@ export function AddMonitorDialog({
 		}
 	}
 
-	// Infinite scroll observer
-	useEffect(() => {
-		const observer = new IntersectionObserver(
-			(entries) => {
-				const entry = entries[0];
-				if (
-					entry &&
-					entry.isIntersecting &&
-					!isFetching &&
-					!isSearching &&
-					hasMore &&
-					allParticipants.length > 0
-				) {
-					setPage((prev) => prev + 1);
-				}
-			},
-			{ threshold: 0.1 },
-		);
-
-		if (observerTarget.current) {
-			observer.observe(observerTarget.current);
-		}
-
-		return () => observer.disconnect();
-	}, [isFetching, isSearching, hasMore, allParticipants.length]);
-
+	// Effects
 	useEffect(() => {
 		if (isMutating === false && addedUsersAmount) {
 			setIsOpen(false);
 			setPage(0);
 			setSearch("");
 			setAllParticipants([]);
-			setSelectedParticipants([]);
+			clearSelection();
 
 			const title =
 				addedUsersAmount > 1
@@ -196,9 +184,7 @@ export function AddMonitorDialog({
 					? "Os monitores foram adicionados com sucesso."
 					: "O monitor foi adicionado com sucesso.";
 
-			toast.success(title, {
-				description,
-			});
+			toast.success(title, { description });
 		}
 	}, [isMutating, addedUsersAmount]);
 
@@ -227,6 +213,7 @@ export function AddMonitorDialog({
 					className="flex flex-col items-start justify-start gap-4"
 				>
 					<div className="flex w-full flex-col items-center justify-start gap-4">
+						{/* Search Input */}
 						<div className="relative w-full">
 							<Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
 							<Input
@@ -239,81 +226,27 @@ export function AddMonitorDialog({
 								<Loader2 className="text-muted-foreground absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 animate-spin" />
 							)}
 						</div>
+
+						{/* Participants List */}
 						{displayedParticipants &&
 						displayedParticipants.length > 0 ? (
 							<div className="flex h-[32.5vh] w-full flex-col items-center justify-start lg:h-[40vh]">
 								<ul className="no-scrollbar flex h-full w-full flex-col items-start justify-start gap-4 overflow-y-scroll">
 									{displayedParticipants.map(
 										(participant: any) => (
-											<li
+											<ParticipantItem
 												key={participant.id}
-												className="flex w-full flex-row items-center justify-between"
-											>
-												<div className="flex flex-row items-center justify-start gap-4">
-													<Avatar className="h-9 w-9">
-														<AvatarImage
-															src={
-																participant.user
-																	?.image_url ||
-																undefined
-															}
-														/>
-														<AvatarFallback>
-															<User className="h-5 w-5" />
-														</AvatarFallback>
-													</Avatar>
-													<span className="text-neutral text-left text-base leading-tight font-semibold">
-														{participant.user
-															?.name ??
-															`@${participant.id}`}
-													</span>
-												</div>
-												<div className="flex flex-row items-center justify-end gap-4">
-													{participant.user?.name && (
-														<span className="text-neutral hidden text-xs leading-none font-semibold opacity-50 md:flex">
-															@
-															{
-																participant.user?.email?.split(
-																	"@",
-																)[0]
-															}
-														</span>
-													)}
-													<Checkbox
-														id={participant.id}
-														name={participant.id}
-														className="h-6 w-6"
-														checked={selectedParticipants.some(
-															(p) =>
-																p.id ===
-																participant.id,
-														)}
-														onCheckedChange={(
-															checked,
-														) => {
-															if (checked) {
-																setSelectedParticipants(
-																	(prev) => [
-																		...prev,
-																		participant,
-																	],
-																);
-															} else {
-																setSelectedParticipants(
-																	(prev) =>
-																		prev.filter(
-																			(
-																				p,
-																			) =>
-																				p.id !==
-																				participant.id,
-																		),
-																);
-															}
-														}}
-													/>
-												</div>
-											</li>
+												participant={participant}
+												isSelected={isSelected(
+													participant.id,
+												)}
+												onToggle={(checked) =>
+													toggleSelection(
+														participant,
+														checked,
+													)
+												}
+											/>
 										),
 									)}
 									<div
@@ -336,10 +269,12 @@ export function AddMonitorDialog({
 							<p>Nenhum participante encontrado.</p>
 						)}
 					</div>
+
+					{/* Footer */}
 					<DialogFooter className="w-full gap-2 sm:justify-start">
 						<DialogClose asChild>
 							<Button
-								className="flex flex-1 md:h-12"
+								className="flex flex-1 md:h-10"
 								type="button"
 								size={"lg"}
 								variant="secondary"
@@ -349,7 +284,7 @@ export function AddMonitorDialog({
 							</Button>
 						</DialogClose>
 						<Button
-							className="flex flex-1 md:h-12"
+							className="flex flex-1 md:h-10"
 							size={"lg"}
 							type="submit"
 							disabled={isMutating}
