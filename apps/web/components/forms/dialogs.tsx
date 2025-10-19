@@ -83,23 +83,6 @@ export function SuccessDialog({
 }: SuccessDialogProps) {
 	return (
 		<Dialog open={isOpen}>
-			{confettiColors && isOpen && (
-				<div className="absolute top-0 left-0 h-screen w-screen">
-					<Confetti
-						mode="boom"
-						particleCount={100}
-						spreadDeg={60}
-						launchSpeed={1.5}
-						colors={confettiColors}
-						className="z-100"
-					/>
-					<Confetti
-						mode="fall"
-						particleCount={50}
-						colors={confettiColors}
-					/>
-				</div>
-			)}
 			<DialogContent
 				className={cn(
 					"flex max-h-[90vh] flex-col items-center justify-start overflow-y-auto py-16",
@@ -111,6 +94,29 @@ export function SuccessDialog({
 				onEscapeKeyDown={(event) => {
 					event.preventDefault();
 				}}
+				additionalChildren={
+					confettiColors &&
+					isOpen && (
+						<>
+							<div className="pointer-events-none fixed inset-0 z-600 h-screen w-screen select-none">
+								<Confetti
+									mode="boom"
+									particleCount={100}
+									spreadDeg={60}
+									launchSpeed={1.5}
+									colors={confettiColors}
+								/>
+							</div>
+							<div className="pointer-events-none fixed inset-0 h-screen w-screen select-none">
+								<Confetti
+									mode="fall"
+									particleCount={50}
+									colors={confettiColors}
+								/>
+							</div>
+						</>
+					)
+				}
 			>
 				<DialogHeader
 					className="flex flex-col items-center justify-center gap-4"

@@ -3,7 +3,7 @@ import { z } from "zod";
 export const joinFormSection0Schema = z.object({
 	email: z
 		.string({ required_error: "Obrigatório" })
-		.email({ message: "É necessário entrar com um e-mail institucional." }),
+		.email({ message: "É necessário entrar com uma conta do Google" }),
 	/* .refine(
 			(email) => {
 				return email.endsWith("ic.ufal.br");
