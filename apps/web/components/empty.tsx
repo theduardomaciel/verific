@@ -30,8 +30,9 @@ export function Empty({ href, title, description }: Props) {
 			)}
 			{href && (
 				<Link
-					href={`${href}?r=${randomId}`}
+					href={`${href}`}
 					className="text-foreground underline"
+					replace
 				>
 					Limpar filtros
 				</Link>

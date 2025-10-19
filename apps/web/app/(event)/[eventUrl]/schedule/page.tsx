@@ -48,18 +48,6 @@ export default async function EventSchedulePage(props: {
 		(activity) => activity.dateFrom,
 	);
 
-	const hasFilters = Object.entries(searchParams).some(([key, value]) => {
-		// Skip defaults: page=0, pageSize=10, sort='recent' (assuming 'recent' is the default based on SortBy component)
-		if (key === "page" && value === 0) return false;
-		if (key === "pageSize" && value === 10) return false;
-		// Check for non-empty, non-null, non-undefined values (handles strings, arrays, etc.)
-		return (
-			value !== undefined &&
-			value !== null &&
-			(Array.isArray(value) ? value.length > 0 : true)
-		);
-	});
-
 	return (
 		<EventContainer.Holder>
 			<EventContainer.Hero coverUrl={event.coverUrl}>
@@ -99,7 +87,7 @@ export default async function EventSchedulePage(props: {
 							filterBy={parsedParams.category}
 							items={[
 								{ value: "lecture", label: "Palestra" },
-								{ value: "workshop", label: "Workshop" },
+								{ value: "workshop", label: "Oficina" },
 								{
 									value: "round-table",
 									label: "Roda de conversa",
@@ -141,8 +129,8 @@ export default async function EventSchedulePage(props: {
 								</div>
 							</div>
 						))
-					) : hasFilters ? (
-						<Empty />
+					) : parsedParams.query || parsedParams.category ? (
+						<Empty href={`/${eventUrl}/schedule`} />
 					) : (
 						<Empty
 							title="Este evento ainda não possui atividades :("

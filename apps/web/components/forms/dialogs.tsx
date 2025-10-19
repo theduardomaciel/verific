@@ -111,7 +111,7 @@ export function SuccessDialog({
 				<DialogFooter>
 					{href ? (
 						<Button type="button" className="h-11 px-6" asChild>
-							<Link href={href} prefetch={false}>
+							<Link href={href} replace prefetch={false}>
 								{buttonText || "Entendi!"}
 							</Link>
 						</Button>
