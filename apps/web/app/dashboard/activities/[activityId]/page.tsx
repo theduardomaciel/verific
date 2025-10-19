@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { env } from "@verific/env";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 import {
 	Calendar,
@@ -98,9 +100,11 @@ export default async function ActivityPage(props: {
 						</Badge>
 					) : null}
 				</div>
-				<h2 className="text-muted-foreground text-base leading-normal font-medium">
-					{activity.description}
-				</h2>
+				<div className="prose prose-sm dark:prose-invert max-w-none">
+					<ReactMarkdown remarkPlugins={[remarkGfm]}>
+						{activity.description || ""}
+					</ReactMarkdown>
+				</div>
 			</div>
 			<div className="flex w-full flex-col items-center justify-start gap-4 md:flex-row">
 				<CategoryCard

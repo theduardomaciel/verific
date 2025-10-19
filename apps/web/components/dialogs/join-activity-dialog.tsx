@@ -3,6 +3,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { Loader2, BookLock, InfoIcon } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 // Components
 import {
 	Dialog,
@@ -123,8 +125,10 @@ export function JoinActivityDialog({ participantId, activity }: Props) {
 					<DialogTitle className="w-full text-center">
 						{activity.name}
 					</DialogTitle>
-					<DialogDescription className="w-full text-center">
-						{activity.description}
+					<DialogDescription className="prose prose-sm dark:prose-invert w-full max-w-none text-center">
+						<ReactMarkdown remarkPlugins={[remarkGfm]}>
+							{activity.description || ""}
+						</ReactMarkdown>
 					</DialogDescription>
 				</DialogHeader>
 				<div className="flex flex-col">
