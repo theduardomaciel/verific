@@ -1,7 +1,7 @@
 import * as React from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
-type Params = Record<string, string | undefined>;
+type Params = Record<string, string | string[] | undefined>;
 
 export function useQueryString() {
 	const pathname = usePathname();
@@ -12,10 +12,11 @@ export function useQueryString() {
 			const params = new URLSearchParams(searchParams);
 
 			for (const [key, value] of Object.entries(parameters)) {
-				if (value) {
+				params.delete(key); // Remove existing
+				if (Array.isArray(value)) {
+					value.forEach(v => params.append(key, v));
+				} else if (value) {
 					params.set(key, value);
-				} else {
-					params.delete(key);
 				}
 			}
 

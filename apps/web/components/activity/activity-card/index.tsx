@@ -18,11 +18,18 @@ import { RouterOutput } from "@verific/api";
 import { activityCategoryLabels } from "@verific/drizzle/schema";
 
 interface EventCardProps {
+	className?: string;
 	activity: RouterOutput["getActivities"]["activities"][number];
 	userId?: string | null;
+	lowSeatsThreshold?: number;
 }
 
-export function ActivityCard({ activity, userId }: EventCardProps) {
+export function ActivityCard({
+	activity,
+	className,
+	userId,
+	lowSeatsThreshold = 7,
+}: EventCardProps) {
 	const participantRole = activity.participants.find(
 		(participant) => participant.userId === userId,
 	)?.role;
@@ -35,13 +42,14 @@ export function ActivityCard({ activity, userId }: EventCardProps) {
 		: null;
 
 	const hasRemainingSeats = remainingSeats === null || remainingSeats > 0;
-	const hasFewRemainingSeats =
-		remainingSeats !== null && remainingSeats > 0 && remainingSeats <= 2;
 
 	return (
 		<div
 			id={activity.id}
-			className={`bg-card flex h-full flex-col justify-between gap-4 rounded-lg border p-6`}
+			className={cn(
+				"bg-card flex flex-col justify-between gap-4 rounded-lg border p-6",
+				className,
+			)}
 		>
 			<div className="flex flex-col gap-2">
 				<div className="flex items-start justify-between">
@@ -52,19 +60,20 @@ export function ActivityCard({ activity, userId }: EventCardProps) {
 						className={cn("text-muted-foreground text-sm", {
 							"opacity-50":
 								remainingSeats !== null && remainingSeats <= 0,
-							"animate-pulse":
+							"animate-pulse font-bold":
 								remainingSeats !== null &&
 								remainingSeats > 0 &&
-								remainingSeats <= 2,
-							"text-red-500 uppercase":
-								remainingSeats !== null && remainingSeats === 0,
+								remainingSeats <= lowSeatsThreshold,
+							"text-red-500 uppercase": !hasRemainingSeats,
 						})}
 					>
 						{remainingSeats === null
-							? "Vagas ilimitadas"
-							: remainingSeats > 0
+							? ""
+							: remainingSeats > lowSeatsThreshold
 								? `${remainingSeats} vagas restantes`
-								: "Esgotado"}
+								: remainingSeats > 0
+									? "Últimas vagas!"
+									: "Esgotado"}
 					</span>
 				</div>
 

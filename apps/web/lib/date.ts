@@ -28,7 +28,12 @@ export const getDateString = (dateFrom: Date, dateTo: Date) => {
 	return dateString;
 };
 
-export const getTimeString = (date: Date) => {
+export const getTimeString = (date: Date, asHourFormat = false) => {
+	if (asHourFormat) {
+		const hours = date.getHours();
+		const minutes = date.getMinutes();
+		return minutes === 0 ? `${hours}h` : `${hours}h${minutes.toString().padStart(2, "0")}`;
+	}
 	return saoPauloFormatter.format(date).split(' ')[1];
 };
 

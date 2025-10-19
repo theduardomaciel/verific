@@ -23,13 +23,13 @@ export function ActivityCardTags({
 	tagsClassName,
 }: ActivityCardTagsProps) {
 	const displayDate = getDateString(activity.dateFrom, activity.dateTo);
-	const displayTime = getTimeString(activity.dateFrom);
+	const displayTime = `${getTimeString(activity.dateFrom, true)} - ${getTimeString(activity.dateTo, true)}`;
 
 	return (
 		<div className="flex flex-wrap gap-2">
 			<Badge
 				className={cn(
-					"bg-background text-foreground py-1 brightness-95",
+					"bg-background text-foreground py-1 break-words brightness-95",
 					tagsClassName,
 				)}
 			>
@@ -38,17 +38,17 @@ export function ActivityCardTags({
 			</Badge>
 			<Badge
 				className={cn(
-					"bg-background text-foreground py-1 brightness-95",
+					"bg-background text-foreground py-1 break-words brightness-95",
 					tagsClassName,
 				)}
 			>
 				<Clock className="mr-2 !h-3.5 !w-3.5" />
 				<span className="-mt-0.5 text-sm">{displayTime}</span>
 			</Badge>
-			{activity.workload ? (
+			{/* {activity.workload ? (
 				<Badge
 					className={cn(
-						"bg-background text-foreground py-1 brightness-95",
+						"bg-background text-foreground py-1 break-words brightness-95",
 						tagsClassName,
 					)}
 				>
@@ -57,11 +57,11 @@ export function ActivityCardTags({
 						{activity.workload}h
 					</span>
 				</Badge>
-			) : null}
+			) : null} */}
 			{activity.address ? (
 				<Badge
 					className={cn(
-						"bg-background text-foreground py-1 brightness-95",
+						"bg-background text-foreground py-1 break-words brightness-95",
 						tagsClassName,
 					)}
 				>
@@ -71,7 +71,7 @@ export function ActivityCardTags({
 			) : null}
 			{/* <Badge
 				className={cn(
-					"bg-background text-foreground py-1 brightness-95",
+					"bg-background text-foreground py-1 brightness-95 break-words",
 					tagsClassName,
 				)}
 			>

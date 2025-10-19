@@ -32,7 +32,7 @@ export function SortBy({ sortBy, items }: SortByProps) {
 
 	return (
 		<Select value={sortBy ?? items[0]?.value} onValueChange={onValueChange}>
-			<SelectTrigger className="w-full md:w-[180px]">
+			<SelectTrigger className="flex flex-1 md:w-[180px]">
 				<SelectValue placeholder="Ordenar por" />
 			</SelectTrigger>
 			<SelectContent>
