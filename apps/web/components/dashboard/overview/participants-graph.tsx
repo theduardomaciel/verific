@@ -33,11 +33,13 @@ const baseChartConfig = {
 interface ParticipantsGraphProps {
 	chartConfig?: ChartConfig;
 	className?: string;
+	data?: Array<{ date: string; total: number; active: number }>;
 }
 
 export function ParticipantsGraph({
 	chartConfig = baseChartConfig,
 	className,
+	data = chartData,
 }: ParticipantsGraphProps) {
 	return (
 		<ChartContainer
@@ -46,7 +48,7 @@ export function ParticipantsGraph({
 		>
 			<AreaChart
 				accessibilityLayer
-				data={chartData}
+				data={data}
 				margin={{
 					left: 12,
 					right: 12,
@@ -100,7 +102,7 @@ export function ParticipantsGraph({
 				</defs>
 				<Area
 					dataKey="active"
-					type="natural"
+					type="linear"
 					fill="url(#fillActive)"
 					fillOpacity={0.4}
 					stroke="var(--color-active)"
@@ -108,7 +110,7 @@ export function ParticipantsGraph({
 				/>
 				<Area
 					dataKey="total"
-					type="natural"
+					type="linear"
 					fill="url(#fillTotal)"
 					fillOpacity={0.4}
 					stroke="var(--color-total)"
