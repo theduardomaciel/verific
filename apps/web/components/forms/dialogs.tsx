@@ -83,7 +83,7 @@ export function SuccessDialog({
 }: SuccessDialogProps) {
 	return (
 		<Dialog open={isOpen}>
-			{confettiColors && (
+			{confettiColors && isOpen && (
 				<div className="absolute top-0 left-0 h-screen w-screen">
 					<Confetti
 						mode="boom"
