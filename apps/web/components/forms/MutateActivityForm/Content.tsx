@@ -58,6 +58,12 @@ import {
 import type { MutateActivityFormSchema } from "@/lib/validations/forms/mutate-activity-form";
 import { useWatch, type UseFormReturn } from "react-hook-form";
 import { calculateWorkloadFromTimes } from "@/lib/date";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Props {
 	form: UseFormReturn<MutateActivityFormSchema>;
@@ -494,23 +500,40 @@ export function MutateActivityFormContent({
 													: field.value
 											}
 										/>
-										<Button
-											type="button"
-											variant="outline"
-											size={"icon"}
-											onClick={() =>
-												// Calcula a carga horária com base no intervalo de tempo
-												field.onChange(() =>
-													calculateWorkloadFromTimes(
-														form.getValues()
-															.timeFrom,
-														form.getValues().timeTo,
-													),
-												)
-											}
-										>
-											<EqualApproximately size={20} />
-										</Button>
+										<TooltipProvider>
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<Button
+														type="button"
+														variant="outline"
+														size={"icon"}
+														title="Calcular carga horária"
+														onClick={() =>
+															// Calcula a carga horária com base no intervalo de tempo
+															field.onChange(() =>
+																calculateWorkloadFromTimes(
+																	form.getValues()
+																		.timeFrom,
+																	form.getValues()
+																		.timeTo,
+																),
+															)
+														}
+													>
+														<EqualApproximately
+															size={20}
+														/>
+													</Button>
+												</TooltipTrigger>
+												<TooltipContent className="sm:max-w-[8rem]">
+													<p>
+														Calcula a carga horária
+														com base no intervalo de
+														tempo definido.
+													</p>
+												</TooltipContent>
+											</Tooltip>
+										</TooltipProvider>
 									</div>
 								</FormControl>
 								<FormMessage />
@@ -596,7 +619,7 @@ export function MutateActivityFormContent({
 					</div>
 				</div>
 
-				<div className="flex w-full flex-row items-center justify-end">
+				<div className="flex w-full flex-col items-center justify-end gap-6 sm:flex-row md:gap-4">
 					<FormField
 						control={form.control}
 						name="isRegistrationOpen"
@@ -616,7 +639,7 @@ export function MutateActivityFormContent({
 					<Button
 						type="submit"
 						size={"lg"}
-						className="!px-6 max-md:w-full"
+						className="!px-6 max-sm:w-full"
 					>
 						{isEditing ? (
 							<>
