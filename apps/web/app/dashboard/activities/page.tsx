@@ -29,10 +29,13 @@ type ActivitiesPageParams = z.infer<typeof getActivitiesParams>;
 
 // API
 import { serverClient } from "@/lib/trpc/server";
+
+// Types & Enums
 import {
 	activityCategories,
 	activityCategoryLabels,
 } from "@verific/drizzle/schema";
+import { sortOptions, sortOptionsLabels } from "@verific/api/utils";
 
 export default async function ActivitiesPage(props: {
 	searchParams: Promise<ActivitiesPageParams>;
@@ -59,12 +62,10 @@ export default async function ActivitiesPage(props: {
 						</div>
 						<SortBy
 							sortBy={parsedParams.sort}
-							items={[
-								{ value: "desc", label: "Mais recentes" },
-								{ value: "asc", label: "Mais antigas" },
-								{ value: "name_asc", label: "Nome A-Z" },
-								{ value: "name_desc", label: "Nome Z-A" },
-							]}
+							items={sortOptions.map((option) => ({
+								value: option,
+								label: sortOptionsLabels[option],
+							}))}
 						/>
 					</div>
 

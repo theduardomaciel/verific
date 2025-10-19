@@ -23,11 +23,8 @@ import * as EventContainer from "@/components/landing/event-container";
 import { ShareDialog } from "@/components/dialogs/share-dialog";
 import { ReportEventDialog } from "@/components/dialogs/report-event-dialog";
 
-// API
-import { serverClient } from "@/lib/trpc/server";
-
 // Utils
-import { isAfterEnd, isBeforeStart } from "@/lib/date";
+import { isAfterEnd } from "@/lib/date";
 import { getProject } from "@/lib/data";
 
 const markdownComponents = {
@@ -133,7 +130,7 @@ export default async function EventPage({
 				</div>
 				<div className="relative z-20 flex items-center justify-center">
 					<Image
-						src="/images/cover.png"
+						src={event.thumbnailUrl || "/images/cover.png"}
 						alt="SECOMP24"
 						width={400}
 						height={240}

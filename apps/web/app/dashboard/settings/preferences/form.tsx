@@ -41,7 +41,9 @@ export function ProjectSettingsPreferencesForm({ project }: Props) {
 			await updateMutation.mutateAsync({
 				id: project.id,
 				logoUrl: data.logoUrl,
+				largeLogoUrl: data.largeLogoUrl,
 				coverUrl: data.bannerUrl,
+				thumbnailUrl: data.thumbnailUrl,
 			});
 			toast.success("Configurações de marca atualizadas!");
 			form.reset(data);

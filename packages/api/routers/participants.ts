@@ -26,17 +26,15 @@ import { participantRoles } from "@verific/drizzle/enum/role";
 
 // Utils
 import { isMemberAuthenticated } from "../auth";
-import { transformSingleToArray } from "../utils";
+import { sortOptions } from "../utils";
 
 // tRPC
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
-export const participantSort = ["asc", "desc", "name_asc", "name_desc"] as const;
-
 export const getParticipantsParams = z.object({
 	query: z.string().optional(), // Para busca por nome ou e-mail
-	sort: z.enum(participantSort).optional(), // Ordenação por data
+	sort: z.enum(sortOptions).optional(), // Ordenação por data
 	page: z.coerce.number().default(0), // Paginação: página atual
 	pageSize: z.coerce.number().default(10), // Paginação: tamanho da página,
 	role: z.array(z.enum(participantRoles)).optional(), // Funções dos participantes
