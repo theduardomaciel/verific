@@ -15,5 +15,6 @@ export * from "./user";
 export * from "../enum/audience";
 export * from "../enum/category";
 export * from "../enum/course";
+export * from "../enum/degree";
 export * from "../enum/period";
 export * from "../enum/role";

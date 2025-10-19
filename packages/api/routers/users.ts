@@ -3,7 +3,7 @@ import { db } from "@verific/drizzle";
 import { z } from "zod";
 
 import { participant, user, project } from "@verific/drizzle/schema";
-import { eq } from "@verific/drizzle/orm";
+import { eq, and } from "@verific/drizzle/orm";
 
 import { unstable_update } from "@verific/auth";
 
@@ -12,6 +12,8 @@ import { createTRPCRouter, protectedProcedure } from "../trpc";
 // Enums
 import { courses } from "@verific/drizzle/enum/course";
 import { periods } from "@verific/drizzle/enum/period";
+import { discoveryOptions } from "@verific/drizzle/enum/discovery";
+import { degreeLevels } from "@verific/drizzle/enum/degree";
 
 // API
 import { TRPCError } from "@trpc/server";
@@ -28,30 +30,24 @@ export const usersRouter = createTRPCRouter({
 				course: z.enum(courses).optional(),
 				registrationId: z.string().optional(),
 				period: z.enum(periods).optional(),
+				degreeLevel: z.enum(degreeLevels).optional(),
 				projectId: z.string(),
 				reason: z.string().optional(),
 				accessibility: z.string().optional(),
-				discovery: z.enum(["instagram",
-					"facebook",
-					"twitter",
-					"tiktok",
-					"linkedin",
-					"friends",
-					"family",
-					"event",
-					"online_ad",
-					"search_engine",
-					"other"]).optional(),
+				discovery: z.enum(discoveryOptions).optional(),
 				discoveryOther: z.string().optional(),
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
 			const userId = ctx.session?.user.id;
 
-			const { name, course, registrationId, period, projectId, reason, accessibility, discovery, discoveryOther } = input;
+			const { name, course, registrationId, period, degreeLevel, projectId, reason, accessibility, discovery, discoveryOther } = input;
 
 			if (!userId) {
-				throw new Error("User not found.");
+				throw new TRPCError({
+					code: "UNAUTHORIZED",
+					message: "User not found.",
+				});
 			}
 
 			// First we update the user
@@ -63,19 +59,32 @@ export const usersRouter = createTRPCRouter({
 				.where(eq(user.id, userId));
 
 			// Then we create the participant
-			const createdMember = await db
-				.insert(participant)
-				.values({
-					userId,
-					course,
-					registrationId,
-					period,
-					projectId,
-				})
-				.returning(/* {
-					id: participant.id,
-					role: participant.role,
-				} */);
+			let createdMember;
+			try {
+				createdMember = await db
+					.insert(participant)
+					.values({
+						userId,
+						course,
+						degreeLevel,
+						registrationId,
+						period,
+						projectId,
+					})
+					.returning(/* {
+						id: participant.id,
+						role: participant.role,
+					} */);
+			} catch (error) {
+				// Check if it's a unique constraint violation
+				if (error instanceof Error && (error.message.includes('unique') || error.message.includes('duplicate') || (error as any).code === '23505')) {
+					throw new TRPCError({
+						code: "CONFLICT",
+						message: "Este número de matrícula já está sendo usado neste projeto.",
+					});
+				}
+				throw error; // Re-throw other errors
+			}
 
 			// Fetch project to check research settings
 			const projectData = await db.query.project.findFirst({

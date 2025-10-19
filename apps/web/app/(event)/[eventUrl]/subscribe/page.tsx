@@ -56,9 +56,15 @@ export default async function EventSubscribePage({
 			<EventContainer.Content>
 				<JoinForm
 					user={session?.user || undefined}
-					projectId={event.id}
-					projectUrl={event.url}
-					projectLogo={event.logoUrl || undefined}
+					project={{
+						id: event.id,
+						url: event.url,
+						logo: event.logoUrl || undefined,
+						colors: [
+							event.primaryColor,
+							event.secondaryColor,
+						].filter(Boolean) as string[],
+					}}
 				/>
 			</EventContainer.Content>
 		</EventContainer.Holder>

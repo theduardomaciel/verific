@@ -3,6 +3,9 @@
 import type React from "react";
 import Link from "next/link";
 
+import { Check, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+
 // Components
 import { Button } from "@/components/ui/button";
 import {
@@ -14,8 +17,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { Check, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import Confetti from "react-confetti-boom";
 
 // Icons
 
@@ -66,6 +68,7 @@ export function LoadingDialog({
 interface SuccessDialogProps extends Props {
 	href?: string;
 	buttonText?: string;
+	confettiColors?: string[];
 }
 
 export function SuccessDialog({
@@ -76,9 +79,27 @@ export function SuccessDialog({
 	description,
 	buttonText,
 	className,
+	confettiColors,
 }: SuccessDialogProps) {
 	return (
 		<Dialog open={isOpen}>
+			{confettiColors && (
+				<div className="absolute top-0 left-0 h-screen w-screen">
+					<Confetti
+						mode="boom"
+						particleCount={100}
+						spreadDeg={60}
+						launchSpeed={1.5}
+						colors={confettiColors}
+						className="z-100"
+					/>
+					<Confetti
+						mode="fall"
+						particleCount={50}
+						colors={confettiColors}
+					/>
+				</div>
+			)}
 			<DialogContent
 				className={cn(
 					"flex max-h-[90vh] flex-col items-center justify-start overflow-y-auto py-16",

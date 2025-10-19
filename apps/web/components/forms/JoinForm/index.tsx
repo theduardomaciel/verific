@@ -34,22 +34,24 @@ import type { GenericForm } from "..";
 import { trpc } from "@/lib/trpc/react";
 import { useRouter } from "next/navigation";
 
-export default function JoinForm({
-	user,
-	projectId,
-	projectUrl,
-	projectLogo,
-}: {
+interface JoinFormProps {
 	user?: User;
-	projectId: string;
-	projectUrl: string;
-	projectLogo?: string;
-}) {
+	project: {
+		id: string;
+		url: string;
+		logo?: string;
+		colors?: string[];
+	};
+}
+
+export default function JoinForm({ user, project }: JoinFormProps) {
 	const router = useRouter();
 
 	const [currentState, setCurrentState] = useState<
 		false | "submitting" | "error" | "submitted"
 	>(false);
+
+	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
 	const mutation = trpc.updateUser.useMutation();
 
@@ -64,7 +66,8 @@ export default function JoinForm({
 			section1: {
 				name: user?.name || "",
 				course: undefined,
-				registrationId: "",
+				degreeLevel: undefined,
+				registrationId: undefined,
 				period: undefined,
 			},
 			section2: {
@@ -102,7 +105,7 @@ export default function JoinForm({
 				course: values.section1.course,
 				registrationId: values.section1.registrationId,
 				period: values.section1.period,
-				projectId,
+				projectId: project.id,
 				reason: values.section2.reason,
 				accessibility: values.section2.accessibility,
 				discovery: values.section2.discovery,
@@ -110,6 +113,9 @@ export default function JoinForm({
 			});
 		} catch (error) {
 			console.error(error);
+			setErrorMessage(
+				error instanceof Error ? error.message : "Erro desconhecido",
+			);
 			setCurrentState("error");
 			return;
 		}
@@ -155,7 +161,7 @@ export default function JoinForm({
 					})}
 				>
 					<JoinForm0
-						projectUrl={projectUrl}
+						projectUrl={project.url}
 						form={form as unknown as GenericForm}
 						email={user?.email}
 					/>
@@ -168,11 +174,12 @@ export default function JoinForm({
 				title="Estamos realizando seu cadastro..."
 			/>
 			<SuccessDialog
-				isOpen={currentState === "submitted"}
+				isOpen={true /* currentState === "submitted" */}
 				onClose={() => {
 					setCurrentState(false);
-					router.push(`${`/${projectUrl}/my`}`);
+					router.push(`${`/${project.url}/my`}`);
 				}}
+				confettiColors={project.colors}
 				className="py-8 sm:!max-w-[40vw]"
 				title={
 					<div className="flex flex-col items-center justify-center gap-4">
@@ -221,8 +228,14 @@ export default function JoinForm({
 			<ErrorDialog
 				isOpen={currentState === "error"}
 				title="Erro ao enviar o formulário"
-				onClose={() => setCurrentState(false)}
-				description="Por favor, tente novamente mais tarde. Se o erro persistir, entre em contato com o suporte."
+				onClose={() => {
+					setCurrentState(false);
+					setErrorMessage(null);
+				}}
+				description={
+					errorMessage ||
+					"Por favor, tente novamente mais tarde. Se o erro persistir, entre em contato com o suporte."
+				}
 			/>
 		</Form>
 	);

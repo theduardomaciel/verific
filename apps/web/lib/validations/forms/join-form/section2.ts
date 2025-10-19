@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { discoveryOptions } from "@verific/drizzle/enum/discovery";
 
 export const joinFormSection2Schema = z.object({
 	reason: z
@@ -9,19 +10,7 @@ export const joinFormSection2Schema = z.object({
 		.string()
 		.max(1000, { message: "Desculpe, o limite de caracteres é 1000 :(" })
 		.optional(),
-	discovery: z.enum([
-		"instagram",
-		"facebook",
-		"twitter",
-		"tiktok",
-		"linkedin",
-		"friends",
-		"family",
-		"event",
-		"online_ad",
-		"search_engine",
-		"other"
-	]).optional(),
+	discovery: z.enum(discoveryOptions).optional(),
 	discoveryOther: z.string().max(50).optional(),
 });
 

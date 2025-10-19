@@ -37,19 +37,20 @@ const section2Keys = Object.keys(
 const formTitles = {
 	reason: "Pergunta 1",
 	discovery: "Pergunta 2",
-	discoveryOther: undefined,
 	accessibility: "Pergunta 3",
 };
 
 export default function JoinForm2({ form }: { form: GenericForm }) {
 	const otherIsSelected = form.watch("section2.discovery") === "other";
 
-	const section2 = section2Keys.map((key) => {
-		return {
-			name: formTitles[key],
-			value: isValid(key, 2, form),
-		};
-	});
+	const section2 = section2Keys
+		.filter((key) => key in formTitles)
+		.map((key) => {
+			return {
+				name: formTitles[key as keyof typeof formTitles],
+				value: isValid(key, 2, form),
+			};
+		});
 
 	return (
 		<FormSection title="Pesquisa" section={2} form={form} fields={section2}>
