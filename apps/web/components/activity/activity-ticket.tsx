@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { QRCodeSVG } from "qrcode.react";
 
 import { cn } from "@/lib/utils";
@@ -13,6 +12,7 @@ import AppleIcon from "@/public/icons/apple.svg";
 // Components
 import { BadgeScanner } from "@/components/badge-scanner";
 import { ActivityStatus } from "./activity-status";
+import { ActivitySpeakers } from "./activity-card/speakers";
 
 // Utils
 import { formatFriendlyDate } from "@/lib/date";
@@ -20,8 +20,6 @@ import { getTimeString } from "@/lib/date";
 
 // API
 import { RouterOutput } from "@verific/api";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { ActivitySpeakers } from "./activity-card/speakers";
 
 export interface WorkshopTicketProps {
 	className?: string;
@@ -53,9 +51,10 @@ export function ActivityTicket({
 			)}
 		>
 			{/* Main content - flex-col on mobile, flex-row on md+ */}
-			<div className="flex flex-col md:flex-row">
-				{/* Left/Top section */}
-				<div className="bg-card flex flex-col gap-4 p-6 md:max-w-3/5">
+			<div className="flex flex-1 flex-col md:flex-row">
+				{/* Activity Details Section */}
+				<div className="bg-card flex flex-col gap-4 p-6 flex-1">
+					{/* Header */}
 					<div className="flex w-full flex-wrap items-center justify-between gap-2">
 						<h2 className="line-clamp-2 text-2xl leading-tight font-bold break-words">
 							{activity.name}
@@ -70,6 +69,7 @@ export function ActivityTicket({
 						/>
 					</div>
 
+					{/* Description */}
 					{activity.description && (
 						<div className="prose prose-sm dark:prose-invert text-muted-foreground max-w-none text-sm">
 							<ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -79,6 +79,7 @@ export function ActivityTicket({
 						</div>
 					)}
 
+					{/* Time Display */}
 					<div className="flex w-full items-center justify-between">
 						<span className="text-xl">{startTime}</span>
 						<div className="mx-4 flex flex-1 items-center justify-center md:mx-8">
@@ -115,6 +116,7 @@ export function ActivityTicket({
 						<span className="text-xl">{endTime}</span>
 					</div>
 
+					{/* Limits and Tolerance */}
 					{activity.participantsLimit || activity.tolerance ? (
 						<div className="text-muted-foreground flex items-center justify-evenly text-sm">
 							{activity.participantsLimit ? (
@@ -136,6 +138,7 @@ export function ActivityTicket({
 						</div>
 					) : null}
 
+					{/* Speakers */}
 					{activity.speakerOnActivity && (
 						<ActivitySpeakers
 							speakers={activity.speakerOnActivity.map(
@@ -144,7 +147,7 @@ export function ActivityTicket({
 						/>
 					)}
 
-					{/* TODO: Atualmente, exibindo a quantidade de participantes, não a quantidade de participantes credenciados */}
+					{/* Monitor: Credentialed Participants Count */}
 					{isMonitor ? (
 						<div className="mt-auto hidden items-center justify-between border-t pt-4 md:flex">
 							<div className="text-muted-foreground flex items-center">
@@ -158,8 +161,8 @@ export function ActivityTicket({
 					) : null}
 				</div>
 
-				{/* Mobile: full width with fixed height - Desktop: fixed width with full height */}
-				<div className="relative h-16 w-full md:h-auto md:w-[7.5%] md:flex-col">
+				{/* Decorative Divider */}
+				<div className="relative h-16 w-full md:h-auto md:w-16 md:flex-col">
 					{/* Line decoration - vertical on mobile, horizontal on desktop */}
 					<div className="border-foreground absolute top-1/2 left-1/2 h-[1px] w-3/4 -translate-x-1/2 -translate-y-1/2 rounded border border-dashed opacity-30 md:h-3/4 md:w-[1px]" />
 
@@ -257,10 +260,11 @@ export function ActivityTicket({
 					</div>
 				</div>
 
-				{/* Right section */}
-				<div className="bg-card flex w-full flex-1 flex-col items-center justify-center px-6 md:pl-0">
+				{/* Action/QR Section */}
+				<div className="bg-card flex flex-col items-center justify-center px-6 md:pl-0 md:w-80">
 					{isMonitor ? (
 						<>
+							{/* Desktop: App Download Info */}
 							<div className="hidden w-full flex-col items-center justify-center py-6 md:flex">
 								<p className="mb-6 text-center">
 									Credencie os participantes do evento pelo
@@ -271,6 +275,7 @@ export function ActivityTicket({
 									<AndroidIcon className="flex w-8 items-center justify-center" />
 								</div>
 							</div>
+							{/* Mobile: Badge Scanner and Count */}
 							<div className="flex w-full flex-col items-center justify-center gap-6 py-6 md:hidden">
 								<BadgeScanner activityId={activity.id} />
 								<div className="flex w-full items-center justify-between">
