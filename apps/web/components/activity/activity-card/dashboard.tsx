@@ -1,6 +1,8 @@
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 // Icons
 import { User, Users } from "lucide-react";
@@ -112,9 +114,11 @@ export function ActivityCard({ activity, className }: ActivityCardProps) {
 					</div>
 
 					{activity.description && (
-						<p className="text-foreground line-clamp-3 text-sm">
-							{activity.description}
-						</p>
+						<div className="prose prose-sm dark:prose-invert line-clamp-3 max-w-none">
+							<ReactMarkdown remarkPlugins={[remarkGfm]}>
+								{activity.description}
+							</ReactMarkdown>
+						</div>
 					)}
 
 					{activity.speakers.length ? (

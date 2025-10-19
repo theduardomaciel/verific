@@ -23,6 +23,7 @@ import { Input, InputWithSuffix } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
 	FormControl,
+	FormDescription,
 	FormField,
 	FormItem,
 	FormLabel,
@@ -145,6 +146,9 @@ export function MutateActivityFormContent({
 							<FormControl>
 								<Textarea {...field} />
 							</FormControl>
+							<FormDescription>
+								Suporte a Markdown.
+							</FormDescription>
 							<FormMessage />
 						</FormItem>
 					)}
@@ -510,7 +514,7 @@ export function MutateActivityFormContent({
 														title="Calcular carga horária"
 														onClick={() =>
 															// Calcula a carga horária com base no intervalo de tempo
-															field.onChange(() =>
+															field.onChange(
 																calculateWorkloadFromTimes(
 																	form.getValues()
 																		.timeFrom,

@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/tooltip";
 import { ActivitySpeakers } from "./speakers";
 import { ActivityCardTags } from "./tags";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 type Activity =
 	| RouterOutput["getActivity"]["activity"]
@@ -40,9 +42,11 @@ export function ActivityDetailsContent({
 				</Badge>
 				<div>
 					<h2 className="mb-2 text-xl font-bold">{activity.name}</h2>
-					<p className="text-muted-foreground text-left text-sm">
-						{activity.description}
-					</p>
+					<div className="prose prose-sm dark:prose-invert max-w-none">
+						<ReactMarkdown remarkPlugins={[remarkGfm]}>
+							{activity.description || ""}
+						</ReactMarkdown>
+					</div>
 				</div>
 			</div>
 

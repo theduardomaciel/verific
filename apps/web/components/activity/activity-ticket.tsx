@@ -2,6 +2,8 @@ import Image from "next/image";
 import { QRCodeSVG } from "qrcode.react";
 
 import { cn } from "@/lib/utils";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 // Icons
 import { Check, User, Clock } from "lucide-react";
@@ -69,8 +71,10 @@ export function ActivityTicket({
 					</div>
 
 					{activity.description && (
-						<div className="text-muted-foreground text-sm">
-							<p>{activity.description}</p>
+						<div className="prose prose-sm dark:prose-invert text-muted-foreground max-w-none text-sm">
+							<ReactMarkdown remarkPlugins={[remarkGfm]}>
+								{activity.description}
+							</ReactMarkdown>
 							<button className="mt-1">Ler mais</button>
 						</div>
 					)}
