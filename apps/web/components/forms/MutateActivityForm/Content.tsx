@@ -53,6 +53,7 @@ import {
 } from "@verific/drizzle/enum/category";
 import type { MutateActivityFormSchema } from "@/lib/validations/forms/mutate-activity-form";
 import { useWatch, type UseFormReturn } from "react-hook-form";
+import { Switch } from "@/components/ui/switch";
 
 interface Props {
 	form: UseFormReturn<MutateActivityFormSchema>;
@@ -570,6 +571,22 @@ export function MutateActivityFormContent({
 				</div>
 
 				<div className="flex w-full flex-row items-center justify-end">
+					<FormField
+						control={form.control}
+						name="isRegistrationOpen"
+						render={({ field }) => (
+							<FormItem className="flex w-full flex-row items-center justify-start gap-4">
+								<FormControl>
+									<Switch
+										size={"lg"}
+										checked={field.value}
+										onCheckedChange={field.onChange}
+									/>
+								</FormControl>
+								<FormLabel>Ativar inscrições</FormLabel>
+							</FormItem>
+						)}
+					/>
 					<Button
 						type="submit"
 						size={"lg"}

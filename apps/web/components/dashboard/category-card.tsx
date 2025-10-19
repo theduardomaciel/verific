@@ -7,20 +7,17 @@ import {
 	activityCategoryLabels,
 } from "@verific/drizzle/enum/category";
 
-// Lib
-import { listToString } from "@/lib/i18n";
-
 interface CategoryCard {
 	className?: string;
 	category: (typeof activityCategories)[number];
-	speakersName: string[];
+	text: string;
 	hours?: number | null;
 }
 
 export function CategoryCard({
 	className,
 	category,
-	speakersName,
+	text,
 	hours,
 }: CategoryCard) {
 	return (
@@ -33,7 +30,7 @@ export function CategoryCard({
 			<div className="inline-flex items-center justify-start gap-4">
 				<CategoryLabel category={category} />
 				<p className="text-foreground shrink grow basis-0 text-base font-medium">
-					{listToString(speakersName)}
+					{text}
 				</p>
 			</div>
 			{hours ? (

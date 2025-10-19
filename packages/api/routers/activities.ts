@@ -53,6 +53,7 @@ export const getActivitiesParams = z.object({
 const mutateActivityParams = z.object({
 	name: z.string().min(1),
 	description: z.string().optional(),
+	isRegistrationOpen: z.boolean().optional(),
 	dateFrom: z.coerce.date(),
 	dateTo: z.coerce.date(),
 	category: z.enum(activityCategories),
@@ -480,6 +481,7 @@ export const activitiesRouter = createTRPCRouter({
 				activityId,
 				name,
 				description,
+				isRegistrationOpen,
 				dateFrom,
 				dateTo,
 				category,
@@ -505,6 +507,7 @@ export const activitiesRouter = createTRPCRouter({
 					.set({
 						name,
 						description,
+						isRegistrationOpen,
 						dateFrom,
 						dateTo,
 						category,

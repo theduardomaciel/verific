@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -44,6 +44,12 @@ export function AddMonitorDialog({
 	const [isOpen, setIsOpen] = useState(false);
 	const [page, setPage] = useState(0);
 	const [search, setSearch] = useState("");
+	const [allParticipants, setAllParticipants] = useState<
+		typeof undefined extends undefined ? any[] : unknown[]
+	>([]);
+	const [hasMore, setHasMore] = useState(true);
+	const [isSearching, setIsSearching] = useState(false);
+	const observerTarget = useRef<HTMLDivElement>(null);
 
 	const [addedUsersAmount, setAddedUsersAmount] = useState<
 		number | undefined
@@ -55,14 +61,47 @@ export function AddMonitorDialog({
 		page,
 		pageSize: 10,
 		query: search,
+		sort: "name_asc",
 	});
 
-	const participants =
-		data?.participants.filter(
-			(participant) => !alreadyAdded.includes(participant.id),
-		) || [];
+	// Atualizar lista quando novos dados chegam
+	useEffect(() => {
+		if (data?.participants) {
+			setAllParticipants((prev) => {
+				// Se é a primeira página (nova busca), substituir completamente
+				if (page === 0) {
+					return data.participants;
+				}
+				// Caso contrário, adicionar à lista existente (infinite scroll)
+				const newParticipants = data.participants.filter(
+					(p) => !prev.find((existing) => existing.id === p.id),
+				);
+				return [...prev, ...newParticipants];
+			});
 
-	const pageCount = data?.pageCount || 0;
+			// Verificar se há mais páginas
+			if (data.pageCount && page >= data.pageCount - 1) {
+				setHasMore(false);
+			}
+
+			// Marcar que a busca terminou
+			setIsSearching(false);
+		}
+	}, [data?.participants, page]);
+
+	// Resetar quando search muda
+	useEffect(() => {
+		if (isOpen) {
+			setPage(0);
+			setHasMore(true);
+			setIsSearching(true);
+			refetch();
+		}
+	}, [search, isOpen, refetch]);
+
+	const filteredParticipants = allParticipants.filter(
+		(participant) => !alreadyAdded.includes(participant.id),
+	);
 
 	const mutations = trpc.addMonitorsToActivity.useMutation();
 
@@ -101,11 +140,38 @@ export function AddMonitorDialog({
 		}
 	}
 
+	// Infinite scroll observer
+	useEffect(() => {
+		const observer = new IntersectionObserver(
+			(entries) => {
+				const entry = entries[0];
+				if (
+					entry &&
+					entry.isIntersecting &&
+					!isFetching &&
+					!isSearching &&
+					hasMore &&
+					allParticipants.length > 0
+				) {
+					setPage((prev) => prev + 1);
+				}
+			},
+			{ threshold: 0.1 },
+		);
+
+		if (observerTarget.current) {
+			observer.observe(observerTarget.current);
+		}
+
+		return () => observer.disconnect();
+	}, [isFetching, isSearching, hasMore, allParticipants.length]);
+
 	useEffect(() => {
 		if (isMutating === false && addedUsersAmount) {
 			setIsOpen(false);
 			setPage(0);
 			setSearch("");
+			setAllParticipants([]);
 
 			const title =
 				addedUsersAmount > 1
@@ -120,13 +186,7 @@ export function AddMonitorDialog({
 				description,
 			});
 		}
-	}, [isMutating, addedUsersAmount, toast]);
-
-	useEffect(() => {
-		if (isOpen) {
-			refetch();
-		}
-	}, [isOpen, search, page, refetch]);
+	}, [isMutating, addedUsersAmount]);
 
 	return (
 		<Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -156,95 +216,80 @@ export function AddMonitorDialog({
 						<div className="relative w-full">
 							<Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
 							<Input
-								className="w-full pl-10"
+								className="w-full pr-10 pl-10"
 								placeholder="Pesquisar participantes"
 								value={search}
 								onChange={(e) => setSearch(e.target.value)}
 							/>
+							{isSearching && (
+								<Loader2 className="text-muted-foreground absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 animate-spin" />
+							)}
 						</div>
-						{participants && participants.length > 0 ? (
-							<div className="no-scrollbar max-h-[32.5vh] w-full overflow-y-scroll lg:max-h-[40vh]">
-								<ul className="flex h-full w-full flex-col items-start justify-start gap-4">
-									{participants.map((participant) => (
-										<li
-											key={participant.id}
-											className="flex w-full flex-row items-center justify-between"
-										>
-											<div className="flex flex-row items-center justify-start gap-4">
-												<Avatar className="h-9 w-9">
-													<AvatarImage
-														src={
-															participant.user
-																?.image_url ||
-															undefined
-														}
-													/>
-													<AvatarFallback>
-														<User className="h-5 w-5" />
-													</AvatarFallback>
-												</Avatar>
-												<span className="text-neutral text-left text-base leading-tight font-semibold">
-													{participant.user?.name ??
-														`@${participant.id}`}
-												</span>
-											</div>
-											<div className="flex flex-row items-center justify-end gap-4">
-												{participant.user?.name && (
-													<span className="text-neutral hidden text-xs leading-none font-semibold opacity-50 md:flex">
-														@
-														{
-															participant.user?.email?.split(
-																"@",
-															)[0]
-														}
+						{filteredParticipants &&
+						filteredParticipants.length > 0 ? (
+							<div className="flex h-[32.5vh] w-full flex-col items-center justify-start lg:h-[40vh]">
+								<ul className="no-scrollbar flex h-full w-full flex-col items-start justify-start gap-4 overflow-y-scroll">
+									{filteredParticipants.map(
+										(participant: any) => (
+											<li
+												key={participant.id}
+												className="flex w-full flex-row items-center justify-between"
+											>
+												<div className="flex flex-row items-center justify-start gap-4">
+													<Avatar className="h-9 w-9">
+														<AvatarImage
+															src={
+																participant.user
+																	?.image_url ||
+																undefined
+															}
+														/>
+														<AvatarFallback>
+															<User className="h-5 w-5" />
+														</AvatarFallback>
+													</Avatar>
+													<span className="text-neutral text-left text-base leading-tight font-semibold">
+														{participant.user
+															?.name ??
+															`@${participant.id}`}
 													</span>
-												)}
-												<Checkbox
-													id={participant.id}
-													name={participant.id}
-													className="h-6 w-6"
-												/>
+												</div>
+												<div className="flex flex-row items-center justify-end gap-4">
+													{participant.user?.name && (
+														<span className="text-neutral hidden text-xs leading-none font-semibold opacity-50 md:flex">
+															@
+															{
+																participant.user?.email?.split(
+																	"@",
+																)[0]
+															}
+														</span>
+													)}
+													<Checkbox
+														id={participant.id}
+														name={participant.id}
+														className="h-6 w-6"
+													/>
+												</div>
+											</li>
+										),
+									)}
+									<div
+										ref={observerTarget}
+										className="w-full py-4"
+									>
+										{isFetching && hasMore && (
+											<div className="flex w-full items-center justify-center">
+												<Loader2 className="origin-center animate-spin" />
 											</div>
-										</li>
-									))}
-								</ul>
-								{pageCount > 1 && (
-									<div className="mt-4 flex justify-center">
-										<Button
-											type="button"
-											variant="outline"
-											onClick={() =>
-												setPage((prev) =>
-													Math.max(0, prev - 1),
-												)
-											}
-											disabled={page === 0}
-										>
-											Anterior
-										</Button>
-										<span className="mx-4">
-											Página {page + 1} de {pageCount}
-										</span>
-										<Button
-											type="button"
-											variant="outline"
-											onClick={() =>
-												setPage((prev) =>
-													Math.min(
-														pageCount - 1,
-														prev + 1,
-													),
-												)
-											}
-											disabled={page >= pageCount - 1}
-										>
-											Próxima
-										</Button>
+										)}
 									</div>
-								)}
+								</ul>
 							</div>
-						) : isFetching ? (
-							<Loader2 className="origin-center animate-spin" />
+						) : isSearching ? (
+							<div className="flex w-full items-center justify-center py-8">
+								<Loader2 className="origin-center animate-spin" />
+							</div>
 						) : (
 							<p>Nenhum participante encontrado.</p>
 						)}
@@ -252,7 +297,7 @@ export function AddMonitorDialog({
 					<DialogFooter className="w-full gap-2 sm:justify-start">
 						<DialogClose asChild>
 							<Button
-								className="w-full md:h-12"
+								className="flex flex-1 md:h-12"
 								type="button"
 								size={"lg"}
 								variant="secondary"
@@ -262,7 +307,7 @@ export function AddMonitorDialog({
 							</Button>
 						</DialogClose>
 						<Button
-							className="w-full md:h-12"
+							className="flex flex-1 md:h-12"
 							size={"lg"}
 							type="submit"
 							disabled={isMutating}
