@@ -17,6 +17,7 @@ import Autoplay from "embla-carousel-autoplay";
 import { RouterOutput } from "@verific/api";
 
 interface Props {
+	className?: string;
 	speakers: NonNullable<
 		RouterOutput["getActivities"]["activities"][number]["speakers"]
 	>;
@@ -64,7 +65,7 @@ function SpeakerCard({
 }) {
 	return (
 		<div
-			className={cn("flex items-center gap-6 px-6 py-4", {
+			className={cn("flex w-full items-center gap-6 px-6 py-4", {
 				"rounded-lg border": showBorder,
 			})}
 		>
