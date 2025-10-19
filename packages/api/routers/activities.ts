@@ -21,6 +21,7 @@ import {
 	gte,
 	not,
 	isNotNull,
+	sql,
 } from "@verific/drizzle/orm";
 import { z } from "zod";
 
@@ -781,6 +782,82 @@ export const activitiesRouter = createTRPCRouter({
 			const activeParticipantsInLastDay = totalParticipants > 0 ? (activeParticipants / totalParticipants) * 100 : 0;
 			const occupancyRate = Number(totalPossible) > 0 ? (totalEnrollments / Number(totalPossible)) * 100 : 0;
 
+			// Graph data: participants per day for last 7 days
+			const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+			let graphDataQuery = await db
+				.select({
+					date: sql<string>`date(${participant.joinedAt})`,
+					count: count(),
+				})
+				.from(participant)
+				.where(and(
+					eq(participant.projectId, projectId),
+					eq(participant.role, "participant"),
+					gte(participant.joinedAt, sevenDaysAgo)
+				))
+				.groupBy(sql`date(${participant.joinedAt})`)
+				.orderBy(sql`date(${participant.joinedAt})`);
+
+			let graphData: Array<{ date: string; total: number; active: number }> = [];
+			if (graphDataQuery.length > 0) {
+				let cumulative = 0;
+				graphData = graphDataQuery.map((row) => {
+					cumulative += row.count;
+					return {
+						date: new Date(row.date).toLocaleDateString('pt-BR', { month: 'short', day: 'numeric' }),
+						total: cumulative,
+						active: row.count,
+					};
+				});
+			} else {
+				// Fallback to hours for last 24 hours
+				const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+				const hoursDataQuery = await db
+					.select({
+						hour: sql<string>`date_trunc('hour', ${participant.joinedAt})`,
+						count: count(),
+					})
+					.from(participant)
+					.where(and(
+						eq(participant.projectId, projectId),
+						eq(participant.role, "participant"),
+						gte(participant.joinedAt, twentyFourHoursAgo)
+					))
+					.groupBy(sql`date_trunc('hour', ${participant.joinedAt})`)
+					.orderBy(sql`date_trunc('hour', ${participant.joinedAt})`);
+
+				let cumulative = 0;
+				graphData = hoursDataQuery.map((row) => {
+					cumulative += row.count;
+					const hourDate = new Date(row.hour);
+					return {
+						date: hourDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+						total: cumulative,
+						active: row.count,
+					};
+				});
+			}
+
+			// Courses data
+			const coursesDataQuery = await db
+				.select({
+					course: participant.course,
+					count: count(),
+				})
+				.from(participant)
+				.where(and(
+					eq(participant.projectId, projectId),
+					eq(participant.role, "participant"),
+					isNotNull(participant.course)
+				))
+				.groupBy(participant.course)
+				.orderBy(desc(count()));
+
+			const coursesData = coursesDataQuery.map((row) => ({
+				course: row.course!,
+				count: row.count,
+			}));
+
 			return {
 				totalParticipants,
 				participantsInLastHourPercentage,
@@ -789,6 +866,8 @@ export const activitiesRouter = createTRPCRouter({
 				activeParticipants,
 				activeParticipantsInLastDay,
 				occupancyRate,
+				graphData,
+				coursesData,
 			};
 		}),
 });

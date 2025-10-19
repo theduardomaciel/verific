@@ -4,17 +4,13 @@ import { redirect } from "next/navigation";
 
 // Icons
 import { Activity, BarChart3, Clock, Globe, Users } from "lucide-react";
-
-// Components
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 
-import { ParticipantsGraph } from "@/components/dashboard/overview/participants-graph";
+import { GraphSelector } from "@/components/dashboard/overview/graph-selector";
 import { ActivitiesList } from "@/components/dashboard/overview/activities-list";
 import { MetricCard } from "@/components/dashboard/overview/metric-card";
-
-// API
 import { serverClient } from "@/lib/trpc/server";
 
 export default async function Overview() {
@@ -111,13 +107,10 @@ export default async function Overview() {
 								</div>
 							</CardHeader>
 							<CardContent className="relative flex flex-1">
-								<ParticipantsGraph className="pointer-events-none opacity-25 select-none" />
-								<div className="absolute top-1/2 left-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 animate-pulse flex-row items-center justify-center gap-4">
-									<BarChart3 size={24} />
-									<p className="text-muted-foreground transform text-center text-lg select-none">
-										Dados insuficientes para gerar o gráfico
-									</p>
-								</div>
+								<GraphSelector
+									graphData={stats.graphData}
+									coursesData={stats.coursesData}
+								/>
 							</CardContent>
 						</Card>
 						<ActivitiesList
