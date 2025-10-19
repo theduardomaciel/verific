@@ -50,6 +50,7 @@
 		"nextjs-toploader": "^3.8.16",
 		"qrcode.react": "^4.2.0",
 		"react": "^19.1.0",
+		"react-confetti-boom": "^2.0.1",
 		"react-day-picker": "8.10.1",
 		"react-dom": "^19.1.0",
 		"react-hook-form": "^7.56.4",

@@ -13,6 +13,7 @@ import { participantOnActivity, project, user } from ".";
 import { courseEnum } from "../enum/course";
 import { periodEnum } from "../enum/period";
 import { roleEnum } from "../enum/role";
+import { degreeLevelEnum } from "../enum/degree";
 
 export const participant = pgTable(
 	"participants",
@@ -32,12 +33,13 @@ export const participant = pgTable(
 			}),
 
 		course: courseEnum("course"),
-		registrationId: text("registration_id").unique(),
+		registrationId: text("registration_id"),
 		period: periodEnum("period"),
 		role: roleEnum("role").notNull().default("participant"),
+		degreeLevel: degreeLevelEnum("degree_level"),
 		joinedAt: timestamp("joined_at").notNull().defaultNow(),
 	},
-	(table) => [uniqueIndex().on(table.userId, table.projectId)],
+	(table) => [uniqueIndex().on(table.userId, table.projectId), uniqueIndex().on(table.registrationId, table.projectId)],
 );
 
 export const participantRelations = relations(participant, ({ one, many }) => ({

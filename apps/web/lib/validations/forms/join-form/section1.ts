@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { courses } from "@verific/drizzle/enum/course";
 import { periods } from "@verific/drizzle/enum/period";
+import { degreeLevels } from "@verific/drizzle/enum/degree";
 
 export const joinFormSection1Schema = z.object({
 	name: z
@@ -20,6 +21,7 @@ export const joinFormSection1Schema = z.object({
 				.join(" ");
 		}),
 	course: z.enum(courses).optional(),
+	degreeLevel: z.enum(degreeLevels).optional(),
 	registrationId: z
 		.string().optional(),
 	period: z.enum(periods).optional(),
@@ -29,6 +31,7 @@ export const joinFormSection1Schema = z.object({
 			message:
 				"O número de telefone deve estar no formato (XX) XXXXX-XXXX",
 		}),
+	hasActiveAcademicFormation: z.boolean().default(false),
 });
 
 export type JoinFormSection1Schema = z.infer<typeof joinFormSection1Schema>;

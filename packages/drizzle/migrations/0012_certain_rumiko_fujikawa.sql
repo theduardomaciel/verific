@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "participants_registration_id_project_id_index" ON "participants" USING btree ("registration_id","project_id");
