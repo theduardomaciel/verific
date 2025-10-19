@@ -49,7 +49,7 @@ export function SettingsCard({
 			{footer && (
 				<div
 					className={cn(
-						"text-muted-foreground flex w-full flex-row items-center justify-between border-t p-4",
+						"text-muted-foreground flex w-full flex-row items-center justify-between gap-4 border-t p-4",
 						borderColor,
 						footerClassName,
 					)}
