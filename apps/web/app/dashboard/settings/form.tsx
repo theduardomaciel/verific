@@ -197,12 +197,12 @@ export function ProjectSettingsGeneral({ project }: Props) {
 									<div className="flex items-center">
 										<div className="bg-muted flex h-9 items-center rounded-l-md border px-4">
 											<span className="text-muted-foreground">
-												verific.com/event/
+												verific.com/
 											</span>
 										</div>
 										<Input
 											{...field}
-											className="rounded-l-none border-l-0"
+											className="w-full rounded-l-none border-l-0 sm:w-fit"
 											autoComplete="off"
 										/>
 									</div>

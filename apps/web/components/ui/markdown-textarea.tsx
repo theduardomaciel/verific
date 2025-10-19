@@ -4,6 +4,8 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
 	Bold,
 	Italic,
@@ -17,6 +19,8 @@ import {
 	Heading1,
 	Heading2,
 	Heading3,
+	Eye,
+	Edit,
 } from "lucide-react";
 
 interface MarkdownTextareaProps
@@ -30,6 +34,7 @@ const MarkdownTextarea = React.forwardRef<
 	MarkdownTextareaProps
 >(({ className, value, onChange, ...props }, ref) => {
 	const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+	const [mode, setMode] = React.useState<"edit" | "preview">("edit");
 
 	React.useImperativeHandle(ref, () => textareaRef.current!);
 
@@ -106,7 +111,12 @@ const MarkdownTextarea = React.forwardRef<
 				prefix = "- ";
 			} else if (/^\d+\.\s/.test(trimmed)) {
 				const match = trimmed.match(/^(\d+)\.\s(.*)/);
-				if (match && match[1] && match[2] && match[2].trim().length > 0) {
+				if (
+					match &&
+					match[1] &&
+					match[2] &&
+					match[2].trim().length > 0
+				) {
 					const num = parseInt(match[1]) + 1;
 					prefix = num + ". ";
 				}
@@ -173,20 +183,32 @@ const MarkdownTextarea = React.forwardRef<
 		{
 			icon: Heading1,
 			label: "Cabeçalho 1",
-			hideOnMobile: true,
+			className: "hidden md:inline-flex",
 			action: () => insertAtLineStart("# "),
 		},
 		{
 			icon: Heading2,
 			label: "Cabeçalho 2",
-			hideOnMobile: true,
+			className: "hidden md:inline-flex",
 			action: () => insertAtLineStart("## "),
 		},
 		{
 			icon: Heading3,
 			label: "Cabeçalho 3",
-			hideOnMobile: true,
+			className: "hidden md:inline-flex",
 			action: () => insertAtLineStart("### "),
+		},
+		{
+			icon: Edit,
+			label: "Editar",
+			className: "hidden md:inline-flex ml-auto",
+			action: () => setMode("edit"),
+		},
+		{
+			icon: Eye,
+			label: "Visualizar",
+			className: "hidden md:inline-flex",
+			action: () => setMode("preview"),
 		},
 	];
 
@@ -199,9 +221,7 @@ const MarkdownTextarea = React.forwardRef<
 						type="button"
 						variant="ghost"
 						size="sm"
-						className={cn("h-8 w-8 p-0", {
-							"hidden md:inline-flex": button.hideOnMobile,
-						})}
+						className={cn("h-8 w-8 p-0", button.className)}
 						onClick={button.action}
 						title={button.label}
 					>
@@ -209,14 +229,39 @@ const MarkdownTextarea = React.forwardRef<
 					</Button>
 				))}
 			</div>
-			<Textarea
-				ref={textareaRef}
-				value={value}
-				onChange={(e) => onChange?.(e.target.value)}
-				onKeyDown={handleKeyDown}
-				className="min-h-32"
-				{...props}
-			/>
+			<div className="relative">
+				{mode === "edit" ? (
+					<Textarea
+						ref={textareaRef}
+						value={value}
+						onChange={(e) => onChange?.(e.target.value)}
+						onKeyDown={handleKeyDown}
+						className="min-h-36"
+						{...props}
+					/>
+				) : (
+					<div className="prose prose-sm dark:prose-invert min-h-32 max-w-none rounded-md border p-3">
+						<ReactMarkdown remarkPlugins={[remarkGfm]}>
+							{value || ""}
+						</ReactMarkdown>
+					</div>
+				)}
+				<Button
+					className="absolute bottom-0 left-0 flex rounded-t-none rounded-l-none p-6 md:hidden"
+					size="icon"
+					type="button"
+					variant="ghost"
+					onClick={() =>
+						setMode(mode === "edit" ? "preview" : "edit")
+					}
+				>
+					{mode === "edit" ? (
+						<Eye className="h-4 w-4" />
+					) : (
+						<Edit className="h-4 w-4" />
+					)}
+				</Button>
+			</div>
 		</div>
 	);
 });
