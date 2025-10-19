@@ -69,6 +69,7 @@ export function ParticipantsGraph({
 					tickLine={false}
 					axisLine={false}
 					tickFormatter={(value) => value}
+					/* domain={[0, "dataMax"]} */
 				/>
 				<ChartTooltip
 					cursor={false}
@@ -106,7 +107,6 @@ export function ParticipantsGraph({
 					fill="url(#fillActive)"
 					fillOpacity={0.4}
 					stroke="var(--color-active)"
-					stackId="a"
 				/>
 				<Area
 					dataKey="total"
@@ -114,7 +114,6 @@ export function ParticipantsGraph({
 					fill="url(#fillTotal)"
 					fillOpacity={0.4}
 					stroke="var(--color-total)"
-					stackId="a"
 				/>
 			</AreaChart>
 		</ChartContainer>
