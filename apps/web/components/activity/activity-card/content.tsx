@@ -35,7 +35,7 @@ export function ActivityDetailsContent({
 	}
 
 	return (
-		<div className="flex flex-col items-center justify-center gap-4">
+		<div className="flex w-full flex-col items-center justify-center gap-4">
 			<div className="flex flex-col items-center justify-center gap-3">
 				<Badge className="w-fit">
 					{activityCategoryLabels[activity.category]}
