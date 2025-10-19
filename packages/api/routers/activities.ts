@@ -213,6 +213,7 @@ export const activitiesRouter = createTRPCRouter({
 
 			return {
 				activity: formattedActivity,
+				participantsAmount: amount,
 				pageCount,
 				participantId: allParticipants.find(
 					(participant) => participant.userId === userId,

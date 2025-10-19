@@ -49,10 +49,11 @@ export default async function ActivityPage(props: {
 	const searchParams = await props.searchParams;
 	const parsedParams = getActivityParams.parse(searchParams);
 
-	const { activity, pageCount } = await serverClient.getActivity({
-		activityId,
-		...parsedParams,
-	});
+	const { activity, participantsAmount, pageCount } =
+		await serverClient.getActivity({
+			activityId,
+			...parsedParams,
+		});
 
 	const monitors = activity.participants.filter((t) => t.role === "monitor");
 
@@ -163,7 +164,9 @@ export default async function ActivityPage(props: {
 					<AddMonitorDialog
 						projectId={projectId}
 						activityId={activityId}
-						alreadyAdded={activity.participants.map((p) => p.id)}
+						alreadyAdded={activity.participants
+							.filter((t) => t.role === "monitor")
+							.map((t) => t.id)}
 					/>
 				</div>
 			</div>
@@ -173,12 +176,14 @@ export default async function ActivityPage(props: {
 						<ParticipantsList.Title className="flex w-full flex-row items-center justify-between">
 							<p>Participantes</p>
 							<span className="text-muted-foreground text-sm font-medium">
-								{activity.participantsLimit &&
+								{participantsAmount &&
+								activity.participantsLimit &&
 								activity.participantsLimit > 0
-									? `Vagas disponíveis: ${activity.participantsLimit - participants.length}/${activity.participantsLimit}`
-									: participants.length > 0
-										? `${participants.length} participante${
-												participants.length !== 1
+									? `Vagas disponíveis: ${activity.participantsLimit - participantsAmount}/${activity.participantsLimit}`
+									: participantsAmount &&
+										  participantsAmount > 0
+										? `${participantsAmount} participante${
+												participantsAmount !== 1
 													? "s"
 													: ""
 											}`

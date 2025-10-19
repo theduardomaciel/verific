@@ -67,6 +67,8 @@ export function AddMonitorDialog({
 	// Atualizar lista quando novos dados chegam
 	useEffect(() => {
 		if (data?.participants) {
+			console.log("Novos participantes recebidos: ", data.participants);
+
 			setAllParticipants((prev) => {
 				// Se é a primeira página (nova busca), substituir completamente
 				if (page === 0) {
@@ -117,7 +119,7 @@ export function AddMonitorDialog({
 
 		if (selectedParticipants.length === 0) {
 			toast.warning(
-				"Nenhum moderador selecionado. Selecione ao menos um moderador para adicionar.",
+				"Nenhum monitor selecionado. Selecione ao menos um monitor para adicionar.",
 			);
 			return;
 		}
