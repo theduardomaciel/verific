@@ -33,6 +33,7 @@ import { z } from "zod";
 // API
 import { serverClient } from "@/lib/trpc/server";
 import { getActivityParams } from "@verific/api/routers/activities";
+import { listToString } from "@/lib/i18n";
 
 type ActivityPageParams = z.infer<typeof getActivityParams>;
 
@@ -105,9 +106,16 @@ export default async function ActivityPage(props: {
 					className="w-full"
 					category={activity.category}
 					hours={activity.workload}
-					speakersName={activity.speakerOnActivity.map(
-						(speakerOnActivity) => speakerOnActivity.speaker.name,
-					)}
+					text={
+						activity.speakerOnActivity.length
+							? listToString(
+									activity.speakerOnActivity.map(
+										(speakerOnActivity) =>
+											speakerOnActivity.speaker.name,
+									),
+								)
+							: "Nenhum palestrante"
+					}
 				/>
 				<div className="flex flex-row items-center gap-3 max-md:w-full max-md:flex-wrap md:justify-between">
 					<div className="flex w-full flex-row items-center gap-3">

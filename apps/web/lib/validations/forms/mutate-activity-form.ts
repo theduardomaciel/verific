@@ -9,6 +9,7 @@ export const mutateActivityFormSchema = z.object({
 			message: "O nome da atividade deve ter pelo menos 3 caracteres",
 		}),
 	description: z.string().optional(),
+	isRegistrationOpen: z.boolean().optional(),
 	participantsLimit: z.coerce
 		.number()
 		.optional()

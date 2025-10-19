@@ -58,11 +58,17 @@ export function SimpleActivityCard({ activity, className }: ActivityCardProps) {
 				)}
 			</div>
 			<div className="bg-input h-[1px] w-full border-t" />
-			<ActivityInfo
-				className="p-4"
-				category={activity.category}
-				dateFrom={activity.dateFrom}
-			/>
+			<div
+				className={
+					"flex w-full flex-wrap items-center justify-between gap-2 p-4"
+				}
+			>
+				<CategoryLabel category={activity.category} />
+				<ActivityStatus
+					date={activity.dateFrom}
+					dateFormat={{ includeDay: true, includeHour: true }}
+				/>
+			</div>
 		</Link>
 	);
 }
@@ -90,12 +96,18 @@ export function ActivityCard({ activity, className }: ActivityCardProps) {
 				)}
 			>
 				<div className="space-y-4 p-6">
-					<div className="flex items-start justify-between">
+					<div className="flex items-center justify-between">
 						<h3 className="font-dashboard text-foreground text-xl font-semibold first-letter:capitalize">
 							{activity.name}
 						</h3>
 						<span className="text-muted-foreground text-sm">
-							#{activity.id.split("-")[0]}
+							<ActivityStatus
+								date={activity.dateFrom}
+								dateFormat={{
+									includeDay: true,
+									includeHour: true,
+								}}
+							/>
 						</span>
 					</div>
 
@@ -105,88 +117,61 @@ export function ActivityCard({ activity, className }: ActivityCardProps) {
 						</p>
 					)}
 
-					<ActivityInfo
-						speakers={activity.speakers}
-						category={activity.category}
-						dateFrom={activity.dateFrom}
-					/>
-
-					{(monitors || participantsAmount) && (
-						<div className="flex flex-wrap items-center justify-between gap-4 border-t pt-2">
-							{monitors && monitors.length > 0 && (
-								<div className="flex items-center gap-2">
-									<div className="flex -space-x-2">
-										{monitors.map((monitor) => (
-											<div
-												key={monitor}
-												className="bg-accent border-card group-hover:border-secondary flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border-2 transition-colors"
-											>
-												<User className="text-foreground h-3 w-3" />
-											</div>
-										))}
-									</div>
-									<span className="text-foreground text-xs">
-										Monitorado por {listToString(monitors)}
-									</span>
-								</div>
-							)}
-
-							{participantsAmount ? (
-								<div className="text-foreground flex items-center gap-1 text-sm">
-									<Users className="h-4 w-4" />
-									<span>
-										{participantsAmount === 1
-											? "1 participante inscrito"
-											: `+ de ${participantsAmount} participantes inscritos`}
-									</span>
-								</div>
-							) : (
-								<div className="text-foreground mt-2 flex items-center gap-1 text-sm">
-									Nenhum participante inscrito
-								</div>
+					{activity.speakers.length ? (
+						<div className="flex items-center gap-2">
+							<CategoryLabel category={activity.category} />
+							{activity.speakers && (
+								<span className="text-foreground font-medium">
+									{listToString(
+										activity.speakers.map(
+											(speaker) => speaker.name,
+										),
+									)}
+								</span>
 							)}
 						</div>
-					)}
+					) : null}
+
+					{(monitors || participantsAmount) &&
+						activity.isRegistrationOpen && (
+							<div className="flex flex-wrap items-center justify-between gap-4 border-t pt-3">
+								{monitors && monitors.length > 0 && (
+									<div className="flex items-center gap-2">
+										<div className="flex -space-x-2">
+											{monitors.map((monitor) => (
+												<div
+													key={monitor}
+													className="bg-accent border-card group-hover:border-secondary flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border-2 transition-colors"
+												>
+													<User className="text-foreground h-3 w-3" />
+												</div>
+											))}
+										</div>
+										<span className="text-foreground text-xs">
+											Monitorado por{" "}
+											{listToString(monitors)}
+										</span>
+									</div>
+								)}
+
+								{participantsAmount ? (
+									<div className="text-foreground flex items-center gap-1 text-sm">
+										<Users className="h-4 w-4" />
+										<span>
+											{participantsAmount === 1
+												? "1 participante inscrito"
+												: `+ de ${participantsAmount} participantes inscritos`}
+										</span>
+									</div>
+								) : (
+									<div className="text-foreground mt-2 flex items-center gap-1 text-sm">
+										Nenhum participante inscrito
+									</div>
+								)}
+							</div>
+						)}
 				</div>
 			</div>
 		</Link>
-	);
-}
-
-interface InfoProps {
-	className?: string;
-	speakers?: RouterOutput["getActivities"]["activities"][number]["speakers"];
-	category: RouterOutput["getActivities"]["activities"][number]["category"];
-	dateFrom: Date;
-}
-
-function ActivityInfo({ className, speakers, category, dateFrom }: InfoProps) {
-	return (
-		<div
-			className={cn(
-				"flex flex-wrap items-center justify-between gap-2",
-				className,
-				{
-					"w-full": !speakers,
-				},
-			)}
-		>
-			<div className="flex items-center gap-2">
-				<CategoryLabel category={category} />
-				{speakers && (
-					<span className="text-foreground font-medium">
-						{listToString(speakers.map((speaker) => speaker.name))}
-					</span>
-				)}
-			</div>
-
-			<ActivityStatus
-				date={dateFrom}
-				dateFormat={{
-					includeDay: true,
-					includeHour: true,
-				}}
-			/>
-		</div>
 	);
 }

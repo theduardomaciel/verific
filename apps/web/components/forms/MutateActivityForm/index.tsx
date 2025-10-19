@@ -53,6 +53,7 @@ export default function MutateActivityForm({
 		defaultValues: {
 			name: activity?.name || "",
 			description: activity?.description || "",
+			isRegistrationOpen: activity?.isRegistrationOpen || false,
 			speakerIds:
 				activity?.speakerOnActivity.map(
 					(speakerOnActivity) => speakerOnActivity.speaker.id,
