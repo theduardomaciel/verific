@@ -4,7 +4,7 @@ import { UseFormReturn } from "react-hook-form";
 // Components
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { MarkdownTextarea } from "@/components/ui/markdown-textarea";
 import { PlacePicker } from "@/components/pickers/place-picker";
 import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
 import { DateRangePicker } from "@/components/pickers/date-range-picker";
@@ -167,7 +167,10 @@ export function ProjectSettingsGeneral({ project }: Props) {
 						render={({ field }) => (
 							<FormItem>
 								<FormControl>
-									<Textarea {...field} className="min-h-24" />
+									<MarkdownTextarea
+										value={field.value}
+										onChange={field.onChange}
+									/>
 								</FormControl>
 								<FormMessage />
 							</FormItem>
