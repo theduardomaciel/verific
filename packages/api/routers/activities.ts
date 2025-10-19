@@ -26,7 +26,7 @@ import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
 // Utils
 import { isMemberAuthenticated } from "../auth";
-import { createEnumArraySchema, transformSingleToArray } from "../utils";
+import { createEnumArraySchema, sortOptions, transformSingleToArray } from "../utils";
 
 // Enums
 import { activityCategories } from "@verific/drizzle/enum/category";
@@ -38,7 +38,7 @@ export const getActivityParams = z.object({
 	page: z.coerce.number().default(0).optional(),
 	pageSize: z.coerce.number().default(5).optional(),
 	search: z.string().optional(),
-	sortBy: z.enum(["asc", "desc"]).optional(),
+	sortBy: z.enum(sortOptions).optional(),
 });
 
 export const getActivitiesParams = z.object({

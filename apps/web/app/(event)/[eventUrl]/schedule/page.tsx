@@ -1,14 +1,13 @@
 import { Calendar } from "lucide-react";
 import { serverClient } from "@/lib/trpc/server";
 
-import { cn } from "@/lib/utils";
-
 // Components
+import * as EventContainer from "@/components/landing/event-container";
 import { ActivityCard } from "@/components/activity/activity-card";
 import { SearchBar } from "@/components/search-bar";
 import { SortBy } from "@/components/sort-by";
-import * as EventContainer from "@/components/landing/event-container";
 import { Empty } from "@/components/empty";
+import { FilterBy } from "@/components/filter-by";
 
 // Validation
 import type { z } from "zod";
@@ -17,10 +16,16 @@ import { getActivitiesParams } from "@verific/api/routers/activities";
 // Auth
 import { auth } from "@verific/auth";
 
-// Utils
+// Types & Enums
+import {
+	activityCategories,
+	activityCategoryLabels,
+} from "@verific/drizzle/enum/category";
+import { sortOptions, sortOptionsLabels } from "@verific/api/utils";
+
+// Lib
 import { categorizeByDate } from "@/lib/date";
 import { getProject } from "@/lib/data";
-import { FilterBy } from "@/components/filter-by";
 
 type SchedulePageParams = z.infer<typeof getActivitiesParams>;
 
@@ -75,26 +80,18 @@ export default async function EventSchedulePage(props: {
 					<div className="flex gap-4">
 						<SortBy
 							sortBy={sort}
-							items={[
-								{ value: "asc", label: "Mais antigas" },
-								{ value: "desc", label: "Mais recentes" },
-								{ value: "name_asc", label: "Nome A-Z" },
-								{ value: "name_desc", label: "Nome Z-A" },
-							]}
+							items={sortOptions.map((option) => ({
+								value: option,
+								label: sortOptionsLabels[option],
+							}))}
 						/>
 						<FilterBy
 							name="category"
 							filterBy={parsedParams.category}
-							items={[
-								{ value: "lecture", label: "Palestra" },
-								{ value: "workshop", label: "Oficina" },
-								{
-									value: "round-table",
-									label: "Roda de conversa",
-								},
-								{ value: "course", label: "Curso" },
-								{ value: "other", label: "Outros" },
-							]}
+							items={activityCategories.map((category) => ({
+								value: category,
+								label: activityCategoryLabels[category],
+							}))}
 						/>
 					</div>
 				</div>

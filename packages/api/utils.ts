@@ -39,3 +39,11 @@ export const createEnumArraySchema = (enumValues: readonly string[]) =>
 		},
 		z.array(z.enum(enumValues as [string, ...string[]])).optional(),
 	);
+
+export const sortOptions = ["asc", "desc", "name_asc", "name_desc"] as const;
+export const sortOptionsLabels = {
+	asc: "Mais antigas",
+	desc: "Mais recentes",
+	name_asc: "Nome A-Z",
+	name_desc: "Nome Z-A",
+}
