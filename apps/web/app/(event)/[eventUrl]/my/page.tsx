@@ -55,7 +55,7 @@ export default async function EventAccountPage({
 				{participantId && (
 					<ParticipantCardDialog
 						trigger={
-							<Button className="z-20">
+							<Button className="z-20" size={"lg"}>
 								<Settings className="mr-2" />
 								Configurações da Conta
 							</Button>
@@ -83,7 +83,7 @@ export default async function EventAccountPage({
 									<h3 className="text-foreground font-dashboard text-xl font-semibold">
 										{category}
 									</h3>
-									<ul className="grid w-full grid-cols-1 gap-4 xl:grid-cols-2">
+									<ul className="flex w-full flex-col gap-4">
 										{grouped
 											.get(category)!
 											.map((onActivity) => (
