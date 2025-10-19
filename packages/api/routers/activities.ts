@@ -17,6 +17,10 @@ import {
 	eq,
 	countDistinct,
 	count,
+	sum,
+	gte,
+	not,
+	isNotNull,
 } from "@verific/drizzle/orm";
 import { z } from "zod";
 
@@ -697,47 +701,94 @@ export const activitiesRouter = createTRPCRouter({
 				)
 				.onConflictDoNothing();
 
-			return { success: true };
 		}),
 
-	deleteActivity: protectedProcedure
-		.input(z.object({ activityId: z.string().uuid() }))
-		.mutation(async ({ input, ctx }) => {
-			const { activityId } = input;
+	getDashboardStats: publicProcedure
+		.input(z.object({ projectId: z.string().uuid() }))
+		.query(async ({ input }) => {
+			const { projectId } = input;
 
-			const userId = ctx.session.user.id;
+			const now = new Date();
+			const lastHour = new Date(now.getTime() - 60 * 60 * 1000);
+			const lastDay = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-			if (!userId) {
-				throw new TRPCError({
-					message: "User not authenticated.",
-					code: "UNAUTHORIZED",
-				});
-			}
+			// Total participants (role = 'participant')
+			const totalParticipantsResult = await db
+				.select({ count: count() })
+				.from(participant)
+				.where(and(eq(participant.projectId, projectId), eq(participant.role, "participant")));
 
-			// Verifica se o usuário é o dono do projeto
-			const project = await db.query.project
-				.findFirst({
-					where(fields) {
-						return eq(fields.ownerId, userId);
-					},
-				})
-				.then((project) => !!project);
+			const totalParticipants = totalParticipantsResult[0]?.count ?? 0;
 
-			if (!project) {
-				throw new TRPCError({
-					message: "User not authorized to delete this activity.",
-					code: "FORBIDDEN",
-				});
-			}
+			// Participants in last hour
+			const participantsInLastHourResult = await db
+				.select({ count: count() })
+				.from(participant)
+				.where(and(
+					eq(participant.projectId, projectId),
+					eq(participant.role, "participant"),
+					gte(participant.joinedAt, lastHour)
+				));
 
-			try {
-				await db.delete(activity).where(eq(activity.id, activityId));
-			} catch (error) {
-				console.error("Error deleting activity:", error);
-				throw new TRPCError({
-					message: "Activity not found.",
-					code: "BAD_REQUEST",
-				});
-			}
+			const participantsInLastHour = participantsInLastHourResult[0]?.count ?? 0;
+
+			// Total workload from activities
+			const totalWorkloadResult = await db
+				.select({ sum: sum(activity.workload) })
+				.from(activity)
+				.where(eq(activity.projectId, projectId));
+
+			const totalWorkload = totalWorkloadResult[0]?.sum ?? 0;
+
+			// Active participants in last 24h
+			const activeParticipantsResult = await db
+				.select({ count: count() })
+				.from(participant)
+				.where(and(
+					eq(participant.projectId, projectId),
+					eq(participant.role, "participant"),
+					gte(participant.joinedAt, lastDay)
+				));
+
+			const activeParticipants = activeParticipantsResult[0]?.count ?? 0;
+
+			// Total possible enrollments (sum of participantsLimit where not null)
+			const totalPossibleResult = await db
+				.select({ sum: sum(activity.participantsLimit) })
+				.from(activity)
+				.where(and(eq(activity.projectId, projectId), isNotNull(activity.participantsLimit)));
+
+			const totalPossible = totalPossibleResult[0]?.sum ?? 0;
+
+			// Total enrollments (count of participantOnActivity where participant.role = 'participant' and activity has participantsLimit)
+			const totalEnrollmentsResult = await db
+				.select({ count: count() })
+				.from(participantOnActivity)
+				.innerJoin(participant, eq(participantOnActivity.participantId, participant.id))
+				.innerJoin(activity, eq(participantOnActivity.activityId, activity.id))
+				.where(and(
+					eq(participant.projectId, projectId),
+					eq(participant.role, "participant"),
+					isNotNull(activity.participantsLimit)
+				));
+
+			const totalEnrollments = totalEnrollmentsResult[0]?.count ?? 0;
+
+			// Calculations
+			const participantsInLastHourPercentage = totalParticipants > 0 ? (participantsInLastHour / totalParticipants) * 100 : 0;
+			const meanWorkloadPerParticipant = totalParticipants > 0 ? Number(totalWorkload) / totalParticipants : 0;
+			const meanPercentageFromTotalWorkload = Number(totalWorkload) > 0 ? (meanWorkloadPerParticipant / Number(totalWorkload)) * 100 : 0;
+			const activeParticipantsInLastDay = totalParticipants > 0 ? (activeParticipants / totalParticipants) * 100 : 0;
+			const occupancyRate = Number(totalPossible) > 0 ? (totalEnrollments / Number(totalPossible)) * 100 : 0;
+
+			return {
+				totalParticipants,
+				participantsInLastHourPercentage,
+				meanWorkloadPerParticipant,
+				meanPercentageFromTotalWorkload,
+				activeParticipants,
+				activeParticipantsInLastDay,
+				occupancyRate,
+			};
 		}),
 });
