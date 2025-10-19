@@ -91,7 +91,7 @@ export const ParticipantListItem = {
 						"bg-card flex w-full flex-col items-start justify-start gap-4 rounded-lg border px-6 py-4",
 						className,
 						{
-							"border-destructive":
+							"border-destructive/50":
 								participant.role === "participant" &&
 								!participant.joinedAt,
 						},

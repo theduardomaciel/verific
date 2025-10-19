@@ -18,6 +18,7 @@ import {
 	CommandGroup,
 	CommandInput,
 	CommandItem,
+	CommandList,
 } from "@/components/ui/command";
 import {
 	Drawer,
@@ -147,7 +148,9 @@ export function InstancePicker<T extends Item = Item>({
 					/>
 				</PopoverTrigger>
 				<PopoverContent
-					className={"w-[var(--radix-popover-trigger-width)] p-0"}
+					className={
+						"max-h-[50vh] w-[var(--radix-popover-trigger-width)] overflow-hidden p-0"
+					}
 				>
 					{visualContent(
 						<InstancesList
@@ -291,43 +294,48 @@ function InstancesList<T extends Item = Item>({
 }: InstancesListProps<T>) {
 	return (
 		<Command className={className}>
-			<CommandInput placeholder={placeholder} />
-			<CommandEmpty>{emptyText}</CommandEmpty>
-			<CommandGroup>
-				{items ? (
-					items.map((item) => (
+			<CommandInput
+				placeholder={placeholder}
+				wrapperClassName="sticky top-0 z-10 bg-popover"
+			/>
+			<CommandList>
+				<CommandEmpty>{emptyText}</CommandEmpty>
+				<CommandGroup>
+					{items ? (
+						items.map((item) => (
+							<CommandItem
+								key={item.id}
+								className="aria-selected:bg-primary-200/50"
+								onSelect={() => onSelect(item.id)}
+							>
+								<PickerItem
+									item={item}
+									isActive={isActive(item.id)}
+								/>
+							</CommandItem>
+						))
+					) : (
+						<div className="flex flex-1 items-center justify-center py-4">
+							<Loader2 className="h-4 w-4 animate-spin" />
+						</div>
+					)}
+
+					<hr className="border-muted-foreground/20 my-1 w-full border-t" />
+
+					{actionButton ? (
+						actionButton
+					) : action ? (
 						<CommandItem
-							key={item.id}
-							className="aria-selected:bg-primary-200/50"
-							onSelect={() => onSelect(item.id)}
+							key="action-button"
+							className="text-primary justify-center font-semibold"
+							onSelect={action.onClick}
 						>
-							<PickerItem
-								item={item}
-								isActive={isActive(item.id)}
-							/>
+							<Plus size={16} />
+							{action.label}
 						</CommandItem>
-					))
-				) : (
-					<div className="flex flex-1 items-center justify-center py-4">
-						<Loader2 className="h-4 w-4 animate-spin" />
-					</div>
-				)}
-
-				<hr className="border-muted-foreground/20 my-1 w-full border-t" />
-
-				{actionButton ? (
-					actionButton
-				) : action ? (
-					<CommandItem
-						key="action-button"
-						className="text-primary justify-center font-semibold"
-						onSelect={action.onClick}
-					>
-						<Plus size={16} />
-						{action.label}
-					</CommandItem>
-				) : null}
-			</CommandGroup>
+					) : null}
+				</CommandGroup>
+			</CommandList>
 		</Command>
 	);
 }
