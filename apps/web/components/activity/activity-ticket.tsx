@@ -42,6 +42,11 @@ export function ActivityTicket({
 			(participant) => participant.joinedAt !== null,
 		).length;
 
+	const startDate = new Date(activity.dateFrom);
+	const endDate = new Date(activity.dateTo);
+	const hours = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
+	const numberOfDots = Math.min(10, Math.max(2, Math.floor(hours) + 1));
+
 	return (
 		<div
 			className={cn(
@@ -54,7 +59,7 @@ export function ActivityTicket({
 				{/* Activity Details Section */}
 				<div className="bg-card flex flex-1 flex-col gap-4 p-6">
 					{/* Header */}
-					<div className="flex w-full flex-wrap items-center justify-between gap-2">
+					<div className="flex w-full flex-wrap items-center justify-between gap-2 md:flex-nowrap">
 						<h2 className="line-clamp-2 text-2xl leading-tight font-bold break-words">
 							{activity.name}
 						</h2>
@@ -80,27 +85,27 @@ export function ActivityTicket({
 							<div className="relative flex h-4 w-full items-center">
 								<div className="bg-foreground absolute top-1/2 left-0 h-0.5 w-full -translate-y-1/2" />
 								<span className="block md:hidden">
-									{Array(3)
+									{Array(numberOfDots)
 										.fill(0)
 										.map((_, i) => (
 											<div
 												key={`dot-${i}`}
 												className="bg-foreground absolute top-1/2 h-2 w-2 -translate-y-1/2 rounded-full"
 												style={{
-													left: `${(i / 2) * 100}%`,
+													left: `${(i / (numberOfDots - 1)) * 100}%`,
 												}}
 											/>
 										))}
 								</span>
 								<span className="hidden md:block">
-									{Array(7)
+									{Array(numberOfDots)
 										.fill(0)
 										.map((_, i) => (
 											<div
 												key={`dot-${i}`}
 												className="bg-foreground absolute top-1/2 h-2 w-2 -translate-y-1/2 rounded-full"
 												style={{
-													left: `${(i / 6) * 100}%`,
+													left: `${(i / (numberOfDots - 1)) * 100}%`,
 												}}
 											/>
 										))}
@@ -156,103 +161,7 @@ export function ActivityTicket({
 				</div>
 
 				{/* Decorative Divider */}
-				<div className="relative h-16 w-full md:h-auto md:w-16 md:flex-col">
-					{/* Line decoration - vertical on mobile, horizontal on desktop */}
-					<div className="border-foreground absolute top-1/2 left-1/2 h-[1px] w-3/4 -translate-x-1/2 -translate-y-1/2 rounded border border-dashed opacity-30 md:h-3/4 md:w-[1px]" />
-
-					<div className="flex h-full flex-row md:flex-col">
-						{/* Left/Top cutout */}
-						<div className="relative aspect-square h-full md:h-auto md:w-full md:pb-[100%]">
-							<svg
-								className="text-card absolute inset-0 h-full w-full"
-								viewBox="0 0 99 99"
-								preserveAspectRatio="none"
-							>
-								<defs>
-									<mask id="inverted-circle-mobile-1">
-										<rect
-											width="100"
-											height="100"
-											fill="white"
-										/>
-										<circle
-											cx="0"
-											cy="50"
-											r="50"
-											fill="black"
-										/>
-									</mask>
-									<mask id="inverted-circle-desktop-1">
-										<rect
-											width="100"
-											height="100"
-											fill="white"
-										/>
-										<circle
-											cx="50"
-											cy="0"
-											r="50"
-											fill="black"
-										/>
-									</mask>
-								</defs>
-								<rect
-									width="100"
-									height="100"
-									fill="currentColor"
-									className="mask-[url(#inverted-circle-mobile-1)] md:mask-[url(#inverted-circle-desktop-1)]"
-								/>
-							</svg>
-						</div>
-
-						{/* Middle section */}
-						<div className="bg-card h-full flex-1 md:aspect-square md:w-full" />
-
-						{/* Right/Bottom cutout */}
-						<div className="relative aspect-square h-full md:h-auto md:w-full md:pt-[100%]">
-							<svg
-								className="text-card absolute inset-0 h-full w-full"
-								viewBox="0 0 99 99"
-								preserveAspectRatio="none"
-							>
-								<defs>
-									<mask id="inverted-circle-mobile-2">
-										<rect
-											width="100"
-											height="100"
-											fill="white"
-										/>
-										<circle
-											cx="100"
-											cy="50"
-											r="50"
-											fill="black"
-										/>
-									</mask>
-									<mask id="inverted-circle-desktop-2">
-										<rect
-											width="100"
-											height="100"
-											fill="white"
-										/>
-										<circle
-											cx="50"
-											cy="100"
-											r="50"
-											fill="black"
-										/>
-									</mask>
-								</defs>
-								<rect
-									width="100"
-									height="100"
-									fill="currentColor"
-									className="mask-[url(#inverted-circle-mobile-2)] md:mask-[url(#inverted-circle-desktop-2)]"
-								/>
-							</svg>
-						</div>
-					</div>
-				</div>
+				<DecorativeDivider />
 
 				{/* Action/QR Section */}
 				<div className="bg-card flex flex-col items-center justify-center px-6 md:w-80 md:pl-0">
@@ -309,6 +218,72 @@ export function ActivityTicket({
 							/>
 						</div>
 					)}
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function DecorativeDivider() {
+	return (
+		<div className="relative h-16 w-full md:h-auto md:w-16 md:flex-col">
+			{/* Line decoration - vertical on mobile, horizontal on desktop */}
+			<div className="border-foreground absolute top-1/2 left-1/2 h-[1px] w-3/4 -translate-x-1/2 -translate-y-1/2 rounded border border-dashed opacity-30 md:h-3/4 md:w-[1px]" />
+
+			<div className="flex h-full flex-row md:flex-col">
+				{/* Left/Top cutout */}
+				<div className="relative aspect-square h-full md:h-auto md:w-full md:pb-[100%]">
+					<svg
+						className="text-card absolute inset-0 h-full w-full"
+						viewBox="0 0 99 99"
+						preserveAspectRatio="none"
+					>
+						<defs>
+							<mask id="inverted-circle-mobile-1">
+								<rect width="100" height="100" fill="white" />
+								<circle cx="0" cy="50" r="50" fill="black" />
+							</mask>
+							<mask id="inverted-circle-desktop-1">
+								<rect width="100" height="100" fill="white" />
+								<circle cx="50" cy="0" r="50" fill="black" />
+							</mask>
+						</defs>
+						<rect
+							width="100"
+							height="100"
+							fill="currentColor"
+							className="mask-[url(#inverted-circle-mobile-1)] md:mask-[url(#inverted-circle-desktop-1)]"
+						/>
+					</svg>
+				</div>
+
+				{/* Middle section */}
+				<div className="bg-card h-full flex-1 md:aspect-square md:w-full" />
+
+				{/* Right/Bottom cutout */}
+				<div className="relative aspect-square h-full md:h-auto md:w-full md:pt-[100%]">
+					<svg
+						className="text-card absolute inset-0 h-full w-full"
+						viewBox="0 0 99 99"
+						preserveAspectRatio="none"
+					>
+						<defs>
+							<mask id="inverted-circle-mobile-2">
+								<rect width="100" height="100" fill="white" />
+								<circle cx="100" cy="50" r="50" fill="black" />
+							</mask>
+							<mask id="inverted-circle-desktop-2">
+								<rect width="100" height="100" fill="white" />
+								<circle cx="50" cy="100" r="50" fill="black" />
+							</mask>
+						</defs>
+						<rect
+							width="100"
+							height="100"
+							fill="currentColor"
+							className="mask-[url(#inverted-circle-mobile-2)] md:mask-[url(#inverted-circle-desktop-2)]"
+						/>
+					</svg>
 				</div>
 			</div>
 		</div>
