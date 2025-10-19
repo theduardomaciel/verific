@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 
 import { cn } from "@/lib/utils";
-import { Check, ChevronsUpDown, Loader2, Plus } from "lucide-react";
+import { Check, ChevronsUpDown, Loader2, Plus, User } from "lucide-react";
 
 // Hooks
 import { useMediaQuery } from "@/hooks/use-media-query";
@@ -31,6 +31,7 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "../ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 // Types
 
@@ -205,15 +206,12 @@ function PickerItem<T extends Item = Item>({
 			})}
 		>
 			<div className="flex items-center gap-3">
-				{item.image && (
-					<Image
-						width={32}
-						height={32}
-						src={item.image}
-						alt={item.label}
-						className="h-8 w-8 rounded-full"
-					/>
-				)}
+				<Avatar className="h-6 w-6">
+					<AvatarImage src={item.image || ""} />
+					<AvatarFallback>
+						<User className="h-4 w-4" />
+					</AvatarFallback>
+				</Avatar>
 				<span>{item.label}</span>
 			</div>
 			<Check
@@ -267,15 +265,12 @@ function Tag<T extends Item = Item>({ item }: { item: T }) {
 	return (
 		<li className="border-primary-200/50 bg-background flex items-center justify-start gap-2 rounded-full border py-1 pr-2">
 			<div className="flex items-center gap-3 pl-2">
-				{item.image && (
-					<Image
-						width={24}
-						height={24}
-						src={item.image}
-						alt={item.label}
-						className="h-6 w-6 rounded-full"
-					/>
-				)}
+				<Avatar className="h-6 w-6">
+					<AvatarImage src={item.image || ""} />
+					<AvatarFallback>
+						<User className="h-4 w-4" />
+					</AvatarFallback>
+				</Avatar>
 				<span className="text-neutral max-w-full overflow-hidden text-xs font-bold overflow-ellipsis whitespace-nowrap">
 					{item.label}
 				</span>

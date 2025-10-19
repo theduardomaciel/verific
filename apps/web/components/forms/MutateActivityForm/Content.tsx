@@ -12,6 +12,7 @@ import {
 	EditIcon,
 	Plus,
 	TrashIcon,
+	User,
 } from "lucide-react";
 
 // Components
@@ -36,6 +37,8 @@ import {
 import { InstancePicker } from "@/components/pickers/instance-picker";
 import { MutateSpeakerDialog } from "@/components/dialogs/mutate-speaker-dialog";
 import { SpeakerDeleteDialog } from "@/components/dialogs/delete-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Switch } from "@/components/ui/switch";
 
 // Date and Time
 import { ptBR } from "date-fns/locale";
@@ -53,7 +56,6 @@ import {
 } from "@verific/drizzle/enum/category";
 import type { MutateActivityFormSchema } from "@/lib/validations/forms/mutate-activity-form";
 import { useWatch, type UseFormReturn } from "react-hook-form";
-import { Switch } from "@/components/ui/switch";
 
 interface Props {
 	form: UseFormReturn<MutateActivityFormSchema>;
@@ -329,15 +331,17 @@ export function MutateActivityFormContent({
 												className="flex items-center justify-between rounded-md border px-4 py-2.5"
 											>
 												<div className="flex items-center gap-2">
-													{speaker.imageUrl && (
-														<img
+													<Avatar className="h-6 w-6">
+														<AvatarImage
 															src={
-																speaker.imageUrl
+																speaker.imageUrl ||
+																""
 															}
-															alt={speaker.name}
-															className="h-8 w-8 rounded-full"
 														/>
-													)}
+														<AvatarFallback>
+															<User className="h-4 w-4" />
+														</AvatarFallback>
+													</Avatar>
 													<span className="text-sm font-medium">
 														{speaker.name}
 													</span>
