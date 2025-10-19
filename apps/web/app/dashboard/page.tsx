@@ -28,65 +28,7 @@ export default async function Overview() {
 		pageSize: 5,
 	});
 
-	const { participants: rawParticipants } =
-		await serverClient.getParticipants({
-			projectId,
-		});
-
-	const participants = rawParticipants.filter(
-		(participant) => participant.role === "participant",
-	);
-
-	const participantsInLastHourPercentage =
-		participants.length > 0
-			? (participants.reduce((acc, participant) => {
-					const lastHour = new Date(Date.now() - 60 * 60 * 1000);
-					if (new Date(participant.joinedAt) > lastHour) {
-						return acc + 1;
-					}
-					return acc;
-				}, 0) /
-					participants.length) *
-				100
-			: 0;
-
-	// Horas por participante (média de workloads das atividades por participante)
-	const totalWorkload = activities.reduce((acc, activity) => {
-		return acc + (activity.workload || 0);
-	}, 0);
-	const meanWorkloadPerParticipant =
-		participants.length > 0 ? totalWorkload / participants.length : 0;
-	const meanPercentageFromTotalWorkload =
-		totalWorkload > 0
-			? (meanWorkloadPerParticipant / totalWorkload) * 100
-			: 0;
-
-	// Participantes ativos nas últimas 24h (com base no joinedAt)
-	const lastDay = new Date(Date.now() - 24 * 60 * 60 * 1000);
-	const activeParticipants = participants.filter(
-		(p) => new Date(p.joinedAt) > lastDay,
-	).length;
-	const activeParticipantsInLastDay =
-		participants.length > 0
-			? (activeParticipants / participants.length) * 100
-			: 0;
-
-	const totalPossible = activities.reduce(
-		(acc, activity) => acc + (activity.participantsLimit || 0),
-		0,
-	);
-	const totalEnrollments = participants.reduce((acc, participant) => {
-		const enrolledInActivity = activities.filter((activity) =>
-			activity.participants.some(
-				(p) =>
-					p.userId === participant.userId && p.role === "participant",
-			),
-		);
-		return acc + enrolledInActivity.length;
-	}, 0);
-	const occupancyRate =
-		totalPossible > 0 ? (totalEnrollments / totalPossible) * 100 : 0;
-	const occupancyRateFromLastDay = occupancyRate; // Sem histórico, repete valor
+	const stats = await serverClient.getDashboardStats({ projectId });
 
 	return (
 		<main className="container-d py-container-v flex w-full flex-1 flex-col items-center justify-start gap-8">
@@ -114,8 +56,8 @@ export default async function Overview() {
 					<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 						<MetricCard
 							title="Participantes inscritos"
-							value={`+${participants.length}`}
-							change={`+${participantsInLastHourPercentage.toFixed(
+							value={`+${stats.totalParticipants}`}
+							change={`+${stats.participantsInLastHourPercentage.toFixed(
 								1,
 							)}% desde a última hora`}
 							icon={
@@ -124,8 +66,8 @@ export default async function Overview() {
 						/>
 						<MetricCard
 							title="Horas por participante"
-							value={`~${meanWorkloadPerParticipant.toFixed(0)}h`}
-							change={`~${meanPercentageFromTotalWorkload.toFixed(
+							value={`~${stats.meanWorkloadPerParticipant.toFixed(0)}h`}
+							change={`~${stats.meanPercentageFromTotalWorkload.toFixed(
 								1,
 							)}% do total possível`}
 							icon={
@@ -134,8 +76,8 @@ export default async function Overview() {
 						/>
 						<MetricCard
 							title="Participantes ativos"
-							value={`${activeParticipants}`}
-							change={`${activeParticipantsInLastDay.toFixed(
+							value={`${stats.activeParticipants}`}
+							change={`${stats.activeParticipantsInLastDay.toFixed(
 								1,
 							)}% no último dia`}
 							icon={
@@ -144,8 +86,8 @@ export default async function Overview() {
 						/>
 						<MetricCard
 							title="Taxa de ocupação"
-							value={`${occupancyRate.toFixed(1)}%`}
-							change={`+${occupancyRateFromLastDay.toFixed(1)}% do último dia`}
+							value={`${stats.occupancyRate.toFixed(1)}%`}
+							change={`+${stats.occupancyRate.toFixed(1)}% do último dia`}
 							icon={
 								<BarChart3 className="text-muted-foreground h-4 w-4" />
 							}
