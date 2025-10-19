@@ -10,6 +10,7 @@ import {
 	CloudUpload,
 	Edit,
 	EditIcon,
+	EqualApproximately,
 	Plus,
 	TrashIcon,
 	User,
@@ -56,6 +57,7 @@ import {
 } from "@verific/drizzle/enum/category";
 import type { MutateActivityFormSchema } from "@/lib/validations/forms/mutate-activity-form";
 import { useWatch, type UseFormReturn } from "react-hook-form";
+import { calculateWorkloadFromTimes } from "@/lib/date";
 
 interface Props {
 	form: UseFormReturn<MutateActivityFormSchema>;
@@ -476,20 +478,40 @@ export function MutateActivityFormContent({
 							<FormItem className="flex-1">
 								<FormLabel>Carga horária</FormLabel>
 								<FormControl>
-									<InputWithSuffix
-										suffix=" horas"
-										className="w-full flex-1"
-										type="number"
-										placeholder="Sem carga horária"
-										{...field}
-										// TODO: Por enquanto, setamos diretamente o value para "" pois o valor "undefined"
-										// não pode ser passado para um input controlado.
-										value={
-											field.value === undefined
-												? ""
-												: field.value
-										}
-									/>
+									<div className="flex flex-row gap-3">
+										<InputWithSuffix
+											suffix=" horas"
+											containerClassName="flex-1"
+											className="w-full flex-1"
+											type="number"
+											placeholder="Sem carga horária"
+											{...field}
+											// TODO: Por enquanto, setamos diretamente o value para "" pois o valor "undefined"
+											// não pode ser passado para um input controlado.
+											value={
+												field.value === undefined
+													? ""
+													: field.value
+											}
+										/>
+										<Button
+											type="button"
+											variant="outline"
+											size={"icon"}
+											onClick={() =>
+												// Calcula a carga horária com base no intervalo de tempo
+												field.onChange(() =>
+													calculateWorkloadFromTimes(
+														form.getValues()
+															.timeFrom,
+														form.getValues().timeTo,
+													),
+												)
+											}
+										>
+											<EqualApproximately size={20} />
+										</Button>
+									</div>
 								</FormControl>
 								<FormMessage />
 							</FormItem>
