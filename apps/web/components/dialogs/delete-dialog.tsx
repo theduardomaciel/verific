@@ -22,6 +22,7 @@ import {
 interface DeleteDialogProps {
 	children: React.ReactNode;
 	title: string;
+	buttonText?: string;
 	description: React.ReactNode;
 	successTitle: string;
 	successDescription?: React.ReactNode;
@@ -32,6 +33,7 @@ interface DeleteDialogProps {
 export function DeleteDialog({
 	children,
 	title,
+	buttonText,
 	description,
 	successTitle,
 	successDescription,
@@ -84,7 +86,7 @@ export function DeleteDialog({
 							className="flex-1"
 							onClick={handleDelete}
 						>
-							Excluir
+							{buttonText ?? "Excluir"}
 						</Button>
 					</DialogFooter>
 				</DialogContent>

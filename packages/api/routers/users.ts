@@ -76,6 +76,7 @@ export const usersRouter = createTRPCRouter({
 						role: participant.role,
 					} */);
 			} catch (error) {
+				console.error("Error creating participant:", error);
 				// Check if it's a unique constraint violation
 				if (error instanceof Error && (error.message.includes('unique') || error.message.includes('duplicate') || (error as any).code === '23505')) {
 					throw new TRPCError({

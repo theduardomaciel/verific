@@ -133,13 +133,15 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 			}
 
 			const isOwner = activityData.project.ownerId === userId;
+			const isModerator = activityData.project.moderators.length > 0;
 
-			if (!isOwner && activityData.project.moderators.length === 0) {
+			// TODO: Adicionar isso aqui novamente, porém verificando se o usuário que está tentando remover é ele mesmo
+			/* if (!isOwner && activityData.project.moderators.length === 0) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
 					message: "Você não tem permissão para remover participantes desta atividade.",
 				});
-			}
+			} */
 
 			await db
 				.delete(participantOnActivity)
@@ -151,5 +153,30 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 				);
 
 			return { success: true };
+		}),
+	getSubscribedActivitiesIdsFromParticipant: publicProcedure
+		.input(
+			z.object({
+				userId: z.string().uuid(),
+			}),
+		)
+		.query(async ({ input }) => {
+			const { userId } = input;
+
+			const activities = await db
+				.select({
+					activityId: participantOnActivity.activityId,
+					participantId: participantOnActivity.participantId,
+				})
+				.from(participantOnActivity)
+				.leftJoin(
+					participant,
+					eq(participant.id, participantOnActivity.participantId),
+				)
+				.where(eq(participant.userId, userId));
+
+			return {
+				ids: activities.map((a) => a.activityId), participantId: activities.length > 0 ? activities[0]?.participantId : undefined
+			}
 		}),
 });

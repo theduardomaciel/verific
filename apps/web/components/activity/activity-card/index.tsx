@@ -23,27 +23,22 @@ import { activityCategoryLabels } from "@verific/drizzle/schema";
 interface EventCardProps {
 	className?: string;
 	activity: RouterOutput["getActivities"]["activities"][number];
-	userId?: string | null;
+	totalParticipants: number;
+	participantId?: string;
+	userId?: string;
 	lowSeatsThreshold?: number;
 }
 
 export function ActivityCard({
 	activity,
-	className,
+	totalParticipants,
+	participantId,
 	userId,
+	className,
 	lowSeatsThreshold = 7,
 }: EventCardProps) {
-	const participant = activity.participants.find(
-		(participant) => participant.userId === userId,
-	);
-	const participantRole = participant?.role;
-	const participantId = participant?.id;
-
 	const remainingSeats = activity.participantsLimit
-		? activity.participantsLimit -
-			activity.participants.filter(
-				(participant) => participant.role === "participant",
-			).length
+		? activity.participantsLimit - totalParticipants
 		: null;
 
 	const hasRemainingSeats = remainingSeats === null || remainingSeats > 0;
@@ -105,7 +100,7 @@ export function ActivityCard({
 								size={"lg"}
 								className={cn({
 									"pointer-events-none opacity-50":
-										!hasRemainingSeats || !!participantRole,
+										!hasRemainingSeats || !!participantId,
 								})}
 								asChild
 							>
@@ -113,7 +108,7 @@ export function ActivityCard({
 									href={`/${activity.project?.url}/schedule/${activity.id}`}
 									scroll={false}
 								>
-									{!!participantRole ? (
+									{!!participantId ? (
 										<>
 											<Check className="mr-2 h-4 w-4" />
 											Inscrito
@@ -127,9 +122,10 @@ export function ActivityCard({
 								</Link>
 							</Button>
 						) : null}
-						{participantId && participantRole === "participant" && (
+						{!!participantId && !!userId && (
 							<ParticipantQuitButton
 								activityId={activity.id}
+								userId={userId}
 								participantId={participantId}
 								projectUrl={activity.project?.url}
 							/>

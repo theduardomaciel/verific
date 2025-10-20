@@ -24,7 +24,11 @@ import { sortOptions, sortOptionsLabels } from "@verific/api/utils";
 
 // Lib
 import { categorizeByDate } from "@/lib/date";
-import { getCachedActivities, getProject } from "@/lib/data";
+import {
+	getCachedActivities,
+	getCachedSubscribedActivitiesIdsFromParticipant,
+	getProject,
+} from "@/lib/data";
 
 type SchedulePageParams = z.infer<typeof getActivitiesParams>;
 
@@ -34,18 +38,23 @@ export default async function EventSchedulePage(props: {
 }) {
 	const { eventUrl } = await props.params;
 	const session = await auth();
+	const userId = session?.user.id;
 
 	const { project } = await getProject(eventUrl);
 
 	const searchParams = await props.searchParams;
 	const { sort, ...parsedParams } = getActivitiesParams.parse(searchParams);
 
-	const { activities } = await getCachedActivities({
+	const { activities, totalParticipants } = await getCachedActivities({
 		projectId: project.id,
 		pageSize: 100, // Fetch all activities for the schedule (placeholder value)
 		sort: sort || "asc",
 		...parsedParams,
 	});
+
+	const result = userId
+		? await getCachedSubscribedActivitiesIdsFromParticipant(userId)
+		: null;
 
 	const { grouped, categories } = categorizeByDate(
 		activities,
@@ -124,7 +133,17 @@ export default async function EventSchedulePage(props: {
 															: undefined
 													}
 													activity={activity}
-													userId={session?.user.id}
+													totalParticipants={
+														totalParticipants
+													}
+													participantId={
+														result?.ids.includes(
+															activity.id,
+														)
+															? result.participantId
+															: undefined
+													}
+													userId={userId}
 												/>
 											);
 										})}

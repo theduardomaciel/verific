@@ -33,7 +33,11 @@ import {
 } from "../ui/tooltip";
 import { ActivitySpeakers } from "../activity/activity-card/speakers";
 import { ActivityCardTags } from "../activity/activity-card/tags";
-import { revalidateParticipantActivities } from "@/app/actions";
+import {
+	revalidateActivities,
+	revalidateParticipantActivities,
+	revalidateSubscribedActivitiesIdsFromParticipant,
+} from "@/app/actions";
 
 interface Props {
 	userId?: string | null;
@@ -66,11 +70,12 @@ export function JoinActivityDialog({ userId, participantId, activity }: Props) {
 				activityId: activity.id,
 				participantsIdsToAdd: [participantId],
 			});
-			setCurrentState("submitted");
 
 			if (userId) {
-				await revalidateParticipantActivities(userId);
+				await revalidateSubscribedActivitiesIdsFromParticipant(userId);
 			}
+
+			setCurrentState("submitted");
 		} catch (error) {
 			console.error(error);
 			setCurrentState("error");
@@ -131,11 +136,11 @@ export function JoinActivityDialog({ userId, participantId, activity }: Props) {
 					<DialogTitle className="w-full text-center">
 						{activity.name}
 					</DialogTitle>
-					<DialogDescription className="prose prose-sm dark:prose-invert w-full max-w-none text-left">
+					<div className="prose prose-sm dark:prose-invert w-full max-w-none text-left leading-snug">
 						<ReactMarkdown remarkPlugins={[remarkGfm]}>
 							{activity.description || ""}
 						</ReactMarkdown>
-					</DialogDescription>
+					</div>
 				</DialogHeader>
 				<div className="flex w-full flex-col gap-4">
 					{activity.speakerOnActivity ? (

@@ -28,8 +28,6 @@ export default async function EventAccountPage({
 	const { eventUrl } = await params;
 	const session = await auth();
 
-	console.log("EventAccountPage session:", session);
-
 	const userId = session?.user.id;
 
 	if (!userId) {
@@ -41,9 +39,10 @@ export default async function EventAccountPage({
 		data = await getCachedActivitiesFromParticipant(eventUrl, userId);
 	} catch (error: any) {
 		console.error("Error fetching activities from participant:", error);
-		return notFound();
-		// redirect(`/${eventUrl}/subscribe`);
+		redirect(`/${eventUrl}/subscribe`);
 	}
+
+	console.log("Fetched activities from participantId:", data.participantId);
 
 	const { activities, participantId } = data;
 
