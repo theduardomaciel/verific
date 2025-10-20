@@ -1,6 +1,7 @@
 import { db } from "@verific/drizzle";
 import {
 	activity,
+	speaker,
 	speakerOnActivity,
 	participant,
 	participantOnActivity,
@@ -226,6 +227,7 @@ export const activitiesRouter = createTRPCRouter({
 			getActivitiesParams.extend({
 				projectId: z.string().uuid().optional(),
 				projectUrl: z.string().optional(),
+				fullQuery: z.boolean().optional(),
 			}),
 		)
 		.query(async ({ input }) => {
@@ -238,21 +240,11 @@ export const activitiesRouter = createTRPCRouter({
 				sort,
 				category: rawCategory,
 				audience: rawAudience,
+				fullQuery
 			} = input;
 
 			const categories = rawCategory as (typeof activityCategories)[number][] | undefined;
 			const audiences = rawAudience as (typeof activityAudiences)[number][] | undefined;
-
-			/* console.log("Fetching activities with params:", {
-				projectId,
-				projectUrl,
-				page,
-				pageSize,
-				query,
-				sort,
-				categories,
-				audiences,
-			}); */
 
 			let projectIdToUse = projectId;
 
@@ -306,66 +298,99 @@ export const activitiesRouter = createTRPCRouter({
 					orderByClause = desc(activity.name);
 					break;
 				default:
-					// "recent"
 					orderByClause = desc(activity.dateFrom);
 			}
 
-			// Query de atividades
-			// Use the prebuilt activitiesWhere (which includes the required projectWhere)
-			// so both the listing and the count use the same filters.
-			const activities = await db.query.activity.findMany({
-				where: and(...activitiesWhere),
-				with: {
-					project: true,
-					speakerOnActivity: {
-						with: {
-							speaker: true,
-						},
+			type ActivityWithRelations = typeof activity.$inferSelect & {
+				project: typeof project.$inferSelect;
+				speakerOnActivity: Array<typeof speakerOnActivity.$inferSelect & {
+					speaker: typeof speaker.$inferSelect;
+				}>;
+				participantOnActivity?: Array<typeof participantOnActivity.$inferSelect & {
+					participant: typeof participant.$inferSelect & {
+						user: typeof user.$inferSelect;
+					};
+				}>;
+			};
+
+			// Only include participators if fullQuery is true
+			const withObj = fullQuery ? {
+				project: true,
+				speakerOnActivity: {
+					with: {
+						speaker: true,
 					},
-					participantOnActivity: {
-						with: {
-							participant: {
-								with: {
-									user: true,
-								},
+				},
+				participantOnActivity: {
+					with: {
+						participant: {
+							with: {
+								user: true,
 							},
 						},
 					},
 				},
+			} : {
+				project: true,
+				speakerOnActivity: {
+					with: {
+						speaker: true,
+					},
+				},
+			};
+
+			const activities = await db.query.activity.findMany({
+				where: and(...activitiesWhere),
+				with: withObj as any,
 				orderBy: orderByClause,
 				offset: page ? (page - 1) * pageSize : 0,
 				limit: pageSize,
-			});
+			}) as ActivityWithRelations[];
 
 			// Query de contagem
-			const amountDb = await db
-				.select({ amount: countDistinct(activity.id) })
-				.from(activity)
-				.where(and(...activitiesWhere));
+			const [amountDb, participantsCount] = await Promise.all([
+				db
+					.select({ amount: countDistinct(activity.id) })
+					.from(activity)
+					.where(and(...activitiesWhere)),
+				fullQuery
+					? db.select({ amount: count() })
+						.from(participantOnActivity)
+						.innerJoin(
+							activity,
+							and(
+								eq(participantOnActivity.activityId, activity.id),
+								eq(participantOnActivity.role, "participant")
+							),
+						)
+						.where(and(...activitiesWhere))
+					: Promise.resolve([{ amount: 0 }]),
+			])
 
 			const amount = amountDb[0]?.amount ?? 0;
+			const totalParticipants = participantsCount[0]?.amount ?? 0;
 
-			// console.log(activities.map(a => a.id))
-			// console.log("Total activities found:", amount);
-
-			// Since findMany returns nested data, no aggregation needed
-			const formattedActivities = activities.map((act) => ({
+			const formattedActivities = activities.map((act: ActivityWithRelations) => ({
 				...act,
-				participants: act.participantOnActivity.map((p) => ({
-					id: p.participant.id,
-					role: p.role,
-					userId: p.participant.userId,
-					user: {
-						name: p.participant.user?.name,
-						image_url: p.participant.user?.image_url,
-					},
-				})),
-				speakers: act.speakerOnActivity.map((s) => ({
-					id: s.speaker.id,
-					name: s.speaker.name,
-					description: s.speaker.description,
-					imageUrl: s.speaker.imageUrl,
-				})),
+				participants: act.participantOnActivity
+					? act.participantOnActivity.map((p: NonNullable<ActivityWithRelations['participantOnActivity']>[0]) => ({
+						id: p.participant.id,
+						role: p.role,
+						userId: p.participant.userId,
+						user: {
+							name: p.participant.user?.name,
+							image_url: p.participant.user?.image_url,
+						},
+					}))
+					: [],
+				speakers: act.speakerOnActivity
+					? act.speakerOnActivity.map((s: ActivityWithRelations['speakerOnActivity'][0]) => ({
+						id: s.speaker.id,
+						name: s.speaker.name,
+						description: s.speaker.description,
+						imageUrl: s.speaker.imageUrl,
+					}))
+					: [],
 			}));
 
 			const pageCount = Math.ceil(amount / pageSize);
@@ -373,6 +398,7 @@ export const activitiesRouter = createTRPCRouter({
 			return {
 				activities: formattedActivities,
 				pageCount,
+				totalParticipants,
 			};
 		}),
 

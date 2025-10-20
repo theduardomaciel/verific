@@ -45,5 +45,13 @@ export async function revalidateParticipantActivities(userId: string) {
 }
 
 export async function revalidateParticipantEnrollment(userId: string) {
+	console.log("Revalidating participant enrollment for userId:", userId);
 	await revalidateTag(`participant-enrollment-${userId}`);
+	console.log("Revalidation complete for userId:", userId);
+}
+
+export async function revalidateSubscribedActivitiesIdsFromParticipant(userId: string) {
+	console.log("Revalidating subscribed activities IDs for participant with userId:", userId);
+	await revalidateTag(`subscribed-activities-ids-from-participant-${userId}`);
+	console.log("Revalidation complete for userId:", userId);
 }

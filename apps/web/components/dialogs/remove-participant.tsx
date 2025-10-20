@@ -16,6 +16,11 @@ import { trpc } from "@/lib/trpc/react";
 import { toast } from "sonner";
 import { Ban } from "lucide-react";
 import { useRouter } from "next/navigation";
+import {
+	revalidateParticipantActivities,
+	revalidateParticipantEnrollment,
+	revalidateParticipants,
+} from "@/app/actions";
 
 interface RemoveParticipantDialogProps {
 	children: React.ReactNode;
@@ -47,6 +52,7 @@ export function RemoveParticipantDialog({
 				activityId,
 				participantId,
 			});
+			await revalidateParticipantActivities(participantId);
 			toast.success("Participante removido da atividade");
 			setOpen(false);
 			userRouter.refresh();
@@ -60,6 +66,8 @@ export function RemoveParticipantDialog({
 			await removeFromProjectMutation.mutateAsync({
 				participantId,
 			});
+			await revalidateParticipants();
+			await revalidateParticipantEnrollment(participantId);
 			toast.success("Participante removido do evento");
 			setOpen(false);
 			userRouter.back();

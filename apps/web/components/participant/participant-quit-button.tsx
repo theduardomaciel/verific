@@ -6,15 +6,18 @@ import { DeleteDialog } from "../dialogs/delete-dialog";
 import { Button } from "../ui/button";
 
 import { trpc } from "@/lib/trpc/react";
+import { revalidateSubscribedActivitiesIdsFromParticipant } from "@/app/actions";
 
 interface Props {
 	activityId: string;
+	userId: string;
 	participantId: string;
 	projectUrl: string;
 }
 
 export function ParticipantQuitButton({
 	activityId,
+	userId,
 	participantId,
 	projectUrl,
 }: Props) {
@@ -26,6 +29,7 @@ export function ParticipantQuitButton({
 			participantId,
 			projectUrl,
 		});
+		await revalidateSubscribedActivitiesIdsFromParticipant(userId);
 	}
 
 	return (
@@ -37,9 +41,10 @@ export function ParticipantQuitButton({
 					sua vaga e precisará se inscrever novamente.
 				</>
 			}
+			buttonText="Cancelar inscrição"
 			successTitle="Inscrição cancelada com sucesso!"
 			successDescription="Você saiu da atividade. Esperamos te ver em outras!"
-			onSuccessRedirect={`/${projectUrl}/schedule`}
+			onSuccessRedirect={`/${projectUrl}`}
 			onDelete={handleQuit}
 		>
 			<Button variant={"ghost"} size={"icon"}>

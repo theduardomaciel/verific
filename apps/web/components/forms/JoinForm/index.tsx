@@ -120,9 +120,9 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 			return;
 		}
 
-		setCurrentState("submitted");
-
 		await revalidateParticipantEnrollment(user.id!);
+
+		setCurrentState("submitted");
 	}
 
 	// 2. Define a submit handler.

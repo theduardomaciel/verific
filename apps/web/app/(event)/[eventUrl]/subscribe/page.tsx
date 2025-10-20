@@ -63,7 +63,7 @@ export default async function EventSubscribePage({
 			</EventContainer.Hero>
 			<EventContainer.Content>
 				<JoinForm
-					user={session?.user || undefined}
+					user={session?.user}
 					project={{
 						id: project.id,
 						url: project.url,

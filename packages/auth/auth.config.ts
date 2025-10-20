@@ -1,14 +1,10 @@
 import type { } from "./auth.d.ts";
-import { db } from "@verific/drizzle";
 
 import { drizzleAuthAdapter } from "./drizzle-auth-adapter";
 import { googleProvider } from "./google-provider";
 
 // Types
-import type { Session, NextAuthConfig } from "next-auth";
-import type { GoogleProfile } from "next-auth/providers/google";
-
-const icDomain = "@ic.ufal.br";
+import type { NextAuthConfig } from "next-auth";
 
 export const authConfig = {
 	adapter: drizzleAuthAdapter,

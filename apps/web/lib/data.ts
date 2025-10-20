@@ -6,8 +6,10 @@ export const getProject = (projectUrl: string, userId?: string) => {
         async () => {
             const res = await publicClient.getProject({ url: projectUrl, userId });
             return res;
-        }
-        , [`project-${projectUrl}`], { revalidate: 3600 * 24 })();
+        },
+        [`project-${projectUrl}`],
+        { revalidate: 3600 * 24, tags: [`project-${projectUrl}`] }
+    )();
 }
 
 export const getProjects = unstable_cache(
@@ -16,7 +18,7 @@ export const getProjects = unstable_cache(
         return res;
     },
     ["projects"],
-    { revalidate: 3600 * 24 }
+    { revalidate: 3600 * 24, tags: ["projects"] }
 );
 
 export const getCachedActivities = unstable_cache(
@@ -24,7 +26,7 @@ export const getCachedActivities = unstable_cache(
         return await publicClient.getActivities(params);
     },
     ["activities"],
-    { revalidate: 3600 * 24 }
+    { revalidate: 3600 * 24, tags: ["activities"] }
 );
 
 export const getCachedActivitiesFromParticipant = (projectUrl: string, userId: string) => {
@@ -33,7 +35,7 @@ export const getCachedActivitiesFromParticipant = (projectUrl: string, userId: s
             return await publicClient.getActivitiesFromParticipant({ projectUrl, userId });
         },
         [`activities-from-participant-${userId}`],
-        { revalidate: 3600 * 24 }
+        { revalidate: 3600 * 24, tags: [`activities-from-participant-${userId}`] }
     )();
 }
 
@@ -42,7 +44,7 @@ export const getCachedParticipants = unstable_cache(
         return await publicClient.getParticipants(params);
     },
     ["participants"],
-    { revalidate: 3600 * 24 }
+    { revalidate: 3600 * 24, tags: ["participants"] }
 );
 
 export const getCachedCheckParticipantEnrollment = (projectUrl: string, userId: string) => {
@@ -52,6 +54,17 @@ export const getCachedCheckParticipantEnrollment = (projectUrl: string, userId: 
             return res;
         },
         [`participant-enrollment-${userId}`],
-        { revalidate: 3600 * 24 }
+        { revalidate: 60, tags: [`participant-enrollment-${userId}`] }
+    )();
+}
+
+export const getCachedSubscribedActivitiesIdsFromParticipant = (userId: string) => {
+    return unstable_cache(
+        async () => {
+            const res = await publicClient.getSubscribedActivitiesIdsFromParticipant({ userId });
+            return res;
+        },
+        [`subscribed-activities-ids-from-participant-${userId}`],
+        { revalidate: 300, tags: [`subscribed-activities-ids-from-participant-${userId}`] }
     )();
 }
