@@ -14,7 +14,8 @@ import { Button } from "../ui/button";
 import { RouterOutput } from "@verific/api";
 
 // Utils
-import { getTimeString } from "../../lib/date";
+import { getTimeString } from "@/lib/date";
+import { RemoveParticipantDialog } from "../dialogs/remove-participant";
 
 type ActivityParticipant =
 	RouterOutput["getActivity"]["activity"]["participants"][number];
@@ -69,19 +70,6 @@ interface ParticipantActionsProps {
 	url: string;
 }
 
-/* function ParticipantActions({ participantId, url }: ParticipantActionsProps) {
-	return (
-		<div className="flex flex-row items-center justify-end gap-2 md:gap-4">
-			<Link href={`${url}/${participantId}`}>
-				<BookUser className="text-foreground h-4 w-4" />
-			</Link>
-			<button type="button" className="cursor-pointer">
-				<Ban className="text-foreground h-4 w-4" />
-			</button>
-		</div>
-	);
-} */
-
 export const ParticipantListItem = {
 	Activity({ className, participant, url }: ActivityParticipantCardProps) {
 		return (
@@ -120,13 +108,16 @@ export const ParticipantListItem = {
 									</>
 								) : null}
 							</div>
-							{/* <ParticipantActions
+							<RemoveParticipantDialog
 								participantId={participant.id}
-								url={url}
-							/> */}
-							<Link href={`${url}/${participant.id}`}>
-								<BookUser className="text-foreground h-4 w-4" />
-							</Link>
+								activityId={participant.activityId}
+								projectUrl={url}
+								userEmail={participant.user.email}
+							>
+								<Button variant={"ghost"} size={"icon"}>
+									<Ban className="text-foreground h-4 w-4" />
+								</Button>
+							</RemoveParticipantDialog>
 						</div>
 					)}
 				</li>
@@ -145,11 +136,6 @@ export const ParticipantListItem = {
 					<ParticipantAvatarAndInfo participant={participant} />
 					<div className="flex w-full flex-row flex-wrap items-center justify-between gap-4">
 						<div className="flex flex-row items-center justify-start gap-3 text-left text-sm leading-tight font-medium">
-							<User className="h-4 w-4" />
-							{participant.role === "monitor"
-								? "Moderador"
-								: "Membro"}
-							<div className="bg-foreground h-1 w-1 rounded-full" />
 							<div className="flex flex-row items-center justify-start gap-2">
 								<Calendar className="h-4 w-4" />
 								Inscreveu-se em{" "}

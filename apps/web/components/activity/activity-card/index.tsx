@@ -33,9 +33,11 @@ export function ActivityCard({
 	userId,
 	lowSeatsThreshold = 7,
 }: EventCardProps) {
-	const participantRole = activity.participants.find(
+	const participant = activity.participants.find(
 		(participant) => participant.userId === userId,
-	)?.role;
+	);
+	const participantRole = participant?.role;
+	const participantId = participant?.id;
 
 	const remainingSeats = activity.participantsLimit
 		? activity.participantsLimit -
@@ -125,10 +127,11 @@ export function ActivityCard({
 								</Link>
 							</Button>
 						) : null}
-						{participantRole === "participant" && (
+						{participantId && participantRole === "participant" && (
 							<ParticipantQuitButton
 								activityId={activity.id}
-								eventUrl={activity.project?.url}
+								participantId={participantId}
+								projectUrl={activity.project?.url}
 							/>
 						)}
 					</div>

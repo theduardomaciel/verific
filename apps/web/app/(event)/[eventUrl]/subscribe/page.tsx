@@ -9,7 +9,9 @@ import * as EventContainer from "@/components/landing/event-container";
 
 // API
 import { auth } from "@verific/auth";
-import { serverClient } from "@/lib/trpc/server";
+import { getProject } from "@/lib/data";
+
+export const revalidate = 3600; // invalidate every hour
 
 export default async function EventSubscribePage({
 	params,
@@ -18,9 +20,7 @@ export default async function EventSubscribePage({
 }) {
 	const { eventUrl } = await params;
 
-	const { project: event, isParticipant } = await serverClient.getProject({
-		url: eventUrl,
-	});
+	const { project: event, isParticipant } = await getProject(eventUrl);
 
 	// console.log("isParticipant", isParticipant);
 

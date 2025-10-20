@@ -23,15 +23,15 @@ interface Props {
 	>;
 }
 
-export function ActivitySpeakers({ speakers }: Props) {
+export function ActivitySpeakers({ className, speakers }: Props) {
 	if (!speakers || speakers.length === 0) {
 		return null;
 	}
 
 	return speakers.length > 1 ? (
 		<Carousel
-			className="w-full"
-			plugins={[Autoplay({ delay: 3000 })]}
+			className={cn("grid w-full grid-cols-1", className)}
+			plugins={[Autoplay({ delay: 4000 })]}
 			slideCount={speakers.length}
 			opts={{
 				loop: true,

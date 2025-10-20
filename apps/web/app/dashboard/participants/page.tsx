@@ -21,6 +21,7 @@ import { getParticipantsParams } from "@verific/api/routers/participants";
 
 // API
 import { serverClient } from "@/lib/trpc/server";
+import { courses } from "@verific/drizzle/schema";
 
 type ParticipantsPageParams = z.infer<typeof getParticipantsParams>;
 
@@ -33,18 +34,11 @@ export default async function ParticipantsPage(props: {
 	const searchParams = await props.searchParams;
 	const parsedParams = getParticipantsParams.parse(searchParams);
 
-	const { participants } = await serverClient.getParticipants({
-		projectId,
-		...parsedParams,
-	});
-
-	const domains = Array.from(
-		new Set(
-			participants.map(
-				(participant) => participant.user?.email.split("@")[1]!,
-			),
-		),
-	);
+	const { participants, pageCount, emailDomains, courses } =
+		await serverClient.getParticipants({
+			projectId,
+			...parsedParams,
+		});
 
 	return (
 		<div className="container-d py-container-v min-h-screen">
@@ -89,7 +83,7 @@ export default async function ParticipantsPage(props: {
 
 					<DashboardPagination
 						currentPage={parsedParams.page || 1}
-						totalPages={5}
+						totalPages={pageCount}
 						prefix="participants"
 					/>
 				</div>
@@ -98,11 +92,20 @@ export default async function ParticipantsPage(props: {
 					<FiltersPanel>
 						<Filter
 							type="checkbox"
-							prefix="category"
+							prefix="domain"
 							title="Filtrar por Domínio"
-							items={domains.map((domain) => ({
+							items={emailDomains.map((domain) => ({
 								value: domain,
 								name: domain,
+							}))}
+						/>
+						<Filter
+							type="checkbox"
+							prefix="course"
+							title="Filtrar por Curso"
+							items={courses.slice(1).map((course) => ({
+								value: course,
+								name: course,
 							}))}
 						/>
 					</FiltersPanel>

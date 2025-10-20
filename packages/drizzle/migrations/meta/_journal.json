@@ -92,6 +92,13 @@
       "when": 1760889247539,
       "tag": "0012_certain_rumiko_fujikawa",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1760907569389,
+      "tag": "0013_loose_kate_bishop",
+      "breakpoints": true
     }
   ]
 }

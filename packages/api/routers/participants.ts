@@ -2,9 +2,11 @@ import { z } from "zod";
 
 import { db } from "@verific/drizzle";
 import {
+	activity,
 	participant,
 	participantOnActivity,
 	project,
+	projectModerator,
 	user,
 } from "@verific/drizzle/schema";
 import {
@@ -13,10 +15,13 @@ import {
 	count,
 	desc,
 	eq,
+	exists,
 	getTableColumns,
 	ilike,
 	inArray,
 	or,
+	sql,
+	SQL,
 } from "@verific/drizzle/orm";
 
 // Enums
@@ -52,6 +57,14 @@ export const participantsRouter = createTRPCRouter({
 		.query(async ({ input, ctx }) => {
 			const { participantId } = input;
 
+			const requestUserId = ctx.session?.user.id;
+			if (!requestUserId) {
+				throw new TRPCError({
+					code: "UNAUTHORIZED",
+					message: "User must be logged in to access participant data",
+				});
+			}
+
 			const participantData = await db.query.participant.findFirst({
 				where: eq(participant.id, participantId),
 				with: {
@@ -71,6 +84,15 @@ export const participantsRouter = createTRPCRouter({
 							},
 						},
 					},
+					project: {
+						with: {
+							moderators: {
+								columns: {
+									userId: true,
+								}
+							}
+						}
+					},
 				},
 			});
 
@@ -81,55 +103,32 @@ export const participantsRouter = createTRPCRouter({
 				});
 			}
 
-			const requestUserId = ctx.session?.user.id;
+			const isModerator = participantData.project.moderators.some((mod => mod.userId === requestUserId))
+				|| participantData.project.ownerId === requestUserId;
 
-			const requestParticipant = requestUserId
-				? await db.query.participant.findFirst({
-					where: eq(participant.userId, requestUserId),
-				})
-				: undefined;
-
-			if (!requestUserId || !requestParticipant) {
+			if (!isModerator && participantData.userId !== requestUserId) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
-					message: "You are not authorized to view this participant",
-					cause: "You are not a participant of this project",
+					message: "You do not have permission to view this participant's data",
 				});
 			}
 
-			if (
-				requestParticipant?.role === "participant" &&
-				requestUserId !== participantData.userId
-			) {
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message: "You are not authorized to view this participant",
-					cause: "You are not the requested participant or a monitor of this project",
-				});
-			}
+			// Verificamos se o participante requerido é um moderador
+			const isModeratorParticipant = participantData.project.moderators.some((mod) => mod.userId === participantData.userId)
+				|| participantData.project.ownerId === participantData.userId;
 
-			const totalWorkload = Array.isArray(
-				participantData.participantOnActivity,
-			)
-				? participantData.participantOnActivity.reduce(
-					(
-						total: number,
-						item: { activity: { workload: number | null } },
-					) => total + (item.activity?.workload || 0),
-					0,
-				)
-				: 0;
+			// Calcula o total de atividades e horas
+			const activitiesAttended = participantData.participantOnActivity.length;
+			const hours = participantData.participantOnActivity.reduce((acc, pa) => {
+				return acc + (pa.activity.workload || 0);
+			}, 0);
 
 			return {
 				participant: participantData,
-				isUser: requestUserId === participantData.userId,
-				hours: totalWorkload,
-				totalEventsAttended: Array.isArray(
-					participantData.participantOnActivity,
-				)
-					? participantData.participantOnActivity.length
-					: 0,
-				clientRole: requestParticipant.role,
+				hours,
+				totalEventsAttended: activitiesAttended,
+				isModeratorParticipant,
+				isModerator,
 			};
 		}),
 
@@ -151,6 +150,17 @@ export const participantsRouter = createTRPCRouter({
 				course,
 			} = input;
 
+			let roleFilter: SQL | undefined;
+			if (role && role.length > 0) {
+				roleFilter = exists(
+					db.select().from(participantOnActivity).innerJoin(activity, eq(participantOnActivity.activityId, activity.id)).where(and(
+						eq(participantOnActivity.participantId, participant.id),
+						eq(activity.projectId, projectId),
+						inArray(participantOnActivity.role, role),
+					))
+				);
+			}
+
 			const whereClauses = [
 				eq(participant.projectId, projectId),
 				search
@@ -162,9 +172,7 @@ export const participantsRouter = createTRPCRouter({
 				periodsFilter && periodsFilter.length > 0
 					? inArray(participant.period, periodsFilter)
 					: undefined,
-				role && role.length > 0
-					? inArray(participant.role, role)
-					: undefined,
+				roleFilter,
 				course && course.length > 0
 					? inArray(participant.course, course)
 					: undefined,
@@ -190,10 +198,15 @@ export const participantsRouter = createTRPCRouter({
 					orderByClause = desc(participant.joinedAt);
 			}
 
-			const [participants, countResult] = await Promise.all([
+			const [participants, countResult, emailDomains, participantsCourses] = await Promise.all([
 				db
 					.select({
-						...getTableColumns(participant),
+						id: participant.id,
+						userId: participant.userId,
+						projectId: participant.projectId,
+						joinedAt: participant.joinedAt,
+						course: participant.course,
+						period: participant.period,
 						user: {
 							name: user.name,
 							email: user.email,
@@ -205,12 +218,25 @@ export const participantsRouter = createTRPCRouter({
 					.where(and(...whereClauses.filter(Boolean)))
 					.orderBy(orderByClause)
 					.limit(pageSize)
-					.offset(pageIndex ? pageIndex * pageSize : 0),
+					.offset(pageIndex ? (pageIndex - 1) * pageSize : 0),
 				db
 					.select({ amount: count() })
 					.from(participant)
 					.leftJoin(user, eq(participant.userId, user.id))
 					.where(and(...whereClauses.filter(Boolean))),
+				// Extrai os domínios de e-mail únicos dos participantes
+				db
+					.select({ emailDomain: sql`SPLIT_PART(${user.email}, '@', 2)` })
+					.from(participant)
+					.leftJoin(user, eq(participant.userId, user.id))
+					.where(eq(participant.projectId, projectId))
+					.groupBy(sql`SPLIT_PART(${user.email}, '@', 2)`),
+				// Extrai os cursos únicos dos participantes
+				db
+					.select({ course: participant.course })
+					.from(participant)
+					.where(eq(participant.projectId, projectId))
+					.groupBy(participant.course),
 			]);
 
 			const amount = countResult?.[0]?.amount ?? 0;
@@ -219,6 +245,8 @@ export const participantsRouter = createTRPCRouter({
 			return {
 				participants,
 				pageCount,
+				emailDomains: emailDomains.map((ed) => ed.emailDomain) as string[],
+				courses: participantsCourses.map((pc) => pc.course) as string[],
 			};
 		}),
 
@@ -315,6 +343,60 @@ export const participantsRouter = createTRPCRouter({
 						joinedAt: new Date(),
 					},
 				});
+
+			return { success: true };
+		}),
+	removeParticipant: protectedProcedure
+		.input(
+			z.object({
+				participantId: z.string().uuid(),
+			}),
+		)
+		.mutation(async ({ input, ctx }) => {
+			const { participantId } = input;
+			const requestUserId = ctx.session?.user.id;
+
+			if (!requestUserId) {
+				throw new TRPCError({
+					code: "UNAUTHORIZED",
+					message: "User must be logged in",
+				});
+			}
+
+			const participantData = await db.query.participant.findFirst({
+				where: eq(participant.id, participantId),
+				with: {
+					project: {
+						with: {
+							moderators: {
+								columns: {
+									userId: true,
+								},
+							},
+						},
+					},
+				},
+			});
+
+			if (!participantData) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Participant not found",
+				});
+			}
+
+			const isModerator =
+				participantData.project.moderators.some((mod) => mod.userId === requestUserId) ||
+				participantData.project.ownerId === requestUserId;
+
+			if (!isModerator) {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "You do not have permission to remove this participant",
+				});
+			}
+
+			await db.delete(participant).where(eq(participant.id, participantId));
 
 			return { success: true };
 		}),

@@ -32,6 +32,7 @@ async function seedUsers() {
 		users.push({
 			name: faker.person.fullName({ sex: sex }),
 			email: faker.internet.email(),
+			public_email: faker.internet.email(),
 			emailVerified: faker.date.past(),
 			image_url: faker.image.personPortrait({ sex: sex }),
 		});
@@ -85,7 +86,6 @@ async function seedParticipants(users: any[], projects: any[]) {
 			course: "Ciência Da Computação",
 			registrationId: faker.string.numeric({ length: 8 }),
 			period: "1",
-			role: "participant",
 			joinedAt: faker.date.past(),
 		});
 	}
@@ -127,7 +127,6 @@ async function seedActivities(projects: any[], speakers: any[]) {
 			dateTo: faker.date.soon({ days: 10 }),
 			audience: "internal",
 			category: "lecture",
-			speakerId: speakers[i % speakers.length].id,
 			participantsLimit: faker.number.int({ min: 10, max: 100 }),
 			tolerance: faker.number.int({ min: 0, max: 20 }),
 			workload: faker.number.int({ min: 1, max: 60 }),

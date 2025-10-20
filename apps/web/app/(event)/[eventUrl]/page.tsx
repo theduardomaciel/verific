@@ -25,7 +25,7 @@ import { ReportEventDialog } from "@/components/dialogs/report-event-dialog";
 
 // Utils
 import { isAfterEnd } from "@/lib/date";
-import { getProject } from "@/lib/data";
+import { getProject, getProjects } from "@/lib/data";
 
 const markdownComponents = {
 	img: ({ src, alt, ...props }: any) => (
@@ -39,6 +39,16 @@ const markdownComponents = {
 		/>
 	),
 };
+
+export const revalidate = 3600; // Revalidate every hour
+
+export async function generateStaticParams() {
+	const projects = await getProjects();
+
+	return projects.map((project) => ({
+		eventUrl: project.url,
+	}));
+}
 
 export default async function EventPage({
 	params,

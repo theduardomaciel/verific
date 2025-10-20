@@ -104,7 +104,6 @@ export const projectsRouter = createTRPCRouter({
 			await db.insert(participant).values({
 				projectId: created[0]!.id,
 				userId: userId,
-				role: "monitor",
 			});
 
 			return { id: created[0]!.id, url: created[0]!.url };
@@ -256,6 +255,10 @@ export const projectsRouter = createTRPCRouter({
 		return db.query.project.findMany({
 			where: eq(project.ownerId, userId),
 		});
+	}),
+
+	getAllProjects: publicProcedure.query(async () => {
+		return db.query.project.findMany();
 	}),
 
 	deleteProject: protectedProcedure

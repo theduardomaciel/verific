@@ -125,15 +125,16 @@ export function JoinActivityDialog({ participantId, activity }: Props) {
 					<DialogTitle className="w-full text-center">
 						{activity.name}
 					</DialogTitle>
-					<DialogDescription className="prose prose-sm dark:prose-invert w-full max-w-none text-center">
+					<DialogDescription className="prose prose-sm dark:prose-invert w-full max-w-none text-left">
 						<ReactMarkdown remarkPlugins={[remarkGfm]}>
 							{activity.description || ""}
 						</ReactMarkdown>
 					</DialogDescription>
 				</DialogHeader>
-				<div className="flex flex-col">
+				<div className="flex w-full flex-col gap-4">
 					{activity.speakerOnActivity ? (
 						<ActivitySpeakers
+							className="w-full"
 							speakers={activity.speakerOnActivity.map(
 								(s) => s.speaker,
 							)}

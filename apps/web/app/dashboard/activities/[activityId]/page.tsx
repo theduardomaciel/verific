@@ -196,7 +196,7 @@ export default async function ActivityPage(props: {
 						</ParticipantsList.Title>
 						<div className="flex w-full flex-col items-start justify-start gap-2 sm:flex-row sm:gap-4">
 							<SearchBar
-								word={"general_search"}
+								word={"search"}
 								placeholder="Pesquisar participantes"
 							/>
 							<SortBy
@@ -219,7 +219,7 @@ export default async function ActivityPage(props: {
 							activityId={activity.id}
 						/>
 					</ParticipantsList.Holder>
-					{participants && participants.length > 0 && (
+					{participants && pageCount > 1 && (
 						<DashboardPagination
 							currentPage={parsedParams.page || 1}
 							totalPages={pageCount}

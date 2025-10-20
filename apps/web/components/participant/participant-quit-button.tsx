@@ -9,15 +9,22 @@ import { trpc } from "@/lib/trpc/react";
 
 interface Props {
 	activityId: string;
-	eventUrl?: string;
+	participantId: string;
+	projectUrl: string;
 }
 
-export function ParticipantQuitButton({ activityId, eventUrl }: Props) {
+export function ParticipantQuitButton({
+	activityId,
+	participantId,
+	projectUrl,
+}: Props) {
 	const mutation = trpc.deleteParticipantFromActivity.useMutation();
 
 	async function handleQuit() {
 		await mutation.mutateAsync({
 			activityId,
+			participantId,
+			projectUrl,
 		});
 	}
 
@@ -32,7 +39,7 @@ export function ParticipantQuitButton({ activityId, eventUrl }: Props) {
 			}
 			successTitle="Inscrição cancelada com sucesso!"
 			successDescription="Você saiu da atividade. Esperamos te ver em outras!"
-			onSuccessRedirect={`/${eventUrl}/schedule`}
+			onSuccessRedirect={`/${projectUrl}/schedule`}
 			onDelete={handleQuit}
 		>
 			<Button variant={"ghost"} size={"icon"}>

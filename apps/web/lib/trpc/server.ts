@@ -8,3 +8,7 @@ export const serverClient = createCallerFactory(appRouter)(async () => {
 
 	return { session };
 });
+
+export const publicClient = createCallerFactory(appRouter)(async () => {
+	return { session: null };
+});

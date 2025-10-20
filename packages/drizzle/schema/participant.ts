@@ -35,7 +35,6 @@ export const participant = pgTable(
 		course: courseEnum("course"),
 		registrationId: text("registration_id"),
 		period: periodEnum("period"),
-		role: roleEnum("role").notNull().default("participant"),
 		degreeLevel: degreeLevelEnum("degree_level"),
 		joinedAt: timestamp("joined_at").notNull().defaultNow(),
 	},
