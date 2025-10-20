@@ -1,5 +1,4 @@
 import { Calendar } from "lucide-react";
-import { serverClient } from "@/lib/trpc/server";
 
 // Components
 import * as EventContainer from "@/components/landing/event-container";
@@ -25,7 +24,7 @@ import { sortOptions, sortOptionsLabels } from "@verific/api/utils";
 
 // Lib
 import { categorizeByDate } from "@/lib/date";
-import { getProject } from "@/lib/data";
+import { getCachedActivities, getProject } from "@/lib/data";
 
 type SchedulePageParams = z.infer<typeof getActivitiesParams>;
 
@@ -34,19 +33,19 @@ export default async function EventSchedulePage(props: {
 	searchParams: Promise<SchedulePageParams>;
 }) {
 	const { eventUrl } = await props.params;
-	const { project: event } = await getProject(eventUrl);
+	const session = await auth();
+
+	const { project } = await getProject(eventUrl);
 
 	const searchParams = await props.searchParams;
 	const { sort, ...parsedParams } = getActivitiesParams.parse(searchParams);
 
-	const { activities } = await serverClient.getActivities({
-		projectId: event.id,
+	const { activities } = await getCachedActivities({
+		projectId: project.id,
 		pageSize: 100, // Fetch all activities for the schedule (placeholder value)
 		sort: sort || "asc",
 		...parsedParams,
 	});
-
-	const session = await auth();
 
 	const { grouped, categories } = categorizeByDate(
 		activities,
@@ -55,21 +54,27 @@ export default async function EventSchedulePage(props: {
 
 	return (
 		<EventContainer.Holder>
-			<EventContainer.Hero coverUrl={event.coverUrl}>
+			<EventContainer.Hero coverUrl={project.coverUrl}>
 				<div className="z-10 flex flex-1 flex-col items-start justify-center">
 					<div className="mb-4 flex items-center text-lg text-white/90">
 						<Calendar className="mr-2 h-4.5 w-4.5" />
 						<span className="-mt-0.5 text-base">
-							De {event.startDate.toLocaleDateString("pt-BR")} a{" "}
-							{event.endDate.toLocaleDateString("pt-BR")}
+							De{" "}
+							{new Date(project.startDate).toLocaleDateString(
+								"pt-BR",
+							)}{" "}
+							a{" "}
+							{new Date(project.endDate).toLocaleDateString(
+								"pt-BR",
+							)}
 						</span>
 					</div>
 					<h1 className="mb-4 text-5xl font-bold text-white">
 						Programação
 					</h1>
 					<p className="text-primary-foreground text-base font-semibold md:max-w-md">
-						Acompanhe as próximas atividades de {event.name} e saiba
-						como e quando participar!
+						Acompanhe as próximas atividades de {project.name} e
+						saiba como e quando participar!
 					</p>
 				</div>
 			</EventContainer.Hero>

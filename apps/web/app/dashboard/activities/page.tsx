@@ -36,6 +36,7 @@ import {
 	activityCategoryLabels,
 } from "@verific/drizzle/schema";
 import { sortOptions, sortOptionsLabels } from "@verific/api/utils";
+import { getCachedActivities } from "@/lib/data";
 
 export default async function ActivitiesPage(props: {
 	searchParams: Promise<ActivitiesPageParams>;
@@ -47,7 +48,7 @@ export default async function ActivitiesPage(props: {
 	const searchParams = await props.searchParams;
 	const parsedParams = getActivitiesParams.parse(searchParams);
 
-	const { activities, pageCount } = await serverClient.getActivities({
+	const { activities, pageCount } = await getCachedActivities({
 		projectId,
 		...parsedParams,
 	});

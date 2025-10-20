@@ -3,7 +3,7 @@ import { db } from "@verific/drizzle";
 import { z } from "zod";
 
 import { participant, project } from "@verific/drizzle/schema";
-import { eq } from "@verific/drizzle/orm";
+import { and, eq } from "@verific/drizzle/orm";
 
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
@@ -190,9 +190,10 @@ export const projectsRouter = createTRPCRouter({
 			z.object({
 				id: z.string().uuid().optional(),
 				url: z.string().optional(),
+				userId: z.string().uuid().optional(),
 			}),
 		)
-		.query(async ({ input, ctx }) => {
+		.query(async ({ input }) => {
 			if (!input.id && !input.url) {
 				throw new Error("Project ID or URL is required");
 			}
@@ -210,13 +211,13 @@ export const projectsRouter = createTRPCRouter({
 			const projectData = await db.query.project.findFirst({
 				where: whereClause,
 				with: {
-					speakers: true,
+					/* speakers: true,
 					participants: {
 						columns: {
 							id: true,
 							userId: true,
 						},
-					},
+					}, */
 					owner: {
 						columns: {
 							id: true,
@@ -233,15 +234,8 @@ export const projectsRouter = createTRPCRouter({
 				throw new Error("Project not found");
 			}
 
-			const userId = ctx.session?.user.id;
-
 			return {
 				project: projectData,
-				isParticipant: userId
-					? projectData.participants.some(
-						(participant) => participant.userId === userId,
-					)
-					: false,
 			};
 		}),
 

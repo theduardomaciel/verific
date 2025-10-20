@@ -25,6 +25,9 @@ import {
 // API
 import { trpc } from "@/lib/trpc/react";
 
+// Actions
+import { revalidateActivities } from "@/app/actions";
+
 // Types
 import { RouterOutput } from "@verific/api";
 import { dateToTimeString } from "@/components/pickers/time-picker";
@@ -118,6 +121,8 @@ export default function MutateActivityForm({
 				submittedActivityId.current = activityId;
 				setCurrentState("submitted");
 			}
+
+			await revalidateActivities();
 		} catch (error) {
 			console.error(error);
 			setCurrentState("error");

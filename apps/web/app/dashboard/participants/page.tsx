@@ -21,7 +21,7 @@ import { getParticipantsParams } from "@verific/api/routers/participants";
 
 // API
 import { serverClient } from "@/lib/trpc/server";
-import { courses } from "@verific/drizzle/schema";
+import { getCachedParticipants } from "@/lib/data";
 
 type ParticipantsPageParams = z.infer<typeof getParticipantsParams>;
 
@@ -35,7 +35,7 @@ export default async function ParticipantsPage(props: {
 	const parsedParams = getParticipantsParams.parse(searchParams);
 
 	const { participants, pageCount, emailDomains, courses } =
-		await serverClient.getParticipants({
+		await getCachedParticipants({
 			projectId,
 			...parsedParams,
 		});

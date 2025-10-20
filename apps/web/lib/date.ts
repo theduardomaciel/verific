@@ -20,8 +20,8 @@ export const isDateDifferent = (date1: Date, date2: Date) => {
 };
 
 export const getDateString = (dateFrom: Date, dateTo: Date) => {
-	const dateString = `${saoPauloDateFormatter.format(dateFrom)}${isDateDifferent(dateFrom, dateTo)
-		? ` - ${saoPauloDateFormatter.format(dateTo)}`
+	const dateString = `${saoPauloDateFormatter.format(new Date(dateFrom))}${isDateDifferent(new Date(dateFrom), new Date(dateTo))
+		? ` - ${saoPauloDateFormatter.format(new Date(dateTo))}`
 		: ""
 		}`;
 
@@ -30,11 +30,11 @@ export const getDateString = (dateFrom: Date, dateTo: Date) => {
 
 export const getTimeString = (date: Date, asHourFormat = false) => {
 	if (asHourFormat) {
-		const hours = date.getHours();
-		const minutes = date.getMinutes();
+		const hours = new Date(date).getHours();
+		const minutes = new Date(date).getMinutes();
 		return minutes === 0 ? `${hours}h` : `${hours}h${minutes.toString().padStart(2, "0")}`;
 	}
-	return saoPauloFormatter.format(date).split(' ')[1];
+	return saoPauloFormatter.format(new Date(date)).split(' ')[1];
 };
 
 export const isBeforeStart = (startDate: Date) => {

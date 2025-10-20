@@ -33,13 +33,15 @@ import {
 } from "../ui/tooltip";
 import { ActivitySpeakers } from "../activity/activity-card/speakers";
 import { ActivityCardTags } from "../activity/activity-card/tags";
+import { revalidateParticipantActivities } from "@/app/actions";
 
 interface Props {
+	userId?: string | null;
 	participantId?: string | null;
 	activity: RouterOutput["getActivity"]["activity"];
 }
 
-export function JoinActivityDialog({ participantId, activity }: Props) {
+export function JoinActivityDialog({ userId, participantId, activity }: Props) {
 	const [currentState, setCurrentState] = useState<FormState>(false);
 	const isLoading = currentState === "submitting";
 
@@ -65,6 +67,10 @@ export function JoinActivityDialog({ participantId, activity }: Props) {
 				participantsIdsToAdd: [participantId],
 			});
 			setCurrentState("submitted");
+
+			if (userId) {
+				await revalidateParticipantActivities(userId);
+			}
 		} catch (error) {
 			console.error(error);
 			setCurrentState("error");

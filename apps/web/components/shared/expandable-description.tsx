@@ -32,51 +32,14 @@ export function ExpandableDescription({
 	const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 	const isDesktop = useMediaQuery("(min-width: 768px)");
 
-	const description = activity.description || "";
-
-	const getTruncatedDescription = (text: string) => {
-		/* if (!text) return "";
-		// Find the first dot not part of a markdown link
-		let firstDotIndex = -1;
-		for (let i = 0; i < text.length; i++) {
-			if (text[i] === ".") {
-				// Check if inside a markdown link: [text](url)
-				const before = text.lastIndexOf("[", i);
-				const after = text.indexOf(")", i);
-				const paren = text.lastIndexOf("(", i);
-				if (
-					before !== -1 &&
-					paren !== -1 &&
-					after !== -1 &&
-					before < paren &&
-					paren < i &&
-					i < after
-				) {
-					continue; // Dot is inside a link
-				}
-				firstDotIndex = i;
-				break;
-			}
-		}
-		if (firstDotIndex !== -1) {
-			return text.substring(0, firstDotIndex + 1);
-		}
-		return text.length > 120 ? text.substring(0, 120) + "..." : text; */
-		return text;
-	};
-
-	const hasMoreDescription =
-		description &&
-		(description.indexOf(".") !== -1 || description.length > 120);
-
-	const truncatedDescription = getTruncatedDescription(description);
+	const hasMoreDescription = activity.description.length > 120;
 
 	return (
 		<>
 			<div className="flex flex-col gap-2">
 				<div className="prose prose-sm dark:prose-invert text-muted-foreground line-clamp-3 max-w-none text-sm">
 					<ReactMarkdown remarkPlugins={[remarkGfm]}>
-						{truncatedDescription}
+						{activity.description}
 					</ReactMarkdown>
 				</div>
 				{hasMoreDescription && (

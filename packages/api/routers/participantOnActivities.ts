@@ -19,18 +19,11 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 		.input(
 			z.object({
 				projectUrl: z.string(),
+				userId: z.string().uuid(),
 			}),
 		)
-		.query(async ({ input, ctx }) => {
-			const { projectUrl } = input;
-			const userId = ctx.session?.user.id;
-
-			if (!userId) {
-				throw new TRPCError({
-					code: "UNAUTHORIZED",
-					message: "Usuário não autenticado",
-				});
-			}
+		.query(async ({ input }) => {
+			const { projectUrl, userId } = input;
 
 			// Precisamos buscar o projeto pois precisamos do projectId para buscar o participante
 			// E precisamos do participantId para buscar as atividades

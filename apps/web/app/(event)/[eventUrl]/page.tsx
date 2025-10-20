@@ -25,7 +25,12 @@ import { ReportEventDialog } from "@/components/dialogs/report-event-dialog";
 
 // Utils
 import { isAfterEnd } from "@/lib/date";
-import { getProject, getProjects } from "@/lib/data";
+import {
+	getCachedCheckParticipantEnrollment,
+	getProject,
+	getProjects,
+} from "@/lib/data";
+import { auth } from "@verific/auth";
 
 const markdownComponents = {
 	img: ({ src, alt, ...props }: any) => (
@@ -56,17 +61,25 @@ export default async function EventPage({
 	params: Promise<{ eventUrl: string }>;
 }) {
 	const { eventUrl } = await params;
+	const session = await auth();
 
-	const { project: event, isParticipant } = await getProject(eventUrl);
+	const { project } = await getProject(eventUrl, session?.user.id);
 
-	if (!event) {
+	if (!project) {
 		notFound();
 	}
 
-	const afterEnd = isAfterEnd(event.endDate);
+	const userId = session?.user.id;
+	const isParticipant = userId
+		? await getCachedCheckParticipantEnrollment(eventUrl, userId)
+		: false;
 
-	const isArchived = event.isArchived;
-	const isRegistrationEnabled = event.isRegistrationEnabled;
+	// console.log("Event page", { eventUrl, project, isParticipant });
+
+	const afterEnd = isAfterEnd(project.endDate);
+
+	const isArchived = project.isArchived;
+	const isRegistrationEnabled = project.isRegistrationEnabled;
 
 	let disabled = false;
 	let buttonText = "";
@@ -95,17 +108,23 @@ export default async function EventPage({
 	return (
 		<EventContainer.Holder>
 			<EventContainer.Hero
-				coverUrl={event.coverUrl || "/images/hero-bg.png"}
+				coverUrl={project.coverUrl || "/images/hero-bg.png"}
 			>
 				<div className="z-10 flex flex-1 flex-col items-start justify-center">
 					<h1 className="mb-4 text-5xl font-bold text-white">
-						{event.name}
+						{project.name}
 					</h1>
 					<div className="mb-6 flex items-center text-lg text-white/90">
 						<Calendar className="mr-2 h-4.5 w-4.5" />
 						<span className="-mt-0.5 text-base">
-							De {event.startDate.toLocaleDateString("pt-BR")} a{" "}
-							{event.endDate.toLocaleDateString("pt-BR")}
+							De{" "}
+							{new Date(project.startDate).toLocaleDateString(
+								"pt-BR",
+							)}{" "}
+							a{" "}
+							{new Date(project.endDate).toLocaleDateString(
+								"pt-BR",
+							)}
 						</span>
 					</div>
 					<div className="mb-8 flex flex-wrap gap-3">
@@ -140,15 +159,15 @@ export default async function EventPage({
 				</div>
 				<div className="relative z-20 flex items-center justify-center">
 					<Image
-						src={event.thumbnailUrl || "/images/cover.png"}
+						src={project.thumbnailUrl || "/images/cover.png"}
 						alt="SECOMP24"
 						width={400}
 						height={240}
 						className="border-primary max-w-md overflow-hidden rounded-3xl border-2"
 					/>
 					<ShareDialog
-						url={`${env.NEXT_PUBLIC_VERCEL_URL}/${event.url}`}
-						title={event.name}
+						url={`${env.NEXT_PUBLIC_VERCEL_URL}/${project.url}`}
+						title={project.name}
 						description={
 							"Use o QR code ou copie o link para compartilhar o evento!"
 						}
@@ -173,7 +192,7 @@ export default async function EventPage({
 									remarkPlugins={[remarkGfm]}
 									components={markdownComponents}
 								>
-									{event.description || ""}
+									{project.description || ""}
 								</ReactMarkdown>
 							</div>
 						</div>
@@ -181,8 +200,8 @@ export default async function EventPage({
 					<div className="sticky top-16 right-0 lg:w-1/3">
 						<div className="mb-6 rounded-lg border p-6">
 							<h3 className="mb-4 text-xl font-medium">Local</h3>
-							<p className="mb-4">{event.address}</p>
-							{event.latitude && event.longitude && (
+							<p className="mb-4">{project.address}</p>
+							{project.latitude && project.longitude && (
 								<div className="mb-4 overflow-hidden rounded-lg border">
 									<iframe
 										title="Mapa do local"
@@ -196,7 +215,7 @@ export default async function EventPage({
 										loading="lazy"
 										allowFullScreen
 										referrerPolicy="no-referrer-when-downgrade"
-										src={`https://www.google.com/maps?q=${event.latitude},${event.longitude}&z=15&output=embed`}
+										src={`https://www.google.com/maps?q=${project.latitude},${project.longitude}&z=15&output=embed`}
 									/>
 								</div>
 							)}
@@ -206,7 +225,7 @@ export default async function EventPage({
 								className="flex w-full items-center justify-center gap-2"
 							>
 								<a
-									href={`https://www.google.com/maps/search/${encodeURIComponent(event.address)}`}
+									href={`https://www.google.com/maps/search/${encodeURIComponent(project.address)}`}
 									target="_blank"
 									rel="noopener noreferrer"
 								>
@@ -219,20 +238,22 @@ export default async function EventPage({
 							<h3 className="mb-4 text-xl font-medium">
 								Sobre o produtor
 							</h3>
-							<p className="mb-4">{event.owner.name}</p>
+							<p className="mb-4">{project.owner.name}</p>
 							<Button
 								asChild
 								variant="outline"
 								className="flex w-full items-center justify-center gap-2"
 							>
-								<a href={`mailto:${event.owner.public_email}`}>
+								<a
+									href={`mailto:${project.owner.public_email}`}
+								>
 									<Mail className="h-4 w-4" />
 									<span>Falar com o produtor</span>
 								</a>
 							</Button>
 						</div>
 						<span className="flex w-full items-end justify-end">
-							<ReportEventDialog eventId={event.id}>
+							<ReportEventDialog eventId={project.id}>
 								<Button
 									variant={"outline"}
 									size={"lg"}

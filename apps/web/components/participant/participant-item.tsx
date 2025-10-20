@@ -58,16 +58,11 @@ function ParticipantAvatarAndInfo({
 					{participant.user?.name}
 				</h3>
 				<p className="text-foreground text-xs font-semibold opacity-50">
-					#{participant.id.split("-")[0]}
+					{participant.user?.email}
 				</p>
 			</div>
 		</div>
 	);
-}
-
-interface ParticipantActionsProps {
-	participantId: string;
-	url: string;
 }
 
 export const ParticipantListItem = {
