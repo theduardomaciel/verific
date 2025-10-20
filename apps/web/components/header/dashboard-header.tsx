@@ -41,7 +41,7 @@ export async function DashboardHeader({
 						projects={projects.map((project) => ({
 							id: project.id,
 							label: project.name,
-							image: project.thumbnailUrl,
+							image: project.logoUrl,
 							url: project.url,
 							date: project.startDate.toISOString(),
 						}))}
