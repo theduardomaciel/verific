@@ -213,13 +213,13 @@ export default async function ActivityPage(props: {
 									},
 								]}
 							/>
-							<ExportParticipantsButton
+							{/* <ExportParticipantsButton
 								participants={participants.map((p) => ({
 									name: p.user.name,
 									email: p.user.email,
 									createdAt: p.joinedAt,
 								}))}
-							/>
+							/> */}
 						</div>
 						<ParticipantsList.List
 							hasActivity

@@ -134,14 +134,13 @@ export const ParticipantListItem = {
 							<div className="flex flex-row items-center justify-start gap-2">
 								<Calendar className="h-4 w-4" />
 								Inscreveu-se em{" "}
-								{participant.joinedAt!.toLocaleDateString(
-									"pt-BR",
-									{
-										day: "2-digit",
-										month: "2-digit",
-										year: "2-digit",
-									},
-								)}
+								{new Date(
+									participant.joinedAt,
+								).toLocaleDateString("pt-BR", {
+									day: "2-digit",
+									month: "2-digit",
+									year: "2-digit",
+								})}
 							</div>
 						</div>
 						<Button

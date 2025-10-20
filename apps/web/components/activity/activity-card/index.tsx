@@ -49,6 +49,10 @@ export function ActivityCard({
 				id={activity.id}
 				className={cn(
 					"bg-card flex flex-col justify-between gap-4 rounded-lg border p-6",
+					{
+						"pointer-events-none opacity-50 select-none":
+							new Date(activity.dateTo) < new Date(),
+					},
 					className,
 				)}
 			>

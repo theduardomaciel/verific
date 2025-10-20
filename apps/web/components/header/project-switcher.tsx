@@ -72,7 +72,6 @@ export function ProjectSwitcher({
 						<AvatarImage
 							src={selectedProject.image || ""}
 							alt={selectedProject.label}
-							className="grayscale"
 						/>
 						<AvatarFallback>
 							{selectedProject.label.slice(0, 2)}
@@ -107,7 +106,6 @@ export function ProjectSwitcher({
 									<AvatarImage
 										src={project.image || ""}
 										alt={project.label}
-										className="grayscale"
 									/>
 									<AvatarFallback>
 										{project.label.slice(0, 2)}

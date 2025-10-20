@@ -12,10 +12,12 @@ const saoPauloDateFormatter = new Intl.DateTimeFormat("pt-BR", {
 });
 
 export const isDateDifferent = (date1: Date, date2: Date) => {
+	const d1 = new Date(date1);
+	const d2 = new Date(date2);
 	return (
-		date1.getDate() !== date2.getDate() ||
-		date1.getMonth() !== date2.getMonth() ||
-		date1.getFullYear() !== date2.getFullYear()
+		d1.getDate() !== d2.getDate() ||
+		d1.getMonth() !== d2.getMonth() ||
+		d1.getFullYear() !== d2.getFullYear()
 	);
 };
 
@@ -38,11 +40,11 @@ export const getTimeString = (date: Date, asHourFormat = false) => {
 };
 
 export const isBeforeStart = (startDate: Date) => {
-	return new Date() < startDate;
+	return new Date() < new Date(startDate);
 }
 
 export const isAfterEnd = (endDate: Date) => {
-	return new Date() > endDate;
+	return new Date() > new Date(endDate);
 }
 
 export const calculateWorkloadFromTimes = (
@@ -76,7 +78,7 @@ export const calculateWorkloadFromTimes = (
 */
 export const isLive = (date: Date): boolean => {
 	const now = Date.now();
-	const startTime = date.getTime();
+	const startTime = new Date(date).getTime();
 	const endTime = startTime + 60 * 60 * 1000; // 1 hora de duração
 	return now >= startTime && now <= endTime;
 };
@@ -86,19 +88,19 @@ export const isLive = (date: Date): boolean => {
 */
 export const isStartingSoon = (date: Date): boolean => {
 	const now = Date.now();
-	const startTime = date.getTime();
+	const startTime = new Date(date).getTime();
 	return startTime > now && startTime - now <= 15 * 60 * 1000;
 };
 
 export const isToday = (date: Date): boolean => {
-	return date.toDateString() === new Date().toDateString();
+	return new Date(date).toDateString() === new Date().toDateString();
 };
 
 export const isTomorrow = (date: Date): boolean => {
 	const tomorrow = new Date();
 	tomorrow.setDate(tomorrow.getDate() + 1);
-	return date.toDateString() === tomorrow.toDateString();
-}
+	return new Date(date).toDateString() === tomorrow.toDateString();
+};
 
 export function categorizeByDate<T>(
 	items: T[],
@@ -213,5 +215,5 @@ export function formatFriendlyDate(date: Date, options?: FriendlyDateOptions): s
 		formatOptions.minute = "2-digit";
 	}
 
-	return new Intl.DateTimeFormat(locale, formatOptions).format(date).replace(", ", ", às ");
+	return new Intl.DateTimeFormat(locale, formatOptions).format(new Date(date)).replace(", ", ", às ");
 }
