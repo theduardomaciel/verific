@@ -15,9 +15,10 @@ export default async function Page({
 }) {
 	const { activityId, eventUrl } = await params;
 
-	const { participantId } = await serverClient.getParticipantIdByProjectUrl({
-		projectUrl: eventUrl,
-	});
+	const { participantId, userId } =
+		await serverClient.getParticipantIdByProjectUrl({
+			projectUrl: eventUrl,
+		});
 
 	const { activity } = await serverClient.getActivity({
 		activityId,
@@ -50,6 +51,7 @@ export default async function Page({
 			) : (
 				<JoinActivityDialog
 					activity={activity}
+					userId={userId}
 					participantId={participantId}
 				/>
 			)}

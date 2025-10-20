@@ -17,6 +17,8 @@ import { Empty } from "@/components/empty";
 
 // Utils
 import { categorizeByDate } from "@/lib/date";
+import { getCachedActivitiesFromParticipant } from "@/lib/data";
+import { auth } from "@verific/auth";
 
 export default async function EventAccountPage({
 	params,
@@ -24,14 +26,23 @@ export default async function EventAccountPage({
 	params: Promise<{ eventUrl: string }>;
 }) {
 	const { eventUrl } = await params;
+	const session = await auth();
+
+	console.log("EventAccountPage session:", session);
+
+	const userId = session?.user.id;
+
+	if (!userId) {
+		redirect(`/${eventUrl}`);
+	}
 
 	let data;
 	try {
-		data = await serverClient.getActivitiesFromParticipant({
-			projectUrl: eventUrl,
-		});
-	} catch {
-		redirect(`/${eventUrl}/subscribe`);
+		data = await getCachedActivitiesFromParticipant(eventUrl, userId);
+	} catch (error: any) {
+		console.error("Error fetching activities from participant:", error);
+		return notFound();
+		// redirect(`/${eventUrl}/subscribe`);
 	}
 
 	const { activities, participantId } = data;

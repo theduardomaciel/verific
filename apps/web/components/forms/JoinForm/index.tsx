@@ -1,5 +1,4 @@
 "use client";
-import Image from "next/image";
 
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -33,6 +32,7 @@ import type { GenericForm } from "..";
 // API
 import { trpc } from "@/lib/trpc/react";
 import { useRouter } from "next/navigation";
+import { revalidateParticipantEnrollment } from "@/app/actions";
 
 interface JoinFormProps {
 	user?: User;
@@ -121,6 +121,8 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 		}
 
 		setCurrentState("submitted");
+
+		await revalidateParticipantEnrollment(user.id!);
 	}
 
 	// 2. Define a submit handler.

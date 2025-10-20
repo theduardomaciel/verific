@@ -71,7 +71,7 @@ function SpeakerCard({
 		>
 			<Avatar className={cn("aspect-square h-10 w-10 object-cover")}>
 				<AvatarImage src={speaker.imageUrl || undefined} />
-				<AvatarFallback className="cursor-default">
+				<AvatarFallback className="bg-primary cursor-default">
 					<User className={cn("h-6 w-6 text-white")} />
 				</AvatarFallback>
 			</Avatar>

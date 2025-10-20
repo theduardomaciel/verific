@@ -1,6 +1,7 @@
 "use server";
 
 import { signIn, signOut } from "@verific/auth";
+import { revalidateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -29,4 +30,20 @@ export async function updateProjectCookies(
 	cookieStore.set("projectDate", projectDate);
 
 	redirect("/dashboard");
+}
+
+export async function revalidateActivities() {
+	await revalidateTag("activities");
+}
+
+export async function revalidateParticipants() {
+	await revalidateTag("participants");
+}
+
+export async function revalidateParticipantActivities(userId: string) {
+	await revalidateTag(`activities-from-participant-${userId}`);
+}
+
+export async function revalidateParticipantEnrollment(userId: string) {
+	await revalidateTag(`participant-enrollment-${userId}`);
 }

@@ -9,7 +9,7 @@ import * as EventContainer from "@/components/landing/event-container";
 
 // API
 import { auth } from "@verific/auth";
-import { getProject } from "@/lib/data";
+import { getCachedCheckParticipantEnrollment, getProject } from "@/lib/data";
 
 export const revalidate = 3600; // invalidate every hour
 
@@ -19,36 +19,44 @@ export default async function EventSubscribePage({
 	params: Promise<{ eventUrl: string }>;
 }) {
 	const { eventUrl } = await params;
+	const session = await auth();
 
-	const { project: event, isParticipant } = await getProject(eventUrl);
+	const { project } = await getProject(eventUrl, session?.user.id);
 
-	// console.log("isParticipant", isParticipant);
+	if (!project.isRegistrationEnabled) {
+		redirect(`/${eventUrl}`);
+	}
+
+	const userId = session?.user.id;
+	const isParticipant = userId
+		? await getCachedCheckParticipantEnrollment(eventUrl, userId)
+		: false;
 
 	if (isParticipant) {
 		redirect(`/${eventUrl}/my`);
 	}
 
-	if (!event.isRegistrationEnabled) {
-		redirect(`/${eventUrl}`);
-	}
-
-	const session = await auth();
-
 	return (
 		<EventContainer.Holder>
 			<EventContainer.Hero
-				coverUrl={event.coverUrl || "/images/hero-bg.png"}
+				coverUrl={project.coverUrl || "/images/hero-bg.png"}
 			>
 				<div className="z-10 flex flex-1 flex-col items-center justify-center">
 					<h1 className="mb-4 text-5xl font-bold text-white">
 						Inscreva-se em <br />
-						{event.name}
+						{project.name}
 					</h1>
 					<div className="mb-4 flex items-center text-lg text-white/90">
 						<Calendar className="mr-2 h-4.5 w-4.5" />
 						<span className="-mt-0.5 text-base">
-							De {event.startDate.toLocaleDateString("pt-BR")} a{" "}
-							{event.endDate.toLocaleDateString("pt-BR")}
+							De{" "}
+							{new Date(project.startDate).toLocaleDateString(
+								"pt-BR",
+							)}{" "}
+							a{" "}
+							{new Date(project.endDate).toLocaleDateString(
+								"pt-BR",
+							)}
 						</span>
 					</div>
 				</div>
@@ -57,12 +65,12 @@ export default async function EventSubscribePage({
 				<JoinForm
 					user={session?.user || undefined}
 					project={{
-						id: event.id,
-						url: event.url,
-						logo: event.logoUrl || undefined,
+						id: project.id,
+						url: project.url,
+						logo: project.logoUrl || undefined,
 						colors: [
-							event.primaryColor,
-							event.secondaryColor,
+							project.primaryColor,
+							project.secondaryColor,
 						].filter(Boolean) as string[],
 					}}
 				/>

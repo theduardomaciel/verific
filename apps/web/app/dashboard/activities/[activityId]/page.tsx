@@ -36,6 +36,7 @@ import { z } from "zod";
 import { serverClient } from "@/lib/trpc/server";
 import { getActivityParams } from "@verific/api/routers/activities";
 import { listToString } from "@/lib/i18n";
+import { ExportParticipantsButton } from "@/components/participant/export-button";
 
 type ActivityPageParams = z.infer<typeof getActivityParams>;
 
@@ -54,7 +55,7 @@ export default async function ActivityPage(props: {
 	const { activity, participantsAmount, pageCount } =
 		await serverClient.getActivity({
 			activityId,
-			...parsedParams,
+			pageSize: 50,
 		});
 
 	const monitors = activity.participants.filter((t) => t.role === "monitor");
@@ -211,6 +212,13 @@ export default async function ActivityPage(props: {
 										value: "oldest",
 									},
 								]}
+							/>
+							<ExportParticipantsButton
+								participants={participants.map((p) => ({
+									name: p.user.name,
+									email: p.user.email,
+									createdAt: p.joinedAt,
+								}))}
 							/>
 						</div>
 						<ParticipantsList.List

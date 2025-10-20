@@ -20,8 +20,9 @@ import { MainNavProps } from "@/components/header/main-nav";
 
 // Lib
 import { isAfterEnd } from "@/lib/date";
-import { getProject } from "@/lib/data";
+import { getCachedCheckParticipantEnrollment, getProject } from "@/lib/data";
 import { env } from "@verific/env";
+import { auth } from "@verific/auth";
 
 export async function generateMetadata({
 	params,
@@ -82,13 +83,19 @@ export default async function EventLayout({
 	params: Promise<{ eventUrl: string }>;
 }) {
 	const { eventUrl } = await params;
+	const session = await auth();
 
-	const { project, isParticipant } = await getProject(eventUrl);
+	const { project } = await getProject(eventUrl, session?.user.id);
 
 	if (!project) {
 		console.error("Event not found", { eventUrl });
 		notFound();
 	}
+
+	const userId = session?.user.id;
+	const isParticipant = userId
+		? await getCachedCheckParticipantEnrollment(eventUrl, userId)
+		: false;
 
 	const EVENT_LINKS = [
 		{

@@ -73,13 +73,6 @@ const mutateActivityParams = z.object({
 	projectId: z.string().uuid(),
 });
 
-// Função auxiliar para calcular ids a adicionar/remover
-function getParticipantsIdsToMutate(newIds: string[], currentIds: string[]) {
-	const idsToAdd = newIds.filter((id) => !currentIds.includes(id));
-	const idsToRemove = currentIds.filter((id) => !newIds.includes(id));
-	return { idsToAdd, idsToRemove };
-}
-
 export const activitiesRouter = createTRPCRouter({
 	getActivity: publicProcedure
 		.input(getActivityParams.extend({ activityId: z.string().uuid() }))
@@ -235,7 +228,7 @@ export const activitiesRouter = createTRPCRouter({
 				projectUrl: z.string().optional(),
 			}),
 		)
-		.query(async ({ input, ctx }) => {
+		.query(async ({ input }) => {
 			const {
 				projectId,
 				projectUrl,
