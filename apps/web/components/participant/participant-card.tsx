@@ -7,7 +7,15 @@ import { cookies } from "next/headers";
 import { getInitials, pluralize } from "@/lib/i18n";
 
 // Icons
-import { Hash, Hourglass, LogOut, Mail, Settings, User } from "lucide-react";
+import {
+	CircleMinus,
+	Hash,
+	Hourglass,
+	LogOut,
+	Mail,
+	Settings,
+	User,
+} from "lucide-react";
 
 // Components
 import { Button } from "@/components/ui/button";
@@ -24,6 +32,7 @@ import { LogoutForm } from "@/components/ui/logout-form";
 
 // API
 import { serverClient } from "@/lib/trpc/server";
+import { RemoveParticipantDialog } from "../dialogs/remove-participant";
 
 interface Props {
 	id: string;
@@ -38,10 +47,15 @@ export async function ParticipantCard({ id: participantId, eventUrl }: Props) {
 			return cookieStore.get("projectUrl")?.value ?? "";
 		})());
 
-	const { participant, hours, totalEventsAttended, clientRole, isUser } =
-		await serverClient.getParticipant({
-			participantId,
-		});
+	const {
+		participant,
+		isModerator,
+		isModeratorParticipant,
+		hours,
+		totalEventsAttended,
+	} = await serverClient.getParticipant({
+		participantId,
+	});
 
 	return (
 		<Suspense fallback={<ParticipantCardSkeleton />}>
@@ -62,67 +76,46 @@ export async function ParticipantCard({ id: participantId, eventUrl }: Props) {
 			<div className="flex flex-col items-center justify-center gap-6">
 				<ul className="flex w-full flex-row flex-wrap items-center justify-center gap-2 md:max-w-[70%]">
 					<Badge variant={"secondary"} size={"xl"}>
-						<User />
-						{participant.role === "participant"
-							? "Participante"
-							: "Moderador"}
-					</Badge>
-					<Badge variant={"secondary"} size={"xl"}>
 						<Mail />
 						{participant.user.email}
 					</Badge>
 					<Badge variant={"secondary"} size={"xl"}>
 						<Hash />
 						{totalEventsAttended}{" "}
-						{participant.role === "participant"
-							? pluralize(
-									totalEventsAttended,
-									"atividade presenciada",
-									"atividades presenciadas",
-								)
-							: pluralize(
-									totalEventsAttended,
-									"atividade moderada",
-									"atividades moderadas",
-								)}
+						{pluralize(
+							totalEventsAttended,
+							"atividades",
+							"atividades",
+						)}
 					</Badge>
-					{participant.role === "participant" && (
-						<Badge variant={"secondary"} size={"xl"}>
-							<Hourglass />
-							{hours} horas
-						</Badge>
-					)}
+					<Badge variant={"secondary"} size={"xl"}>
+						<Hourglass />
+						{hours} horas
+					</Badge>
 				</ul>
 			</div>
 			<DialogFooter>
-				{isUser ? (
-					clientRole === "monitor" ? (
-						<Button className="w-full" asChild>
-							<Link href={"/auth"} className="w-full">
-								<Settings width={24} height={24} />
-								Gerenciar minha conta
-							</Link>
+				{isModerator && !isModeratorParticipant ? (
+					<RemoveParticipantDialog
+						participantId={participant.id}
+						projectUrl={projectUrl}
+						userEmail={participant.user.email}
+					>
+						<Button className="w-full" variant={"destructive"}>
+							<CircleMinus width={24} height={24} />
+							Expulsar do evento
 						</Button>
-					) : (
-						<LogoutForm
-							className="w-full"
-							redirectTo={`/${projectUrl}`}
-						>
-							<Button type="submit" className="w-full">
-								<LogOut width={24} height={24} />
-								Log-out
-							</Button>
-						</LogoutForm>
-					)
+					</RemoveParticipantDialog>
 				) : (
-					clientRole === "monitor" && (
-						<Button className="w-full" asChild>
-							<Link href={"/auth"} className="w-full">
-								<Settings width={24} height={24} />
-								Expulsar participante
-							</Link>
+					<LogoutForm
+						className="w-full"
+						redirectTo={`/${projectUrl}`}
+					>
+						<Button type="submit" className="w-full">
+							<LogOut width={24} height={24} />
+							Log-out
 						</Button>
-					)
+					</LogoutForm>
 				)}
 			</DialogFooter>
 		</Suspense>

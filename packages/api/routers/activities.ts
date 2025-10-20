@@ -40,7 +40,7 @@ import { activityAudiences } from "@verific/drizzle/enum/audience";
 export const activitySort = ["asc", "desc", "name_asc", "name_desc"] as const;
 
 export const getActivityParams = z.object({
-	page: z.coerce.number().default(0).optional(),
+	page: z.coerce.number().default(1).optional(),
 	pageSize: z.coerce.number().default(5).optional(),
 	search: z.string().optional(),
 	sortBy: z.enum(sortOptions).optional(),
@@ -86,7 +86,7 @@ export const activitiesRouter = createTRPCRouter({
 		.query(async ({ input, ctx }) => {
 			const {
 				activityId,
-				page = 0,
+				page = 1,
 				pageSize = 5,
 				search,
 				sortBy,
@@ -142,14 +142,14 @@ export const activitiesRouter = createTRPCRouter({
 				.where(
 					and(
 						eq(participantOnActivity.activityId, activityId),
-						eq(participant.role, "monitor"),
+						eq(participantOnActivity.role, "monitor"),
 					),
 				);
 
 			// Buscar participantes não moderadores com paginação/filtro
 			const nonMonitorWhere = [
 				eq(participantOnActivity.activityId, activityId),
-				eq(participant.role, "participant"),
+				eq(participantOnActivity.role, "participant"),
 			];
 
 			if (search) {
@@ -175,7 +175,7 @@ export const activitiesRouter = createTRPCRouter({
 				.innerJoin(user, eq(participant.userId, user.id))
 				.where(and(...nonMonitorWhere))
 				.orderBy(orderBy)
-				.offset(page * pageSize)
+				.offset((page - 1) * pageSize)
 				.limit(pageSize);
 
 			// Buscar total de participantes não moderadores para paginação
@@ -359,7 +359,8 @@ export const activitiesRouter = createTRPCRouter({
 			const formattedActivities = activities.map((act) => ({
 				...act,
 				participants: act.participantOnActivity.map((p) => ({
-					role: p.participant.role,
+					id: p.participant.id,
+					role: p.role,
 					userId: p.participant.userId,
 					user: {
 						name: p.participant.user?.name,
@@ -462,6 +463,7 @@ export const activitiesRouter = createTRPCRouter({
 			await db.insert(participantOnActivity).values({
 				activityId: insertedActivityId,
 				participantId: participantFromUser[0]?.id,
+				role: "monitor",
 			});
 
 			if (speakerIds && speakerIds.length > 0) {
@@ -685,25 +687,64 @@ export const activitiesRouter = createTRPCRouter({
 			});
 			if (error) throw new TRPCError(error);
 
-			// Update roles to monitor
-			await db
-				.update(participant)
-				.set({ role: "monitor" })
-				.where(inArray(participant.id, participantsIdsToAdd));
+			const toInsert: (typeof participantOnActivity.$inferInsert)[] = participantsIdsToAdd.map((participantId) => ({
+				activityId,
+				participantId,
+				role: "monitor"
+			}));
 
 			// Add to activity
 			await db
 				.insert(participantOnActivity)
-				.values(
-					participantsIdsToAdd.map((participantId) => ({
-						activityId,
-						participantId,
-					})),
-				)
-				.onConflictDoNothing();
+				.values(toInsert)
+				.onConflictDoUpdate({
+					target: [participantOnActivity.activityId, participantOnActivity.participantId],
+					set: {
+						role: "monitor",
+					},
+				});
 
 		}),
+	deleteActivity: protectedProcedure
+		.input(z.object({ activityId: z.string().uuid() }))
+		.mutation(async ({ input, ctx }) => {
+			const { activityId } = input;
 
+			const userId = ctx.session.user.id;
+
+			if (!userId) {
+				throw new TRPCError({
+					message: "User not authenticated.",
+					code: "UNAUTHORIZED",
+				});
+			}
+
+			// Verifica se o usuário é o dono do projeto
+			const project = await db.query.project
+				.findFirst({
+					where(fields) {
+						return eq(fields.ownerId, userId);
+					},
+				})
+				.then((project) => !!project);
+
+			if (!project) {
+				throw new TRPCError({
+					message: "User not authorized to delete this activity.",
+					code: "FORBIDDEN",
+				});
+			}
+
+			try {
+				await db.delete(activity).where(eq(activity.id, activityId));
+			} catch (error) {
+				console.error("Error deleting activity:", error);
+				throw new TRPCError({
+					message: "Activity not found.",
+					code: "BAD_REQUEST",
+				});
+			}
+		}),
 	getDashboardStats: publicProcedure
 		.input(z.object({ projectId: z.string().uuid() }))
 		.query(async ({ input }) => {
@@ -715,19 +756,22 @@ export const activitiesRouter = createTRPCRouter({
 
 			// Total participants (role = 'participant')
 			const totalParticipantsResult = await db
-				.select({ count: count() })
-				.from(participant)
-				.where(and(eq(participant.projectId, projectId), eq(participant.role, "participant")));
+				.select({ count: countDistinct(participantOnActivity.participantId) })
+				.from(participantOnActivity)
+				.innerJoin(activity, eq(participantOnActivity.activityId, activity.id))
+				.where(and(eq(activity.projectId, projectId), eq(participantOnActivity.role, "participant")));
 
 			const totalParticipants = totalParticipantsResult[0]?.count ?? 0;
 
 			// Participants in last hour
 			const participantsInLastHourResult = await db
-				.select({ count: count() })
-				.from(participant)
+				.select({ count: countDistinct(participantOnActivity.participantId) })
+				.from(participantOnActivity)
+				.innerJoin(activity, eq(participantOnActivity.activityId, activity.id))
+				.innerJoin(participant, eq(participantOnActivity.participantId, participant.id))
 				.where(and(
-					eq(participant.projectId, projectId),
-					eq(participant.role, "participant"),
+					eq(activity.projectId, projectId),
+					eq(participantOnActivity.role, "participant"),
 					gte(participant.joinedAt, lastHour)
 				));
 
@@ -743,11 +787,13 @@ export const activitiesRouter = createTRPCRouter({
 
 			// Active participants in last 24h
 			const activeParticipantsResult = await db
-				.select({ count: count() })
-				.from(participant)
+				.select({ count: countDistinct(participantOnActivity.participantId) })
+				.from(participantOnActivity)
+				.innerJoin(activity, eq(participantOnActivity.activityId, activity.id))
+				.innerJoin(participant, eq(participantOnActivity.participantId, participant.id))
 				.where(and(
-					eq(participant.projectId, projectId),
-					eq(participant.role, "participant"),
+					eq(activity.projectId, projectId),
+					eq(participantOnActivity.role, "participant"),
 					gte(participant.joinedAt, lastDay)
 				));
 
@@ -761,15 +807,15 @@ export const activitiesRouter = createTRPCRouter({
 
 			const totalPossible = totalPossibleResult[0]?.sum ?? 0;
 
-			// Total enrollments (count of participantOnActivity where participant.role = 'participant' and activity has participantsLimit)
+			// Total enrollments (count of participantOnActivity where participantOnActivity.role = 'participant' and activity has participantsLimit)
 			const totalEnrollmentsResult = await db
 				.select({ count: count() })
 				.from(participantOnActivity)
 				.innerJoin(participant, eq(participantOnActivity.participantId, participant.id))
 				.innerJoin(activity, eq(participantOnActivity.activityId, activity.id))
 				.where(and(
-					eq(participant.projectId, projectId),
-					eq(participant.role, "participant"),
+					eq(activity.projectId, projectId),
+					eq(participantOnActivity.role, "participant"),
 					isNotNull(activity.participantsLimit)
 				));
 
@@ -787,12 +833,14 @@ export const activitiesRouter = createTRPCRouter({
 			let graphDataQuery = await db
 				.select({
 					date: sql<string>`date(${participant.joinedAt})`,
-					count: count(),
+					count: countDistinct(participantOnActivity.participantId),
 				})
-				.from(participant)
+				.from(participantOnActivity)
+				.innerJoin(activity, eq(participantOnActivity.activityId, activity.id))
+				.innerJoin(participant, eq(participantOnActivity.participantId, participant.id))
 				.where(and(
-					eq(participant.projectId, projectId),
-					eq(participant.role, "participant"),
+					eq(activity.projectId, projectId),
+					eq(participantOnActivity.role, "participant"),
 					gte(participant.joinedAt, sevenDaysAgo)
 				))
 				.groupBy(sql`date(${participant.joinedAt})`)
@@ -815,12 +863,14 @@ export const activitiesRouter = createTRPCRouter({
 				const hoursDataQuery = await db
 					.select({
 						hour: sql<string>`date_trunc('hour', ${participant.joinedAt})`,
-						count: count(),
+						count: countDistinct(participantOnActivity.participantId),
 					})
-					.from(participant)
+					.from(participantOnActivity)
+					.innerJoin(activity, eq(participantOnActivity.activityId, activity.id))
+					.innerJoin(participant, eq(participantOnActivity.participantId, participant.id))
 					.where(and(
-						eq(participant.projectId, projectId),
-						eq(participant.role, "participant"),
+						eq(activity.projectId, projectId),
+						eq(participantOnActivity.role, "participant"),
 						gte(participant.joinedAt, twentyFourHoursAgo)
 					))
 					.groupBy(sql`date_trunc('hour', ${participant.joinedAt})`)
@@ -842,12 +892,14 @@ export const activitiesRouter = createTRPCRouter({
 			const coursesDataQuery = await db
 				.select({
 					course: participant.course,
-					count: count(),
+					count: countDistinct(participantOnActivity.participantId),
 				})
-				.from(participant)
+				.from(participantOnActivity)
+				.innerJoin(activity, eq(participantOnActivity.activityId, activity.id))
+				.innerJoin(participant, eq(participantOnActivity.participantId, participant.id))
 				.where(and(
-					eq(participant.projectId, projectId),
-					eq(participant.role, "participant"),
+					eq(activity.projectId, projectId),
+					eq(participantOnActivity.role, "participant"),
 					isNotNull(participant.course)
 				))
 				.groupBy(participant.course)

@@ -75,7 +75,7 @@ export function DashboardPagination({
 		}
 
 		// Sempre mostra a última página
-		if (currentPage < totalPageCount - 2 && totalPageCount > 1) {
+		if (totalPageCount > 1) {
 			pages.push(totalPageCount);
 		}
 

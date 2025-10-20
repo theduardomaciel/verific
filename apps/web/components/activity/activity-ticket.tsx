@@ -22,25 +22,19 @@ import { RouterOutput } from "@verific/api";
 
 export interface WorkshopTicketProps {
 	className?: string;
-	onActivity: RouterOutput["getActivitiesFromParticipant"]["activities"][0];
-	role: "monitor" | "participant";
+	activity: RouterOutput["getActivitiesFromParticipant"]["activities"][0];
+	participantId: string;
 }
 
 export function ActivityTicket({
-	onActivity,
-	role,
+	activity,
+	participantId,
 	className,
 }: WorkshopTicketProps) {
-	const activity = onActivity.activity;
-	const isMonitor = role === "monitor";
+	const isMonitor = activity.role === "monitor";
 
 	const startTime = getTimeString(activity.dateFrom);
 	const endTime = getTimeString(activity.dateTo);
-
-	const credentialedParticipantsAmount =
-		activity.participantOnActivity.filter(
-			(participant) => participant.joinedAt !== null,
-		).length;
 
 	const startDate = new Date(activity.dateFrom);
 	const endDate = new Date(activity.dateTo);
@@ -138,12 +132,8 @@ export function ActivityTicket({
 					) : null}
 
 					{/* Speakers */}
-					{activity.speakerOnActivity && role === "participant" && (
-						<ActivitySpeakers
-							speakers={activity.speakerOnActivity.map(
-								(s) => s.speaker,
-							)}
-						/>
+					{activity.speakers && activity.role === "participant" && (
+						<ActivitySpeakers speakers={activity.speakers} />
 					)}
 
 					{/* Monitor: Credentialed Participants Count */}
@@ -154,7 +144,7 @@ export function ActivityTicket({
 								<span>Participantes credenciados</span>
 							</div>
 							<div className="text-2xl font-bold">
-								{credentialedParticipantsAmount}
+								PLACEHOLDER
 							</div>
 						</div>
 					) : null}
@@ -187,12 +177,12 @@ export function ActivityTicket({
 										<span>Participantes credenciados</span>
 									</div>
 									<div className="text-2xl font-bold">
-										{credentialedParticipantsAmount}
+										PLACEHOLDER
 									</div>
 								</div>
 							</div>
 						</>
-					) : onActivity.joinedAt ? (
+					) : activity.joinedAt ? (
 						<div className="flex w-full items-center justify-between py-8 md:flex-col md:items-center md:justify-center md:border-0 md:pt-0">
 							<div className="text-muted-foreground md:text-card-foreground flex items-center md:flex-col md:gap-3 md:text-center">
 								<Check className="mr-2 size-6 md:mr-0 md:size-12" />
@@ -201,7 +191,7 @@ export function ActivityTicket({
 								</span>
 							</div>
 							<div className="text-2xl font-bold md:text-4xl">
-								{formatFriendlyDate(onActivity.joinedAt)}
+								{formatFriendlyDate(activity.joinedAt)}
 							</div>
 						</div>
 					) : (
@@ -212,7 +202,7 @@ export function ActivityTicket({
 							</p>
 							<QRCodeSVG
 								className="rounded-sm bg-white p-3"
-								value={onActivity.participantId}
+								value={participantId}
 								width={200}
 								height={200}
 							/>

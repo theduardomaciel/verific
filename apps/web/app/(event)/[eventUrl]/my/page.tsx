@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 // Components
 import { ExternalLinkIcon, Settings } from "lucide-react";
@@ -25,19 +25,20 @@ export default async function EventAccountPage({
 }) {
 	const { eventUrl } = await params;
 
-	// TODO: O "role" atualmente é definido por projeto/evento, ao invés de por atividade.
-	const { activities, isParticipant, role, participantId } =
-		await serverClient.getActivitiesFromParticipant({
+	let data;
+	try {
+		data = await serverClient.getActivitiesFromParticipant({
 			projectUrl: eventUrl,
 		});
-
-	if (!isParticipant) {
+	} catch {
 		redirect(`/${eventUrl}/subscribe`);
 	}
 
+	const { activities, participantId } = data;
+
 	const { grouped, categories } = categorizeByDate(
 		activities,
-		(item) => item.activity.dateFrom,
+		(item) => item.dateFrom,
 	);
 
 	return (
@@ -86,14 +87,16 @@ export default async function EventAccountPage({
 									<ul className="flex w-full flex-col gap-4">
 										{grouped
 											.get(category)!
-											.map((onActivity) => (
+											.map((activity) => (
 												<li
-													key={onActivity.activityId}
+													key={activity.id}
 													className="w-full"
 												>
 													<ActivityTicket
-														onActivity={onActivity}
-														role={role!}
+														activity={activity}
+														participantId={
+															participantId
+														}
 													/>
 												</li>
 											))}

@@ -42,7 +42,7 @@ export function ActivityDetailsContent({
 				</Badge>
 				<div>
 					<h2 className="mb-2 text-xl font-bold">{activity.name}</h2>
-					<div className="prose prose-sm dark:prose-invert max-w-none">
+					<div className="prose prose-sm dark:prose-invert max-w-none text-left">
 						<ReactMarkdown remarkPlugins={[remarkGfm]}>
 							{activity.description || ""}
 						</ReactMarkdown>
