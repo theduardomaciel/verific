@@ -12,9 +12,10 @@ import { updateProjectCookies } from "@/app/actions";
 // Types
 import { RouterOutput } from "@verific/api";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
 
 interface EventCardProps {
-	project: RouterOutput["getProjects"][number];
+	project: RouterOutput["getProjects"]["owned"][0];
 }
 
 export function AccountEventCard({ project }: EventCardProps) {
@@ -34,14 +35,23 @@ export function AccountEventCard({ project }: EventCardProps) {
 				<Image src={project.thumbnailUrl} alt="" fill />
 			)}
 			<div className="flex items-center gap-6">
-				<Avatar className="bg-border flex h-11 w-24 items-center justify-center rounded-md px-4">
+				<Avatar
+					className={cn(
+						"bg-border flex h-11 w-11 items-center justify-center rounded-md px-4",
+						{
+							"w-24": project.largeLogoUrl,
+						},
+					)}
+				>
 					<AvatarImage
 						className="object-contain"
-						src={project.logoUrl || undefined}
+						src={
+							project.largeLogoUrl || project.logoUrl || undefined
+						}
 						alt={project.name}
 					/>
 					<AvatarFallback>
-						<Ticket className="h-5 w-5 text-slate-300" />
+						<Ticket className="text-foreground h-5 w-5" />
 					</AvatarFallback>
 				</Avatar>
 				<div className="flex flex-col items-start gap-0.5">

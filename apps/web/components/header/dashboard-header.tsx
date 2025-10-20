@@ -15,7 +15,7 @@ import { RouterOutput } from "@verific/api";
 
 interface Props {
 	selectedProjectId: string;
-	projects: RouterOutput["getProjects"];
+	projects: RouterOutput["getProjects"]["owned"];
 	prefix: MainNavProps["prefix"];
 	links: MainNavProps["links"];
 	showProjectSwitcher?: boolean;

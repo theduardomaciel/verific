@@ -302,6 +302,7 @@ export const activitiesRouter = createTRPCRouter({
 			}
 
 			type ActivityWithRelations = typeof activity.$inferSelect & {
+				participantsCount: number,
 				project: typeof project.$inferSelect;
 				speakerOnActivity: Array<typeof speakerOnActivity.$inferSelect & {
 					speaker: typeof speaker.$inferSelect;
@@ -348,13 +349,19 @@ export const activitiesRouter = createTRPCRouter({
 			}) as ActivityWithRelations[];
 
 			// Query de contagem
-			const [amountDb, participantsCount] = await Promise.all([
+			// Get activities count and participants count per activity
+			const [amountDb, participantsCounts] = await Promise.all([
 				db
 					.select({ amount: countDistinct(activity.id) })
 					.from(activity)
 					.where(and(...activitiesWhere)),
 				fullQuery
-					? db.select({ amount: count() })
+					? null
+					: db
+						.select({
+							activityId: participantOnActivity.activityId,
+							count: count(),
+						})
 						.from(participantOnActivity)
 						.innerJoin(
 							activity,
@@ -364,14 +371,20 @@ export const activitiesRouter = createTRPCRouter({
 							),
 						)
 						.where(and(...activitiesWhere))
-					: Promise.resolve([{ amount: 0 }]),
-			])
+						.groupBy(participantOnActivity.activityId),
+			]);
 
-			const amount = amountDb[0]?.amount ?? 0;
-			const totalParticipants = participantsCount[0]?.amount ?? 0;
+			// Map activityId to participant count
+			const participantsCountMap: Record<string, number> = {};
+			if (participantsCounts && Array.isArray(participantsCounts)) {
+				for (const row of participantsCounts) {
+					participantsCountMap[row.activityId] = row.count;
+				}
+			}
 
 			const formattedActivities = activities.map((act: ActivityWithRelations) => ({
 				...act,
+				participantsCount: participantsCountMap[act.id] ?? 0,
 				participants: act.participantOnActivity
 					? act.participantOnActivity.map((p: NonNullable<ActivityWithRelations['participantOnActivity']>[0]) => ({
 						id: p.participant.id,
@@ -393,12 +406,12 @@ export const activitiesRouter = createTRPCRouter({
 					: [],
 			}));
 
+			const amount = amountDb[0]?.amount ?? 0;
 			const pageCount = Math.ceil(amount / pageSize);
 
 			return {
 				activities: formattedActivities,
 				pageCount,
-				totalParticipants,
 			};
 		}),
 
