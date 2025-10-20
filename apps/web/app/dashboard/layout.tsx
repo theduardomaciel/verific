@@ -50,7 +50,9 @@ export default async function DashboardLayout({
 		notFound();
 	}
 
-	const projectsIds = projects.map((project) => project.id);
+	const projectsIds = projects.owned
+		.map((project) => project.id)
+		.concat(projects.shared.map((project) => project.id));
 
 	if (!projectsIds.includes(projectId)) {
 		notFound();
@@ -63,7 +65,7 @@ export default async function DashboardLayout({
 			<DashboardHeader
 				prefix={`/dashboard`}
 				selectedProjectId={projectId}
-				projects={projects}
+				projects={projects.owned.concat(projects.shared)}
 				links={DASHBOARD_LINKS}
 			/>
 			{children}

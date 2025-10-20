@@ -43,7 +43,7 @@ export default async function AccountLayout({
 				links={ACCOUNT_LINKS}
 				showProjectSwitcher={false}
 				showAccountActions={false}
-				projects={projects}
+				projects={projects.owned}
 				selectedProjectId={projectId}
 			/>
 			{children}

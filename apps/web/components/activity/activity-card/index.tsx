@@ -23,7 +23,6 @@ import { activityCategoryLabels } from "@verific/drizzle/schema";
 interface EventCardProps {
 	className?: string;
 	activity: RouterOutput["getActivities"]["activities"][number];
-	totalParticipants: number;
 	participantId?: string;
 	userId?: string;
 	lowSeatsThreshold?: number;
@@ -31,14 +30,13 @@ interface EventCardProps {
 
 export function ActivityCard({
 	activity,
-	totalParticipants,
 	participantId,
 	userId,
 	className,
 	lowSeatsThreshold = 7,
 }: EventCardProps) {
 	const remainingSeats = activity.participantsLimit
-		? activity.participantsLimit - totalParticipants
+		? activity.participantsLimit - activity.participantsCount
 		: null;
 
 	const hasRemainingSeats = remainingSeats === null || remainingSeats > 0;
@@ -126,14 +124,16 @@ export function ActivityCard({
 								</Link>
 							</Button>
 						) : null}
-						{!!participantId && !!userId && (
-							<ParticipantQuitButton
-								activityId={activity.id}
-								userId={userId}
-								participantId={participantId}
-								projectUrl={activity.project?.url}
-							/>
-						)}
+						{!!participantId &&
+							!!userId &&
+							new Date(activity.dateTo) > new Date() && (
+								<ParticipantQuitButton
+									activityId={activity.id}
+									userId={userId}
+									participantId={participantId}
+									projectUrl={activity.project?.url}
+								/>
+							)}
 					</div>
 				</div>
 			</div>

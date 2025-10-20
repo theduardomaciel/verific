@@ -45,11 +45,12 @@ export default async function EventSchedulePage(props: {
 	const searchParams = await props.searchParams;
 	const { sort, ...parsedParams } = getActivitiesParams.parse(searchParams);
 
-	const { activities, totalParticipants } = await getCachedActivities({
+	const { activities } = await getCachedActivities({
 		projectId: project.id,
 		pageSize: 100, // Fetch all activities for the schedule (placeholder value)
-		sort: sort || "asc",
-		...parsedParams,
+		sort: "asc",
+		/* sort: sort || "asc",
+		...parsedParams, */
 	});
 
 	const result = userId
@@ -89,7 +90,7 @@ export default async function EventSchedulePage(props: {
 			</EventContainer.Hero>
 
 			<EventContainer.Content>
-				<div className="container-p mb-8 flex flex-col justify-between gap-4 md:flex-row">
+				{/* <div className="container-p mb-8 flex flex-col justify-between gap-4 md:flex-row">
 					<SearchBar placeholder="Pesquisar atividades" />
 					<div className="flex gap-4">
 						<SortBy
@@ -108,7 +109,7 @@ export default async function EventSchedulePage(props: {
 							}))}
 						/>
 					</div>
-				</div>
+				</div> */}
 
 				<div className="container-p mb-10">
 					{activities.length > 0 ? (
@@ -133,9 +134,6 @@ export default async function EventSchedulePage(props: {
 															: undefined
 													}
 													activity={activity}
-													totalParticipants={
-														totalParticipants
-													}
 													participantId={
 														result?.ids.includes(
 															activity.id,

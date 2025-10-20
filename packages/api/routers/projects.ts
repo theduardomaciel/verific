@@ -2,7 +2,7 @@ import { db } from "@verific/drizzle";
 
 import { z } from "zod";
 
-import { participant, project } from "@verific/drizzle/schema";
+import { participant, project, projectModerator } from "@verific/drizzle/schema";
 import { and, eq } from "@verific/drizzle/orm";
 
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
@@ -246,9 +246,23 @@ export const projectsRouter = createTRPCRouter({
 			throw new Error("User not found");
 		}
 
-		return db.query.project.findMany({
+		const ownerProjects = db.query.project.findMany({
 			where: eq(project.ownerId, userId),
 		});
+
+		const sharedProjects = db.query.projectModerator.findMany({
+			where: eq(projectModerator.userId, userId),
+			with: {
+				project: true,
+			},
+		});
+
+		const [owned, shared] = await Promise.all([
+			ownerProjects,
+			sharedProjects,
+		]);
+
+		return { owned, shared: shared.map((sp) => sp.project) };
 	}),
 
 	getAllProjects: publicProcedure.query(async () => {
