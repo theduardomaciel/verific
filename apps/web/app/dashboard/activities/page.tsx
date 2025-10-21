@@ -22,13 +22,10 @@ import { Empty } from "@/components/empty";
 import { ActivityCard } from "@/components/activity/activity-card/dashboard";
 
 // Validation
-import type { z } from "zod";
+import { z } from "@verific/zod";
 import { getActivitiesParams } from "@verific/api/routers/activities";
 
 type ActivitiesPageParams = z.infer<typeof getActivitiesParams>;
-
-// API
-import { serverClient } from "@/lib/trpc/server";
 
 // Types & Enums
 import {
@@ -36,6 +33,8 @@ import {
 	activityCategoryLabels,
 } from "@verific/drizzle/schema";
 import { sortOptions, sortOptionsLabels } from "@verific/api/utils";
+
+// Lib
 import { getCachedActivities } from "@/lib/data";
 
 export default async function ActivitiesPage(props: {
@@ -51,6 +50,7 @@ export default async function ActivitiesPage(props: {
 	const { activities, pageCount } = await getCachedActivities({
 		projectId,
 		...parsedParams,
+		fullQuery: true,
 	});
 
 	return (

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@verific/zod"
 
 // Nome
 const nameSchema = z.object({
@@ -35,9 +35,9 @@ const eventDescriptionSchema = z.object({
 // Datas
 const dateSchema = z.object({
 	startDate: z.coerce.date({
-		required_error: "Data inicial obrigatória",
+		error: "Data inicial obrigatória",
 	}),
-	endDate: z.coerce.date({ required_error: "Data final obrigatória" }),
+	endDate: z.coerce.date({ error: "Data final obrigatória" }),
 });
 
 // Endereço

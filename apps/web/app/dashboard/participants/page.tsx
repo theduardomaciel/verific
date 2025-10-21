@@ -16,7 +16,7 @@ import { ParticipantListItem } from "@/components/participant/participant-item";
 import { Empty } from "@/components/empty";
 
 // Validation
-import { z } from "zod";
+import { z } from "@verific/zod";
 import { getParticipantsParams } from "@verific/api/routers/participants";
 
 // API

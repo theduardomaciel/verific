@@ -30,7 +30,7 @@ import { AddMonitorDialog } from "@/components/dialogs/add-monitor-dialog";
 import { getDateString, getTimeString } from "@/lib/date";
 
 // Validation
-import { z } from "zod";
+import { z } from "@verific/zod";
 
 // API
 import { serverClient } from "@/lib/trpc/server";
@@ -55,7 +55,7 @@ export default async function ActivityPage(props: {
 	const { activity, participantsAmount, pageCount } =
 		await serverClient.getActivity({
 			activityId,
-			...parsedParams,
+			pageSize: 100,
 		});
 
 	const monitors = activity.participants.filter((t) => t.role === "monitor");
@@ -197,29 +197,36 @@ export default async function ActivityPage(props: {
 						</ParticipantsList.Title>
 						<div className="flex w-full flex-col items-start justify-start gap-2 sm:flex-row sm:gap-4">
 							<SearchBar
-								word={"search"}
+								prefix={"search"}
 								placeholder="Pesquisar participantes"
 							/>
 							<SortBy
-								sortBy={parsedParams.sortBy}
 								items={[
 									{
 										label: "Mais recentes",
-										value: "recent",
+										value: "desc",
 									},
 									{
 										label: "Mais antigos",
-										value: "oldest",
+										value: "asc",
+									},
+									{
+										label: "Nome A-Z",
+										value: "name_asc",
+									},
+									{
+										label: "Nome Z-A",
+										value: "name_desc",
 									},
 								]}
 							/>
-							{/* <ExportParticipantsButton
+							<ExportParticipantsButton
 								participants={participants.map((p) => ({
 									name: p.user.name,
 									email: p.user.email,
 									createdAt: p.joinedAt,
 								}))}
-							/> */}
+							/>
 						</div>
 						<ParticipantsList.List
 							hasActivity

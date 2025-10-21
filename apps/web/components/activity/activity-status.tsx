@@ -41,7 +41,7 @@ export function ActivityStatus({ className, date, dateFormat }: Props) {
 		>
 			<Calendar className="mt-[1.2px] h-4 w-4" />
 			<p className="text-sm leading-0 overflow-ellipsis">
-				{formatFriendlyDate(date, dateFormat)}
+				{formatFriendlyDate(new Date(date), dateFormat)}
 			</p>
 		</div>
 	);

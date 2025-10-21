@@ -24,7 +24,6 @@ import {
 
 interface ReportEventDialogProps {
 	children: React.ReactNode;
-	eventId: string;
 }
 
 const reportReasons = [
@@ -34,10 +33,7 @@ const reportReasons = [
 	{ value: "other", label: "Outros" },
 ];
 
-export function ReportEventDialog({
-	children,
-	eventId,
-}: ReportEventDialogProps) {
+export function ReportEventDialog({ children }: ReportEventDialogProps) {
 	const [currentState, setCurrentState] = useState<
 		boolean | "submitting" | "submitted" | "error"
 	>(false);

@@ -1,9 +1,9 @@
-import { z } from "zod";
+import { z } from "@verific/zod"
 
 export const joinFormSection0Schema = z.object({
-	email: z
-		.string({ required_error: "Obrigatório" })
-		.email({ message: "É necessário entrar com uma conta do Google" }),
+	email: z.email({
+		error: "Por favor, insira um e-mail válido",
+	}),
 	/* .refine(
 			(email) => {
 				return email.endsWith("ic.ufal.br");

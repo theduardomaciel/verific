@@ -25,7 +25,7 @@ import {
 } from "@/lib/validations/forms/settings-form/project/general-form";
 
 // Infer types from schemas
-import z from "zod";
+import { z } from "@verific/zod";
 type NameFormValues = z.infer<typeof nameSchema>;
 type UrlFormValues = z.infer<typeof urlSchema>;
 type DateFormValues = z.infer<typeof dateSchema>;

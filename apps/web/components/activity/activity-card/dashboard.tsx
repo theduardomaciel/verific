@@ -59,7 +59,7 @@ export function SimpleActivityCard({ activity, className }: ActivityCardProps) {
 					</span>
 				)}
 			</div>
-			<div className="bg-input h-[1px] w-full border-t" />
+			<div className="bg-input h-px w-full border-t" />
 			<div
 				className={
 					"flex w-full flex-wrap items-center justify-between gap-2 p-4"
@@ -99,10 +99,10 @@ export function ActivityCard({ activity, className }: ActivityCardProps) {
 			>
 				<div className="space-y-4 p-6">
 					<div className="flex items-center justify-between">
-						<h3 className="font-dashboard text-foreground text-xl font-semibold first-letter:capitalize">
+						<h3 className="font-dashboard text-foreground w-full text-xl font-semibold first-letter:capitalize">
 							{activity.name}
 						</h3>
-						<span className="text-muted-foreground text-sm">
+						<span className="text-muted-foreground ml-8 shrink-0 text-sm">
 							<ActivityStatus
 								date={activity.dateFrom}
 								dateFormat={{
@@ -139,7 +139,7 @@ export function ActivityCard({ activity, className }: ActivityCardProps) {
 					{(monitors || participantsAmount) &&
 						activity.isRegistrationOpen && (
 							<div className="flex flex-wrap items-center justify-between gap-4 border-t pt-3">
-								{monitors && monitors.length > 0 && (
+								{monitors && monitors.length > 0 ? (
 									<div className="flex items-center gap-2">
 										<div className="flex -space-x-2">
 											{monitors.map((monitor) => (
@@ -151,12 +151,16 @@ export function ActivityCard({ activity, className }: ActivityCardProps) {
 												</div>
 											))}
 										</div>
-										<span className="text-foreground text-xs">
+										<span className="text-foreground text-sm">
 											Monitorado por{" "}
 											{listToString(monitors)}
 										</span>
 									</div>
-								)}
+								) : participantsAmount ? (
+									<div className="text-foreground flex items-center gap-1 text-sm">
+										<p>Nenhum monitor designado</p>
+									</div>
+								) : null}
 
 								{participantsAmount ? (
 									<div className="text-foreground flex items-center gap-1 text-sm">

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@verific/zod"
 
 // Schema para gerenciamento de inscrições
 const subscriptionManagementSchema = z.object({
@@ -8,7 +8,7 @@ const subscriptionManagementSchema = z.object({
 // Schema para habilitar pesquisa
 const researchSchema = z.object({
 	enableResearch: z.boolean().default(false),
-	researchUrl: z.string().url("URL inválida").optional().or(z.literal("")),
+	researchUrl: z.url("URL inválida").optional().or(z.literal("")),
 });
 
 export { subscriptionManagementSchema, researchSchema };

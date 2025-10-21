@@ -95,7 +95,7 @@ export const authConfig = {
 		authorized({ auth, request: { nextUrl } }) {
 			const isLoggedIn = !!auth?.user;
 
-			console.log("Authorized", { isLoggedIn });
+			// console.log("Authorized", { isLoggedIn });
 
 			const authenticatedRoutes = ["/dashboard", "/account"];
 

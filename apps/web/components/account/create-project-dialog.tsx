@@ -44,7 +44,7 @@ import { ErrorDialog, LoadingDialog } from "../forms/dialogs";
 import { useMediaQuery } from "@/hooks/use-media-query";
 
 // Form
-import * as z from "zod";
+import { z } from "@verific/zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type UseFormReturn } from "react-hook-form";
 import type { FormState } from "@/lib/types/forms";
@@ -61,8 +61,8 @@ const formSchema = z.object({
 		message: "Descrições devem ter no máximo 3000 caracteres.",
 	}),
 	date: z.object({
-		from: z.date({ required_error: "Selecione a data inicial." }),
-		to: z.date({ required_error: "Selecione a data final." }),
+		from: z.date({ error: "Selecione a data inicial." }),
+		to: z.date({ error: "Selecione a data final." }),
 	}),
 	location: z.object({
 		address: z.string().min(1, {

@@ -1,9 +1,11 @@
+import "server-only"
+
 import { db } from "@verific/drizzle";
 
-import { z } from "zod";
+import { z } from "@verific/zod";
 
 import { participant, user, project } from "@verific/drizzle/schema";
-import { eq, and } from "@verific/drizzle/orm";
+import { eq } from "@verific/drizzle/orm";
 
 import { unstable_update } from "@verific/auth";
 

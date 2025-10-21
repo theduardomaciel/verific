@@ -1,4 +1,4 @@
-import z from "zod";
+import z from "@verific/zod";
 
 export const transformSingleToArray = <T>(
 	value: T | T[] | undefined,
@@ -37,7 +37,7 @@ export const createEnumArraySchema = (enumValues: readonly string[]) =>
 			}
 			return val;
 		},
-		z.array(z.enum(enumValues as [string, ...string[]])).optional(),
+		z.array(z.enum(enumValues as [string, ...string[]])),
 	);
 
 export const sortOptions = ["asc", "desc", "name_asc", "name_desc"] as const;

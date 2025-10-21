@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@verific/zod";
 
 import { db } from "@verific/drizzle";
 import {
@@ -175,8 +175,13 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 				)
 				.where(eq(participant.userId, userId));
 
-			return {
-				ids: activities.map((a) => a.activityId), participantId: activities.length > 0 ? activities[0]?.participantId : undefined
+			const participantId =
+				activities.length > 0 ? activities[0]?.participantId : undefined;
+
+			if (!participantId) {
+				return null;
 			}
+
+			return { ids: activities.map((a) => a.activityId), participantId }
 		}),
 });

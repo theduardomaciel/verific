@@ -157,7 +157,7 @@ export default async function EventPage({
 						)}
 					</Button>
 				</div>
-				<div className="relative z-20 flex items-center justify-center">
+				<div className="relative z-20 flex h-60 items-center justify-center">
 					<Image
 						src={project.thumbnailUrl || "/images/cover.png"}
 						alt="SECOMP24"
@@ -253,7 +253,7 @@ export default async function EventPage({
 							</Button>
 						</div>
 						<span className="flex w-full items-end justify-end">
-							<ReportEventDialog eventId={project.id}>
+							<ReportEventDialog>
 								<Button
 									variant={"outline"}
 									size={"lg"}
