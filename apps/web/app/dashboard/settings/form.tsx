@@ -158,7 +158,7 @@ export function ProjectSettingsGeneral({ project }: Props) {
 				schema={eventDescriptionSchema}
 				title="Descrição do Evento"
 				description="Esta breve descrição será exibida para todos os visitantes e participantes. Suporte a Markdown."
-				initialState={{ description: project.description }}
+				initialState={{ description: project.description || undefined }}
 				onSubmit={onSubmitEventDescription}
 				renderField={(form) => (
 					<FormField
@@ -253,8 +253,8 @@ export function ProjectSettingsGeneral({ project }: Props) {
 				description="Este é o local físico utilizado para hospedar seu evento. Ele será exibido aos participantes na página de inscrição."
 				initialState={{
 					address: project.address,
-					latitude: project.latitude,
-					longitude: project.longitude,
+					latitude: project.latitude || undefined,
+					longitude: project.longitude || undefined,
 				}}
 				onSubmit={onSubmitAddress}
 				renderField={(form) => (

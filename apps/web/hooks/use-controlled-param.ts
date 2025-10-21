@@ -1,7 +1,6 @@
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useQueryString } from "./use-query-string";
-import { useDebounce } from "./use-debounce";
 
 type ParamType = "string" | "array";
 
@@ -65,11 +64,16 @@ export function useControlledParam<T extends string | string[]>({
 
     // No modo URL-Driven: inicializa do URL, depois usa defaultValue como fallback
     // No modo Client-Driven: usa value prop diretamente
-    const initialValue = isControlled
-        ? value
-        : value ?? parseValue(query.get(key)) ?? defaultValue ?? (type === "array" ? ([] as unknown as T) : ("" as unknown as T));
+    const getInitialValue = useCallback((): T => {
+        if (isControlled) {
+            return value as T;
+        }
+        const urlValue = parseValue(query.get(key));
+        const fallback = defaultValue ?? (type === "array" ? ([] as unknown as T) : ("" as unknown as T));
+        return urlValue ?? fallback;
+    }, [isControlled, value, query, key, parseValue, defaultValue, type]);
 
-    const [localValue, setLocalValue] = useState<T>(initialValue as T);
+    const [localValue, setLocalValue] = useState<T>(getInitialValue);
 
     // Sincroniza value externo em modo Client-Driven
     useEffect(() => {
@@ -78,23 +82,48 @@ export function useControlledParam<T extends string | string[]>({
         }
     }, [value, isControlled]);
 
-    const debouncedValue = useDebounce(localValue, isControlled ? debounce : debounce);
+    // Refs para gerenciar debounce manualmente (mais eficiente que useDebounce)
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const lastUrlUpdateRef = useRef<string | undefined>(undefined);
 
     // Atualiza URL apenas em modo URL-Driven (sem onChange)
     useEffect(() => {
         if (isControlled) return; // Pula se for Client-Driven
 
-        startTransition(() => {
-            router.push(
-                toUrl({
-                    [key]: serializeValue(debouncedValue),
-                }),
-                {
-                    scroll: false,
-                },
-            );
-        });
-    }, [debouncedValue, key, toUrl, router, isControlled, serializeValue]);
+        // Limpa timeout anterior
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+        }
+
+        // Debounce manual - mais eficiente que criar estado extra
+        timeoutRef.current = setTimeout(() => {
+            const serialized = serializeValue(localValue);
+
+            // Evita navegações desnecessárias se o valor não mudou
+            if (lastUrlUpdateRef.current === serialized) {
+                return;
+            }
+
+            lastUrlUpdateRef.current = serialized;
+
+            startTransition(() => {
+                router.push(
+                    toUrl({
+                        [key]: serialized,
+                    }),
+                    {
+                        scroll: false,
+                    },
+                );
+            });
+        }, debounce);
+
+        return () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+        };
+    }, [localValue, key, toUrl, router, isControlled, serializeValue, debounce]);
 
     const setValue = useCallback(
         (newValue: T) => {

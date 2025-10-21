@@ -55,7 +55,7 @@
 		"react-dom": "^19.2.0",
 		"react-hook-form": "^7.65.0",
 		"react-markdown": "^10.1.0",
-		"recharts": "^3.3.0",
+		"recharts": "^2.15.2",
 		"remark-gfm": "^4.0.1",
 		"server-only": "^0.0.1",
 		"sonner": "^2.0.7",
@@ -78,6 +78,9 @@
 		"tailwindcss": "^4.1.15",
 		"tsx": "^4.20.6",
 		"typescript": "^5.9.3"
+	},
+	"overrides": {
+		"react-is": "^19.2.0"
 	},
 	"prettier": "@verific/prettier-config"
 }

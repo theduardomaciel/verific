@@ -62,7 +62,6 @@ export default async function ActivitiesPage(props: {
 							<SearchBar placeholder="Pesquisar atividades..." />
 						</div>
 						<SortBy
-							sortBy={parsedParams.sort}
 							items={sortOptions.map((option) => ({
 								value: option,
 								label: sortOptionsLabels[option],

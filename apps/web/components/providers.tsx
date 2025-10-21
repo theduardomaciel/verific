@@ -10,7 +10,7 @@ import { Toaster } from "./ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { trpcLinks } from "@/lib/trpc/client";
-import { trpc, TRPCProvider } from "@/lib/trpc/react";
+import { trpc } from "@/lib/trpc/react";
 import { createQueryClient } from "@/lib/trpc/query-client";
 
 let clientQueryClientSingleton: QueryClient | undefined = undefined;
@@ -40,13 +40,13 @@ export function Providers({ children }: { children: ReactNode }) {
 			enableSystem
 			disableTransitionOnChange
 		>
-			<TRPCProvider client={trpcClient} queryClient={queryClient}>
+			<trpc.Provider client={trpcClient} queryClient={queryClient}>
 				<QueryClientProvider client={queryClient}>
 					<NextTopLoader showSpinner={false} color="var(--primary)" />
 					{children}
 					<Toaster richColors closeButton />
 				</QueryClientProvider>
-			</TRPCProvider>
+			</trpc.Provider>
 		</ThemeProvider>
 	);
 }

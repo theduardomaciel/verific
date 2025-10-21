@@ -82,7 +82,7 @@ export function ProjectSettingsSubscriptionsForm({ project }: Props) {
 				title="Gerenciar Inscrições"
 				description="Decida se usuários poderão utilizar a página de inscrição para se cadastrarem ou não"
 				initialState={{
-					enableSubscription: project.isRegistrationEnabled,
+					enableSubscription: project.isRegistrationEnabled || false,
 				}}
 				onSubmit={onSubmitSubscriptionManagement}
 				renderField={(form) => (
@@ -120,7 +120,7 @@ export function ProjectSettingsSubscriptionsForm({ project }: Props) {
 				title="Realizar Pesquisa"
 				description="Decida se irá disponibilizar uma pesquisa opcional na página de inscrição de seu evento"
 				initialState={{
-					enableResearch: project.isResearchEnabled,
+					enableResearch: project.isResearchEnabled || false,
 					researchUrl: project.researchUrl || "",
 				}}
 				onSubmit={onSubmitResearch}

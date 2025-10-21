@@ -14,11 +14,10 @@ import { auth } from "@verific/auth";
 import { RouterOutput } from "@verific/api";
 
 interface Props {
-	selectedProjectId: string;
+	selectedProjectId?: string;
 	projects: RouterOutput["getProjects"]["owned"];
 	prefix: MainNavProps["prefix"];
 	links: MainNavProps["links"];
-	showProjectSwitcher?: boolean;
 	showAccountActions?: boolean;
 }
 
@@ -27,7 +26,6 @@ export async function DashboardHeader({
 	projects,
 	prefix,
 	links,
-	showProjectSwitcher = true,
 	showAccountActions = true,
 }: Props) {
 	const session = await auth();
@@ -35,7 +33,7 @@ export async function DashboardHeader({
 	return (
 		<div className="px-container-h flex w-full flex-col items-center gap-6 border-b py-4 md:flex-row-reverse">
 			<div className="flex items-center justify-between gap-6 max-md:w-full md:ml-auto">
-				{showProjectSwitcher && (
+				{!!selectedProjectId && (
 					<ProjectSwitcher
 						selectedProjectId={selectedProjectId}
 						projects={projects.map((project) => ({

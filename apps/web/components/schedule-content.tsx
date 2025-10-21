@@ -44,8 +44,14 @@ export function ScheduleContent({
 	eventUrl,
 }: ScheduleContentProps) {
 	const [searchQuery, setSearchQuery] = useState<string>("");
-	const [sortBy, setSortBy] = useState<string>("asc");
+	const [sortBy, setSortBy] = useState<string | undefined>(undefined);
 	const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
+
+	const cleanFilters = () => {
+		setSearchQuery("");
+		setCategoryFilter([]);
+		setSortBy(undefined);
+	};
 
 	const filteredActivities = useMemo(() => {
 		let filtered = activities;
@@ -179,7 +185,14 @@ export function ScheduleContent({
 						))}
 					</Accordion>
 				) : searchQuery || categoryFilter.length > 0 ? (
-					<Empty href={`/${eventUrl}/schedule`} />
+					<Empty>
+						<button
+							onClick={cleanFilters}
+							className="text-foreground cursor-pointer underline"
+						>
+							Limpar filtros
+						</button>
+					</Empty>
 				) : (
 					<Empty
 						title="Este evento ainda não possui atividades :("
