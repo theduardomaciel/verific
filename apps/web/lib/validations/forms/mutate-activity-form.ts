@@ -1,10 +1,10 @@
-import { z } from "zod";
+import { z } from "@verific/zod"
 import { activityAudiences } from "@verific/drizzle/enum/audience";
 import { activityCategories } from "@verific/drizzle/enum/category";
 
 export const mutateActivityFormSchema = z.object({
 	name: z
-		.string({ required_error: "O nome da atividade é obrigatório" })
+		.string({ error: "O nome da atividade é obrigatório" })
 		.min(3, {
 			message: "O nome da atividade deve ter pelo menos 3 caracteres",
 		}),
@@ -32,18 +32,18 @@ export const mutateActivityFormSchema = z.object({
 	speakerIds: z
 		.array(z.number()).optional(),
 	dateFrom: z.coerce.date({
-		required_error: "É necessário inserir a data de início da atividade",
+		error: "É necessário inserir a data de início da atividade",
 	}),
 	/* dateTo: z.coerce.date() */
 	timeFrom: z.string({
-		required_error: "É necessário inserir o horário de início da atividade",
+		error: "É necessário inserir o horário de início da atividade",
 	}).regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Formato de horário inválido"),
 	timeTo: z.string({
-		required_error:
+		error:
 			"É necessário inserir o horário de término da atividade",
 	}).regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Formato de horário inválido"),
 	category: z.enum(activityCategories, {
-		required_error: "É necessário informar qual a categoria da atividade.",
+		error: "É necessário informar qual a categoria da atividade.",
 	}),
 	address: z.string().optional(),
 }).superRefine((data, ctx) => {
@@ -54,7 +54,7 @@ export const mutateActivityFormSchema = z.object({
 		const minutesTo = h2! * 60 + m2!;
 		if (minutesTo <= minutesFrom) {
 			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
+				code: "custom",
 				message: "Horário de término deve ser após o horário de início",
 				path: ["timeTo"],
 			});

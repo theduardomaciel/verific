@@ -1,6 +1,6 @@
 import SuperJSON from "superjson";
 import { initTRPC, TRPCError } from "@trpc/server";
-import { ZodError } from "zod";
+import { ZodError } from "@verific/zod";
 
 import type { Session } from "@verific/auth";
 

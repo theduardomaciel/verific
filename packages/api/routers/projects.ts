@@ -1,9 +1,9 @@
 import { db } from "@verific/drizzle";
 
-import { z } from "zod";
+import { z } from "@verific/zod";
 
 import { participant, project, projectModerator } from "@verific/drizzle/schema";
-import { and, eq } from "@verific/drizzle/orm";
+import { eq } from "@verific/drizzle/orm";
 
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
@@ -15,7 +15,7 @@ import { google } from "googleapis";
 import { env } from "@verific/env";
 
 export const updateProjectSchema = z.object({
-	id: z.string().uuid(),
+	id: z.uuid(),
 	name: z.string().optional(),
 	description: z.string().optional(),
 	url: z.string().optional(),

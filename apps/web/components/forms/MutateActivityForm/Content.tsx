@@ -43,7 +43,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
 
 // Date and Time
-import { ptBR } from "date-fns/locale";
 import { Calendar } from "@/components/ui/calendar";
 import { TimePicker } from "@/components/pickers/time-picker";
 
@@ -569,7 +568,6 @@ export function MutateActivityFormContent({
 									<Calendar
 										mode="single"
 										lang="pt-br"
-										locale={ptBR}
 										selected={field.value}
 										onSelect={field.onChange}
 										defaultMonth={field.value}

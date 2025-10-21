@@ -21,7 +21,7 @@ interface EventHeroProps {
 
 export function Hero({ children, coverUrl }: EventHeroProps) {
 	return (
-		<section className="from-primary bg-primary px-landing border-secondary relative w-full border-b-[10px] py-24">
+		<section className="from-primary bg-primary px-landing border-secondary relative flex w-full border-b-[10px] py-24">
 			<div className="container-p z-10 mx-auto flex w-full flex-col gap-8 md:flex-row">
 				{children}
 			</div>

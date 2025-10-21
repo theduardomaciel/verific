@@ -1,8 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { addDays, format, subDays } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import type { DateRange } from "react-day-picker";
 
@@ -22,6 +20,16 @@ interface Props {
 }
 
 export function DateRangePicker({ className, value, onChange }: Props) {
+	const formatDate = (date: Date) => {
+		const str = date.toLocaleDateString("pt-BR", {
+			day: "2-digit",
+			month: "short",
+			year: "numeric",
+		});
+		const parts = str.split(" ");
+		return `${parts[0]} de ${parts[2]}, ${parts[4]}`;
+	};
+
 	return (
 		<div className={cn("grid gap-2", className)}>
 			<Popover>
@@ -38,18 +46,11 @@ export function DateRangePicker({ className, value, onChange }: Props) {
 						{value?.from ? (
 							value.to ? (
 								<>
-									{format(value.from, "dd 'de' MMM, yyyy", {
-										locale: ptBR,
-									})}{" "}
-									-{" "}
-									{format(value.to, "dd 'de' MMM, yyyy", {
-										locale: ptBR,
-									})}
+									{formatDate(value.from)} -{" "}
+									{formatDate(value.to)}
 								</>
 							) : (
-								format(value.from, "dd 'de' MMM, yyyy", {
-									locale: ptBR,
-								})
+								formatDate(value.from)
 							)
 						) : (
 							<span>Escolha uma data</span>
@@ -64,7 +65,6 @@ export function DateRangePicker({ className, value, onChange }: Props) {
 						selected={value}
 						onSelect={onChange}
 						numberOfMonths={2}
-						locale={ptBR}
 					/>
 				</PopoverContent>
 			</Popover>

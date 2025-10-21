@@ -1,12 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition, useCallback } from "react";
+import { useCallback } from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { useQueryString } from "@/hooks/use-query-string";
-import { useDebounce } from "@/hooks/use-debounce";
+
+// Hooks
+import { useControlledParam } from "@/hooks/use-controlled-param";
 
 // Components
 import { Button } from "@/components/ui/button";
@@ -27,65 +27,49 @@ import {
 import { listToString } from "@/lib/i18n";
 
 interface FilterByProps {
-	name: string;
+	prefix?: string;
 	placeholder?: string;
-	filterBy?: string[];
 	items: Array<{ value: string; label: string }>;
+	// Client-Driven: forneça ambas para gerenciar estado no pai
+	value?: string[];
+	onChange?: (value: string[]) => void;
 }
 
 export function FilterBy({
-	name,
+	prefix = "filter",
 	placeholder,
-	filterBy,
 	items,
+	value,
+	onChange,
 }: FilterByProps) {
-	const router = useRouter();
-	const { toUrl } = useQueryString();
+	const {
+		value: selectedValues,
+		setValue,
+		isPending,
+	} = useControlledParam({
+		key: prefix,
+		value,
+		onChange,
+		type: "array",
+	});
 
-	const [isPending, startTransition] = useTransition();
-
-	// State for immediate UI feedback
-	const [selected, setSelected] = useState<string[]>(filterBy || []);
-
-	// Debounce changes to optimize server calls
-	const debouncedSelected = useDebounce(selected, 750);
-
-	// Update URL when debounced selection changes
-	useEffect(() => {
-		startTransition(() => {
-			router.replace(
-				toUrl({
-					[`${name}`]:
-						debouncedSelected.length === 0
-							? undefined
-							: debouncedSelected.join(","),
-				}),
-				{
-					scroll: false,
-				},
-			);
-		});
-	}, [debouncedSelected, name, toUrl, router]);
-
-	// Sync selected with external URL changes
-	useEffect(() => {
-		const urlFilters = filterBy || [];
-		if (JSON.stringify(urlFilters) !== JSON.stringify(selected)) {
-			setSelected(urlFilters);
-		}
-	}, [filterBy]);
-
-	const handleSelect = useCallback((value: string) => {
-		setSelected((prevSelected) =>
-			prevSelected.includes(value)
-				? prevSelected.filter((s) => s !== value)
-				: [...prevSelected, value],
-		);
-	}, []);
+	const handleSelect = useCallback(
+		(val: string) => {
+			const current = (selectedValues ?? []) as string[];
+			let newValues: string[];
+			if (current.includes(val)) {
+				newValues = current.filter((v) => v !== val);
+			} else {
+				newValues = [...current, val];
+			}
+			setValue(newValues);
+		},
+		[selectedValues, setValue],
+	);
 
 	// Get selected labels
 	const selectedLabels = items
-		.filter((item) => selected.includes(item.value))
+		.filter((item) => (selectedValues ?? []).includes(item.value))
 		.map((item) => item.label);
 
 	return (
@@ -95,7 +79,7 @@ export function FilterBy({
 					variant="outline"
 					role="combobox"
 					disabled={isPending}
-					className="flex flex-1 justify-between overflow-hidden font-normal text-ellipsis"
+					className="flex min-w-40 flex-1 justify-between overflow-hidden font-normal text-ellipsis"
 				>
 					{selectedLabels.length > 0
 						? listToString(selectedLabels)
@@ -103,7 +87,7 @@ export function FilterBy({
 					<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
 				</Button>
 			</PopoverTrigger>
-			<PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+			<PopoverContent className="w-(--radix-popover-trigger-width) p-0">
 				<Command>
 					<CommandInput placeholder="Buscar..." />
 					<CommandList>
@@ -118,7 +102,9 @@ export function FilterBy({
 									<Check
 										className={cn(
 											"mr-2 h-4 w-4",
-											selected.includes(item.value)
+											(selectedValues ?? []).includes(
+												item.value,
+											)
 												? "opacity-100"
 												: "opacity-0",
 										)}

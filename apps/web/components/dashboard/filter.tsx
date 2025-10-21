@@ -1,19 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import {
-	type Dispatch,
-	type SetStateAction,
-	useEffect,
-	useState,
-	useTransition,
-	useRef,
-} from "react";
+import { useRef } from "react";
+import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
 // Icons
-import { ChevronUp, CircleOff, Loader2 } from "lucide-react";
+import { ChevronUp, CircleOff } from "lucide-react";
 
 // Components
 import { Label } from "@/components/ui/label";
@@ -29,8 +22,7 @@ import {
 } from "@/components/ui/select";
 
 // Utils
-import { useQueryString } from "@/hooks/use-query-string";
-import { useDebounce } from "@/hooks/use-debounce";
+import { useControlledParam } from "@/hooks/use-controlled-param";
 
 interface FilterProps {
 	title?: string;
@@ -46,6 +38,9 @@ interface FilterProps {
 		name: string;
 		value: string;
 	}[];
+	// Client-Driven: forneça ambas para gerenciar estado no pai
+	value?: string[];
+	onChange?: (value: string[]) => void;
 }
 
 const FILTERS = {
@@ -72,44 +67,21 @@ export function Filter({
 		linesAmount: 1,
 		placeholder: "Selecione um item",
 	},
+	value,
+	onChange,
 }: FilterProps) {
-	const router = useRouter();
-	const { query, toUrl } = useQueryString();
+	const {
+		value: filters,
+		setValue: setFilters,
+		isPending: isPendingFilterTransition,
+	} = useControlledParam({
+		key: prefix,
+		value,
+		onChange,
+		type: "array",
+	});
 
-	const [isPendingFilterTransition, startTransition] = useTransition();
-
-	// State for immediate UI feedback
-	const [filters, setFilters] = useState<string[]>(
-		query.get(prefix)?.split(",") ?? [],
-	);
-
-	// Debounce for optimized server calls
-	const debouncedValue = useDebounce(filters, 750);
-
-	// Update URL when debounced value changes
-	useEffect(() => {
-		startTransition(() => {
-			router.push(
-				toUrl({
-					[`${prefix}`]:
-						debouncedValue.length === 0
-							? undefined
-							: debouncedValue.join(","),
-				}),
-				{
-					scroll: false,
-				},
-			);
-		});
-	}, [debouncedValue, prefix, toUrl, router]);
-
-	// Sync filters with external URL changes
-	useEffect(() => {
-		const urlFilters = query.get(prefix)?.split(",") ?? [];
-		if (JSON.stringify(urlFilters) !== JSON.stringify(filters)) {
-			setFilters(urlFilters);
-		}
-	}, [query, prefix]);
+	const safeFilters = (filters ?? []) as string[];
 
 	return (
 		<div
@@ -125,10 +97,12 @@ export function Filter({
 			)}
 			{FILTERS[type]({
 				items,
-				filters,
+				filters: safeFilters,
 				setFilters,
 				config,
 				isPendingFilterTransition,
+				value,
+				onChange,
 			})}
 		</div>
 	);
@@ -138,8 +112,10 @@ interface ItemsProps {
 	items: FilterProps["items"];
 	config?: FilterProps["config"];
 	filters: string[];
-	setFilters: Dispatch<SetStateAction<string[]>>;
+	setFilters: (value: string[]) => void;
 	isPendingFilterTransition?: boolean;
+	value?: string[];
+	onChange?: (value: string[]) => void;
 }
 
 interface SelectItemsProps extends ItemsProps {}
@@ -150,13 +126,23 @@ function SelectFilter({
 	filters,
 	setFilters,
 	isPendingFilterTransition,
+	value,
+	onChange,
 }: SelectItemsProps) {
-	const handleFilterChange = (value: string) => {
-		setFilters([value]);
+	const handleFilterChange = (val: string) => {
+		const newFilters = [val];
+		if (onChange) {
+			onChange(newFilters);
+		} else {
+			setFilters(newFilters);
+		}
 	};
 
 	return (
-		<Select onValueChange={handleFilterChange} defaultValue={filters[0]}>
+		<Select
+			onValueChange={handleFilterChange}
+			value={value?.[0] ?? filters[0]}
+		>
 			<SelectTrigger
 				disabled={isPendingFilterTransition}
 				className={cn(config?.className, {
@@ -210,17 +196,25 @@ function CheckboxFilter({
 	filters,
 	setFilters,
 	isPendingFilterTransition,
+	value,
+	onChange,
 }: CheckboxItemsProps) {
 	const [isExpanded, setIsExpanded] = useState(false);
 	const itemsContainerRef = useRef<HTMLUListElement>(null);
 	const [collapsedHeight, setCollapsedHeight] = useState<number | null>(null);
 
-	const handleFilterChange = (value: string, checked: boolean) => {
-		const newFilters: string[] | undefined = checked
-			? [...filters, value]
-			: filters.filter((f) => f !== value);
+	const currentFilters = value ?? filters;
 
-		setFilters(newFilters);
+	const handleFilterChange = (val: string, checked: boolean) => {
+		const newFilters: string[] = checked
+			? [...currentFilters, val]
+			: currentFilters.filter((f) => f !== val);
+
+		if (onChange) {
+			onChange(newFilters);
+		} else {
+			setFilters(newFilters);
+		}
 	};
 
 	// Usar ResizeObserver para calcular a altura real baseada nos elementos visíveis
@@ -286,7 +280,7 @@ function CheckboxFilter({
 								id={item.value}
 								name={item.name}
 								value={item.value}
-								checked={filters.includes(item.value)}
+								checked={currentFilters.includes(item.value)}
 								onCheckedChange={(checked) => {
 									handleFilterChange(
 										item.value,
@@ -302,13 +296,6 @@ function CheckboxFilter({
 							>
 								{item.name}
 							</Label>
-
-							{isPendingFilterTransition && (
-								<Loader2
-									className="text-muted-foreground absolute top-1/2 right-0 ml-2 h-4 w-4 translate-y-[-50%] animate-spin"
-									size={16}
-								/>
-							)}
 						</li>
 					))
 				) : (

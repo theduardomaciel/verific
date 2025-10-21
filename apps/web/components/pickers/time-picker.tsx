@@ -170,7 +170,7 @@ export function TimePicker({
 				</button>
 			</PopoverTrigger>
 			<PopoverContent
-				className="no-scrollbar max-h-56 w-[var(--radix-popover-trigger-width)] overflow-y-scroll p-0"
+				className="no-scrollbar max-h-56 w-(--radix-popover-trigger-width) overflow-y-scroll p-0"
 				onOpenAutoFocus={(e) => e.preventDefault()}
 				onCloseAutoFocus={(e) => e.preventDefault()}
 			>

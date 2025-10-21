@@ -1,5 +1,5 @@
 import { createEnv } from "@t3-oss/env-nextjs";
-import { z } from "zod";
+import { z } from "@verific/zod";
 
 export const env = createEnv({
 	server: {
@@ -10,6 +10,7 @@ export const env = createEnv({
 		GOOGLE_CLIENT_ID: z.string().min(1),
 		GOOGLE_CLIENT_SECRET: z.string().min(1),
 		GOOGLE_PRIVATE_KEY: z.string().min(1),
+		MAINTENANCE_MODE: z.string().optional(),
 	},
 	client: {
 		NEXT_PUBLIC_VERCEL_URL: z.string(),
@@ -25,6 +26,7 @@ export const env = createEnv({
 		GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
 		GOOGLE_PRIVATE_KEY: process.env.GOOGLE_PRIVATE_KEY,
 		NEXT_PUBLIC_GOOGLE_SHEET_CLIENT_EMAIL: process.env.NEXT_PUBLIC_GOOGLE_SHEET_CLIENT_EMAIL,
+		MAINTENANCE_MODE: process.env.MAINTENANCE_MODE,
 	},
 	emptyStringAsUndefined: true,
 });

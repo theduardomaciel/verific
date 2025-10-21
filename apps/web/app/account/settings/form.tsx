@@ -20,7 +20,7 @@ import { toast } from "sonner";
 
 // Validations
 import { nameSchema } from "@/lib/validations/forms/settings-form/project/general-form";
-import z from "zod";
+import { z } from "@verific/zod";
 type NameFormValues = z.infer<typeof nameSchema>;
 
 interface Props {

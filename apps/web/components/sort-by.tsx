@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback } from "react";
-import { useRouter } from "next/navigation";
 
-import { useQueryString } from "@/hooks/use-query-string";
+// Hooks
+import { useControlledParam } from "@/hooks/use-controlled-param";
 
 // Components
 import {
@@ -15,23 +15,38 @@ import {
 } from "@/components/ui/select";
 
 interface SortByProps {
-	sortBy?: string;
 	items: Array<{ value: string; label: string }>;
+	// Client-Driven: forneça ambas para gerenciar estado no pai
+	value?: string;
+	onChange?: (value: string) => void;
 }
 
-export function SortBy({ sortBy, items }: SortByProps) {
-	const router = useRouter();
-	const { toUrl } = useQueryString();
+export function SortBy({ items, value, onChange }: SortByProps) {
+	const {
+		value: currentSort,
+		setValue,
+		isPending,
+	} = useControlledParam({
+		key: "sort",
+		value,
+		onChange,
+		type: "string",
+		defaultValue: items[0]?.value || "",
+	});
 
 	const onValueChange = useCallback(
-		(value: string) => {
-			router.replace(toUrl({ sort: value }));
+		(val: string) => {
+			setValue(val);
 		},
-		[router, toUrl],
+		[setValue],
 	);
 
 	return (
-		<Select value={sortBy ?? items[0]?.value} onValueChange={onValueChange}>
+		<Select
+			value={currentSort as string}
+			onValueChange={onValueChange}
+			disabled={isPending}
+		>
 			<SelectTrigger className="flex flex-1 md:max-w-[180px]">
 				<SelectValue placeholder="Ordenar por" />
 			</SelectTrigger>

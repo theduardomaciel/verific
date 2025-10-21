@@ -14,8 +14,8 @@
 	},
 	"devDependencies": {
 		"@verific/eslint-config": "workspace:*",
-		"@verific/typescript-config": "workspace:*",
-		"@verific/prettier-config": "workspace:*"
+		"@verific/prettier-config": "workspace:*",
+		"@verific/typescript-config": "workspace:*"
 	},
 	"prettier": "@verific/prettier-config"
 }

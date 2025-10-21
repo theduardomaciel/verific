@@ -43,7 +43,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 // Form
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type UseFormReturn } from "react-hook-form";
-import * as z from "zod";
+import { z } from "@verific/zod";
 
 // tRPC
 import { trpc } from "@/lib/trpc/react";

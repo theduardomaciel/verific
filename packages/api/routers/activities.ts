@@ -24,7 +24,7 @@ import {
 	isNotNull,
 	sql,
 } from "@verific/drizzle/orm";
-import { z } from "zod";
+import { z } from "@verific/zod";
 
 // tRPC
 import { TRPCError } from "@trpc/server";
@@ -44,7 +44,7 @@ export const getActivityParams = z.object({
 	page: z.coerce.number().default(1).optional(),
 	pageSize: z.coerce.number().default(5).optional(),
 	search: z.string().optional(),
-	sortBy: z.enum(sortOptions).optional(),
+	sort: z.enum(sortOptions).optional(),
 });
 
 export const getActivitiesParams = z.object({
@@ -52,8 +52,8 @@ export const getActivitiesParams = z.object({
 	sort: z.enum(activitySort).optional(),
 	page: z.coerce.number().default(0).optional(),
 	pageSize: z.coerce.number().default(10).optional(),
-	category: createEnumArraySchema(activityCategories),
-	audience: createEnumArraySchema(activityAudiences),
+	category: createEnumArraySchema(activityCategories).optional(),
+	audience: createEnumArraySchema(activityAudiences).optional(),
 });
 
 const mutateActivityParams = z.object({
@@ -71,19 +71,19 @@ const mutateActivityParams = z.object({
 	longitude: z.number().optional(),
 	tolerance: z.coerce.number().optional(),
 	workload: z.coerce.number().optional(),
-	projectId: z.string().uuid(),
+	projectId: z.uuid(),
 });
 
 export const activitiesRouter = createTRPCRouter({
 	getActivity: publicProcedure
-		.input(getActivityParams.extend({ activityId: z.string().uuid() }))
+		.input(getActivityParams.extend({ activityId: z.uuid() }))
 		.query(async ({ input, ctx }) => {
 			const {
 				activityId,
 				page = 1,
 				pageSize = 5,
 				search,
-				sortBy,
+				sort
 			} = input;
 
 			const userId = ctx.session?.user.id;
@@ -150,10 +150,25 @@ export const activitiesRouter = createTRPCRouter({
 				nonMonitorWhere.push(ilike(user.name, `%${search}%`));
 			}
 
-			const orderBy =
-				sortBy === "desc"
-					? desc(participantOnActivity.joinedAt)
-					: asc(participantOnActivity.joinedAt);
+			let orderByClause;
+
+			switch (sort) {
+				case "asc":
+					orderByClause = asc(participantOnActivity.joinedAt);
+					break;
+				case "desc":
+					orderByClause = desc(participantOnActivity.joinedAt);
+					break;
+				case "name_asc":
+					orderByClause = asc(user.name);
+					break;
+				case "name_desc":
+					orderByClause = desc(user.name);
+					break;
+				default:
+					// "recent"
+					orderByClause = desc(participantOnActivity.joinedAt);
+			}
 
 			const nonMonitorParticipants = await db
 				.select({
@@ -168,7 +183,7 @@ export const activitiesRouter = createTRPCRouter({
 				)
 				.innerJoin(user, eq(participant.userId, user.id))
 				.where(and(...nonMonitorWhere))
-				.orderBy(orderBy)
+				.orderBy(orderByClause)
 				.offset((page - 1) * pageSize)
 				.limit(pageSize);
 
@@ -225,7 +240,7 @@ export const activitiesRouter = createTRPCRouter({
 	getActivities: publicProcedure
 		.input(
 			getActivitiesParams.extend({
-				projectId: z.string().uuid().optional(),
+				projectId: z.uuid().optional(),
 				projectUrl: z.string().optional(),
 				fullQuery: z.boolean().optional(),
 			}),
@@ -298,7 +313,7 @@ export const activitiesRouter = createTRPCRouter({
 					orderByClause = desc(activity.name);
 					break;
 				default:
-					orderByClause = desc(activity.dateFrom);
+					orderByClause = asc(activity.dateFrom);
 			}
 
 			type ActivityWithRelations = typeof activity.$inferSelect & {
@@ -513,7 +528,7 @@ export const activitiesRouter = createTRPCRouter({
 	updateActivity: protectedProcedure
 		.input(
 			mutateActivityParams.partial().extend({
-				activityId: z.string().uuid(),
+				activityId: z.uuid(),
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
@@ -632,7 +647,7 @@ export const activitiesRouter = createTRPCRouter({
 	addActivityParticipants: protectedProcedure
 		.input(
 			z.object({
-				activityId: z.string().uuid(),
+				activityId: z.uuid(),
 				participantsIdsToAdd: z
 					.union([z.array(z.string()), z.string()])
 					.transform(transformSingleToArray),

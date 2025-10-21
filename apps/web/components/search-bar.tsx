@@ -1,8 +1,5 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-
 import { cn } from "@/lib/utils";
 
 // Icons
@@ -12,57 +9,42 @@ import { Search, Loader2, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 // Hooks
-import { useQueryString } from "@/hooks/use-query-string";
-import { useDebounce } from "@/hooks/use-debounce";
+import { useControlledParam } from "@/hooks/use-controlled-param";
 
-interface SearchBarProps extends React.InputHTMLAttributes<HTMLInputElement> {
-	word?: string;
+interface SearchBarProps
+	extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange"> {
+	prefix?: string;
+	debounce?: number;
+	// Client-Driven: forneça ambas para gerenciar estado no pai
+	value?: string;
+	onChange?: (value: string) => void;
 }
 
 export function SearchBar({
-	word = "query",
+	prefix = "query",
+	debounce = 500,
+	value,
 	onChange,
 	...props
 }: SearchBarProps) {
-	const router = useRouter();
-	const { query, toUrl } = useQueryString();
+	const {
+		value: currentValue,
+		setValue,
+		isPending,
+	} = useControlledParam({
+		key: prefix,
+		value,
+		onChange,
+		debounce,
+		type: "string",
+	});
 
-	const [isPending, startTransition] = useTransition();
-
-	const [value, setValue] = useState(query.get(word) || "");
-	const debouncedValue = useDebounce(value, 500);
-
-	// Update URL only when debounced value changes
-	useEffect(() => {
-		startTransition(() => {
-			router.push(
-				toUrl(
-					debouncedValue
-						? { [word]: debouncedValue, page: undefined }
-						: { [word]: undefined },
-				),
-				{
-					scroll: false,
-				},
-			);
-		});
-	}, [debouncedValue, toUrl, router, word]);
-
-	// Sync value with URL when component mounts or word changes
-	useEffect(() => {
-		const urlValue = query.get(word) || "";
-		if (urlValue !== value) {
-			setValue(urlValue);
-		}
-	}, [query, word]);
+	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		setValue(e.target.value);
+	};
 
 	const handleClear = () => {
 		setValue("");
-		startTransition(() => {
-			router.push(toUrl({ [word]: undefined }), {
-				scroll: false,
-			});
-		});
 	};
 
 	return (
@@ -71,11 +53,8 @@ export function SearchBar({
 			<Input
 				className={cn("w-full pr-10 pl-10", props.className)}
 				placeholder={props.placeholder || "Pesquisar..."}
-				value={value}
-				onChange={(e) => {
-					if (onChange) onChange(e);
-					setValue(e.target.value);
-				}}
+				value={currentValue as string}
+				onChange={handleInputChange}
 				{...props}
 			/>
 
@@ -86,7 +65,7 @@ export function SearchBar({
 			>
 				{isPending ? (
 					<Loader2 className="text-foreground h-4 w-4 origin-center animate-spin" />
-				) : value ? (
+				) : (currentValue as string) ? (
 					<X
 						className="text-foreground hover:text-foreground/80 h-4 w-4 cursor-pointer transition-colors"
 						onClick={handleClear}

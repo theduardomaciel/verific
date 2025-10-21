@@ -1,11 +1,11 @@
-import { z } from "zod";
+import { z } from "@verific/zod"
 import { courses } from "@verific/drizzle/enum/course";
 import { periods } from "@verific/drizzle/enum/period";
 import { degreeLevels } from "@verific/drizzle/enum/degree";
 
 export const joinFormSection1Schema = z.object({
 	name: z
-		.string({ required_error: "Obrigatório" })
+		.string({ error: "Obrigatório" })
 		.min(2, {
 			message: "Um nome deve conter no mínimo 2 caracteres.",
 		})
@@ -26,7 +26,7 @@ export const joinFormSection1Schema = z.object({
 		.string().optional(),
 	period: z.enum(periods).optional(),
 	phoneNumber: z
-		.string({ required_error: "Obrigatório" })
+		.string({ error: "Obrigatório" })
 		.regex(/^\(\d{2}\) \d{5}-\d{4}$/, {
 			message:
 				"O número de telefone deve estar no formato (XX) XXXXX-XXXX",

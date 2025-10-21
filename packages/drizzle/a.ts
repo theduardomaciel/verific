@@ -23,11 +23,43 @@ function removeParticipantOnActivityFromId(participantId: string) {
         .returning();
 }
 
+function addParticipantOnActivity(
+    participantId: string,
+    activityId: string,
+    role: "participant" | "monitor",
+) {
+    return db
+        .insert(schema.participantOnActivity)
+        .values({
+            participantId,
+            activityId,
+            role,
+            joinedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+            target: [
+                schema.participantOnActivity.participantId,
+                schema.participantOnActivity.activityId,
+            ],
+            set: {
+                role,
+                joinedAt: new Date(),
+            },
+        })
+        .returning();
+}
+
 async function main() {
-    const result = await removeParticipantOnActivityFromId(
+    /* const result = await removeParticipantOnActivityFromId(
         "b1fafff9-1f56-47ea-864d-26ba1c14a03a",
     );
-    console.log("Deleted rows:", result);
+    console.log("Deleted rows:", result); */
+    const result = await addParticipantOnActivity(
+        "1be86cbb-540d-4579-addc-6cf6a03f1862",
+        "9bdb947d-b9b9-417c-a36c-4549df93a54f",
+        "participant",
+    );
+    console.log("Inserted row:", result);
 }
 
 main().catch((error) => {

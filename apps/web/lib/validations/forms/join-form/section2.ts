@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@verific/zod"
 import { discoveryOptions } from "@verific/drizzle/enum/discovery";
 
 export const joinFormSection2Schema = z.object({

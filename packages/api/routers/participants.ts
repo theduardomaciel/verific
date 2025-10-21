@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@verific/zod";
 
 import { db } from "@verific/drizzle";
 import {
@@ -320,6 +320,23 @@ export const participantsRouter = createTRPCRouter({
 
 			if (error) {
 				throw new TRPCError(error);
+			}
+
+			// Checamos se o usuário estão inscritos na atividade
+			const isPresent = await db
+				.select({ amount: count() })
+				.from(participantOnActivity)
+				.where(and(
+					eq(participantOnActivity.activityId, activityId),
+					eq(participantOnActivity.participantId, participantId),
+				));
+
+			// Caso não, retornamos um erro
+			if ((isPresent?.[0]?.amount ?? 0) === 0) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Participante não está inscrito na atividade",
+				});
 			}
 
 			// Upsert: se já existe, atualiza joinedAt e presence; senão, insere

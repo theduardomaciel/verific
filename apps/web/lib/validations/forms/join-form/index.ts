@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@verific/zod"
 
 import {
 	type JoinFormSection0Schema,
