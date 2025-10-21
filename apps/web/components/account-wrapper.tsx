@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo, useState, useEffect } from "react";
 
 // Components
 import { ExternalLinkIcon } from "lucide-react";
@@ -8,6 +9,12 @@ import * as EventContainer from "@/components/landing/event-container";
 import { ActivityTicket } from "@/components/activity/activity-ticket";
 import { Button } from "@/components/ui/button";
 import { Empty } from "@/components/empty";
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
+} from "@/components/ui/accordion";
 
 // Utils
 import { categorizeByDate } from "@/lib/date";
@@ -23,10 +30,21 @@ export function AccountWrapper({
 	activities,
 	participantId,
 }: AccountWrapperProps) {
-	const { grouped, categories } = categorizeByDate(
-		activities,
-		(item) => item.dateFrom,
-	);
+	const { grouped, categories, initialExpanded } = useMemo(() => {
+		const { grouped, categories } = categorizeByDate(
+			activities,
+			(item) => item.dateFrom,
+		);
+		const hasToday = categories.includes("Hoje");
+		const initialExpanded = hasToday ? ["Hoje"] : categories;
+		return { grouped, categories, initialExpanded };
+	}, [activities]);
+
+	const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+
+	useEffect(() => {
+		setExpandedCategories(initialExpanded);
+	}, [initialExpanded]);
 
 	return (
 		<EventContainer.Content>
@@ -36,28 +54,40 @@ export function AccountWrapper({
 						<h2 className="text-foreground font-dashboard text-3xl font-semibold">
 							Seus eventos
 						</h2>
-						{categories.map((category) => (
-							<div key={category} className="flex flex-col gap-4">
-								<h3 className="text-foreground font-dashboard text-xl font-semibold">
-									{category}
-								</h3>
-								<ul className="flex w-full flex-col gap-4">
-									{grouped.get(category)!.map((activity) => (
-										<li
-											key={activity.id}
-											className="w-full"
-										>
-											<ActivityTicket
-												activity={activity}
-												participantId={
-													participantId || ""
-												}
-											/>
-										</li>
-									))}
-								</ul>
-							</div>
-						))}
+						<Accordion
+							type="multiple"
+							value={expandedCategories}
+							onValueChange={setExpandedCategories}
+							className="w-full"
+						>
+							{categories.map((category) => (
+								<AccordionItem key={category} value={category}>
+									<AccordionTrigger className="text-foreground font-dashboard text-xl font-semibold">
+										{category}
+									</AccordionTrigger>
+									<AccordionContent>
+										<ul className="flex w-full flex-col gap-4">
+											{grouped
+												.get(category)!
+												.map((activity) => (
+													<li
+														key={activity.id}
+														className="w-full"
+													>
+														<ActivityTicket
+															activity={activity}
+															participantId={
+																participantId ||
+																""
+															}
+														/>
+													</li>
+												))}
+										</ul>
+									</AccordionContent>
+								</AccordionItem>
+							))}
+						</Accordion>
 					</>
 				) : (
 					<Empty

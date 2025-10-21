@@ -8,9 +8,14 @@ import { SearchBar } from "@/components/search-bar";
 import { SortBy } from "@/components/sort-by";
 import { Empty } from "@/components/empty";
 import { FilterBy } from "@/components/filter-by";
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
+} from "@/components/ui/accordion";
 
 // Icons
-import { ChevronUp } from "lucide-react";
 
 // Utils
 import { categorizeByDate } from "@/lib/date";
@@ -89,31 +94,15 @@ export function ScheduleContent({
 			(activity) => activity.dateFrom,
 		);
 		const hasToday = categories.includes("Hoje");
-		const initialExpanded = hasToday
-			? new Set(["Hoje"])
-			: new Set(categories);
+		const initialExpanded = hasToday ? ["Hoje"] : categories;
 		return { grouped, categories, initialExpanded };
 	}, [filteredActivities]);
 
-	const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-		new Set(),
-	);
+	const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
 
 	useEffect(() => {
 		setExpandedCategories(initialExpanded);
 	}, [initialExpanded]);
-
-	const toggleCategory = (category: string) => {
-		setExpandedCategories((prev) => {
-			const newSet = new Set(prev);
-			if (newSet.has(category)) {
-				newSet.delete(category);
-			} else {
-				newSet.add(category);
-			}
-			return newSet;
-		});
-	};
 
 	return (
 		<>
@@ -145,33 +134,18 @@ export function ScheduleContent({
 			</div>
 			<div className="container-p mb-10">
 				{filteredActivities.length > 0 ? (
-					categories.map((category) => {
-						const isExpanded = expandedCategories.has(category);
-						return (
-							<div key={category} className="mb-8">
-								<button
-									type="button"
-									onClick={() => toggleCategory(category)}
-									className="mb-4 flex items-center gap-2"
-								>
-									<ChevronUp
-										className={`h-5 w-5 transition-transform duration-300 ${
-											isExpanded
-												? "rotate-0"
-												: "rotate-180"
-										}`}
-									/>
-									<h3 className="text-xl font-bold">
-										{category}
-									</h3>
-								</button>
-								<div
-									className={`overflow-hidden transition-all duration-300 ${
-										isExpanded
-											? "max-h-screen opacity-100"
-											: "max-h-0 opacity-0"
-									}`}
-								>
+					<Accordion
+						type="multiple"
+						value={expandedCategories}
+						onValueChange={setExpandedCategories}
+						className="w-full"
+					>
+						{categories.map((category) => (
+							<AccordionItem key={category} value={category}>
+								<AccordionTrigger className="text-xl font-bold">
+									{category}
+								</AccordionTrigger>
+								<AccordionContent className="-m-4 p-4">
 									<div className="flex flex-col gap-6 md:grid md:grid-cols-2">
 										{grouped
 											.get(category)!
@@ -200,10 +174,10 @@ export function ScheduleContent({
 												);
 											})}
 									</div>
-								</div>
-							</div>
-						);
-					})
+								</AccordionContent>
+							</AccordionItem>
+						))}
+					</Accordion>
 				) : searchQuery || categoryFilter.length > 0 ? (
 					<Empty href={`/${eventUrl}/schedule`} />
 				) : (
