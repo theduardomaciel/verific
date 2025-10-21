@@ -73,6 +73,7 @@ export function JoinActivityDialog({ userId, participantId, activity }: Props) {
 
 			if (userId) {
 				await revalidateSubscribedActivitiesIdsFromParticipant(userId);
+				await revalidateParticipantActivities(userId);
 			}
 
 			setCurrentState("submitted");

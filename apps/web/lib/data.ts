@@ -35,7 +35,7 @@ export const getCachedActivitiesFromParticipant = (projectUrl: string, userId: s
             return await publicClient.getActivitiesFromParticipant({ projectUrl, userId });
         },
         [`activities-from-participant-${userId}`],
-        { revalidate: 3600 * 24, tags: [`activities-from-participant-${userId}`] }
+        { revalidate: 60, tags: [`activities-from-participant-${userId}`] }
     )();
 }
 

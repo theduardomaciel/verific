@@ -6,7 +6,10 @@ import { DeleteDialog } from "../dialogs/delete-dialog";
 import { Button } from "../ui/button";
 
 import { trpc } from "@/lib/trpc/react";
-import { revalidateSubscribedActivitiesIdsFromParticipant } from "@/app/actions";
+import {
+	revalidateParticipantActivities,
+	revalidateSubscribedActivitiesIdsFromParticipant,
+} from "@/app/actions";
 
 interface Props {
 	activityId: string;
@@ -30,6 +33,7 @@ export function ParticipantQuitButton({
 			projectUrl,
 		});
 		await revalidateSubscribedActivitiesIdsFromParticipant(userId);
+		await revalidateParticipantActivities(userId);
 	}
 
 	return (

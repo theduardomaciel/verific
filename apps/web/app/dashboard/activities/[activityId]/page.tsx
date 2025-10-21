@@ -55,7 +55,7 @@ export default async function ActivityPage(props: {
 	const { activity, participantsAmount, pageCount } =
 		await serverClient.getActivity({
 			activityId,
-			pageSize: 50,
+			...parsedParams,
 		});
 
 	const monitors = activity.participants.filter((t) => t.role === "monitor");

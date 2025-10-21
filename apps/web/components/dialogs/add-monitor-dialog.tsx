@@ -29,6 +29,7 @@ import { useParticipantSelection } from "@/hooks/participant/use-participant-sel
 
 // Types
 import { trpc } from "@/lib/trpc/react";
+import { revalidateParticipantActivities } from "@/app/actions";
 
 interface AddMonitorDialogProps {
 	projectId: string;
@@ -138,8 +139,12 @@ export function AddMonitorDialog({
 		event.preventDefault();
 
 		const selectedParticipantsIds = selectedParticipants.map((p) => p.id);
+		const selectedParticipantsUserIds = selectedParticipants.map(
+			(p) => p.userId,
+		);
 
 		console.log("Monitores selecionados: ", selectedParticipantsIds);
+		// console.log(selectedParticipantsUserIds, "userIds");
 
 		if (selectedParticipantsIds.length === 0) {
 			toast.warning(
@@ -157,6 +162,12 @@ export function AddMonitorDialog({
 				setAddedUsersAmount(selectedParticipantsIds.length);
 				router.refresh();
 			});
+
+			await Promise.all(
+				selectedParticipantsUserIds.map((id) =>
+					revalidateParticipantActivities(id),
+				),
+			);
 		} catch (error) {
 			console.error(error);
 			toast.error("Erro ao adicionar monitor", {

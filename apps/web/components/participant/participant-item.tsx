@@ -4,7 +4,15 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 // Icons
-import { Check, BookUser, Ban, Calendar, User, X } from "lucide-react";
+import {
+	Check,
+	BookUser,
+	Ban,
+	Calendar,
+	User,
+	X,
+	CircleMinus,
+} from "lucide-react";
 
 // Components
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -81,10 +89,10 @@ export const ParticipantListItem = {
 					)}
 				>
 					<ParticipantAvatarAndInfo participant={participant} />
-					{participant.role === "participant" && (
-						<div className="flex w-full flex-row items-center justify-between gap-4">
-							<div className="text-foreground flex flex-row items-center justify-start gap-4">
-								{participant.joinedAt != null ? (
+					<div className="flex w-full flex-row items-center justify-between gap-4">
+						<div className="text-foreground flex flex-row items-center justify-start gap-4">
+							{participant.role === "participant" ? (
+								participant.joinedAt != null ? (
 									<>
 										<Check className="h-4 w-4" />
 										<p className="text-left text-sm leading-tight font-medium">
@@ -94,27 +102,39 @@ export const ParticipantListItem = {
 											)}
 										</p>
 									</>
-								) : participant.role === "participant" ? (
+								) : (
 									<>
 										<X className="h-4 w-4" />
 										<p className="text-left text-sm leading-tight font-medium">
 											Ainda não marcou presença
 										</p>
 									</>
-								) : null}
-							</div>
-							<RemoveParticipantDialog
-								participantId={participant.id}
-								activityId={participant.activityId}
-								projectUrl={url}
-								userEmail={participant.user.email}
-							>
-								<Button variant={"ghost"} size={"icon"}>
-									<Ban className="text-foreground h-4 w-4" />
-								</Button>
-							</RemoveParticipantDialog>
+								)
+							) : (
+								<div className="flex flex-row items-center justify-start gap-2">
+									<User className="h-4 w-4" />
+
+									<p className="text-left text-sm leading-tight font-bold">
+										Monitor
+									</p>
+								</div>
+							)}
 						</div>
-					)}
+						<RemoveParticipantDialog
+							participantId={participant.id}
+							activityId={participant.activityId}
+							projectUrl={url}
+							userEmail={participant.user.email}
+						>
+							<Button variant={"ghost"} size={"icon"}>
+								{participant.role === "participant" ? (
+									<Ban className="text-foreground h-4 w-4" />
+								) : (
+									<CircleMinus className="text-foreground h-4 w-4" />
+								)}
+							</Button>
+						</RemoveParticipantDialog>
+					</div>
 				</li>
 			</>
 		);
