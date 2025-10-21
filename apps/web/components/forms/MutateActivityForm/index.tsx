@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 
-import { useForm } from "react-hook-form";
+import { useForm, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 // Components
@@ -52,7 +52,10 @@ export default function MutateActivityForm({
 
 	// 1. Define your form.
 	const form = useForm<MutateActivityFormSchema>({
-		resolver: zodResolver(mutateActivityFormSchema),
+		resolver: zodResolver(mutateActivityFormSchema) as Resolver<
+			MutateActivityFormSchema,
+			any
+		>,
 		defaultValues: {
 			name: activity?.name || "",
 			description: activity?.description || "",

@@ -49,7 +49,6 @@ export default async function ParticipantsPage(props: {
 							<SearchBar placeholder="Pesquisar participantes..." />
 						</div>
 						<SortBy
-							sortBy={parsedParams.sort}
 							items={[
 								{ value: "desc", label: "Mais recentes" },
 								{ value: "asc", label: "Mais antigas" },

@@ -8,11 +8,10 @@ interface Props {
 	title?: string;
 	description?: string | React.ReactNode;
 	className?: string;
+	children?: React.ReactNode;
 }
 
-export function Empty({ href, title, description }: Props) {
-	const randomId = Math.random().toString(36).substring(7);
-
+export function Empty({ href, title, description, children }: Props) {
 	return (
 		<div className="inline-flex w-full flex-col items-center justify-center gap-4 rounded-2xl border px-6 py-12">
 			<CircleOff />
@@ -28,6 +27,7 @@ export function Empty({ href, title, description }: Props) {
 			) : (
 				description
 			)}
+			{children}
 			{href && (
 				<Link
 					href={`${href}`}

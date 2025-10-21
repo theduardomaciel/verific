@@ -11,20 +11,22 @@ import {
 } from "@/components/settings/settings-card";
 
 // Forms
-import { useForm, UseFormReturn } from "react-hook-form";
+import { useForm, UseFormReturn, Resolver } from "react-hook-form";
 import { FormProvider } from "react-hook-form";
 
 // Validations
-import z, { ZodTypeAny } from "zod";
+import z from "@verific/zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-interface SettingsFormCardProps<T extends ZodTypeAny> {
+interface SettingsFormCardProps<
+	T extends z.ZodType<Record<string, any>, Record<string, any>>,
+> {
 	schema: T;
 	title: string;
 	description: string;
-	initialState: any;
-	onSubmit: (form: UseFormReturn<z.infer<T>>) => void;
-	renderField: (form: UseFormReturn<z.infer<T>>) => React.ReactNode;
+	initialState: Partial<z.output<T>>;
+	onSubmit: (form: UseFormReturn<z.output<T>>) => void;
+	renderField: (form: UseFormReturn<z.output<T>>) => React.ReactNode;
 	footer?: {
 		text?: SettingsCardFooterProps["text"];
 		action?: {
@@ -34,7 +36,9 @@ interface SettingsFormCardProps<T extends ZodTypeAny> {
 	};
 }
 
-export function SettingsFormCard<T extends ZodTypeAny>({
+export function SettingsFormCard<
+	T extends z.ZodType<Record<string, any>, Record<string, any>>,
+>({
 	schema,
 	title,
 	description,
@@ -43,9 +47,9 @@ export function SettingsFormCard<T extends ZodTypeAny>({
 	renderField,
 	footer,
 }: SettingsFormCardProps<T>) {
-	const form = useForm({
-		resolver: zodResolver(schema),
-		defaultValues: initialState,
+	const form = useForm<z.output<T>, any, z.output<T>>({
+		resolver: zodResolver(schema) as Resolver<z.output<T>, any>,
+		defaultValues: initialState as any,
 	});
 
 	const { isSubmitting, isDirty } = form.formState;

@@ -18,21 +18,14 @@ const ACCOUNT_LINKS = [
 	{ href: "/settings", label: "Configurações" },
 ];
 
-export default async function AccountLayout({
-	children,
-	params,
-}: Readonly<{
+interface Props {
 	children: React.ReactNode;
-	params: Promise<{ projectId: string }>;
-}>) {
-	const { projectId } = await params;
+}
 
-	let projects;
+export default async function AccountLayout({ children }: Props) {
+	const projects = await serverClient.getProjects();
 
-	try {
-		projects = await serverClient.getProjects();
-	} catch (error) {
-		console.error("Error fetching project:", error);
+	if (!projects) {
 		notFound();
 	}
 
@@ -41,10 +34,8 @@ export default async function AccountLayout({
 			<DashboardHeader
 				prefix="/account"
 				links={ACCOUNT_LINKS}
-				showProjectSwitcher={false}
 				showAccountActions={false}
 				projects={projects.owned}
-				selectedProjectId={projectId}
 			/>
 			{children}
 			<Footer />

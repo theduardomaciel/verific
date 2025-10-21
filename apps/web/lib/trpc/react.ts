@@ -1,6 +1,6 @@
+// react.ts
 import type { AppRouter } from "@verific/api";
-import { createTRPCReact } from "@trpc/react-query";
+import { createTRPCReact, type CreateTRPCReact } from "@trpc/react-query";
 
-export const trpc = createTRPCReact<AppRouter>();
-
-export const TRPCProvider = trpc.Provider;
+export const trpc: CreateTRPCReact<AppRouter, null> =
+    createTRPCReact<AppRouter, null>();
