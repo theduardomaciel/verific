@@ -179,7 +179,6 @@ export function formatFriendlyDate(date: Date, options?: FriendlyDateOptions): s
 		locale = "pt-BR",
 	} = options || {};
 
-	const now = new Date();
 	const today = isToday(date);
 	const tomorrow = isTomorrow(date);
 
@@ -189,7 +188,7 @@ export function formatFriendlyDate(date: Date, options?: FriendlyDateOptions): s
 				timeZone: "America/Sao_Paulo",
 				hour: "2-digit",
 				minute: "2-digit",
-			}).format(date)}`
+			}).format(new Date(date))}`
 			: "Hoje";
 	}
 
@@ -199,7 +198,7 @@ export function formatFriendlyDate(date: Date, options?: FriendlyDateOptions): s
 				timeZone: "America/Sao_Paulo",
 				hour: "2-digit",
 				minute: "2-digit",
-			}).format(date)}`
+			}).format(new Date(date))}`
 			: "Amanhã";
 	}
 
