@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 
 // Components
 import { ExternalLinkIcon, Settings } from "lucide-react";
@@ -12,7 +12,6 @@ import { ParticipantCardDialog } from "@/components/dialogs/participant-card-dia
 import { ParticipantCard } from "@/components/participant/participant-card";
 
 // API
-import { serverClient } from "@/lib/trpc/server";
 import { Empty } from "@/components/empty";
 
 // Utils
@@ -41,8 +40,6 @@ export default async function EventAccountPage({
 		console.error("Error fetching activities from participant:", error);
 		redirect(`/${eventUrl}/subscribe`);
 	}
-
-	console.log("Fetched activities from participantId:", data.participantId);
 
 	const { activities, participantId } = data;
 

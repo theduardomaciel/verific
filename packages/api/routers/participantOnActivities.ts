@@ -8,7 +8,7 @@ import {
 	project,
 	projectModerator,
 } from "@verific/drizzle/schema";
-import { and, eq } from "@verific/drizzle/orm";
+import { and, eq, count, inArray, isNotNull } from "@verific/drizzle/orm";
 
 // tRPC
 import { TRPCError } from "@trpc/server";
@@ -74,6 +74,24 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 			// Retornamos a atividade com os palestrantes e o papel do participante na atividade
 			// Não retornamos outros dados como os outros participantes inscritos
 
+			const activityIds = activities.map(onActivity => onActivity.activity.id);
+
+			const joinedCounts = await db
+				.select({
+					activityId: participantOnActivity.activityId,
+					count: count(),
+				})
+				.from(participantOnActivity)
+				.where(
+					and(
+						inArray(participantOnActivity.activityId, activityIds),
+						isNotNull(participantOnActivity.joinedAt),
+					),
+				)
+				.groupBy(participantOnActivity.activityId);
+
+			const countsMap = new Map(joinedCounts.map(c => [c.activityId, c.count]));
+
 			const formattedActivities = activities.map((onActivity) => {
 				const { speakerOnActivity, ...activityData } = onActivity.activity;
 
@@ -82,6 +100,7 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 					speakers: speakerOnActivity.map(s => s.speaker),
 					role: onActivity.role,
 					joinedAt: onActivity.joinedAt,
+					participantsJoined: countsMap.get(activityData.id) || 0,
 				};
 			});
 
