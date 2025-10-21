@@ -3,7 +3,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { cn } from "@/lib/utils";
 
 // Icons
-import { Check, User, Clock } from "lucide-react";
+import { Check, User, Clock, Frown } from "lucide-react";
 import AndroidIcon from "@/public/icons/android.svg";
 import AppleIcon from "@/public/icons/apple.svg";
 
@@ -26,6 +26,8 @@ export interface WorkshopTicketProps {
 	participantId: string;
 }
 
+const TOLERANCE = 15; // minutes
+
 export function ActivityTicket({
 	activity,
 	participantId,
@@ -40,6 +42,10 @@ export function ActivityTicket({
 	const endDate = new Date(activity.dateTo);
 	const hours = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
 	const numberOfDots = Math.min(10, Math.max(2, Math.floor(hours) + 1));
+
+	const endDatePlusTolerance = new Date(
+		endDate.getTime() + TOLERANCE * 60 * 1000,
+	);
 
 	return (
 		<div
@@ -144,7 +150,7 @@ export function ActivityTicket({
 								<span>Participantes credenciados</span>
 							</div>
 							<div className="text-2xl font-bold">
-								PLACEHOLDER
+								{activity.participantsJoined}
 							</div>
 						</div>
 					) : null}
@@ -155,7 +161,25 @@ export function ActivityTicket({
 
 				{/* Action/QR Section */}
 				<div className="bg-card flex flex-col items-center justify-center px-6 md:w-80 md:pl-0">
-					{isMonitor ? (
+					{new Date() > endDatePlusTolerance ? (
+						isMonitor ? (
+							<div className="flex flex-col items-center justify-center gap-4 pt-6 pb-8">
+								<Frown className="text-muted-foreground h-6 w-6" />
+								<p className="text-muted-foreground text-center">
+									O prazo para credenciamento desta atividade
+									terminou.
+								</p>
+							</div>
+						) : (
+							<div className="flex flex-col items-center justify-center gap-4 pt-6 pb-8">
+								<Frown className="text-muted-foreground h-6 w-6" />
+								<p className="text-muted-foreground text-center">
+									Você não confirmou presença nesta atividade
+									:(
+								</p>
+							</div>
+						)
+					) : isMonitor ? (
 						<>
 							{/* Desktop: App Download Info */}
 							<div className="hidden w-full flex-col items-center justify-center py-6 md:flex">
@@ -177,7 +201,7 @@ export function ActivityTicket({
 										<span>Participantes credenciados</span>
 									</div>
 									<div className="text-2xl font-bold">
-										PLACEHOLDER
+										{activity.participantsJoined}
 									</div>
 								</div>
 							</div>
