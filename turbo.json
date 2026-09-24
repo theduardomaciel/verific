@@ -1,8 +1,6 @@
 {
 	"$schema": "https://turbo.build/schema.json",
-	"globalDependencies": [
-		".env"
-	],
+	"globalDependencies": [".env"],
 	"tasks": {
 		"dev": {
 			"cache": false,
@@ -11,7 +9,8 @@
 		"build": {
 			"env": [
 				"VERCEL_URL",
-				"AUTH_SECRET",
+				"BETTER_AUTH_SECRET",
+				"BETTER_AUTH_URL",
 				"DATABASE_URL",
 				"GOOGLE_CLIENT_ID",
 				"GOOGLE_CLIENT_SECRET",
@@ -23,14 +22,8 @@
 				"DIRECT_DATABASE_URL",
 				"NEXTAUTH_URL"
 			],
-			"dependsOn": [
-				"^build"
-			],
-			"outputs": [
-				"dist/**",
-				".next/**",
-				"!.next/cache/**"
-			]
+			"dependsOn": ["^build"],
+			"outputs": ["dist/**", ".next/**", "!.next/cache/**"]
 		},
 		"lint": {},
 		"db:generate": {},

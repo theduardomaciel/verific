@@ -1,5 +1,12 @@
 import { relations } from "drizzle-orm";
-import { integer, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import {
+	integer,
+	pgTable,
+	text,
+	timestamp,
+	uniqueIndex,
+	uuid,
+} from "drizzle-orm/pg-core";
 
 import { user } from ".";
 
@@ -14,9 +21,11 @@ export const account = pgTable(
 				onUpdate: "cascade",
 			}),
 		//
-		type: text("type").notNull(),
+		type: text("type"),
 		provider: text("provider").notNull(),
 		providerAccountId: text("provider_account_id").notNull(),
+		accessTokenExpiresAt: timestamp("access_token_expires_at"),
+		refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
 		refreshToken: text("refresh_token"),
 		accessToken: text("access_token"),
 		expiresAt: integer("expires_at"),
@@ -24,6 +33,9 @@ export const account = pgTable(
 		scope: text("scope"),
 		idToken: text("id_token"),
 		sessionState: text("session_state"),
+		password: text("password"),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at").defaultNow().notNull(),
 	},
 	(table) => [uniqueIndex().on(table.provider, table.providerAccountId)],
 );

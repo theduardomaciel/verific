@@ -8,7 +8,7 @@ import {
 } from "@/lib/data";
 
 // Auth
-import { auth } from "@verific/auth";
+import { getSession } from "@/lib/session";
 
 interface Props {
 	project: {
@@ -18,7 +18,7 @@ interface Props {
 }
 
 export async function ScheduleWrapper({ project }: Props) {
-	const session = await auth();
+	const session = await getSession();
 	const userId = session?.user.id;
 
 	const { activities } = await getCachedActivities({
@@ -27,7 +27,10 @@ export async function ScheduleWrapper({ project }: Props) {
 	});
 
 	const result = userId
-		? await getCachedSubscribedActivitiesIdsFromParticipant(userId)
+		? await getCachedSubscribedActivitiesIdsFromParticipant(
+				project.url,
+				userId,
+			)
 		: null;
 
 	return (

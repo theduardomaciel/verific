@@ -1,9 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-	experimental: {
-		useCache: true,
-	},
+	cacheComponents: true,
 	webpack(config, { isServer }) {
 		config.module.rules.push({
 			test: /\.svg$/,
@@ -11,10 +9,10 @@ const nextConfig: NextConfig = {
 		});
 
 		if (!isServer) {
-			config.resolve.fallback.fs = false
-			config.resolve.fallback.tls = false
-			config.resolve.fallback.net = false
-			config.resolve.fallback.child_process = false
+			config.resolve.fallback.fs = false;
+			config.resolve.fallback.tls = false;
+			config.resolve.fallback.net = false;
+			config.resolve.fallback.child_process = false;
 		}
 
 		return config;

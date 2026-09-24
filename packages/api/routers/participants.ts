@@ -132,7 +132,7 @@ export const participantsRouter = createTRPCRouter({
 			};
 		}),
 
-	getParticipants: publicProcedure
+	getParticipants: protectedProcedure
 		.input(
 			getParticipantsParams.extend({
 				projectId: z.string().uuid(), // ID do projeto
@@ -250,15 +250,15 @@ export const participantsRouter = createTRPCRouter({
 			};
 		}),
 
-	checkParticipant: publicProcedure
+	checkParticipant: protectedProcedure
 		.input(
 			z.object({
 				projectUrl: z.string(),
-				userId: z.string().uuid(),
 			}),
 		)
-		.query(async ({ input }) => {
-			const { projectUrl, userId } = input;
+		.query(async ({ input, ctx }) => {
+			const { projectUrl } = input;
+			const userId = ctx.session.user.id;
 
 			// Faz uma única query para verificar se existe o participante no projeto pelo projectUrl
 			const result = await db

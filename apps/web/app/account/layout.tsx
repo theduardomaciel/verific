@@ -1,13 +1,11 @@
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
-// Components
 import { DashboardHeader } from "@/components/header/dashboard-header";
 import { Footer } from "@/components/footer";
-
-// API
 import { serverClient } from "@/lib/trpc/server";
-
 import { REM } from "next/font/google";
+
 const rem = REM({
 	variable: "--font-rem",
 	subsets: ["latin"],
@@ -22,7 +20,7 @@ interface Props {
 	children: React.ReactNode;
 }
 
-export default async function AccountLayout({ children }: Props) {
+async function AccountLayoutContent({ children }: Props) {
 	const projects = await serverClient.getProjects();
 
 	if (!projects) {
@@ -40,5 +38,13 @@ export default async function AccountLayout({ children }: Props) {
 			{children}
 			<Footer />
 		</div>
+	);
+}
+
+export default function AccountLayout({ children }: Props) {
+	return (
+		<Suspense fallback={<div className="min-h-screen" />}>
+			<AccountLayoutContent>{children}</AccountLayoutContent>
+		</Suspense>
 	);
 }

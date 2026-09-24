@@ -680,11 +680,40 @@ export const activitiesRouter = createTRPCRouter({
 				});
 			}
 
+			if (!foundActivity.isRegistrationOpen) {
+				throw new TRPCError({
+					message: "Activity registration is closed.",
+					code: "BAD_REQUEST",
+				});
+			}
+
+			const projectParticipants = await db
+				.select({ id: participant.id })
+				.from(participant)
+				.where(
+					and(
+						eq(participant.projectId, foundActivity.projectId),
+						inArray(participant.id, participantsIdsToAdd),
+					),
+				);
+
+			if (projectParticipants.length !== participantsIdsToAdd.length) {
+				throw new TRPCError({
+					message: "Participants must belong to the activity project.",
+					code: "FORBIDDEN",
+				});
+			}
+
 			if (foundActivity.participantsLimit) {
 				const currentCountResult = await db
 					.select({ amount: count() })
 					.from(participantOnActivity)
-					.where(eq(participantOnActivity.activityId, activityId));
+					.where(
+						and(
+							eq(participantOnActivity.activityId, activityId),
+							eq(participantOnActivity.role, "participant"),
+						),
+					);
 
 				const currentCount = currentCountResult?.[0]?.amount ?? 0;
 				const availableSpots = foundActivity.participantsLimit - currentCount;

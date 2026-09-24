@@ -2,6 +2,7 @@ import { relations } from "drizzle-orm";
 import {
 	pgTable,
 	text,
+	boolean,
 	timestamp,
 	uniqueIndex,
 	uuid,
@@ -15,10 +16,11 @@ export const user = pgTable(
 		id: uuid("id").primaryKey().defaultRandom(),
 		name: text("name").notNull(),
 		email: text("email").notNull(),
-		emailVerified: timestamp("emailVerified", { mode: "date" }),
-		public_email: text("public_email").notNull(),
+		emailVerified: boolean("emailVerified").default(false).notNull(),
+		publicEmail: text("public_email").notNull(),
 		image_url: text("image_url"),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at").defaultNow().notNull(),
 	},
 	(table) => [uniqueIndex().on(table.email)],
 );

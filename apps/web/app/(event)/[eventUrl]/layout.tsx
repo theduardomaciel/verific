@@ -2,27 +2,19 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
-// Icons
 import Logo from "@/public/logo.svg";
-
-// Fonts
 import { REM } from "next/font/google";
+import { EventHeader } from "@/components/event-header";
+import { Footer } from "@/components/footer";
+import { getProject, getProjects } from "@/lib/data";
+import { env } from "@verific/env";
+
 const rem = REM({
 	variable: "--font-rem",
 	subsets: ["latin"],
 });
-
-// Components
-import { Header } from "@/components/header/landing-header";
-import { Footer } from "@/components/footer";
-import { MainNavProps } from "@/components/header/main-nav";
-
-// Lib
-import { isAfterEnd } from "@/lib/date";
-import { getCachedCheckParticipantEnrollment, getProject } from "@/lib/data";
-import { env } from "@verific/env";
-import { auth } from "@verific/auth";
 
 export async function generateMetadata({
 	params,
@@ -30,9 +22,14 @@ export async function generateMetadata({
 	params: Promise<{ eventUrl: string }>;
 }): Promise<Metadata> {
 	const { eventUrl } = await params;
-	const { project } = await getProject(eventUrl);
+	const result = await getProject(eventUrl);
 
-	const baseUrl = env.NEXT_PUBLIC_VERCEL_URL;
+	if (!result?.project) {
+		return { title: "Evento" };
+	}
+
+	const { project } = result;
+	const baseUrl = env.NEXT_PUBLIC_VERCEL_URL.replace(/\/$/, "");
 	const imageUrl =
 		project.coverUrl ||
 		project.largeLogoUrl ||
@@ -75,7 +72,16 @@ export async function generateMetadata({
 	};
 }
 
-export default async function EventLayout({
+export async function generateStaticParams() {
+	const projects = await getProjects();
+	return projects.map((project) => ({ eventUrl: project.url }));
+}
+
+function EventLayoutFallback() {
+	return <div className="min-h-screen" />;
+}
+
+async function EventLayoutContent({
 	children,
 	params,
 }: {
@@ -83,59 +89,13 @@ export default async function EventLayout({
 	params: Promise<{ eventUrl: string }>;
 }) {
 	const { eventUrl } = await params;
-	const session = await auth();
+	const result = await getProject(eventUrl);
 
-	const { project } = await getProject(eventUrl, session?.user.id);
-
-	if (!project) {
-		console.error("Event not found", { eventUrl });
+	if (!result?.project) {
 		notFound();
 	}
 
-	const userId = session?.user.id;
-	const isParticipant = userId
-		? await getCachedCheckParticipantEnrollment(eventUrl, userId)
-		: false;
-
-	const EVENT_LINKS = [
-		{
-			href: "",
-			label: "Sobre",
-			className:
-				"hover:text-primary-foreground/90 text-primary-foreground text-sm hover:bg-transparent",
-			activeClassName: "!bg-primary-foreground !text-primary",
-			mobileClassName: "text-primary-foreground",
-		},
-		{
-			href: "/schedule",
-			label: "Programação",
-			className:
-				"hover:text-primary-foreground/90 text-primary-foreground text-sm hover:bg-transparent",
-			activeClassName: "!bg-primary-foreground !text-primary",
-			mobileClassName: "text-primary-foreground",
-		},
-		isParticipant
-			? {
-					href: "/my",
-					label: "Sua Conta",
-					className:
-						"hover:text-primary-foreground hover:bg-secondary dark:hover:bg-secondary border-secondary font-semibold uppercase border text-primary-foreground text-xs",
-					activeClassName: "!text-primary-foreground !bg-secondary",
-					mobileClassName:
-						"text-primary-foreground uppercase py-3 border border-secondary w-full rounded text-center items-center text-sm bg-secondary",
-				}
-			: project.isRegistrationEnabled &&
-				!project.isArchived &&
-				!isAfterEnd(project.endDate) && {
-					href: "/subscribe",
-					label: "Inscrições",
-					className:
-						"hover:text-primary-foreground hover:bg-secondary dark:hover:bg-secondary border-secondary font-semibold uppercase border text-primary-foreground text-xs",
-					activeClassName: "!text-primary-foreground !bg-secondary",
-					mobileClassName:
-						"text-primary-foreground uppercase py-3 border border-secondary w-full rounded text-center items-center text-sm bg-secondary",
-				},
-	].filter(Boolean) as MainNavProps["links"];
+	const { project } = result;
 
 	return (
 		<div
@@ -152,15 +112,22 @@ export default async function EventLayout({
 				} as React.CSSProperties
 			}
 		>
-			<Header
+			<EventHeader
+				eventUrl={eventUrl}
+				project={{
+					id: project.id,
+					name: project.name,
+					url: project.url,
+					endDate: project.endDate,
+					isArchived: Boolean(project.isArchived),
+					isRegistrationEnabled: Boolean(
+						project.isRegistrationEnabled,
+					),
+				}}
 				className="!bg-primary relative h-21 border-none py-0"
-				mobileMenuClassName={"bg-primary"}
+				mobileMenuClassName="bg-primary"
 				buttonClassName="bg-primary text-white text-primary-foreground !hover:text-white"
-				languageSelectorClassName={
-					"border-none bg-transparent shadow-none text-primary-foreground"
-				}
-				links={EVENT_LINKS}
-				prefix={`/${eventUrl}`}
+				languageSelectorClassName="border-none bg-transparent shadow-none text-primary-foreground"
 				logo={
 					<Link href={`/${eventUrl}`}>
 						{project.largeLogoUrl || project.logoUrl ? (
@@ -186,5 +153,19 @@ export default async function EventLayout({
 				</div>
 			</div>
 		</div>
+	);
+}
+
+export default function EventLayout({
+	children,
+	params,
+}: {
+	children: React.ReactNode;
+	params: Promise<{ eventUrl: string }>;
+}) {
+	return (
+		<Suspense fallback={<EventLayoutFallback />}>
+			<EventLayoutContent params={params}>{children}</EventLayoutContent>
+		</Suspense>
 	);
 }

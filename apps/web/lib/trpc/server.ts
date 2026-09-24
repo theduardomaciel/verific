@@ -1,14 +1,26 @@
 import "server-only";
 
-import { auth } from "@verific/auth";
+import { getSession } from "@/lib/session";
+import type { Session } from "@verific/auth";
 import { appRouter, createCallerFactory } from "@verific/api";
 
-export const serverClient = createCallerFactory(appRouter)(async () => {
-	const session = await auth();
+const createClient = createCallerFactory(appRouter);
+type Client = ReturnType<typeof createClient>;
 
-	return { session };
-});
+export const serverClient: Client = createClient(async () => ({
+	session: await getSession(),
+}));
 
-export const publicClient = createCallerFactory(appRouter)(async () => {
-	return { session: null };
-});
+export const publicClient: Client = createClient(async () => ({
+	session: null,
+}));
+
+export function createClientForUser(userId: string): Client {
+	return createClient(async () => ({
+		session: {
+			user: {
+				id: userId,
+			},
+		} as Session,
+	}));
+}
