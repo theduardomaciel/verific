@@ -8,7 +8,7 @@ import { UserNav } from "./user-nav";
 import Logo from "@/public/logo.svg";
 
 // API
-import { auth } from "@verific/auth";
+import { getSession } from "@/lib/session";
 
 // Types
 import { RouterOutput } from "@verific/api";
@@ -28,7 +28,7 @@ export async function DashboardHeader({
 	links,
 	showAccountActions = true,
 }: Props) {
-	const session = await auth();
+	const session = await getSession();
 
 	return (
 		<div className="px-container-h flex w-full flex-col items-center gap-6 border-b py-4 md:flex-row-reverse">

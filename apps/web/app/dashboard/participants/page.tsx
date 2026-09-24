@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 
@@ -20,7 +21,7 @@ import { z } from "@verific/zod";
 import { getParticipantsParams } from "@verific/api/routers/participants";
 
 // API
-import { serverClient } from "@/lib/trpc/server";
+import { getSession } from "@/lib/session";
 import { getCachedParticipants } from "@/lib/data";
 
 type ParticipantsPageParams = z.infer<typeof getParticipantsParams>;
@@ -30,12 +31,17 @@ export default async function ParticipantsPage(props: {
 }) {
 	const cookieStore = await cookies();
 	const projectId = cookieStore.get("projectId")!.value;
+	const session = await getSession();
+
+	if (!session?.user.id) {
+		redirect("/auth");
+	}
 
 	const searchParams = await props.searchParams;
 	const parsedParams = getParticipantsParams.parse(searchParams);
 
 	const { participants, pageCount, emailDomains, courses } =
-		await getCachedParticipants({
+		await getCachedParticipants(session.user.id, {
 			projectId,
 			...parsedParams,
 		});

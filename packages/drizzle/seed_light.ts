@@ -32,8 +32,8 @@ async function seedUsers() {
 		users.push({
 			name: faker.person.fullName({ sex: sex }),
 			email: faker.internet.email(),
-			public_email: faker.internet.email(),
-			emailVerified: faker.date.past(),
+			publicEmail: faker.internet.email(),
+			emailVerified: true,
 			image_url: faker.image.personPortrait({ sex: sex }),
 		});
 	}

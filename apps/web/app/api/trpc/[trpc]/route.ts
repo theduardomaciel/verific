@@ -1,4 +1,4 @@
-import { auth } from "@verific/auth";
+import { getSession } from "@/lib/session";
 import { appRouter } from "@verific/api";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { type NextRequest } from "next/server";
@@ -24,7 +24,7 @@ const handler = async (req: NextRequest) => {
 		router: appRouter,
 		req,
 		createContext: async () => {
-			const session = await auth();
+			const session = await getSession();
 
 			return {
 				session,

@@ -1,11 +1,13 @@
 import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
+import { Suspense } from "react";
 
-// Components
 import { DashboardHeader } from "@/components/header/dashboard-header";
 import { Footer } from "@/components/footer";
-
 import { REM } from "next/font/google";
+import { serverClient } from "@/lib/trpc/server";
+import type { Metadata } from "next";
+
 const rem = REM({
 	variable: "--font-rem",
 	subsets: ["latin"],
@@ -18,17 +20,11 @@ const DASHBOARD_LINKS = [
 	{ href: "/settings", label: "Configurações" },
 ];
 
-// API
-import { serverClient } from "@/lib/trpc/server";
-
-// Types
-import type { Metadata } from "next";
-
 export const metadata: Metadata = {
 	title: "Dashboard",
 };
 
-export default async function DashboardLayout({
+async function DashboardLayoutContent({
 	children,
 }: Readonly<{
 	children: React.ReactNode;
@@ -45,16 +41,15 @@ export default async function DashboardLayout({
 
 	try {
 		projects = await serverClient.getProjects();
-	} catch (error) {
-		console.error("Error fetching project:", error);
+	} catch {
 		notFound();
 	}
 
-	const projectsIds = projects.owned
+	const projectIds = projects.owned
 		.map((project) => project.id)
 		.concat(projects.shared.map((project) => project.id));
 
-	if (!projectsIds.includes(projectId)) {
+	if (!projectIds.includes(projectId)) {
 		notFound();
 	}
 
@@ -71,5 +66,17 @@ export default async function DashboardLayout({
 			{children}
 			<Footer />
 		</div>
+	);
+}
+
+export default function DashboardLayout({
+	children,
+}: Readonly<{
+	children: React.ReactNode;
+}>) {
+	return (
+		<Suspense fallback={<div className="min-h-screen" />}>
+			<DashboardLayoutContent>{children}</DashboardLayoutContent>
+		</Suspense>
 	);
 }

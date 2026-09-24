@@ -6,7 +6,7 @@
 		"dev": "next dev --turbopack",
 		"build": "tsx tools/scripts/codegen-css-colors.ts && next build",
 		"start": "next start",
-		"lint": "next lint",
+		"lint": "eslint .",
 		"codegen:css-colors": "tsx tools/scripts/codegen-css-colors.ts"
 	},
 	"dependencies": {
@@ -37,6 +37,7 @@
 		"@verific/env": "workspace:*",
 		"@verific/zod": "workspace:*",
 		"@yudiel/react-qr-scanner": "^2.4.0",
+		"better-auth": "1.7.6",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"cmdk": "^1.1.1",
@@ -45,7 +46,7 @@
 		"embla-carousel-react": "^8.6.0",
 		"leaflet": "^1.9.4",
 		"lucide-react": "^0.546.0",
-		"next": "15.5.6",
+		"next": "16.3.6",
 		"next-themes": "^0.4.6",
 		"nextjs-toploader": "^3.9.17",
 		"qrcode.react": "^4.2.0",
@@ -75,6 +76,7 @@
 		"@verific/eslint-config": "workspace:*",
 		"@verific/prettier-config": "workspace:*",
 		"@verific/typescript-config": "workspace:*",
+		"eslint": "^9.24.0",
 		"tailwindcss": "^4.1.15",
 		"tsx": "^4.20.6",
 		"typescript": "^5.9.3"
