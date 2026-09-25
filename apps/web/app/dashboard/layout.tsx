@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { Suspense } from "react";
 
 import { DashboardHeader } from "@/components/header/dashboard-header";
+import { DashboardProvider } from "@/components/dashboard/dashboard-context";
 import { Footer } from "@/components/footer";
 import { REM } from "next/font/google";
 import { getCachedAccountProjects } from "@/lib/trpc/server";
@@ -63,7 +64,9 @@ async function DashboardLayoutContent({
 				projects={projects.owned.concat(projects.shared)}
 				links={DASHBOARD_LINKS}
 			/>
-			{children}
+			<DashboardProvider projectId={projectId} projectUrl={projectUrl}>
+				{children}
+			</DashboardProvider>
 			<Footer />
 		</div>
 	);

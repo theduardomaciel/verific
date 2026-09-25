@@ -33,7 +33,12 @@ interface Props {
 }
 
 export function ProjectSettingsPreferencesForm({ project }: Props) {
-	const updateMutation = trpc.updateProject.useMutation();
+	const utils = trpc.useUtils();
+	const updateMutation = trpc.updateProject.useMutation({
+		onSuccess: () => {
+			utils.getProject.invalidate();
+		},
+	});
 
 	const onSubmitBranding = async (form: UseFormReturn<any>) => {
 		const data = form.getValues();

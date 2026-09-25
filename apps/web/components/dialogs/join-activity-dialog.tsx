@@ -34,7 +34,6 @@ import {
 import { ActivitySpeakers } from "../activity/activity-card/speakers";
 import { ActivityCardTags } from "../activity/activity-card/tags";
 import {
-	revalidateActivities,
 	revalidateParticipantActivities,
 	revalidateSubscribedActivitiesIdsFromParticipant,
 } from "@/app/actions";
@@ -50,6 +49,7 @@ export function JoinActivityDialog({ userId, participantId, activity }: Props) {
 	const isLoading = currentState === "submitting";
 
 	const router = useRouter();
+	const utils = trpc.useUtils();
 
 	const addMutation = trpc.addActivityParticipants.useMutation();
 
@@ -75,6 +75,9 @@ export function JoinActivityDialog({ userId, participantId, activity }: Props) {
 				await revalidateSubscribedActivitiesIdsFromParticipant(userId);
 				await revalidateParticipantActivities(userId);
 			}
+
+			await utils.getSubscribedActivitiesIdsFromParticipant.invalidate();
+			await utils.getActivitiesFromParticipant.invalidate();
 
 			setCurrentState("submitted");
 		} catch (error) {

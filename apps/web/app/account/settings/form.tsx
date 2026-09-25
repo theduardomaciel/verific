@@ -24,10 +24,47 @@ import { z } from "@verific/zod";
 type NameFormValues = z.infer<typeof nameSchema>;
 
 interface Props {
-	user: RouterOutput["getUser"];
+	user: NonNullable<RouterOutput["getUser"]>;
 }
 
-export function AccountSettingsGeneral({ user }: Props) {
+export function AccountSettingsSkeleton() {
+	return (
+		<div className="flex flex-col gap-4">
+			<div className="bg-accent h-40 w-full animate-pulse rounded-md" />
+			<div className="bg-accent h-40 w-full animate-pulse rounded-md" />
+			<div className="bg-accent h-40 w-full animate-pulse rounded-md" />
+		</div>
+	);
+}
+
+export function AccountSettingsGeneral() {
+	const {
+		data: user,
+		isPending,
+		isError,
+	} = trpc.getUser.useQuery(undefined, {
+		staleTime: 5 * 60 * 1000,
+		gcTime: 30 * 60 * 1000,
+		refetchOnWindowFocus: false,
+	});
+
+	if (isPending) {
+		return <AccountSettingsSkeleton />;
+	}
+
+	if (isError || !user) {
+		return (
+			<p className="text-muted-foreground text-sm">
+				Não foi possível carregar seus dados. Tente recarregar a
+				página.
+			</p>
+		);
+	}
+
+	return <AccountSettingsContent user={user} />;
+}
+
+function AccountSettingsContent({ user }: Props) {
 	const updateMutation = trpc.updateUser.useMutation();
 
 	const onSubmitName = async (form: any) => {

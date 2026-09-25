@@ -30,19 +30,23 @@ import { sortOptions, sortOptionsLabels } from "@verific/api/utils";
 // Types
 import { RouterOutput } from "@verific/api";
 
+// Hooks
+import { useSubscribedActivities } from "@/hooks/use-subscribed-activities";
+
 interface ScheduleContentProps {
 	activities: RouterOutput["getActivities"]["activities"];
-	userId?: string;
-	result?: { ids: string[]; participantId: string } | null;
 	eventUrl: string;
 }
 
 export function ScheduleContent({
 	activities,
-	userId,
-	result,
 	eventUrl,
 }: ScheduleContentProps) {
+	const {
+		userId,
+		subscribedIds,
+		participantId,
+	} = useSubscribedActivities(eventUrl);
 	const [searchQuery, setSearchQuery] = useState<string>("");
 	const [sortBy, setSortBy] = useState<string | undefined>(undefined);
 	const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
@@ -169,10 +173,10 @@ export function ScheduleContent({
 														}
 														activity={activity}
 														participantId={
-															result?.ids.includes(
+															subscribedIds?.includes(
 																activity.id,
 															)
-																? result.participantId
+																? participantId
 																: undefined
 														}
 														userId={userId}

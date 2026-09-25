@@ -1,22 +1,27 @@
-import { Suspense } from "react";
+"use client";
 
 // Components
 import { ProjectSettingsPreferencesForm } from "./form";
 import { SettingsFormSkeleton } from "../skeleton";
 
 // API
-import { getCurrentProject } from "@/lib/current-project";
-
-async function PreferencesSettingsContent() {
-	const project = await getCurrentProject();
-
-	return <ProjectSettingsPreferencesForm project={project} />;
-}
+import { useCurrentProject } from "@/hooks/use-current-project";
 
 export default function PreferencesSettingsPage() {
-	return (
-		<Suspense fallback={<SettingsFormSkeleton />}>
-			<PreferencesSettingsContent />
-		</Suspense>
-	);
+	const { data, isPending, isError } = useCurrentProject();
+
+	if (isPending) {
+		return <SettingsFormSkeleton />;
+	}
+
+	if (isError || !data?.project) {
+		return (
+			<p className="text-muted-foreground text-sm">
+				Não foi possível carregar as configurações. Tente recarregar a
+				página.
+			</p>
+		);
+	}
+
+	return <ProjectSettingsPreferencesForm project={data.project} />;
 }

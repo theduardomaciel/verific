@@ -39,7 +39,12 @@ interface Props {
 }
 
 export function ProjectSettingsSubscriptionsForm({ project }: Props) {
-	const updateMutation = trpc.updateProject.useMutation();
+	const utils = trpc.useUtils();
+	const updateMutation = trpc.updateProject.useMutation({
+		onSuccess: () => {
+			utils.getProject.invalidate();
+		},
+	});
 
 	const onSubmitSubscriptionManagement = async (form: UseFormReturn<any>) => {
 		const data = form.getValues();

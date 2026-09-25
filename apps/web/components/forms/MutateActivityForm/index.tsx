@@ -85,6 +85,7 @@ export default function MutateActivityForm({
 
 	const updateMutation = trpc.updateActivity.useMutation();
 	const createMutation = trpc.createActivity.useMutation();
+	const utils = trpc.useUtils();
 
 	// 2. Define a submit handler.
 	async function onSubmit(data: MutateActivityFormSchema) {
@@ -126,6 +127,9 @@ export default function MutateActivityForm({
 			}
 
 			await revalidateActivities();
+			utils.getActivities.invalidate();
+			utils.getActivity.invalidate();
+			utils.getDashboardStats.invalidate();
 		} catch (error) {
 			console.error(error);
 			setCurrentState("error");
