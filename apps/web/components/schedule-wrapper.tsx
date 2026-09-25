@@ -2,13 +2,7 @@
 import { ScheduleContent } from "./schedule-content";
 
 // Data
-import {
-	getCachedActivities,
-	getCachedSubscribedActivitiesIdsFromParticipant,
-} from "@/lib/data";
-
-// Auth
-import { getSession } from "@/lib/session";
+import { getCachedActivities } from "@/lib/data";
 
 interface Props {
 	project: {
@@ -18,27 +12,10 @@ interface Props {
 }
 
 export async function ScheduleWrapper({ project }: Props) {
-	const session = await getSession();
-	const userId = session?.user.id;
-
 	const { activities } = await getCachedActivities({
 		projectId: project.id,
 		pageSize: 1000, // Fetch all activities for the schedule
 	});
 
-	const result = userId
-		? await getCachedSubscribedActivitiesIdsFromParticipant(
-				project.url,
-				userId,
-			)
-		: null;
-
-	return (
-		<ScheduleContent
-			activities={activities}
-			userId={userId}
-			result={result}
-			eventUrl={project.url}
-		/>
-	);
+	return <ScheduleContent activities={activities} eventUrl={project.url} />;
 }

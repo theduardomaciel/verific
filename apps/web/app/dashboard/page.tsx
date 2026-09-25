@@ -1,7 +1,6 @@
+"use client";
+
 import Link from "next/link";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import { Suspense } from "react";
 
 // Icons
 import { Activity, BarChart3, Clock, Globe, Users } from "lucide-react";
@@ -13,7 +12,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { GraphSelector } from "@/components/dashboard/overview/graph-selector";
 import { ActivitiesList } from "@/components/dashboard/overview/activities-list";
 import { MetricCard } from "@/components/dashboard/overview/metric-card";
-import { serverClient } from "@/lib/trpc/server";
+import { useDashboard } from "@/components/dashboard/dashboard-context";
+import { trpc } from "@/lib/trpc/react";
 
 function DashboardSkeleton() {
 	return (
@@ -31,23 +31,35 @@ function DashboardSkeleton() {
 	);
 }
 
-async function DashboardContent() {
-	const cookieStore = await cookies();
-	const projectId = cookieStore.get("projectId")?.value;
-	const projectUrl = cookieStore.get("projectUrl")?.value;
+export default function Overview() {
+	const { projectId, projectUrl } = useDashboard();
 
-	if (!projectId || !projectUrl) {
-		redirect("/account");
+	const activitiesQuery = trpc.getActivities.useQuery(
+		{ projectId, sort: "asc", pageSize: 5 },
+		{ staleTime: 30 * 1000, refetchOnWindowFocus: false },
+	);
+	const statsQuery = trpc.getDashboardStats.useQuery(
+		{ projectId },
+		{ staleTime: 30 * 1000, refetchOnWindowFocus: false },
+	);
+
+	if (activitiesQuery.isPending || statsQuery.isPending) {
+		return <DashboardSkeleton />;
 	}
 
-	const [{ activities }, stats] = await Promise.all([
-		serverClient.getActivities({
-			projectId,
-			sort: "asc",
-			pageSize: 5,
-		}),
-		serverClient.getDashboardStats({ projectId }),
-	]);
+	if (activitiesQuery.isError || statsQuery.isError) {
+		return (
+			<main className="container-d py-container-v flex w-full flex-1 flex-col items-center justify-start">
+				<p className="text-muted-foreground text-sm">
+					Não foi possível carregar o dashboard. Tente recarregar a
+					página.
+				</p>
+			</main>
+		);
+	}
+
+	const { activities } = activitiesQuery.data;
+	const stats = statsQuery.data;
 
 	return (
 		<main className="container-d py-container-v flex w-full flex-1 flex-col items-center justify-start gap-8">
@@ -119,8 +131,6 @@ async function DashboardContent() {
 							<CardHeader className="flex flex-row items-center justify-between">
 								<CardTitle>Participantes</CardTitle>
 								<div className="hidden items-center space-x-2 md:flex">
-									{/* <CalendarDateRangePicker className="pointer-events-none opacity-50" />
-									<Button disabled>Gerar relatório</Button> */}
 									<Button disabled asChild>
 										<Link href={`/${projectUrl}`}>
 											<Globe className="mr-2" size={24} />
@@ -144,13 +154,5 @@ async function DashboardContent() {
 				</TabsContent>
 			</Tabs>
 		</main>
-	);
-}
-
-export default function Overview() {
-	return (
-		<Suspense fallback={<DashboardSkeleton />}>
-			<DashboardContent />
-		</Suspense>
 	);
 }

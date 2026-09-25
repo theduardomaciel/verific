@@ -1,22 +1,27 @@
-import { Suspense } from "react";
+"use client";
 
 // Components
 import { ProjectSettingsSubscriptionsForm } from "./form";
 import { SettingsFormSkeleton } from "../skeleton";
 
 // API
-import { getCurrentProject } from "@/lib/current-project";
-
-async function SubscriptionsSettingsContent() {
-	const project = await getCurrentProject();
-
-	return <ProjectSettingsSubscriptionsForm project={project} />;
-}
+import { useCurrentProject } from "@/hooks/use-current-project";
 
 export default function SubscriptionsSettingsPage() {
-	return (
-		<Suspense fallback={<SettingsFormSkeleton />}>
-			<SubscriptionsSettingsContent />
-		</Suspense>
-	);
+	const { data, isPending, isError } = useCurrentProject();
+
+	if (isPending) {
+		return <SettingsFormSkeleton />;
+	}
+
+	if (isError || !data?.project) {
+		return (
+			<p className="text-muted-foreground text-sm">
+				Não foi possível carregar as configurações. Tente recarregar a
+				página.
+			</p>
+		);
+	}
+
+	return <ProjectSettingsSubscriptionsForm project={data.project} />;
 }

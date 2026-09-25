@@ -43,6 +43,15 @@ export async function getCachedActivities(
 	return publicClient.getActivities(params);
 }
 
+export async function getCachedActivity(
+	params: Parameters<typeof publicClient.getActivity>[0],
+) {
+	"use cache";
+	cacheLife("minutes");
+	cacheTag("activities", `activity:${params.activityId}`);
+	return publicClient.getActivity(params);
+}
+
 export async function getCachedActivitiesFromParticipant(
 	projectUrl: string,
 	userId: string,

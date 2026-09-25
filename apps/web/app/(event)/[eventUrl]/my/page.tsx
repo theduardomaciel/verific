@@ -12,14 +12,14 @@ import { getCachedActivitiesFromParticipant } from "@/lib/data";
 import { getSession } from "@/lib/session";
 
 async function AccountContent({
+	data,
 	eventUrl,
-	userId,
 }: {
+	data: Awaited<
+		ReturnType<typeof getCachedActivitiesFromParticipant>
+	>;
 	eventUrl: string;
-	userId: string;
 }) {
-	const data = await getCachedActivitiesFromParticipant(eventUrl, userId);
-
 	return (
 		<AccountWrapper
 			eventUrl={eventUrl}
@@ -42,11 +42,11 @@ async function EventAccountContent({
 		redirect(`/${eventUrl}`);
 	}
 
-	let participantId: string | null = null;
+	let participantData;
 
 	try {
-		const data = await getCachedActivitiesFromParticipant(eventUrl, userId);
-		participantId = data.participantId;
+		participantData =
+			await getCachedActivitiesFromParticipant(eventUrl, userId);
 	} catch {
 		redirect(`/${eventUrl}/subscribe`);
 	}
@@ -63,7 +63,7 @@ async function EventAccountContent({
 						com facilidade.
 					</p>
 				</div>
-				{participantId && (
+				{participantData.participantId && (
 					<ParticipantCardDialog
 						trigger={
 							<Button className="z-20" size={"lg"}>
@@ -73,7 +73,7 @@ async function EventAccountContent({
 						}
 					>
 						<ParticipantCard
-							id={participantId}
+							id={participantData.participantId}
 							eventUrl={eventUrl}
 						/>
 					</ParticipantCardDialog>
@@ -81,7 +81,7 @@ async function EventAccountContent({
 			</EventContainer.Hero>
 
 			<Suspense fallback={<AccountLoading />}>
-				<AccountContent eventUrl={eventUrl} userId={userId} />
+				<AccountContent data={participantData} eventUrl={eventUrl} />
 			</Suspense>
 		</EventContainer.Holder>
 	);

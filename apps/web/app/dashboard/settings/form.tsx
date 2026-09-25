@@ -40,7 +40,12 @@ interface Props {
 }
 
 export function ProjectSettingsGeneral({ project }: Props) {
-	const updateMutation = trpc.updateProject.useMutation();
+	const utils = trpc.useUtils();
+	const updateMutation = trpc.updateProject.useMutation({
+		onSuccess: () => {
+			utils.getProject.invalidate();
+		},
+	});
 
 	const onSubmitName = async (form: UseFormReturn<NameFormValues>) => {
 		const data = form.getValues();
