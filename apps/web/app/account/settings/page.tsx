@@ -1,15 +1,43 @@
-import { cookies } from "next/headers";
+import { Suspense } from "react";
+import { redirect } from "next/navigation";
+
 // Components
 import { AccountSettingsGeneral } from "@/app/account/settings/form";
+import { Skeleton } from "@/components/ui/skeleton";
+
 // API
-import { serverClient } from "@/lib/trpc/server";
+import { getSession } from "@/lib/session";
+import { getCachedUser } from "@/lib/data";
 
-export default async function AccountSettings() {
-	const cookieStore = await cookies();
-	const accountId = cookieStore.get("accountId")?.value;
+function AccountSettingsSkeleton() {
+	return (
+		<div className="flex flex-col gap-4">
+			<Skeleton className="h-40 w-full" />
+			<Skeleton className="h-40 w-full" />
+			<Skeleton className="h-40 w-full" />
+		</div>
+	);
+}
 
-	// Buscar dados do usuário do servidor
-	const user = await serverClient.getUser();
+async function AccountSettingsContent() {
+	const session = await getSession();
+
+	if (!session?.user.id) {
+		redirect("/auth");
+	}
+
+	// Cached across navigations (`"use cache"` keyed by userId).
+	// Going back to this tab revalidates in the background instead of
+	// refetching from scratch, so the skeleton barely flashes.
+	const user = await getCachedUser(session.user.id);
 
 	return <AccountSettingsGeneral user={user} />;
+}
+
+export default function AccountSettings() {
+	return (
+		<Suspense fallback={<AccountSettingsSkeleton />}>
+			<AccountSettingsContent />
+		</Suspense>
+	);
 }

@@ -8,7 +8,7 @@ import Logo from "@/public/logo.svg";
 import { REM } from "next/font/google";
 import { EventHeader } from "@/components/event-header";
 import { Footer } from "@/components/footer";
-import { getProject, getProjects } from "@/lib/data";
+import { getEventStaticParams, getProject } from "@/lib/data";
 import { env } from "@verific/env";
 
 const rem = REM({
@@ -73,8 +73,7 @@ export async function generateMetadata({
 }
 
 export async function generateStaticParams() {
-	const projects = await getProjects();
-	return projects.map((project) => ({ eventUrl: project.url }));
+	return getEventStaticParams();
 }
 
 function EventLayoutFallback() {

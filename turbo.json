@@ -16,11 +16,8 @@
 				"GOOGLE_CLIENT_SECRET",
 				"GOOGLE_PRIVATE_KEY",
 				"NEXT_PUBLIC_VERCEL_URL",
-				"NEXTAUTH_SECRET",
 				"NODE_ENV",
-				"PORT",
-				"DIRECT_DATABASE_URL",
-				"NEXTAUTH_URL"
+				"PORT"
 			],
 			"dependsOn": ["^build"],
 			"outputs": ["dist/**", ".next/**", "!.next/cache/**"]

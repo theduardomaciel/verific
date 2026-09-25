@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cache } from "react";
+
 import { getSession } from "@/lib/session";
 import type { Session } from "@verific/auth";
 import { appRouter, createCallerFactory } from "@verific/api";
@@ -24,3 +26,15 @@ export function createClientForUser(userId: string): Client {
 		} as Session,
 	}));
 }
+
+/**
+ * Per-request memoized wrapper around `getProjects`.
+ *
+ * `app/account/layout.tsx` and `app/account/page.tsx` both need the same
+ * data. Without `cache()` each `await serverClient.getProjects()` issues its
+ * own DB round-trip (and its own `getSession()` → `headers()` access).
+ * Memoizing collapses layout + page into a single query per request.
+ */
+export const getCachedAccountProjects = cache(() =>
+	serverClient.getProjects(),
+);

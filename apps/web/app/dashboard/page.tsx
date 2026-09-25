@@ -1,30 +1,53 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 
 // Icons
 import { Activity, BarChart3, Clock, Globe, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { GraphSelector } from "@/components/dashboard/overview/graph-selector";
 import { ActivitiesList } from "@/components/dashboard/overview/activities-list";
 import { MetricCard } from "@/components/dashboard/overview/metric-card";
 import { serverClient } from "@/lib/trpc/server";
 
-export default async function Overview() {
+function DashboardSkeleton() {
+	return (
+		<main className="container-d py-container-v flex w-full flex-1 flex-col items-center justify-start gap-8">
+			<div className="grid w-full gap-4 md:grid-cols-2 lg:grid-cols-4">
+				{Array.from({ length: 4 }).map((_, i) => (
+					<Skeleton key={i} className="h-32 w-full" />
+				))}
+			</div>
+			<div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-3">
+				<Skeleton className="h-96 w-full lg:col-span-2" />
+				<Skeleton className="h-96 w-full" />
+			</div>
+		</main>
+	);
+}
+
+async function DashboardContent() {
 	const cookieStore = await cookies();
-	const projectId = cookieStore.get("projectId")!.value;
-	const projectUrl = cookieStore.get("projectUrl")!.value;
+	const projectId = cookieStore.get("projectId")?.value;
+	const projectUrl = cookieStore.get("projectUrl")?.value;
 
-	const { activities } = await serverClient.getActivities({
-		projectId,
-		sort: "asc",
-		pageSize: 5,
-	});
+	if (!projectId || !projectUrl) {
+		redirect("/account");
+	}
 
-	const stats = await serverClient.getDashboardStats({ projectId });
+	const [{ activities }, stats] = await Promise.all([
+		serverClient.getActivities({
+			projectId,
+			sort: "asc",
+			pageSize: 5,
+		}),
+		serverClient.getDashboardStats({ projectId }),
+	]);
 
 	return (
 		<main className="container-d py-container-v flex w-full flex-1 flex-col items-center justify-start gap-8">
@@ -121,5 +144,13 @@ export default async function Overview() {
 				</TabsContent>
 			</Tabs>
 		</main>
+	);
+}
+
+export default function Overview() {
+	return (
+		<Suspense fallback={<DashboardSkeleton />}>
+			<DashboardContent />
+		</Suspense>
 	);
 }

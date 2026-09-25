@@ -1,4 +1,4 @@
-import { betterAuth } from "better-auth";
+import { betterAuth } from "better-auth/minimal";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { nextCookies } from "better-auth/next-js";
 
@@ -6,29 +6,23 @@ import { db } from "@verific/drizzle";
 import { account, session, user, verification } from "@verific/drizzle/schema";
 import { env } from "@verific/env";
 
-const baseURL = (env.BETTER_AUTH_URL ?? env.NEXT_PUBLIC_VERCEL_URL).replace(
-	/\/$/,
-	"",
-);
-const secret = env.BETTER_AUTH_SECRET ?? env.NEXTAUTH_SECRET;
-
-if (!secret) {
-	throw new Error("BETTER_AUTH_SECRET is required");
-}
+const baseURL = env.BETTER_AUTH_URL.replace(/\/$/, "");
+const secret = env.BETTER_AUTH_SECRET;
 
 export const auth = betterAuth({
 	database: drizzleAdapter(db, {
 		provider: "pg",
 		schema: {
-			users: user,
-			sessions: session,
-			accounts: account,
+			user,
+			session,
+			account,
 			verification,
 		},
 	}),
 	secret,
 	baseURL,
 	trustedOrigins: [baseURL],
+	onAPIError: { errorURL: "/auth/error" },
 	socialProviders: {
 		google: {
 			clientId: env.GOOGLE_CLIENT_ID,
@@ -36,7 +30,7 @@ export const auth = betterAuth({
 		},
 	},
 	session: {
-		modelName: "sessions",
+		modelName: "session",
 		expiresIn: 60 * 60 * 24 * 7,
 		updateAge: 60 * 60 * 24,
 		deferSessionRefresh: true,
@@ -48,14 +42,10 @@ export const auth = betterAuth({
 	},
 	account: {
 		encryptOAuthTokens: true,
-		modelName: "accounts",
-		fields: {
-			accountId: "providerAccountId",
-			providerId: "provider",
-		},
+		modelName: "account",
 	},
 	user: {
-		modelName: "users",
+		modelName: "user",
 		fields: {
 			image: "image_url",
 		},
