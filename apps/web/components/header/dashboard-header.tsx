@@ -54,7 +54,7 @@ export async function DashboardHeader({
 			</div>
 			<MainNav prefix={prefix} links={links} />
 			{/* <Link href="/">
-				<Logo className="h-6" />
+				<Logo className="h-5" />
 			</Link> */}
 		</div>
 	);

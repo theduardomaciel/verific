@@ -1,17 +1,22 @@
-import { cookies } from "next/headers";
+import { Suspense } from "react";
 
 // Components
 import { ProjectSettingsPreferencesForm } from "./form";
-import { serverClient } from "@/lib/trpc/server";
+import { SettingsFormSkeleton } from "../skeleton";
 
 // API
+import { getCurrentProject } from "@/lib/current-project";
 
-export default async function PreferencesSettingsPage() {
-	const cookieStore = await cookies();
-	const projectId = cookieStore.get("projectId")!.value;
-
-	// Fetch project data from the server
-	const { project } = await serverClient.getProject({ id: projectId });
+async function PreferencesSettingsContent() {
+	const project = await getCurrentProject();
 
 	return <ProjectSettingsPreferencesForm project={project} />;
+}
+
+export default function PreferencesSettingsPage() {
+	return (
+		<Suspense fallback={<SettingsFormSkeleton />}>
+			<PreferencesSettingsContent />
+		</Suspense>
+	);
 }

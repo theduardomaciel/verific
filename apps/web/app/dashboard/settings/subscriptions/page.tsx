@@ -1,17 +1,22 @@
-import { cookies } from "next/headers";
+import { Suspense } from "react";
 
 // Components
 import { ProjectSettingsSubscriptionsForm } from "./form";
+import { SettingsFormSkeleton } from "../skeleton";
 
 // API
-import { serverClient } from "@/lib/trpc/server";
+import { getCurrentProject } from "@/lib/current-project";
 
-export default async function SubscriptionsSettingsPage() {
-	const cookieStore = await cookies();
-	const projectId = cookieStore.get("projectId")!.value;
-
-	// Fetch project data from the server
-	const { project } = await serverClient.getProject({ id: projectId });
+async function SubscriptionsSettingsContent() {
+	const project = await getCurrentProject();
 
 	return <ProjectSettingsSubscriptionsForm project={project} />;
+}
+
+export default function SubscriptionsSettingsPage() {
+	return (
+		<Suspense fallback={<SettingsFormSkeleton />}>
+			<SubscriptionsSettingsContent />
+		</Suspense>
+	);
 }
