@@ -36,6 +36,7 @@ export const courses = [
 	"Física",
 	"Geografia",
 	"História",
+	"Inteligência Artificial",
 	"Jornalismo",
 	"Letras",
 	"Letras (Espanhol)",
@@ -61,6 +62,7 @@ export const courses = [
 	"Teatro",
 	"Turismo",
 	"Zootecnia",
+	"Outro",
 ] as const;
 export const courseEnum = pgEnum("course", courses);
 export type Course = (typeof courses)[number];

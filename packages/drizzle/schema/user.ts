@@ -8,7 +8,11 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 
-import { account, session, participant, project, projectModerator } from ".";
+import { account } from "./account";
+import { session } from "./session";
+import { participant } from "./participant";
+import { project } from "./project";
+import { projectModerator } from "./project-moderator";
 
 export const user = pgTable(
 	"users",

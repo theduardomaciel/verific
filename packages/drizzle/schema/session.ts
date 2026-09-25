@@ -1,7 +1,7 @@
 import { relations } from "drizzle-orm";
 import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
-import { user } from ".";
+import { user } from "./user";
 
 export const session = pgTable("sessions", {
 	id: text("id").primaryKey(),

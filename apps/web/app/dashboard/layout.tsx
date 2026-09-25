@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { DashboardHeader } from "@/components/header/dashboard-header";
 import { Footer } from "@/components/footer";
 import { REM } from "next/font/google";
-import { serverClient } from "@/lib/trpc/server";
+import { getCachedAccountProjects } from "@/lib/trpc/server";
 import type { Metadata } from "next";
 
 const rem = REM({
@@ -40,7 +40,7 @@ async function DashboardLayoutContent({
 	let projects;
 
 	try {
-		projects = await serverClient.getProjects();
+		projects = await getCachedAccountProjects();
 	} catch {
 		notFound();
 	}
@@ -75,7 +75,9 @@ export default function DashboardLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<Suspense fallback={<div className="min-h-screen" />}>
+		<Suspense
+			fallback={<div className="min-h-screen w-full" aria-hidden />}
+		>
 			<DashboardLayoutContent>{children}</DashboardLayoutContent>
 		</Suspense>
 	);

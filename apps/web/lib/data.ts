@@ -21,6 +21,16 @@ export async function getProjects() {
 	return publicClient.getAllProjects();
 }
 
+export async function getEventStaticParams() {
+	const projects = await getProjects();
+
+	if (projects.length > 0) {
+		return projects.map((project) => ({ eventUrl: project.url }));
+	}
+
+	return [{ eventUrl: "__no-events__" }];
+}
+
 export async function getCachedActivities(
 	params: Parameters<typeof publicClient.getActivities>[0],
 ) {
@@ -86,4 +96,11 @@ export async function getCachedSubscribedActivitiesIdsFromParticipant(
 	).getSubscribedActivitiesIdsFromParticipant({
 		projectUrl,
 	});
+}
+
+export async function getCachedUser(userId: string) {
+	"use cache";
+	cacheLife("minutes");
+	cacheTag("users", `user:${userId}`);
+	return createClientForUser(userId).getUser();
 }

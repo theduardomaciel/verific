@@ -1,1 +1,0 @@
-ALTER TABLE "speakers" ALTER COLUMN "description" DROP NOT NULL;

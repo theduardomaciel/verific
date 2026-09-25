@@ -24,7 +24,7 @@ import * as EventContainer from "@/components/landing/event-container";
 import { ShareDialog } from "@/components/dialogs/share-dialog";
 import { ReportEventDialog } from "@/components/dialogs/report-event-dialog";
 
-import { getProject, getProjects } from "@/lib/data";
+import { getEventStaticParams, getProject } from "@/lib/data";
 
 const markdownComponents = {
 	img: ({ src, alt, ...props }: any) => (
@@ -40,11 +40,7 @@ const markdownComponents = {
 };
 
 export async function generateStaticParams() {
-	const projects = await getProjects();
-
-	return projects.map((project) => ({
-		eventUrl: project.url,
-	}));
+	return getEventStaticParams();
 }
 
 async function EventPageContent({

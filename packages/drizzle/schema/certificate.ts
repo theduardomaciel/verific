@@ -6,7 +6,9 @@ import {
 	uniqueIndex,
 } from "drizzle-orm/pg-core";
 
-import { activity, participant, project } from ".";
+import { activity } from "./activity";
+import { participant } from "./participant";
+import { project } from "./project";
 import { template } from "./template";
 
 export const certificate = pgTable(

@@ -3,7 +3,8 @@ import { Suspense } from "react";
 
 import { DashboardHeader } from "@/components/header/dashboard-header";
 import { Footer } from "@/components/footer";
-import { serverClient } from "@/lib/trpc/server";
+import { AccountHeaderSkeleton } from "@/components/account/project-skeleton";
+import { getCachedAccountProjects } from "@/lib/trpc/server";
 import { REM } from "next/font/google";
 
 const rem = REM({
@@ -21,7 +22,7 @@ interface Props {
 }
 
 async function AccountLayoutContent({ children }: Props) {
-	const projects = await serverClient.getProjects();
+	const projects = await getCachedAccountProjects();
 
 	if (!projects) {
 		notFound();
@@ -43,7 +44,7 @@ async function AccountLayoutContent({ children }: Props) {
 
 export default function AccountLayout({ children }: Props) {
 	return (
-		<Suspense fallback={<div className="min-h-screen" />}>
+		<Suspense fallback={<AccountHeaderSkeleton />}>
 			<AccountLayoutContent>{children}</AccountLayoutContent>
 		</Suspense>
 	);

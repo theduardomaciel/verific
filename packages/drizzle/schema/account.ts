@@ -1,6 +1,5 @@
 import { relations } from "drizzle-orm";
 import {
-	integer,
 	pgTable,
 	text,
 	timestamp,
@@ -8,7 +7,7 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 
-import { user } from ".";
+import { user } from "./user";
 
 export const account = pgTable(
 	"accounts",
@@ -20,24 +19,19 @@ export const account = pgTable(
 				onDelete: "cascade",
 				onUpdate: "cascade",
 			}),
-		//
-		type: text("type"),
-		provider: text("provider").notNull(),
-		providerAccountId: text("provider_account_id").notNull(),
+		accountId: text("account_id").notNull(),
+		providerId: text("provider_id").notNull(),
+		accessToken: text("access_token"),
+		refreshToken: text("refresh_token"),
+		idToken: text("id_token"),
 		accessTokenExpiresAt: timestamp("access_token_expires_at"),
 		refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
-		refreshToken: text("refresh_token"),
-		accessToken: text("access_token"),
-		expiresAt: integer("expires_at"),
-		tokenType: text("token_type"),
 		scope: text("scope"),
-		idToken: text("id_token"),
-		sessionState: text("session_state"),
 		password: text("password"),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at").defaultNow().notNull(),
 	},
-	(table) => [uniqueIndex().on(table.provider, table.providerAccountId)],
+	(table) => [uniqueIndex().on(table.providerId, table.accountId)],
 );
 
 export const accountRelations = relations(account, ({ one }) => ({
