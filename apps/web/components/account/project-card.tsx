@@ -22,13 +22,7 @@ export function AccountEventCard({ project }: EventCardProps) {
 	return (
 		<button
 			type="button"
-			onClick={() =>
-				updateProjectCookies(
-					project.id,
-					project.url,
-					project.startDate.toISOString(),
-				)
-			}
+			onClick={() => updateProjectCookies(project.id)}
 			className="bg-card hover:bg-foreground/5 relative flex w-full cursor-pointer items-center justify-between rounded-lg p-4 transition-colors"
 		>
 			{project.thumbnailUrl && (
