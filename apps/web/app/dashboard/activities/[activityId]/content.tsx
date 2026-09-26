@@ -34,10 +34,11 @@ import { getDateString, getTimeString } from "@/lib/date";
 import { listToString } from "@/lib/i18n";
 import { ExportParticipantsButton } from "@/components/participant/export-button";
 
-// Validation
-import { getActivityParams } from "@verific/api/routers/activities";
+// Validation (client-safe: no db / server env imports)
+import { getActivityParams } from "@verific/api/schemas";
 
 // Hooks
+import { useDelayedPending } from "@/hooks/use-delayed-pending";
 import { useParsedSearchParams } from "@/hooks/use-parsed-search-params";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
 
@@ -58,22 +59,12 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 		},
 		{
 			placeholderData: keepPreviousData,
-			staleTime: 30 * 1000,
-			refetchOnWindowFocus: false,
 		},
 	);
 
-	if (isPending) {
-		return (
-			<main className="py-container-v container-p flex min-h-screen flex-col items-center justify-start gap-9">
-				<Skeleton className="h-12 w-full" />
-				<Skeleton className="h-64 w-full" />
-				<Skeleton className="h-96 w-full" />
-			</main>
-		);
-	}
+	const showPending = useDelayedPending(isPending);
 
-	if (isError || !data) {
+	if (isError) {
 		return (
 			<main className="py-container-v container-p flex min-h-screen flex-col items-center justify-start">
 				<p className="text-muted-foreground text-sm">
@@ -82,6 +73,16 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 				</p>
 			</main>
 		);
+	}
+
+	if (!data) {
+		return showPending ? (
+			<main className="py-container-v container-p flex min-h-screen flex-col items-center justify-start gap-9">
+				<Skeleton className="h-12 w-full" />
+				<Skeleton className="h-64 w-full" />
+				<Skeleton className="h-96 w-full" />
+			</main>
+		) : null;
 	}
 
 	const { activity, participantsAmount, pageCount } = data;

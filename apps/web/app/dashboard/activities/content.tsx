@@ -17,8 +17,8 @@ import { Empty } from "@/components/empty";
 import { ActivityCard } from "@/components/activity/activity-card/dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Validation
-import { getActivitiesParams } from "@verific/api/routers/activities";
+// Validation (client-safe: no db / server env imports)
+import { getActivitiesParams } from "@verific/api/schemas";
 
 // Types & Enums
 import {
@@ -28,6 +28,7 @@ import {
 import { sortOptions, sortOptionsLabels } from "@verific/api/utils";
 
 // Hooks
+import { useDelayedPending } from "@/hooks/use-delayed-pending";
 import { useParsedSearchParams } from "@/hooks/use-parsed-search-params";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
 
@@ -65,16 +66,12 @@ export function ActivitiesContent() {
 		},
 		{
 			placeholderData: keepPreviousData,
-			staleTime: 30 * 1000,
-			refetchOnWindowFocus: false,
 		},
 	);
 
-	if (isPending) {
-		return <ActivitiesSkeleton />;
-	}
+	const showPending = useDelayedPending(isPending);
 
-	if (isError || !data) {
+	if (isError) {
 		return (
 			<div className="container-d py-container-v min-h-screen">
 				<p className="text-muted-foreground text-sm">
@@ -83,6 +80,10 @@ export function ActivitiesContent() {
 				</p>
 			</div>
 		);
+	}
+
+	if (!data) {
+		return showPending ? <ActivitiesSkeleton /> : null;
 	}
 
 	const { activities, pageCount } = data;

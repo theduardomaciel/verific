@@ -1,7 +1,5 @@
 "use client";
 
-import NextTopLoader from "nextjs-toploader";
-
 import { type ReactNode, useState } from "react";
 import { ThemeProvider } from "next-themes";
 
@@ -25,7 +23,8 @@ const getQueryClient = () => {
 };
 
 export function Providers({ children }: { children: ReactNode }) {
-	const queryClient = getQueryClient();
+	// useState preserves the same client across renders (no cache loss).
+	const [queryClient] = useState(getQueryClient);
 
 	const [trpcClient] = useState(() => {
 		return trpc.createClient({
@@ -42,7 +41,6 @@ export function Providers({ children }: { children: ReactNode }) {
 		>
 			<trpc.Provider client={trpcClient} queryClient={queryClient}>
 				<QueryClientProvider client={queryClient}>
-					<NextTopLoader showSpinner={false} color="var(--primary)" />
 					{children}
 					<Toaster richColors closeButton />
 				</QueryClientProvider>

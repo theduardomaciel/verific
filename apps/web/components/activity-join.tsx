@@ -24,9 +24,6 @@ function useMembership(eventUrl: string) {
 		{ projectUrl: eventUrl },
 		{
 			enabled: Boolean(userId),
-			staleTime: 60 * 1000,
-			gcTime: 10 * 60 * 1000,
-			refetchOnWindowFocus: false,
 		},
 	);
 

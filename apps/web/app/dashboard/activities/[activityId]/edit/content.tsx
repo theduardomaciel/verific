@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 // Hooks
 import { useDashboard } from "@/components/dashboard/dashboard-context";
+import { useDelayedPending } from "@/hooks/use-delayed-pending";
 
 // API
 import { trpc } from "@/lib/trpc/react";
@@ -15,18 +16,11 @@ export function EditActivityContent({ activityId }: { activityId: string }) {
 
 	const { data, isPending, isError } = trpc.getActivity.useQuery(
 		{ activityId },
-		{ staleTime: 30 * 1000, refetchOnWindowFocus: false },
 	);
 
-	if (isPending) {
-		return (
-			<main className="container-p py-container-v flex min-h-screen flex-col items-center justify-start">
-				<Skeleton className="h-96 w-full" />
-			</main>
-		);
-	}
+	const showPending = useDelayedPending(isPending);
 
-	if (isError || !data) {
+	if (isError) {
 		return (
 			<main className="container-p py-container-v flex min-h-screen flex-col items-center justify-start">
 				<p className="text-muted-foreground text-sm">
@@ -35,6 +29,14 @@ export function EditActivityContent({ activityId }: { activityId: string }) {
 				</p>
 			</main>
 		);
+	}
+
+	if (!data) {
+		return showPending ? (
+			<main className="container-p py-container-v flex min-h-screen flex-col items-center justify-start">
+				<Skeleton className="h-96 w-full" />
+			</main>
+		) : null;
 	}
 
 	const { activity, projectStartDate, projectEndDate } = data;
