@@ -12,10 +12,11 @@ import { ParticipantListItem } from "@/components/participant/participant-item";
 import { Empty } from "@/components/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Validation
-import { getParticipantsParams } from "@verific/api/routers/participants";
+// Validation (client-safe: no db / server env imports)
+import { getParticipantsParams } from "@verific/api/schemas";
 
 // Hooks
+import { useDelayedPending } from "@/hooks/use-delayed-pending";
 import { useParsedSearchParams } from "@/hooks/use-parsed-search-params";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
 
@@ -51,16 +52,12 @@ export function ParticipantsContent() {
 		},
 		{
 			placeholderData: keepPreviousData,
-			staleTime: 30 * 1000,
-			refetchOnWindowFocus: false,
 		},
 	);
 
-	if (isPending) {
-		return <ParticipantsSkeleton />;
-	}
+	const showPending = useDelayedPending(isPending);
 
-	if (isError || !data) {
+	if (isError) {
 		return (
 			<div className="container-d py-container-v min-h-screen">
 				<p className="text-muted-foreground text-sm">
@@ -69,6 +66,10 @@ export function ParticipantsContent() {
 				</p>
 			</div>
 		);
+	}
+
+	if (!data) {
+		return showPending ? <ParticipantsSkeleton /> : null;
 	}
 
 	const { participants, pageCount, emailDomains, courses } = data;

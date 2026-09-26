@@ -13,6 +13,7 @@ import { GraphSelector } from "@/components/dashboard/overview/graph-selector";
 import { ActivitiesList } from "@/components/dashboard/overview/activities-list";
 import { MetricCard } from "@/components/dashboard/overview/metric-card";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
+import { useDelayedPending } from "@/hooks/use-delayed-pending";
 import { trpc } from "@/lib/trpc/react";
 
 function DashboardSkeleton() {
@@ -36,16 +37,12 @@ export default function Overview() {
 
 	const activitiesQuery = trpc.getActivities.useQuery(
 		{ projectId, sort: "asc", pageSize: 5 },
-		{ staleTime: 30 * 1000, refetchOnWindowFocus: false },
 	);
-	const statsQuery = trpc.getDashboardStats.useQuery(
-		{ projectId },
-		{ staleTime: 30 * 1000, refetchOnWindowFocus: false },
-	);
+	const statsQuery = trpc.getDashboardStats.useQuery({ projectId });
 
-	if (activitiesQuery.isPending || statsQuery.isPending) {
-		return <DashboardSkeleton />;
-	}
+	const showPending = useDelayedPending(
+		activitiesQuery.isPending || statsQuery.isPending,
+	);
 
 	if (activitiesQuery.isError || statsQuery.isError) {
 		return (
@@ -58,11 +55,15 @@ export default function Overview() {
 		);
 	}
 
+	if (!activitiesQuery.data || !statsQuery.data) {
+		return showPending ? <DashboardSkeleton /> : null;
+	}
+
 	const { activities } = activitiesQuery.data;
 	const stats = statsQuery.data;
 
 	return (
-		<main className="container-d py-container-v flex w-full flex-1 flex-col items-center justify-start gap-8">
+		<main className="px-container-h py-container-v flex w-full flex-1 flex-col items-center justify-start gap-8">
 			<Tabs
 				defaultValue="overview"
 				className="flex w-full flex-1 space-y-4"
