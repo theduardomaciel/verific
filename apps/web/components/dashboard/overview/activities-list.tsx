@@ -12,7 +12,7 @@ interface Props {
 	activities: RouterOutput["getActivities"]["activities"];
 }
 
-export async function ActivitiesList({ activities, className }: Props) {
+export function ActivitiesList({ activities, className }: Props) {
 	return (
 		<Card className={cn("h-auto gap-2", className)}>
 			<CardHeader>
