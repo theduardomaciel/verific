@@ -36,23 +36,9 @@ export async function signOutFormAction(formData: FormData) {
 	redirect(redirectTo);
 }
 
-export async function updateProjectCookies(
-	projectId: string,
-	projectUrl: string,
-	projectDate: string,
-) {
+export async function updateProjectCookies(projectId: string) {
 	const cookieStore = await cookies();
 	cookieStore.set("projectId", projectId, {
-		httpOnly: true,
-		secure: process.env.NODE_ENV === "production",
-		sameSite: "lax",
-	});
-	cookieStore.set("projectUrl", projectUrl, {
-		httpOnly: true,
-		secure: process.env.NODE_ENV === "production",
-		sameSite: "lax",
-	});
-	cookieStore.set("projectDate", projectDate, {
 		httpOnly: true,
 		secure: process.env.NODE_ENV === "production",
 		sameSite: "lax",

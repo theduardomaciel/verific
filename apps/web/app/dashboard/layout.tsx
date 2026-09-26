@@ -32,9 +32,8 @@ async function DashboardLayoutContent({
 }>) {
 	const cookieStore = await cookies();
 	const projectId = cookieStore.get("projectId")?.value;
-	const projectUrl = cookieStore.get("projectUrl")?.value;
 
-	if (!projectId || !projectUrl) {
+	if (!projectId) {
 		redirect("/account");
 	}
 
@@ -46,13 +45,16 @@ async function DashboardLayoutContent({
 		notFound();
 	}
 
-	const projectIds = projects.owned
-		.map((project) => project.id)
-		.concat(projects.shared.map((project) => project.id));
+	const allProjects = projects.owned.concat(projects.shared);
+	const currentProject = allProjects.find(
+		(project) => project.id === projectId,
+	);
 
-	if (!projectIds.includes(projectId)) {
+	if (!currentProject) {
 		notFound();
 	}
+
+	const projectUrl = currentProject.url;
 
 	return (
 		<div
@@ -61,7 +63,7 @@ async function DashboardLayoutContent({
 			<DashboardHeader
 				prefix={`/dashboard`}
 				selectedProjectId={projectId}
-				projects={projects.owned.concat(projects.shared)}
+				projects={allProjects}
 				links={DASHBOARD_LINKS}
 			/>
 			<DashboardProvider projectId={projectId} projectUrl={projectUrl}>
