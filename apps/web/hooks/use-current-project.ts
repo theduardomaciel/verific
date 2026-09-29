@@ -13,7 +13,14 @@ interface CurrentProjectQuery {
 export function useCurrentProject(): CurrentProjectQuery {
 	const { projectId } = useDashboard();
 
-	const query = trpc.getProject.useQuery({ id: projectId });
+	const query = trpc.getProject.useQuery(
+		{ id: projectId },
+		{
+			staleTime: 60 * 1000,
+			gcTime: 10 * 60 * 1000,
+			refetchOnWindowFocus: false,
+		},
+	);
 
 	return {
 		data: query.data,

@@ -24,6 +24,8 @@ export function useParticipantSearch({ projectId, isOpen }: UseParticipantSearch
         pageSize: 20,
         query: debouncedSearch,
         sort: "name_asc",
+    }, {
+        staleTime: 1000 * 30, // 30 seconds
     });
 
     // Reset when debouncedSearch changes

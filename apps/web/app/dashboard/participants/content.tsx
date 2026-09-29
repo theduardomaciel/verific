@@ -16,7 +16,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getParticipantsParams } from "@verific/api/schemas";
 
 // Hooks
-import { useDelayedPending } from "@/hooks/use-delayed-pending";
 import { useParsedSearchParams } from "@/hooks/use-parsed-search-params";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
 
@@ -52,12 +51,16 @@ export function ParticipantsContent() {
 		},
 		{
 			placeholderData: keepPreviousData,
+			staleTime: 30 * 1000,
+			refetchOnWindowFocus: false,
 		},
 	);
 
-	const showPending = useDelayedPending(isPending);
+	if (isPending) {
+		return <ParticipantsSkeleton />;
+	}
 
-	if (isError) {
+	if (isError || !data) {
 		return (
 			<div className="container-d py-container-v min-h-screen">
 				<p className="text-muted-foreground text-sm">
@@ -66,10 +69,6 @@ export function ParticipantsContent() {
 				</p>
 			</div>
 		);
-	}
-
-	if (!data) {
-		return showPending ? <ParticipantsSkeleton /> : null;
 	}
 
 	const { participants, pageCount, emailDomains, courses } = data;

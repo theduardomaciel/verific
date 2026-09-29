@@ -13,12 +13,11 @@ import { GraphSelector } from "@/components/dashboard/overview/graph-selector";
 import { ActivitiesList } from "@/components/dashboard/overview/activities-list";
 import { MetricCard } from "@/components/dashboard/overview/metric-card";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
-import { useDelayedPending } from "@/hooks/use-delayed-pending";
 import { trpc } from "@/lib/trpc/react";
 
 function DashboardSkeleton() {
 	return (
-		<main className="container-d py-container-v flex w-full flex-1 flex-col items-center justify-start gap-8">
+		<main className="container-d py-container-v flex w-full flex-1 flex-col items-center justify-start gap-8 min-h-screen">
 			<div className="grid w-full gap-4 md:grid-cols-2 lg:grid-cols-4">
 				{Array.from({ length: 4 }).map((_, i) => (
 					<Skeleton key={i} className="h-32 w-full" />
@@ -37,16 +36,20 @@ export default function Overview() {
 
 	const activitiesQuery = trpc.getActivities.useQuery(
 		{ projectId, sort: "asc", pageSize: 5 },
+		{ staleTime: 30 * 1000, refetchOnWindowFocus: false },
 	);
-	const statsQuery = trpc.getDashboardStats.useQuery({ projectId });
+	const statsQuery = trpc.getDashboardStats.useQuery(
+		{ projectId },
+		{ staleTime: 30 * 1000, refetchOnWindowFocus: false },
+	);
 
-	const showPending = useDelayedPending(
-		activitiesQuery.isPending || statsQuery.isPending,
-	);
+	if (activitiesQuery.isPending || statsQuery.isPending) {
+		return <DashboardSkeleton />;
+	}
 
 	if (activitiesQuery.isError || statsQuery.isError) {
 		return (
-			<main className="container-d py-container-v flex w-full flex-1 flex-col items-center justify-start">
+			<main className="container-d py-container-v flex w-full flex-1 flex-col items-center justify-start min-h-screen">
 				<p className="text-muted-foreground text-sm">
 					Não foi possível carregar o dashboard. Tente recarregar a
 					página.
@@ -55,15 +58,11 @@ export default function Overview() {
 		);
 	}
 
-	if (!activitiesQuery.data || !statsQuery.data) {
-		return showPending ? <DashboardSkeleton /> : null;
-	}
-
 	const { activities } = activitiesQuery.data;
 	const stats = statsQuery.data;
 
 	return (
-		<main className="px-container-h py-container-v flex w-full flex-1 flex-col items-center justify-start gap-8">
+		<main className="container-d py-container-v flex w-full flex-1 flex-col items-center justify-start gap-8 min-h-screen">
 			<Tabs
 				defaultValue="overview"
 				className="flex w-full flex-1 space-y-4"
@@ -133,7 +132,7 @@ export default function Overview() {
 								<CardTitle>Participantes</CardTitle>
 								<div className="hidden items-center space-x-2 md:flex">
 									<Button disabled asChild>
-										<Link href={`/${projectUrl}`}>
+										<Link target="_blank" href={`/${projectUrl}`}>
 											<Globe className="mr-2" size={24} />
 											Acessar página do evento
 										</Link>

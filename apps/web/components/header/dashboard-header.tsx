@@ -31,7 +31,7 @@ export async function DashboardHeader({
 	const session = await getSession();
 
 	return (
-		<div className="px-container-h flex w-full flex-col items-center gap-6 border-b py-4 md:flex-row-reverse">
+		<div className="container-d flex w-full flex-col items-center gap-6 border-b py-4 md:flex-row-reverse">
 			<div className="flex items-center justify-between gap-6 max-md:w-full md:ml-auto">
 				{!!selectedProjectId && (
 					<ProjectSwitcher
@@ -53,9 +53,9 @@ export async function DashboardHeader({
 				) : null}
 			</div>
 			<MainNav prefix={prefix} links={links} />
-			{/* <Link href="/">
-				<Logo className="h-5" />
-			</Link> */}
+			<Link href="/dashboard">
+				<Logo className="h-5 mr-4" />
+			</Link>
 		</div>
 	);
 }

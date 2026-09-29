@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
@@ -20,31 +18,15 @@ import { listToString } from "@/lib/i18n";
 // Types
 import { RouterOutput } from "@verific/api";
 
-// API
-import { trpc } from "@/lib/trpc/react";
-
 interface ActivityCardProps {
 	className?: string;
 	activity: RouterOutput["getActivities"]["activities"][number];
 }
 
-function usePrefetchActivity(activityId: string) {
-	const utils = trpc.useUtils();
-	return () => {
-		// Warm the detail query cache on hover/focus so clicking the card
-		// navigates to an already-cached result (no skeleton flash).
-		// Input must match `ActivityContent`'s query input.
-		utils.getActivity.prefetch({ activityId, pageSize: 100 });
-	};
-}
-
 export function SimpleActivityCard({ activity, className }: ActivityCardProps) {
-	const prefetch = usePrefetchActivity(activity.id);
 	return (
 		<Link
 			href={`/dashboard/activities/${activity.id}`}
-			onMouseEnter={prefetch}
-			onFocus={prefetch}
 			className={cn(
 				"hover:bg-foreground/5 flex flex-col items-start justify-start rounded-md border",
 				className,
@@ -94,7 +76,6 @@ export function SimpleActivityCard({ activity, className }: ActivityCardProps) {
 }
 
 export function ActivityCard({ activity, className }: ActivityCardProps) {
-	const prefetch = usePrefetchActivity(activity.id);
 	const monitors =
 		activity.participants
 			?.filter((onActivity) => onActivity.role === "monitor")
@@ -108,8 +89,6 @@ export function ActivityCard({ activity, className }: ActivityCardProps) {
 	return (
 		<Link
 			href={`/dashboard/activities/${activity.id}`}
-			onMouseEnter={prefetch}
-			onFocus={prefetch}
 			className="flex w-full"
 		>
 			<div

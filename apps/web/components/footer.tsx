@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import Logo from "@/public/logo.svg";
 
 const footerVariants = cva(
-	"flex items-center px-container-h justify-center w-full py-6 ",
+	"flex items-center container-d justify-center w-full py-6 ",
 	{
 		variants: {
 			variant: {
