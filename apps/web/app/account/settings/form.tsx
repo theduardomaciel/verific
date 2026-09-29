@@ -42,7 +42,11 @@ export function AccountSettingsGeneral() {
 		data: user,
 		isPending,
 		isError,
-	} = trpc.getUser.useQuery();
+	} = trpc.getUser.useQuery(undefined, {
+		staleTime: 5 * 60 * 1000,
+		gcTime: 30 * 60 * 1000,
+		refetchOnWindowFocus: false,
+	});
 
 	if (isPending) {
 		return <AccountSettingsSkeleton />;

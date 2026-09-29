@@ -31,7 +31,7 @@ export function AccountEventCard({ project }: EventCardProps) {
 			<div className="flex items-center gap-6">
 				<Avatar
 					className={cn(
-						"bg-border flex h-11 w-11 items-center justify-center rounded-md px-4",
+						"bg-border flex h-11 w-11 items-center justify-center rounded-md",
 						{
 							"w-24": project.largeLogoUrl,
 						},

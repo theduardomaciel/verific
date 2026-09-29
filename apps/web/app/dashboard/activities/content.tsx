@@ -28,7 +28,6 @@ import {
 import { sortOptions, sortOptionsLabels } from "@verific/api/utils";
 
 // Hooks
-import { useDelayedPending } from "@/hooks/use-delayed-pending";
 import { useParsedSearchParams } from "@/hooks/use-parsed-search-params";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
 
@@ -66,12 +65,16 @@ export function ActivitiesContent() {
 		},
 		{
 			placeholderData: keepPreviousData,
+			staleTime: 30 * 1000,
+			refetchOnWindowFocus: false,
 		},
 	);
 
-	const showPending = useDelayedPending(isPending);
+	if (isPending) {
+		return <ActivitiesSkeleton />;
+	}
 
-	if (isError) {
+	if (isError || !data) {
 		return (
 			<div className="container-d py-container-v min-h-screen">
 				<p className="text-muted-foreground text-sm">
@@ -80,10 +83,6 @@ export function ActivitiesContent() {
 				</p>
 			</div>
 		);
-	}
-
-	if (!data) {
-		return showPending ? <ActivitiesSkeleton /> : null;
 	}
 
 	const { activities, pageCount } = data;

@@ -1,5 +1,7 @@
 "use client";
 
+import NextTopLoader from "nextjs-toploader";
+
 import { type ReactNode, useState } from "react";
 import { ThemeProvider } from "next-themes";
 
@@ -41,6 +43,7 @@ export function Providers({ children }: { children: ReactNode }) {
 		>
 			<trpc.Provider client={trpcClient} queryClient={queryClient}>
 				<QueryClientProvider client={queryClient}>
+					<NextTopLoader showSpinner={false} color="var(--primary)" />
 					{children}
 					<Toaster richColors closeButton />
 				</QueryClientProvider>
