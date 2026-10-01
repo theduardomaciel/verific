@@ -16,7 +16,6 @@ import {
 	desc,
 	eq,
 	exists,
-	getTableColumns,
 	ilike,
 	inArray,
 	or,
@@ -134,9 +133,7 @@ export const participantsRouter = createTRPCRouter({
 				sort,
 				query: search,
 				page: pageIndex,
-				period: periodsFilter,
 				pageSize,
-				course,
 			} = input;
 
 			let roleFilter: SQL | undefined;
@@ -158,13 +155,7 @@ export const participantsRouter = createTRPCRouter({
 						ilike(user.email, `%${search}%`),
 					)
 					: undefined,
-				periodsFilter && periodsFilter.length > 0
-					? inArray(participant.period, periodsFilter)
-					: undefined,
 				roleFilter,
-				course && course.length > 0
-					? inArray(participant.course, course)
-					: undefined,
 			];
 
 			let orderByClause;
@@ -187,15 +178,13 @@ export const participantsRouter = createTRPCRouter({
 					orderByClause = desc(participant.joinedAt);
 			}
 
-			const [participants, countResult, emailDomains, participantsCourses] = await Promise.all([
+			const [participants, countResult, emailDomains] = await Promise.all([
 				db
 					.select({
 						id: participant.id,
 						userId: participant.userId,
 						projectId: participant.projectId,
 						joinedAt: participant.joinedAt,
-						course: participant.course,
-						period: participant.period,
 						user: {
 							name: user.name,
 							email: user.email,
@@ -220,12 +209,6 @@ export const participantsRouter = createTRPCRouter({
 					.leftJoin(user, eq(participant.userId, user.id))
 					.where(eq(participant.projectId, projectId))
 					.groupBy(sql`SPLIT_PART(${user.email}, '@', 2)`),
-				// Extrai os cursos únicos dos participantes
-				db
-					.select({ course: participant.course })
-					.from(participant)
-					.where(eq(participant.projectId, projectId))
-					.groupBy(participant.course),
 			]);
 
 			const amount = countResult?.[0]?.amount ?? 0;
@@ -235,7 +218,6 @@ export const participantsRouter = createTRPCRouter({
 				participants,
 				pageCount,
 				emailDomains: emailDomains.map((ed) => ed.emailDomain) as string[],
-				courses: participantsCourses.map((pc) => pc.course) as string[],
 			};
 		}),
 

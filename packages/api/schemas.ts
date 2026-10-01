@@ -2,8 +2,7 @@ import { z } from "@verific/zod";
 
 import { activityAudiences } from "@verific/drizzle/enum/audience";
 import { activityCategories } from "@verific/drizzle/enum/category";
-import { courses } from "@verific/drizzle/enum/course";
-import { periods } from "@verific/drizzle/enum/period";
+import { formFieldTypes } from "@verific/drizzle/enum/form-field-type";
 import { participantRoles } from "@verific/drizzle/enum/role";
 
 import {
@@ -41,11 +40,202 @@ export const getActivitiesParams = z.object({
 });
 
 export const getParticipantsParams = z.object({
-	query: z.string().optional(), // Para busca por nome ou e-mail
-	sort: z.enum(sortOptions).optional(), // Ordenação por data
-	page: z.coerce.number().default(0), // Paginação: página atual
-	pageSize: z.coerce.number().default(10), // Paginação: tamanho da página,
-	role: z.array(z.enum(participantRoles)).optional(), // Funções dos participantes
-	course: z.array(z.enum(courses)).optional(), // Cursos dos participantes
-	period: z.array(z.enum(periods)).optional(), // Períodos dos participantes
+	query: z.string().optional(),
+	sort: z.enum(sortOptions).optional(),
+	page: z.coerce.number().default(0),
+	pageSize: z.coerce.number().default(10),
+	role: z.array(z.enum(participantRoles)).optional(),
 });
+
+export { formFieldTypes };
+
+export const formFieldValidationSchema = z
+	.object({
+		min: z.number().optional(),
+		max: z.number().optional(),
+		minLength: z.number().int().min(0).optional(),
+		maxLength: z.number().int().min(0).optional(),
+		pattern: z.string().optional(),
+	})
+	.optional();
+
+export const formFieldOptionsSchema = z.array(z.string().min(1)).optional();
+
+export const upsertFormFieldInput = z.object({
+	versionId: z.uuid(),
+	fieldId: z.uuid().optional(),
+	key: z
+		.string()
+		.min(1)
+		.max(64)
+		.regex(/^[a-z0-9_]+$/, {
+			message: "Use apenas letras minúsculas, números e _",
+		}),
+	label: z.string().min(1).max(200),
+	type: z.enum(formFieldTypes),
+	helpText: z.string().max(500).optional().nullable(),
+	required: z.boolean().default(false),
+	order: z.number().int().default(0),
+	options: formFieldOptionsSchema,
+	validation: formFieldValidationSchema,
+	isVisible: z.boolean().default(true),
+	editableAfterSignup: z.boolean().default(true),
+});
+
+export type UpsertFormFieldInput = z.infer<typeof upsertFormFieldInput>;
+
+export const answerValueSchema = z.union([
+	z.string(),
+	z.number(),
+	z.boolean(),
+	z.array(z.string()),
+	z.null(),
+	z.undefined(),
+]);
+
+export const submitAnswersInput = z.object({
+	projectId: z.uuid(),
+	name: z.string().min(2),
+	answers: z.record(z.string(), answerValueSchema),
+});
+
+export type SubmitAnswersInput = z.infer<typeof submitAnswersInput>;
+
+export type FormFieldForValidation = {
+	key: string;
+	label: string;
+	type: (typeof formFieldTypes)[number];
+	required: boolean;
+	options?: string[] | null;
+	validation?: {
+		min?: number | null;
+		max?: number | null;
+		minLength?: number | null;
+		maxLength?: number | null;
+		pattern?: string | null;
+	} | null;
+	isVisible: boolean;
+	isActive: boolean;
+};
+
+function fieldValueSchema(field: FormFieldForValidation) {
+	let base: z.ZodTypeAny;
+
+	switch (field.type) {
+		case "text":
+		case "textarea": {
+			base = z.string();
+			const v = field.validation;
+			if (typeof v?.minLength === "number")
+				base = (base as z.ZodString).min(v.minLength);
+			if (typeof v?.maxLength === "number")
+				base = (base as z.ZodString).max(v.maxLength);
+			if (v?.pattern) {
+				try {
+					base = (base as z.ZodString).regex(new RegExp(v.pattern));
+				} catch {
+					// ignore invalid regex stored in db
+				}
+			}
+			break;
+		}
+		case "number": {
+			base = z.coerce.number();
+			const v = field.validation;
+			if (typeof v?.min === "number")
+				base = (base as z.ZodCoercedNumber<number>).min(v.min);
+			if (typeof v?.max === "number")
+				base = (base as z.ZodCoercedNumber<number>).max(v.max);
+			break;
+		}
+		case "date": {
+			base = z.coerce.date();
+			break;
+		}
+		case "select_single": {
+			if (field.options && field.options.length > 0) {
+				base = z.enum(field.options as [string, ...string[]]);
+			} else {
+				base = z.string().min(1);
+			}
+			break;
+		}
+		case "select_multiple": {
+			if (field.options && field.options.length > 0) {
+				const opt = z.enum(field.options as [string, ...string[]]);
+				base = z.array(opt);
+			} else {
+				base = z.array(z.string().min(1));
+			}
+			break;
+		}
+		case "checkbox": {
+			base = z.coerce.boolean();
+			break;
+		}
+		default:
+			base = z.string();
+	}
+
+	if (!field.required) {
+		return base.optional().nullable().transform((v) => {
+			if (v === "" || v === null) return undefined;
+			if (Array.isArray(v) && v.length === 0) return undefined;
+			return v;
+		});
+	}
+
+	if (field.type === "text" || field.type === "textarea") {
+		return (base as z.ZodString).min(1, { message: "Obrigatório" });
+	}
+	if (field.type === "select_multiple") {
+		return (base as z.ZodArray<any>).min(1, { message: "Obrigatório" });
+	}
+	if (field.type === "checkbox") {
+		return z.literal(true, { message: "Obrigatório" });
+	}
+	return base;
+}
+
+export function buildAnswersSchema(fields: FormFieldForValidation[]) {
+	const shape: Record<string, z.ZodTypeAny> = {};
+	for (const field of fields) {
+		if (!field.isActive || !field.isVisible) continue;
+		shape[field.key] = fieldValueSchema(field);
+	}
+	return z.object(shape);
+}
+
+export function validateAnswers(
+	fields: FormFieldForValidation[],
+	answers: Record<string, unknown>,
+): { success: boolean; errors?: Record<string, string[]>; data?: Record<string, unknown> } {
+	const schema = buildAnswersSchema(fields);
+	const parsed = schema.safeParse(answers);
+	if (parsed.success) return { success: true, data: parsed.data };
+	const flat = parsed.error.flatten();
+	const errors: Record<string, string[]> = {};
+	for (const [key, messages] of Object.entries(flat.fieldErrors)) {
+		if (messages) errors[key] = messages;
+	}
+	return { success: false, errors };
+}
+
+export function formatAnswerValue(
+	type: FormFieldForValidation["type"],
+	value: unknown,
+): string {
+	if (value === null || value === undefined || value === "") return "";
+	if (Array.isArray(value)) return value.join("; ");
+	if (value instanceof Date) return value.toISOString().slice(0, 10);
+	if (typeof value === "boolean") return value ? "Sim" : "Não";
+	if (typeof value === "number") return String(value);
+	if (typeof value === "string") {
+		if (type === "date") {
+			const d = new Date(value);
+			if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+		}
+		return value;
+	}
+	return String(value);
+}

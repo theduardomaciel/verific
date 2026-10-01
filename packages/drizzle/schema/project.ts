@@ -13,6 +13,9 @@ import { participant } from "./participant";
 import { speaker } from "./speaker";
 import { user } from "./user";
 import { projectModerator } from "./project-moderator";
+import { formVersion } from "./form-version";
+import { formField } from "./form-field";
+import { formAnswer } from "./form-answer";
 
 export const project = pgTable("projects", {
 	id: uuid("id").primaryKey().defaultRandom(),
@@ -21,7 +24,6 @@ export const project = pgTable("projects", {
 	welcomeMessage: text("welcome_message"),
 
 	url: text("url").notNull(),
-	researchUrl: text("research_url"),
 
 	// 📍 Location fields
 	address: text("address").notNull(), // Human-readable address for display
@@ -29,7 +31,6 @@ export const project = pgTable("projects", {
 	longitude: doublePrecision("longitude"),
 
 	isRegistrationEnabled: boolean("is_registration_enabled").default(false),
-	isResearchEnabled: boolean("is_research_enabled").default(false),
 	isArchived: boolean("is_archived").default(false),
 
 	logoUrl: text("logo_url"),
@@ -58,6 +59,9 @@ export const projectRelations = relations(project, ({ many, one }) => ({
 	participants: many(participant),
 	speakers: many(speaker),
 	moderators: many(projectModerator),
+	formVersions: many(formVersion),
+	formFields: many(formField),
+	formAnswers: many(formAnswer),
 	owner: one(user, {
 		fields: [project.ownerId],
 		references: [user.id],

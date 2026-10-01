@@ -8,7 +8,6 @@ export type Project = {
 	url: string;
 	address: string;
 	isRegistrationEnabled: boolean;
-	isResearchEnabled: boolean;
 	isArchived: boolean;
 	coverUrl: string;
 	thumbnailUrl: string;

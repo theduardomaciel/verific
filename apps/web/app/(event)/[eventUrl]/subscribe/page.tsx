@@ -68,6 +68,7 @@ async function SubscribeContent({
 					project={{
 						id: project.id,
 						url: project.url,
+						name: project.name,
 						logo: project.logoUrl || undefined,
 						colors: [
 							project.primaryColor,

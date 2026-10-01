@@ -18,6 +18,7 @@ const DASHBOARD_LINKS = [
 	{ href: "", label: "Visão Geral" },
 	{ href: "/activities", label: "Atividades" },
 	{ href: "/participants", label: "Participantes" },
+	{ href: "/forms", label: "Formulários" },
 	{ href: "/settings", label: "Configurações" },
 ];
 

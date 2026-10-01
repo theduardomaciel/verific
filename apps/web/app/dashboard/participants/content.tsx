@@ -71,7 +71,7 @@ export function ParticipantsContent() {
 		);
 	}
 
-	const { participants, pageCount, emailDomains, courses } = data;
+	const { participants, pageCount, emailDomains } = data;
 
 	return (
 		<div className="container-d py-container-v min-h-screen">
@@ -129,15 +129,6 @@ export function ParticipantsContent() {
 							items={emailDomains.map((domain) => ({
 								value: domain,
 								name: domain,
-							}))}
-						/>
-						<Filter
-							type="checkbox"
-							prefix="course"
-							title="Filtrar por Curso"
-							items={courses.slice(1).map((course) => ({
-								value: course,
-								name: course,
 							}))}
 						/>
 					</FiltersPanel>
