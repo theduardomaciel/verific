@@ -33,7 +33,8 @@ async function seedUsers() {
 		users.push({
 			name: faker.person.fullName({ sex: sex }),
 			email: faker.internet.email(),
-			emailVerified: faker.date.past(),
+			emailVerified: true,
+			publicEmail: faker.internet.email(),
 			image_url: faker.image.personPortrait({ sex: sex }),
 		});
 	}
@@ -157,7 +158,7 @@ async function seedParticipantOnActivity(
 		);
 		const participantCount = Math.floor(
 			Math.random() *
-			Math.min(participants.length / 2, participants.length),
+				Math.min(participants.length / 2, participants.length),
 		);
 		for (let j = 0; j < participantCount; j++) {
 			const hasJoined = Math.random() > 0.7;

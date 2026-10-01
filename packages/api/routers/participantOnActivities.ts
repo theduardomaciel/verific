@@ -12,18 +12,18 @@ import { and, eq, count, inArray, isNotNull } from "@verific/drizzle/orm";
 
 // tRPC
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, publicProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 export const participantOnActivitiesRouter = createTRPCRouter({
-	getActivitiesFromParticipant: publicProcedure
+	getActivitiesFromParticipant: protectedProcedure
 		.input(
 			z.object({
 				projectUrl: z.string(),
-				userId: z.string().uuid(),
 			}),
 		)
-		.query(async ({ input }) => {
-			const { projectUrl, userId } = input;
+		.query(async ({ input, ctx }) => {
+			const { projectUrl } = input;
+			const userId = ctx.session.user.id;
 
 			// Precisamos buscar o projeto pois precisamos do projectId para buscar o participante
 			// E precisamos do participantId para buscar as atividades
@@ -110,7 +110,7 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 			};
 
 		}),
-	deleteParticipantFromActivity: publicProcedure
+	deleteParticipantFromActivity: protectedProcedure
 		.input(
 			z.object({
 				projectUrl: z.string(),
@@ -119,7 +119,7 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			const { activityId, participantId } = input;
+			const { projectUrl, activityId, participantId } = input;
 
 			const userId = ctx.session?.user.id;
 
@@ -151,16 +151,38 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 				});
 			}
 
+			if (activityData.project.url !== projectUrl) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Atividade não pertence ao evento informado.",
+				});
+			}
+
+			const participantData = await db.query.participant.findFirst({
+				where: and(
+					eq(participant.id, participantId),
+					eq(participant.projectId, activityData.project.id),
+				),
+				columns: { userId: true },
+			});
+
+			if (!participantData) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Participante não encontrado no evento informado.",
+				});
+			}
+
+			const isParticipant = participantData.userId === userId;
 			const isOwner = activityData.project.ownerId === userId;
 			const isModerator = activityData.project.moderators.length > 0;
 
-			// TODO: Adicionar isso aqui novamente, porém verificando se o usuário que está tentando remover é ele mesmo
-			/* if (!isOwner && activityData.project.moderators.length === 0) {
+			if (!isParticipant && !isOwner && !isModerator) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
 					message: "Você não tem permissão para remover participantes desta atividade.",
 				});
-			} */
+			}
 
 			await db
 				.delete(participantOnActivity)
@@ -173,14 +195,15 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 
 			return { success: true };
 		}),
-	getSubscribedActivitiesIdsFromParticipant: publicProcedure
+	getSubscribedActivitiesIdsFromParticipant: protectedProcedure
 		.input(
 			z.object({
-				userId: z.string().uuid(),
+				projectUrl: z.string(),
 			}),
 		)
-		.query(async ({ input }) => {
-			const { userId } = input;
+		.query(async ({ input, ctx }) => {
+			const { projectUrl } = input;
+			const userId = ctx.session.user.id;
 
 			const activities = await db
 				.select({
@@ -188,11 +211,19 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 					participantId: participantOnActivity.participantId,
 				})
 				.from(participantOnActivity)
-				.leftJoin(
+				.innerJoin(
 					participant,
 					eq(participant.id, participantOnActivity.participantId),
 				)
-				.where(eq(participant.userId, userId));
+				.innerJoin(project, eq(project.id, participant.projectId))
+				.innerJoin(activity, eq(activity.id, participantOnActivity.activityId))
+				.where(
+					and(
+						eq(participant.userId, userId),
+						eq(project.url, projectUrl),
+						eq(activity.projectId, project.id),
+					),
+				);
 
 			const participantId =
 				activities.length > 0 ? activities[0]?.participantId : undefined;

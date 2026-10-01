@@ -23,12 +23,17 @@ export function DateRangePicker({ className, value, onChange }: Props) {
 	const formatDate = (date: Date) => {
 		const str = date.toLocaleDateString("pt-BR", {
 			day: "2-digit",
-			month: "short",
+			month: "long",
 			year: "numeric",
 		});
 		const parts = str.split(" ");
 		return `${parts[0]} de ${parts[2]}, ${parts[4]}`;
 	};
+
+	const isSameDay = (a: Date, b: Date) =>
+		a.getFullYear() === b.getFullYear() &&
+		a.getMonth() === b.getMonth() &&
+		a.getDate() === b.getDate();
 
 	return (
 		<div className={cn("grid gap-2", className)}>
@@ -45,10 +50,13 @@ export function DateRangePicker({ className, value, onChange }: Props) {
 						<CalendarIcon className="mr-2 h-4 w-4" />
 						{value?.from ? (
 							value.to ? (
-								<>
-									{formatDate(value.from)} -{" "}
-									{formatDate(value.to)}
-								</>
+								isSameDay(value.from, value.to) ? (
+									formatDate(value.from)
+								) : (
+									<>
+										{formatDate(value.from)} - {formatDate(value.to)}
+									</>
+								)
 							) : (
 								formatDate(value.from)
 							)

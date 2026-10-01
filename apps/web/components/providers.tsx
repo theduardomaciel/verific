@@ -25,7 +25,8 @@ const getQueryClient = () => {
 };
 
 export function Providers({ children }: { children: ReactNode }) {
-	const queryClient = getQueryClient();
+	// useState preserves the same client across renders (no cache loss).
+	const [queryClient] = useState(getQueryClient);
 
 	const [trpcClient] = useState(() => {
 		return trpc.createClient({

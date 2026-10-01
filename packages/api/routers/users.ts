@@ -7,8 +7,6 @@ import { z } from "@verific/zod";
 import { participant, user, project } from "@verific/drizzle/schema";
 import { eq } from "@verific/drizzle/orm";
 
-import { unstable_update } from "@verific/auth";
-
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 // Enums
@@ -60,10 +58,38 @@ export const usersRouter = createTRPCRouter({
 				})
 				.where(eq(user.id, userId));
 
+			const projectData = await db.query.project.findFirst({
+				where: eq(project.id, projectId),
+				columns: {
+					researchUrl: true,
+					isResearchEnabled: true,
+					isRegistrationEnabled: true,
+					isArchived: true,
+					endDate: true,
+				},
+			});
+
+			if (!projectData) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Project not found.",
+				});
+			}
+
+			if (
+				!projectData.isRegistrationEnabled ||
+				projectData.isArchived ||
+				projectData.endDate < new Date()
+			) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Registration is closed for this event.",
+				});
+			}
+
 			// Then we create the participant
-			let createdMember;
 			try {
-				createdMember = await db
+				await db
 					.insert(participant)
 					.values({
 						userId,
@@ -88,15 +114,6 @@ export const usersRouter = createTRPCRouter({
 				}
 				throw error; // Re-throw other errors
 			}
-
-			// Fetch project to check research settings
-			const projectData = await db.query.project.findFirst({
-				where: eq(project.id, projectId),
-				columns: {
-					researchUrl: true,
-					isResearchEnabled: true,
-				},
-			});
 
 			// Submit research answers to Google Sheets if enabled
 			if (projectData?.isResearchEnabled && projectData.researchUrl && (reason || accessibility || discovery)) {
@@ -166,15 +183,6 @@ export const usersRouter = createTRPCRouter({
 					console.error('Failed to submit research answers:', error);
 					// Don't fail the mutation if sheets submission fails
 				}
-			}
-
-			if (createdMember[0]) {
-				await unstable_update({
-					user: {
-						...ctx.session.user,
-						name,
-					},
-				});
 			}
 		}),
 	getUser: protectedProcedure.query(async ({ ctx }) => {

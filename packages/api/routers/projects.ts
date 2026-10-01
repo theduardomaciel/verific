@@ -190,7 +190,6 @@ export const projectsRouter = createTRPCRouter({
 			z.object({
 				id: z.string().uuid().optional(),
 				url: z.string().optional(),
-				userId: z.string().uuid().optional(),
 			}),
 		)
 		.query(async ({ input }) => {
@@ -223,7 +222,7 @@ export const projectsRouter = createTRPCRouter({
 							id: true,
 							name: true,
 							image_url: true,
-							public_email: true,
+							publicEmail: true,
 						},
 					},
 				},

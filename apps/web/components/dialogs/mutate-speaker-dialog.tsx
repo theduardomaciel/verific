@@ -1,5 +1,4 @@
 "use client";
-import { useRouter } from "next/navigation";
 
 import { useState, useEffect } from "react";
 
@@ -82,7 +81,7 @@ export function MutateSpeakerDialog({
 	const [open, setOpen] = useState(false);
 	const isDesktop = useMediaQuery("(min-width: 768px)");
 
-	const router = useRouter();
+	const utils = trpc.useUtils();
 
 	// Inicializamos o formulário com o Zod e o React Hook Form
 	const form = useForm<z.infer<typeof formSchema>>({
@@ -206,7 +205,7 @@ export function MutateSpeakerDialog({
 					currentState={currentState}
 					onClose={(refresh) => {
 						if (refresh) {
-							router.refresh();
+							utils.getSpeakers.invalidate();
 						}
 						setCurrentState(false);
 						setOpen(false);
@@ -272,7 +271,7 @@ export function MutateSpeakerDialog({
 				currentState={currentState}
 				onClose={(refresh) => {
 					if (refresh) {
-						router.refresh();
+						utils.getSpeakers.invalidate();
 					}
 					setCurrentState(false);
 					setOpen(false);

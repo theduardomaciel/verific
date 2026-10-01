@@ -1,33 +1,68 @@
+"use client";
+
 import Link from "next/link";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 
 // Icons
 import { Activity, BarChart3, Clock, Globe, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { GraphSelector } from "@/components/dashboard/overview/graph-selector";
 import { ActivitiesList } from "@/components/dashboard/overview/activities-list";
 import { MetricCard } from "@/components/dashboard/overview/metric-card";
-import { serverClient } from "@/lib/trpc/server";
+import { useDashboard } from "@/components/dashboard/dashboard-context";
+import { trpc } from "@/lib/trpc/react";
 
-export default async function Overview() {
-	const cookieStore = await cookies();
-	const projectId = cookieStore.get("projectId")!.value;
-	const projectUrl = cookieStore.get("projectUrl")!.value;
+function DashboardSkeleton() {
+	return (
+		<main className="container-d py-container-v flex w-full flex-1 flex-col items-center justify-start gap-8 min-h-screen">
+			<div className="grid w-full gap-4 md:grid-cols-2 lg:grid-cols-4">
+				{Array.from({ length: 4 }).map((_, i) => (
+					<Skeleton key={i} className="h-32 w-full" />
+				))}
+			</div>
+			<div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-3">
+				<Skeleton className="h-96 w-full lg:col-span-2" />
+				<Skeleton className="h-96 w-full" />
+			</div>
+		</main>
+	);
+}
 
-	const { activities } = await serverClient.getActivities({
-		projectId,
-		sort: "asc",
-		pageSize: 5,
-	});
+export default function Overview() {
+	const { projectId, projectUrl } = useDashboard();
 
-	const stats = await serverClient.getDashboardStats({ projectId });
+	const activitiesQuery = trpc.getActivities.useQuery(
+		{ projectId, sort: "asc", pageSize: 5 },
+		{ staleTime: 30 * 1000, refetchOnWindowFocus: false },
+	);
+	const statsQuery = trpc.getDashboardStats.useQuery(
+		{ projectId },
+		{ staleTime: 30 * 1000, refetchOnWindowFocus: false },
+	);
+
+	if (activitiesQuery.isPending || statsQuery.isPending) {
+		return <DashboardSkeleton />;
+	}
+
+	if (activitiesQuery.isError || statsQuery.isError) {
+		return (
+			<main className="container-d py-container-v flex w-full flex-1 flex-col items-center justify-start min-h-screen">
+				<p className="text-muted-foreground text-sm">
+					Não foi possível carregar o dashboard. Tente recarregar a
+					página.
+				</p>
+			</main>
+		);
+	}
+
+	const { activities } = activitiesQuery.data;
+	const stats = statsQuery.data;
 
 	return (
-		<main className="container-d py-container-v flex w-full flex-1 flex-col items-center justify-start gap-8">
+		<main className="container-d py-container-v flex w-full flex-1 flex-col items-center justify-start gap-8 min-h-screen">
 			<Tabs
 				defaultValue="overview"
 				className="flex w-full flex-1 space-y-4"
@@ -96,10 +131,8 @@ export default async function Overview() {
 							<CardHeader className="flex flex-row items-center justify-between">
 								<CardTitle>Participantes</CardTitle>
 								<div className="hidden items-center space-x-2 md:flex">
-									{/* <CalendarDateRangePicker className="pointer-events-none opacity-50" />
-									<Button disabled>Gerar relatório</Button> */}
 									<Button disabled asChild>
-										<Link href={`/${projectUrl}`}>
+										<Link target="_blank" href={`/${projectUrl}`}>
 											<Globe className="mr-2" size={24} />
 											Acessar página do evento
 										</Link>

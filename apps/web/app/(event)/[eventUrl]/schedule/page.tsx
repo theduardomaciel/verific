@@ -1,20 +1,25 @@
 import { Calendar } from "lucide-react";
+import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
-// Components
 import * as EventContainer from "@/components/landing/event-container";
 import ScheduleLoading from "./skeleton";
 import { ScheduleWrapper } from "@/components/schedule-wrapper";
-
-// Data
 import { getProject } from "@/lib/data";
+
 interface Props {
 	params: Promise<{ eventUrl: string }>;
 }
 
-export default async function EventSchedulePage(props: Props) {
-	const { eventUrl } = await props.params;
-	const { project } = await getProject(eventUrl);
+async function SchedulePageContent({ params }: Props) {
+	const { eventUrl } = await params;
+	const result = await getProject(eventUrl);
+
+	if (!result?.project) {
+		notFound();
+	}
+
+	const { project } = result;
 
 	return (
 		<EventContainer.Holder>
@@ -54,5 +59,13 @@ export default async function EventSchedulePage(props: Props) {
 				</Suspense>
 			</EventContainer.Content>
 		</EventContainer.Holder>
+	);
+}
+
+export default function EventSchedulePage(props: Props) {
+	return (
+		<Suspense fallback={<ScheduleLoading />}>
+			<SchedulePageContent params={props.params} />
+		</Suspense>
 	);
 }

@@ -1,6 +1,6 @@
-import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { env } from "@verific/env";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -17,20 +17,14 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { EventAction } from "@/components/event-action";
 
 // Components
 import * as EventContainer from "@/components/landing/event-container";
 import { ShareDialog } from "@/components/dialogs/share-dialog";
 import { ReportEventDialog } from "@/components/dialogs/report-event-dialog";
 
-// Utils
-import { isAfterEnd } from "@/lib/date";
-import {
-	getCachedCheckParticipantEnrollment,
-	getProject,
-	getProjects,
-} from "@/lib/data";
-import { auth } from "@verific/auth";
+import { getEventStaticParams, getProject } from "@/lib/data";
 
 const markdownComponents = {
 	img: ({ src, alt, ...props }: any) => (
@@ -45,65 +39,23 @@ const markdownComponents = {
 	),
 };
 
-export const revalidate = 3600; // Revalidate every hour
-
 export async function generateStaticParams() {
-	const projects = await getProjects();
-
-	return projects.map((project) => ({
-		eventUrl: project.url,
-	}));
+	return getEventStaticParams();
 }
 
-export default async function EventPage({
+async function EventPageContent({
 	params,
 }: {
 	params: Promise<{ eventUrl: string }>;
 }) {
 	const { eventUrl } = await params;
-	const session = await auth();
+	const result = await getProject(eventUrl);
 
-	const { project } = await getProject(eventUrl, session?.user.id);
-
-	if (!project) {
+	if (!result?.project) {
 		notFound();
 	}
 
-	const userId = session?.user.id;
-	const isParticipant = userId
-		? await getCachedCheckParticipantEnrollment(eventUrl, userId)
-		: false;
-
-	// console.log("Event page", { eventUrl, project, isParticipant });
-
-	const afterEnd = isAfterEnd(project.endDate);
-
-	const isArchived = project.isArchived;
-	const isRegistrationEnabled = project.isRegistrationEnabled;
-
-	let disabled = false;
-	let buttonText = "";
-	let href = `/${eventUrl}/schedule`;
-
-	if (isParticipant) {
-		buttonText = "Ver programação";
-		disabled = isArchived || afterEnd;
-	} else {
-		href = `/${eventUrl}/subscribe`;
-		if (isArchived) {
-			buttonText = "Evento arquivado";
-			disabled = true;
-		} else if (afterEnd) {
-			buttonText = "Evento encerrado";
-			disabled = true;
-		} else if (!isRegistrationEnabled) {
-			buttonText = "Inscrições fechadas";
-			disabled = true;
-		} else {
-			buttonText = "Inscrever-se";
-			disabled = false;
-		}
-	}
+	const { project } = result;
 
 	return (
 		<EventContainer.Holder>
@@ -143,19 +95,14 @@ export default async function EventPage({
 							<span>Emite certificado</span>
 						</Badge>
 					</div>
-					<Button
-						asChild={!disabled}
-						size={"lg"}
-						variant={"secondary"}
-						disabled={disabled}
-						className="px-12 py-6 text-base font-semibold text-white uppercase max-md:w-full"
-					>
-						{disabled ? (
-							buttonText
-						) : (
-							<Link href={href}>{buttonText}</Link>
+					<EventAction
+						eventUrl={eventUrl}
+						endDate={project.endDate}
+						isArchived={Boolean(project.isArchived)}
+						isRegistrationEnabled={Boolean(
+							project.isRegistrationEnabled,
 						)}
-					</Button>
+					/>
 				</div>
 				<div className="relative z-20 flex h-60 items-center justify-center">
 					<Image
@@ -244,9 +191,7 @@ export default async function EventPage({
 								variant="outline"
 								className="flex w-full items-center justify-center gap-2"
 							>
-								<a
-									href={`mailto:${project.owner.public_email}`}
-								>
+								<a href={`mailto:${project.owner.publicEmail}`}>
 									<Mail className="h-4 w-4" />
 									<span>Falar com o produtor</span>
 								</a>
@@ -268,5 +213,17 @@ export default async function EventPage({
 				</div>
 			</EventContainer.Content>
 		</EventContainer.Holder>
+	);
+}
+
+export default function EventPage({
+	params,
+}: {
+	params: Promise<{ eventUrl: string }>;
+}) {
+	return (
+		<Suspense fallback={<div className="min-h-[50vh]" />}>
+			<EventPageContent params={params} />
+		</Suspense>
 	);
 }

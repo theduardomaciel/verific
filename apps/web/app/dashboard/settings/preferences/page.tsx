@@ -1,17 +1,27 @@
-import { cookies } from "next/headers";
+"use client";
 
 // Components
 import { ProjectSettingsPreferencesForm } from "./form";
-import { serverClient } from "@/lib/trpc/server";
+import { SettingsFormSkeleton } from "../skeleton";
 
 // API
+import { useCurrentProject } from "@/hooks/use-current-project";
 
-export default async function PreferencesSettingsPage() {
-	const cookieStore = await cookies();
-	const projectId = cookieStore.get("projectId")!.value;
+export default function PreferencesSettingsPage() {
+	const { data, isPending, isError } = useCurrentProject();
 
-	// Fetch project data from the server
-	const { project } = await serverClient.getProject({ id: projectId });
+	if (isPending) {
+		return <SettingsFormSkeleton />;
+	}
 
-	return <ProjectSettingsPreferencesForm project={project} />;
+	if (isError || !data?.project) {
+		return (
+			<p className="text-muted-foreground text-sm">
+				Não foi possível carregar as configurações. Tente recarregar a
+				página.
+			</p>
+		);
+	}
+
+	return <ProjectSettingsPreferencesForm project={data.project} />;
 }

@@ -69,7 +69,6 @@ export function ErrorDisplay({ error }: { error?: string }) {
 
 	return (
 		<Panel
-			className="text-muted-foreground text-left text-sm leading-relaxed"
 			type={errorObj.type}
 			showIcon
 		>

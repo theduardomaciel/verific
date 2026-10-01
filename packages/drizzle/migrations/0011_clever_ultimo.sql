@@ -1,1 +1,0 @@
-ALTER TABLE "participants" DROP CONSTRAINT "participants_registration_id_unique";

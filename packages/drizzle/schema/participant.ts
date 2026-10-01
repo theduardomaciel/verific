@@ -7,12 +7,13 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 
-import { participantOnActivity, project, user } from ".";
+import { participantOnActivity } from "./participant-on-activity";
+import { project } from "./project";
+import { user } from "./user";
 
 // Enums
 import { courseEnum } from "../enum/course";
 import { periodEnum } from "../enum/period";
-import { roleEnum } from "../enum/role";
 import { degreeLevelEnum } from "../enum/degree";
 
 export const participant = pgTable(

@@ -24,28 +24,17 @@ import {
 	SQL,
 } from "@verific/drizzle/orm";
 
-// Enums
-import { courses } from "@verific/drizzle/enum/course";
-import { periods } from "@verific/drizzle/enum/period";
-import { participantRoles } from "@verific/drizzle/enum/role";
-
 // Utils
 import { isMemberAuthenticated } from "../auth";
-import { sortOptions } from "../utils";
+import { getParticipantsParams } from "../schemas";
+
+// Re-export client-safe schema so existing server imports keep working.
+// Client components must import from `@verific/api/schemas` instead.
+export { getParticipantsParams };
 
 // tRPC
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
-
-export const getParticipantsParams = z.object({
-	query: z.string().optional(), // Para busca por nome ou e-mail
-	sort: z.enum(sortOptions).optional(), // Ordenação por data
-	page: z.coerce.number().default(0), // Paginação: página atual
-	pageSize: z.coerce.number().default(10), // Paginação: tamanho da página,
-	role: z.array(z.enum(participantRoles)).optional(), // Funções dos participantes
-	course: z.array(z.enum(courses)).optional(), // Cursos dos participantes
-	period: z.array(z.enum(periods)).optional(), // Períodos dos participantes
-});
 
 export const participantsRouter = createTRPCRouter({
 	getParticipant: protectedProcedure
@@ -132,7 +121,7 @@ export const participantsRouter = createTRPCRouter({
 			};
 		}),
 
-	getParticipants: publicProcedure
+	getParticipants: protectedProcedure
 		.input(
 			getParticipantsParams.extend({
 				projectId: z.string().uuid(), // ID do projeto
@@ -250,15 +239,15 @@ export const participantsRouter = createTRPCRouter({
 			};
 		}),
 
-	checkParticipant: publicProcedure
+	checkParticipant: protectedProcedure
 		.input(
 			z.object({
 				projectUrl: z.string(),
-				userId: z.string().uuid(),
 			}),
 		)
-		.query(async ({ input }) => {
-			const { projectUrl, userId } = input;
+		.query(async ({ input, ctx }) => {
+			const { projectUrl } = input;
+			const userId = ctx.session.user.id;
 
 			// Faz uma única query para verificar se existe o participante no projeto pelo projectUrl
 			const result = await db

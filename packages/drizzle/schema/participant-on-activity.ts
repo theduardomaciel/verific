@@ -1,7 +1,8 @@
 import { relations } from "drizzle-orm";
 import { pgTable, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
-import { participant, activity } from ".";
+import { participant } from "./participant";
+import { activity } from "./activity";
 
 // Enums
 import { roleEnum } from "../enum/role";

@@ -1,70 +1,115 @@
-import { publicClient } from './trpc/server';
-import { unstable_cache } from 'next/cache';
+import { cacheLife, cacheTag } from "next/cache";
 
-export const getProject = (projectUrl: string, userId?: string) => {
-    return unstable_cache(
-        async () => {
-            const res = await publicClient.getProject({ url: projectUrl, userId });
-            return res;
-        },
-        [`project-${projectUrl}`],
-        { revalidate: 3600 * 24, tags: [`project-${projectUrl}`] }
-    )();
+import { createClientForUser, publicClient } from "@/lib/trpc/server";
+
+export async function getProject(projectUrl: string) {
+	"use cache";
+	cacheLife("hours");
+	cacheTag("projects", `project:${projectUrl}`);
+
+	try {
+		return await publicClient.getProject({ url: projectUrl });
+	} catch {
+		return null;
+	}
 }
 
-export const getProjects = unstable_cache(
-    async () => {
-        const res = await publicClient.getAllProjects();
-        return res;
-    },
-    ["projects"],
-    { revalidate: 3600 * 24, tags: ["projects"] }
-);
-
-export const getCachedActivities = unstable_cache(
-    async (params: Parameters<typeof publicClient.getActivities>[0]) => {
-        return await publicClient.getActivities(params);
-    },
-    ["activities"],
-    { revalidate: 3600 * 24, tags: ["activities"] }
-);
-
-export const getCachedActivitiesFromParticipant = (projectUrl: string, userId: string) => {
-    return unstable_cache(
-        async () => {
-            return await publicClient.getActivitiesFromParticipant({ projectUrl, userId });
-        },
-        [`activities-from-participant-${userId}`],
-        { revalidate: 60, tags: [`activities-from-participant-${userId}`] }
-    )();
+export async function getProjects() {
+	"use cache";
+	cacheLife("hours");
+	cacheTag("projects");
+	return publicClient.getAllProjects();
 }
 
-export const getCachedParticipants = unstable_cache(
-    async (params: Parameters<typeof publicClient.getParticipants>[0]) => {
-        return await publicClient.getParticipants(params);
-    },
-    ["participants"],
-    { revalidate: 3600 * 24, tags: ["participants"] }
-);
+export async function getEventStaticParams() {
+	const projects = await getProjects();
 
-export const getCachedCheckParticipantEnrollment = (projectUrl: string, userId: string) => {
-    return unstable_cache(
-        async () => {
-            const res = await publicClient.checkParticipant({ projectUrl, userId });
-            return res;
-        },
-        [`participant-enrollment-${userId}`],
-        { revalidate: 60, tags: [`participant-enrollment-${userId}`] }
-    )();
+	if (projects.length > 0) {
+		return projects.map((project) => ({ eventUrl: project.url }));
+	}
+
+	return [{ eventUrl: "__no-events__" }];
 }
 
-export const getCachedSubscribedActivitiesIdsFromParticipant = (userId: string) => {
-    return unstable_cache(
-        async () => {
-            const res = await publicClient.getSubscribedActivitiesIdsFromParticipant({ userId });
-            return res;
-        },
-        [`subscribed-activities-ids-from-participant-${userId}`],
-        { revalidate: 300, tags: [`subscribed-activities-ids-from-participant-${userId}`] }
-    )();
+export async function getCachedActivities(
+	params: Parameters<typeof publicClient.getActivities>[0],
+) {
+	"use cache";
+	cacheLife("minutes");
+	cacheTag(
+		"activities",
+		`activities:${params.projectId ?? params.projectUrl ?? "all"}`,
+	);
+	return publicClient.getActivities(params);
+}
+
+export async function getCachedActivity(
+	params: Parameters<typeof publicClient.getActivity>[0],
+) {
+	"use cache";
+	cacheLife("minutes");
+	cacheTag("activities", `activity:${params.activityId}`);
+	return publicClient.getActivity(params);
+}
+
+export async function getCachedActivitiesFromParticipant(
+	projectUrl: string,
+	userId: string,
+) {
+	"use cache";
+	cacheLife({ stale: 30, revalidate: 30, expire: 60 });
+	cacheTag(
+		`activities-from-participant-${userId}`,
+		`activities-from-participant-${userId}-${projectUrl}`,
+	);
+	return createClientForUser(userId).getActivitiesFromParticipant({
+		projectUrl,
+	});
+}
+
+export async function getCachedParticipants(
+	userId: string,
+	params: Parameters<typeof publicClient.getParticipants>[0],
+) {
+	"use cache";
+	cacheLife("hours");
+	cacheTag("participants", `participants:${params.projectId ?? "all"}`);
+	return createClientForUser(userId).getParticipants(params);
+}
+
+export async function getCachedCheckParticipantEnrollment(
+	projectUrl: string,
+	userId: string,
+) {
+	"use cache";
+	cacheLife({ stale: 30, revalidate: 30, expire: 60 });
+	cacheTag(
+		`participant-enrollment-${userId}`,
+		`participant-enrollment-${userId}-${projectUrl}`,
+	);
+	return createClientForUser(userId).checkParticipant({ projectUrl });
+}
+
+export async function getCachedSubscribedActivitiesIdsFromParticipant(
+	projectUrl: string,
+	userId: string,
+) {
+	"use cache";
+	cacheLife({ stale: 30, revalidate: 30, expire: 60 });
+	cacheTag(
+		`subscribed-activities-ids-from-participant-${userId}`,
+		`subscribed-activities-ids-from-participant-${userId}-${projectUrl}`,
+	);
+	return createClientForUser(
+		userId,
+	).getSubscribedActivitiesIdsFromParticipant({
+		projectUrl,
+	});
+}
+
+export async function getCachedUser(userId: string) {
+	"use cache";
+	cacheLife("minutes");
+	cacheTag("users", `user:${userId}`);
+	return createClientForUser(userId).getUser();
 }
