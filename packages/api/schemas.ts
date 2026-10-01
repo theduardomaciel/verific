@@ -122,8 +122,7 @@ function fieldValueSchema(field: FormFieldForValidation) {
 	let base: z.ZodTypeAny;
 
 	switch (field.type) {
-		case "text":
-		case "textarea": {
+		case "text": {
 			base = z.string();
 			const v = field.validation;
 			if (typeof v?.minLength === "number")
@@ -137,6 +136,15 @@ function fieldValueSchema(field: FormFieldForValidation) {
 					// ignore invalid regex stored in db
 				}
 			}
+			break;
+		}
+		case "textarea": {
+			base = z.string();
+			const v = field.validation;
+			if (typeof v?.minLength === "number")
+				base = (base as z.ZodString).min(v.minLength);
+			if (typeof v?.maxLength === "number")
+				base = (base as z.ZodString).max(v.maxLength);
 			break;
 		}
 		case "number": {

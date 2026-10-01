@@ -130,6 +130,9 @@ function FieldDialog({
 	const watchedType = form.watch("type");
 	const watchedLabel = form.watch("label");
 	const needsOptions = watchedType === "select_single" || watchedType === "select_multiple";
+	const showNumberRange = watchedType === "number";
+	const showTextLength = watchedType === "text" || watchedType === "textarea";
+	const showPattern = watchedType === "text";
 
 	useEffect(() => {
 		if (!initial && watchedLabel && !form.getValues("key")) {
@@ -138,10 +141,26 @@ function FieldDialog({
 	}, [watchedLabel, initial, form]);
 
 	function submit(values: FieldFormValues) {
-		const options = values.optionsText
-			? values.optionsText.split("\n").map((s) => s.trim()).filter(Boolean)
-			: undefined;
 		const num = (v?: string) => (v && v.trim() !== "" ? Number(v) : undefined);
+		const options =
+			needsOptions && values.optionsText
+				? values.optionsText.split("\n").map((s) => s.trim()).filter(Boolean)
+				: undefined;
+		const validation =
+			values.type === "number"
+				? { min: num(values.min), max: num(values.max) }
+				: values.type === "text"
+					? {
+							minLength: num(values.minLength),
+							maxLength: num(values.maxLength),
+							pattern: values.pattern || undefined,
+						}
+					: values.type === "textarea"
+						? {
+								minLength: num(values.minLength),
+								maxLength: num(values.maxLength),
+							}
+						: undefined;
 		mutation.mutate({
 			versionId,
 			fieldId: values.fieldId,
@@ -152,13 +171,7 @@ function FieldDialog({
 			required: values.required,
 			order: Number(values.order) || 0,
 			options,
-			validation: {
-				min: num(values.min),
-				max: num(values.max),
-				minLength: num(values.minLength),
-				maxLength: num(values.maxLength),
-				pattern: values.pattern || undefined,
-			},
+			validation,
 			isVisible: values.isVisible,
 			editableAfterSignup: values.editableAfterSignup,
 		});
@@ -274,35 +287,76 @@ function FieldDialog({
 								)}
 							/>
 						)}
-						<div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-							{(["min", "max", "minLength", "maxLength"] as const).map((n) => (
+						{showNumberRange && (
+							<div className="grid grid-cols-2 gap-4">
 								<FormField
-									key={n}
 									control={form.control}
-									name={n}
+									name="min"
 									render={({ field }) => (
 										<FormItem>
-											<FormLabel>{n}</FormLabel>
+											<FormLabel>Valor mínimo</FormLabel>
 											<FormControl>
 												<Input type="number" placeholder="-" {...field} />
 											</FormControl>
 										</FormItem>
 									)}
 								/>
-							))}
-						</div>
-						<FormField
-							control={form.control}
-							name="pattern"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Regex de validação (opcional)</FormLabel>
-									<FormControl>
-										<Input placeholder="^[0-9]+$" {...field} />
-									</FormControl>
-								</FormItem>
-							)}
-						/>
+								<FormField
+									control={form.control}
+									name="max"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Valor máximo</FormLabel>
+											<FormControl>
+												<Input type="number" placeholder="-" {...field} />
+											</FormControl>
+										</FormItem>
+									)}
+								/>
+							</div>
+						)}
+						{showTextLength && (
+							<div className="grid grid-cols-2 gap-4">
+								<FormField
+									control={form.control}
+									name="minLength"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Tamanho mínimo</FormLabel>
+											<FormControl>
+												<Input type="number" placeholder="-" {...field} />
+											</FormControl>
+										</FormItem>
+									)}
+								/>
+								<FormField
+									control={form.control}
+									name="maxLength"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Tamanho máximo</FormLabel>
+											<FormControl>
+												<Input type="number" placeholder="-" {...field} />
+											</FormControl>
+										</FormItem>
+									)}
+								/>
+							</div>
+						)}
+						{showPattern && (
+							<FormField
+								control={form.control}
+								name="pattern"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Regex de validação (opcional)</FormLabel>
+										<FormControl>
+											<Input placeholder="^[0-9]+$" {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+						)}
 						<div className="flex flex-wrap gap-6">
 							<FormField
 								control={form.control}
