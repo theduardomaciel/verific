@@ -11,11 +11,12 @@ export * from "./project-moderator";
 export * from "./template";
 export * from "./user";
 export * from "./verification";
+export * from "./form-version";
+export * from "./form-field";
+export * from "./form-answer";
 
 // Enums
 export * from "../enum/audience";
 export * from "../enum/category";
-export * from "../enum/course";
-export * from "../enum/degree";
-export * from "../enum/period";
+export * from "../enum/form-field-type";
 export * from "../enum/role";

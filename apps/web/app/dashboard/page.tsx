@@ -142,7 +142,6 @@ export default function Overview() {
 							<CardContent className="relative flex flex-1">
 								<GraphSelector
 									graphData={stats.graphData}
-									coursesData={stats.coursesData}
 								/>
 							</CardContent>
 						</Card>

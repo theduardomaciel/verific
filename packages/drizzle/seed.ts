@@ -57,7 +57,6 @@ async function seedProjects(users: any[]) {
 			url: name.toLowerCase().replace(/\s+/g, "-"),
 			address: faker.location.streetAddress(),
 			isRegistrationEnabled: faker.datatype.boolean(),
-			isResearchEnabled: faker.datatype.boolean(),
 			isArchived: false,
 			logoUrl: faker.image.urlPicsumPhotos(),
 			coverUrl: faker.image.urlPicsumPhotos(),
@@ -84,10 +83,6 @@ async function seedParticipants(users: any[], projects: any[]) {
 		participants.push({
 			userId: users[i].id,
 			projectId: projects[i % projects.length].id,
-			course: "Ciência Da Computação",
-			registrationId: faker.string.numeric({ length: 8 }),
-			period: "1",
-			role: "participant",
 			joinedAt: faker.date.past(),
 		});
 	}
@@ -130,7 +125,6 @@ async function seedActivities(projects: any[], speakers: any[]) {
 			dateTo: faker.date.soon({ days: 10 }),
 			audience: "internal",
 			category: "lecture",
-			speakerId: speakers[i % speakers.length].id,
 			participantsLimit: faker.number.int({ min: 10, max: 100 }),
 			tolerance: faker.number.int({ min: 0, max: 20 }),
 			workload: faker.number.int({ min: 1, max: 60 }),

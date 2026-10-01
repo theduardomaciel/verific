@@ -56,7 +56,6 @@ async function seedProjects(users: any[]) {
 			url: name.toLowerCase().replace(/\s+/g, "-"),
 			address: faker.location.streetAddress(),
 			isRegistrationEnabled: faker.datatype.boolean(),
-			isResearchEnabled: faker.datatype.boolean(),
 			isArchived: false,
 			logoUrl: faker.image.urlPicsumPhotos(),
 			coverUrl: faker.image.urlPicsumPhotos(),
@@ -83,9 +82,6 @@ async function seedParticipants(users: any[], projects: any[]) {
 		participants.push({
 			userId: users[i].id,
 			projectId: projects[i % projects.length].id,
-			course: "Ciência Da Computação",
-			registrationId: faker.string.numeric({ length: 8 }),
-			period: "1",
 			joinedAt: faker.date.past(),
 		});
 	}

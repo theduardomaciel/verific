@@ -49,6 +49,31 @@ export async function ParticipantCard({ id: participantId, eventUrl }: Props) {
 		participantId,
 	});
 
+	let answers: Array<{ label: string; display: string }> = [];
+	try {
+		const result = await serverClient.getParticipantAnswers({ participantId });
+		answers = result.answers.map((a) => {
+			const label =
+				(a.field?.label as string | undefined) ??
+				(a.fieldSnapshot as { label?: string } | null)?.label ??
+				"Resposta";
+			const raw =
+				(a as { value?: unknown }).value ??
+				a.valueText ??
+				a.valueNumber ??
+				a.valueDate ??
+				a.valueJson;
+			let display = "";
+			if (Array.isArray(raw)) display = raw.join("; ");
+			else if (raw instanceof Date) display = raw.toISOString().slice(0, 10);
+			else if (typeof raw === "boolean") display = raw ? "Sim" : "Não";
+			else if (raw !== null && raw !== undefined) display = String(raw);
+			return { label, display };
+		});
+	} catch {
+		answers = [];
+	}
+
 	const projectUrl = eventUrl ?? participant.project.url;
 
 	return (
@@ -87,6 +112,19 @@ export async function ParticipantCard({ id: participantId, eventUrl }: Props) {
 						{hours} horas
 					</Badge>
 				</ul>
+				{answers.length > 0 && (
+					<div className="flex w-full flex-col gap-2 rounded-lg border p-4 text-left">
+						<h4 className="text-sm font-bold">Respostas do formulário</h4>
+						<ul className="flex flex-col gap-2">
+							{answers.map((a, i) => (
+								<li key={i} className="text-sm">
+									<span className="font-semibold">{a.label}: </span>
+									<span className="text-muted-foreground break-words">{a.display || "—"}</span>
+								</li>
+							))}
+						</ul>
+					</div>
+				)}
 			</div>
 			<DialogFooter>
 				{isModerator && !isModeratorParticipant ? (

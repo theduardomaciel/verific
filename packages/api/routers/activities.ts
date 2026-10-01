@@ -955,28 +955,6 @@ export const activitiesRouter = createTRPCRouter({
 				});
 			}
 
-			// Courses data
-			const coursesDataQuery = await db
-				.select({
-					course: participant.course,
-					count: countDistinct(participantOnActivity.participantId),
-				})
-				.from(participantOnActivity)
-				.innerJoin(activity, eq(participantOnActivity.activityId, activity.id))
-				.innerJoin(participant, eq(participantOnActivity.participantId, participant.id))
-				.where(and(
-					eq(activity.projectId, projectId),
-					eq(participantOnActivity.role, "participant"),
-					isNotNull(participant.course)
-				))
-				.groupBy(participant.course)
-				.orderBy(desc(count()));
-
-			const coursesData = coursesDataQuery.map((row) => ({
-				course: row.course!,
-				count: row.count,
-			}));
-
 			return {
 				totalParticipants,
 				participantsInLastHourPercentage,
@@ -986,7 +964,7 @@ export const activitiesRouter = createTRPCRouter({
 				activeParticipantsInLastDay,
 				occupancyRate,
 				graphData,
-				coursesData,
+				coursesData: [] as Array<{ course: string; count: number }>,
 			};
 		}),
 });
