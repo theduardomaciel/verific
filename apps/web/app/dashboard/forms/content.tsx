@@ -49,11 +49,6 @@ type Field = RouterOutput["getVersion"]["fields"][number];
 
 const fieldFormSchema = z.object({
 	fieldId: z.string().optional(),
-	key: z
-		.string()
-		.min(1, "Obrigatório")
-		.max(64)
-		.regex(/^[a-z0-9_]+$/, "Use minúsculas, números e _"),
 	label: z.string().min(1, "Obrigatório").max(200),
 	type: z.enum(formFieldTypes),
 	helpText: z.string().max(500).optional(),
@@ -70,16 +65,6 @@ const fieldFormSchema = z.object({
 });
 
 type FieldFormValues = z.infer<typeof fieldFormSchema>;
-
-function slugify(label: string) {
-	return label
-		.normalize("NFD")
-		.replace(/[\u0300-\u036f]/g, "")
-		.toLowerCase()
-		.replace(/[^a-z0-9]+/g, "_")
-		.replace(/^_+|_+$/g, "")
-		.slice(0, 64);
-}
 
 function FieldDialog({
 	versionId,
@@ -110,7 +95,6 @@ function FieldDialog({
 		resolver: zodResolver(fieldFormSchema) as never,
 		defaultValues: {
 			fieldId: initial?.id,
-			key: initial?.key ?? "",
 			label: initial?.label ?? "",
 			type: (initial?.type as FieldFormValues["type"]) ?? "text",
 			helpText: initial?.helpText ?? "",
@@ -128,17 +112,10 @@ function FieldDialog({
 	});
 
 	const watchedType = form.watch("type");
-	const watchedLabel = form.watch("label");
 	const needsOptions = watchedType === "select_single" || watchedType === "select_multiple";
 	const showNumberRange = watchedType === "number";
 	const showTextLength = watchedType === "text" || watchedType === "textarea";
 	const showPattern = watchedType === "text";
-
-	useEffect(() => {
-		if (!initial && watchedLabel && !form.getValues("key")) {
-			form.setValue("key", slugify(watchedLabel));
-		}
-	}, [watchedLabel, initial, form]);
 
 	function submit(values: FieldFormValues) {
 		const num = (v?: string) => (v && v.trim() !== "" ? Number(v) : undefined);
@@ -164,7 +141,6 @@ function FieldDialog({
 		mutation.mutate({
 			versionId,
 			fieldId: values.fieldId,
-			key: values.key,
 			label: values.label,
 			type: values.type,
 			helpText: values.helpText || null,
@@ -190,34 +166,19 @@ function FieldDialog({
 				</DialogHeader>
 				<Form {...form}>
 					<form onSubmit={form.handleSubmit(submit)} className="flex flex-col gap-4">
-						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-							<FormField
-								control={form.control}
-								name="label"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Rótulo *</FormLabel>
-										<FormControl>
-											<Input placeholder="Ex: Restrições alimentares" {...field} />
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<FormField
-								control={form.control}
-								name="key"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Chave *</FormLabel>
-										<FormControl>
-											<Input placeholder="ex: restricoes_alimentares" {...field} />
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-						</div>
+						<FormField
+							control={form.control}
+							name="label"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Rótulo *</FormLabel>
+									<FormControl>
+										<Input placeholder="Ex: Restrições alimentares" {...field} />
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 							<FormField
 								control={form.control}
@@ -668,7 +629,7 @@ export function FormsContent() {
 													{!f.isActive && <Badge variant="outline">Inativo</Badge>}
 												</div>
 												<div className="text-muted-foreground text-xs">
-													{f.key} • {f.type} • ordem {f.order}
+													{f.type} • ordem {f.order}
 													{f.helpText ? ` • ${f.helpText}` : ""}
 													{(f.options ?? []).length > 0 ? ` • opções: ${(f.options ?? []).join(", ")}` : ""}
 												</div>

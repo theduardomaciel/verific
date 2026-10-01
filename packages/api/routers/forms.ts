@@ -99,6 +99,31 @@ function answerToValue(row: typeof formAnswer.$inferSelect): unknown {
 	return row.valueText;
 }
 
+function slugifyKey(label: string): string {
+	const slug = label
+		.normalize("NFD")
+		.replace(/[\u0300-\u036f]/g, "")
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, "_")
+		.replace(/^_+|_+$/g, "")
+		.slice(0, 48);
+	return slug || "campo";
+}
+
+async function resolveUniqueKey(versionId: string, base: string, excludeFieldId?: string): Promise<string> {
+	const existing = await db.query.formField.findMany({
+		where: eq(formField.formVersionId, versionId),
+		columns: { id: true, key: true },
+	});
+	const taken = new Set(existing.filter((f) => f.id !== excludeFieldId).map((f) => f.key));
+	if (!taken.has(base)) return base;
+	for (let i = 2; i < 1000; i++) {
+		const candidate = `${base}_${i}`.slice(0, 64);
+		if (!taken.has(candidate)) return candidate;
+	}
+	return `${base}_${Date.now().toString(36)}`.slice(0, 64);
+}
+
 export const formsRouter = createTRPCRouter({
 	getPublishedForm: publicProcedure
 		.input(
@@ -229,7 +254,6 @@ export const formsRouter = createTRPCRouter({
 				const updated = await db
 					.update(formField)
 					.set({
-						key: input.key,
 						label: input.label,
 						type: input.type,
 						helpText: input.helpText ?? null,
@@ -245,18 +269,14 @@ export const formsRouter = createTRPCRouter({
 				if (!updated[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Campo não encontrado." });
 				return updated[0];
 			}
-			const duplicate = await db.query.formField.findFirst({
-				where: and(eq(formField.formVersionId, input.versionId), eq(formField.key, input.key)),
-			});
-			if (duplicate) {
-				throw new TRPCError({ code: "CONFLICT", message: "Já existe um campo com essa chave nesta versão." });
-			}
+			const baseKey = input.key?.trim() || slugifyKey(input.label);
+			const key = await resolveUniqueKey(input.versionId, baseKey);
 			const created = await db
 				.insert(formField)
 				.values({
 					formVersionId: input.versionId,
 					projectId: version.projectId,
-					key: input.key,
+					key,
 					label: input.label,
 					type: input.type,
 					helpText: input.helpText ?? null,

@@ -70,7 +70,8 @@ export const upsertFormFieldInput = z.object({
 		.max(64)
 		.regex(/^[a-z0-9_]+$/, {
 			message: "Use apenas letras minúsculas, números e _",
-		}),
+		})
+		.optional(),
 	label: z.string().min(1).max(200),
 	type: z.enum(formFieldTypes),
 	helpText: z.string().max(500).optional().nullable(),
