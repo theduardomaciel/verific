@@ -93,11 +93,7 @@ export function ProjectSwitcher({
 							<CommandItem
 								key={project.id}
 								onSelect={() => {
-									updateProjectCookies(
-										project.id,
-										project.url,
-										project.date,
-									);
+									updateProjectCookies(project.id);
 									setOpen(false);
 								}}
 								className="w-full rounded-none py-2 text-sm"

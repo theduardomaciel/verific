@@ -28,13 +28,7 @@ export default function NotFoundPage() {
 								letterSpacing: "0.05em",
 							}}
 						>
-							{
-								randomPhrases[
-									Math.floor(
-										Math.random() * randomPhrases.length,
-									)
-								]
-							}
+							{randomPhrases[i % randomPhrases.length]}
 						</span>
 					))}
 				</span>
@@ -47,13 +41,7 @@ export default function NotFoundPage() {
 								letterSpacing: "0.03em",
 							}}
 						>
-							{
-								randomPhrases[
-									Math.floor(
-										Math.random() * randomPhrases.length,
-									)
-								]
-							}
+							{randomPhrases[i % randomPhrases.length]}
 						</span>
 					))}
 				</span>

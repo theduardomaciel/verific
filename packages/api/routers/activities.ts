@@ -32,29 +32,20 @@ import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
 // Utils
 import { isMemberAuthenticated } from "../auth";
-import { createEnumArraySchema, sortOptions, transformSingleToArray } from "../utils";
+import { transformSingleToArray } from "../utils";
+import {
+	activitySort,
+	getActivitiesParams,
+	getActivityParams,
+} from "../schemas";
+
+// Re-export client-safe schemas so existing server imports keep working.
+// Client components must import from `@verific/api/schemas` instead.
+export { activitySort, getActivitiesParams, getActivityParams };
 
 // Enums
 import { activityCategories } from "@verific/drizzle/enum/category";
 import { activityAudiences } from "@verific/drizzle/enum/audience";
-
-export const activitySort = ["asc", "desc", "name_asc", "name_desc"] as const;
-
-export const getActivityParams = z.object({
-	page: z.coerce.number().default(1).optional(),
-	pageSize: z.coerce.number().default(5).optional(),
-	search: z.string().optional(),
-	sort: z.enum(sortOptions).optional(),
-});
-
-export const getActivitiesParams = z.object({
-	query: z.string().optional(),
-	sort: z.enum(activitySort).optional(),
-	page: z.coerce.number().default(0).optional(),
-	pageSize: z.coerce.number().default(10).optional(),
-	category: createEnumArraySchema(activityCategories).optional(),
-	audience: createEnumArraySchema(activityAudiences).optional(),
-});
 
 const mutateActivityParams = z.object({
 	name: z.string().min(1),
@@ -680,11 +671,40 @@ export const activitiesRouter = createTRPCRouter({
 				});
 			}
 
+			if (!foundActivity.isRegistrationOpen) {
+				throw new TRPCError({
+					message: "Activity registration is closed.",
+					code: "BAD_REQUEST",
+				});
+			}
+
+			const projectParticipants = await db
+				.select({ id: participant.id })
+				.from(participant)
+				.where(
+					and(
+						eq(participant.projectId, foundActivity.projectId),
+						inArray(participant.id, participantsIdsToAdd),
+					),
+				);
+
+			if (projectParticipants.length !== participantsIdsToAdd.length) {
+				throw new TRPCError({
+					message: "Participants must belong to the activity project.",
+					code: "FORBIDDEN",
+				});
+			}
+
 			if (foundActivity.participantsLimit) {
 				const currentCountResult = await db
 					.select({ amount: count() })
 					.from(participantOnActivity)
-					.where(eq(participantOnActivity.activityId, activityId));
+					.where(
+						and(
+							eq(participantOnActivity.activityId, activityId),
+							eq(participantOnActivity.role, "participant"),
+						),
+					);
 
 				const currentCount = currentCountResult?.[0]?.amount ?? 0;
 				const availableSpots = foundActivity.participantsLimit - currentCount;

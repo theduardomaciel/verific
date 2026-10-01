@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
-// Components
 import { Settings } from "lucide-react";
 import * as EventContainer from "@/components/landing/event-container";
 import { Button } from "@/components/ui/button";
@@ -9,51 +8,46 @@ import { ParticipantCardDialog } from "@/components/dialogs/participant-card-dia
 import { ParticipantCard } from "@/components/participant/participant-card";
 import AccountLoading from "./skeleton";
 import { AccountWrapper } from "@/components/account-wrapper";
-
-// Utils
 import { getCachedActivitiesFromParticipant } from "@/lib/data";
-import { auth } from "@verific/auth";
+import { getSession } from "@/lib/session";
 
 async function AccountContent({
+	data,
 	eventUrl,
-	userId,
 }: {
+	data: Awaited<
+		ReturnType<typeof getCachedActivitiesFromParticipant>
+	>;
 	eventUrl: string;
-	userId: string;
 }) {
-	const data = await getCachedActivitiesFromParticipant(eventUrl, userId);
-	const { activities, participantId } = data;
-
 	return (
 		<AccountWrapper
 			eventUrl={eventUrl}
-			activities={activities}
-			participantId={participantId}
+			activities={data.activities}
+			participantId={data.participantId}
 		/>
 	);
 }
 
-export default async function EventAccountPage({
+async function EventAccountContent({
 	params,
 }: {
 	params: Promise<{ eventUrl: string }>;
 }) {
 	const { eventUrl } = await params;
-	const session = await auth();
-
+	const session = await getSession();
 	const userId = session?.user.id;
 
 	if (!userId) {
 		redirect(`/${eventUrl}`);
 	}
 
-	let participantId: string | null = null;
+	let participantData;
 
 	try {
-		const data = await getCachedActivitiesFromParticipant(eventUrl, userId);
-		participantId = data.participantId;
-	} catch (error: any) {
-		console.error("Error fetching participant:", error);
+		participantData =
+			await getCachedActivitiesFromParticipant(eventUrl, userId);
+	} catch {
 		redirect(`/${eventUrl}/subscribe`);
 	}
 
@@ -69,7 +63,7 @@ export default async function EventAccountPage({
 						com facilidade.
 					</p>
 				</div>
-				{participantId && (
+				{participantData.participantId && (
 					<ParticipantCardDialog
 						trigger={
 							<Button className="z-20" size={"lg"}>
@@ -79,7 +73,7 @@ export default async function EventAccountPage({
 						}
 					>
 						<ParticipantCard
-							id={participantId}
+							id={participantData.participantId}
 							eventUrl={eventUrl}
 						/>
 					</ParticipantCardDialog>
@@ -87,8 +81,20 @@ export default async function EventAccountPage({
 			</EventContainer.Hero>
 
 			<Suspense fallback={<AccountLoading />}>
-				<AccountContent eventUrl={eventUrl} userId={userId} />
+				<AccountContent data={participantData} eventUrl={eventUrl} />
 			</Suspense>
 		</EventContainer.Holder>
+	);
+}
+
+export default function EventAccountPage({
+	params,
+}: {
+	params: Promise<{ eventUrl: string }>;
+}) {
+	return (
+		<Suspense fallback={<AccountLoading />}>
+			<EventAccountContent params={params} />
+		</Suspense>
 	);
 }

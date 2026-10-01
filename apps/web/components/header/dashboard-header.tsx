@@ -8,7 +8,7 @@ import { UserNav } from "./user-nav";
 import Logo from "@/public/logo.svg";
 
 // API
-import { auth } from "@verific/auth";
+import { getSession } from "@/lib/session";
 
 // Types
 import { RouterOutput } from "@verific/api";
@@ -28,10 +28,10 @@ export async function DashboardHeader({
 	links,
 	showAccountActions = true,
 }: Props) {
-	const session = await auth();
+	const session = await getSession();
 
 	return (
-		<div className="px-container-h flex w-full flex-col items-center gap-6 border-b py-4 md:flex-row-reverse">
+		<div className="container-d flex w-full flex-col items-center gap-6 border-b py-4 md:flex-row-reverse">
 			<div className="flex items-center justify-between gap-6 max-md:w-full md:ml-auto">
 				{!!selectedProjectId && (
 					<ProjectSwitcher
@@ -53,9 +53,9 @@ export async function DashboardHeader({
 				) : null}
 			</div>
 			<MainNav prefix={prefix} links={links} />
-			{/* <Link href="/">
-				<Logo className="h-6" />
-			</Link> */}
+			<Link href="/dashboard">
+				<Logo className="h-5 mr-4" />
+			</Link>
 		</div>
 	);
 }

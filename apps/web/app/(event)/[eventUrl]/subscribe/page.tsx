@@ -1,27 +1,28 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { Suspense } from "react";
 
-// Icons
 import { Calendar } from "lucide-react";
 
-// Components
 import JoinForm from "@/components/forms/JoinForm";
 import * as EventContainer from "@/components/landing/event-container";
 
-// API
-import { auth } from "@verific/auth";
+import { getSession } from "@/lib/session";
 import { getCachedCheckParticipantEnrollment, getProject } from "@/lib/data";
 
-export const revalidate = 3600; // invalidate every hour
-
-export default async function EventSubscribePage({
+async function SubscribeContent({
 	params,
 }: {
 	params: Promise<{ eventUrl: string }>;
 }) {
 	const { eventUrl } = await params;
-	const session = await auth();
+	const session = await getSession();
+	const result = await getProject(eventUrl);
 
-	const { project } = await getProject(eventUrl, session?.user.id);
+	if (!result?.project) {
+		notFound();
+	}
+
+	const { project } = result;
 
 	if (!project.isRegistrationEnabled) {
 		redirect(`/${eventUrl}`);
@@ -76,5 +77,17 @@ export default async function EventSubscribePage({
 				/>
 			</EventContainer.Content>
 		</EventContainer.Holder>
+	);
+}
+
+export default function EventSubscribePage({
+	params,
+}: {
+	params: Promise<{ eventUrl: string }>;
+}) {
+	return (
+		<Suspense fallback={<div className="min-h-[50vh]" />}>
+			<SubscribeContent params={params} />
+		</Suspense>
 	);
 }

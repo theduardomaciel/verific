@@ -19,10 +19,6 @@ export function GraphSelector({ graphData, coursesData }: GraphSelectorProps) {
 			onValueChange={setSelectedGraph}
 			className="w-full"
 		>
-			<TabsList className="grid w-full grid-cols-2">
-				<TabsTrigger value="evolution">Evolução Temporal</TabsTrigger>
-				<TabsTrigger value="course">Por Curso</TabsTrigger>
-			</TabsList>
 			<TabsContent value="evolution" className="mt-4 w-full">
 				{graphData.length > 0 ? (
 					<ParticipantsGraph data={graphData} />
@@ -45,6 +41,10 @@ export function GraphSelector({ graphData, coursesData }: GraphSelectorProps) {
 					</div>
 				)}
 			</TabsContent>
+			<TabsList className="grid w-full grid-cols-2">
+				<TabsTrigger value="evolution">Evolução Temporal</TabsTrigger>
+				<TabsTrigger value="course">Por Curso</TabsTrigger>
+			</TabsList>
 		</Tabs>
 	);
 }

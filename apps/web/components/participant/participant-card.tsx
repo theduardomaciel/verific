@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
-import { cookies } from "next/headers";
 
 // Utils
 import { getInitials, pluralize } from "@/lib/i18n";
@@ -40,13 +39,6 @@ interface Props {
 }
 
 export async function ParticipantCard({ id: participantId, eventUrl }: Props) {
-	const projectUrl =
-		eventUrl ??
-		(await (async () => {
-			const cookieStore = await cookies();
-			return cookieStore.get("projectUrl")?.value ?? "";
-		})());
-
 	const {
 		participant,
 		isModerator,
@@ -56,6 +48,8 @@ export async function ParticipantCard({ id: participantId, eventUrl }: Props) {
 	} = await serverClient.getParticipant({
 		participantId,
 	});
+
+	const projectUrl = eventUrl ?? participant.project.url;
 
 	return (
 		<Suspense fallback={<ParticipantCardSkeleton />}>

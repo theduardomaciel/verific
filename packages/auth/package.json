@@ -8,9 +8,10 @@
 		"lint": "pnpm biome lint ."
 	},
 	"dependencies": {
+		"@better-auth/drizzle-adapter": "1.7.6",
 		"@verific/drizzle": "workspace:*",
 		"@verific/env": "workspace:*",
-		"next-auth": "5.0.0-beta.25"
+		"better-auth": "1.7.6"
 	},
 	"devDependencies": {
 		"@verific/eslint-config": "workspace:*",

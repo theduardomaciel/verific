@@ -1,7 +1,7 @@
 import { pgTable, smallserial, text, uuid } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
-import { project } from ".";
+import { project } from "./project";
 import { speakerOnActivity } from "./speaker-on-activity";
 
 export const speaker = pgTable("speakers", {

@@ -15,11 +15,14 @@ export function Screenshots() {
 						src={desktopDark}
 						alt="Dashboard desktop"
 						className="hidden h-full object-contain object-bottom dark:flex"
+						style={{ width: "auto" }}
 					/>
 					<Image
 						src={desktopLight}
 						alt="Dashboard desktop"
 						className="flex h-full object-contain object-bottom dark:hidden"
+						style={{ width: "auto" }}
+						priority
 					/>
 				</div>
 				<div className="bg-primary flex h-[472px] max-h-[472px] flex-1 items-end justify-center overflow-hidden rounded-2xl px-10 pt-14 md:hidden lg:flex">
@@ -29,6 +32,7 @@ export function Screenshots() {
 						width={810}
 						height={472}
 						className="hidden h-full object-contain object-bottom dark:flex"
+						style={{ width: "auto" }}
 					/>
 					<Image
 						src={mobileLight}
@@ -36,6 +40,8 @@ export function Screenshots() {
 						width={810}
 						height={472}
 						className="flex h-full object-contain object-bottom dark:hidden"
+						style={{ width: "auto" }}
+						priority
 					/>
 				</div>
 			</div>

@@ -128,7 +128,13 @@ export function ActivityDeleteDialog({
 	children,
 	activityId,
 }: ActivityDeleteDialogProps) {
-	const mutation = trpc.deleteActivity.useMutation();
+	const utils = trpc.useUtils();
+	const mutation = trpc.deleteActivity.useMutation({
+		onSuccess: () => {
+			utils.getActivities.invalidate();
+			utils.getDashboardStats.invalidate();
+		},
+	});
 
 	return (
 		<DeleteDialog

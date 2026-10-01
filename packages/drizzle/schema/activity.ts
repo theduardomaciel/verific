@@ -9,8 +9,8 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 
-import { participantOnActivity, project } from ".";
-
+import { participantOnActivity } from "./participant-on-activity";
+import { project } from "./project";
 import { categoryEnum } from "../enum/category";
 import { audienceEnum } from "../enum/audience";
 import { speakerOnActivity } from "./speaker-on-activity";

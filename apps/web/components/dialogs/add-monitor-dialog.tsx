@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useTransition, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 // Icons
@@ -42,7 +41,6 @@ export function AddMonitorDialog({
 	activityId,
 	alreadyAdded,
 }: AddMonitorDialogProps) {
-	const router = useRouter();
 	const currentDate = new Date();
 
 	// Dialog state
@@ -132,7 +130,13 @@ export function AddMonitorDialog({
 	});
 
 	// Mutations
-	const mutations = trpc.addMonitorsToActivity.useMutation();
+	const utils = trpc.useUtils();
+	const mutations = trpc.addMonitorsToActivity.useMutation({
+		onSuccess: () => {
+			utils.getActivity.invalidate();
+			utils.getActivities.invalidate();
+		},
+	});
 
 	// Handlers
 	async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -160,7 +164,6 @@ export function AddMonitorDialog({
 					participantsIdsToAdd: selectedParticipantsIds,
 				});
 				setAddedUsersAmount(selectedParticipantsIds.length);
-				router.refresh();
 			});
 
 			await Promise.all(

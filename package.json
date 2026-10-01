@@ -19,7 +19,7 @@
 	},
 	"devDependencies": {
 		"@verific/prettier-config": "workspace:*",
-		"turbo": "^2.10.12"
+		"turbo": "2.11.4"
 	},
 	"prettier": "@verific/prettier-config"
 }

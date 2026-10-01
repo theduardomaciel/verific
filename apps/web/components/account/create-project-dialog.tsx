@@ -106,7 +106,7 @@ export function CreateProjectDialog() {
 
 		// console.log(data);
 		try {
-			const { id, url } = await createMutation.mutateAsync({
+			const { id } = await createMutation.mutateAsync({
 				startDate: date.from,
 				endDate: date.to,
 				address: location.address,
@@ -116,7 +116,7 @@ export function CreateProjectDialog() {
 			});
 
 			// Atualiza o cookie com as informações do projeto
-			updateProjectCookies(id, url, date.from.toISOString());
+			updateProjectCookies(id);
 		} catch (error) {
 			console.error(error);
 			setCurrentState("error");
@@ -188,7 +188,7 @@ export function CreateProjectDialog() {
 							<DrawerTitle>Criar projeto</DrawerTitle>
 						</DrawerHeader>
 
-						<div className="px-4">
+						<div className="px-4 space-y-4">
 							<CreateProjectForm form={form} />
 						</div>
 

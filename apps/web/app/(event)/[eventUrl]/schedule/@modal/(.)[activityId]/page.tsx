@@ -1,7 +1,9 @@
-import { JoinActivityDialog } from "@/components/dialogs/join-activity-dialog";
+import { notFound } from "next/navigation";
+
+import { ActivityJoinModalContent } from "@/components/activity-join";
 
 // API
-import { serverClient } from "@/lib/trpc/server";
+import { getCachedActivity } from "@/lib/data";
 
 export default async function Page({
 	params,
@@ -10,20 +12,16 @@ export default async function Page({
 }) {
 	const { activityId, eventUrl } = await params;
 
-	const { participantId, userId } =
-		await serverClient.getParticipantIdByProjectUrl({
-			projectUrl: eventUrl,
-		});
+	const data = await getCachedActivity({ activityId }).catch(() => null);
 
-	const { activity } = await serverClient.getActivity({
-		activityId,
-	});
+	if (!data?.activity) {
+		notFound();
+	}
 
 	return (
-		<JoinActivityDialog
-			activity={activity}
-			participantId={participantId}
-			userId={userId}
+		<ActivityJoinModalContent
+			activity={data.activity}
+			eventUrl={eventUrl}
 		/>
 	);
 }

@@ -10,6 +10,7 @@ export * from "./speaker-on-activity";
 export * from "./project-moderator";
 export * from "./template";
 export * from "./user";
+export * from "./verification";
 
 // Enums
 export * from "../enum/audience";

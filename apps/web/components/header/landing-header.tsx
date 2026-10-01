@@ -16,6 +16,7 @@ import MainNav, { MainNavProps } from "@/components/header/main-nav";
 interface Props {
 	prefix?: string;
 	links: MainNavProps["links"];
+	userActions?: React.ReactNode;
 	logo?: React.ReactNode;
 	className?: string;
 	buttonClassName?: string;
@@ -27,6 +28,7 @@ export function Header({
 	className,
 	prefix,
 	links,
+	userActions,
 	logo,
 	buttonClassName,
 	languageSelectorClassName,
@@ -50,6 +52,7 @@ export function Header({
 
 				<nav className="hidden items-center gap-9 md:flex">
 					<MainNav prefix={prefix} links={links} />
+					{userActions}
 
 					{/* <div className="flex items-center gap-4">
 						<Select

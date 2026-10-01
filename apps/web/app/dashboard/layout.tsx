@@ -1,11 +1,14 @@
 import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
+import { Suspense } from "react";
 
-// Components
 import { DashboardHeader } from "@/components/header/dashboard-header";
+import { DashboardProvider } from "@/components/dashboard/dashboard-context";
 import { Footer } from "@/components/footer";
-
 import { REM } from "next/font/google";
+import { getCachedAccountProjects } from "@/lib/trpc/server";
+import type { Metadata } from "next";
+
 const rem = REM({
 	variable: "--font-rem",
 	subsets: ["latin"],
@@ -18,45 +21,40 @@ const DASHBOARD_LINKS = [
 	{ href: "/settings", label: "Configurações" },
 ];
 
-// API
-import { serverClient } from "@/lib/trpc/server";
-
-// Types
-import type { Metadata } from "next";
-
 export const metadata: Metadata = {
 	title: "Dashboard",
 };
 
-export default async function DashboardLayout({
+async function DashboardLayoutContent({
 	children,
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
 	const cookieStore = await cookies();
 	const projectId = cookieStore.get("projectId")?.value;
-	const projectUrl = cookieStore.get("projectUrl")?.value;
 
-	if (!projectId || !projectUrl) {
+	if (!projectId) {
 		redirect("/account");
 	}
 
 	let projects;
 
 	try {
-		projects = await serverClient.getProjects();
-	} catch (error) {
-		console.error("Error fetching project:", error);
+		projects = await getCachedAccountProjects();
+	} catch {
 		notFound();
 	}
 
-	const projectsIds = projects.owned
-		.map((project) => project.id)
-		.concat(projects.shared.map((project) => project.id));
+	const allProjects = projects.owned.concat(projects.shared);
+	const currentProject = allProjects.find(
+		(project) => project.id === projectId,
+	);
 
-	if (!projectsIds.includes(projectId)) {
+	if (!currentProject) {
 		notFound();
 	}
+
+	const projectUrl = currentProject.url;
 
 	return (
 		<div
@@ -65,11 +63,27 @@ export default async function DashboardLayout({
 			<DashboardHeader
 				prefix={`/dashboard`}
 				selectedProjectId={projectId}
-				projects={projects.owned.concat(projects.shared)}
+				projects={allProjects}
 				links={DASHBOARD_LINKS}
 			/>
-			{children}
+			<DashboardProvider projectId={projectId} projectUrl={projectUrl}>
+				{children}
+			</DashboardProvider>
 			<Footer />
 		</div>
+	);
+}
+
+export default function DashboardLayout({
+	children,
+}: Readonly<{
+	children: React.ReactNode;
+}>) {
+	return (
+		<Suspense
+			fallback={<div className="min-h-screen w-full" aria-hidden />}
+		>
+			<DashboardLayoutContent>{children}</DashboardLayoutContent>
+		</Suspense>
 	);
 }

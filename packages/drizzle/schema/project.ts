@@ -8,7 +8,10 @@ import {
 	boolean,
 } from "drizzle-orm/pg-core";
 
-import { activity, participant, speaker, user } from ".";
+import { activity } from "./activity";
+import { participant } from "./participant";
+import { speaker } from "./speaker";
+import { user } from "./user";
 import { projectModerator } from "./project-moderator";
 
 export const project = pgTable("projects", {
@@ -34,8 +37,8 @@ export const project = pgTable("projects", {
 	coverUrl: text("cover_url"),
 	thumbnailUrl: text("thumbnail_url"),
 
-	primaryColor: text("primary_color").default("#3B82F6"),
-	secondaryColor: text("secondary_color").default("#60A8FB"),
+	primaryColor: text("primary_color"), // quando nulo, usar a cor padrão do sistema
+	secondaryColor: text("secondary_color"), // quando nulo, usar a cor padrão do sistema
 
 	startDate: timestamp("start_date").notNull(),
 	endDate: timestamp("end_date").notNull(),
