@@ -86,7 +86,9 @@ export function FormPreview({ fields }: { fields: BuilderField[] }) {
 				</CardTitle>
 				{hiddenCount > 0 && (
 					<span className="text-muted-foreground text-xs">
-						{hiddenCount} campo{hiddenCount === 1 ? "" : "s"} oculto{hiddenCount === 1 ? "" : "s"} não exibido{hiddenCount === 1 ? "" : "s"}
+						{hiddenCount} campo{hiddenCount === 1 ? "" : "s"} oculto
+						{hiddenCount === 1 ? "" : "s"} não exibido
+						{hiddenCount === 1 ? "" : "s"}
 					</span>
 				)}
 			</CardHeader>
@@ -102,24 +104,31 @@ export function FormPreview({ fields }: { fields: BuilderField[] }) {
 							render={({ field }) => (
 								<FormItem className="w-full">
 									<FormLabel>
-										Nome completo <span className="text-destructive ml-1">*</span>
+										Nome completo{" "}
+										<span className="text-destructive ml-1">
+											*
+										</span>
 									</FormLabel>
 									<FormControl>
-										<Input placeholder="Fulano da Silva" {...field} value={field.value ?? ""} />
+										<Input
+											placeholder="Fulano da Silva"
+											{...field}
+											value={field.value ?? ""}
+										/>
 									</FormControl>
 									<FormMessage />
 								</FormItem>
 							)}
 						/>
-						{visible.length === 0 ? (
-							<p className="text-muted-foreground text-sm">
-								Este evento não exige informações adicionais.
-							</p>
-						) : (
+						{rows.length > 0 && (
 							<div className="flex w-full flex-col gap-6">
 								{rows.map((row, ri) => (
 									<div
-										key={row.fields.map((f) => f.id).join("-") || `row-${ri}`}
+										key={
+											row.fields
+												.map((f) => f.id)
+												.join("-") || `row-${ri}`
+										}
 										className={
 											row.fields.length === 2
 												? "grid w-full grid-cols-1 gap-6 md:grid-cols-2"
@@ -138,14 +147,18 @@ export function FormPreview({ fields }: { fields: BuilderField[] }) {
 								))}
 							</div>
 						)}
-						<div className="flex w-full flex-row items-center justify-end">
-							<Button className="h-12 w-full !px-8 font-bold md:w-fit" type="submit">
+						<div className="flex w-full flex-row items-center justify-between gap-4">
+							<p className="text-muted-foreground text-sm">
+								Não se preocupe, enviar o formulário aqui só
+								valida os campos — nada é salvo ;)
+							</p>
+							<Button
+								className="h-12 w-full !px-8 font-bold md:w-fit"
+								type="submit"
+							>
 								Enviar (simulação)
 							</Button>
 						</div>
-						<p className="text-muted-foreground text-xs">
-							Enviar aqui só valida os campos — nada é salvo.
-						</p>
 					</form>
 				</Form>
 			</CardContent>
