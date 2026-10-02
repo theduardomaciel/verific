@@ -85,8 +85,12 @@ export function FieldDialog({
 	const watchedHalfWidth = form.watch("halfWidth");
 	const needsOptions = needsOptionsFor(watchedType);
 	const showNumberRange = watchedType === "number";
-	const showTextLength = watchedType === "text" || watchedType === "textarea";
-	const showPattern = watchedType === "text";
+	const showTextLength =
+		watchedType === "text" ||
+		watchedType === "textarea" ||
+		watchedType === "email";
+	// NOTE: regex validation is hidden from the builder UI for now.
+	// const showPattern = watchedType === "text";
 
 	useEffect(() => {
 		if (open) {
@@ -180,6 +184,12 @@ export function FieldDialog({
 											</SelectItem>
 											<SelectItem value="checkbox">
 												Checkbox
+											</SelectItem>
+											<SelectItem value="phone">
+												Telefone
+											</SelectItem>
+											<SelectItem value="email">
+												E-mail
 											</SelectItem>
 										</SelectContent>
 									</Select>
@@ -299,6 +309,7 @@ export function FieldDialog({
 								/>
 							</div>
 						)}
+						{/* Regex validation is hidden from the builder UI for now.
 						{showPattern && (
 							<FormField
 								control={form.control}
@@ -317,7 +328,7 @@ export function FieldDialog({
 									</FormItem>
 								)}
 							/>
-						)}
+						)} */}
 						<div className="flex flex-wrap gap-6">
 							<FormField
 								control={form.control}

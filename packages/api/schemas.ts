@@ -182,6 +182,36 @@ function fieldValueSchema(field: FormFieldForValidation) {
 			base = z.coerce.boolean();
 			break;
 		}
+		case "email": {
+			let emailBase = z.string();
+			const v = field.validation;
+			if (typeof v?.minLength === "number")
+				emailBase = emailBase.min(v.minLength, {
+					message: "E-mail muito curto.",
+				});
+			if (typeof v?.maxLength === "number")
+				emailBase = emailBase.max(v.maxLength, {
+					message: "E-mail muito longo.",
+				});
+			base = emailBase.refine(
+				(val) => val === "" || z.email().safeParse(val).success,
+				{
+					message: "E-mail inválido.",
+				},
+			);
+			break;
+		}
+		case "phone": {
+			base = z.string().refine(
+				(val) => {
+					if (val === "") return true;
+					const digits = val.replace(/\D/g, "");
+					return digits.length >= 8 && digits.length <= 15;
+				},
+				{ message: "Telefone inválido." },
+			);
+			break;
+		}
 		default:
 			base = z.string();
 	}
@@ -196,6 +226,13 @@ function fieldValueSchema(field: FormFieldForValidation) {
 
 	if (field.type === "text" || field.type === "textarea") {
 		return (base as z.ZodString).min(1, { message: "Obrigatório" });
+	}
+	if (field.type === "email" || field.type === "phone") {
+		// Base is a ZodEffects (refine), so require non-empty via refine
+		// instead of .min() to keep the "Obrigatório" message for blanks.
+		return base.refine((v) => typeof v === "string" && v.trim().length > 0, {
+			message: "Obrigatório",
+		});
 	}
 	if (field.type === "select_multiple") {
 		return (base as z.ZodArray<any>).min(1, { message: "Obrigatório" });

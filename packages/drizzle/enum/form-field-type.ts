@@ -8,6 +8,8 @@ export const formFieldTypes = [
 	"select_single",
 	"select_multiple",
 	"checkbox",
+	"phone",
+	"email",
 ] as const;
 
 export const formFieldTypeEnum = pgEnum("form_field_type", formFieldTypes);
@@ -22,4 +24,6 @@ export const formFieldTypeLabels: Record<FormFieldType, string> = {
 	select_single: "Seleção única",
 	select_multiple: "Múltipla seleção",
 	checkbox: "Checkbox",
+	phone: "Telefone",
+	email: "E-mail",
 };
