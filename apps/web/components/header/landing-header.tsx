@@ -31,7 +31,6 @@ export function Header({
 	userActions,
 	logo,
 	buttonClassName,
-	languageSelectorClassName,
 	mobileMenuClassName,
 }: Props) {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -39,7 +38,7 @@ export function Header({
 	return (
 		<header
 			className={cn(
-				"border-border/40 bg-background/95 supports-[backdrop-filter]:bg-background/60 px-landing sticky top-0 z-50 flex w-full justify-center border-b backdrop-blur",
+				"border-border/40 bg-background/95 supports-backdrop-filter:bg-background/60 px-landing sticky top-0 z-50 flex w-full justify-center border-b backdrop-blur",
 				className,
 			)}
 		>
@@ -53,33 +52,6 @@ export function Header({
 				<nav className="hidden items-center gap-9 md:flex">
 					<MainNav prefix={prefix} links={links} />
 					{userActions}
-
-					{/* <div className="flex items-center gap-4">
-						<Select
-							defaultValue="pt"
-							onValueChange={(value) => console.log(value)}
-						>
-							<SelectTrigger
-								className={languageSelectorClassName}
-							>
-								<SelectValue placeholder="Selecione o idioma" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem
-									value="pt"
-									className="cursor-pointer"
-								>
-									🇧🇷 PT
-								</SelectItem>
-								<SelectItem
-									value="en"
-									className="cursor-pointer"
-								>
-									🇺🇸 EN
-								</SelectItem>
-							</SelectContent>
-						</Select>
-					</div> */}
 				</nav>
 
 				<Button

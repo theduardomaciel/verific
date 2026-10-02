@@ -126,9 +126,8 @@ async function EventLayoutContent({
 				className="!bg-primary relative h-21 border-none py-0"
 				mobileMenuClassName="bg-primary"
 				buttonClassName="bg-primary text-white text-primary-foreground !hover:text-white"
-				languageSelectorClassName="border-none bg-transparent shadow-none text-primary-foreground"
 				logo={
-					<Link href={`/${eventUrl}`}>
+					<Link href={`/${eventUrl}`} className="text-white">
 						{project.largeLogoUrl || project.logoUrl ? (
 							<Image
 								src={project.largeLogoUrl || project.logoUrl!}

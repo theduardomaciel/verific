@@ -56,7 +56,7 @@ export function EventAction({
 	}
 
 	return (
-		<Button asChild>
+		<Button className="font-semibold uppercase" size={"xl"} asChild>
 			<Link href={href}>{buttonText}</Link>
 		</Button>
 	);
