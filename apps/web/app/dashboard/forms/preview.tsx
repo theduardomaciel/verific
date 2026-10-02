@@ -153,7 +153,7 @@ export function FormPreview({ fields }: { fields: BuilderField[] }) {
 								valida os campos — nada é salvo ;)
 							</p>
 							<Button
-								className="h-12 w-full !px-8 font-bold md:w-fit"
+								className="h-10 w-full px-4! font-bold md:w-fit"
 								type="submit"
 							>
 								Enviar (simulação)

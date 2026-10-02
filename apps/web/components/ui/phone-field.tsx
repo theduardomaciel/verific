@@ -1,14 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { formatPhone } from "@/lib/validations/masks/phone";
 import { cn } from "@/lib/utils";
 
@@ -90,52 +84,60 @@ export function PhoneField({
 	className,
 }: PhoneFieldProps) {
 	const raw = value ?? "";
-	const country = useMemo(() => findCountryForValue(raw), [raw]);
+	// Country is state, not derived from the value: with an empty number
+	// there is no prefix to parse, so deriving it would snap the selection
+	// back to Brazil on every pick.
+	const [countryCode, setCountryCode] = useState(
+		() => findCountryForValue(raw).code,
+	);
+	const country =
+		phoneCountries.find((c) => c.code === countryCode) ?? DEFAULT_COUNTRY;
+
+	// Follow externally provided values (e.g. loaded answers) that carry
+	// a different country prefix.
+	useEffect(() => {
+		if (raw.trim().startsWith("+")) {
+			const parsed = findCountryForValue(raw);
+			if (parsed.code !== countryCode) setCountryCode(parsed.code);
+		}
+	}, [raw, countryCode]);
+
 	const national = useMemo(
 		() => formatNational(nationalDigits(raw, country), country),
 		[raw, country],
 	);
 
-	function emit(countryCode: string, digits: string) {
+	function emit(nextCountryCode: string, digits: string) {
+		setCountryCode(nextCountryCode);
 		if (!digits) {
 			onChange("");
 			return;
 		}
-		const target = phoneCountries.find((c) => c.code === countryCode);
+		const target = phoneCountries.find((c) => c.code === nextCountryCode);
 		onChange(
-			`+${countryCode} ${formatNational(digits, target ?? DEFAULT_COUNTRY)}`,
+			`+${nextCountryCode} ${formatNational(digits, target ?? DEFAULT_COUNTRY)}`,
 		);
 	}
 
 	return (
 		<div className={cn("flex gap-2", className)}>
-			<Select
-				disabled={disabled}
-				value={country.code}
-				onValueChange={(code) =>
-					emit(code, nationalDigits(raw, country))
-				}
-			>
-				<SelectTrigger
-					aria-label="País"
-					className="w-[7.5rem] shrink-0"
-				>
-					<SelectValue>
-						<span>
-							{country.flag} +{country.code}
-						</span>
-					</SelectValue>
-				</SelectTrigger>
-				<SelectContent>
-					{phoneCountries.map((c) => (
-						<SelectItem key={c.iso} value={c.code}>
-							<span>
-								{c.flag} {c.name} (+{c.code})
-							</span>
-						</SelectItem>
-					))}
-				</SelectContent>
-			</Select>
+			<div className="w-[9.5rem] shrink-0">
+				<Combobox
+					value={country.code}
+					disabled={disabled}
+					placeholder="País"
+					searchMessage="Buscar país..."
+					emptyMessage="Nenhum país encontrado."
+					items={phoneCountries.map((c) => ({
+						label: `${c.flag} +${c.code}`,
+						value: c.code,
+						keywords: [c.name, c.iso, c.code, `+${c.code}`],
+					}))}
+					onChange={(code) => {
+						if (code) emit(code, nationalDigits(raw, country));
+					}}
+				/>
+			</div>
 			<Input
 				name={name}
 				disabled={disabled}
