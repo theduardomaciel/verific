@@ -78,14 +78,22 @@ export function DynamicField({ field, control, name, disabled }: DynamicFieldPro
 								{field.helpText && <FormDescription>{field.helpText}</FormDescription>}
 								<FormControl>
 									<Input
-										type="number"
+										type="text"
+										inputMode="decimal"
+										autoComplete="off"
 										disabled={disabled}
 										value={(value as number | string) ?? ""}
-										min={field.validation?.min ?? undefined}
-										max={field.validation?.max ?? undefined}
-										onChange={(e) =>
-											rhf.onChange(e.target.value === "" ? undefined : Number(e.target.value))
-										}
+										onChange={(e) => {
+											// type="number" blocks "+", spaces and parens, so country
+											// codes can't be typed. Accept them here and normalize
+											// to a plain numeric string; z.coerce.number()
+											// converts it back on validation/submit.
+											const raw = e.target.value
+												.replace(/,/g, ".")
+												.replace(/[^0-9+.()\s-]/g, "")
+												.replace(/[\s()-]/g, "");
+											rhf.onChange(raw === "" ? undefined : raw);
+										}}
 										onBlur={rhf.onBlur}
 										name={rhf.name}
 									/>
