@@ -26,6 +26,7 @@ import JoinForm0 from "./Section0";
 
 // Validation
 import { buildAnswersSchema } from "@verific/api/schemas";
+import { groupFieldsIntoRows } from "@/lib/forms/layout";
 import type { GenericForm } from "..";
 
 // Types
@@ -60,6 +61,11 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 	const submitMutation = trpc.submitAnswers.useMutation();
 
 	const fields = useMemo(() => formData?.fields ?? [], [formData]);
+
+	const visibleRows = useMemo(
+		() => groupFieldsIntoRows(fields.filter((f) => f.isVisible)),
+		[fields],
+	);
 
 	const dynamicSchema = useMemo(() => {
 		return buildAnswersSchema(
@@ -162,16 +168,27 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 								Este evento não exige informações adicionais.
 							</p>
 						) : (
-							fields
-								.filter((f) => f.isVisible)
-								.map((f) => (
-									<DynamicField
-										key={f.id}
-										field={f}
-										control={form.control as never}
-										name={`answers.${f.key}`}
-									/>
-								))
+							<div className="flex w-full flex-col gap-6">
+								{visibleRows.map((row, ri) => (
+									<div
+										key={row.fields.map((f) => f.id).join("-") || `row-${ri}`}
+										className={
+											row.fields.length === 2
+												? "grid w-full grid-cols-1 gap-6 md:grid-cols-2"
+												: "w-full"
+										}
+									>
+										{row.fields.map((f) => (
+											<DynamicField
+												key={f.id}
+												field={f}
+												control={form.control as never}
+												name={`answers.${f.key}`}
+											/>
+										))}
+									</div>
+								))}
+							</div>
 						)}
 						<SectionFooter isFinalSection />
 					</FormSection>
