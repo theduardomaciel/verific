@@ -1,4 +1,8 @@
 import { z } from "@verific/zod";
+import {
+	isValidPhoneNumber,
+	parsePhoneNumberFromString,
+} from "libphonenumber-js";
 
 import { activityAudiences } from "@verific/drizzle/enum/audience";
 import { activityCategories } from "@verific/drizzle/enum/category";
@@ -55,7 +59,6 @@ export const formFieldValidationSchema = z
 		max: z.number().optional(),
 		minLength: z.number().int().min(0).optional(),
 		maxLength: z.number().int().min(0).optional(),
-		pattern: z.string().optional(),
 	})
 	.optional();
 
@@ -113,7 +116,6 @@ export type FormFieldForValidation = {
 		max?: number | null;
 		minLength?: number | null;
 		maxLength?: number | null;
-		pattern?: string | null;
 	} | null;
 	isVisible: boolean;
 	isActive: boolean;
@@ -130,13 +132,6 @@ function fieldValueSchema(field: FormFieldForValidation) {
 				base = (base as z.ZodString).min(v.minLength);
 			if (typeof v?.maxLength === "number")
 				base = (base as z.ZodString).max(v.maxLength);
-			if (v?.pattern) {
-				try {
-					base = (base as z.ZodString).regex(new RegExp(v.pattern));
-				} catch {
-					// ignore invalid regex stored in db
-				}
-			}
 			break;
 		}
 		case "textarea": {
@@ -202,14 +197,11 @@ function fieldValueSchema(field: FormFieldForValidation) {
 			break;
 		}
 		case "phone": {
-			base = z.string().refine(
-				(val) => {
-					if (val === "") return true;
-					const digits = val.replace(/\D/g, "");
-					return digits.length >= 8 && digits.length <= 15;
-				},
-				{ message: "Telefone inválido." },
-			);
+			base = z
+				.string()
+				.refine((val) => val === "" || isValidPhoneNumber(val), {
+					message: "Telefone inválido.",
+				});
 			break;
 		}
 		default:
@@ -280,6 +272,16 @@ export function formatAnswerValue(
 		if (type === "date") {
 			const d = new Date(value);
 			if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+		}
+		if (type === "phone" && value !== "") {
+			try {
+				return (
+					parsePhoneNumberFromString(value)?.formatInternational() ??
+					value
+				);
+			} catch {
+				return value;
+			}
 		}
 		return value;
 	}

@@ -89,8 +89,6 @@ export function FieldDialog({
 		watchedType === "text" ||
 		watchedType === "textarea" ||
 		watchedType === "email";
-	// NOTE: regex validation is hidden from the builder UI for now.
-	// const showPattern = watchedType === "text";
 
 	useEffect(() => {
 		if (open) {
@@ -309,26 +307,6 @@ export function FieldDialog({
 								/>
 							</div>
 						)}
-						{/* Regex validation is hidden from the builder UI for now.
-						{showPattern && (
-							<FormField
-								control={form.control}
-								name="pattern"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>
-											Regex de validação (opcional)
-										</FormLabel>
-										<FormControl>
-											<Input
-												placeholder="^[0-9]+$"
-												{...field}
-											/>
-										</FormControl>
-									</FormItem>
-								)}
-							/>
-						)} */}
 						<div className="flex flex-wrap gap-6">
 							<FormField
 								control={form.control}
