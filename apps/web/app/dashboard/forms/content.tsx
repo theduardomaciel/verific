@@ -393,8 +393,9 @@ function SortableFieldRow({
 	return (
 		<div
 			ref={ref}
+			data-field-id={field.id}
 			className={cn(
-				"flex flex-col gap-3 rounded-lg border bg-card p-3 transition-all duration-200 ease-in-out",
+				"flex flex-col gap-3 rounded-lg border bg-card p-3 transition-all duration-200 ease-in-out will-change-transform",
 				"md:flex-row md:items-center md:justify-between",
 				isDragging && "z-10 scale-[0.99] border-primary/60 opacity-60 shadow-lg",
 				isDropTarget && !isDragging && "border-primary shadow-md ring-2 ring-primary/30",
@@ -526,6 +527,7 @@ export function FormsContent() {
 	const [tab, setTab] = useState<"builder" | "answers">("builder");
 	const [displayFields, setDisplayFields] = useState<Field[]>([]);
 	const isDraggingRef = useRef(false);
+	const listRef = useRef<HTMLDivElement>(null);
 
 	const versions: Version[] = useMemo(() => versionsQuery.data ?? [], [versionsQuery.data]);
 
@@ -598,6 +600,35 @@ export function FormsContent() {
 		reorderFields.mutate({ versionId: selectedId, orderedIds: next.map((f) => f.id) });
 	}
 
+	function animateFlip(container: HTMLElement | null) {
+		if (!container || typeof window === "undefined") return;
+		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+		const first = new Map<string, number>();
+		container.querySelectorAll<HTMLElement>("[data-field-id]").forEach((el) => {
+			const id = el.dataset.fieldId;
+			if (id) first.set(id, el.getBoundingClientRect().top);
+		});
+		if (first.size === 0) return;
+		requestAnimationFrame(() => {
+			requestAnimationFrame(() => {
+				container.querySelectorAll<HTMLElement>("[data-field-id]").forEach((el) => {
+					const id = el.dataset.fieldId;
+					if (!id) return;
+					const prevTop = first.get(id);
+					if (prevTop === undefined) return;
+					const nextTop = el.getBoundingClientRect().top;
+					const dy = prevTop - nextTop;
+					if (dy !== 0) {
+						el.animate(
+							[{ transform: `translateY(${dy}px)` }, { transform: "translateY(0)" }],
+							{ duration: 250, easing: "cubic-bezier(0.25, 1, 0.5, 1)" },
+						);
+					}
+				});
+			});
+		});
+	}
+
 	function move(index: number, dir: -1 | 1) {
 		const next = [...fields];
 		const j = index + dir;
@@ -605,6 +636,7 @@ export function FormsContent() {
 		const [item] = next.splice(index, 1);
 		if (!item) return;
 		next.splice(j, 0, item);
+		animateFlip(listRef.current);
 		persistOrder(next);
 	}
 
@@ -733,42 +765,44 @@ export function FormsContent() {
 											}
 										}}
 									>
-										{fields.map((f, i) => (
-											<SortableFieldRow
-												key={f.id}
-												field={f}
-												index={i}
-												disabled={isPublished}
-												actions={
-													<>
-														<Button size="sm" variant="outline" disabled={i === 0} onClick={() => move(i, -1)}>
-															↑
-														</Button>
-														<Button
-															size="sm"
-															variant="outline"
-															disabled={i === fields.length - 1}
-															onClick={() => move(i, 1)}
-														>
-															↓
-														</Button>
-														<FieldDialog
-															key={f.id}
-															versionId={selected.id}
-															initial={f}
-															onDone={() => undefined}
-														/>
-														<Button
-															size="sm"
-															variant="ghost"
-															onClick={() => deleteField.mutate({ fieldId: f.id })}
-														>
-															Excluir
-														</Button>
-													</>
-												}
-											/>
-										))}
+										<div ref={listRef} className="flex flex-col gap-3">
+											{fields.map((f, i) => (
+												<SortableFieldRow
+													key={f.id}
+													field={f}
+													index={i}
+													disabled={isPublished}
+													actions={
+														<>
+															<Button size="sm" variant="outline" disabled={i === 0} onClick={() => move(i, -1)}>
+																↑
+															</Button>
+															<Button
+																size="sm"
+																variant="outline"
+																disabled={i === fields.length - 1}
+																onClick={() => move(i, 1)}
+															>
+																↓
+															</Button>
+															<FieldDialog
+																key={f.id}
+																versionId={selected.id}
+																initial={f}
+																onDone={() => undefined}
+															/>
+															<Button
+																size="sm"
+																variant="ghost"
+																onClick={() => deleteField.mutate({ fieldId: f.id })}
+															>
+																Excluir
+															</Button>
+														</>
+													}
+												/>
+											))}
+										</div>
 									</DragDropProvider>
 								)}
 								{isPublished && (
