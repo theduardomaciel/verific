@@ -80,9 +80,11 @@ export function toUpsertFieldInput(
 				? {
 						minLength: num(values.minLength),
 						maxLength: num(values.maxLength),
+						// NOTE: `pattern` (regex) is hidden from the builder UI,
+						// but still persisted for backwards compatibility.
 						pattern: values.pattern || undefined,
 					}
-				: values.type === "textarea"
+				: values.type === "textarea" || values.type === "email"
 					? {
 							minLength: num(values.minLength),
 							maxLength: num(values.maxLength),

@@ -3,6 +3,7 @@
 import { Controller, type Control, type FieldValues } from "react-hook-form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { PhoneField } from "@/components/ui/phone-field";
 import { Textarea } from "@/components/ui/textarea";
 import {
 	FormControl,
@@ -186,6 +187,46 @@ export function DynamicField({ field, control, name, disabled }: DynamicFieldPro
 									{field.helpText && <FormDescription>{field.helpText}</FormDescription>}
 									<FormMessage />
 								</div>
+							</FormItem>
+						);
+					case "phone":
+						return (
+							<FormItem className="w-full">
+								{label}
+								{field.helpText && <FormDescription>{field.helpText}</FormDescription>}
+								<FormControl>
+									<PhoneField
+										name={rhf.name}
+										disabled={disabled}
+										value={(value as string) ?? ""}
+										onChange={(v) => rhf.onChange(v === "" ? undefined : v)}
+										onBlur={rhf.onBlur}
+									/>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						);
+					case "email":
+						return (
+							<FormItem className="w-full">
+								{label}
+								{field.helpText && <FormDescription>{field.helpText}</FormDescription>}
+								<FormControl>
+									<Input
+										type="email"
+										inputMode="email"
+										autoComplete="email"
+										placeholder="voce@exemplo.com"
+										disabled={disabled}
+										value={(value as string) ?? ""}
+										maxLength={field.validation?.maxLength ?? undefined}
+										minLength={field.validation?.minLength ?? undefined}
+										onChange={(e) => rhf.onChange(e.target.value)}
+										onBlur={rhf.onBlur}
+										name={rhf.name}
+									/>
+								</FormControl>
+								<FormMessage />
 							</FormItem>
 						);
 					case "text":
