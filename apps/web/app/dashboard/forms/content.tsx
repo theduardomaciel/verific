@@ -46,6 +46,7 @@ import { cn } from "@/lib/utils";
 import { formFieldTypes } from "@verific/api/schemas";
 import { downloadCsv, toCsv } from "@/lib/forms/csv";
 import { formatAnswerValue } from "@verific/api/schemas";
+import { findOrphanHalfIds, groupFieldsIntoRows } from "@/lib/forms/layout";
 import type { RouterOutput } from "@verific/api";
 
 type Version = RouterOutput["listVersions"][number];
@@ -65,6 +66,7 @@ const fieldFormSchema = z.object({
 	pattern: z.string().optional(),
 	isVisible: z.boolean().default(true),
 	editableAfterSignup: z.boolean().default(true),
+	halfWidth: z.boolean().default(false),
 });
 
 type FieldFormValues = z.infer<typeof fieldFormSchema>;
@@ -73,10 +75,16 @@ function FieldDialog({
 	versionId,
 	initial,
 	onDone,
+	siblings,
+	position,
 }: {
 	versionId: string;
 	initial?: Field;
 	onDone: () => void;
+	/** Ordered fields of the version, for live row-pairing hints. */
+	siblings?: Pick<Field, "id" | "label" | "halfWidth">[];
+	/** Index of `initial` in `siblings`, or `siblings.length` for a new field at the end. */
+	position?: number | null;
 }) {
 	const [open, setOpen] = useState(false);
 	const utils = trpc.useUtils();
@@ -108,10 +116,12 @@ function FieldDialog({
 			pattern: initial?.validation?.pattern ?? "",
 			isVisible: initial?.isVisible ?? true,
 			editableAfterSignup: initial?.editableAfterSignup ?? true,
+			halfWidth: initial?.halfWidth ?? false,
 		} as FieldFormValues,
 	});
 
 	const watchedType = form.watch("type");
+	const watchedHalfWidth = form.watch("halfWidth");
 	const needsOptions = watchedType === "select_single" || watchedType === "select_multiple";
 	const showNumberRange = watchedType === "number";
 	const showTextLength = watchedType === "text" || watchedType === "textarea";
@@ -133,9 +143,32 @@ function FieldDialog({
 				pattern: initial?.validation?.pattern ?? "",
 				isVisible: initial?.isVisible ?? true,
 				editableAfterSignup: initial?.editableAfterSignup ?? true,
+				halfWidth: initial?.halfWidth ?? false,
 			} as FieldFormValues);
 		}
 	}, [open, initial, form]);
+
+	const rowHint = useMemo(() => {
+		if (!siblings || position === undefined || position === null) return null;
+		if (!watchedHalfWidth) return "Ocupará a linha inteira.";
+		const hypothetical = siblings.map((s) => ({ id: s.id, halfWidth: s.halfWidth ?? false }));
+		const selfId = initial?.id ?? "__new__";
+		if (initial?.id) {
+			const idx = hypothetical.findIndex((s) => s.id === initial.id);
+			if (idx >= 0) hypothetical[idx] = { id: selfId, halfWidth: true };
+		} else {
+			hypothetical.splice(Math.min(position, hypothetical.length), 0, { id: selfId, halfWidth: true });
+		}
+		const rows = groupFieldsIntoRows(hypothetical);
+		const row = rows.find((r) => r.fields.some((f) => f.id === selfId));
+		if (!row) return null;
+		if (row.orphan || row.fields.length < 2) {
+			return "Atenção: ficará sozinha e ocupará a linha inteira — ative “Meia largura” no campo vizinho para dividir a linha.";
+		}
+		const partner = row.fields.find((f) => f.id !== selfId);
+		const partnerLabel = siblings.find((s) => s.id === partner?.id)?.label;
+		return partnerLabel ? `Vai dividir a linha com “${partnerLabel}”.` : "Vai dividir a linha com o campo vizinho.";
+	}, [siblings, position, watchedHalfWidth, initial?.id]);
 
 	function submit(values: FieldFormValues) {
 		const num = (v?: string) => (v && v.trim() !== "" ? Number(v) : undefined);
@@ -169,6 +202,7 @@ function FieldDialog({
 			validation,
 			isVisible: values.isVisible,
 			editableAfterSignup: values.editableAfterSignup,
+			halfWidth: values.halfWidth,
 		});
 	}
 
@@ -359,7 +393,22 @@ function FieldDialog({
 									</FormItem>
 								)}
 							/>
+							<FormField
+								control={form.control}
+								name="halfWidth"
+								render={({ field }) => (
+									<FormItem className="flex items-center gap-2 space-y-0">
+										<FormControl>
+											<Switch checked={field.value} onCheckedChange={field.onChange} />
+										</FormControl>
+										<Label>Meia largura</Label>
+									</FormItem>
+								)}
+							/>
 						</div>
+						{rowHint && (
+							<p className="text-muted-foreground text-xs">{rowHint}</p>
+						)}
 						<Button type="submit" disabled={mutation.isPending}>
 							{mutation.isPending ? "Salvando..." : "Salvar campo"}
 						</Button>
@@ -375,11 +424,13 @@ function SortableFieldRow({
 	index,
 	disabled,
 	actions,
+	isOrphanHalf,
 }: {
 	field: Field;
 	index: number;
 	disabled: boolean;
 	actions?: React.ReactNode;
+	isOrphanHalf?: boolean;
 }) {
 	const { ref, handleRef, isDragging, isDropTarget } = useSortable({
 		id: field.id,
@@ -415,6 +466,12 @@ function SortableFieldRow({
 					<div className="flex flex-wrap items-center gap-2 font-semibold">
 						<span className="truncate">{field.label}</span>
 						{field.required && <Badge>Obrigatório</Badge>}
+						{field.halfWidth && <Badge variant="secondary">½ largura</Badge>}
+						{isOrphanHalf && (
+							<Badge variant="outline" className="border-amber-500 text-amber-600">
+								½ sozinha
+							</Badge>
+						)}
 						{!field.isVisible && <Badge variant="outline">Oculto</Badge>}
 						{!field.isActive && <Badge variant="outline">Inativo</Badge>}
 					</div>
@@ -593,6 +650,7 @@ export function FormsContent() {
 	const fields = displayFields;
 	const selected = versions.find((v) => v.id === selectedId) ?? null;
 	const isPublished = !!selected?.isPublished;
+	const orphanHalfIds = useMemo(() => findOrphanHalfIds(fields), [fields]);
 
 	function persistOrder(next: Field[]) {
 		if (!selectedId) return;
@@ -723,6 +781,8 @@ export function FormsContent() {
 										<FieldDialog
 											versionId={selected.id}
 											onDone={() => undefined}
+											siblings={fields}
+											position={fields.length}
 										/>
 									)}
 									{!isPublished && (
@@ -772,6 +832,7 @@ export function FormsContent() {
 													field={f}
 													index={i}
 													disabled={isPublished}
+													isOrphanHalf={orphanHalfIds.has(f.id)}
 													actions={
 														<>
 															<Button size="sm" variant="outline" disabled={i === 0} onClick={() => move(i, -1)}>
@@ -790,6 +851,8 @@ export function FormsContent() {
 																versionId={selected.id}
 																initial={f}
 																onDone={() => undefined}
+																siblings={fields}
+																position={i}
 															/>
 															<Button
 																size="sm"

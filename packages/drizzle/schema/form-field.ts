@@ -55,6 +55,7 @@ export const formField = pgTable(
 		helpText: text("help_text"),
 		required: boolean("required").default(false).notNull(),
 		order: integer("order").default(0).notNull(),
+		halfWidth: boolean("half_width").default(false).notNull(),
 		options: jsonb("options").$type<FormFieldOption[]>(),
 		validation: jsonb("validation").$type<FormFieldValidation>(),
 		isVisible: boolean("is_visible").default(true).notNull(),

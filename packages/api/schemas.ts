@@ -76,6 +76,7 @@ export const upsertFormFieldInput = z.object({
 	type: z.enum(formFieldTypes),
 	helpText: z.string().max(500).optional().nullable(),
 	required: z.boolean().default(false),
+	halfWidth: z.boolean().default(false),
 	options: formFieldOptionsSchema,
 	validation: formFieldValidationSchema,
 	isVisible: z.boolean().default(true),
