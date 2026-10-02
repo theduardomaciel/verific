@@ -41,7 +41,14 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { GripVertical, Eye, Lock } from "lucide-react";
+import {
+	GripVertical,
+	Eye,
+	Lock,
+	PlusIcon,
+	PencilIcon,
+	TrashIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formFieldTypes } from "@verific/api/schemas";
 import { downloadCsv, toCsv } from "@/lib/forms/csv";
@@ -49,6 +56,11 @@ import { formatAnswerValue } from "@verific/api/schemas";
 import { findOrphanHalfIds, groupFieldsIntoRows } from "@/lib/forms/layout";
 import { FormPreview } from "./preview";
 import type { RouterOutput } from "@verific/api";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type Version = RouterOutput["listVersions"][number];
 type Field = RouterOutput["getVersion"]["fields"][number];
@@ -123,7 +135,8 @@ function FieldDialog({
 
 	const watchedType = form.watch("type");
 	const watchedHalfWidth = form.watch("halfWidth");
-	const needsOptions = watchedType === "select_single" || watchedType === "select_multiple";
+	const needsOptions =
+		watchedType === "select_single" || watchedType === "select_multiple";
 	const showNumberRange = watchedType === "number";
 	const showTextLength = watchedType === "text" || watchedType === "textarea";
 	const showPattern = watchedType === "text";
@@ -150,15 +163,22 @@ function FieldDialog({
 	}, [open, initial, form]);
 
 	const rowHint = useMemo(() => {
-		if (!siblings || position === undefined || position === null) return null;
+		if (!siblings || position === undefined || position === null)
+			return null;
 		if (!watchedHalfWidth) return "Ocupará a linha inteira.";
-		const hypothetical = siblings.map((s) => ({ id: s.id, halfWidth: s.halfWidth ?? false }));
+		const hypothetical = siblings.map((s) => ({
+			id: s.id,
+			halfWidth: s.halfWidth ?? false,
+		}));
 		const selfId = initial?.id ?? "__new__";
 		if (initial?.id) {
 			const idx = hypothetical.findIndex((s) => s.id === initial.id);
 			if (idx >= 0) hypothetical[idx] = { id: selfId, halfWidth: true };
 		} else {
-			hypothetical.splice(Math.min(position, hypothetical.length), 0, { id: selfId, halfWidth: true });
+			hypothetical.splice(Math.min(position, hypothetical.length), 0, {
+				id: selfId,
+				halfWidth: true,
+			});
 		}
 		const rows = groupFieldsIntoRows(hypothetical);
 		const row = rows.find((r) => r.fields.some((f) => f.id === selfId));
@@ -168,14 +188,20 @@ function FieldDialog({
 		}
 		const partner = row.fields.find((f) => f.id !== selfId);
 		const partnerLabel = siblings.find((s) => s.id === partner?.id)?.label;
-		return partnerLabel ? `Vai dividir a linha com “${partnerLabel}”.` : "Vai dividir a linha com o campo vizinho.";
+		return partnerLabel
+			? `Vai dividir a linha com “${partnerLabel}”.`
+			: "Vai dividir a linha com o campo vizinho.";
 	}, [siblings, position, watchedHalfWidth, initial?.id]);
 
 	function submit(values: FieldFormValues) {
-		const num = (v?: string) => (v && v.trim() !== "" ? Number(v) : undefined);
+		const num = (v?: string) =>
+			v && v.trim() !== "" ? Number(v) : undefined;
 		const options =
 			needsOptions && values.optionsText
-				? values.optionsText.split("\n").map((s) => s.trim()).filter(Boolean)
+				? values.optionsText
+						.split("\n")
+						.map((s) => s.trim())
+						.filter(Boolean)
 				: undefined;
 		const validation =
 			values.type === "number"
@@ -211,15 +237,21 @@ function FieldDialog({
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
 				<Button size="sm" variant={initial ? "ghost" : "default"}>
+					{initial ? <PencilIcon /> : <PlusIcon />}
 					{initial ? "Editar" : "Novo campo"}
 				</Button>
 			</DialogTrigger>
 			<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
 				<DialogHeader>
-					<DialogTitle>{initial ? "Editar campo" : "Novo campo"}</DialogTitle>
+					<DialogTitle>
+						{initial ? "Editar campo" : "Novo campo"}
+					</DialogTitle>
 				</DialogHeader>
 				<Form {...form}>
-					<form onSubmit={form.handleSubmit(submit)} className="flex flex-col gap-4">
+					<form
+						onSubmit={form.handleSubmit(submit)}
+						className="flex flex-col gap-4"
+					>
 						<FormField
 							control={form.control}
 							name="label"
@@ -227,7 +259,10 @@ function FieldDialog({
 								<FormItem>
 									<FormLabel>Rótulo *</FormLabel>
 									<FormControl>
-										<Input placeholder="Ex: Restrições alimentares" {...field} />
+										<Input
+											placeholder="Ex: Restrições alimentares"
+											{...field}
+										/>
 									</FormControl>
 									<FormMessage />
 								</FormItem>
@@ -239,20 +274,37 @@ function FieldDialog({
 							render={({ field }) => (
 								<FormItem>
 									<FormLabel>Tipo *</FormLabel>
-									<Select value={field.value} onValueChange={field.onChange}>
+									<Select
+										value={field.value}
+										onValueChange={field.onChange}
+									>
 										<FormControl>
 											<SelectTrigger>
 												<SelectValue />
 											</SelectTrigger>
 										</FormControl>
 										<SelectContent>
-											<SelectItem value="text">Texto curto</SelectItem>
-											<SelectItem value="textarea">Texto longo</SelectItem>
-											<SelectItem value="number">Número</SelectItem>
-											<SelectItem value="date">Data</SelectItem>
-											<SelectItem value="select_single">Seleção única</SelectItem>
-											<SelectItem value="select_multiple">Múltipla seleção</SelectItem>
-											<SelectItem value="checkbox">Checkbox</SelectItem>
+											<SelectItem value="text">
+												Texto curto
+											</SelectItem>
+											<SelectItem value="textarea">
+												Texto longo
+											</SelectItem>
+											<SelectItem value="number">
+												Número
+											</SelectItem>
+											<SelectItem value="date">
+												Data
+											</SelectItem>
+											<SelectItem value="select_single">
+												Seleção única
+											</SelectItem>
+											<SelectItem value="select_multiple">
+												Múltipla seleção
+											</SelectItem>
+											<SelectItem value="checkbox">
+												Checkbox
+											</SelectItem>
 										</SelectContent>
 									</Select>
 									<FormMessage />
@@ -266,7 +318,10 @@ function FieldDialog({
 								<FormItem>
 									<FormLabel>Descrição de ajuda</FormLabel>
 									<FormControl>
-										<Textarea placeholder="Texto de apoio ao participante" {...field} />
+										<Textarea
+											placeholder="Texto de apoio ao participante"
+											{...field}
+										/>
 									</FormControl>
 									<FormMessage />
 								</FormItem>
@@ -278,9 +333,14 @@ function FieldDialog({
 								name="optionsText"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Opções (uma por linha) *</FormLabel>
+										<FormLabel>
+											Opções (uma por linha) *
+										</FormLabel>
 										<FormControl>
-											<Textarea placeholder={"Opção 1\nOpção 2"} {...field} />
+											<Textarea
+												placeholder={"Opção 1\nOpção 2"}
+												{...field}
+											/>
 										</FormControl>
 										<FormMessage />
 									</FormItem>
@@ -296,7 +356,11 @@ function FieldDialog({
 										<FormItem>
 											<FormLabel>Valor mínimo</FormLabel>
 											<FormControl>
-												<Input type="number" placeholder="-" {...field} />
+												<Input
+													type="number"
+													placeholder="-"
+													{...field}
+												/>
 											</FormControl>
 										</FormItem>
 									)}
@@ -308,7 +372,11 @@ function FieldDialog({
 										<FormItem>
 											<FormLabel>Valor máximo</FormLabel>
 											<FormControl>
-												<Input type="number" placeholder="-" {...field} />
+												<Input
+													type="number"
+													placeholder="-"
+													{...field}
+												/>
 											</FormControl>
 										</FormItem>
 									)}
@@ -322,9 +390,15 @@ function FieldDialog({
 									name="minLength"
 									render={({ field }) => (
 										<FormItem>
-											<FormLabel>Tamanho mínimo</FormLabel>
+											<FormLabel>
+												Tamanho mínimo
+											</FormLabel>
 											<FormControl>
-												<Input type="number" placeholder="-" {...field} />
+												<Input
+													type="number"
+													placeholder="-"
+													{...field}
+												/>
 											</FormControl>
 										</FormItem>
 									)}
@@ -334,9 +408,15 @@ function FieldDialog({
 									name="maxLength"
 									render={({ field }) => (
 										<FormItem>
-											<FormLabel>Tamanho máximo</FormLabel>
+											<FormLabel>
+												Tamanho máximo
+											</FormLabel>
 											<FormControl>
-												<Input type="number" placeholder="-" {...field} />
+												<Input
+													type="number"
+													placeholder="-"
+													{...field}
+												/>
 											</FormControl>
 										</FormItem>
 									)}
@@ -349,9 +429,14 @@ function FieldDialog({
 								name="pattern"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Regex de validação (opcional)</FormLabel>
+										<FormLabel>
+											Regex de validação (opcional)
+										</FormLabel>
 										<FormControl>
-											<Input placeholder="^[0-9]+$" {...field} />
+											<Input
+												placeholder="^[0-9]+$"
+												{...field}
+											/>
 										</FormControl>
 									</FormItem>
 								)}
@@ -364,7 +449,10 @@ function FieldDialog({
 								render={({ field }) => (
 									<FormItem className="flex items-center gap-2 space-y-0">
 										<FormControl>
-											<Checkbox checked={field.value} onCheckedChange={field.onChange} />
+											<Checkbox
+												checked={field.value}
+												onCheckedChange={field.onChange}
+											/>
 										</FormControl>
 										<FormLabel>Obrigatório</FormLabel>
 									</FormItem>
@@ -376,7 +464,10 @@ function FieldDialog({
 								render={({ field }) => (
 									<FormItem className="flex items-center gap-2 space-y-0">
 										<FormControl>
-											<Switch checked={field.value} onCheckedChange={field.onChange} />
+											<Switch
+												checked={field.value}
+												onCheckedChange={field.onChange}
+											/>
 										</FormControl>
 										<Label>Visível</Label>
 									</FormItem>
@@ -388,7 +479,10 @@ function FieldDialog({
 								render={({ field }) => (
 									<FormItem className="flex items-center gap-2 space-y-0">
 										<FormControl>
-											<Switch checked={field.value} onCheckedChange={field.onChange} />
+											<Switch
+												checked={field.value}
+												onCheckedChange={field.onChange}
+											/>
 										</FormControl>
 										<Label>Editável após inscrição</Label>
 									</FormItem>
@@ -400,7 +494,10 @@ function FieldDialog({
 								render={({ field }) => (
 									<FormItem className="flex items-center gap-2 space-y-0">
 										<FormControl>
-											<Switch checked={field.value} onCheckedChange={field.onChange} />
+											<Switch
+												checked={field.value}
+												onCheckedChange={field.onChange}
+											/>
 										</FormControl>
 										<Label>Meia largura</Label>
 									</FormItem>
@@ -408,10 +505,14 @@ function FieldDialog({
 							/>
 						</div>
 						{rowHint && (
-							<p className="text-muted-foreground text-xs">{rowHint}</p>
+							<p className="text-muted-foreground text-xs">
+								{rowHint}
+							</p>
 						)}
 						<Button type="submit" disabled={mutation.isPending}>
-							{mutation.isPending ? "Salvando..." : "Salvar campo"}
+							{mutation.isPending
+								? "Salvando..."
+								: "Salvar campo"}
 						</Button>
 					</form>
 				</Form>
@@ -447,10 +548,13 @@ function SortableFieldRow({
 			ref={ref}
 			data-field-id={field.id}
 			className={cn(
-				"flex flex-col gap-3 rounded-lg border bg-card p-3 transition-all duration-200 ease-in-out will-change-transform",
+				"bg-card flex flex-col gap-3 rounded-lg border p-3 transition-all duration-200 ease-in-out will-change-transform",
 				"md:flex-row md:items-center md:justify-between",
-				isDragging && "z-10 scale-[0.99] border-primary/60 opacity-60 shadow-lg",
-				isDropTarget && !isDragging && "border-primary shadow-md ring-2 ring-primary/30",
+				isDragging &&
+					"border-primary/60 z-10 scale-[0.99] opacity-60 shadow-lg",
+				isDropTarget &&
+					!isDragging &&
+					"border-primary ring-primary/30 shadow-md ring-2",
 			)}
 		>
 			<div className="flex min-w-0 flex-1 items-start gap-2">
@@ -458,7 +562,7 @@ function SortableFieldRow({
 					<span
 						ref={handleRef}
 						title="Arrastar para reordenar"
-						className="mt-0.5 shrink-0 cursor-grab touch-none rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:cursor-grabbing"
+						className="text-muted-foreground hover:bg-muted hover:text-foreground mt-0.5 shrink-0 cursor-grab touch-none rounded p-1 transition-colors active:cursor-grabbing"
 					>
 						<GripVertical className="h-5 w-5" />
 					</span>
@@ -467,24 +571,37 @@ function SortableFieldRow({
 					<div className="flex flex-wrap items-center gap-2 font-semibold">
 						<span className="truncate">{field.label}</span>
 						{field.required && <Badge>Obrigatório</Badge>}
-						{field.halfWidth && <Badge variant="secondary">½ largura</Badge>}
+						{field.halfWidth && (
+							<Badge variant="secondary">½ largura</Badge>
+						)}
 						{isOrphanHalf && (
-							<Badge variant="outline" className="border-amber-500 text-amber-600">
+							<Badge
+								variant="outline"
+								className="border-amber-500 text-amber-600"
+							>
 								½ sozinha
 							</Badge>
 						)}
-						{!field.isVisible && <Badge variant="outline">Oculto</Badge>}
-						{!field.isActive && <Badge variant="outline">Inativo</Badge>}
+						{!field.isVisible && (
+							<Badge variant="outline">Oculto</Badge>
+						)}
+						{!field.isActive && (
+							<Badge variant="outline">Inativo</Badge>
+						)}
 					</div>
-					<div className="mt-1 truncate text-xs text-muted-foreground">
+					<div className="text-muted-foreground mt-1 truncate text-xs">
 						{field.type}
 						{field.helpText ? ` • ${field.helpText}` : ""}
-						{(field.options ?? []).length > 0 ? ` • opções: ${(field.options ?? []).join(", ")}` : ""}
+						{(field.options ?? []).length > 0
+							? ` • opções: ${(field.options ?? []).join(", ")}`
+							: ""}
 					</div>
 				</div>
 			</div>
 			{!disabled && actions && (
-				<div className="flex shrink-0 items-center gap-1 pl-9 md:pl-0">{actions}</div>
+				<div className="flex shrink-0 items-center gap-3 pl-9 md:pl-0">
+					{actions}
+				</div>
 			)}
 		</div>
 	);
@@ -493,7 +610,12 @@ function SortableFieldRow({
 function AnswersPanel({ projectId }: { projectId: string }) {
 	const [query, setQuery] = useState("");
 	const [page, setPage] = useState(1);
-	const list = trpc.listAnswers.useQuery({ projectId, page, pageSize: 10, query: query || undefined });
+	const list = trpc.listAnswers.useQuery({
+		projectId,
+		page,
+		pageSize: 10,
+		query: query || undefined,
+	});
 	const exp = trpc.exportAnswers.useQuery({ projectId }, { enabled: false });
 
 	async function handleExport() {
@@ -502,14 +624,27 @@ function AnswersPanel({ projectId }: { projectId: string }) {
 			toast.error("Falha ao exportar.");
 			return;
 		}
-		const cols = ["Nome", "E-mail", "Inscrito em", ...result.data.fields.map((f) => f.label)];
+		const cols = [
+			"Nome",
+			"E-mail",
+			"Inscrito em",
+			...result.data.fields.map((f) => f.label),
+		];
 		const rows = result.data.rows.map((r) => [
 			r.name ?? "",
 			r.email ?? "",
 			r.joinedAt ? new Date(r.joinedAt).toLocaleString("pt-BR") : "",
-			...result.data.fields.map((f) => formatAnswerValue(f.type as never, (r.answers as Record<string, unknown>)[f.key])),
+			...result.data.fields.map((f) =>
+				formatAnswerValue(
+					f.type as never,
+					(r.answers as Record<string, unknown>)[f.key],
+				),
+			),
 		]);
-		downloadCsv(`respostas-${projectId.slice(0, 8)}.csv`, toCsv(cols, rows));
+		downloadCsv(
+			`respostas-${projectId.slice(0, 8)}.csv`,
+			toCsv(cols, rows),
+		);
 		toast.success(`${rows.length} respostas exportadas!`);
 	}
 
@@ -517,16 +652,30 @@ function AnswersPanel({ projectId }: { projectId: string }) {
 		<Card>
 			<CardHeader className="flex flex-row items-center justify-between">
 				<CardTitle>Respostas</CardTitle>
-				<Button size="sm" variant="outline" onClick={handleExport} disabled={exp.isFetching}>
+				<Button
+					size="sm"
+					variant="outline"
+					onClick={handleExport}
+					disabled={exp.isFetching}
+				>
 					{exp.isFetching ? "Exportando..." : "Exportar CSV"}
 				</Button>
 			</CardHeader>
 			<CardContent className="flex flex-col gap-4">
-				<Input placeholder="Buscar por nome ou e-mail..." value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} />
+				<Input
+					placeholder="Buscar por nome ou e-mail..."
+					value={query}
+					onChange={(e) => {
+						setQuery(e.target.value);
+						setPage(1);
+					}}
+				/>
 				{list.isPending ? (
 					<Skeleton className="h-40 w-full" />
 				) : !list.data || list.data.participants.length === 0 ? (
-					<p className="text-muted-foreground text-sm">Nenhuma inscrição encontrada.</p>
+					<p className="text-muted-foreground text-sm">
+						Nenhuma inscrição encontrada.
+					</p>
 				) : (
 					<>
 						<div className="overflow-x-auto">
@@ -535,7 +684,9 @@ function AnswersPanel({ projectId }: { projectId: string }) {
 									<tr className="text-muted-foreground text-left">
 										<th className="p-2">Participante</th>
 										{list.data.fields.map((f) => (
-											<th key={f.id} className="p-2">{f.label}</th>
+											<th key={f.id} className="p-2">
+												{f.label}
+											</th>
 										))}
 									</tr>
 								</thead>
@@ -543,24 +694,48 @@ function AnswersPanel({ projectId }: { projectId: string }) {
 									{list.data.participants.map((p) => (
 										<tr key={p.id} className="border-t">
 											<td className="p-2">
-												<div className="font-semibold">{p.user?.name}</div>
-												<div className="text-muted-foreground text-xs">{p.user?.email}</div>
+												<div className="font-semibold">
+													{p.user?.name}
+												</div>
+												<div className="text-muted-foreground text-xs">
+													{p.user?.email}
+												</div>
 											</td>
-											{(list.data?.fields ?? []).map((f) => (
-												<td key={f.id} className="max-w-[220px] truncate p-2">
-													{formatAnswerValue(f.type as never, (p.answers as Record<string, unknown>)[f.key])}
-												</td>
-											))}
+											{(list.data?.fields ?? []).map(
+												(f) => (
+													<td
+														key={f.id}
+														className="max-w-[220px] truncate p-2"
+													>
+														{formatAnswerValue(
+															f.type as never,
+															(
+																p.answers as Record<
+																	string,
+																	unknown
+																>
+															)[f.key],
+														)}
+													</td>
+												),
+											)}
 										</tr>
 									))}
 								</tbody>
 							</table>
 						</div>
 						<div className="flex items-center justify-between">
-							<Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage((v) => v - 1)}>
+							<Button
+								size="sm"
+								variant="outline"
+								disabled={page <= 1}
+								onClick={() => setPage((v) => v - 1)}
+							>
 								Anterior
 							</Button>
-							<span className="text-muted-foreground text-xs">Página {page}</span>
+							<span className="text-muted-foreground text-xs">
+								Página {page}
+							</span>
 							<Button
 								size="sm"
 								variant="outline"
@@ -582,16 +757,22 @@ export function FormsContent() {
 	const utils = trpc.useUtils();
 	const versionsQuery = trpc.listVersions.useQuery({ projectId });
 	const [selectedId, setSelectedId] = useState<string | null>(null);
-	const [tab, setTab] = useState<"builder" | "preview" | "answers">("builder");
+	const [tab, setTab] = useState<"builder" | "preview" | "answers">(
+		"builder",
+	);
 	const [displayFields, setDisplayFields] = useState<Field[]>([]);
 	const isDraggingRef = useRef(false);
 	const listRef = useRef<HTMLDivElement>(null);
 
-	const versions: Version[] = useMemo(() => versionsQuery.data ?? [], [versionsQuery.data]);
+	const versions: Version[] = useMemo(
+		() => versionsQuery.data ?? [],
+		[versionsQuery.data],
+	);
 
 	useEffect(() => {
 		if (!selectedId && versions.length > 0) {
-			const published = versions.find((v) => v.isPublished) ?? versions[0];
+			const published =
+				versions.find((v) => v.isPublished) ?? versions[0];
 			if (published) setSelectedId(published.id);
 		}
 	}, [versions, selectedId]);
@@ -634,7 +815,10 @@ export function FormsContent() {
 	});
 
 	const serverFields: Field[] = useMemo(
-		() => (versionQuery.data?.fields ?? []).slice().sort((a, b) => a.order - b.order),
+		() =>
+			(versionQuery.data?.fields ?? [])
+				.slice()
+				.sort((a, b) => a.order - b.order),
 		[versionQuery.data],
 	);
 
@@ -656,34 +840,48 @@ export function FormsContent() {
 	function persistOrder(next: Field[]) {
 		if (!selectedId) return;
 		setDisplayFields(next);
-		reorderFields.mutate({ versionId: selectedId, orderedIds: next.map((f) => f.id) });
+		reorderFields.mutate({
+			versionId: selectedId,
+			orderedIds: next.map((f) => f.id),
+		});
 	}
 
 	function animateFlip(container: HTMLElement | null) {
 		if (!container || typeof window === "undefined") return;
-		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+			return;
 		const first = new Map<string, number>();
-		container.querySelectorAll<HTMLElement>("[data-field-id]").forEach((el) => {
-			const id = el.dataset.fieldId;
-			if (id) first.set(id, el.getBoundingClientRect().top);
-		});
+		container
+			.querySelectorAll<HTMLElement>("[data-field-id]")
+			.forEach((el) => {
+				const id = el.dataset.fieldId;
+				if (id) first.set(id, el.getBoundingClientRect().top);
+			});
 		if (first.size === 0) return;
 		requestAnimationFrame(() => {
 			requestAnimationFrame(() => {
-				container.querySelectorAll<HTMLElement>("[data-field-id]").forEach((el) => {
-					const id = el.dataset.fieldId;
-					if (!id) return;
-					const prevTop = first.get(id);
-					if (prevTop === undefined) return;
-					const nextTop = el.getBoundingClientRect().top;
-					const dy = prevTop - nextTop;
-					if (dy !== 0) {
-						el.animate(
-							[{ transform: `translateY(${dy}px)` }, { transform: "translateY(0)" }],
-							{ duration: 250, easing: "cubic-bezier(0.25, 1, 0.5, 1)" },
-						);
-					}
-				});
+				container
+					.querySelectorAll<HTMLElement>("[data-field-id]")
+					.forEach((el) => {
+						const id = el.dataset.fieldId;
+						if (!id) return;
+						const prevTop = first.get(id);
+						if (prevTop === undefined) return;
+						const nextTop = el.getBoundingClientRect().top;
+						const dy = prevTop - nextTop;
+						if (dy !== 0) {
+							el.animate(
+								[
+									{ transform: `translateY(${dy}px)` },
+									{ transform: "translateY(0)" },
+								],
+								{
+									duration: 250,
+									easing: "cubic-bezier(0.25, 1, 0.5, 1)",
+								},
+							);
+						}
+					});
 			});
 		});
 	}
@@ -712,14 +910,26 @@ export function FormsContent() {
 			<div className="flex flex-wrap items-center justify-between gap-4">
 				<h1 className="text-2xl font-bold">Formulário de inscrição</h1>
 				<div className="flex gap-2">
-					<Button size="sm" variant={tab === "builder" ? "default" : "outline"} onClick={() => setTab("builder")}>
+					<Button
+						size="sm"
+						variant={tab === "builder" ? "default" : "outline"}
+						onClick={() => setTab("builder")}
+					>
 						Construtor
 					</Button>
-					<Button size="sm" variant={tab === "preview" ? "default" : "outline"} onClick={() => setTab("preview")}>
+					<Button
+						size="sm"
+						variant={tab === "preview" ? "default" : "outline"}
+						onClick={() => setTab("preview")}
+					>
 						<Eye className="h-4 w-4" />
 						Pré-visualizar
 					</Button>
-					<Button size="sm" variant={tab === "answers" ? "default" : "outline"} onClick={() => setTab("answers")}>
+					<Button
+						size="sm"
+						variant={tab === "answers" ? "default" : "outline"}
+						onClick={() => setTab("answers")}
+					>
 						Respostas
 					</Button>
 				</div>
@@ -738,7 +948,9 @@ export function FormsContent() {
 								<Button
 									size="sm"
 									variant="outline"
-									onClick={() => createVersion.mutate({ projectId })}
+									onClick={() =>
+										createVersion.mutate({ projectId })
+									}
 									disabled={createVersion.isPending}
 								>
 									Nova versão
@@ -747,7 +959,12 @@ export function FormsContent() {
 									<Button
 										size="sm"
 										variant="outline"
-										onClick={() => createVersion.mutate({ projectId, cloneFromVersionId: selected.id })}
+										onClick={() =>
+											createVersion.mutate({
+												projectId,
+												cloneFromVersionId: selected.id,
+											})
+										}
 										disabled={createVersion.isPending}
 									>
 										Duplicar v{selected.version}
@@ -758,18 +975,28 @@ export function FormsContent() {
 						<CardContent className="flex flex-wrap gap-2">
 							{versions.length === 0 ? (
 								<p className="text-muted-foreground text-sm">
-									Nenhuma versão ainda. Crie a primeira para começar.
+									Nenhuma versão ainda. Crie a primeira para
+									começar.
 								</p>
 							) : (
 								versions.map((v) => (
 									<Button
 										key={v.id}
 										size="sm"
-										variant={v.id === selectedId ? "default" : "outline"}
+										variant={
+											v.id === selectedId
+												? "default"
+												: "outline"
+										}
 										onClick={() => setSelectedId(v.id)}
 									>
-										v{v.version} ({v.fieldsCount})
-										{v.isPublished && <Badge className="ml-2">publicada</Badge>}
+										v{v.version}
+										{v.isPublished &&
+											v.id !== selectedId && (
+												<Badge className="ml-2">
+													publicada
+												</Badge>
+											)}
 									</Button>
 								))
 							)}
@@ -781,7 +1008,11 @@ export function FormsContent() {
 							<CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
 								<CardTitle>
 									Campos da v{selected.version}
-									{isPublished && <Badge className="ml-2">publicada (imutável)</Badge>}
+									{isPublished && (
+										<Badge className="ml-2">
+											publicada
+										</Badge>
+									)}
 								</CardTitle>
 								<div className="flex gap-2">
 									{!isPublished && (
@@ -793,29 +1024,73 @@ export function FormsContent() {
 										/>
 									)}
 									{!isPublished && (
-										<Button size="sm" onClick={() => publishVersion.mutate({ versionId: selected.id })} disabled={publishVersion.isPending}>
+										<Button
+											size="sm"
+											onClick={() =>
+												publishVersion.mutate({
+													versionId: selected.id,
+												})
+											}
+											disabled={
+												publishVersion.isPending ||
+												isPublished
+											}
+										>
 											Publicar
 										</Button>
+									)}
+									{isPublished && (
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<span>
+													<Button
+														size="sm"
+														disabled={true}
+													>
+														Editar
+													</Button>
+												</span>
+											</TooltipTrigger>
+											<TooltipContent>
+												<p>
+													Para alterar o formulário
+													sem
+													<br />
+													corromper inscrições
+													existentes,
+													<br />
+													duplique esta versão, edite
+													e
+													<br />
+													publique a nova.
+												</p>
+											</TooltipContent>
+										</Tooltip>
 									)}
 								</div>
 							</CardHeader>
 							<CardContent className="flex flex-col gap-3">
-								<div className="flex flex-col gap-3 rounded-lg border border-dashed bg-muted/40 p-3 md:flex-row md:items-center md:justify-between">
+								<div className="bg-muted/40 flex flex-col gap-3 rounded-lg border border-dashed p-3 md:flex-row md:items-center md:justify-between">
 									<div className="flex min-w-0 flex-1 items-start gap-2">
 										<span
 											title="Campo fixo do sistema"
-											className="mt-0.5 shrink-0 rounded p-1 text-muted-foreground"
+											className="text-muted-foreground mt-0.5 shrink-0 rounded p-1"
 										>
 											<Lock className="h-5 w-5" />
 										</span>
 										<div className="min-w-0 flex-1">
 											<div className="flex flex-wrap items-center gap-2 font-semibold">
-												<span className="truncate">Nome completo</span>
+												<span className="truncate">
+													Nome completo
+												</span>
 												<Badge>Obrigatório</Badge>
-												<Badge variant="outline">Fixo</Badge>
+												<Badge variant="outline">
+													Fixo
+												</Badge>
 											</div>
-											<div className="mt-1 truncate text-xs text-muted-foreground">
-												Coletado em toda inscrição • não pode ser editado, movido ou removido
+											<div className="text-muted-foreground mt-1 truncate text-xs">
+												Coletado automaticamente em toda
+												inscrição
 											</div>
 										</div>
 									</div>
@@ -823,7 +1098,9 @@ export function FormsContent() {
 								{versionQuery.isPending ? (
 									<Skeleton className="h-40 w-full" />
 								) : fields.length === 0 ? (
-									<p className="text-muted-foreground text-sm">Nenhum campo adicional. O nome completo acima é sempre coletado.</p>
+									<p className="text-muted-foreground text-sm">
+										Nenhum campo adicionado ainda.
+									</p>
 								) : (
 									<DragDropProvider
 										key={selected.id}
@@ -838,54 +1115,100 @@ export function FormsContent() {
 											}
 											const { source } = event.operation;
 											if (isSortable(source)) {
-												const { initialIndex, index } = source;
+												const { initialIndex, index } =
+													source;
 												if (initialIndex !== index) {
-													const next = [...displayFields];
-													const [moved] = next.splice(initialIndex, 1);
+													const next = [
+														...displayFields,
+													];
+													const [moved] = next.splice(
+														initialIndex,
+														1,
+													);
 													if (!moved) {
-														setDisplayFields(serverFields);
+														setDisplayFields(
+															serverFields,
+														);
 														return;
 													}
-													next.splice(index, 0, moved);
+													next.splice(
+														index,
+														0,
+														moved,
+													);
 													persistOrder(next);
 												}
 											}
 										}}
 									>
-										<div ref={listRef} className="flex flex-col gap-3">
+										<div
+											ref={listRef}
+											className="flex flex-col gap-3"
+										>
 											{fields.map((f, i) => (
 												<SortableFieldRow
 													key={f.id}
 													field={f}
 													index={i}
 													disabled={isPublished}
-													isOrphanHalf={orphanHalfIds.has(f.id)}
+													isOrphanHalf={orphanHalfIds.has(
+														f.id,
+													)}
 													actions={
 														<>
-															<Button size="sm" variant="outline" disabled={i === 0} onClick={() => move(i, -1)}>
+															<Button
+																size="sm"
+																variant="outline"
+																disabled={
+																	i === 0
+																}
+																onClick={() =>
+																	move(i, -1)
+																}
+															>
 																↑
 															</Button>
 															<Button
 																size="sm"
 																variant="outline"
-																disabled={i === fields.length - 1}
-																onClick={() => move(i, 1)}
+																disabled={
+																	i ===
+																	fields.length -
+																		1
+																}
+																onClick={() =>
+																	move(i, 1)
+																}
 															>
 																↓
 															</Button>
 															<FieldDialog
 																key={f.id}
-																versionId={selected.id}
+																versionId={
+																	selected.id
+																}
 																initial={f}
-																onDone={() => undefined}
-																siblings={fields}
+																onDone={() =>
+																	undefined
+																}
+																siblings={
+																	fields
+																}
 																position={i}
 															/>
 															<Button
 																size="sm"
 																variant="ghost"
-																onClick={() => deleteField.mutate({ fieldId: f.id })}
+																onClick={() =>
+																	deleteField.mutate(
+																		{
+																			fieldId:
+																				f.id,
+																		},
+																	)
+																}
 															>
+																<TrashIcon />
 																Excluir
 															</Button>
 														</>
@@ -894,11 +1217,6 @@ export function FormsContent() {
 											))}
 										</div>
 									</DragDropProvider>
-								)}
-								{isPublished && (
-									<p className="text-muted-foreground text-xs">
-										Para alterar o formulário sem corromper inscrições existentes, duplique esta versão, edite e publique a nova.
-									</p>
 								)}
 							</CardContent>
 						</Card>
