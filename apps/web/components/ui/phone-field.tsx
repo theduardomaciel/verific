@@ -1,62 +1,57 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import {
+	AsYouType,
+	getCountries,
+	getCountryCallingCode,
+	parsePhoneNumberFromString,
+	type CountryCode,
+} from "libphonenumber-js";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
-import { formatPhone } from "@/lib/validations/masks/phone";
 import { cn } from "@/lib/utils";
 
-interface Country {
-	iso: string;
+export interface PhoneCountry {
+	iso: CountryCode;
 	code: string;
 	flag: string;
 	name: string;
 }
 
-export const phoneCountries: Country[] = [
-	{ iso: "BR", code: "55", flag: "🇧🇷", name: "Brasil" },
-	{ iso: "US", code: "1", flag: "🇺🇸", name: "Estados Unidos" },
-	{ iso: "PT", code: "351", flag: "🇵🇹", name: "Portugal" },
-	{ iso: "AR", code: "54", flag: "🇦🇷", name: "Argentina" },
-	{ iso: "CL", code: "56", flag: "🇨🇱", name: "Chile" },
-	{ iso: "CO", code: "57", flag: "🇨🇴", name: "Colômbia" },
-	{ iso: "MX", code: "52", flag: "🇲🇽", name: "México" },
-	{ iso: "PY", code: "595", flag: "🇵🇾", name: "Paraguai" },
-	{ iso: "UY", code: "598", flag: "🇺🇾", name: "Uruguai" },
-	{ iso: "ES", code: "34", flag: "🇪🇸", name: "Espanha" },
-	{ iso: "FR", code: "33", flag: "🇫🇷", name: "França" },
-	{ iso: "DE", code: "49", flag: "🇩🇪", name: "Alemanha" },
-	{ iso: "IT", code: "39", flag: "🇮🇹", name: "Itália" },
-	{ iso: "GB", code: "44", flag: "🇬🇧", name: "Reino Unido" },
-];
+function flagEmoji(iso: string): string {
+	return String.fromCodePoint(
+		...[...iso.toUpperCase()].map((c) => 127397 + c.charCodeAt(0)),
+	);
+}
 
-const DEFAULT_COUNTRY = phoneCountries[0]!;
+const regionNames = new Intl.DisplayNames(["pt-BR"], { type: "region" });
 
-function findCountryForValue(value: string): Country {
-	if (value.startsWith("+")) {
-		const digits = value.slice(1).replace(/\D/g, "");
-		// Longest dial-code match first (e.g. 598 before 59).
-		const sorted = [...phoneCountries].sort(
-			(a, b) => b.code.length - a.code.length,
-		);
-		for (const c of sorted) {
-			if (digits.startsWith(c.code)) return c;
+export const phoneCountries: PhoneCountry[] = getCountries()
+	.map((iso) => {
+		let code: string;
+		try {
+			code = getCountryCallingCode(iso);
+		} catch {
+			return null;
 		}
-	}
-	return DEFAULT_COUNTRY;
-}
+		return {
+			iso,
+			code,
+			flag: flagEmoji(iso),
+			name: regionNames.of(iso) ?? iso,
+		};
+	})
+	.filter((c): c is PhoneCountry => c !== null)
+	.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
 
-function nationalDigits(value: string, country: Country): string {
-	let digits = value.replace(/\D/g, "");
-	if (value.trim().startsWith("+") && digits.startsWith(country.code)) {
-		digits = digits.slice(country.code.length);
-	}
-	return digits.slice(0, 15);
-}
+const DEFAULT_ISO: CountryCode = "BR";
 
-function formatNational(digits: string, country: Country): string {
-	if (country.iso === "BR") return formatPhone(digits);
-	return digits;
+function countryIsoForValue(value: string): CountryCode {
+	if (value.trim().startsWith("+")) {
+		return parsePhoneNumberFromString(value)?.country ?? DEFAULT_ISO;
+	}
+	return DEFAULT_ISO;
 }
 
 interface PhoneFieldProps {
@@ -70,9 +65,11 @@ interface PhoneFieldProps {
 }
 
 /**
- * Phone input with country selector (flag + dial code).
- * Brazil (+55) is the default. The emitted value is the full
- * international string, e.g. "+55 (11) 99999-9999", or "" when empty.
+ * Phone input with searchable country selector (flag + dial code).
+ * Brazil (+55) is the default. Typing is formatted live with
+ * `AsYouType` using the selected country's rules, and the emitted
+ * value is the normalized E.164 number (e.g. "+5582999999999"),
+ * or "" when empty.
  */
 export function PhoneField({
 	value,
@@ -87,54 +84,61 @@ export function PhoneField({
 	// Country is state, not derived from the value: with an empty number
 	// there is no prefix to parse, so deriving it would snap the selection
 	// back to Brazil on every pick.
-	const [countryCode, setCountryCode] = useState(
-		() => findCountryForValue(raw).code,
-	);
+	const [countryIso, setCountryIso] =
+		useState<CountryCode>(() => countryIsoForValue(raw));
 	const country =
-		phoneCountries.find((c) => c.code === countryCode) ?? DEFAULT_COUNTRY;
+		phoneCountries.find((c) => c.iso === countryIso) ??
+		phoneCountries.find((c) => c.iso === DEFAULT_ISO)!;
 
 	// Follow externally provided values (e.g. loaded answers) that carry
 	// a different country prefix.
 	useEffect(() => {
 		if (raw.trim().startsWith("+")) {
-			const parsed = findCountryForValue(raw);
-			if (parsed.code !== countryCode) setCountryCode(parsed.code);
+			const parsed = countryIsoForValue(raw);
+			if (parsed !== countryIso) setCountryIso(parsed);
 		}
-	}, [raw, countryCode]);
+	}, [raw, countryIso]);
 
 	const national = useMemo(
-		() => formatNational(nationalDigits(raw, country), country),
-		[raw, country],
+		() => new AsYouType(country.iso).input(raw),
+		[raw, country.iso],
 	);
 
-	function emit(nextCountryCode: string, digits: string) {
-		setCountryCode(nextCountryCode);
-		if (!digits) {
+	function emit(nextIso: CountryCode, text: string) {
+		setCountryIso(nextIso);
+		if (!text.replace(/\D/g, "")) {
 			onChange("");
 			return;
 		}
-		const target = phoneCountries.find((c) => c.code === nextCountryCode);
-		onChange(
-			`+${nextCountryCode} ${formatNational(digits, target ?? DEFAULT_COUNTRY)}`,
-		);
+		const formatted = new AsYouType(nextIso).input(text);
+		const parsed =
+			parsePhoneNumberFromString(formatted, nextIso) ??
+			parsePhoneNumberFromString(text, nextIso);
+		onChange(parsed?.number ?? formatted);
 	}
 
 	return (
 		<div className={cn("flex gap-2", className)}>
 			<div className="w-[9.5rem] shrink-0">
 				<Combobox
-					value={country.code}
+					value={country.iso}
 					disabled={disabled}
 					placeholder="País"
 					searchMessage="Buscar país..."
 					emptyMessage="Nenhum país encontrado."
 					items={phoneCountries.map((c) => ({
 						label: `${c.flag} +${c.code}`,
-						value: c.code,
+						value: c.iso,
 						keywords: [c.name, c.iso, c.code, `+${c.code}`],
 					}))}
-					onChange={(code) => {
-						if (code) emit(code, nationalDigits(raw, country));
+					onChange={(iso) => {
+						const next = phoneCountries.find((c) => c.iso === iso);
+						if (!next) return;
+						const current = parsePhoneNumberFromString(
+							raw,
+							country.iso,
+						);
+						emit(next.iso, current?.nationalNumber ?? raw);
 					}}
 				/>
 			</div>
@@ -144,12 +148,7 @@ export function PhoneField({
 				value={national}
 				inputMode="tel"
 				placeholder={placeholder}
-				onChange={(e) =>
-					emit(
-						country.code,
-						e.target.value.replace(/\D/g, "").slice(0, 15),
-					)
-				}
+				onChange={(e) => emit(country.iso, e.target.value)}
 				onBlur={onBlur}
 			/>
 		</div>

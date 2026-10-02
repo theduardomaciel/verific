@@ -14,7 +14,6 @@ export const fieldFormSchema = z.object({
 	max: z.string().optional(),
 	minLength: z.string().optional(),
 	maxLength: z.string().optional(),
-	pattern: z.string().optional(),
 	isVisible: z.boolean().default(true),
 	editableAfterSignup: z.boolean().default(true),
 	halfWidth: z.boolean().default(false),
@@ -34,7 +33,6 @@ export function defaultFieldValues(initial?: Field): FieldFormValues {
 		max: initial?.validation?.max?.toString() ?? "",
 		minLength: initial?.validation?.minLength?.toString() ?? "",
 		maxLength: initial?.validation?.maxLength?.toString() ?? "",
-		pattern: initial?.validation?.pattern ?? "",
 		isVisible: initial?.isVisible ?? true,
 		editableAfterSignup: initial?.editableAfterSignup ?? true,
 		halfWidth: initial?.halfWidth ?? false,
@@ -76,20 +74,14 @@ export function toUpsertFieldInput(
 	const validation =
 		values.type === "number"
 			? { min: num(values.min), max: num(values.max) }
-			: values.type === "text"
+			: values.type === "text" ||
+				  values.type === "textarea" ||
+				  values.type === "email"
 				? {
 						minLength: num(values.minLength),
 						maxLength: num(values.maxLength),
-						// NOTE: `pattern` (regex) is hidden from the builder UI,
-						// but still persisted for backwards compatibility.
-						pattern: values.pattern || undefined,
 					}
-				: values.type === "textarea" || values.type === "email"
-					? {
-							minLength: num(values.minLength),
-							maxLength: num(values.maxLength),
-						}
-					: undefined;
+				: undefined;
 	return {
 		versionId,
 		fieldId: values.fieldId,

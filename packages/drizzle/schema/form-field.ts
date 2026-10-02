@@ -22,7 +22,6 @@ export interface FormFieldValidation {
 	max?: number;
 	minLength?: number;
 	maxLength?: number;
-	pattern?: string;
 }
 
 export interface FormFieldSnapshot {
