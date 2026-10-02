@@ -21,6 +21,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Dialog,
 	DialogContent,
+	DialogDescription,
+	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
@@ -48,6 +50,7 @@ import {
 	PlusIcon,
 	PencilIcon,
 	TrashIcon,
+	PencilRulerIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formFieldTypes } from "@verific/api/schemas";
@@ -761,6 +764,7 @@ export function FormsContent() {
 		"builder",
 	);
 	const [displayFields, setDisplayFields] = useState<Field[]>([]);
+	const [fieldToDelete, setFieldToDelete] = useState<Field | null>(null);
 	const isDraggingRef = useRef(false);
 	const listRef = useRef<HTMLDivElement>(null);
 
@@ -803,6 +807,7 @@ export function FormsContent() {
 		onSuccess: async () => {
 			await utils.getVersion.invalidate();
 			await utils.listVersions.invalidate();
+			setFieldToDelete(null);
 			toast.success("Campo removido!");
 		},
 		onError: (e) => toast.error(e.message),
@@ -911,14 +916,13 @@ export function FormsContent() {
 				<h1 className="text-2xl font-bold">Formulário de inscrição</h1>
 				<div className="flex gap-2">
 					<Button
-						size="sm"
 						variant={tab === "builder" ? "default" : "outline"}
 						onClick={() => setTab("builder")}
 					>
-						Construtor
+						<PencilRulerIcon />
+						Editor
 					</Button>
 					<Button
-						size="sm"
 						variant={tab === "preview" ? "default" : "outline"}
 						onClick={() => setTab("preview")}
 					>
@@ -926,7 +930,6 @@ export function FormsContent() {
 						Pré-visualizar
 					</Button>
 					<Button
-						size="sm"
 						variant={tab === "answers" ? "default" : "outline"}
 						onClick={() => setTab("answers")}
 					>
@@ -1200,11 +1203,8 @@ export function FormsContent() {
 																size="sm"
 																variant="ghost"
 																onClick={() =>
-																	deleteField.mutate(
-																		{
-																			fieldId:
-																				f.id,
-																		},
+																	setFieldToDelete(
+																		f,
 																	)
 																}
 															>
@@ -1223,6 +1223,54 @@ export function FormsContent() {
 					)}
 				</>
 			)}
+			<Dialog
+				open={!!fieldToDelete}
+				onOpenChange={(open) => {
+					if (!open) setFieldToDelete(null);
+				}}
+			>
+				<DialogContent className="sm:max-w-[440px]">
+					<DialogHeader>
+						<DialogTitle>Excluir campo</DialogTitle>
+						<DialogDescription>
+							{fieldToDelete ? (
+								<>
+									Tem certeza que deseja excluir o campo{" "}
+									<span className="font-semibold">
+										“{fieldToDelete.label}”
+									</span>
+									? Essa ação não pode ser desfeita.
+								</>
+							) : (
+								"Tem certeza que deseja excluir este campo? Essa ação não pode ser desfeita."
+							)}
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setFieldToDelete(null)}
+							disabled={deleteField.isPending}
+						>
+							Cancelar
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={() => {
+								if (fieldToDelete)
+									deleteField.mutate({
+										fieldId: fieldToDelete.id,
+									});
+							}}
+							disabled={deleteField.isPending}
+						>
+							{deleteField.isPending
+								? "Excluindo..."
+								: "Excluir campo"}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }
