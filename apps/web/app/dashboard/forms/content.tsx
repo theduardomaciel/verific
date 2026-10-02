@@ -39,6 +39,8 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { GripVertical } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { formFieldTypes } from "@verific/api/schemas";
 import { downloadCsv, toCsv } from "@/lib/forms/csv";
 import { formatAnswerValue } from "@verific/api/schemas";
@@ -53,7 +55,6 @@ const fieldFormSchema = z.object({
 	type: z.enum(formFieldTypes),
 	helpText: z.string().max(500).optional(),
 	required: z.boolean().default(false),
-	order: z.coerce.number().int().default(0),
 	optionsText: z.string().optional(),
 	min: z.string().optional(),
 	max: z.string().optional(),
@@ -69,12 +70,10 @@ type FieldFormValues = z.infer<typeof fieldFormSchema>;
 function FieldDialog({
 	versionId,
 	initial,
-	nextOrder,
 	onDone,
 }: {
 	versionId: string;
 	initial?: Field;
-	nextOrder: number;
 	onDone: () => void;
 }) {
 	const [open, setOpen] = useState(false);
@@ -99,7 +98,6 @@ function FieldDialog({
 			type: (initial?.type as FieldFormValues["type"]) ?? "text",
 			helpText: initial?.helpText ?? "",
 			required: initial?.required ?? false,
-			order: initial?.order ?? nextOrder,
 			optionsText: (initial?.options ?? []).join("\n"),
 			min: initial?.validation?.min?.toString() ?? "",
 			max: initial?.validation?.max?.toString() ?? "",
@@ -145,7 +143,6 @@ function FieldDialog({
 			type: values.type,
 			helpText: values.helpText || null,
 			required: values.required,
-			order: Number(values.order) || 0,
 			options,
 			validation,
 			isVisible: values.isVisible,
@@ -179,47 +176,32 @@ function FieldDialog({
 								</FormItem>
 							)}
 						/>
-						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-							<FormField
-								control={form.control}
-								name="type"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Tipo *</FormLabel>
-										<Select value={field.value} onValueChange={field.onChange}>
-											<FormControl>
-												<SelectTrigger>
-													<SelectValue />
-												</SelectTrigger>
-											</FormControl>
-											<SelectContent>
-												<SelectItem value="text">Texto curto</SelectItem>
-												<SelectItem value="textarea">Texto longo</SelectItem>
-												<SelectItem value="number">Número</SelectItem>
-												<SelectItem value="date">Data</SelectItem>
-												<SelectItem value="select_single">Seleção única</SelectItem>
-												<SelectItem value="select_multiple">Múltipla seleção</SelectItem>
-												<SelectItem value="checkbox">Checkbox</SelectItem>
-											</SelectContent>
-										</Select>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<FormField
-								control={form.control}
-								name="order"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Ordem</FormLabel>
+						<FormField
+							control={form.control}
+							name="type"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Tipo *</FormLabel>
+									<Select value={field.value} onValueChange={field.onChange}>
 										<FormControl>
-											<Input type="number" {...field} />
+											<SelectTrigger>
+												<SelectValue />
+											</SelectTrigger>
 										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-						</div>
+										<SelectContent>
+											<SelectItem value="text">Texto curto</SelectItem>
+											<SelectItem value="textarea">Texto longo</SelectItem>
+											<SelectItem value="number">Número</SelectItem>
+											<SelectItem value="date">Data</SelectItem>
+											<SelectItem value="select_single">Seleção única</SelectItem>
+											<SelectItem value="select_multiple">Múltipla seleção</SelectItem>
+											<SelectItem value="checkbox">Checkbox</SelectItem>
+										</SelectContent>
+									</Select>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
 						<FormField
 							control={form.control}
 							name="helpText"
@@ -459,6 +441,8 @@ export function FormsContent() {
 	const versionsQuery = trpc.listVersions.useQuery({ projectId });
 	const [selectedId, setSelectedId] = useState<string | null>(null);
 	const [tab, setTab] = useState<"builder" | "answers">("builder");
+	const [dragIndex, setDragIndex] = useState<number | null>(null);
+	const [dropIndex, setDropIndex] = useState<number | null>(null);
 
 	const versions: Version[] = useMemo(() => versionsQuery.data ?? [], [versionsQuery.data]);
 
@@ -526,6 +510,21 @@ export function FormsContent() {
 		const [item] = next.splice(index, 1);
 		next.splice(j, 0, item!);
 		reorderFields.mutate({ versionId: selectedId, orderedIds: next.map((f) => f.id) });
+	}
+
+	function handleFieldDrop(target: number) {
+		if (!selectedId) return;
+		if (dragIndex === null || dragIndex === target) {
+			setDragIndex(null);
+			setDropIndex(null);
+			return;
+		}
+		const next = [...fields];
+		const [item] = next.splice(dragIndex, 1);
+		next.splice(target, 0, item!);
+		reorderFields.mutate({ versionId: selectedId, orderedIds: next.map((f) => f.id) });
+		setDragIndex(null);
+		setDropIndex(null);
 	}
 
 	return (
@@ -602,7 +601,6 @@ export function FormsContent() {
 									{!isPublished && (
 										<FieldDialog
 											versionId={selected.id}
-											nextOrder={fields.length}
 											onDone={() => undefined}
 										/>
 									)}
@@ -620,7 +618,39 @@ export function FormsContent() {
 									<p className="text-muted-foreground text-sm">Nenhum campo. Adicione o primeiro campo acima.</p>
 								) : (
 									fields.map((f, i) => (
-										<div key={f.id} className="flex flex-col gap-1 rounded-lg border p-3 md:flex-row md:items-center md:justify-between">
+										<div
+											key={f.id}
+											draggable={!isPublished}
+											onDragStart={(e) => {
+												e.dataTransfer.setData("text/plain", String(i));
+												e.dataTransfer.effectAllowed = "move";
+												setDragIndex(i);
+											}}
+											onDragOver={(e) => {
+												e.preventDefault();
+												e.dataTransfer.dropEffect = "move";
+												if (dropIndex !== i) setDropIndex(i);
+											}}
+											onDragLeave={() => setDropIndex((v) => (v === i ? null : v))}
+											onDrop={(e) => {
+												e.preventDefault();
+												handleFieldDrop(i);
+											}}
+											onDragEnd={() => {
+												setDragIndex(null);
+												setDropIndex(null);
+											}}
+											className={cn(
+												"flex flex-col gap-1 rounded-lg border p-3 md:flex-row md:items-center md:justify-between",
+												dragIndex === i && "opacity-50",
+												dropIndex === i && dragIndex !== null && dragIndex !== i && "border-primary ring-1 ring-primary",
+											)}
+										>
+											{!isPublished && (
+												<span title="Arrastar para reordenar" className="cursor-grab touch-none text-muted-foreground active:cursor-grabbing">
+													<GripVertical className="h-5 w-5" />
+												</span>
+											)}
 											<div>
 												<div className="flex items-center gap-2 font-semibold">
 													{f.label}
@@ -629,7 +659,7 @@ export function FormsContent() {
 													{!f.isActive && <Badge variant="outline">Inativo</Badge>}
 												</div>
 												<div className="text-muted-foreground text-xs">
-													{f.type} • ordem {f.order}
+													{f.type}
 													{f.helpText ? ` • ${f.helpText}` : ""}
 													{(f.options ?? []).length > 0 ? ` • opções: ${(f.options ?? []).join(", ")}` : ""}
 												</div>
@@ -642,7 +672,6 @@ export function FormsContent() {
 													<Button size="sm" variant="outline" disabled={i === fields.length - 1} onClick={() => move(i, 1)}>
 														↓
 													</Button>
-													<FieldDialog versionId={selected.id} initial={f} nextOrder={f.order} onDone={() => undefined} />
 													<Button size="sm" variant="ghost" onClick={() => deleteField.mutate({ fieldId: f.id })}>
 														Excluir
 													</Button>

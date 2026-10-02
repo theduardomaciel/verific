@@ -258,7 +258,6 @@ export const formsRouter = createTRPCRouter({
 						type: input.type,
 						helpText: input.helpText ?? null,
 						required: input.required,
-						order: input.order,
 						options: input.options ?? null,
 						validation: input.validation ?? null,
 						isVisible: input.isVisible,
@@ -271,6 +270,11 @@ export const formsRouter = createTRPCRouter({
 			}
 			const baseKey = input.key?.trim() || slugifyKey(input.label);
 			const key = await resolveUniqueKey(input.versionId, baseKey);
+			const orderRows = await db.query.formField.findMany({
+				where: eq(formField.formVersionId, input.versionId),
+				columns: { order: true },
+			});
+			const nextOrder = orderRows.reduce((max, r) => Math.max(max, r.order), -1) + 1;
 			const created = await db
 				.insert(formField)
 				.values({
@@ -281,7 +285,7 @@ export const formsRouter = createTRPCRouter({
 					type: input.type,
 					helpText: input.helpText ?? null,
 					required: input.required,
-					order: input.order,
+					order: nextOrder,
 					options: input.options ?? null,
 					validation: input.validation ?? null,
 					isVisible: input.isVisible,
