@@ -41,12 +41,13 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { GripVertical } from "lucide-react";
+import { GripVertical, Eye, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formFieldTypes } from "@verific/api/schemas";
 import { downloadCsv, toCsv } from "@/lib/forms/csv";
 import { formatAnswerValue } from "@verific/api/schemas";
 import { findOrphanHalfIds, groupFieldsIntoRows } from "@/lib/forms/layout";
+import { FormPreview } from "./preview";
 import type { RouterOutput } from "@verific/api";
 
 type Version = RouterOutput["listVersions"][number];
@@ -581,7 +582,7 @@ export function FormsContent() {
 	const utils = trpc.useUtils();
 	const versionsQuery = trpc.listVersions.useQuery({ projectId });
 	const [selectedId, setSelectedId] = useState<string | null>(null);
-	const [tab, setTab] = useState<"builder" | "answers">("builder");
+	const [tab, setTab] = useState<"builder" | "preview" | "answers">("builder");
 	const [displayFields, setDisplayFields] = useState<Field[]>([]);
 	const isDraggingRef = useRef(false);
 	const listRef = useRef<HTMLDivElement>(null);
@@ -714,6 +715,10 @@ export function FormsContent() {
 					<Button size="sm" variant={tab === "builder" ? "default" : "outline"} onClick={() => setTab("builder")}>
 						Construtor
 					</Button>
+					<Button size="sm" variant={tab === "preview" ? "default" : "outline"} onClick={() => setTab("preview")}>
+						<Eye className="h-4 w-4" />
+						Pré-visualizar
+					</Button>
 					<Button size="sm" variant={tab === "answers" ? "default" : "outline"} onClick={() => setTab("answers")}>
 						Respostas
 					</Button>
@@ -722,6 +727,8 @@ export function FormsContent() {
 
 			{tab === "answers" ? (
 				<AnswersPanel projectId={projectId} />
+			) : tab === "preview" ? (
+				<FormPreview fields={fields} />
 			) : (
 				<>
 					<Card>
@@ -793,10 +800,30 @@ export function FormsContent() {
 								</div>
 							</CardHeader>
 							<CardContent className="flex flex-col gap-3">
+								<div className="flex flex-col gap-3 rounded-lg border border-dashed bg-muted/40 p-3 md:flex-row md:items-center md:justify-between">
+									<div className="flex min-w-0 flex-1 items-start gap-2">
+										<span
+											title="Campo fixo do sistema"
+											className="mt-0.5 shrink-0 rounded p-1 text-muted-foreground"
+										>
+											<Lock className="h-5 w-5" />
+										</span>
+										<div className="min-w-0 flex-1">
+											<div className="flex flex-wrap items-center gap-2 font-semibold">
+												<span className="truncate">Nome completo</span>
+												<Badge>Obrigatório</Badge>
+												<Badge variant="outline">Fixo</Badge>
+											</div>
+											<div className="mt-1 truncate text-xs text-muted-foreground">
+												Coletado em toda inscrição • não pode ser editado, movido ou removido
+											</div>
+										</div>
+									</div>
+								</div>
 								{versionQuery.isPending ? (
 									<Skeleton className="h-40 w-full" />
 								) : fields.length === 0 ? (
-									<p className="text-muted-foreground text-sm">Nenhum campo. Adicione o primeiro campo acima.</p>
+									<p className="text-muted-foreground text-sm">Nenhum campo adicional. O nome completo acima é sempre coletado.</p>
 								) : (
 									<DragDropProvider
 										key={selected.id}
