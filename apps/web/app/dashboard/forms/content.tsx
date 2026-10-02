@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "@verific/zod";
 import { toast } from "sonner";
+import { DragDropProvider } from "@dnd-kit/react";
+import { isSortable, useSortable } from "@dnd-kit/react/sortable";
 
 import { useDashboard } from "@/components/dashboard/dashboard-context";
 import { trpc } from "@/lib/trpc/react";
@@ -114,6 +116,26 @@ function FieldDialog({
 	const showNumberRange = watchedType === "number";
 	const showTextLength = watchedType === "text" || watchedType === "textarea";
 	const showPattern = watchedType === "text";
+
+	useEffect(() => {
+		if (open) {
+			form.reset({
+				fieldId: initial?.id,
+				label: initial?.label ?? "",
+				type: (initial?.type as FieldFormValues["type"]) ?? "text",
+				helpText: initial?.helpText ?? "",
+				required: initial?.required ?? false,
+				optionsText: (initial?.options ?? []).join("\n"),
+				min: initial?.validation?.min?.toString() ?? "",
+				max: initial?.validation?.max?.toString() ?? "",
+				minLength: initial?.validation?.minLength?.toString() ?? "",
+				maxLength: initial?.validation?.maxLength?.toString() ?? "",
+				pattern: initial?.validation?.pattern ?? "",
+				isVisible: initial?.isVisible ?? true,
+				editableAfterSignup: initial?.editableAfterSignup ?? true,
+			} as FieldFormValues);
+		}
+	}, [open, initial, form]);
 
 	function submit(values: FieldFormValues) {
 		const num = (v?: string) => (v && v.trim() !== "" ? Number(v) : undefined);
@@ -348,6 +370,67 @@ function FieldDialog({
 	);
 }
 
+function SortableFieldRow({
+	field,
+	index,
+	disabled,
+	actions,
+}: {
+	field: Field;
+	index: number;
+	disabled: boolean;
+	actions?: React.ReactNode;
+}) {
+	const { ref, handleRef, isDragging, isDropTarget } = useSortable({
+		id: field.id,
+		index,
+		disabled,
+		type: "form-field",
+		accept: "form-field",
+		transition: { duration: 200, easing: "ease-in-out" },
+	});
+
+	return (
+		<div
+			ref={ref}
+			className={cn(
+				"flex flex-col gap-3 rounded-lg border bg-card p-3 transition-all duration-200 ease-in-out",
+				"md:flex-row md:items-center md:justify-between",
+				isDragging && "z-10 scale-[0.99] border-primary/60 opacity-60 shadow-lg",
+				isDropTarget && !isDragging && "border-primary shadow-md ring-2 ring-primary/30",
+			)}
+		>
+			<div className="flex min-w-0 flex-1 items-start gap-2">
+				{!disabled && (
+					<span
+						ref={handleRef}
+						title="Arrastar para reordenar"
+						className="mt-0.5 shrink-0 cursor-grab touch-none rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:cursor-grabbing"
+					>
+						<GripVertical className="h-5 w-5" />
+					</span>
+				)}
+				<div className="min-w-0 flex-1">
+					<div className="flex flex-wrap items-center gap-2 font-semibold">
+						<span className="truncate">{field.label}</span>
+						{field.required && <Badge>Obrigatório</Badge>}
+						{!field.isVisible && <Badge variant="outline">Oculto</Badge>}
+						{!field.isActive && <Badge variant="outline">Inativo</Badge>}
+					</div>
+					<div className="mt-1 truncate text-xs text-muted-foreground">
+						{field.type}
+						{field.helpText ? ` • ${field.helpText}` : ""}
+						{(field.options ?? []).length > 0 ? ` • opções: ${(field.options ?? []).join(", ")}` : ""}
+					</div>
+				</div>
+			</div>
+			{!disabled && actions && (
+				<div className="flex shrink-0 items-center gap-1 pl-9 md:pl-0">{actions}</div>
+			)}
+		</div>
+	);
+}
+
 function AnswersPanel({ projectId }: { projectId: string }) {
 	const [query, setQuery] = useState("");
 	const [page, setPage] = useState(1);
@@ -441,8 +524,8 @@ export function FormsContent() {
 	const versionsQuery = trpc.listVersions.useQuery({ projectId });
 	const [selectedId, setSelectedId] = useState<string | null>(null);
 	const [tab, setTab] = useState<"builder" | "answers">("builder");
-	const [dragIndex, setDragIndex] = useState<number | null>(null);
-	const [dropIndex, setDropIndex] = useState<number | null>(null);
+	const [displayFields, setDisplayFields] = useState<Field[]>([]);
+	const isDraggingRef = useRef(false);
 
 	const versions: Version[] = useMemo(() => versionsQuery.data ?? [], [versionsQuery.data]);
 
@@ -490,41 +573,47 @@ export function FormsContent() {
 		onError: (e) => toast.error(e.message),
 	});
 
+	const serverFields: Field[] = useMemo(
+		() => (versionQuery.data?.fields ?? []).slice().sort((a, b) => a.order - b.order),
+		[versionQuery.data],
+	);
+
+	useEffect(() => {
+		if (!isDraggingRef.current) {
+			setDisplayFields(serverFields);
+		}
+	}, [serverFields]);
+
+	useEffect(() => {
+		setDisplayFields([]);
+	}, [selectedId]);
+
+	const fields = displayFields;
+	const selected = versions.find((v) => v.id === selectedId) ?? null;
+	const isPublished = !!selected?.isPublished;
+
+	function persistOrder(next: Field[]) {
+		if (!selectedId) return;
+		setDisplayFields(next);
+		reorderFields.mutate({ versionId: selectedId, orderedIds: next.map((f) => f.id) });
+	}
+
+	function move(index: number, dir: -1 | 1) {
+		const next = [...fields];
+		const j = index + dir;
+		if (j < 0 || j >= next.length) return;
+		const [item] = next.splice(index, 1);
+		if (!item) return;
+		next.splice(j, 0, item);
+		persistOrder(next);
+	}
+
 	if (versionsQuery.isPending) {
 		return (
 			<div className="container-d py-container-v min-h-screen">
 				<Skeleton className="h-96 w-full" />
 			</div>
 		);
-	}
-
-	const selected = versions.find((v) => v.id === selectedId) ?? null;
-	const fields: Field[] = (versionQuery.data?.fields ?? []).slice().sort((a, b) => a.order - b.order);
-	const isPublished = !!selected?.isPublished;
-
-	function move(index: number, dir: -1 | 1) {
-		if (!selectedId) return;
-		const next = [...fields];
-		const j = index + dir;
-		if (j < 0 || j >= next.length) return;
-		const [item] = next.splice(index, 1);
-		next.splice(j, 0, item!);
-		reorderFields.mutate({ versionId: selectedId, orderedIds: next.map((f) => f.id) });
-	}
-
-	function handleFieldDrop(target: number) {
-		if (!selectedId) return;
-		if (dragIndex === null || dragIndex === target) {
-			setDragIndex(null);
-			setDropIndex(null);
-			return;
-		}
-		const next = [...fields];
-		const [item] = next.splice(dragIndex, 1);
-		next.splice(target, 0, item!);
-		reorderFields.mutate({ versionId: selectedId, orderedIds: next.map((f) => f.id) });
-		setDragIndex(null);
-		setDropIndex(null);
 	}
 
 	return (
@@ -617,68 +706,70 @@ export function FormsContent() {
 								) : fields.length === 0 ? (
 									<p className="text-muted-foreground text-sm">Nenhum campo. Adicione o primeiro campo acima.</p>
 								) : (
-									fields.map((f, i) => (
-										<div
-											key={f.id}
-											draggable={!isPublished}
-											onDragStart={(e) => {
-												e.dataTransfer.setData("text/plain", String(i));
-												e.dataTransfer.effectAllowed = "move";
-												setDragIndex(i);
-											}}
-											onDragOver={(e) => {
-												e.preventDefault();
-												e.dataTransfer.dropEffect = "move";
-												if (dropIndex !== i) setDropIndex(i);
-											}}
-											onDragLeave={() => setDropIndex((v) => (v === i ? null : v))}
-											onDrop={(e) => {
-												e.preventDefault();
-												handleFieldDrop(i);
-											}}
-											onDragEnd={() => {
-												setDragIndex(null);
-												setDropIndex(null);
-											}}
-											className={cn(
-												"flex flex-col gap-1 rounded-lg border p-3 md:flex-row md:items-center md:justify-between",
-												dragIndex === i && "opacity-50",
-												dropIndex === i && dragIndex !== null && dragIndex !== i && "border-primary ring-1 ring-primary",
-											)}
-										>
-											{!isPublished && (
-												<span title="Arrastar para reordenar" className="cursor-grab touch-none text-muted-foreground active:cursor-grabbing">
-													<GripVertical className="h-5 w-5" />
-												</span>
-											)}
-											<div>
-												<div className="flex items-center gap-2 font-semibold">
-													{f.label}
-													{f.required && <Badge>Obrigatório</Badge>}
-													{!f.isVisible && <Badge variant="outline">Oculto</Badge>}
-													{!f.isActive && <Badge variant="outline">Inativo</Badge>}
-												</div>
-												<div className="text-muted-foreground text-xs">
-													{f.type}
-													{f.helpText ? ` • ${f.helpText}` : ""}
-													{(f.options ?? []).length > 0 ? ` • opções: ${(f.options ?? []).join(", ")}` : ""}
-												</div>
-											</div>
-											{!isPublished && (
-												<div className="flex gap-1">
-													<Button size="sm" variant="outline" disabled={i === 0} onClick={() => move(i, -1)}>
-														↑
-													</Button>
-													<Button size="sm" variant="outline" disabled={i === fields.length - 1} onClick={() => move(i, 1)}>
-														↓
-													</Button>
-													<Button size="sm" variant="ghost" onClick={() => deleteField.mutate({ fieldId: f.id })}>
-														Excluir
-													</Button>
-												</div>
-											)}
-										</div>
-									))
+									<DragDropProvider
+										key={selected.id}
+										onDragStart={() => {
+											isDraggingRef.current = true;
+										}}
+										onDragEnd={(event) => {
+											isDraggingRef.current = false;
+											if (event.canceled) {
+												setDisplayFields(serverFields);
+												return;
+											}
+											const { source } = event.operation;
+											if (isSortable(source)) {
+												const { initialIndex, index } = source;
+												if (initialIndex !== index) {
+													const next = [...displayFields];
+													const [moved] = next.splice(initialIndex, 1);
+													if (!moved) {
+														setDisplayFields(serverFields);
+														return;
+													}
+													next.splice(index, 0, moved);
+													persistOrder(next);
+												}
+											}
+										}}
+									>
+										{fields.map((f, i) => (
+											<SortableFieldRow
+												key={f.id}
+												field={f}
+												index={i}
+												disabled={isPublished}
+												actions={
+													<>
+														<Button size="sm" variant="outline" disabled={i === 0} onClick={() => move(i, -1)}>
+															↑
+														</Button>
+														<Button
+															size="sm"
+															variant="outline"
+															disabled={i === fields.length - 1}
+															onClick={() => move(i, 1)}
+														>
+															↓
+														</Button>
+														<FieldDialog
+															key={f.id}
+															versionId={selected.id}
+															initial={f}
+															onDone={() => undefined}
+														/>
+														<Button
+															size="sm"
+															variant="ghost"
+															onClick={() => deleteField.mutate({ fieldId: f.id })}
+														>
+															Excluir
+														</Button>
+													</>
+												}
+											/>
+										))}
+									</DragDropProvider>
 								)}
 								{isPublished && (
 									<p className="text-muted-foreground text-xs">
