@@ -49,7 +49,7 @@ export const isAfterEnd = (endDate: Date) => {
 
 export const calculateWorkloadFromTimes = (
 	timeFrom: string | undefined,
-	timeTo: string | undefined
+	timeTo: string | undefined,
 ): number | undefined => {
 	if (timeFrom && timeTo) {
 		const [fromHoursStr, fromMinutesStr] = timeFrom.split(":");
@@ -71,26 +71,137 @@ export const calculateWorkloadFromTimes = (
 	}
 
 	return undefined;
+};
+
+/* -------------------------------------------------------------------------- */
+/*                            Multi-session helpers                           */
+/* -------------------------------------------------------------------------- */
+
+export interface ActivitySessionLike {
+	startsAt: Date;
+	endsAt: Date;
+	address?: string | null;
+	joinedAt?: Date | null;
 }
 
-/* 
-	Uma atividade está "ao vivo" se a data atual estiver entre a data de início e a data de término da atividade.
-*/
-export const isLive = (date: Date): boolean => {
-	const now = Date.now();
-	const startTime = new Date(date).getTime();
-	const endTime = startTime + 60 * 60 * 1000; // 1 hora de duração
-	return now >= startTime && now <= endTime;
+const toDate = (date: Date | string) => new Date(date);
+
+/** Earliest session start, or null when there are no sessions. */
+export const getFirstSessionStart = (
+	sessions: ActivitySessionLike[] | undefined | null,
+): Date | null => {
+	if (!sessions || sessions.length === 0) return null;
+	return sessions.reduce((min, s) =>
+		toDate(s.startsAt) < min ? toDate(s.startsAt) : min,
+		toDate(sessions[0]!.startsAt),
+	);
 };
 
-/* 
-	Uma atividade está "começando em instantes" se estiver para começar nos próximos 15 minutos.
-*/
-export const isStartingSoon = (date: Date): boolean => {
-	const now = Date.now();
-	const startTime = new Date(date).getTime();
-	return startTime > now && startTime - now <= 15 * 60 * 1000;
+/** Latest session end, or null when there are no sessions. */
+export const getLastSessionEnd = (
+	sessions: ActivitySessionLike[] | undefined | null,
+): Date | null => {
+	if (!sessions || sessions.length === 0) return null;
+	return sessions.reduce((max, s) =>
+		toDate(s.endsAt) > max ? toDate(s.endsAt) : max,
+		toDate(sessions[0]!.endsAt),
+	);
 };
+
+export const getSessionsSorted = <T extends ActivitySessionLike>(
+	sessions: T[] | undefined | null,
+): T[] => {
+	return [...(sessions ?? [])].sort(
+		(a, b) => toDate(a.startsAt).getTime() - toDate(b.startsAt).getTime(),
+	);
+};
+
+/** "12/05" for one day, "12/05 - 14/05" across days. */
+export const getSessionsDateString = (
+	sessions: ActivitySessionLike[] | undefined | null,
+): string => {
+	const sorted = getSessionsSorted(sessions);
+	if (sorted.length === 0) return "";
+	return getDateString(sorted[0]!.startsAt, sorted[sorted.length - 1]!.endsAt);
+};
+
+/** "14h - 16h" for a single session. */
+export const getSessionTimeString = (
+	session: ActivitySessionLike,
+	asHourFormat = true,
+): string => {
+	return `${getTimeString(session.startsAt, asHourFormat)} - ${getTimeString(session.endsAt, asHourFormat)}`;
+};
+
+/** True when `now` falls inside any session. */
+export const isSessionLive = (
+	session: Pick<ActivitySessionLike, "startsAt" | "endsAt">,
+	now: Date = new Date(),
+): boolean => {
+	return now >= toDate(session.startsAt) && now <= toDate(session.endsAt);
+};
+
+export const getLiveSession = <T extends ActivitySessionLike>(
+	sessions: T[] | undefined | null,
+	now: Date = new Date(),
+): T | null => {
+	return getSessionsSorted(sessions).find((s) => isSessionLive(s, now)) ?? null;
+};
+
+export const getNextSession = <T extends ActivitySessionLike>(
+	sessions: T[] | undefined | null,
+	now: Date = new Date(),
+): T | null => {
+	return (
+		getSessionsSorted(sessions).find((s) => toDate(s.startsAt) > now) ?? null
+	);
+};
+
+/** True when every session already ended. */
+export const hasEverySessionEnded = (
+	sessions: ActivitySessionLike[] | undefined | null,
+	now: Date = new Date(),
+): boolean => {
+	const lastEnd = getLastSessionEnd(sessions);
+	return lastEnd !== null && now > lastEnd;
+};
+
+/** Sum of session durations in hours, rounded to 2 decimals. */
+export const sumSessionsHours = (
+	sessions: Array<{ startsAt: Date; endsAt: Date }>,
+): number => {
+	const total = sessions.reduce(
+		(acc, s) =>
+			acc + (toDate(s.endsAt).getTime() - toDate(s.startsAt).getTime()) / 3_600_000,
+		0,
+	);
+	return Math.round(total * 100) / 100;
+};
+
+/**
+ * Expands activities into one occurrence per session, for day-grouped views.
+ * Occurrences are sorted by session start.
+ */
+export function expandSessionOccurrences<T extends { sessions?: ActivitySessionLike[] | null }>(
+	activities: T[],
+): Array<{ activity: T; session: ActivitySessionLike; sessionIndex: number; sessionCount: number }> {
+	return activities
+		.flatMap((activity) =>
+			getSessionsSorted(activity.sessions).map((session, sessionIndex) => ({
+				activity,
+				session,
+				sessionIndex,
+				sessionCount: activity.sessions?.length ?? 0,
+			})),
+		)
+		.sort(
+			(a, b) =>
+				toDate(a.session.startsAt).getTime() -
+				toDate(b.session.startsAt).getTime(),
+		);
+}
+
+/* --------------- Categorization --------------- */
 
 export const isToday = (date: Date): boolean => {
 	return new Date(date).toDateString() === new Date().toDateString();

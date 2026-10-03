@@ -13,14 +13,16 @@ import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc/react";
 
 interface Props {
-	activityId: string;
+	sessionId: string;
+	buttonLabel?: string;
 }
 
-export function BadgeScanner({ activityId }: Props) {
+export function BadgeScanner({ sessionId, buttonLabel }: Props) {
 	const [isLoading, setIsLoading] = useState(false);
 	const [open, setOpen] = useState(false);
 
-	const mutation = trpc.updateParticipantPresence.useMutation();
+	const utils = trpc.useUtils();
+	const mutation = trpc.updateSessionPresence.useMutation();
 
 	async function handleScan(result: IDetectedBarcode[]) {
 		setIsLoading(true);
@@ -36,24 +38,29 @@ export function BadgeScanner({ activityId }: Props) {
 		try {
 			await mutation.mutateAsync({
 				participantId,
-				activityId,
+				sessionId,
 			});
+
+			await Promise.all([
+				utils.getActivitiesFromParticipant.invalidate(),
+				utils.getActivity.invalidate(),
+			]);
 
 			console.log(result);
 			toast.success("Participante credenciado com sucesso!");
 			setOpen(false);
 		} catch (error) {
-			console.error("Error updating participant presence:", error);
+			console.error("Error updating session presence:", error);
 			toast.error("Erro ao credenciar o participante.");
+		} finally {
 			setIsLoading(false);
-			return;
 		}
 	}
 
 	return (
 		<>
 			<Button
-				className="flex w-full md:hidden"
+				className="flex w-full"
 				size="lg"
 				onClick={() => {
 					console.log("abrindo");
@@ -61,7 +68,7 @@ export function BadgeScanner({ activityId }: Props) {
 				}}
 			>
 				<BarcodeIcon />
-				Escanear crachás
+				{buttonLabel ?? "Escanear crachás"}
 			</Button>
 			<FullScreenDrawer
 				open={open}

@@ -50,6 +50,27 @@
       "when": 1791300000000,
       "tag": "0006_conditional_sections",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791061725612,
+      "tag": "0007_broad_blockbuster",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791061889152,
+      "tag": "0008_romantic_jigsaw",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791062352407,
+      "tag": "0009_bumpy_clea",
+      "breakpoints": true
     }
   ]
 }

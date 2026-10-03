@@ -67,7 +67,7 @@ export function SimpleActivityCard({ activity, className }: ActivityCardProps) {
 			>
 				<CategoryLabel category={activity.category} />
 				<ActivityStatus
-					date={activity.dateFrom}
+					sessions={activity.sessions}
 					dateFormat={{ includeDay: true, includeHour: true }}
 				/>
 			</div>
@@ -104,7 +104,7 @@ export function ActivityCard({ activity, className }: ActivityCardProps) {
 						</h3>
 						<span className="text-muted-foreground ml-8 shrink-0 text-sm">
 							<ActivityStatus
-								date={activity.dateFrom}
+								sessions={activity.sessions}
 								dateFormat={{
 									includeDay: true,
 									includeHour: true,

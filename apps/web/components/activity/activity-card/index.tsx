@@ -19,6 +19,7 @@ import { RouterOutput } from "@verific/api";
 
 // Lib
 import { activityCategoryLabels } from "@verific/drizzle/schema";
+import { hasEverySessionEnded, type ActivitySessionLike } from "@/lib/date";
 
 interface EventCardProps {
 	className?: string;
@@ -26,6 +27,9 @@ interface EventCardProps {
 	participantId?: string;
 	userId?: string;
 	lowSeatsThreshold?: number;
+	/** When rendered as one day of a multi-session activity. */
+	occurrenceSession?: ActivitySessionLike | null;
+	occurrenceLabel?: string | null;
 }
 
 export function ActivityCard({
@@ -34,12 +38,15 @@ export function ActivityCard({
 	userId,
 	className,
 	lowSeatsThreshold = 7,
+	occurrenceSession,
+	occurrenceLabel,
 }: EventCardProps) {
 	const remainingSeats = activity.participantsLimit
 		? activity.participantsLimit - activity.participantsCount
 		: null;
 
 	const hasRemainingSeats = remainingSeats === null || remainingSeats > 0;
+	const hasEnded = hasEverySessionEnded(activity.sessions);
 
 	return (
 		<>
@@ -48,8 +55,7 @@ export function ActivityCard({
 				className={cn(
 					"bg-card flex flex-col justify-between gap-4 rounded-lg border p-6",
 					{
-						"pointer-events-none opacity-50 select-none":
-							new Date(activity.dateTo) < new Date(),
+						"pointer-events-none opacity-50 select-none": hasEnded,
 					},
 					className,
 				)}
@@ -82,6 +88,11 @@ export function ActivityCard({
 					</div>
 
 					<h3 className="text-lg font-bold">{activity.name}</h3>
+					{occurrenceLabel ? (
+						<span className="text-muted-foreground text-sm font-medium">
+							{occurrenceLabel}
+						</span>
+					) : null}
 					{activity.description && (
 						<ExpandableDescription activity={activity} />
 					)}
@@ -92,7 +103,10 @@ export function ActivityCard({
 				) : null}
 
 				<div className="mt-auto flex flex-col flex-wrap items-start justify-center gap-4 md:flex-row-reverse md:items-center md:justify-between">
-					<ActivityCardTags activity={activity} />
+					<ActivityCardTags
+						activity={activity}
+						highlightSession={occurrenceSession}
+					/>
 					<div className="flex flex-row items-center justify-start gap-4">
 						{activity.workload &&
 						activity.workload > 0 &&
@@ -126,7 +140,7 @@ export function ActivityCard({
 						) : null}
 						{!!participantId &&
 							!!userId &&
-							new Date(activity.dateTo) > new Date() && (
+							!hasEnded && (
 								<ParticipantQuitButton
 									activityId={activity.id}
 									userId={userId}

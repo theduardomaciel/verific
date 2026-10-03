@@ -26,6 +26,7 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { activityCategoryLabels } from "@verific/drizzle/enum/category";
+import { getFirstSessionStart } from "@/lib/date";
 
 type ReleasableActivity = RouterOutput["getReleasableActivities"][number];
 type GroupBy = "day" | "category" | "tag";
@@ -66,7 +67,8 @@ function buildGroups(
 ): Group[] {
 	const sorted = [...activities].sort(
 		(a, b) =>
-			new Date(a.dateFrom).getTime() - new Date(b.dateFrom).getTime(),
+			(getFirstSessionStart(a.sessions)?.getTime() ?? 0) -
+			(getFirstSessionStart(b.sessions)?.getTime() ?? 0),
 	);
 
 	const map = new Map<string, Group>();
@@ -79,7 +81,8 @@ function buildGroups(
 
 	for (const activity of sorted) {
 		if (groupBy === "day") {
-			const date = new Date(activity.dateFrom);
+			const firstStart = getFirstSessionStart(activity.sessions);
+			const date = firstStart ? new Date(firstStart) : new Date();
 			add(
 				date.toLocaleDateString("sv-SE"), // yyyy-mm-dd, local time
 				capitalize(
@@ -325,12 +328,28 @@ export function ReleaseRegistrationsDialog({
 												)}
 												<span className="text-muted-foreground shrink-0 text-xs tabular-nums">
 													{groupBy === "day"
-														? formatTime(
-																activity.dateFrom,
-															)
-														: formatShortDate(
-																activity.dateFrom,
-															)}
+														? (() => {
+																const first =
+																	getFirstSessionStart(
+																		activity.sessions,
+																	);
+																return first
+																	? formatTime(
+																			first,
+																		)
+																	: "";
+															})()
+														: (() => {
+																const first =
+																	getFirstSessionStart(
+																		activity.sessions,
+																	);
+																return first
+																	? formatShortDate(
+																			first,
+																		)
+																	: "";
+															})()}
 												</span>
 											</label>
 										))}

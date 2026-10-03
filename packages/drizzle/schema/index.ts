@@ -1,5 +1,7 @@
 export * from "./account";
 export * from "./activity";
+export * from "./activity-session";
+export * from "./session-attendance";
 export * from "./certificate";
 export * from "./participant-on-activity";
 export * from "./participant";

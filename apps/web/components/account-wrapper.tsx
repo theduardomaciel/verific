@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/accordion";
 
 // Utils
-import { categorizeByDate } from "@/lib/date";
+import { categorizeByDate, getFirstSessionStart } from "@/lib/date";
 
 interface AccountWrapperProps {
 	eventUrl: string;
@@ -33,7 +33,7 @@ export function AccountWrapper({
 	const { grouped, categories, initialExpanded } = useMemo(() => {
 		const { grouped, categories } = categorizeByDate(
 			activities,
-			(item) => item.dateFrom,
+			(item) => getFirstSessionStart(item.sessions) ?? new Date(),
 		);
 		const hasToday = categories.includes("Hoje");
 		const initialExpanded = hasToday ? ["Hoje"] : categories;

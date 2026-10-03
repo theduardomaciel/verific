@@ -121,8 +121,6 @@ async function seedActivities(projects: any[], speakers: any[]) {
 		activities.push({
 			name: faker.lorem.words(3),
 			description: faker.lorem.sentence(),
-			dateFrom: faker.date.soon(),
-			dateTo: faker.date.soon({ days: 10 }),
 			audience: "internal",
 			category: "lecture",
 			participantsLimit: faker.number.int({ min: 10, max: 100 }),
@@ -138,12 +136,44 @@ async function seedActivities(projects: any[], speakers: any[]) {
 		.values(activities)
 		.returning();
 	console.log("✅ Atividades inseridas!");
-	return inserted;
+
+	// Uma sessão por atividade; a cada 3 atividades, uma segunda sessão no dia seguinte
+	const sessions: (typeof schema.activitySession.$inferInsert)[] = [];
+	inserted.forEach((activity, i) => {
+		const start = faker.date.soon();
+		const end = new Date(
+			start.getTime() + faker.number.int({ min: 1, max: 4 }) * 60 * 60 * 1000,
+		);
+		sessions.push({
+			activityId: activity.id,
+			startsAt: start,
+			endsAt: end,
+		});
+		if (i % 3 === 0) {
+			const secondStart = new Date(start);
+			secondStart.setDate(secondStart.getDate() + 1);
+			const secondEnd = new Date(end);
+			secondEnd.setDate(secondEnd.getDate() + 1);
+			sessions.push({
+				activityId: activity.id,
+				startsAt: secondStart,
+				endsAt: secondEnd,
+			});
+		}
+	});
+	console.log("🌱 Semeando sessões...");
+	const insertedSessions = await db
+		.insert(schema.activitySession)
+		.values(sessions)
+		.returning();
+	console.log("✅ Sessões inseridas!");
+	return { activities: inserted, sessions: insertedSessions };
 }
 
 async function seedParticipantOnActivity(
 	participants: any[],
 	activities: any[],
+	sessions: any[],
 ) {
 	const data: (typeof schema.participantOnActivity.$inferInsert)[] = [];
 	for (let i = 0; i < activities.length; i++) {
@@ -155,19 +185,41 @@ async function seedParticipantOnActivity(
 				Math.min(participants.length / 2, participants.length),
 		);
 		for (let j = 0; j < participantCount; j++) {
-			const hasJoined = Math.random() > 0.7;
 			data.push({
 				participantId: shuffledParticipants[j].id,
 				activityId: activities[i].id,
 				subscribedAt: faker.date.past(),
-				joinedAt: hasJoined ? faker.date.past() : null,
-				leftAt: null,
 			});
 		}
 	}
 	console.log("🌱 Semeando participantes em atividades...");
 	await db.insert(schema.participantOnActivity).values(data);
 	console.log("✅ Participantes em atividades inseridos!");
+
+	// Presenças aleatórias em sessões para os inscritos
+	const sessionsByActivity = new Map<string, any[]>();
+	for (const session of sessions) {
+		const list = sessionsByActivity.get(session.activityId) ?? [];
+		list.push(session);
+		sessionsByActivity.set(session.activityId, list);
+	}
+	const attendances: (typeof schema.sessionAttendance.$inferInsert)[] = [];
+	for (const row of data) {
+		for (const session of sessionsByActivity.get(row.activityId) ?? []) {
+			if (Math.random() > 0.5) {
+				attendances.push({
+					sessionId: session.id,
+					participantId: row.participantId,
+					joinedAt: faker.date.past(),
+				});
+			}
+		}
+	}
+	if (attendances.length > 0) {
+		console.log("🌱 Semeando presenças em sessões...");
+		await db.insert(schema.sessionAttendance).values(attendances);
+		console.log("✅ Presenças em sessões inseridas!");
+	}
 }
 
 /* async function seedCertificates(
@@ -202,8 +254,8 @@ export async function seed() {
 	const projects = await seedProjects(users);
 	const participants = await seedParticipants(users, projects);
 	const speakers = await seedSpeakers(projects);
-	const activities = await seedActivities(projects, speakers);
-	await seedParticipantOnActivity(participants, activities);
+	const { activities, sessions } = await seedActivities(projects, speakers);
+	await seedParticipantOnActivity(participants, activities, sessions);
 	// await seedCertificates(participants, activities, projects);
 }
 
