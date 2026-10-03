@@ -4,7 +4,19 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { PlusIcon, PencilIcon } from "lucide-react";
+import {
+	PlusIcon,
+	PencilIcon,
+	BaselineIcon,
+	TextInitialIcon,
+	HashIcon,
+	CalendarIcon,
+	SquareMousePointerIcon,
+	CopyCheckIcon,
+	SquareCheckIcon,
+	PhoneIcon,
+	MailIcon,
+} from "lucide-react";
 
 import { trpc } from "@/lib/trpc/react";
 import { Button } from "@/components/ui/button";
@@ -44,6 +56,10 @@ import {
 	toUpsertFieldInput,
 	type FieldFormValues,
 } from "../lib/field-form";
+import {
+	formFieldTypeLabels,
+	formFieldTypes,
+} from "@verific/drizzle/enum/form-field-type";
 
 interface FieldDialogProps {
 	versionId: string;
@@ -54,6 +70,20 @@ interface FieldDialogProps {
 	/** Index of `initial` in `siblings`, or `siblings.length` for a new field at the end. */
 	position?: number | null;
 }
+
+type FieldType = (typeof formFieldTypes)[number];
+
+const formFieldIcons: Record<FieldType, React.ReactNode> = {
+	text: <BaselineIcon />,
+	textarea: <TextInitialIcon />,
+	number: <HashIcon />,
+	date: <CalendarIcon />,
+	select_single: <SquareMousePointerIcon />,
+	select_multiple: <CopyCheckIcon />,
+	checkbox: <SquareCheckIcon />,
+	phone: <PhoneIcon />,
+	email: <MailIcon />,
+};
 
 export function FieldDialog({
 	versionId,
@@ -135,19 +165,19 @@ export function FieldDialog({
 								control={form.control}
 								name="type"
 								render={({ field }) => (
-									<FormItem>
+									<FormItem className="flex-1">
 										<FormLabel>Tipo</FormLabel>
 										<Select
 											value={field.value}
 											onValueChange={field.onChange}
 										>
 											<FormControl>
-												<SelectTrigger>
+												<SelectTrigger className="w-auto flex-1">
 													<SelectValue />
 												</SelectTrigger>
 											</FormControl>
 											<SelectContent>
-												<SelectItem value="text">
+												{/* <SelectItem value="text">
 													Texto curto
 												</SelectItem>
 												<SelectItem value="textarea">
@@ -173,7 +203,20 @@ export function FieldDialog({
 												</SelectItem>
 												<SelectItem value="email">
 													E-mail
-												</SelectItem>
+												</SelectItem> */}
+												{formFieldTypes.map((type) => (
+													<SelectItem
+														key={type}
+														value={type}
+													>
+														{formFieldIcons[type]}
+														{
+															formFieldTypeLabels[
+																type
+															]
+														}
+													</SelectItem>
+												))}
 											</SelectContent>
 										</Select>
 										<FormMessage />
@@ -198,7 +241,7 @@ export function FieldDialog({
 								)}
 							/>
 						</div>
-						<FormField
+						{/* <FormField
 							control={form.control}
 							name="helpText"
 							render={({ field }) => (
@@ -213,7 +256,7 @@ export function FieldDialog({
 									<FormMessage />
 								</FormItem>
 							)}
-						/>
+						/> */}
 						{needsOptions && (
 							<FormField
 								control={form.control}
@@ -310,14 +353,14 @@ export function FieldDialog({
 								/>
 							</div>
 						)}
-						<div className="flex flex-wrap gap-6">
+						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 							<FormField
 								control={form.control}
 								name="required"
 								render={({ field }) => (
 									<FormItem className="flex items-center gap-2 space-y-0">
 										<FormControl>
-											<Checkbox
+											<Switch
 												checked={field.value}
 												onCheckedChange={field.onChange}
 											/>
