@@ -84,7 +84,6 @@ interface SectionBlockProps {
 	fieldIds: string[];
 	fieldById: Map<string, Field>;
 	fields: Field[];
-	sortedSections: Section[];
 	orphanHalfIds: Set<string>;
 	highlightDrop: boolean;
 	upsertSection: UseFormsBuilder["upsertSection"];
@@ -107,7 +106,6 @@ function SectionBlock({
 	fieldIds,
 	fieldById,
 	fields,
-	sortedSections,
 	orphanHalfIds,
 	highlightDrop,
 	upsertSection,
@@ -197,8 +195,7 @@ function SectionBlock({
 							onDone={() => undefined}
 							siblings={fields}
 							position={fields.length}
-							sections={sortedSections}
-							defaultSectionId={section.id}
+							sectionId={section.id}
 						/>
 						<Button
 							size="sm"
@@ -286,8 +283,7 @@ function SectionBlock({
 											onDone={() => undefined}
 											siblings={fields}
 											position={globalIndex}
-											sections={sortedSections}
-											defaultSectionId={section.id}
+											sectionId={section.id}
 										/>
 										<Button
 											size="sm"
@@ -316,7 +312,6 @@ interface UngroupedBoxProps {
 	selectedId: string;
 	isPublished: boolean;
 	orphanHalfIds: Set<string>;
-	sortedSections: Section[];
 	highlightDrop: boolean;
 	onMove: (index: number, dir: -1 | 1) => void;
 	onDelete: (field: Field) => void;
@@ -330,7 +325,6 @@ function UngroupedBox({
 	selectedId,
 	isPublished,
 	orphanHalfIds,
-	sortedSections,
 	highlightDrop,
 	onMove,
 	onDelete,
@@ -421,8 +415,7 @@ function UngroupedBox({
 												onDone={() => undefined}
 												siblings={fields}
 												position={globalIndex}
-												sections={sortedSections}
-												defaultSectionId={null}
+												sectionId={null}
 											/>
 											<Button
 												size="sm"
@@ -697,7 +690,6 @@ export function BuilderCard({
 							}
 							fieldById={fieldById}
 							fields={fields}
-							sortedSections={sortedSections}
 							orphanHalfIds={orphanHalfIds}
 							highlightDrop={draggingField}
 							upsertSection={upsertSection}
@@ -715,7 +707,6 @@ export function BuilderCard({
 						selectedId={selected.id}
 						isPublished={isPublished}
 						orphanHalfIds={orphanHalfIds}
-						sortedSections={sortedSections}
 						highlightDrop={draggingField}
 						onMove={onMove}
 						onDelete={onDelete}
