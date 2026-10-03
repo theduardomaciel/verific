@@ -27,7 +27,7 @@ export function defaultFieldValues(initial?: Field): FieldFormValues {
 		label: initial?.label ?? "",
 		type: (initial?.type as FieldFormValues["type"]) ?? "text",
 		helpText: initial?.helpText ?? "",
-		required: initial?.required ?? false,
+		required: initial?.required ?? true,
 		optionsText: (initial?.options ?? []).join("\n"),
 		min: initial?.validation?.min?.toString() ?? "",
 		max: initial?.validation?.max?.toString() ?? "",
@@ -61,8 +61,7 @@ export function toUpsertFieldInput(
 	versionId: string,
 	values: FieldFormValues,
 ): UpsertFieldInput {
-	const num = (v?: string) =>
-		v && v.trim() !== "" ? Number(v) : undefined;
+	const num = (v?: string) => (v && v.trim() !== "" ? Number(v) : undefined);
 	const needsOptions = needsOptionsFor(values.type);
 	const options =
 		needsOptions && values.optionsText
@@ -109,7 +108,7 @@ export function buildRowHint(args: {
 }): string | null {
 	const { siblings, position, initialId, halfWidth } = args;
 	if (!siblings || position === undefined || position === null) return null;
-	if (!halfWidth) return "Ocupará a linha inteira.";
+	if (!halfWidth) return null;
 	const hypothetical = siblings.map((s) => ({
 		id: s.id,
 		halfWidth: s.halfWidth ?? false,
