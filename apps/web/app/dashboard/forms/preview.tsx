@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "@verific/zod";
 import { toast } from "sonner";
 
-import { buildAnswersSchema } from "@verific/api/schemas";
+import { buildAnswersSchema, filterVisibleFields, getVisibleSectionIds } from "@verific/api/schemas";
 import { groupFieldsBySection } from "@/lib/forms/layout";
 import { DynamicField } from "@/components/forms/dynamic/DynamicField";
 import { Button } from "@/components/ui/button";
@@ -42,43 +42,83 @@ export function FormPreview({
 	sections: BuilderSection[];
 	isLoading?: boolean;
 }) {
-	const visible = useMemo(
+	const baseVisible = useMemo(
 		() => fields.filter((f) => f.isActive && f.isVisible),
 		[fields],
 	);
-	const hiddenCount = fields.length - visible.length;
+	const hiddenCount = fields.length - baseVisible.length;
 
-	const grouped = useMemo(() => groupFieldsBySection(visible, sections), [visible, sections]);
-
-	const schema = useMemo(() => {
-		const answers = buildAnswersSchema(
-			visible.map((f) => ({
+	const fieldsForValidation = useMemo(
+		() =>
+			baseVisible.map((f) => ({
+				id: f.id,
+				sectionId: f.sectionId,
 				key: f.key,
 				label: f.label,
 				type: f.type,
 				required: f.required,
 				options: f.options,
-				allowOther: f.allowOther,
+				allowOther: (f as { allowOther?: boolean | null }).allowOther,
 				validation: f.validation,
 				isVisible: f.isVisible,
 				isActive: f.isActive,
 			})),
-		);
-		return z.object({
-			name: z
+		[baseVisible],
+	);
+
+	const sectionsForVisibility = useMemo(
+		() =>
+			sections.map((s) => ({
+				id: s.id,
+				visibilityRule: (s as { visibilityRule?: { sourceFieldId: string; operator: "is_checked" | "is_not_checked" | "equals" | "includes_any" | "includes_all"; values?: string[] } | null }).visibilityRule ?? null,
+			})),
+		[sections],
+	);
+
+	const nameSchema = useMemo(
+		() =>
+			z
 				.string({ error: "Obrigatório" })
 				.min(2, { message: "Informe seu nome completo." })
 				.refine((v) => v.trim().split(/\s+/).length >= 2, {
 					message: "Informe nome e sobrenome.",
 				}),
-			answers,
-		});
-	}, [visible]);
+		[],
+	);
+
+	const resolver = useMemo(() => {
+		return async (values: unknown, context: unknown, options: unknown) => {
+			const v = (values ?? {}) as { answers?: Record<string, unknown> };
+			const answersSchema = buildAnswersSchema(
+				fieldsForValidation,
+				sectionsForVisibility,
+				(v.answers ?? {}) as Record<string, unknown>,
+			);
+			const schema = z.object({ name: nameSchema, answers: answersSchema });
+			const zod = zodResolver(schema as never);
+			return (zod as (a: unknown, b: unknown, c: unknown) => Promise<unknown>)(
+				values,
+				context,
+				options,
+			) as never;
+		};
+	}, [fieldsForValidation, sectionsForVisibility, nameSchema]);
 
 	const form = useForm<{ name: string; answers: Record<string, unknown> }>({
-		resolver: zodResolver(schema as never),
+		resolver: resolver as never,
 		defaultValues: { name: "", answers: {} },
 	});
+
+	const watchedAnswers = (form.watch("answers") ?? {}) as Record<string, unknown>;
+
+	const grouped = useMemo(() => {
+		if (!sectionsForVisibility.some((s) => s.visibilityRule)) {
+			return groupFieldsBySection(baseVisible, sections);
+		}
+		const visible = filterVisibleFields(baseVisible, sectionsForVisibility, watchedAnswers);
+		const ids = getVisibleSectionIds(sectionsForVisibility, fieldsForValidation, watchedAnswers);
+		return groupFieldsBySection(visible, sections).filter((g) => ids.has(g.section.id));
+	}, [baseVisible, sections, sectionsForVisibility, fieldsForValidation, watchedAnswers]);
 
 	function onSubmit() {
 		toast.success("Pré-visualização válida! Nenhum dado foi enviado.");

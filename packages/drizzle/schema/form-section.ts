@@ -1,6 +1,7 @@
 import { relations } from "drizzle-orm";
 import {
 	integer,
+	jsonb,
 	pgTable,
 	text,
 	timestamp,
@@ -10,6 +11,19 @@ import {
 import { formVersion } from "./form-version";
 import { project } from "./project";
 import { formField } from "./form-field";
+
+export type SectionVisibilityOperator =
+	| "is_checked"
+	| "is_not_checked"
+	| "equals"
+	| "includes_any"
+	| "includes_all";
+
+export interface SectionVisibilityRule {
+	sourceFieldId: string;
+	operator: SectionVisibilityOperator;
+	values?: string[];
+}
 
 export const formSection = pgTable("form_sections", {
 	id: uuid("id").primaryKey().defaultRandom(),
@@ -27,6 +41,7 @@ export const formSection = pgTable("form_sections", {
 		}),
 	title: text("title").notNull(),
 	order: integer("order").default(0).notNull(),
+	visibilityRule: jsonb("visibility_rule").$type<SectionVisibilityRule>(),
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

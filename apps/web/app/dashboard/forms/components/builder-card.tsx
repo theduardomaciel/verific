@@ -84,6 +84,7 @@ interface SectionBlockProps {
 	fieldIds: string[];
 	fieldById: Map<string, Field>;
 	fields: Field[];
+	sections: Section[];
 	orphanHalfIds: Set<string>;
 	highlightDrop: boolean;
 	upsertSection: UseFormsBuilder["upsertSection"];
@@ -97,6 +98,30 @@ interface SectionBlockProps {
 	onDelete: (field: Field) => void;
 }
 
+function describeRule(
+	section: Section,
+	fieldById: Map<string, Field>,
+): string | null {
+	const rule = (section as { visibilityRule?: { sourceFieldId: string; operator: string; values?: string[] } | null }).visibilityRule;
+	if (!rule) return null;
+	const source = fieldById.get(rule.sourceFieldId);
+	const name = source?.label ?? "campo removido";
+	switch (rule.operator) {
+		case "is_checked":
+			return `Se “${name}” marcado`;
+		case "is_not_checked":
+			return `Se “${name}” desmarcado`;
+		case "equals":
+			return `Se “${name}” = ${(rule.values ?? []).join(", ")}`;
+		case "includes_any":
+			return `Se “${name}” contiver ${(rule.values ?? []).join(", ")}`;
+		case "includes_all":
+			return `Se “${name}” contiver todos: ${(rule.values ?? []).join(", ")}`;
+		default:
+			return `Condicional em “${name}”`;
+	}
+}
+
 function SectionBlock({
 	section,
 	position,
@@ -106,6 +131,7 @@ function SectionBlock({
 	fieldIds,
 	fieldById,
 	fields,
+	sections,
 	orphanHalfIds,
 	highlightDrop,
 	upsertSection,
@@ -166,7 +192,17 @@ function SectionBlock({
 						{fieldIds.length} campo
 						{fieldIds.length === 1 ? "" : "s"}
 					</Badge>
+					{describeRule(section, fieldById) && (
+						<Badge variant="outline" title={describeRule(section, fieldById) ?? ""}>
+							Condicional
+						</Badge>
+					)}
 				</div>
+				{describeRule(section, fieldById) && (
+					<p className="text-muted-foreground w-full text-xs">
+						{describeRule(section, fieldById)}
+					</p>
+				)}
 				{!isPublished && (
 					<div className="flex flex-wrap items-center gap-2">
 						<Button
@@ -188,6 +224,8 @@ function SectionBlock({
 						<SectionDialog
 							versionId={selectedId}
 							initial={section}
+							fields={fields}
+							sections={sections}
 							upsertSection={upsertSection}
 						/>
 						<FieldDialog
@@ -690,6 +728,7 @@ export function BuilderCard({
 							}
 							fieldById={fieldById}
 							fields={fields}
+							sections={sortedSections}
 							orphanHalfIds={orphanHalfIds}
 							highlightDrop={draggingField}
 							upsertSection={upsertSection}
@@ -727,6 +766,8 @@ export function BuilderCard({
 					{!isPublished && (
 						<SectionDialog
 							versionId={selected.id}
+							fields={fields}
+							sections={sortedSections}
 							upsertSection={upsertSection}
 						/>
 					)}

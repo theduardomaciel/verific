@@ -19,6 +19,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { RouterOutput } from "@verific/api";
 import {
 	OTHER_LABEL,
@@ -335,6 +336,102 @@ export function DynamicField({
 											disabled={disabled}
 											maxLength={OTHER_TEXT_MAX_LENGTH}
 											value={singleOtherText}
+											onChange={(e) => rhf.onChange(e.target.value)}
+											onBlur={rhf.onBlur}
+											name={rhf.name}
+										/>
+									</FormControl>
+								)}
+								<FormMessage />
+							</FormItem>
+						);
+					}
+					case "radio_group": {
+						const radioOptions = field.options ?? [];
+						const radioAllowOther = getAllowOther(field);
+						const radioRaw = (value ?? undefined) as string | undefined;
+						const radioInOptions =
+							typeof radioRaw === "string" && radioOptions.includes(radioRaw);
+						const radioOtherSelected =
+							radioAllowOther &&
+							typeof radioRaw === "string" &&
+							(radioRaw === "" ||
+								(radioRaw !== "" && !radioOptions.includes(radioRaw)));
+						const radioValue = radioInOptions
+							? radioRaw
+							: radioOtherSelected
+								? OTHER_SENTINEL
+								: "";
+						const radioOtherText =
+							radioOtherSelected &&
+							typeof radioRaw === "string" &&
+							radioRaw !== "" &&
+							!radioOptions.includes(radioRaw)
+								? radioRaw
+								: "";
+						return (
+							<FormItem className="w-full">
+								{label}
+								{field.helpText && (
+									<FormDescription>
+										{field.helpText}
+									</FormDescription>
+								)}
+								<FormControl>
+									<RadioGroup
+										disabled={disabled}
+										value={radioValue}
+										onValueChange={(v) => {
+											if (v === OTHER_SENTINEL) {
+												rhf.onChange(
+													typeof radioRaw === "string" &&
+													radioRaw !== "" &&
+													!radioOptions.includes(radioRaw)
+														? radioRaw
+														: "",
+												);
+											} else if (!field.required && v === EMPTY_SELECT_VALUE) {
+												rhf.onChange(undefined);
+											} else {
+												rhf.onChange(v);
+											}
+										}}
+										className="flex flex-col gap-2"
+									>
+										{!field.required && (
+											<div className="flex items-center gap-2 text-sm">
+												<RadioGroupItem value={EMPTY_SELECT_VALUE} id={`${name}-clear`} />
+												<label htmlFor={`${name}-clear`} className="text-muted-foreground cursor-pointer">
+													Limpar seleção
+												</label>
+											</div>
+										)}
+										{radioOptions.map((opt) => (
+											<div key={opt} className="flex items-center gap-2 text-sm">
+												<RadioGroupItem value={opt} id={`${name}-${opt}`} />
+												<label htmlFor={`${name}-${opt}`} className="cursor-pointer">
+													{opt}
+												</label>
+											</div>
+										))}
+										{radioAllowOther && (
+											<div className="flex items-center gap-2 text-sm">
+												<RadioGroupItem value={OTHER_SENTINEL} id={`${name}-other`} />
+												<label htmlFor={`${name}-other`} className="cursor-pointer">
+													{OTHER_LABEL}
+												</label>
+											</div>
+										)}
+									</RadioGroup>
+								</FormControl>
+								{radioOtherSelected && (
+									<FormControl>
+										<Input
+											type="text"
+											placeholder={OTHER_PLACEHOLDER}
+											disabled={disabled}
+											maxLength={OTHER_TEXT_MAX_LENGTH}
+											value={radioOtherText}
 											onChange={(e) => rhf.onChange(e.target.value)}
 											onBlur={rhf.onBlur}
 											name={rhf.name}

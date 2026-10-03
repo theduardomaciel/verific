@@ -16,13 +16,16 @@ import { and, asc, count, desc, eq, ilike, inArray, or } from "@verific/drizzle/
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import {
+	filterVisibleFields,
 	hasOutroOption,
+	isConditionalTriggerType,
 	reorderFormFieldsInput,
 	reorderFormSectionsInput,
 	submitAnswersInput,
 	upsertFormFieldInput,
 	upsertFormSectionInput,
 	validateAnswers,
+	validateSectionVisibilityRule,
 	type FormFieldForValidation,
 } from "../schemas";
 
@@ -63,6 +66,8 @@ function toValidationFields(
 	fields: typeof formField.$inferSelect[],
 ): FormFieldForValidation[] {
 	return fields.map((f) => ({
+		id: f.id,
+		sectionId: f.sectionId,
 		key: f.key,
 		label: f.label,
 		type: f.type,
@@ -72,6 +77,19 @@ function toValidationFields(
 		validation: f.validation,
 		isVisible: f.isVisible,
 		isActive: f.isActive,
+	}));
+}
+
+function toVisibilitySections(
+	sections: typeof formSection.$inferSelect[],
+): { id: string; visibilityRule: { sourceFieldId: string; operator: "is_checked" | "is_not_checked" | "equals" | "includes_any" | "includes_all"; values?: string[] } | null }[] {
+	return sections.map((s) => ({
+		id: s.id,
+		visibilityRule: (s.visibilityRule ?? null) as {
+			sourceFieldId: string;
+			operator: "is_checked" | "is_not_checked" | "equals" | "includes_any" | "includes_all";
+			values?: string[];
+		} | null,
 	}));
 }
 
@@ -236,6 +254,7 @@ export const formsRouter = createTRPCRouter({
 							projectId: input.projectId,
 							title: s.title,
 							order: s.order,
+							visibilityRule: s.visibilityRule ?? null,
 						})
 						.returning({ id: formSection.id });
 					if (inserted[0]) sectionIdMap.set(s.id, inserted[0].id);
@@ -243,27 +262,66 @@ export const formsRouter = createTRPCRouter({
 				const sourceFields = await db.query.formField.findMany({
 					where: eq(formField.formVersionId, input.cloneFromVersionId),
 				});
+				const fieldIdMap = new Map<string, string>();
 				if (sourceFields.length > 0) {
-					await db.insert(formField).values(
-						sourceFields.map((f) => ({
-							formVersionId: newVersion.id,
-							projectId: input.projectId,
-							key: f.key,
-							label: f.label,
-							type: f.type,
-							helpText: f.helpText,
-							required: f.required,
-							order: f.order,
-							sectionId: f.sectionId ? (sectionIdMap.get(f.sectionId) ?? null) : null,
-							halfWidth: f.halfWidth,
-							options: f.options,
-							allowOther: f.allowOther,
-							validation: f.validation,
-							isVisible: f.isVisible,
-							editableAfterSignup: f.editableAfterSignup,
-							isActive: f.isActive,
-						})),
-					);
+					const insertedFields = await db
+						.insert(formField)
+						.values(
+							sourceFields.map((f) => ({
+								formVersionId: newVersion.id,
+								projectId: input.projectId,
+								key: f.key,
+								label: f.label,
+								type: f.type,
+								helpText: f.helpText,
+								required: f.required,
+								order: f.order,
+								sectionId: f.sectionId ? (sectionIdMap.get(f.sectionId) ?? null) : null,
+								halfWidth: f.halfWidth,
+								options: f.options,
+								allowOther: f.allowOther,
+								validation: f.validation,
+								isVisible: f.isVisible,
+								editableAfterSignup: f.editableAfterSignup,
+								isActive: f.isActive,
+							})),
+						)
+						.returning({ id: formField.id, key: formField.key });
+					// Map old field ids to new ids by key (keys are unique per version).
+					const keyToNewId = new Map(insertedFields.map((f) => [f.key, f.id]));
+					for (const f of sourceFields) {
+						const nid = keyToNewId.get(f.key);
+						if (nid) fieldIdMap.set(f.id, nid);
+					}
+					// Remap visibility rules to the cloned field ids.
+					for (const s of sourceSections) {
+						const rule = s.visibilityRule as {
+							sourceFieldId?: string;
+							operator?: "is_checked" | "is_not_checked" | "equals" | "includes_any" | "includes_all";
+							values?: string[];
+						} | null;
+						if (!rule?.sourceFieldId || !rule.operator) continue;
+						const newSectionId = sectionIdMap.get(s.id);
+						const newSourceId = fieldIdMap.get(rule.sourceFieldId);
+						if (!newSectionId) continue;
+						if (!newSourceId) {
+							await db
+								.update(formSection)
+								.set({ visibilityRule: null })
+								.where(eq(formSection.id, newSectionId));
+							continue;
+						}
+						await db
+							.update(formSection)
+							.set({
+								visibilityRule: {
+									sourceFieldId: newSourceId,
+									operator: rule.operator,
+									...(rule.values ? { values: rule.values } : {}),
+								},
+							})
+							.where(eq(formSection.id, newSectionId));
+					}
 				}
 				if (sourceSections.length === 0 && sourceFields.length > 0) {
 					const fallback = await db
@@ -307,12 +365,19 @@ export const formsRouter = createTRPCRouter({
 					message: "Versão publicada é imutável. Crie uma nova versão para editar.",
 				});
 			}
-			if ((input.type === "select_single" || input.type === "select_multiple") && (!input.options || input.options.length === 0)) {
+			if (
+				(input.type === "select_single" ||
+					input.type === "select_multiple" ||
+					input.type === "radio_group") &&
+				(!input.options || input.options.length === 0)
+			) {
 				throw new TRPCError({ code: "BAD_REQUEST", message: "Campos de seleção exigem ao menos uma opção." });
 			}
 			// allowOther only applies to select fields; a stale flag must not survive a type change.
 			const allowOther =
-				(input.type === "select_single" || input.type === "select_multiple") &&
+				(input.type === "select_single" ||
+					input.type === "select_multiple" ||
+					input.type === "radio_group") &&
 				input.allowOther === true;
 			if (allowOther && hasOutroOption(input.options)) {
 				throw new TRPCError({
@@ -334,6 +399,58 @@ export const formsRouter = createTRPCRouter({
 				}
 			}
 			if (input.fieldId) {
+				// Guard dependent conditional sections against breaking type/option/section changes.
+				const dependents = (
+					await db.query.formSection.findMany({
+						where: eq(formSection.formVersionId, input.versionId),
+					})
+				).filter(
+					(s) =>
+						(s.visibilityRule as { sourceFieldId?: string } | null)?.sourceFieldId ===
+						input.fieldId,
+				);
+				if (dependents.length > 0) {
+					if (!isConditionalTriggerType(input.type)) {
+						throw new TRPCError({
+							code: "BAD_REQUEST",
+							message: `Este campo controla ${dependents.length} seção(ões). Altere o tipo apenas para checkbox, seleção ou rádio.`,
+						});
+					}
+					const nextSectionId =
+						sectionId !== undefined
+							? sectionId
+							: (
+									await db.query.formField.findFirst({
+										where: eq(formField.id, input.fieldId!),
+										columns: { sectionId: true },
+									})
+								)?.sectionId ?? null;
+					for (const dep of dependents) {
+						if (nextSectionId && dep.id === nextSectionId) {
+							throw new TRPCError({
+								code: "BAD_REQUEST",
+								message: "O campo de origem não pode ficar dentro da seção que ele controla.",
+							});
+						}
+						const rule = dep.visibilityRule as {
+							sourceFieldId: string;
+							operator: "is_checked" | "is_not_checked" | "equals" | "includes_any" | "includes_all";
+							values?: string[];
+						};
+						const err = validateSectionVisibilityRule({
+							rule,
+							sourceField: { id: input.fieldId!, type: input.type, options: input.options ?? null },
+							sectionId: dep.id,
+							sourceSectionId: nextSectionId,
+						});
+						if (err) {
+							throw new TRPCError({
+								code: "BAD_REQUEST",
+								message: `A alteração quebra a condição da seção “${dep.title}”: ${err}`,
+							});
+						}
+					}
+				}
 				const updated = await db
 					.update(formField)
 					.set({
@@ -408,6 +525,20 @@ export const formsRouter = createTRPCRouter({
 					message: "Versão publicada é imutável. Crie uma nova versão para editar.",
 				});
 			}
+			const dependentSections = await db.query.formSection.findMany({
+				where: eq(formSection.formVersionId, field.formVersionId),
+			});
+			const dependents = dependentSections.filter(
+				(s) =>
+					(s.visibilityRule as { sourceFieldId?: string } | null)?.sourceFieldId ===
+					input.fieldId,
+			);
+			if (dependents.length > 0) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: `Este campo controla a visibilidade de ${dependents.length} seção(ões). Remova a condição antes de excluí-lo.`,
+				});
+			}
 			const answersCount = await db
 				.select({ amount: count() })
 				.from(formAnswer)
@@ -440,6 +571,23 @@ export const formsRouter = createTRPCRouter({
 					});
 					if (!section) throw new TRPCError({ code: "BAD_REQUEST", message: "Seção inválida para esta versão." });
 				}
+				const allSections = await db.query.formSection.findMany({
+					where: eq(formSection.formVersionId, input.versionId),
+				});
+				for (const [fid, sid] of Object.entries(input.sectionIdByField)) {
+					if (sid === null || sid === undefined) continue;
+					const dependent = allSections.find(
+						(s) =>
+							(s.visibilityRule as { sourceFieldId?: string } | null)?.sourceFieldId === fid &&
+							s.id === sid,
+					);
+					if (dependent) {
+						throw new TRPCError({
+							code: "BAD_REQUEST",
+							message: "O campo de origem não pode ficar dentro da seção que ele controla.",
+						});
+					}
+				}
 			}
 			await db.transaction(async (tx) => {
 				for (let i = 0; i < input.orderedIds.length; i++) {
@@ -468,10 +616,28 @@ export const formsRouter = createTRPCRouter({
 					message: "Versão publicada é imutável. Crie uma nova versão para editar.",
 				});
 			}
+			const hasRuleKey = "visibilityRule" in input;
+			const visibilityRule = input.visibilityRule ?? null;
+			if (visibilityRule) {
+				const source = await db.query.formField.findFirst({
+					where: and(eq(formField.id, visibilityRule.sourceFieldId), eq(formField.formVersionId, input.versionId)),
+				});
+				if (!source) throw new TRPCError({ code: "BAD_REQUEST", message: "Campo de origem não encontrado nesta versão." });
+				const err = validateSectionVisibilityRule({
+					rule: visibilityRule,
+					sourceField: { id: source.id, type: source.type, options: source.options },
+					sectionId: input.sectionId ?? null,
+					sourceSectionId: source.sectionId,
+				});
+				if (err) throw new TRPCError({ code: "BAD_REQUEST", message: err });
+			}
 			if (input.sectionId) {
 				const updated = await db
 					.update(formSection)
-					.set({ title: input.title })
+					.set({
+						title: input.title,
+						...(hasRuleKey ? { visibilityRule } : {}),
+					})
 					.where(and(eq(formSection.id, input.sectionId), eq(formSection.formVersionId, input.versionId)))
 					.returning();
 				if (!updated[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Seção não encontrada." });
@@ -489,6 +655,7 @@ export const formsRouter = createTRPCRouter({
 					projectId: version.projectId,
 					title: input.title,
 					order: nextOrder,
+					visibilityRule,
 				})
 				.returning();
 			return created[0];
@@ -632,8 +799,18 @@ export const formsRouter = createTRPCRouter({
 						orderBy: asc(formField.order),
 					})
 				: [];
+			const sections = version
+				? await db.query.formSection.findMany({
+						where: eq(formSection.formVersionId, version.id),
+						orderBy: asc(formSection.order),
+					})
+				: [];
 
-			const validation = validateAnswers(toValidationFields(fields), input.answers);
+			const validation = validateAnswers(
+				toValidationFields(fields),
+				input.answers,
+				toVisibilitySections(sections),
+			);
 			if (!validation.success) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
@@ -652,9 +829,18 @@ export const formsRouter = createTRPCRouter({
 			if (!participantId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Falha ao criar inscrição." });
 
 			if (version && fields.length > 0) {
+				const validationFields = toValidationFields(fields);
+				const visibilitySections = toVisibilitySections(sections);
+				const visibleFields = filterVisibleFields(
+					validationFields,
+					visibilitySections,
+					(validation.data ?? {}) as Record<string, unknown>,
+				);
+				const visibleKeys = new Set(visibleFields.map((f) => f.key));
 				const rows = [];
 				for (const field of fields) {
 					if (!field.isVisible) continue;
+					if (!visibleKeys.has(field.key)) continue;
 					const raw = (validation.data ?? {})[field.key];
 					if (raw === undefined) continue;
 					const mapped = mapValueToColumns(field.type, raw);
@@ -722,12 +908,32 @@ export const formsRouter = createTRPCRouter({
 				where: and(eq(formField.formVersionId, version.id), eq(formField.isActive, true)),
 				orderBy: asc(formField.order),
 			});
+			const sections = await db.query.formSection.findMany({
+				where: eq(formSection.formVersionId, version.id),
+				orderBy: asc(formSection.order),
+			});
 			const editable = fields.filter((f) => f.editableAfterSignup && f.isVisible);
-			const validation = validateAnswers(toValidationFields(editable), input.answers);
+			const validation = validateAnswers(
+				toValidationFields(editable),
+				input.answers,
+				toVisibilitySections(sections),
+			);
 			if (!validation.success) {
 				throw new TRPCError({ code: "BAD_REQUEST", message: "Respostas inválidas.", cause: validation.errors });
 			}
+			const visibleEditable = filterVisibleFields(
+				toValidationFields(editable),
+				toVisibilitySections(sections),
+				(validation.data ?? {}) as Record<string, unknown>,
+			);
+			const visibleEditableKeys = new Set(visibleEditable.map((f) => f.key));
 			for (const field of editable) {
+				if (!visibleEditableKeys.has(field.key)) {
+					await db
+						.delete(formAnswer)
+						.where(and(eq(formAnswer.participantId, participantRow.id), eq(formAnswer.fieldId, field.id)));
+					continue;
+				}
 				const raw = (validation.data ?? {})[field.key];
 				if (raw === undefined) {
 					if (!field.required) {
