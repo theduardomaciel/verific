@@ -21,8 +21,8 @@ export function FormsContent() {
 		setSelectedId,
 		selected,
 		isPublished,
-		versionQuery,
 		fields,
+		isLoadingFields,
 		orphanHalfIds,
 		fieldToDelete,
 		setFieldToDelete,
@@ -51,7 +51,7 @@ export function FormsContent() {
 			{tab === "answers" ? (
 				<AnswersPanel projectId={projectId} />
 			) : tab === "preview" ? (
-				<FormPreview fields={fields} />
+				<FormPreview fields={fields} isLoading={isLoadingFields} />
 			) : (
 				<>
 					<VersionsCard
@@ -75,7 +75,7 @@ export function FormsContent() {
 							selected={selected}
 							isPublished={isPublished}
 							fields={fields}
-							isLoadingFields={versionQuery.isPending}
+							isLoadingFields={isLoadingFields}
 							orphanHalfIds={orphanHalfIds}
 							listRef={listRef}
 							isDraggingRef={isDraggingRef}

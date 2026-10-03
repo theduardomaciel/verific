@@ -10,6 +10,7 @@ import { buildAnswersSchema } from "@verific/api/schemas";
 import { groupFieldsIntoRows } from "@/lib/forms/layout";
 import { DynamicField } from "@/components/forms/dynamic/DynamicField";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -31,7 +32,13 @@ type BuilderField = RouterOutput["getVersion"]["fields"][number];
  * as the public JoinForm, with real validation — submitting only
  * validates locally and never sends data.
  */
-export function FormPreview({ fields }: { fields: BuilderField[] }) {
+export function FormPreview({
+	fields,
+	isLoading = false,
+}: {
+	fields: BuilderField[];
+	isLoading?: boolean;
+}) {
 	const visible = useMemo(
 		() => fields.filter((f) => f.isActive && f.isVisible),
 		[fields],
@@ -75,6 +82,39 @@ export function FormPreview({ fields }: { fields: BuilderField[] }) {
 
 	function onInvalid() {
 		toast.error("Verifique os campos destacados.");
+	}
+
+	if (isLoading) {
+		return (
+			<Card>
+				<CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
+					<CardTitle className="flex flex-wrap items-center gap-2">
+						Visão do participante
+						<Badge variant="secondary">Pré-visualização</Badge>
+					</CardTitle>
+				</CardHeader>
+				<CardContent className="flex w-full flex-col gap-6">
+					<div className="flex flex-col gap-2">
+						<Skeleton className="h-4 w-32" />
+						<Skeleton className="h-10 w-full" />
+					</div>
+					<div className="flex flex-col gap-2">
+						<Skeleton className="h-4 w-40" />
+						<Skeleton className="h-10 w-full" />
+					</div>
+					<div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2">
+						<div className="flex flex-col gap-2">
+							<Skeleton className="h-4 w-28" />
+							<Skeleton className="h-10 w-full" />
+						</div>
+						<div className="flex flex-col gap-2">
+							<Skeleton className="h-4 w-28" />
+							<Skeleton className="h-10 w-full" />
+						</div>
+					</div>
+				</CardContent>
+			</Card>
+		);
 	}
 
 	return (

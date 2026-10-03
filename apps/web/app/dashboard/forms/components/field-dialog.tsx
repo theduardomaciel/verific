@@ -130,71 +130,74 @@ export function FieldDialog({
 						onSubmit={form.handleSubmit(submit)}
 						className="flex flex-col gap-4"
 					>
-						<FormField
-							control={form.control}
-							name="label"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Rótulo *</FormLabel>
-									<FormControl>
-										<Input
-											placeholder="Ex: Restrições alimentares"
-											{...field}
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-						<FormField
-							control={form.control}
-							name="type"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Tipo *</FormLabel>
-									<Select
-										value={field.value}
-										onValueChange={field.onChange}
-									>
+						<div className="flex w-full flex-row gap-3">
+							<FormField
+								control={form.control}
+								name="type"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Tipo</FormLabel>
+										<Select
+											value={field.value}
+											onValueChange={field.onChange}
+										>
+											<FormControl>
+												<SelectTrigger>
+													<SelectValue />
+												</SelectTrigger>
+											</FormControl>
+											<SelectContent>
+												<SelectItem value="text">
+													Texto curto
+												</SelectItem>
+												<SelectItem value="textarea">
+													Texto longo
+												</SelectItem>
+												<SelectItem value="number">
+													Número
+												</SelectItem>
+												<SelectItem value="date">
+													Data
+												</SelectItem>
+												<SelectItem value="select_single">
+													Seleção única
+												</SelectItem>
+												<SelectItem value="select_multiple">
+													Múltipla seleção
+												</SelectItem>
+												<SelectItem value="checkbox">
+													Checkbox
+												</SelectItem>
+												<SelectItem value="phone">
+													Telefone
+												</SelectItem>
+												<SelectItem value="email">
+													E-mail
+												</SelectItem>
+											</SelectContent>
+										</Select>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name="label"
+								render={({ field }) => (
+									<FormItem className="flex-1">
+										<FormLabel>Nome do Campo</FormLabel>
 										<FormControl>
-											<SelectTrigger>
-												<SelectValue />
-											</SelectTrigger>
+											<Input
+												className="flex-1"
+												placeholder="Ex: Restrições alimentares"
+												{...field}
+											/>
 										</FormControl>
-										<SelectContent>
-											<SelectItem value="text">
-												Texto curto
-											</SelectItem>
-											<SelectItem value="textarea">
-												Texto longo
-											</SelectItem>
-											<SelectItem value="number">
-												Número
-											</SelectItem>
-											<SelectItem value="date">
-												Data
-											</SelectItem>
-											<SelectItem value="select_single">
-												Seleção única
-											</SelectItem>
-											<SelectItem value="select_multiple">
-												Múltipla seleção
-											</SelectItem>
-											<SelectItem value="checkbox">
-												Checkbox
-											</SelectItem>
-											<SelectItem value="phone">
-												Telefone
-											</SelectItem>
-											<SelectItem value="email">
-												E-mail
-											</SelectItem>
-										</SelectContent>
-									</Select>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+						</div>
 						<FormField
 							control={form.control}
 							name="helpText"
@@ -218,7 +221,7 @@ export function FieldDialog({
 								render={({ field }) => (
 									<FormItem>
 										<FormLabel>
-											Opções (uma por linha) *
+											Opções (uma por linha)
 										</FormLabel>
 										<FormControl>
 											<Textarea

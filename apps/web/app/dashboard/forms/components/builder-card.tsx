@@ -121,7 +121,20 @@ export function BuilderCard({
 					</div>
 				</div>
 				{isLoadingFields ? (
-					<Skeleton className="h-40 w-full" />
+					<div className="flex flex-col gap-3" aria-busy="true">
+						<div className="flex flex-col gap-2 rounded-lg border p-3">
+							<Skeleton className="h-5 w-2/5" />
+							<Skeleton className="h-4 w-1/3" />
+						</div>
+						<div className="flex flex-col gap-2 rounded-lg border p-3">
+							<Skeleton className="h-5 w-1/2" />
+							<Skeleton className="h-4 w-1/4" />
+						</div>
+						<div className="flex flex-col gap-2 rounded-lg border p-3">
+							<Skeleton className="h-5 w-1/3" />
+							<Skeleton className="h-4 w-1/2" />
+						</div>
+					</div>
 				) : fields.length === 0 ? (
 					<p className="text-muted-foreground text-sm">
 						Nenhum campo adicionado ainda.
