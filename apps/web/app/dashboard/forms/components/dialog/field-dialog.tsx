@@ -17,6 +17,7 @@ import {
 	PhoneIcon,
 	MailIcon,
 	ChevronDownIcon,
+	CircleDotIcon,
 } from "lucide-react";
 
 import { trpc } from "@/lib/trpc/react";
@@ -88,6 +89,7 @@ const formFieldIcons: Record<FieldType, React.ReactNode> = {
 	date: <CalendarIcon />,
 	select_single: <SquareMousePointerIcon />,
 	select_multiple: <CopyCheckIcon />,
+	radio_group: <CircleDotIcon />,
 	checkbox: <SquareCheckIcon />,
 	phone: <PhoneIcon />,
 	email: <MailIcon />,

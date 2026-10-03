@@ -113,9 +113,43 @@ export const upsertFormSectionInput = z.object({
 	versionId: z.uuid(),
 	sectionId: z.uuid().optional(),
 	title: z.string().trim().min(1, "Obrigatório").max(120),
+	visibilityRule: z
+		.object({
+			sourceFieldId: z.uuid(),
+			operator: z.enum([
+				"is_checked",
+				"is_not_checked",
+				"equals",
+				"includes_any",
+				"includes_all",
+			]),
+			values: z.array(z.string().min(1).max(200)).max(20).optional(),
+		})
+		.nullable()
+		.optional(),
 });
 
 export type UpsertFormSectionInput = z.infer<typeof upsertFormSectionInput>;
+
+export type SectionVisibilityRule = NonNullable<
+	UpsertFormSectionInput["visibilityRule"]
+>;
+
+/** Field types that can trigger a conditional section. */
+export const conditionalTriggerTypes = [
+	"checkbox",
+	"select_single",
+	"select_multiple",
+	"radio_group",
+] as const;
+
+export type ConditionalTriggerType = (typeof conditionalTriggerTypes)[number];
+
+export function isConditionalTriggerType(
+	type: string,
+): type is ConditionalTriggerType {
+	return (conditionalTriggerTypes as readonly string[]).includes(type);
+}
 
 export const reorderFormSectionsInput = z.object({
 	versionId: z.uuid(),
@@ -160,7 +194,157 @@ export type FormFieldForValidation = {
 	} | null;
 	isVisible: boolean;
 	isActive: boolean;
+	id?: string;
+	sectionId?: string | null;
 };
+
+export interface SectionForVisibility {
+	id: string;
+	visibilityRule?: SectionVisibilityRule | null;
+}
+
+/**
+ * Pure evaluator for conditional sections. `answer` is the current value
+ * of the trigger field keyed by field key (string | string[] | boolean).
+ * A null/undefined rule means always visible.
+ */
+export function evaluateSectionVisibility(
+	rule: SectionVisibilityRule | null | undefined,
+	answer: unknown,
+): boolean {
+	if (!rule) return true;
+	switch (rule.operator) {
+		case "is_checked":
+			return answer === true;
+		case "is_not_checked":
+			return answer !== true;
+		case "equals": {
+			if (typeof answer !== "string") return false;
+			return (rule.values ?? []).includes(answer);
+		}
+		case "includes_any": {
+			if (!Array.isArray(answer)) return false;
+			const wanted = new Set(rule.values ?? []);
+			return (answer as unknown[]).some((v) => wanted.has(v as string));
+		}
+		case "includes_all": {
+			if (!Array.isArray(answer)) return false;
+			const wanted = rule.values ?? [];
+			if (wanted.length === 0) return false;
+			const have = new Set(answer as string[]);
+			return wanted.every((v) => have.has(v));
+		}
+		default:
+			return true;
+	}
+}
+
+/**
+ * Returns the ids of sections visible for `answers` (keyed by field key).
+ * Needs a fieldId -> key lookup because rules reference `sourceFieldId`.
+ */
+export function getVisibleSectionIds<
+	S extends SectionForVisibility,
+	F extends { id?: string; key: string },
+>(
+	sections: S[],
+	fields: F[],
+	answers: Record<string, unknown>,
+): Set<string> {
+	const keyById = new Map<string, string>();
+	for (const f of fields) {
+		if (f.id) keyById.set(f.id, f.key);
+	}
+	const visible = new Set<string>();
+	for (const s of sections) {
+		const rule = s.visibilityRule;
+		if (!rule) {
+			visible.add(s.id);
+			continue;
+		}
+		const key = keyById.get(rule.sourceFieldId);
+		visible.add(s.id);
+		if (key === undefined) continue;
+		if (!evaluateSectionVisibility(rule, answers[key])) {
+			visible.delete(s.id);
+		}
+	}
+	return visible;
+}
+
+/** Filters a field list down to fields in visible sections. */
+export function filterVisibleFields<
+	F extends { key: string; id?: string; sectionId?: string | null },
+	S extends SectionForVisibility,
+>(
+	fields: F[],
+	sections: S[],
+	answers: Record<string, unknown>,
+): F[] {
+	if (!sections.some((s) => s.visibilityRule)) return fields;
+	const visibleIds = getVisibleSectionIds(sections, fields, answers);
+	return fields.filter((f) => {
+		if (!f.sectionId) return true;
+		if (!sections.some((s) => s.id === f.sectionId)) return true;
+		return visibleIds.has(f.sectionId);
+	});
+}
+
+/** Returns a copy of `answers` without keys belonging to hidden sections. */
+export function stripHiddenAnswers(
+	answers: Record<string, unknown>,
+	hiddenKeys: Set<string> | string[],
+): Record<string, unknown> {
+	const hidden = hiddenKeys instanceof Set ? hiddenKeys : new Set(hiddenKeys);
+	if (hidden.size === 0) return answers;
+	const next: Record<string, unknown> = {};
+	for (const [k, v] of Object.entries(answers)) {
+		if (!hidden.has(k)) next[k] = v;
+	}
+	return next;
+}
+
+export function validateSectionVisibilityRule(args: {
+	rule: SectionVisibilityRule | null | undefined;
+	sourceField: { id: string; type: string; options?: string[] | null } | undefined;
+	sectionId?: string | null;
+	sourceSectionId?: string | null;
+}): string | null {
+	const { rule, sourceField, sectionId, sourceSectionId } = args;
+	if (!rule) return null;
+	if (!sourceField) return "Campo de origem não encontrado nesta versão.";
+	if (!isConditionalTriggerType(sourceField.type)) {
+		return "O campo de origem deve ser checkbox, seleção única, múltipla seleção ou grupo de rádio.";
+	}
+	if (sectionId && rule.sourceFieldId && sourceSectionId && sourceSectionId === sectionId) {
+		return "A seção não pode depender de um campo dela mesma.";
+	}
+	switch (sourceField.type) {
+		case "checkbox":
+			if (rule.operator !== "is_checked" && rule.operator !== "is_not_checked") {
+				return "Para checkbox use “está marcado” ou “não está marcado”.";
+			}
+			break;
+		case "select_single":
+		case "radio_group":
+			if (rule.operator !== "equals") return "Para este campo use “é igual a”.";
+			if (!rule.values || rule.values.length === 0) return "Escolha ao menos um valor.";
+			break;
+		case "select_multiple":
+			if (rule.operator !== "includes_any" && rule.operator !== "includes_all") {
+				return "Para múltipla seleção use “contém” ou “contém todos”.";
+			}
+			if (!rule.values || rule.values.length === 0) return "Escolha ao menos um valor.";
+			break;
+		default:
+			break;
+	}
+	if (rule.values && rule.values.length > 0 && sourceField.options) {
+		const unknown = rule.values.filter((v) => !sourceField.options!.includes(v));
+		if (unknown.length > 0) return "A regra contém valores que não existem mais no campo de origem.";
+	}
+	return null;
+}
 
 function fieldValueSchema(field: FormFieldForValidation) {
 	let base: z.ZodTypeAny;
@@ -197,7 +381,8 @@ function fieldValueSchema(field: FormFieldForValidation) {
 			base = z.coerce.date();
 			break;
 		}
-		case "select_single": {
+		case "select_single":
+		case "radio_group": {
 			const opts = field.options && field.options.length > 0 ? field.options : null;
 			if (!opts) {
 				base = z.string().min(1);
@@ -332,9 +517,15 @@ function fieldValueSchema(field: FormFieldForValidation) {
 	return base;
 }
 
-export function buildAnswersSchema(fields: FormFieldForValidation[]) {
+export function buildAnswersSchema(
+	fields: FormFieldForValidation[],
+	sections?: SectionForVisibility[],
+	answers?: Record<string, unknown>,
+) {
+	const effective =
+		sections && answers ? filterVisibleFields(fields, sections, answers) : fields;
 	const shape: Record<string, z.ZodTypeAny> = {};
-	for (const field of fields) {
+	for (const field of effective) {
 		if (!field.isActive || !field.isVisible) continue;
 		shape[field.key] = fieldValueSchema(field);
 	}
@@ -344,9 +535,10 @@ export function buildAnswersSchema(fields: FormFieldForValidation[]) {
 export function validateAnswers(
 	fields: FormFieldForValidation[],
 	answers: Record<string, unknown>,
+	sections?: SectionForVisibility[],
 ): { success: boolean; errors?: Record<string, string[]>; data?: Record<string, unknown> } {
-	const schema = buildAnswersSchema(fields);
-	const parsed = schema.safeParse(answers);
+	const schema = buildAnswersSchema(fields, sections, answers);
+	const parsed = schema.safeParse(stripHiddenForValidation(fields, sections, answers));
 	if (parsed.success) return { success: true, data: parsed.data };
 	const flat = parsed.error.flatten();
 	const errors: Record<string, string[]> = {};
@@ -354,6 +546,26 @@ export function validateAnswers(
 		if (messages) errors[key] = messages;
 	}
 	return { success: false, errors };
+}
+
+/**
+ * Removes answers for hidden sections before validation so required
+ * fields in hidden sections never block submit and spoofed payloads
+ * for hidden sections are ignored.
+ */
+function stripHiddenForValidation(
+	fields: FormFieldForValidation[],
+	sections: SectionForVisibility[] | undefined,
+	answers: Record<string, unknown>,
+): Record<string, unknown> {
+	if (!sections || !sections.some((s) => s.visibilityRule)) return answers;
+	const visible = new Set(filterVisibleFields(fields, sections, answers).map((f) => f.key));
+	const next: Record<string, unknown> = {};
+	for (const [k, v] of Object.entries(answers)) {
+		if (visible.has(k) || !fields.some((f) => f.key === k)) next[k] = v;
+	}
+	// Always keep trigger answers even if their own section logic changes.
+	return next;
 }
 
 export function formatAnswerValue(

@@ -23,7 +23,7 @@ export const fieldFormSchema = z
 	})
 	.superRefine((values, ctx) => {
 		if (!values.allowOther) return;
-		if (values.type !== "select_single" && values.type !== "select_multiple") return;
+		if (values.type !== "select_single" && values.type !== "select_multiple" && values.type !== "radio_group") return;
 		const hasOutro = hasOutroOption(
 			(values.optionsText ?? "").split("\n"),
 		);
@@ -59,7 +59,7 @@ export function defaultFieldValues(initial?: Field, sectionId?: string | null): 
 }
 
 export function needsOptionsFor(type: FieldFormValues["type"]): boolean {
-	return type === "select_single" || type === "select_multiple";
+	return type === "select_single" || type === "select_multiple" || type === "radio_group";
 }
 
 interface UpsertFieldInput {
