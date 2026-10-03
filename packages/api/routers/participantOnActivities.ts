@@ -11,6 +11,7 @@ import {
 	sessionAttendance,
 } from "@verific/drizzle/schema";
 import { and, asc, eq, count, countDistinct, inArray } from "@verific/drizzle/orm";
+import type { ParticipantActivitySession } from "../schemas";
 
 // tRPC
 import { TRPCError } from "@trpc/server";
@@ -142,18 +143,22 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 				const { speakerOnActivity, sessions, tagOnActivity, ...activityData } =
 					onActivity.activity;
 
+				const dtoSessions: ParticipantActivitySession[] = (
+					sessions ?? []
+				).map((session) => ({
+					id: session.id,
+					startsAt: session.startsAt,
+					endsAt: session.endsAt,
+					address: session.address,
+					joinedAt: session.attendances?.[0]?.joinedAt ?? null,
+					attendedCount: sessionCountsMap.get(session.id) ?? 0,
+				}));
+
 				return {
 					...activityData,
 					speakers: speakerOnActivity.map(s => s.speaker),
 					tags: (tagOnActivity ?? []).map((t) => t.tag),
-					sessions: (sessions ?? []).map((session) => ({
-						...session,
-						joinedAt:
-							session.attendances?.[0]?.joinedAt ?? null,
-						attendedCount:
-							sessionCountsMap.get(session.id) ?? 0,
-						attendances: undefined,
-					})),
+					sessions: dtoSessions,
 					role: onActivity.role,
 					participantsJoined: countsMap.get(activityData.id) || 0,
 				};

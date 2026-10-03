@@ -85,6 +85,20 @@ export const tagColors = [
 
 export const tagColorSchema = z.enum(tagColors);
 
+/**
+ * Session shape sent to participants (ticket / schedule).
+ * `joinedAt` is the current participant's check-in for the session (null when absent).
+ * `attendedCount` is the total number of check-ins for the session.
+ */
+export interface ParticipantActivitySession {
+	id: string;
+	startsAt: Date;
+	endsAt: Date;
+	address: string | null;
+	joinedAt: Date | null;
+	attendedCount: number;
+}
+
 export { formFieldTypes };
 
 /** Fixed label for the opt-in "Other" choice on select fields. */
