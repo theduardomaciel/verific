@@ -24,6 +24,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { animateFlip } from "../lib/animate-flip";
 import type { Field, Section, Version } from "../types";
 import type { UseFormsBuilder } from "../hooks/use-forms-builder";
 import { FieldDialog } from "./field-dialog";
@@ -140,8 +141,9 @@ function SectionBlock({
 	return (
 		<div
 			ref={sectionRef}
+			data-section-id={section.id}
 			className={cn(
-				"flex flex-col gap-2 rounded-lg border bg-transparent p-3 transition-all duration-200",
+				"flex flex-col gap-2 rounded-lg border bg-transparent p-3 transition-all duration-200 will-change-transform",
 				isSectionDragging && "border-primary/60 opacity-60 shadow-lg",
 				isSectionDropTarget &&
 					!isSectionDragging &&
@@ -534,6 +536,7 @@ export function BuilderCard({
 			const f = fieldById.get(id);
 			if (f) next.push(f);
 		}
+		animateFlip(listRef.current);
 		onPersistOrder(next);
 	}
 
