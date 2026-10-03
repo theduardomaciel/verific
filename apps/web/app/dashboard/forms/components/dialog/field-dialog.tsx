@@ -24,7 +24,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Dialog,
 	DialogContent,
@@ -47,7 +46,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import type { Field, Section } from "../types";
+import type { Field, Section } from "../../types";
 import {
 	buildRowHint,
 	defaultFieldValues,
@@ -55,7 +54,7 @@ import {
 	needsOptionsFor,
 	toUpsertFieldInput,
 	type FieldFormValues,
-} from "../lib/field-form";
+} from "../../lib/field-form";
 import {
 	formFieldTypeLabels,
 	formFieldTypes,
@@ -167,13 +166,40 @@ export function FieldDialog({
 						<div className="flex w-full flex-row gap-3">
 							<FormField
 								control={form.control}
+								name="label"
+								render={({ field }) => (
+									<FormItem className="flex-1">
+										<FormLabel>Nome do Campo</FormLabel>
+										<FormControl>
+											<Input
+												className="flex-1"
+												placeholder="Ex: Restrições alimentares"
+												{...field}
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
 								name="type"
 								render={({ field }) => (
 									<FormItem className="flex-1">
 										<FormLabel>Tipo</FormLabel>
 										<Select
 											value={field.value}
-											onValueChange={field.onChange}
+											onValueChange={(next) => {
+												field.onChange(next);
+												const currentLabel = form.getValues("label")?.trim();
+												const prevLabel = formFieldTypeLabels[field.value as FieldType];
+												if (!currentLabel || currentLabel === prevLabel) {
+													form.setValue("label", formFieldTypeLabels[next as FieldType], {
+														shouldValidate: true,
+														shouldDirty: true,
+													});
+												}
+											}}
 										>
 											<FormControl>
 												<SelectTrigger className="w-auto flex-1">
@@ -181,33 +207,6 @@ export function FieldDialog({
 												</SelectTrigger>
 											</FormControl>
 											<SelectContent>
-												{/* <SelectItem value="text">
-													Texto curto
-												</SelectItem>
-												<SelectItem value="textarea">
-													Texto longo
-												</SelectItem>
-												<SelectItem value="number">
-													Número
-												</SelectItem>
-												<SelectItem value="date">
-													Data
-												</SelectItem>
-												<SelectItem value="select_single">
-													Seleção única
-												</SelectItem>
-												<SelectItem value="select_multiple">
-													Múltipla seleção
-												</SelectItem>
-												<SelectItem value="checkbox">
-													Checkbox
-												</SelectItem>
-												<SelectItem value="phone">
-													Telefone
-												</SelectItem>
-												<SelectItem value="email">
-													E-mail
-												</SelectItem> */}
 												{formFieldTypes.map((type) => (
 													<SelectItem
 														key={type}
@@ -223,23 +222,6 @@ export function FieldDialog({
 												))}
 											</SelectContent>
 										</Select>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<FormField
-								control={form.control}
-								name="label"
-								render={({ field }) => (
-									<FormItem className="flex-1">
-										<FormLabel>Nome do Campo</FormLabel>
-										<FormControl>
-											<Input
-												className="flex-1"
-												placeholder="Ex: Restrições alimentares"
-												{...field}
-											/>
-										</FormControl>
 										<FormMessage />
 									</FormItem>
 								)}
@@ -375,7 +357,10 @@ export function FieldDialog({
 											</FormControl>
 											<SelectContent>
 												{sections.map((s) => (
-													<SelectItem key={s.id} value={s.id}>
+													<SelectItem
+														key={s.id}
+														value={s.id}
+													>
 														{s.title}
 													</SelectItem>
 												))}

@@ -9,7 +9,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import type { Section } from "../types";
+import type { Section } from "../../types";
 
 interface DeleteSectionDialogProps {
 	section: Section | null;
@@ -38,8 +38,10 @@ export function DeleteSectionDialog({
 								{fieldCount > 0 && (
 									<>
 										{" "}
-										Ela possui {fieldCount} campo{fieldCount === 1 ? "" : "s"} — mova ou
-										exclua os campos antes de excluir a seção.
+										Ela possui {fieldCount} campo
+										{fieldCount === 1 ? "" : "s"} — mova ou
+										exclua os campos antes de excluir a
+										seção.
 									</>
 								)}
 							</>
@@ -47,7 +49,11 @@ export function DeleteSectionDialog({
 					</DialogDescription>
 				</DialogHeader>
 				<DialogFooter>
-					<Button variant="outline" onClick={onClose} disabled={isPending}>
+					<Button
+						variant="outline"
+						onClick={onClose}
+						disabled={isPending}
+					>
 						Cancelar
 					</Button>
 					<Button

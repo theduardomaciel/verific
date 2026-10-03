@@ -5,8 +5,8 @@ import { FormPreview } from "./preview";
 import { useFormsBuilder } from "./hooks/use-forms-builder";
 import { AnswersPanel } from "./components/answers-panel";
 import { BuilderCard } from "./components/builder-card";
-import { DeleteFieldDialog } from "./components/delete-field-dialog";
-import { DeleteSectionDialog } from "./components/delete-section-dialog";
+import { DeleteFieldDialog } from "./components/dialog/delete-field-dialog";
+import { DeleteSectionDialog } from "./components/dialog/delete-section-dialog";
 import { FormsHeader } from "./components/forms-header";
 import { VersionsCard } from "./components/versions-card";
 
@@ -64,16 +64,18 @@ export function FormsContent() {
 			{tab === "answers" ? (
 				<AnswersPanel projectId={projectId} />
 			) : tab === "preview" ? (
-				<FormPreview fields={fields} sections={sections} isLoading={isLoadingFields} />
+				<FormPreview
+					fields={fields}
+					sections={sections}
+					isLoading={isLoadingFields}
+				/>
 			) : (
 				<>
 					<VersionsCard
 						versions={versions}
 						selectedId={selectedId}
 						onSelect={setSelectedId}
-						onCreate={() =>
-							createVersion.mutate({ projectId })
-						}
+						onCreate={() => createVersion.mutate({ projectId })}
 						onDuplicate={(v) =>
 							createVersion.mutate({
 								projectId,
@@ -119,18 +121,14 @@ export function FormsContent() {
 				field={fieldToDelete}
 				isPending={deleteField.isPending}
 				onClose={() => setFieldToDelete(null)}
-				onConfirm={(f) =>
-					deleteField.mutate({ fieldId: f.id })
-				}
+				onConfirm={(f) => deleteField.mutate({ fieldId: f.id })}
 			/>
 			<DeleteSectionDialog
 				section={sectionToDelete}
 				fieldCount={sectionToDeleteFieldCount}
 				isPending={deleteSection.isPending}
 				onClose={() => setSectionToDelete(null)}
-				onConfirm={(s) =>
-					deleteSection.mutate({ sectionId: s.id })
-				}
+				onConfirm={(s) => deleteSection.mutate({ sectionId: s.id })}
 			/>
 		</div>
 	);
