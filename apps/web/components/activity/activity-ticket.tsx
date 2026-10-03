@@ -85,10 +85,7 @@ export function ActivityTicket({
 					<div className="flex w-full flex-col gap-2">
 						{sessions.map((session, i) => (
 							<div
-								key={
-									(session as { id?: string }).id ??
-									`${activity.id}-session-${i}`
-								}
+								key={session.id}
 								className="flex w-full items-center justify-between gap-3 rounded-md border px-3 py-2"
 							>
 								<div className="flex min-w-0 flex-col">
@@ -191,10 +188,7 @@ export function ActivityTicket({
 						<div className="flex w-full flex-col items-center justify-center gap-4 py-6">
 							{sessions.map((session, i) => (
 								<div
-									key={
-										(session as { id?: string }).id ??
-										`${activity.id}-checkin-${i}`
-									}
+									key={session.id}
 									className="flex w-full flex-col gap-2 rounded-md border px-3 py-2"
 								>
 									<div className="flex w-full items-center justify-between gap-2 text-sm">
@@ -206,14 +200,11 @@ export function ActivityTicket({
 										</span>
 										<span className="text-muted-foreground flex shrink-0 items-center gap-1">
 											<User size={14} />
-											{(session as { attendedCount?: number })
-												.attendedCount ?? 0}
+											{session.attendedCount}
 										</span>
 									</div>
 									<BadgeScanner
-										sessionId={
-											(session as { id: string }).id
-										}
+										sessionId={session.id}
 										buttonLabel={
 											sessions.length > 1
 												? `Credenciar sessão ${i + 1}`
