@@ -197,6 +197,8 @@ function fieldValueSchema(field: FormFieldForValidation) {
 			break;
 		}
 		case "phone": {
+			// Stored form is always E.164 (e.g. "+5582999991234"), so no
+			// default region is needed. See DOCS/i18n.md.
 			base = z
 				.string()
 				.refine((val) => val === "" || isValidPhoneNumber(val), {
