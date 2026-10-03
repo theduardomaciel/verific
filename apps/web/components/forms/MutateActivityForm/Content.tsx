@@ -114,7 +114,7 @@ function RegistrationSettings({
 			/>
 
 			<div className="flex flex-col gap-4 border-t p-4">
-				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+				<div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
 					<FormField
 						control={form.control}
 						name="participantsLimit"
@@ -182,7 +182,8 @@ function RegistrationSettings({
 							Formulário de inscrição
 						</p>
 						<p className="text-muted-foreground text-sm">
-							Opcional. Sem formulário, a inscrição é direta.
+							Adiciona um formulário customizado para os
+							participantes
 						</p>
 					</div>
 					{formAction}
@@ -263,9 +264,9 @@ export function MutateActivityFormContent({
 				</Button>
 			</header>
 
-			<div className="flex w-full flex-col items-start gap-10 md:flex-row">
+			<div className="flex w-full flex-col items-start gap-10 md:flex-row xl:gap-24">
 				{/* ------------------------------ Main column ------------------------------ */}
-				<div className="flex min-w-0 flex-1 flex-col gap-6">
+				<div className="flex w-full min-w-0 flex-1 flex-col gap-6">
 					<FormField
 						control={form.control}
 						name="name"
@@ -302,7 +303,7 @@ export function MutateActivityFormContent({
 						)}
 					/>
 
-					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+					<div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
 						<FormField
 							control={form.control}
 							name="category"
@@ -688,7 +689,7 @@ export function MutateActivityFormContent({
 													today /* || date > endDate */
 												);
 											}}
-											className="max-w-full rounded-md border [--cell-size:2.5rem] min-[420px]:[--cell-size:3rem]"
+											className="max-w-full rounded-md border [--cell-size:2rem] min-[375px]:[--cell-size:2.15rem] min-[1024px]:[--cell-size:3rem]"
 										/>
 									</div>
 									<FormMessage />
