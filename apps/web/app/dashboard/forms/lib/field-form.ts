@@ -22,7 +22,7 @@ export const fieldFormSchema = z.object({
 
 export type FieldFormValues = z.infer<typeof fieldFormSchema>;
 
-export function defaultFieldValues(initial?: Field, defaultSectionId?: string | null): FieldFormValues {
+export function defaultFieldValues(initial?: Field, sectionId?: string | null): FieldFormValues {
 	return {
 		fieldId: initial?.id,
 		label: initial?.label ?? "",
@@ -37,7 +37,7 @@ export function defaultFieldValues(initial?: Field, defaultSectionId?: string | 
 		isVisible: initial?.isVisible ?? true,
 		editableAfterSignup: initial?.editableAfterSignup ?? true,
 		halfWidth: initial?.halfWidth ?? false,
-		sectionId: initial?.sectionId ?? defaultSectionId ?? null,
+		sectionId: sectionId !== undefined ? sectionId : (initial?.sectionId ?? null),
 	} as FieldFormValues;
 }
 

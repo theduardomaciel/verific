@@ -46,7 +46,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import type { Field, Section } from "../../types";
+import type { Field } from "../../types";
 import {
 	buildRowHint,
 	defaultFieldValues,
@@ -68,8 +68,8 @@ interface FieldDialogProps {
 	siblings?: Pick<Field, "id" | "label" | "halfWidth">[];
 	/** Index of `initial` in `siblings`, or `siblings.length` for a new field at the end. */
 	position?: number | null;
-	sections?: Pick<Section, "id" | "title">[];
-	defaultSectionId?: string | null;
+	/** Section this dialog was opened from. New fields are created in it; edits stay in it. */
+	sectionId?: string | null;
 }
 
 type FieldType = (typeof formFieldTypes)[number];
@@ -92,8 +92,7 @@ export function FieldDialog({
 	onDone,
 	siblings,
 	position,
-	sections,
-	defaultSectionId,
+	sectionId,
 }: FieldDialogProps) {
 	const [open, setOpen] = useState(false);
 	const utils = trpc.useUtils();
@@ -111,7 +110,7 @@ export function FieldDialog({
 
 	const form = useForm<FieldFormValues>({
 		resolver: zodResolver(fieldFormSchema) as never,
-		defaultValues: defaultFieldValues(initial, defaultSectionId),
+		defaultValues: defaultFieldValues(initial, sectionId),
 	});
 
 	const watchedType = form.watch("type");
@@ -125,9 +124,9 @@ export function FieldDialog({
 
 	useEffect(() => {
 		if (open) {
-			form.reset(defaultFieldValues(initial, defaultSectionId));
+			form.reset(defaultFieldValues(initial, sectionId));
 		}
-	}, [open, initial, defaultSectionId, form]);
+	}, [open, initial, sectionId, form]);
 
 	const rowHint = useMemo(
 		() =>
@@ -338,38 +337,6 @@ export function FieldDialog({
 									)}
 								/>
 							</div>
-						)}
-						{sections && sections.length > 0 && (
-							<FormField
-								control={form.control}
-								name="sectionId"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Seção</FormLabel>
-										<Select
-											value={field.value ?? ""}
-											onValueChange={field.onChange}
-										>
-											<FormControl>
-												<SelectTrigger>
-													<SelectValue placeholder="Selecione a seção" />
-												</SelectTrigger>
-											</FormControl>
-											<SelectContent>
-												{sections.map((s) => (
-													<SelectItem
-														key={s.id}
-														value={s.id}
-													>
-														{s.title}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
 						)}
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 							<FormField
