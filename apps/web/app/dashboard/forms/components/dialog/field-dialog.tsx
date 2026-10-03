@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import {
@@ -16,6 +16,7 @@ import {
 	SquareCheckIcon,
 	PhoneIcon,
 	MailIcon,
+	ChevronDownIcon,
 } from "lucide-react";
 
 import { trpc } from "@/lib/trpc/react";
@@ -23,10 +24,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
 	Dialog,
 	DialogContent,
+	DialogDescription,
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
@@ -34,6 +40,7 @@ import {
 import {
 	Form,
 	FormControl,
+	FormDescription,
 	FormField,
 	FormItem,
 	FormLabel,
@@ -86,6 +93,66 @@ const formFieldIcons: Record<FieldType, React.ReactNode> = {
 	email: <MailIcon />,
 };
 
+type SwitchName =
+	| "required"
+	| "isVisible"
+	| "editableAfterSignup"
+	| "halfWidth";
+
+/** A setting row: label + short description on the left, switch on the right. */
+function SwitchRow({
+	control,
+	name,
+	label,
+	description,
+}: {
+	control: Control<FieldFormValues>;
+	name: SwitchName;
+	label: string;
+	description: string;
+}) {
+	return (
+		<FormField
+			control={control}
+			name={name}
+			render={({ field }) => (
+				<FormItem className="flex flex-row items-center justify-between gap-4 space-y-0">
+					<div className="flex flex-col gap-0.5">
+						<FormLabel>{label}</FormLabel>
+						<FormDescription className="text-xs">
+							{description}
+						</FormDescription>
+					</div>
+					<FormControl>
+						<Switch
+							checked={Boolean(field.value)}
+							onCheckedChange={field.onChange}
+						/>
+					</FormControl>
+				</FormItem>
+			)}
+		/>
+	);
+}
+
+/** Bordered block used to group type-specific inputs. */
+function Section({
+	title,
+	children,
+}: {
+	title: string;
+	children: React.ReactNode;
+}) {
+	return (
+		<div className="flex flex-col gap-3 rounded-lg border p-4">
+			<p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+				{title}
+			</p>
+			{children}
+		</div>
+	);
+}
+
 export function FieldDialog({
 	versionId,
 	initial,
@@ -95,6 +162,7 @@ export function FieldDialog({
 	sectionId,
 }: FieldDialogProps) {
 	const [open, setOpen] = useState(false);
+	const [advancedOpen, setAdvancedOpen] = useState(false);
 	const utils = trpc.useUtils();
 	const mutation = trpc.upsertField.useMutation({
 		onSuccess: async () => {
@@ -125,6 +193,7 @@ export function FieldDialog({
 	useEffect(() => {
 		if (open) {
 			form.reset(defaultFieldValues(initial, sectionId));
+			setAdvancedOpen(false);
 		}
 	}, [open, initial, sectionId, form]);
 
@@ -151,265 +220,325 @@ export function FieldDialog({
 					{initial ? "Editar" : "Novo campo"}
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
+			<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[560px]">
 				<DialogHeader>
 					<DialogTitle>
 						{initial ? "Editar campo" : "Novo campo"}
 					</DialogTitle>
+					<DialogDescription>
+						Defina como este campo aparece no formulário de
+						inscrição.
+					</DialogDescription>
 				</DialogHeader>
 				<Form {...form}>
 					<form
 						onSubmit={form.handleSubmit(submit)}
-						className="flex flex-col gap-4"
+						className="flex flex-col gap-5"
 					>
-						<div className="flex w-full flex-row gap-3">
-							<FormField
-								control={form.control}
-								name="label"
-								render={({ field }) => (
-									<FormItem className="flex-1">
-										<FormLabel>Nome do Campo</FormLabel>
-										<FormControl>
-											<Input
-												className="flex-1"
-												placeholder="Ex: Restrições alimentares"
-												{...field}
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<FormField
-								control={form.control}
-								name="type"
-								render={({ field }) => (
-									<FormItem className="flex-1">
-										<FormLabel>Tipo</FormLabel>
-										<Select
-											value={field.value}
-											onValueChange={(next) => {
-												field.onChange(next);
-												const currentLabel = form.getValues("label")?.trim();
-												const prevLabel = formFieldTypeLabels[field.value as FieldType];
-												if (!currentLabel || currentLabel === prevLabel) {
-													form.setValue("label", formFieldTypeLabels[next as FieldType], {
-														shouldValidate: true,
-														shouldDirty: true,
-													});
-												}
-											}}
-										>
+						{/* Essentials */}
+						<div className="flex flex-col gap-4">
+							<div className="flex w-full flex-row gap-3">
+								<FormField
+									control={form.control}
+									name="label"
+									render={({ field }) => (
+										<FormItem className="flex-[3]">
+											<FormLabel>Nome do campo</FormLabel>
 											<FormControl>
-												<SelectTrigger className="w-auto flex-1">
-													<SelectValue />
-												</SelectTrigger>
+												<Input
+													placeholder="Ex: Restrições alimentares"
+													{...field}
+												/>
 											</FormControl>
-											<SelectContent>
-												{formFieldTypes.map((type) => (
-													<SelectItem
-														key={type}
-														value={type}
-													>
-														{formFieldIcons[type]}
-														{
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<FormField
+									control={form.control}
+									name="type"
+									render={({ field }) => (
+										<FormItem className="flex-[2]">
+											<FormLabel>Tipo</FormLabel>
+											<Select
+												value={field.value}
+												onValueChange={(next) => {
+													field.onChange(next);
+													const currentLabel = form
+														.getValues("label")
+														?.trim();
+													const prevLabel =
+														formFieldTypeLabels[
+															field.value as FieldType
+														];
+													if (
+														!currentLabel ||
+														currentLabel ===
+															prevLabel
+													) {
+														form.setValue(
+															"label",
 															formFieldTypeLabels[
-																type
-															]
-														}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-						</div>
-						{/* <FormField
-							control={form.control}
-							name="helpText"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Descrição de ajuda</FormLabel>
-									<FormControl>
-										<Textarea
-											placeholder="Texto de apoio ao participante"
-											{...field}
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/> */}
-						{needsOptions && (
+																next as FieldType
+															],
+															{
+																shouldValidate:
+																	true,
+																shouldDirty:
+																	true,
+															},
+														);
+													}
+												}}
+											>
+												<FormControl>
+													<SelectTrigger className="w-full">
+														<SelectValue />
+													</SelectTrigger>
+												</FormControl>
+												<SelectContent>
+													{formFieldTypes.map(
+														(type) => (
+															<SelectItem
+																key={type}
+																value={type}
+															>
+																{
+																	formFieldIcons[
+																		type
+																	]
+																}
+																{
+																	formFieldTypeLabels[
+																		type
+																	]
+																}
+															</SelectItem>
+														),
+													)}
+												</SelectContent>
+											</Select>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							</div>
+
 							<FormField
 								control={form.control}
-								name="optionsText"
+								name="helpText"
 								render={({ field }) => (
 									<FormItem>
 										<FormLabel>
-											Opções (uma por linha)
+											Descrição de ajuda{" "}
+											<span className="text-muted-foreground font-normal">
+												(opcional)
+											</span>
 										</FormLabel>
 										<FormControl>
 											<Textarea
-												placeholder={"Opção 1\nOpção 2"}
+												rows={2}
+												className="resize-none"
+												placeholder="Texto de apoio exibido ao participante"
 												{...field}
+												value={field.value ?? ""}
 											/>
 										</FormControl>
 										<FormMessage />
 									</FormItem>
 								)}
 							/>
+						</div>
+
+						{/* Type-specific: options */}
+						{needsOptions && (
+							<Section title="Opções">
+								<FormField
+									control={form.control}
+									name="optionsText"
+									render={({ field }) => (
+										<FormItem>
+											<FormControl>
+												<Textarea
+													rows={4}
+													placeholder={
+														"Opção 1\nOpção 2"
+													}
+													{...field}
+												/>
+											</FormControl>
+											<FormDescription className="text-xs">
+												Uma opção por linha.
+											</FormDescription>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							</Section>
 						)}
+
+						{/* Type-specific: validation */}
 						{showNumberRange && (
-							<div className="grid grid-cols-2 gap-4">
-								<FormField
-									control={form.control}
-									name="min"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Valor mínimo</FormLabel>
-											<FormControl>
-												<Input
-													type="number"
-													placeholder="-"
-													{...field}
-												/>
-											</FormControl>
-										</FormItem>
-									)}
-								/>
-								<FormField
-									control={form.control}
-									name="max"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Valor máximo</FormLabel>
-											<FormControl>
-												<Input
-													type="number"
-													placeholder="-"
-													{...field}
-												/>
-											</FormControl>
-										</FormItem>
-									)}
-								/>
-							</div>
+							<Section title="Validação">
+								<div className="grid grid-cols-2 gap-3">
+									<FormField
+										control={form.control}
+										name="min"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>
+													Valor mínimo
+												</FormLabel>
+												<FormControl>
+													<Input
+														type="number"
+														placeholder="-"
+														{...field}
+													/>
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+									<FormField
+										control={form.control}
+										name="max"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>
+													Valor máximo
+												</FormLabel>
+												<FormControl>
+													<Input
+														type="number"
+														placeholder="-"
+														{...field}
+													/>
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+								</div>
+							</Section>
 						)}
 						{showTextLength && (
-							<div className="grid grid-cols-2 gap-4">
-								<FormField
-									control={form.control}
-									name="minLength"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>
-												Tamanho mínimo
-											</FormLabel>
-											<FormControl>
-												<Input
-													type="number"
-													placeholder="-"
-													{...field}
-												/>
-											</FormControl>
-										</FormItem>
-									)}
-								/>
-								<FormField
-									control={form.control}
-									name="maxLength"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>
-												Tamanho máximo
-											</FormLabel>
-											<FormControl>
-												<Input
-													type="number"
-													placeholder="-"
-													{...field}
-												/>
-											</FormControl>
-										</FormItem>
-									)}
-								/>
-							</div>
+							<Section title="Validação">
+								<div className="grid grid-cols-2 gap-3">
+									<FormField
+										control={form.control}
+										name="minLength"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>
+													Tamanho mínimo
+												</FormLabel>
+												<FormControl>
+													<Input
+														type="number"
+														placeholder="-"
+														{...field}
+													/>
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+									<FormField
+										control={form.control}
+										name="maxLength"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>
+													Tamanho máximo
+												</FormLabel>
+												<FormControl>
+													<Input
+														type="number"
+														placeholder="-"
+														{...field}
+													/>
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+								</div>
+							</Section>
 						)}
-						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-							<FormField
+
+						{/* Behavior */}
+						<div className="flex flex-col gap-4">
+							<SwitchRow
 								control={form.control}
 								name="required"
-								render={({ field }) => (
-									<FormItem className="flex items-center gap-2 space-y-0">
-										<FormControl>
-											<Switch
-												checked={field.value}
-												onCheckedChange={field.onChange}
-											/>
-										</FormControl>
-										<FormLabel>Obrigatório</FormLabel>
-									</FormItem>
-								)}
+								label="Obrigatório"
+								description="O participante precisa preencher para concluir a inscrição."
 							/>
-							<FormField
-								control={form.control}
-								name="isVisible"
-								render={({ field }) => (
-									<FormItem className="flex items-center gap-2 space-y-0">
-										<FormControl>
-											<Switch
-												checked={field.value}
-												onCheckedChange={field.onChange}
-											/>
-										</FormControl>
-										<Label>Visível</Label>
-									</FormItem>
+							<div className="flex flex-col gap-2">
+								<SwitchRow
+									control={form.control}
+									name="halfWidth"
+									label="Meia largura"
+									description="Permite dividir a linha com outro campo de meia largura."
+								/>
+								{rowHint && (
+									<p className="text-muted-foreground bg-muted/50 rounded-md px-3 py-2 text-xs">
+										{rowHint}
+									</p>
 								)}
-							/>
-							<FormField
-								control={form.control}
-								name="editableAfterSignup"
-								render={({ field }) => (
-									<FormItem className="flex items-center gap-2 space-y-0">
-										<FormControl>
-											<Switch
-												checked={field.value}
-												onCheckedChange={field.onChange}
-											/>
-										</FormControl>
-										<Label>Editável após inscrição</Label>
-									</FormItem>
-								)}
-							/>
-							<FormField
-								control={form.control}
-								name="halfWidth"
-								render={({ field }) => (
-									<FormItem className="flex items-center gap-2 space-y-0">
-										<FormControl>
-											<Switch
-												checked={field.value}
-												onCheckedChange={field.onChange}
-											/>
-										</FormControl>
-										<Label>Meia largura</Label>
-									</FormItem>
-								)}
-							/>
+							</div>
 						</div>
-						{rowHint && (
-							<p className="text-muted-foreground text-xs">
-								{rowHint}
-							</p>
-						)}
-						<Button type="submit" disabled={mutation.isPending}>
-							{mutation.isPending
-								? "Salvando..."
-								: "Salvar campo"}
-						</Button>
+
+						{/* Advanced */}
+						<Collapsible
+							open={advancedOpen}
+							onOpenChange={setAdvancedOpen}
+							className="rounded-lg border"
+						>
+							<CollapsibleTrigger asChild>
+								<Button
+									type="button"
+									variant="ghost"
+									className="group flex w-full items-center justify-between px-4"
+								>
+									<span className="text-sm font-medium">
+										Configurações avançadas
+									</span>
+									<ChevronDownIcon className="size-4 transition-transform group-data-[state=open]:rotate-180" />
+								</Button>
+							</CollapsibleTrigger>
+							<CollapsibleContent className="flex flex-col gap-4 border-t px-4 py-4">
+								<SwitchRow
+									control={form.control}
+									name="isVisible"
+									label="Visível"
+									description="Campos ocultos não aparecem no formulário."
+								/>
+								<SwitchRow
+									control={form.control}
+									name="editableAfterSignup"
+									label="Editável após inscrição"
+									description="O participante pode alterar a resposta depois de se inscrever."
+								/>
+							</CollapsibleContent>
+						</Collapsible>
+
+						{/* Footer */}
+						<div className="flex justify-end gap-2">
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => setOpen(false)}
+							>
+								Cancelar
+							</Button>
+							<Button type="submit" disabled={mutation.isPending}>
+								{mutation.isPending
+									? "Salvando..."
+									: "Salvar campo"}
+							</Button>
+						</div>
 					</form>
 				</Form>
 			</DialogContent>
