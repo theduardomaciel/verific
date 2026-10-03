@@ -4,6 +4,8 @@ import { db } from "@verific/drizzle";
 import {
 	activity,
 	activitySession,
+	formAnswer,
+	formVersion,
 	participant,
 	participantOnActivity,
 	project,
@@ -266,6 +268,24 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 						inArray(
 							sessionAttendance.sessionId,
 							activitySessions.map((s) => s.id),
+						),
+					),
+				);
+			}
+
+			// Remove respostas do formulário da atividade
+			const activityFormVersions = await db
+				.select({ id: formVersion.id })
+				.from(formVersion)
+				.where(eq(formVersion.activityId, activityId));
+
+			if (activityFormVersions.length > 0) {
+				await db.delete(formAnswer).where(
+					and(
+						eq(formAnswer.participantId, participantId),
+						inArray(
+							formAnswer.formVersionId,
+							activityFormVersions.map((v) => v.id),
 						),
 					),
 				);

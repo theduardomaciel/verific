@@ -94,11 +94,11 @@ export async function ParticipantCard({ id: participantId, eventUrl }: Props) {
 			</DialogHeader>
 			<div className="flex flex-col items-center justify-center gap-6">
 				<ul className="flex w-full flex-row flex-wrap items-center justify-center gap-2 md:max-w-[70%]">
-					<Badge variant={"secondary"} size={"xl"}>
+					<Badge variant={"secondary"}>
 						<Mail />
 						{participant.user.email}
 					</Badge>
-					<Badge variant={"secondary"} size={"xl"}>
+					<Badge variant={"secondary"}>
 						<Hash />
 						{totalEventsAttended}{" "}
 						{pluralize(
@@ -107,7 +107,7 @@ export async function ParticipantCard({ id: participantId, eventUrl }: Props) {
 							"atividades",
 						)}
 					</Badge>
-					<Badge variant={"secondary"} size={"xl"}>
+					<Badge variant={"secondary"}>
 						<Hourglass />
 						{hours} horas
 					</Badge>

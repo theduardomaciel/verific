@@ -2,6 +2,9 @@ import { db } from "@verific/drizzle";
 import {
 	activity,
 	activitySession,
+	formAnswer,
+	formField,
+	formVersion,
 	sessionAttendance,
 	speaker,
 	speakerOnActivity,
@@ -42,7 +45,15 @@ import {
 	activitySort,
 	getActivitiesParams,
 	getActivityParams,
+	answerValueSchema,
+	validateAnswers,
 } from "../schemas";
+import {
+	buildAnswerRows,
+	getPublishedVersionWithFields,
+	toValidationFields,
+	toVisibilitySections,
+} from "./forms";
 
 // Re-export client-safe schemas so existing server imports keep working.
 // Client components must import from `@verific/api/schemas` instead.
@@ -207,6 +218,10 @@ export const activitiesRouter = createTRPCRouter({
 				return {
 					activity: {
 						...selectedActivity,
+						tags: (selectedActivity.tagOnActivity ?? []).map(
+							(t) => t.tag,
+						),
+						form: null,
 						participants: [],
 					},
 					pageCount: 0,
@@ -369,8 +384,39 @@ export const activitiesRouter = createTRPCRouter({
 				participants: participantsWithAttendance,
 			};
 
+			const latestFormVersion = await db.query.formVersion.findFirst({
+				where: and(
+					eq(formVersion.projectId, selectedActivity.projectId),
+					eq(formVersion.activityId, activityId),
+				),
+				orderBy: desc(formVersion.version),
+			});
+			let formSummary: {
+				versionId: string;
+				version: number;
+				isPublished: boolean;
+				fieldsCount: number;
+			} | null = null;
+			if (latestFormVersion) {
+				const fieldsCountResult = await db
+					.select({ amount: count() })
+					.from(formField)
+					.where(
+						and(
+							eq(formField.formVersionId, latestFormVersion.id),
+							eq(formField.isActive, true),
+						),
+					);
+				formSummary = {
+					versionId: latestFormVersion.id,
+					version: latestFormVersion.version,
+					isPublished: latestFormVersion.isPublished,
+					fieldsCount: fieldsCountResult?.[0]?.amount ?? 0,
+				};
+			}
+
 			return {
-				activity: formattedActivity,
+				activity: { ...formattedActivity, form: formSummary },
 				participantsAmount: amount,
 				pageCount,
 				participantId: allParticipants.find(
@@ -482,6 +528,7 @@ export const activitiesRouter = createTRPCRouter({
 			type ActivityWithRelations = typeof activity.$inferSelect & {
 				participantsCount: number;
 				project: typeof project.$inferSelect;
+				sessions: Array<typeof activitySession.$inferSelect>;
 				speakerOnActivity: Array<
 					typeof speakerOnActivity.$inferSelect & {
 						speaker: typeof speaker.$inferSelect;
@@ -911,10 +958,15 @@ export const activitiesRouter = createTRPCRouter({
 				participantsIdsToAdd: z
 					.union([z.array(z.string()), z.string()])
 					.transform(transformSingleToArray),
+				formAnswers: z
+					.object({
+						answers: z.record(z.string(), answerValueSchema),
+					})
+					.optional(),
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			const { activityId, participantsIdsToAdd } = input;
+			const { activityId, participantsIdsToAdd, formAnswers } = input;
 
 			if (!participantsIdsToAdd) {
 				throw new TRPCError({
@@ -989,15 +1041,116 @@ export const activitiesRouter = createTRPCRouter({
 				}
 			}
 
-			await db
-				.insert(participantOnActivity)
-				.values(
-					participantsIdsToAdd.map((participantId) => ({
-						activityId,
-						participantId,
-					})),
-				)
-				.onConflictDoNothing();
+			// Respostas do formulário de inscrição da atividade (quando houver)
+			const {
+				version: activityFormVersion,
+				fields: activityFormFields,
+				sections: activityFormSections,
+			} = await getPublishedVersionWithFields(
+				foundActivity.projectId,
+				activityId,
+			);
+
+			let answerRows: ReturnType<typeof buildAnswerRows> = [];
+			if (activityFormVersion) {
+				if (formAnswers) {
+					if (participantsIdsToAdd.length !== 1) {
+						throw new TRPCError({
+							message:
+								"Respostas só podem ser enviadas para uma inscrição por vez.",
+							code: "BAD_REQUEST",
+						});
+					}
+					const validation = validateAnswers(
+						toValidationFields(activityFormFields),
+						formAnswers.answers,
+						toVisibilitySections(activityFormSections),
+					);
+					if (!validation.success) {
+						throw new TRPCError({
+							message:
+								"Respostas inválidas. Verifique os campos obrigatórios.",
+							code: "BAD_REQUEST",
+							cause: validation.errors,
+						});
+					}
+					answerRows = buildAnswerRows({
+						participantId: participantsIdsToAdd[0]!,
+						projectId: foundActivity.projectId,
+						versionId: activityFormVersion.id,
+						fields: activityFormFields,
+						sections: activityFormSections,
+						data: validation.data as Record<string, unknown>,
+					});
+				} else {
+					// Sem respostas: só bloqueia quando o próprio usuário se
+					// inscreve e o formulário exige preenchimento.
+					const requesterParticipant =
+						await db.query.participant.findFirst({
+							where: and(
+								eq(
+									participant.projectId,
+									foundActivity.projectId,
+								),
+								eq(participant.userId, ctx.session.user.id),
+							),
+							columns: { id: true },
+						});
+					const subscribesSelf =
+						!!requesterParticipant &&
+						participantsIdsToAdd.includes(
+							requesterParticipant.id,
+						);
+					if (subscribesSelf) {
+						const probe = validateAnswers(
+							toValidationFields(activityFormFields),
+							{},
+							toVisibilitySections(activityFormSections),
+						);
+						if (!probe.success) {
+							throw new TRPCError({
+								message:
+									"Esta atividade exige o preenchimento do formulário de inscrição.",
+								code: "BAD_REQUEST",
+								cause: probe.errors,
+							});
+						}
+					}
+				}
+			}
+
+			await db.transaction(async (tx) => {
+				await tx
+					.insert(participantOnActivity)
+					.values(
+						participantsIdsToAdd.map((participantId) => ({
+							activityId,
+							participantId,
+						})),
+					)
+					.onConflictDoNothing();
+
+				if (answerRows.length > 0) {
+					await tx
+						.insert(formAnswer)
+						.values(answerRows)
+						.onConflictDoUpdate({
+							target: [
+								formAnswer.participantId,
+								formAnswer.fieldId,
+							],
+							set: {
+								valueText: sql`excluded."value_text"`,
+								valueNumber: sql`excluded."value_number"`,
+								valueDate: sql`excluded."value_date"`,
+								valueJson: sql`excluded."value_json"`,
+								fieldSnapshot:
+									sql`excluded."field_snapshot"`,
+								updatedAt: new Date(),
+							},
+						});
+				}
+			});
 
 			return { success: true };
 		}),

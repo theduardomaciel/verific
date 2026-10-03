@@ -34,7 +34,6 @@ function addParticipantOnActivity(
             participantId,
             activityId,
             role,
-            joinedAt: new Date(),
         })
         .onConflictDoUpdate({
             target: [
@@ -43,7 +42,6 @@ function addParticipantOnActivity(
             ],
             set: {
                 role,
-                joinedAt: new Date(),
             },
         })
         .returning();

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { useForm, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,6 +38,8 @@ interface Props {
 	startDate?: Date;
 	endDate?: Date;
 	activity?: RouterOutput["getActivity"]["activity"];
+	registrationFormAction?: React.ReactNode;
+	enableConfigureAfterSave?: boolean;
 }
 
 export default function MutateActivityForm({
@@ -44,11 +47,15 @@ export default function MutateActivityForm({
 	startDate,
 	endDate,
 	activity,
+	registrationFormAction,
+	enableConfigureAfterSave,
 }: Props) {
 	const [currentState, setCurrentState] = useState<
 		false | "submitting" | "submitted" | "error"
 	>(false);
 	const submittedActivityId = useRef<string | undefined>(undefined);
+	const configureAfterSave = useRef(false);
+	const router = useRouter();
 
 	// 1. Define your form.
 	const form = useForm<MutateActivityFormSchema>({
@@ -133,6 +140,17 @@ export default function MutateActivityForm({
 				});
 
 				submittedActivityId.current = activityId;
+
+				if (configureAfterSave.current) {
+					configureAfterSave.current = false;
+					await revalidateActivities();
+					utils.getActivities.invalidate();
+					router.push(
+						`/dashboard/activities/${activityId}/form`,
+					);
+					return;
+				}
+
 				setCurrentState("submitted");
 			}
 
@@ -161,6 +179,15 @@ export default function MutateActivityForm({
 					endDate={endDate}
 					form={form}
 					isEditing={!!activity}
+					registrationFormAction={registrationFormAction}
+					onSecondarySubmit={
+						enableConfigureAfterSave && !activity
+							? () => {
+									configureAfterSave.current = true;
+									void form.handleSubmit(onSubmit)();
+								}
+							: undefined
+					}
 				/>
 			</form>
 			<LoadingDialog
