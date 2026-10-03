@@ -3,6 +3,10 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	ConfirmDialog,
+	useConfirmDialog,
+} from "@/components/ui/confirm-dialog";
 import type { Version } from "../types";
 
 interface VersionsCardProps {
@@ -23,6 +27,27 @@ export function VersionsCard({
 	isCreating,
 }: VersionsCardProps) {
 	const selected = versions.find((v) => v.id === selectedId) ?? null;
+	const { confirm, dialogProps } = useConfirmDialog();
+
+	async function handleCreate() {
+		const ok = await confirm({
+			title: "Criar nova versão?",
+			description:
+				"Uma nova versão vazia será criada a partir da versão atual. Deseja continuar?",
+			confirmLabel: "Criar versão",
+		});
+		if (ok) onCreate();
+	}
+
+	async function handleDuplicate() {
+		if (!selected) return;
+		const ok = await confirm({
+			title: `Duplicar v${selected.version}?`,
+			description: `Uma cópia da v${selected.version} com todos os campos será criada como uma nova versão. Deseja continuar?`,
+			confirmLabel: "Duplicar versão",
+		});
+		if (ok) onDuplicate(selected);
+	}
 
 	return (
 		<Card>
@@ -32,7 +57,7 @@ export function VersionsCard({
 					<Button
 						size="sm"
 						variant="outline"
-						onClick={onCreate}
+						onClick={() => void handleCreate()}
 						disabled={isCreating}
 					>
 						Nova versão
@@ -41,7 +66,7 @@ export function VersionsCard({
 						<Button
 							size="sm"
 							variant="outline"
-							onClick={() => onDuplicate(selected)}
+							onClick={() => void handleDuplicate()}
 							disabled={isCreating}
 						>
 							Duplicar v{selected.version}
@@ -72,6 +97,7 @@ export function VersionsCard({
 					))
 				)}
 			</CardContent>
+			<ConfirmDialog {...dialogProps} />
 		</Card>
 	);
 }
