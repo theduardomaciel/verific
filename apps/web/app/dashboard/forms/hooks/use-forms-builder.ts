@@ -75,12 +75,6 @@ export function useFormsBuilder() {
 		},
 		onError: (e) => toast.error(e.message),
 	});
-	const reorderFields = trpc.reorderFields.useMutation({
-		onSuccess: async () => {
-			await utils.getVersion.invalidate();
-		},
-		onError: (e) => toast.error(e.message),
-	});
 	const upsertSection = trpc.upsertSection.useMutation({
 		onSuccess: async () => {
 			await utils.getVersion.invalidate();
@@ -119,6 +113,20 @@ export function useFormsBuilder() {
 		[versionQuery.data],
 	);
 
+	// Declared after `serverFields` so the rollback can reference it.
+	const reorderFields = trpc.reorderFields.useMutation({
+		onSuccess: async () => {
+			await utils.getVersion.invalidate();
+		},
+		onError: (e) => {
+			// Roll back the optimistic order. Setting state directly is needed
+			// because a refetch returning identical data keeps the same
+			// reference and would not re-trigger the sync effect below.
+			setDisplayFields(serverFields);
+			toast.error(e.message);
+		},
+	});
+
 	useEffect(() => {
 		if (isDraggingRef.current) return;
 		// Only sync when the fetched data belongs to the current selection.
@@ -149,12 +157,22 @@ export function useFormsBuilder() {
 		(versionQuery.isPending ||
 			versionQuery.data?.version.id !== selectedId);
 
-	function persistOrder(next: Field[], sectionIdByField?: Record<string, string | null>) {
+	function persistOrder(
+		next: Field[],
+		sectionIdByField?: Record<string, string | null>,
+	) {
 		if (!selectedId) return;
-		setDisplayFields(next);
+		// Consumers (e.g. BuilderCard's baseGroups) sort by `order`, so the
+		// optimistic state must carry the new `order` values. Otherwise the
+		// moved item renders at its old position until the refetch lands.
+		const renumbered = next.map((f, i) => ({ ...f, order: i }));
+		// Stop an in-flight refetch from overwriting the optimistic state
+		// with the pre-reorder order.
+		void utils.getVersion.cancel();
+		setDisplayFields(renumbered);
 		reorderFields.mutate({
 			versionId: selectedId,
-			orderedIds: next.map((f) => f.id),
+			orderedIds: renumbered.map((f) => f.id),
 			...(sectionIdByField ? { sectionIdByField } : {}),
 		});
 	}
