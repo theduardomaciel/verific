@@ -1,6 +1,13 @@
 "use client";
 
-import { useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
+import {
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+	type ReactNode,
+	type RefObject,
+} from "react";
 import { CollisionPriority } from "@dnd-kit/abstract";
 import { move } from "@dnd-kit/helpers";
 import { DragDropProvider, useDroppable } from "@dnd-kit/react";
@@ -55,7 +62,10 @@ interface BuilderCardProps {
 	isPublishing: boolean;
 	upsertSection: UseFormsBuilder["upsertSection"];
 	onPublish: () => void;
-	onPersistOrder: (next: Field[], sectionIdByField?: Record<string, string | null>) => void;
+	onPersistOrder: (
+		next: Field[],
+		sectionIdByField?: Record<string, string | null>,
+	) => void;
 	onPersistSectionOrder: (next: Section[]) => void;
 	onRevertOrder: () => void;
 	onMove: (index: number, dir: -1 | 1) => void;
@@ -79,7 +89,11 @@ interface SectionBlockProps {
 	upsertSection: UseFormsBuilder["upsertSection"];
 	onMoveSection: (index: number, dir: -1 | 1) => void;
 	onDeleteSection: (section: Section) => void;
-	moveWithinSection: (sectionId: string, fieldIndex: number, dir: -1 | 1) => void;
+	moveWithinSection: (
+		sectionId: string,
+		fieldIndex: number,
+		dir: -1 | 1,
+	) => void;
 	onDelete: (field: Field) => void;
 }
 
@@ -149,7 +163,8 @@ function SectionBlock({
 						{position + 1}. {section.title}
 					</span>
 					<Badge variant="secondary">
-						{fieldIds.length} campo{fieldIds.length === 1 ? "" : "s"}
+						{fieldIds.length} campo
+						{fieldIds.length === 1 ? "" : "s"}
 					</Badge>
 				</div>
 				{!isPublished && (
@@ -208,7 +223,9 @@ function SectionBlock({
 					<div
 						className={cn(
 							"rounded-lg border border-dashed p-4 text-center text-sm",
-							isListTarget ? "text-foreground" : "text-muted-foreground",
+							isListTarget
+								? "text-foreground"
+								: "text-muted-foreground",
 						)}
 					>
 						{isListTarget
@@ -219,7 +236,9 @@ function SectionBlock({
 					fieldIds.map((id, i) => {
 						const f = fieldById.get(id);
 						if (!f) return null;
-						const globalIndex = fields.findIndex((gf) => gf.id === f.id);
+						const globalIndex = fields.findIndex(
+							(gf) => gf.id === f.id,
+						);
 						return (
 							<SortableFieldRow
 								key={f.id}
@@ -234,7 +253,13 @@ function SectionBlock({
 											size="sm"
 											variant="outline"
 											disabled={i === 0}
-											onClick={() => moveWithinSection(section.id, i, -1)}
+											onClick={() =>
+												moveWithinSection(
+													section.id,
+													i,
+													-1,
+												)
+											}
 										>
 											↑
 										</Button>
@@ -242,7 +267,13 @@ function SectionBlock({
 											size="sm"
 											variant="outline"
 											disabled={i === fieldIds.length - 1}
-											onClick={() => moveWithinSection(section.id, i, 1)}
+											onClick={() =>
+												moveWithinSection(
+													section.id,
+													i,
+													1,
+												)
+											}
 										>
 											↓
 										</Button>
@@ -325,14 +356,18 @@ function UngroupedBox({
 				ref={ref}
 				className={cn(
 					"flex flex-col gap-3 rounded-lg transition-colors",
-					highlightDrop && isDropTarget && "bg-primary/5 ring-primary/30 ring-2",
+					highlightDrop &&
+						isDropTarget &&
+						"bg-primary/5 ring-primary/30 ring-2",
 				)}
 			>
 				{fieldIds.length === 0 ? (
 					<div
 						className={cn(
 							"rounded-lg border border-dashed p-4 text-center text-sm",
-							isDropTarget ? "text-foreground" : "text-muted-foreground",
+							isDropTarget
+								? "text-foreground"
+								: "text-muted-foreground",
 						)}
 					>
 						Solte aqui para remover o campo da seção
@@ -341,7 +376,9 @@ function UngroupedBox({
 					fieldIds.map((id, i) => {
 						const f = fieldById.get(id);
 						if (!f) return null;
-						const globalIndex = fields.findIndex((gf) => gf.id === f.id);
+						const globalIndex = fields.findIndex(
+							(gf) => gf.id === f.id,
+						);
 						return (
 							<SortableFieldRow
 								key={f.id}
@@ -357,15 +394,21 @@ function UngroupedBox({
 												size="sm"
 												variant="outline"
 												disabled={i === 0}
-												onClick={() => onMove(globalIndex, -1)}
+												onClick={() =>
+													onMove(globalIndex, -1)
+												}
 											>
 												↑
 											</Button>
 											<Button
 												size="sm"
 												variant="outline"
-												disabled={i === fieldIds.length - 1}
-												onClick={() => onMove(globalIndex, 1)}
+												disabled={
+													i === fieldIds.length - 1
+												}
+												onClick={() =>
+													onMove(globalIndex, 1)
+												}
 											>
 												↓
 											</Button>
@@ -424,7 +467,10 @@ export function BuilderCard({
 		[sections],
 	);
 
-	const fieldById = useMemo(() => new Map(fields.map((f) => [f.id, f])), [fields]);
+	const fieldById = useMemo(
+		() => new Map(fields.map((f) => [f.id, f])),
+		[fields],
+	);
 
 	const sectionIdSet = useMemo(
 		() => new Set(sortedSections.map((s) => s.id)),
@@ -437,25 +483,38 @@ export function BuilderCard({
 		g[UNGROUPED] = [];
 		for (const f of [...fields].sort((a, b) => a.order - b.order)) {
 			const key =
-				f.sectionId && sectionIdSet.has(f.sectionId) ? f.sectionId : UNGROUPED;
+				f.sectionId && sectionIdSet.has(f.sectionId)
+					? f.sectionId
+					: UNGROUPED;
 			g[key]?.push(f.id);
 		}
 		return g;
 	}, [fields, sortedSections, sectionIdSet]);
 
 	// Live preview of field positions while dragging (controlled, following
-	// the documented multiple-sortable-lists pattern). Only committed to the
-	// server on drop; discarded on cancel. `displayFields` in the hook is
-	// untouched until then, so cancel needs no server-state revert.
+	// the documented multiple-sortable-lists pattern). Committed to the
+	// server on drop and kept on screen until the new order lands in
+	// `fields` (see the effect below); discarded immediately on cancel.
 	const [fieldPreview, setFieldPreview] = useState<FieldGroups | null>(null);
 	const [dragType, setDragType] = useState<string | null>(null);
 	const groups = fieldPreview ?? baseGroups;
 	const groupsRef = useRef(groups);
 	groupsRef.current = groups;
 
+	// Keep the preview until the persisted/optimistic order lands in `fields`,
+	// otherwise the list flashes back to the old order on drop.
+	useEffect(() => {
+		if (isDraggingRef.current) return;
+		setFieldPreview(null);
+	}, [fields, isDraggingRef]);
+
 	const draggingField = dragType === FIELD_TYPE;
 
-	function moveWithinSection(sectionId: string, fieldIndex: number, dir: -1 | 1) {
+	function moveWithinSection(
+		sectionId: string,
+		fieldIndex: number,
+		dir: -1 | 1,
+	) {
 		const list = baseGroups[sectionId] ?? [];
 		const j = fieldIndex + dir;
 		if (j < 0 || j >= list.length) return;
@@ -515,10 +574,17 @@ export function BuilderCard({
 			next.map((f) => f.id).join(",") +
 			"#" +
 			next.map((f) => f.sectionId ?? "").join(",");
-		if (prevSig === nextSig) return;
+		if (prevSig === nextSig) {
+			// Nothing to persist, so `fields` won't change and the effect
+			// above won't fire: clear the preview here.
+			setFieldPreview(null);
+			return;
+		}
 		onPersistOrder(
 			next,
-			Object.keys(sectionIdByField).length > 0 ? sectionIdByField : undefined,
+			Object.keys(sectionIdByField).length > 0
+				? sectionIdByField
+				: undefined,
 		);
 	}
 
@@ -577,7 +643,9 @@ export function BuilderCard({
 					if (sourceType === SECTION_TYPE) {
 						setFieldPreview(null);
 						if (event.canceled) return;
-						const ids = sortedSections.map((s) => sectionSortId(s.id));
+						const ids = sortedSections.map((s) =>
+							sectionSortId(s.id),
+						);
 						const nextIds = move(ids, event);
 						if (nextIds.join(",") === ids.join(",")) return;
 						const bySortId = new Map(
@@ -600,15 +668,14 @@ export function BuilderCard({
 						return;
 					}
 					if (event.canceled) {
-						// Previews never touched `displayFields`, just drop them.
 						setFieldPreview(null);
 						return;
 					}
-					// Apply the final hover position (in case the last dragover
-					// before drop wasn't flushed) and commit to the server.
-					const finalGroups = move(groupsRef.current, event);
-					setFieldPreview(null);
-					commitFieldGroups(finalGroups);
+					// groupsRef.current already holds the result of every
+					// onDragOver `move`. Do NOT call move() again here, and do
+					// NOT clear the preview yet: the effect above clears it once
+					// the new order reaches `fields`.
+					commitFieldGroups(groupsRef.current);
 				}}
 			>
 				<div ref={listRef} className="flex flex-col gap-4">
@@ -620,7 +687,11 @@ export function BuilderCard({
 							total={sortedSections.length}
 							selectedId={selected.id}
 							isPublished={isPublished}
-							fieldIds={groups[section.id] ?? baseGroups[section.id] ?? []}
+							fieldIds={
+								groups[section.id] ??
+								baseGroups[section.id] ??
+								[]
+							}
 							fieldById={fieldById}
 							fields={fields}
 							sortedSections={sortedSections}
@@ -660,7 +731,10 @@ export function BuilderCard({
 				</CardTitle>
 				<div className="flex flex-wrap gap-2">
 					{!isPublished && (
-						<SectionDialog versionId={selected.id} upsertSection={upsertSection} />
+						<SectionDialog
+							versionId={selected.id}
+							upsertSection={upsertSection}
+						/>
 					)}
 					{!isPublished && (
 						<Button
