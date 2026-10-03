@@ -16,6 +16,7 @@ import { Filter } from "@/components/dashboard/filter";
 import { Empty } from "@/components/empty";
 import { ActivityCard } from "@/components/activity/activity-card/dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ReleaseRegistrationsDialog } from "@/components/dialogs/release-registrations-dialog";
 
 // Validation (client-safe: no db / server env imports)
 import { getActivitiesParams } from "@verific/api/schemas";
@@ -44,6 +45,7 @@ function ActivitiesSkeleton() {
 				</div>
 				<div className="order-first space-y-4 md:order-last md:col-span-1">
 					<Skeleton className="h-12 w-full" />
+					<Skeleton className="h-12 w-full" />
 					<Skeleton className="h-64 w-full" />
 				</div>
 			</div>
@@ -57,18 +59,19 @@ export function ActivitiesContent() {
 		getActivitiesParams.parse(raw),
 	);
 
-	const { data, isPending, isError, isFetching } = trpc.getActivities.useQuery(
-		{
-			projectId,
-			...parsedParams,
-			fullQuery: true,
-		},
-		{
-			placeholderData: keepPreviousData,
-			staleTime: 30 * 1000,
-			refetchOnWindowFocus: false,
-		},
-	);
+	const { data, isPending, isError, isFetching } =
+		trpc.getActivities.useQuery(
+			{
+				projectId,
+				...parsedParams,
+				fullQuery: true,
+			},
+			{
+				placeholderData: keepPreviousData,
+				staleTime: 30 * 1000,
+				refetchOnWindowFocus: false,
+			},
+		);
 
 	if (isPending) {
 		return <ActivitiesSkeleton />;
@@ -144,6 +147,8 @@ export function ActivitiesContent() {
 							atividade
 						</Link>
 					</Button>
+
+					<ReleaseRegistrationsDialog projectId={projectId} />
 
 					<FiltersPanel>
 						<Filter
