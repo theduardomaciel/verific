@@ -494,33 +494,35 @@ export function FieldDialog({
 						<Collapsible
 							open={advancedOpen}
 							onOpenChange={setAdvancedOpen}
-							className="rounded-lg border"
+							className="overflow-hidden rounded-lg border"
 						>
 							<CollapsibleTrigger asChild>
 								<Button
 									type="button"
 									variant="ghost"
-									className="group flex w-full items-center justify-between px-4"
+									className="group flex w-full items-center justify-between rounded-none px-4"
 								>
 									<span className="text-sm font-medium">
 										Configurações avançadas
 									</span>
-									<ChevronDownIcon className="size-4 transition-transform group-data-[state=open]:rotate-180" />
+									<ChevronDownIcon className="size-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
 								</Button>
 							</CollapsibleTrigger>
-							<CollapsibleContent className="flex flex-col gap-4 border-t px-4 py-4">
-								<SwitchRow
-									control={form.control}
-									name="isVisible"
-									label="Visível"
-									description="Campos ocultos não aparecem no formulário."
-								/>
-								<SwitchRow
-									control={form.control}
-									name="editableAfterSignup"
-									label="Editável após inscrição"
-									description="O participante pode alterar a resposta depois de se inscrever."
-								/>
+							<CollapsibleContent>
+								<div className="flex flex-col gap-4 border-t px-4 py-4">
+									<SwitchRow
+										control={form.control}
+										name="isVisible"
+										label="Visível"
+										description="Campos ocultos não aparecem no formulário."
+									/>
+									<SwitchRow
+										control={form.control}
+										name="editableAfterSignup"
+										label="Editável após inscrição"
+										description="O participante pode alterar a resposta depois de se inscrever."
+									/>
+								</div>
 							</CollapsibleContent>
 						</Collapsible>
 
