@@ -53,6 +53,25 @@ export const getParticipantsParams = z.object({
 
 export { formFieldTypes };
 
+/** Fixed label for the opt-in "Other" choice on select fields. */
+export const OTHER_LABEL = "Outro";
+/** Placeholder shown in the free-text input revealed by "Outro". */
+export const OTHER_PLACEHOLDER = "Especifique";
+/** Max length (in trimmed characters) accepted for custom "Outro" text. */
+export const OTHER_TEXT_MAX_LENGTH = 200;
+/**
+ * Sentinel used only as the `Select` / checkbox value for "Outro" in the UI.
+ * It is never persisted: the stored answer is always the custom text as-is
+ * (or a regular option). If a stored value isn't in `options`, it is an
+ * "Other" answer.
+ */
+export const OTHER_SENTINEL = "__other__";
+
+/** True when `options` already contain an "Outro" entry (case-insensitive). */
+export function hasOutroOption(options: string[] | null | undefined): boolean {
+	return (options ?? []).some((o) => o.trim().toLowerCase() === OTHER_LABEL.toLowerCase());
+}
+
 export const formFieldValidationSchema = z
 	.object({
 		min: z.number().optional(),
@@ -82,6 +101,7 @@ export const upsertFormFieldInput = z.object({
 	halfWidth: z.boolean().default(false),
 	sectionId: z.uuid().nullable().optional(),
 	options: formFieldOptionsSchema,
+	allowOther: z.boolean().default(false),
 	validation: formFieldValidationSchema,
 	isVisible: z.boolean().default(true),
 	editableAfterSignup: z.boolean().default(true),
@@ -131,6 +151,7 @@ export type FormFieldForValidation = {
 	type: (typeof formFieldTypes)[number];
 	required: boolean;
 	options?: string[] | null;
+	allowOther?: boolean | null;
 	validation?: {
 		min?: number | null;
 		max?: number | null;
@@ -177,20 +198,74 @@ function fieldValueSchema(field: FormFieldForValidation) {
 			break;
 		}
 		case "select_single": {
-			if (field.options && field.options.length > 0) {
-				base = z.enum(field.options as [string, ...string[]]);
-			} else {
+			const opts = field.options && field.options.length > 0 ? field.options : null;
+			if (!opts) {
 				base = z.string().min(1);
+				break;
 			}
+			const allowOther = field.allowOther === true;
+			base = z
+				.string()
+				.min(1, { message: "Obrigatório" })
+				.superRefine((v, ctx) => {
+					if (opts.includes(v)) return;
+					if (!allowOther) {
+						ctx.addIssue({
+							code: "custom",
+							message: "Opção inválida.",
+						});
+						return;
+					}
+					const trimmed = v.trim();
+					if (trimmed.length === 0) {
+						ctx.addIssue({
+							code: "custom",
+							message: "Informe o texto de “Outro”.",
+						});
+					} else if (trimmed.length > OTHER_TEXT_MAX_LENGTH) {
+						ctx.addIssue({
+							code: "custom",
+							message: `Máximo de ${OTHER_TEXT_MAX_LENGTH} caracteres.`,
+						});
+					}
+				});
 			break;
 		}
 		case "select_multiple": {
-			if (field.options && field.options.length > 0) {
-				const opt = z.enum(field.options as [string, ...string[]]);
-				base = z.array(opt);
-			} else {
+			const opts = field.options && field.options.length > 0 ? field.options : null;
+			if (!opts) {
 				base = z.array(z.string().min(1));
+				break;
 			}
+			const allowOther = field.allowOther === true;
+			const element = z
+				.string()
+				.min(1, { message: "Obrigatório" })
+				.superRefine((v, ctx) => {
+					if (opts.includes(v)) return;
+					if (!allowOther) {
+						ctx.addIssue({
+							code: "custom",
+							message: "Opção inválida.",
+						});
+						return;
+					}
+					const trimmed = v.trim();
+					if (trimmed.length === 0) {
+						ctx.addIssue({
+							code: "custom",
+							message: "Informe o texto de “Outro”.",
+						});
+					} else if (trimmed.length > OTHER_TEXT_MAX_LENGTH) {
+						ctx.addIssue({
+							code: "custom",
+							message: `Máximo de ${OTHER_TEXT_MAX_LENGTH} caracteres.`,
+						});
+					}
+				});
+			// "Outro" counts as one selection: the custom text is stored
+			// as-is as a single array element, so no extra handling needed.
+			base = z.array(element);
 			break;
 		}
 		case "checkbox": {

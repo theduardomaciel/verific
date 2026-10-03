@@ -77,6 +77,7 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 				type: f.type,
 				required: f.required,
 				options: f.options,
+				allowOther: f.allowOther,
 				validation: f.validation,
 				isVisible: f.isVisible,
 				isActive: f.isActive,

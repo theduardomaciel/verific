@@ -31,6 +31,7 @@ export interface FormFieldSnapshot {
 	type: string;
 	required: boolean;
 	options?: FormFieldOption[] | null;
+	allowOther?: boolean | null;
 }
 
 export const formField = pgTable(
@@ -61,6 +62,7 @@ export const formField = pgTable(
 		}),
 		halfWidth: boolean("half_width").default(false).notNull(),
 		options: jsonb("options").$type<FormFieldOption[]>(),
+		allowOther: boolean("allow_other").default(false).notNull(),
 		validation: jsonb("validation").$type<FormFieldValidation>(),
 		isVisible: boolean("is_visible").default(true).notNull(),
 		editableAfterSignup: boolean("editable_after_signup")

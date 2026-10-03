@@ -36,6 +36,13 @@
       "when": 1791100000000,
       "tag": "0004_form_sections",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791200000000,
+      "tag": "0005_allow_other",
+      "breakpoints": true
     }
   ]
 }

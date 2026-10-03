@@ -97,6 +97,7 @@ type SwitchName =
 	| "required"
 	| "isVisible"
 	| "editableAfterSignup"
+	| "allowOther"
 	| "halfWidth";
 
 /** A setting row: label + short description on the left, switch on the right. */
@@ -373,6 +374,12 @@ export function FieldDialog({
 											<FormMessage />
 										</FormItem>
 									)}
+								/>
+								<SwitchRow
+									control={form.control}
+									name="allowOther"
+									label="Permitir “Outro”"
+									description="Adiciona a opção “Outro” por último, com campo de texto livre (máx. 200 caracteres)."
 								/>
 							</Section>
 						)}

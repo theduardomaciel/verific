@@ -16,6 +16,7 @@ import { and, asc, count, desc, eq, ilike, inArray, or } from "@verific/drizzle/
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import {
+	hasOutroOption,
 	reorderFormFieldsInput,
 	reorderFormSectionsInput,
 	submitAnswersInput,
@@ -67,6 +68,7 @@ function toValidationFields(
 		type: f.type,
 		required: f.required,
 		options: f.options,
+		allowOther: f.allowOther ?? false,
 		validation: f.validation,
 		isVisible: f.isVisible,
 		isActive: f.isActive,
@@ -255,6 +257,7 @@ export const formsRouter = createTRPCRouter({
 							sectionId: f.sectionId ? (sectionIdMap.get(f.sectionId) ?? null) : null,
 							halfWidth: f.halfWidth,
 							options: f.options,
+							allowOther: f.allowOther,
 							validation: f.validation,
 							isVisible: f.isVisible,
 							editableAfterSignup: f.editableAfterSignup,
@@ -307,6 +310,16 @@ export const formsRouter = createTRPCRouter({
 			if ((input.type === "select_single" || input.type === "select_multiple") && (!input.options || input.options.length === 0)) {
 				throw new TRPCError({ code: "BAD_REQUEST", message: "Campos de seleção exigem ao menos uma opção." });
 			}
+			// allowOther only applies to select fields; a stale flag must not survive a type change.
+			const allowOther =
+				(input.type === "select_single" || input.type === "select_multiple") &&
+				input.allowOther === true;
+			if (allowOther && hasOutroOption(input.options)) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Remova a opção “Outro” da lista — ela já é adicionada automaticamente.",
+				});
+			}
 			let sectionId: string | null | undefined;
 			if (input.sectionId !== undefined) {
 				if (input.sectionId === null) {
@@ -331,6 +344,7 @@ export const formsRouter = createTRPCRouter({
 						halfWidth: input.halfWidth,
 						...(sectionId !== undefined ? { sectionId } : {}),
 						options: input.options ?? null,
+						allowOther,
 						validation: input.validation ?? null,
 						isVisible: input.isVisible,
 						editableAfterSignup: input.editableAfterSignup,
@@ -370,6 +384,7 @@ export const formsRouter = createTRPCRouter({
 								)?.id ?? null,
 					halfWidth: input.halfWidth,
 					options: input.options ?? null,
+					allowOther,
 					validation: input.validation ?? null,
 					isVisible: input.isVisible,
 					editableAfterSignup: input.editableAfterSignup,
@@ -655,6 +670,7 @@ export const formsRouter = createTRPCRouter({
 							type: field.type,
 							required: field.required,
 							options: field.options,
+							allowOther: field.allowOther,
 						},
 						...mapped,
 					});
@@ -736,6 +752,7 @@ export const formsRouter = createTRPCRouter({
 							type: field.type,
 							required: field.required,
 							options: field.options,
+							allowOther: field.allowOther,
 						},
 						...mapped,
 					})

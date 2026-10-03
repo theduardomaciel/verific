@@ -1,6 +1,7 @@
 "use client";
 
 import { Controller, type Control, type FieldValues } from "react-hook-form";
+import { useEffect, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input, PhoneInput } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +20,12 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import type { RouterOutput } from "@verific/api";
+import {
+	OTHER_LABEL,
+	OTHER_PLACEHOLDER,
+	OTHER_SENTINEL,
+	OTHER_TEXT_MAX_LENGTH,
+} from "@verific/api/schemas";
 
 export type DynamicFormField = NonNullable<
 	RouterOutput["getPublishedForm"]
@@ -33,6 +40,93 @@ interface DynamicFieldProps {
 
 function requiredMark(required: boolean) {
 	return required ? <span className="text-destructive ml-1">*</span> : null;
+}
+
+function getAllowOther(field: DynamicFormField): boolean {
+	return (field as { allowOther?: boolean | null }).allowOther === true;
+}
+
+/**
+ * Checkbox list for `select_multiple` with an opt-in "Outro" entry rendered
+ * last. The custom text is stored as-is as a single array element: any stored
+ * value that isn't in `options` is treated as an "Other" answer (which also
+ * gracefully handles options deleted/renamed after answering).
+ */
+function SelectMultipleWithOther({
+	options,
+	allowOther,
+	value,
+	disabled,
+	onChange,
+}: {
+	options: string[];
+	allowOther: boolean;
+	value: string[];
+	disabled?: boolean;
+	onChange: (next: string[]) => void;
+}) {
+	const others = value.filter((v) => !options.includes(v));
+	const [otherOpen, setOtherOpen] = useState(others.length > 0);
+	const othersKey = others.join("");
+	useEffect(() => {
+		if (others.length > 0) setOtherOpen(true);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [othersKey]);
+	const otherText = others[0] ?? "";
+
+	return (
+		<div className="flex flex-col gap-2">
+			{options.map((opt) => {
+				const checked = value.includes(opt);
+				return (
+					<label key={opt} className="flex cursor-pointer items-center gap-2 text-sm">
+						<Checkbox
+							disabled={disabled}
+							checked={checked}
+							onCheckedChange={(c) => {
+								if (c) onChange([...value, opt]);
+								else onChange(value.filter((v) => v !== opt));
+							}}
+						/>
+						{opt}
+					</label>
+				);
+			})}
+			{allowOther && (
+				<>
+					<label className="flex cursor-pointer items-center gap-2 text-sm">
+						<Checkbox
+							disabled={disabled}
+							checked={otherOpen}
+							onCheckedChange={(c) => {
+								if (c) {
+									setOtherOpen(true);
+								} else {
+									setOtherOpen(false);
+									onChange(value.filter((v) => options.includes(v)));
+								}
+							}}
+						/>
+						{OTHER_LABEL}
+					</label>
+					{otherOpen && (
+						<Input
+							type="text"
+							placeholder={OTHER_PLACEHOLDER}
+							disabled={disabled}
+							maxLength={OTHER_TEXT_MAX_LENGTH}
+							value={otherText}
+							onChange={(e) => {
+								const text = e.target.value;
+								const kept = value.filter((v) => options.includes(v));
+								onChange(text === "" ? kept : [...kept, text]);
+							}}
+						/>
+					)}
+				</>
+			)}
+		</div>
+	);
 }
 
 const EMPTY_SELECT_VALUE = "__verific_empty__";
@@ -151,7 +245,34 @@ export function DynamicField({
 								<FormMessage />
 							</FormItem>
 						);
-					case "select_single":
+					case "select_single": {
+						const singleOptions = field.options ?? [];
+						const singleAllowOther = getAllowOther(field);
+						const singleRaw = (value ?? undefined) as string | undefined;
+						const singleInOptions =
+							typeof singleRaw === "string" &&
+							singleRaw !== "" &&
+							singleOptions.includes(singleRaw);
+						// Stored custom text as-is: anything not in `options`
+						// (including "" right after picking "Outro") is an
+						// "Other" answer, so edits pre-select it automatically.
+						const singleOtherSelected =
+							singleAllowOther &&
+							typeof singleRaw === "string" &&
+							(singleRaw === "" ||
+								(singleRaw !== "" && !singleOptions.includes(singleRaw)));
+						const singleSelectValue = singleInOptions
+							? singleRaw
+							: singleOtherSelected
+								? OTHER_SENTINEL
+								: "";
+						const singleOtherText =
+							singleOtherSelected &&
+							typeof singleRaw === "string" &&
+							singleRaw !== "" &&
+							!singleOptions.includes(singleRaw)
+								? singleRaw
+								: "";
 						return (
 							<FormItem className="w-full">
 								{label}
@@ -162,15 +283,23 @@ export function DynamicField({
 								)}
 								<Select
 									disabled={disabled}
-									value={(value as string) ?? ""}
-									onValueChange={(v) =>
-										rhf.onChange(
-											!field.required &&
-												v === EMPTY_SELECT_VALUE
-												? undefined
-												: v,
-										)
-									}
+									value={singleSelectValue}
+									onValueChange={(v) => {
+										if (v === OTHER_SENTINEL) {
+											// Keep already-typed custom text when re-picking.
+											rhf.onChange(
+												typeof singleRaw === "string" &&
+												singleRaw !== "" &&
+												!singleOptions.includes(singleRaw)
+												? singleRaw
+												: "",
+											);
+										} else {
+											rhf.onChange(
+												!field.required && v === EMPTY_SELECT_VALUE ? undefined : v,
+											);
+										}
+									}}
 								>
 									<FormControl>
 										<SelectTrigger className="w-full">
@@ -191,11 +320,31 @@ export function DynamicField({
 												{opt}
 											</SelectItem>
 										))}
+										{singleAllowOther && (
+											<SelectItem value={OTHER_SENTINEL}>
+												{OTHER_LABEL}
+											</SelectItem>
+										)}
 									</SelectContent>
 								</Select>
+								{singleOtherSelected && (
+									<FormControl>
+										<Input
+											type="text"
+											placeholder={OTHER_PLACEHOLDER}
+											disabled={disabled}
+											maxLength={OTHER_TEXT_MAX_LENGTH}
+											value={singleOtherText}
+											onChange={(e) => rhf.onChange(e.target.value)}
+											onBlur={rhf.onBlur}
+											name={rhf.name}
+										/>
+									</FormControl>
+								)}
 								<FormMessage />
 							</FormItem>
 						);
+					}
 					case "select_multiple": {
 						const selected: string[] = Array.isArray(value)
 							? value
@@ -208,38 +357,13 @@ export function DynamicField({
 										{field.helpText}
 									</FormDescription>
 								)}
-								<div className="flex flex-col gap-2">
-									{(field.options ?? []).map((opt) => {
-										const checked = selected.includes(opt);
-										return (
-											<label
-												key={opt}
-												className="flex cursor-pointer items-center gap-2 text-sm"
-											>
-												<Checkbox
-													disabled={disabled}
-													checked={checked}
-													onCheckedChange={(c) => {
-														if (c)
-															rhf.onChange([
-																...selected,
-																opt,
-															]);
-														else
-															rhf.onChange(
-																selected.filter(
-																	(v) =>
-																		v !==
-																		opt,
-																),
-															);
-													}}
-												/>
-												{opt}
-											</label>
-										);
-									})}
-								</div>
+								<SelectMultipleWithOther
+									options={field.options ?? []}
+									allowOther={getAllowOther(field)}
+									value={selected}
+									disabled={disabled}
+									onChange={rhf.onChange}
+								/>
 								<FormMessage />
 							</FormItem>
 						);

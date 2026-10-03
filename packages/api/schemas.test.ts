@@ -74,6 +74,69 @@ describe("validateAnswers", () => {
 			true,
 		);
 	});
+
+	it("rejects unknown options when allowOther is off", () => {
+		const single = {
+			key: "color",
+			label: "Cor",
+			type: "select_single",
+			required: true,
+			options: ["azul", "verde"],
+			allowOther: false,
+			isVisible: true,
+			isActive: true,
+		} satisfies FormFieldForValidation;
+
+		expect(validateAnswers([single], { color: "azul" }).success).toBe(true);
+		expect(validateAnswers([single], { color: "roxo" }).success).toBe(false);
+	});
+
+	it("accepts custom text as-is when allowOther is on", () => {
+		const single = {
+			key: "color",
+			label: "Cor",
+			type: "select_single",
+			required: true,
+			options: ["azul", "verde"],
+			allowOther: true,
+			isVisible: true,
+			isActive: true,
+		} satisfies FormFieldForValidation;
+
+		const ok = validateAnswers([single], { color: "roxo" });
+		expect(ok.success).toBe(true);
+		expect(ok.data).toEqual({ color: "roxo" });
+
+		// Empty/whitespace custom text is invalid on required fields…
+		expect(validateAnswers([single], { color: "" }).success).toBe(false);
+		expect(validateAnswers([single], { color: "   " }).success).toBe(false);
+
+		// …and capped at 200 chars.
+		expect(
+			validateAnswers([single], { color: "x".repeat(201) }).success,
+		).toBe(false);
+		expect(
+			validateAnswers([single], { color: "x".repeat(200) }).success,
+		).toBe(true);
+	});
+
+	it("counts Outro as one selection in select_multiple", () => {
+		const multi = {
+			key: "diet",
+			label: "Dieta",
+			type: "select_multiple",
+			required: true,
+			options: ["vegana", "vegetariana"],
+			allowOther: true,
+			isVisible: true,
+			isActive: true,
+		} satisfies FormFieldForValidation;
+
+		const ok = validateAnswers([multi], { diet: ["vegana", "frugívora"] });
+		expect(ok.success).toBe(true);
+		expect(ok.data).toEqual({ diet: ["vegana", "frugívora"] });
+		expect(validateAnswers([multi], { diet: [] }).success).toBe(false);
+	});
 });
 
 describe("formatAnswerValue", () => {
