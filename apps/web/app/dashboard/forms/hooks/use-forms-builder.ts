@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
 import { trpc } from "@/lib/trpc/react";
 import { findOrphanHalfIds, groupFieldsBySection } from "@/lib/forms/layout";
-import { animateFlip } from "../lib/animate-flip";
+import { animateFlip, animateSectionFlip } from "../lib/animate-flip";
 import type { Field, FormsTab, Section, Version } from "../types";
 
 export function useFormsBuilder() {
@@ -14,6 +14,7 @@ export function useFormsBuilder() {
 	const [selectedId, setSelectedId] = useState<string | null>(null);
 	const [tab, setTab] = useState<FormsTab>("builder");
 	const [displayFields, setDisplayFields] = useState<Field[]>([]);
+	const [displaySections, setDisplaySections] = useState<Section[]>([]);
 	const [fieldToDelete, setFieldToDelete] = useState<Field | null>(null);
 	const [sectionToDelete, setSectionToDelete] = useState<Section | null>(null);
 	const isDraggingRef = useRef(false);
@@ -90,24 +91,29 @@ export function useFormsBuilder() {
 		},
 		onError: (e) => toast.error(e.message),
 	});
-	const reorderSections = trpc.reorderSections.useMutation({
-		onSuccess: async () => {
-			await utils.getVersion.invalidate();
-		},
-		onError: (e) => toast.error(e.message),
-	});
-
-	const serverFields: Field[] = useMemo(
+	const serverSections: Section[] = useMemo(
 		() =>
-			(versionQuery.data?.fields ?? [])
+			(versionQuery.data?.sections ?? [])
 				.slice()
 				.sort((a, b) => a.order - b.order),
 		[versionQuery.data],
 	);
 
-	const sections: Section[] = useMemo(
+	const reorderSections = trpc.reorderSections.useMutation({
+		onSuccess: async () => {
+			await utils.getVersion.invalidate();
+		},
+		onError: (e) => {
+			// Roll back the optimistic section order, mirroring the
+			// fields rollback below.
+			setDisplaySections(serverSections);
+			toast.error(e.message);
+		},
+	});
+
+	const serverFields: Field[] = useMemo(
 		() =>
-			(versionQuery.data?.sections ?? [])
+			(versionQuery.data?.fields ?? [])
 				.slice()
 				.sort((a, b) => a.order - b.order),
 		[versionQuery.data],
@@ -139,7 +145,15 @@ export function useFormsBuilder() {
 		setDisplayFields(serverFields);
 	}, [serverFields, selectedId, versionQuery.data]);
 
+	useEffect(() => {
+		if (isDraggingRef.current) return;
+		if (versionQuery.data && versionQuery.data.version.id !== selectedId)
+			return;
+		setDisplaySections(serverSections);
+	}, [serverSections, selectedId, versionQuery.data]);
+
 	const fields = displayFields;
+	const sections = displaySections;
 	const selected = versions.find((v) => v.id === selectedId) ?? null;
 	const isPublished = !!selected?.isPublished;
 	const orphanHalfIds = useMemo(() => findOrphanHalfIds(fields), [fields]);
@@ -179,6 +193,7 @@ export function useFormsBuilder() {
 
 	function revertOrder() {
 		setDisplayFields(serverFields);
+		setDisplaySections(serverSections);
 	}
 
 	function move(index: number, dir: -1 | 1) {
@@ -200,17 +215,24 @@ export function useFormsBuilder() {
 		const [item] = next.splice(index, 1);
 		if (!item) return;
 		next.splice(j, 0, item);
+		animateSectionFlip(listRef.current);
+		const renumbered = next.map((s, i) => ({ ...s, order: i }));
+		void utils.getVersion.cancel();
+		setDisplaySections(renumbered);
 		reorderSections.mutate({
 			versionId: selectedId,
-			orderedIds: next.map((s) => s.id),
+			orderedIds: renumbered.map((s) => s.id),
 		});
 	}
 
 	function persistSectionOrder(next: Section[]) {
 		if (!selectedId) return;
+		const renumbered = next.map((s, i) => ({ ...s, order: i }));
+		void utils.getVersion.cancel();
+		setDisplaySections(renumbered);
 		reorderSections.mutate({
 			versionId: selectedId,
-			orderedIds: next.map((s) => s.id),
+			orderedIds: renumbered.map((s) => s.id),
 		});
 	}
 
