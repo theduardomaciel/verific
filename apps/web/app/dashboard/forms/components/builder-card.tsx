@@ -56,9 +56,7 @@ export function BuilderCard({
 			<CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
 				<CardTitle>
 					Campos da v{selected.version}
-					{isPublished && (
-						<Badge className="ml-2">publicada</Badge>
-					)}
+					{isPublished && <Badge className="ml-2">publicada</Badge>}
 				</CardTitle>
 				<div className="flex gap-2">
 					{!isPublished && (

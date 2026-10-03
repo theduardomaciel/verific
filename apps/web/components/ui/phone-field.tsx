@@ -84,8 +84,9 @@ export function PhoneField({
 	// Country is state, not derived from the value: with an empty number
 	// there is no prefix to parse, so deriving it would snap the selection
 	// back to Brazil on every pick.
-	const [countryIso, setCountryIso] =
-		useState<CountryCode>(() => countryIsoForValue(raw));
+	const [countryIso, setCountryIso] = useState<CountryCode>(() =>
+		countryIsoForValue(raw),
+	);
 	const country =
 		phoneCountries.find((c) => c.iso === countryIso) ??
 		phoneCountries.find((c) => c.iso === DEFAULT_ISO)!;
@@ -119,7 +120,7 @@ export function PhoneField({
 
 	return (
 		<div className={cn("flex gap-2", className)}>
-			<div className="w-[9.5rem] shrink-0">
+			<div className="w-44 shrink-0">
 				<Combobox
 					value={country.iso}
 					disabled={disabled}
@@ -127,7 +128,7 @@ export function PhoneField({
 					searchMessage="Buscar país..."
 					emptyMessage="Nenhum país encontrado."
 					items={phoneCountries.map((c) => ({
-						label: `${c.flag} +${c.code}`,
+						label: `${c.flag} ${c.name} (+${c.code})`,
 						value: c.iso,
 						keywords: [c.name, c.iso, c.code, `+${c.code}`],
 					}))}

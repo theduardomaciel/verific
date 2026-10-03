@@ -7,6 +7,9 @@
 		"build": "tsx tools/scripts/codegen-css-colors.ts && next build",
 		"start": "next start",
 		"lint": "eslint .",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:coverage": "vitest run --coverage",
 		"codegen:css-colors": "tsx tools/scripts/codegen-css-colors.ts"
 	},
 	"dependencies": {
@@ -71,6 +74,9 @@
 	"devDependencies": {
 		"@svgr/webpack": "^8.1.0",
 		"@tailwindcss/postcss": "^4.1.15",
+		"@testing-library/jest-dom": "^7.0.1",
+		"@testing-library/react": "^16.3.3",
+		"@testing-library/user-event": "^14.6.7",
 		"@types/leaflet": "^1.9.21",
 		"@types/node": "^24.9.1",
 		"@types/react": "^19.2.2",
@@ -78,10 +84,14 @@
 		"@verific/eslint-config": "workspace:*",
 		"@verific/prettier-config": "workspace:*",
 		"@verific/typescript-config": "workspace:*",
+		"@vitejs/plugin-react": "^6.1.1",
+		"@vitest/coverage-v8": "^5.0.3",
 		"eslint": "^9.24.0",
+		"jsdom": "^30.1.1",
 		"tailwindcss": "^4.1.15",
 		"tsx": "^4.20.6",
-		"typescript": "^5.9.3"
+		"typescript": "^5.9.3",
+		"vitest": "^5.0.3"
 	},
 	"overrides": {
 		"react-is": "^19.2.0"

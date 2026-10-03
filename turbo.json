@@ -22,6 +22,8 @@
 			"outputs": ["dist/**", ".next/**", "!.next/cache/**"]
 		},
 		"lint": {},
+		"test": {},
+		"test:coverage": {},
 		"db:generate": {},
 		"db:drop": {},
 		"db:push": {},
