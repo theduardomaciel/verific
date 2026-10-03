@@ -1,6 +1,8 @@
 import { db } from "@verific/drizzle";
 import {
 	activity,
+	activitySession,
+	sessionAttendance,
 	speaker,
 	speakerOnActivity,
 	participant,
@@ -23,6 +25,7 @@ import {
 	not,
 	isNotNull,
 	sql,
+	exists,
 } from "@verific/drizzle/orm";
 import { z } from "@verific/zod";
 
@@ -47,12 +50,66 @@ export { activitySort, getActivitiesParams, getActivityParams };
 import { activityCategories } from "@verific/drizzle/enum/category";
 import { activityAudiences } from "@verific/drizzle/enum/audience";
 
+const activitySessionSchema = z.object({
+	startsAt: z.coerce.date(),
+	endsAt: z.coerce.date(),
+	address: z.string().optional(),
+});
+
+const sessionsSchema = z
+	.array(activitySessionSchema)
+	.min(1, { message: "A atividade precisa de pelo menos uma sessão." })
+	.max(30, { message: "Máximo de 30 sessões por atividade." })
+	.superRefine((sessions, ctx) => {
+		sessions.forEach((session, i) => {
+			if (session.endsAt <= session.startsAt) {
+				ctx.addIssue({
+					code: "custom",
+					message:
+						"O término da sessão deve ser após o início.",
+					path: [i, "endsAt"],
+				});
+			}
+		});
+
+		const sorted = [...sessions].sort(
+			(a, b) => a.startsAt.getTime() - b.startsAt.getTime(),
+		);
+		for (let i = 1; i < sorted.length; i++) {
+			if (sorted[i]!.startsAt < sorted[i - 1]!.endsAt) {
+				ctx.addIssue({
+					code: "custom",
+					message: "As sessões não podem se sobrepor.",
+					path: [],
+				});
+				break;
+			}
+		}
+	});
+
+/** SQL expression for the earliest session start of an activity. */
+const firstSessionStart = sql`(SELECT MIN(${activitySession.startsAt}) FROM ${activitySession} WHERE ${activitySession.activityId} = ${activity.id})`;
+
+/** SQL expression matching activities with at least one session not yet ended. */
+function hasUpcomingSession(now: Date = new Date()) {
+	return exists(
+		db
+			.select({ id: activitySession.id })
+			.from(activitySession)
+			.where(
+				and(
+					eq(activitySession.activityId, activity.id),
+					gte(activitySession.endsAt, now),
+				),
+			),
+	);
+}
+
 const mutateActivityParams = z.object({
 	name: z.string().min(1),
 	description: z.string().optional(),
 	isRegistrationOpen: z.boolean().optional(),
-	dateFrom: z.coerce.date(),
-	dateTo: z.coerce.date(),
+	sessions: sessionsSchema,
 	category: z.enum(activityCategories),
 	audience: z.enum(activityAudiences),
 	speakerIds: z.array(z.coerce.number()).optional(),
@@ -79,6 +136,9 @@ export const activitiesRouter = createTRPCRouter({
 				},
 				with: {
 					project: true,
+					sessions: {
+						orderBy: asc(activitySession.startsAt),
+					},
 					speakerOnActivity: {
 						with: {
 							speaker: true,
@@ -139,10 +199,10 @@ export const activitiesRouter = createTRPCRouter({
 
 			switch (sort) {
 				case "asc":
-					orderByClause = asc(participantOnActivity.joinedAt);
+					orderByClause = asc(participantOnActivity.subscribedAt);
 					break;
 				case "desc":
-					orderByClause = desc(participantOnActivity.joinedAt);
+					orderByClause = desc(participantOnActivity.subscribedAt);
 					break;
 				case "name_asc":
 					orderByClause = asc(user.name);
@@ -152,7 +212,7 @@ export const activitiesRouter = createTRPCRouter({
 					break;
 				default:
 					// "recent"
-					orderByClause = desc(participantOnActivity.joinedAt);
+					orderByClause = desc(participantOnActivity.subscribedAt);
 			}
 
 			const nonMonitorParticipants = await db
@@ -191,7 +251,7 @@ export const activitiesRouter = createTRPCRouter({
 				...nonMonitorParticipants,
 			].map((row) => {
 				// Removemos a data em que o usuário se inscreveu no evento para que o
-				// "joinedAt" de "participantOnActivity" não seja sobrescrito
+				// "joinedAt" de "participant" não seja exposto aqui
 				const { joinedAt, ...rest } = row.participant;
 
 				return {
@@ -205,9 +265,59 @@ export const activitiesRouter = createTRPCRouter({
 				};
 			});
 
+			// Presença por sessão: participantId -> [{ sessionId, joinedAt }]
+			const attendanceRows = await db
+				.select({
+					sessionId: sessionAttendance.sessionId,
+					participantId: sessionAttendance.participantId,
+					joinedAt: sessionAttendance.joinedAt,
+				})
+				.from(sessionAttendance)
+				.innerJoin(
+					activitySession,
+					eq(sessionAttendance.sessionId, activitySession.id),
+				)
+				.where(eq(activitySession.activityId, activityId));
+
+			const attendanceByParticipant = new Map<
+				string,
+				Array<{ sessionId: string; joinedAt: Date }>
+			>();
+			const attendanceCountBySession = new Map<string, number>();
+			for (const row of attendanceRows) {
+				const list =
+					attendanceByParticipant.get(row.participantId) ?? [];
+				list.push({
+					sessionId: row.sessionId,
+					joinedAt: row.joinedAt,
+				});
+				attendanceByParticipant.set(row.participantId, list);
+				attendanceCountBySession.set(
+					row.sessionId,
+					(attendanceCountBySession.get(row.sessionId) ?? 0) + 1,
+				);
+			}
+
+			const participantsWithAttendance = allParticipants.map(
+				(p) => ({
+					...p,
+					sessionAttendances:
+						attendanceByParticipant.get(p.participantId) ?? [],
+				}),
+			);
+
+			const sessionsWithCounts = (
+				selectedActivity.sessions ?? []
+			).map((session) => ({
+				...session,
+				attendedCount:
+					attendanceCountBySession.get(session.id) ?? 0,
+			}));
+
 			const formattedActivity = {
 				...selectedActivity,
-				participants: allParticipants,
+				sessions: sessionsWithCounts,
+				participants: participantsWithAttendance,
 			};
 
 			return {
@@ -290,10 +400,10 @@ export const activitiesRouter = createTRPCRouter({
 
 			switch (sort) {
 				case "desc":
-					orderByClause = desc(activity.dateFrom);
+					orderByClause = desc(firstSessionStart);
 					break;
 				case "asc":
-					orderByClause = asc(activity.dateFrom);
+					orderByClause = asc(firstSessionStart);
 					break;
 				case "name_asc":
 					orderByClause = asc(activity.name);
@@ -302,7 +412,7 @@ export const activitiesRouter = createTRPCRouter({
 					orderByClause = desc(activity.name);
 					break;
 				default:
-					orderByClause = asc(activity.dateFrom);
+					orderByClause = asc(firstSessionStart);
 			}
 
 			type ActivityWithRelations = typeof activity.$inferSelect & {
@@ -326,6 +436,9 @@ export const activitiesRouter = createTRPCRouter({
 			const withObj = fullQuery
 				? {
 						project: true,
+						sessions: {
+							orderBy: asc(activitySession.startsAt),
+						},
 						speakerOnActivity: {
 							with: {
 								speaker: true,
@@ -343,6 +456,9 @@ export const activitiesRouter = createTRPCRouter({
 					}
 				: {
 						project: true,
+						sessions: {
+							orderBy: asc(activitySession.startsAt),
+						},
 						speakerOnActivity: {
 							with: {
 								speaker: true,
@@ -459,8 +575,7 @@ export const activitiesRouter = createTRPCRouter({
 			const {
 				name,
 				description,
-				dateFrom,
-				dateTo,
+				sessions,
 				category,
 				audience,
 				speakerIds,
@@ -473,33 +588,44 @@ export const activitiesRouter = createTRPCRouter({
 				projectId,
 			} = input;
 
-			const inserted = await db
-				.insert(activity)
-				.values({
-					name,
-					description,
-					dateFrom,
-					dateTo,
-					category,
-					audience,
-					participantsLimit,
-					tolerance,
-					workload,
-					address,
-					latitude,
-					longitude,
-					projectId,
-				})
-				.returning({ id: activity.id });
+			const insertedActivityId = await db.transaction(async (tx) => {
+				const inserted = await tx
+					.insert(activity)
+					.values({
+						name,
+						description,
+						category,
+						audience,
+						participantsLimit,
+						tolerance,
+						workload,
+						address,
+						latitude,
+						longitude,
+						projectId,
+					})
+					.returning({ id: activity.id });
 
-			const insertedActivityId = inserted[0]?.id;
+				const activityId = inserted[0]?.id;
 
-			if (!insertedActivityId) {
-				throw new TRPCError({
-					message: "Failed to create activity.",
-					code: "INTERNAL_SERVER_ERROR",
-				});
-			}
+				if (!activityId) {
+					throw new TRPCError({
+						message: "Failed to create activity.",
+						code: "INTERNAL_SERVER_ERROR",
+					});
+				}
+
+				await tx.insert(activitySession).values(
+					sessions.map((session) => ({
+						activityId,
+						startsAt: session.startsAt,
+						endsAt: session.endsAt,
+						address: session.address,
+					})),
+				);
+
+				return activityId;
+			});
 
 			// We add the user as a monitor by default
 			const participantFromUser = await db
@@ -551,8 +677,7 @@ export const activitiesRouter = createTRPCRouter({
 				name,
 				description,
 				isRegistrationOpen,
-				dateFrom,
-				dateTo,
+				sessions,
 				category,
 				audience,
 				speakerIds,
@@ -577,8 +702,6 @@ export const activitiesRouter = createTRPCRouter({
 						name,
 						description,
 						isRegistrationOpen,
-						dateFrom,
-						dateTo,
 						category,
 						audience,
 						participantsLimit,
@@ -589,6 +712,21 @@ export const activitiesRouter = createTRPCRouter({
 						longitude,
 					})
 					.where(eq(activity.id, activityId));
+
+				// Replace sessions (attendance rows cascade-delete with them)
+				if (sessions !== undefined) {
+					await tx
+						.delete(activitySession)
+						.where(eq(activitySession.activityId, activityId));
+					await tx.insert(activitySession).values(
+						sessions.map((session) => ({
+							activityId,
+							startsAt: session.startsAt,
+							endsAt: session.endsAt,
+							address: session.address,
+						})),
+					);
+				}
 
 				// Update speakers
 				if (speakerIds !== undefined) {
@@ -1100,20 +1238,26 @@ export const activitiesRouter = createTRPCRouter({
 				where: and(
 					eq(activity.projectId, input.projectId),
 					eq(activity.isRegistrationOpen, false),
-					gte(activity.dateTo, new Date()),
+					hasUpcomingSession(),
 				),
 				with: {
+					sessions: {
+						orderBy: asc(activitySession.startsAt),
+					},
 					tagOnActivity: {
 						with: { tag: true },
 					},
 				},
-				orderBy: asc(activity.dateFrom),
+				orderBy: asc(firstSessionStart),
 			});
 
 			return rows.map((row) => ({
 				id: row.id,
 				name: row.name,
-				dateFrom: row.dateFrom,
+				sessions: row.sessions.map((session) => ({
+					startsAt: session.startsAt,
+					endsAt: session.endsAt,
+				})),
 				category: row.category,
 				participantsLimit: row.participantsLimit,
 				tags: row.tagOnActivity.map((t) => ({

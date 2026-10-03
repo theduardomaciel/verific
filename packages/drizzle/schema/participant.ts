@@ -7,6 +7,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { participantOnActivity } from "./participant-on-activity";
+import { sessionAttendance } from "./session-attendance";
 import { project } from "./project";
 import { user } from "./user";
 import { formAnswer } from "./form-answer";
@@ -43,5 +44,6 @@ export const participantRelations = relations(participant, ({ one, many }) => ({
 		references: [project.id],
 	}),
 	participantOnActivity: many(participantOnActivity),
+	sessionAttendances: many(sessionAttendance),
 	answers: many(formAnswer),
 }));

@@ -54,8 +54,8 @@ import {
 	activityCategoryLabels,
 } from "@verific/drizzle/enum/category";
 import type { MutateActivityFormSchema } from "@/lib/validations/forms/mutate-activity-form";
-import { useWatch, type UseFormReturn } from "react-hook-form";
-import { calculateWorkloadFromTimes } from "@/lib/date";
+import { useFieldArray, useWatch, type UseFormReturn } from "react-hook-form";
+import { sumSessionsHours } from "@/lib/date";
 import {
 	Tooltip,
 	TooltipContent,
@@ -189,6 +189,170 @@ function RegistrationSettings({
 					{formAction}
 				</div>
 			</div>
+		</div>
+	);
+}
+
+/* -------------------------------------------------------------------------- */
+/*                               Sessions editor                              */
+/* -------------------------------------------------------------------------- */
+
+const setTimeOnDate = (date: Date, time: string) => {
+	const timeParts = time.split(":");
+	date.setUTCHours(Number(timeParts[0]) + 3, Number(timeParts[1]));
+};
+
+function buildSessionIntervals(
+	sessions: Array<{ date: Date; timeFrom: string; timeTo: string }>,
+) {
+	const intervals: Array<{ startsAt: Date; endsAt: Date }> = [];
+	for (const session of sessions) {
+		if (!session?.date || !session.timeFrom || !session.timeTo) continue;
+		const startsAt = new Date(session.date);
+		setTimeOnDate(startsAt, session.timeFrom);
+		const endsAt = new Date(session.date);
+		setTimeOnDate(endsAt, session.timeTo);
+		if (endsAt > startsAt) intervals.push({ startsAt, endsAt });
+	}
+	return intervals;
+}
+
+function SessionsEditor({
+	form,
+}: {
+	form: UseFormReturn<MutateActivityFormSchema>;
+}) {
+	const { fields, append, remove } = useFieldArray({
+		control: form.control,
+		name: "sessions",
+	});
+
+	return (
+		<div className="flex w-full flex-col gap-4">
+			{fields.map((field, index) => (
+				<div
+					key={field.id}
+					className="mx-auto flex w-full max-w-full flex-col gap-4 rounded-2xl border p-5 md:mx-0 md:w-fit"
+				>
+					<div className="flex w-full items-center justify-between gap-2">
+						<p className="text-sm font-semibold">
+							Sessão {index + 1}
+						</p>
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							className="h-8 w-8"
+							aria-label={`Remover sessão ${index + 1}`}
+							disabled={fields.length <= 1}
+							onClick={() => remove(index)}
+						>
+							<TrashIcon size={14} />
+						</Button>
+					</div>
+
+					<FormField
+						control={form.control}
+						name={`sessions.${index}.date` as const}
+						render={({ field }) => (
+							<FormItem className="w-full">
+								<FormLabel>Data</FormLabel>
+								<div className="flex w-full justify-center">
+									<Calendar
+										mode="single"
+										lang="pt-br"
+										selected={field.value}
+										onSelect={field.onChange}
+										defaultMonth={field.value}
+										disabled={(date) => {
+											const today = new Date();
+											today.setHours(0, 0, 0, 0);
+											return date < today;
+										}}
+										className="max-w-full rounded-md border [--cell-size:2rem] min-[375px]:[--cell-size:2.15rem] min-[1024px]:[--cell-size:3rem] min-[1280px]:[--cell-size:3.25rem]"
+									/>
+								</div>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
+					<div className="flex w-full flex-col items-start justify-start gap-2">
+						<FormLabel>Horário</FormLabel>
+						<div className="flex w-full flex-row items-start justify-between gap-3">
+							<FormField
+								control={form.control}
+								name={`sessions.${index}.timeFrom` as const}
+								render={({ field }) => (
+									<FormItem className="w-full">
+										<TimePicker
+											value={field.value}
+											onChange={field.onChange}
+											placeholder="HH:MM"
+										/>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+							<div className="mt-5 h-0.5 w-[15px] shrink-0 rounded-full bg-gray-400" />
+							<FormField
+								control={form.control}
+								name={`sessions.${index}.timeTo` as const}
+								render={({ field }) => (
+									<FormItem className="w-full">
+										<TimePicker
+											value={field.value}
+											onChange={field.onChange}
+											placeholder="HH:MM"
+										/>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+						</div>
+					</div>
+
+					<FormField
+						control={form.control}
+						name={`sessions.${index}.address` as const}
+						render={({ field }) => (
+							<FormItem className="w-full">
+								<FormLabel>
+									Local da sessão{" "}
+									<span className="text-muted-foreground font-normal">
+										(opcional)
+									</span>
+								</FormLabel>
+								<FormControl>
+									<Input
+										placeholder="Sala 101"
+										{...field}
+										value={field.value ?? ""}
+									/>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+				</div>
+			))}
+
+			<Button
+				type="button"
+				variant="outline"
+				className="w-full"
+				onClick={() =>
+					append({
+						date: new Date(),
+						timeFrom: "",
+						timeTo: "",
+						address: "",
+					})
+				}
+			>
+				<Plus size={16} />
+				Adicionar sessão
+			</Button>
 		</div>
 	);
 }
@@ -372,13 +536,13 @@ export function MutateActivityFormContent({
 															size="icon"
 															title="Calcular carga horária"
 															onClick={() =>
-																// Calcula a carga horária com base no intervalo de tempo
+																// Soma a duração de todas as sessões
 																field.onChange(
-																	calculateWorkloadFromTimes(
-																		form.getValues()
-																			.timeFrom,
-																		form.getValues()
-																			.timeTo,
+																	sumSessionsHours(
+																		buildSessionIntervals(
+																			form.getValues()
+																				.sessions ?? [],
+																		),
 																	),
 																)
 															}
@@ -667,71 +831,7 @@ export function MutateActivityFormContent({
 
 				{/* ------------------------------ Side column ------------------------------ */}
 				<aside className="w-full shrink-0 md:sticky md:top-24 md:w-auto">
-					<div className="mx-auto flex w-full max-w-full flex-col gap-6 rounded-2xl border p-5 md:mx-0 md:w-fit">
-						<FormField
-							control={form.control}
-							name="dateFrom"
-							render={({ field }) => (
-								<FormItem className="w-full">
-									<FormLabel>Data</FormLabel>
-									<div className="flex w-full justify-center">
-										<Calendar
-											mode="single"
-											lang="pt-br"
-											selected={field.value}
-											onSelect={field.onChange}
-											defaultMonth={field.value}
-											disabled={(date) => {
-												const today = new Date();
-												today.setHours(0, 0, 0, 0);
-												return (
-													date <
-													today /* || date > endDate */
-												);
-											}}
-											className="max-w-full rounded-md border [--cell-size:2rem] min-[375px]:[--cell-size:2.15rem] min-[1024px]:[--cell-size:3rem]"
-										/>
-									</div>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-
-						<div className="flex w-full flex-col items-start justify-start gap-2">
-							<FormLabel>Horário</FormLabel>
-							<div className="flex w-full flex-row items-start justify-between gap-3">
-								<FormField
-									control={form.control}
-									name="timeFrom"
-									render={({ field }) => (
-										<FormItem className="w-full">
-											<TimePicker
-												value={field.value}
-												onChange={field.onChange}
-												placeholder="HH:MM"
-											/>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-								<div className="mt-5 h-0.5 w-[15px] shrink-0 rounded-full bg-gray-400" />
-								<FormField
-									control={form.control}
-									name="timeTo"
-									render={({ field }) => (
-										<FormItem className="w-full">
-											<TimePicker
-												value={field.value}
-												onChange={field.onChange}
-												placeholder="HH:MM"
-											/>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-							</div>
-						</div>
-					</div>
+					<SessionsEditor form={form} />
 				</aside>
 			</div>
 		</div>

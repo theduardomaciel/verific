@@ -3,10 +3,12 @@ import { z } from "@verific/zod";
 import { db } from "@verific/drizzle";
 import {
 	activity,
+	activitySession,
 	participant,
 	participantOnActivity,
 	project,
 	projectModerator,
+	sessionAttendance,
 	user,
 } from "@verific/drizzle/schema";
 import {
@@ -274,16 +276,15 @@ export const participantsRouter = createTRPCRouter({
 			return { participantId: result?.[0]?.id ?? null, userId };
 		}),
 
-	updateParticipantPresence: protectedProcedure
+	updateSessionPresence: protectedProcedure
 		.input(
 			z.object({
-				activityId: z.string().uuid(),
+				sessionId: z.string().uuid(),
 				participantId: z.string().uuid(),
-				presence: z.boolean().optional(),
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			const { activityId, participantId } = input;
+			const { sessionId, participantId } = input;
 
 			const error = await isMemberAuthenticated({
 				userId: ctx.session.user.id,
@@ -293,35 +294,52 @@ export const participantsRouter = createTRPCRouter({
 				throw new TRPCError(error);
 			}
 
-			// Checamos se o usuário estão inscritos na atividade
-			const isPresent = await db
+			const session = await db.query.activitySession.findFirst({
+				where: eq(activitySession.id, sessionId),
+			});
+
+			if (!session) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Sessão não encontrada",
+				});
+			}
+
+			// Só permite credenciar quem está inscrito na atividade
+			const subscription = await db
 				.select({ amount: count() })
 				.from(participantOnActivity)
-				.where(and(
-					eq(participantOnActivity.activityId, activityId),
-					eq(participantOnActivity.participantId, participantId),
-				));
+				.where(
+					and(
+						eq(
+							participantOnActivity.activityId,
+							session.activityId,
+						),
+						eq(
+							participantOnActivity.participantId,
+							participantId,
+						),
+					),
+				);
 
-			// Caso não, retornamos um erro
-			if ((isPresent?.[0]?.amount ?? 0) === 0) {
+			if ((subscription?.[0]?.amount ?? 0) === 0) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
 					message: "Participante não está inscrito na atividade",
 				});
 			}
 
-			// Upsert: se já existe, atualiza joinedAt e presence; senão, insere
 			await db
-				.insert(participantOnActivity)
+				.insert(sessionAttendance)
 				.values({
-					activityId,
+					sessionId,
 					participantId,
 					joinedAt: new Date(),
 				})
 				.onConflictDoUpdate({
 					target: [
-						participantOnActivity.activityId,
-						participantOnActivity.participantId,
+						sessionAttendance.sessionId,
+						sessionAttendance.participantId,
 					],
 					set: {
 						joinedAt: new Date(),

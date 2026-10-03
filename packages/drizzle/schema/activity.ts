@@ -10,6 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { participantOnActivity } from "./participant-on-activity";
+import { activitySession } from "./activity-session";
 import { project } from "./project";
 import { categoryEnum } from "../enum/category";
 import { audienceEnum } from "../enum/audience";
@@ -23,9 +24,6 @@ export const activity = pgTable("activities", {
 	bannerUrl: text("banner_url"),
 	isPublished: boolean("is_published").notNull().default(true),  // Controls if the activity is visible/discoverable to users
 	isRegistrationOpen: boolean("is_registration_open").notNull().default(true),  // Controls if users can sign up
-
-	dateFrom: timestamp("date_from").notNull(),
-	dateTo: timestamp("date_to").notNull(),
 
 	audience: audienceEnum("audience").notNull().default("internal"),
 	category: categoryEnum("category").notNull().default("other"),
@@ -56,6 +54,7 @@ export const activityRelations = relations(activity, ({ one, many }) => ({
 	}),
 	participantOnActivity: many(participantOnActivity),
 	speakerOnActivity: many(speakerOnActivity),
+	sessions: many(activitySession),
 	conflictsAsBlocking: many(activityConflict, {
 		relationName: "blockingActivities",
 	}),

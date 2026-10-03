@@ -18,7 +18,11 @@ import {
 // Icons
 
 // Utils
-import { categorizeByDate } from "@/lib/date";
+import {
+	categorizeByDate,
+	expandSessionOccurrences,
+	getFirstSessionStart,
+} from "@/lib/date";
 
 // Enums
 import {
@@ -80,14 +84,14 @@ export function ScheduleContent({
 		if (sortBy === "asc") {
 			sorted.sort(
 				(a, b) =>
-					new Date(a.dateFrom).getTime() -
-					new Date(b.dateFrom).getTime(),
+					(getFirstSessionStart(a.sessions)?.getTime() ?? 0) -
+					(getFirstSessionStart(b.sessions)?.getTime() ?? 0),
 			);
 		} else if (sortBy === "desc") {
 			sorted.sort(
 				(a, b) =>
-					new Date(b.dateFrom).getTime() -
-					new Date(a.dateFrom).getTime(),
+					(getFirstSessionStart(b.sessions)?.getTime() ?? 0) -
+					(getFirstSessionStart(a.sessions)?.getTime() ?? 0),
 			);
 		} else if (sortBy === "name_asc") {
 			sorted.sort((a, b) => a.name.localeCompare(b.name));
@@ -99,9 +103,10 @@ export function ScheduleContent({
 	}, [activities, searchQuery, categoryFilter, sortBy]);
 
 	const { grouped, categories, initialExpanded } = useMemo(() => {
+		const occurrences = expandSessionOccurrences(filteredActivities);
 		const { grouped, categories } = categorizeByDate(
-			filteredActivities,
-			(activity) => activity.dateFrom,
+			occurrences,
+			(occurrence) => occurrence.session.startsAt,
 		);
 		const hasToday = categories.includes("Hoje");
 		const initialExpanded = hasToday ? ["Hoje"] : categories;
@@ -159,19 +164,32 @@ export function ScheduleContent({
 									<div className="flex flex-col gap-6 md:grid md:grid-cols-2">
 										{grouped
 											.get(category)!
-											.map((activity, idx, arr) => {
+											.map((occurrence, idx, arr) => {
+												const { activity } = occurrence;
 												const isLastOdd =
 													arr.length % 2 === 1 &&
 													idx === arr.length - 1;
 												return (
 													<ActivityCard
-														key={activity.id}
+														key={`${activity.id}-${occurrence.sessionIndex}`}
 														className={
 															isLastOdd
 																? "md:col-span-2"
 																: undefined
 														}
 														activity={activity}
+														occurrenceSession={
+															occurrence.sessionCount >
+															1
+																? occurrence.session
+																: null
+														}
+														occurrenceLabel={
+															occurrence.sessionCount >
+															1
+																? `Sessão ${occurrence.sessionIndex + 1} de ${occurrence.sessionCount}`
+																: null
+														}
 														participantId={
 															subscribedIds?.includes(
 																activity.id,
