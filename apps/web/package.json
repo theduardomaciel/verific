@@ -13,6 +13,8 @@
 		"codegen:css-colors": "tsx tools/scripts/codegen-css-colors.ts"
 	},
 	"dependencies": {
+		"@dnd-kit/abstract": "^0.5.0",
+		"@dnd-kit/helpers": "^0.5.0",
 		"@dnd-kit/react": "^0.5.0",
 		"@hookform/resolvers": "^5.2.2",
 		"@radix-ui/react-accordion": "^1.2.12",

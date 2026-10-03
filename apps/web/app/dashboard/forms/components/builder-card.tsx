@@ -1,6 +1,8 @@
 "use client";
 
-import type { ReactNode, RefObject } from "react";
+import { useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
+import { CollisionPriority } from "@dnd-kit/abstract";
+import { move } from "@dnd-kit/helpers";
 import { DragDropProvider, useDroppable } from "@dnd-kit/react";
 import { isSortable, useSortable } from "@dnd-kit/react/sortable";
 import { GripVertical, Lock, TrashIcon } from "lucide-react";
@@ -24,14 +26,21 @@ import { SortableFieldRow } from "./field-row";
 const SECTIONS_GROUP = "__sections";
 const UNGROUPED = "__ungrouped";
 const SECTION_PREFIX = "section:";
-const FIELD_DROP_PREFIX = "field-drop:";
+const FIELD_TYPE = "form-field";
+const SECTION_TYPE = "form-section";
+
+type FieldGroups = Record<string, string[]>;
 
 function sectionSortId(sectionId: string) {
 	return `${SECTION_PREFIX}${sectionId}`;
 }
 
-function fieldDropId(sectionId: string) {
-	return `${FIELD_DROP_PREFIX}${sectionId}`;
+function getSourceType(source: unknown): string | null {
+	if (typeof source === "object" && source !== null && "type" in source) {
+		const t = (source as { type?: unknown }).type;
+		return typeof t === "string" ? t : null;
+	}
+	return null;
 }
 
 interface BuilderCardProps {
@@ -55,47 +64,18 @@ interface BuilderCardProps {
 	onDeleteSection: (section: Section) => void;
 }
 
-function EmptySectionDropZone({
-	sectionId,
-	disabled,
-}: {
-	sectionId: string;
-	disabled: boolean;
-}) {
-	const { ref, isDropTarget } = useDroppable({
-		id: fieldDropId(sectionId),
-		type: "form-field",
-		accept: "form-field",
-		disabled,
-	});
-	return (
-		<div
-			ref={ref}
-			className={cn(
-				"rounded-lg border border-dashed p-4 text-center text-sm transition-colors",
-				isDropTarget
-					? "border-primary bg-primary/5 text-foreground"
-					: "text-muted-foreground",
-			)}
-		>
-			{isDropTarget
-				? "Solte aqui para mover o campo para esta seção"
-				: "Nenhum campo nesta seção ainda. Arraste um campo para cá."}
-		</div>
-	);
-}
-
 interface SectionBlockProps {
 	section: Section;
 	position: number;
 	total: number;
 	selectedId: string;
 	isPublished: boolean;
-	sectionFields: Field[];
+	fieldIds: string[];
+	fieldById: Map<string, Field>;
 	fields: Field[];
 	sortedSections: Section[];
-	fieldsBySection: Map<string, Field[]>;
 	orphanHalfIds: Set<string>;
+	highlightDrop: boolean;
 	upsertSection: UseFormsBuilder["upsertSection"];
 	onMoveSection: (index: number, dir: -1 | 1) => void;
 	onDeleteSection: (section: Section) => void;
@@ -109,10 +89,12 @@ function SectionBlock({
 	total,
 	selectedId,
 	isPublished,
-	sectionFields,
+	fieldIds,
+	fieldById,
 	fields,
 	sortedSections,
 	orphanHalfIds,
+	highlightDrop,
 	upsertSection,
 	onMoveSection,
 	onDeleteSection,
@@ -128,10 +110,17 @@ function SectionBlock({
 		id: sectionSortId(section.id),
 		index: position,
 		group: SECTIONS_GROUP,
-		type: "form-section",
-		accept: "form-section",
+		type: SECTION_TYPE,
+		accept: SECTION_TYPE,
 		disabled: isPublished,
 		transition: { duration: 200, easing: "ease-in-out" },
+	});
+
+	const { ref: listRef, isDropTarget: isListTarget } = useDroppable({
+		id: section.id,
+		accept: FIELD_TYPE,
+		collisionPriority: CollisionPriority.Low,
+		disabled: isPublished,
 	});
 
 	return (
@@ -160,7 +149,7 @@ function SectionBlock({
 						{position + 1}. {section.title}
 					</span>
 					<Badge variant="secondary">
-						{sectionFields.length} campo{sectionFields.length === 1 ? "" : "s"}
+						{fieldIds.length} campo{fieldIds.length === 1 ? "" : "s"}
 					</Badge>
 				</div>
 				{!isPublished && (
@@ -205,11 +194,31 @@ function SectionBlock({
 					</div>
 				)}
 			</div>
-			{sectionFields.length === 0 ? (
-				<EmptySectionDropZone sectionId={section.id} disabled={isPublished} />
-			) : (
-				<div className="flex flex-col gap-3">
-					{sectionFields.map((f, i) => {
+			<div
+				ref={listRef}
+				className={cn(
+					"flex flex-col gap-3 rounded-lg transition-colors",
+					fieldIds.length === 0 && "p-1",
+					highlightDrop &&
+						isListTarget &&
+						"bg-primary/5 ring-primary/30 ring-2",
+				)}
+			>
+				{fieldIds.length === 0 ? (
+					<div
+						className={cn(
+							"rounded-lg border border-dashed p-4 text-center text-sm",
+							isListTarget ? "text-foreground" : "text-muted-foreground",
+						)}
+					>
+						{isListTarget
+							? "Solte aqui para mover o campo para esta seção"
+							: "Nenhum campo nesta seção ainda. Arraste um campo para cá."}
+					</div>
+				) : (
+					fieldIds.map((id, i) => {
+						const f = fieldById.get(id);
+						if (!f) return null;
 						const globalIndex = fields.findIndex((gf) => gf.id === f.id);
 						return (
 							<SortableFieldRow
@@ -232,7 +241,7 @@ function SectionBlock({
 										<Button
 											size="sm"
 											variant="outline"
-											disabled={i === sectionFields.length - 1}
+											disabled={i === fieldIds.length - 1}
 											onClick={() => moveWithinSection(section.id, i, 1)}
 										>
 											↓
@@ -259,9 +268,133 @@ function SectionBlock({
 								}
 							/>
 						);
-					})}
-				</div>
-			)}
+					})
+				)}
+			</div>
+		</div>
+	);
+}
+
+interface UngroupedBoxProps {
+	visible: boolean;
+	fieldIds: string[];
+	fieldById: Map<string, Field>;
+	fields: Field[];
+	selectedId: string;
+	isPublished: boolean;
+	orphanHalfIds: Set<string>;
+	sortedSections: Section[];
+	highlightDrop: boolean;
+	onMove: (index: number, dir: -1 | 1) => void;
+	onDelete: (field: Field) => void;
+}
+
+function UngroupedBox({
+	visible,
+	fieldIds,
+	fieldById,
+	fields,
+	selectedId,
+	isPublished,
+	orphanHalfIds,
+	sortedSections,
+	highlightDrop,
+	onMove,
+	onDelete,
+}: UngroupedBoxProps) {
+	const { ref, isDropTarget } = useDroppable({
+		id: UNGROUPED,
+		accept: FIELD_TYPE,
+		collisionPriority: CollisionPriority.Low,
+		disabled: isPublished || !visible,
+	});
+
+	if (!visible) return null;
+
+	return (
+		<div className="flex flex-col gap-2 rounded-lg border border-dashed p-3">
+			<div className="flex flex-wrap items-center gap-2">
+				<span className="font-bold">Sem seção</span>
+				<Badge variant="outline">{fieldIds.length}</Badge>
+			</div>
+			<p className="text-muted-foreground text-xs">
+				Arraste para uma seção ou edite cada campo para atribuí-lo a uma
+				seção.
+			</p>
+			<div
+				ref={ref}
+				className={cn(
+					"flex flex-col gap-3 rounded-lg transition-colors",
+					highlightDrop && isDropTarget && "bg-primary/5 ring-primary/30 ring-2",
+				)}
+			>
+				{fieldIds.length === 0 ? (
+					<div
+						className={cn(
+							"rounded-lg border border-dashed p-4 text-center text-sm",
+							isDropTarget ? "text-foreground" : "text-muted-foreground",
+						)}
+					>
+						Solte aqui para remover o campo da seção
+					</div>
+				) : (
+					fieldIds.map((id, i) => {
+						const f = fieldById.get(id);
+						if (!f) return null;
+						const globalIndex = fields.findIndex((gf) => gf.id === f.id);
+						return (
+							<SortableFieldRow
+								key={f.id}
+								field={f}
+								index={i}
+								group={UNGROUPED}
+								disabled={isPublished}
+								isOrphanHalf={orphanHalfIds.has(f.id)}
+								actions={
+									!isPublished ? (
+										<>
+											<Button
+												size="sm"
+												variant="outline"
+												disabled={i === 0}
+												onClick={() => onMove(globalIndex, -1)}
+											>
+												↑
+											</Button>
+											<Button
+												size="sm"
+												variant="outline"
+												disabled={i === fieldIds.length - 1}
+												onClick={() => onMove(globalIndex, 1)}
+											>
+												↓
+											</Button>
+											<FieldDialog
+												key={f.id}
+												versionId={selectedId}
+												initial={f}
+												onDone={() => undefined}
+												siblings={fields}
+												position={globalIndex}
+												sections={sortedSections}
+												defaultSectionId={null}
+											/>
+											<Button
+												size="sm"
+												variant="ghost"
+												onClick={() => onDelete(f)}
+											>
+												<TrashIcon />
+												Excluir
+											</Button>
+										</>
+									) : undefined
+								}
+							/>
+						);
+					})
+				)}
+			</div>
 		</div>
 	);
 }
@@ -286,200 +419,110 @@ export function BuilderCard({
 	onDelete,
 	onDeleteSection,
 }: BuilderCardProps) {
-	if (!selected) return null;
+	const sortedSections = useMemo(
+		() => [...sections].sort((a, b) => a.order - b.order),
+		[sections],
+	);
 
-	const sortedSections = [...sections].sort((a, b) => a.order - b.order);
-	const fieldsBySection = new Map<string, Field[]>();
-	const ungrouped: Field[] = [];
-	for (const f of [...fields].sort((a, b) => a.order - b.order)) {
-		if (f.sectionId && sortedSections.some((s) => s.id === f.sectionId)) {
-			if (!fieldsBySection.has(f.sectionId)) fieldsBySection.set(f.sectionId, []);
-			fieldsBySection.get(f.sectionId)!.push(f);
-		} else {
-			ungrouped.push(f);
-		}
-	}
+	const fieldById = useMemo(() => new Map(fields.map((f) => [f.id, f])), [fields]);
 
-	function findFieldSectionId(fieldId: string): string | null {
-		for (const [sid, list] of fieldsBySection) {
-			if (list.some((f) => f.id === fieldId)) return sid;
+	const sectionIdSet = useMemo(
+		() => new Set(sortedSections.map((s) => s.id)),
+		[sortedSections],
+	);
+
+	const baseGroups = useMemo<FieldGroups>(() => {
+		const g: FieldGroups = {};
+		for (const s of sortedSections) g[s.id] = [];
+		g[UNGROUPED] = [];
+		for (const f of [...fields].sort((a, b) => a.order - b.order)) {
+			const key =
+				f.sectionId && sectionIdSet.has(f.sectionId) ? f.sectionId : UNGROUPED;
+			g[key]?.push(f.id);
 		}
-		if (ungrouped.some((f) => f.id === fieldId)) return null;
-		const direct = fields.find((f) => f.id === fieldId);
-		return direct?.sectionId ?? null;
-	}
+		return g;
+	}, [fields, sortedSections, sectionIdSet]);
+
+	// Live preview of field positions while dragging (controlled, following
+	// the documented multiple-sortable-lists pattern). Only committed to the
+	// server on drop; discarded on cancel. `displayFields` in the hook is
+	// untouched until then, so cancel needs no server-state revert.
+	const [fieldPreview, setFieldPreview] = useState<FieldGroups | null>(null);
+	const [dragType, setDragType] = useState<string | null>(null);
+	const groups = fieldPreview ?? baseGroups;
+	const groupsRef = useRef(groups);
+	groupsRef.current = groups;
+
+	const draggingField = dragType === FIELD_TYPE;
 
 	function moveWithinSection(sectionId: string, fieldIndex: number, dir: -1 | 1) {
-		const list = fieldsBySection.get(sectionId) ?? [];
+		const list = baseGroups[sectionId] ?? [];
 		const j = fieldIndex + dir;
 		if (j < 0 || j >= list.length) return;
-		const nextList = [...list];
-		const [item] = nextList.splice(fieldIndex, 1);
+		const nextIds = [...list];
+		const [item] = nextIds.splice(fieldIndex, 1);
 		if (!item) return;
-		nextList.splice(j, 0, item);
-		// Rebuild the flat order: keep section order, replace this section's slice.
+		nextIds.splice(j, 0, item);
 		const next: Field[] = [];
 		for (const s of sortedSections) {
-			if (s.id === sectionId) next.push(...nextList);
-			else next.push(...(fieldsBySection.get(s.id) ?? []));
+			const ids = s.id === sectionId ? nextIds : (baseGroups[s.id] ?? []);
+			for (const id of ids) {
+				const f = fieldById.get(id);
+				if (f) next.push(f);
+			}
 		}
-		next.push(...ungrouped);
+		for (const id of baseGroups[UNGROUPED] ?? []) {
+			const f = fieldById.get(id);
+			if (f) next.push(f);
+		}
 		onPersistOrder(next);
 	}
 
-	function handleDragEnd(event: {
-		canceled: boolean;
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		operation: { source: any; target: any };
-	}) {
-		isDraggingRef.current = false;
-		if (event.canceled) {
-			onRevertOrder();
-			return;
-		}
-		const { source, target } = event.operation as {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			source: any;
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			target: any | null;
-		};
-		if (!isSortable(source)) return;
-
-		const rawSourceId = String(source.id);
-
-		// --- Section reorder ---
-		if (rawSourceId.startsWith(SECTION_PREFIX)) {
-			const movedSectionId = rawSourceId.slice(SECTION_PREFIX.length);
-			const from = sortedSections.findIndex((s) => s.id === movedSectionId);
-			if (from < 0) return;
-			let to: number | null = null;
-			if (typeof source.index === "number") to = source.index as number;
-			if (
-				target &&
-				isSortable(target) &&
-				String((target as unknown as { id: unknown }).id).startsWith(SECTION_PREFIX)
-			) {
-				const t = target as unknown as Record<string, unknown>;
-				if (typeof t.index === "number") to = t.index as number;
-			}
-			if (to === null || to === from) return;
-			to = Math.max(0, Math.min(sortedSections.length - 1, to));
-			const next = [...sortedSections];
-			const [moved] = next.splice(from, 1);
-			if (!moved) return;
-			next.splice(to, 0, moved);
-			onPersistSectionOrder(next);
-			return;
-		}
-
-		// --- Field move (within or across sections) ---
-		const movedFieldId = rawSourceId;
-		const fromSectionId = (
-			typeof source.initialGroup === "string"
-				? (source.initialGroup as string)
-				: typeof source.group === "string"
-					? (source.group as string)
-					: findFieldSectionId(movedFieldId)
-		) as string | null;
-
-		let toSectionId: string | null | undefined;
-		let toIndex: number | undefined;
-		const sourceGroup =
-			typeof source.group === "string" ? (source.group as string) : undefined;
-		const sourceIndex =
-			typeof source.index === "number" ? (source.index as number) : undefined;
-
-		if (target && typeof target === "object") {
-			const targetId = String((target as { id: unknown }).id ?? "");
-			const t = target as Record<string, unknown>;
-			if (targetId.startsWith(FIELD_DROP_PREFIX)) {
-				// Dropped onto an empty section zone -> append.
-				const sid = targetId.slice(FIELD_DROP_PREFIX.length);
-				toSectionId = sid === UNGROUPED ? null : sid;
-				const len =
-					sid === UNGROUPED
-						? ungrouped.length
-						: (fieldsBySection.get(sid)?.length ?? 0);
-				toIndex = len;
-			} else if (isSortable(target)) {
-				if (!targetId.startsWith(SECTION_PREFIX)) {
-					const g = t.group;
-					toSectionId =
-						typeof g === "string"
-							? g === UNGROUPED
-								? null
-								: g
-							: undefined;
-					if (typeof t.index === "number") toIndex = t.index as number;
+	function commitFieldGroups(finalGroups: FieldGroups) {
+		const next: Field[] = [];
+		const sectionIdByField: Record<string, string | null> = {};
+		for (const s of sortedSections) {
+			// Fall back to the prop-derived order for any section the preview
+			// doesn't know about (e.g. a refetch landed mid-drag), so fields
+			// can never silently disappear from the committed order.
+			const ids = finalGroups[s.id] ?? baseGroups[s.id] ?? [];
+			for (const id of ids) {
+				const f = fieldById.get(id);
+				if (!f) continue;
+				if (f.sectionId !== s.id) {
+					sectionIdByField[id] = s.id;
+					next.push({ ...f, sectionId: s.id });
+				} else {
+					next.push(f);
 				}
 			}
 		}
-
-		// Prefer the source's final optimistic group/index when available
-		// (dnd-kit updates them live while hovering other groups).
-		if (sourceGroup !== undefined && toSectionId === undefined) {
-			toSectionId = sourceGroup === UNGROUPED ? null : sourceGroup;
+		for (const id of finalGroups[UNGROUPED] ?? []) {
+			const f = fieldById.get(id);
+			if (!f) continue;
+			if (f.sectionId !== null) {
+				sectionIdByField[id] = null;
+				next.push({ ...f, sectionId: null });
+			} else {
+				next.push(f);
+			}
 		}
-		if (toSectionId === undefined) {
-			toSectionId = fromSectionId;
-		}
-		if (toIndex === undefined) {
-			toIndex = sourceIndex ?? 0;
-		}
-
-		const fromKey = fromSectionId ?? UNGROUPED;
-		const toKey = toSectionId ?? UNGROUPED;
-		const fromList =
-			fromKey === UNGROUPED
-				? [...ungrouped]
-				: [...(fieldsBySection.get(fromKey) ?? [])];
-		const actualFrom = fromList.findIndex((f) => f.id === movedFieldId);
-		if (actualFrom < 0) {
-			onRevertOrder();
-			return;
-		}
-		const [moved] = fromList.splice(actualFrom, 1);
-		if (!moved) {
-			onRevertOrder();
-			return;
-		}
-
-		let destList: Field[];
-		if (fromKey === toKey) {
-			destList = fromList;
-		} else {
-			destList =
-				toKey === UNGROUPED
-					? [...ungrouped]
-					: [...(fieldsBySection.get(toKey) ?? [])];
-		}
-		toIndex = Math.max(0, Math.min(destList.length, toIndex));
-		destList.splice(toIndex, 0, moved);
-
-		const lists = new Map<string, Field[]>();
-		for (const [k, v] of fieldsBySection) lists.set(k, [...v]);
-		lists.set(fromKey === UNGROUPED ? UNGROUPED : fromKey, fromKey === toKey ? destList : fromList);
-		if (fromKey !== toKey) {
-			lists.set(toKey === UNGROUPED ? UNGROUPED : toKey, destList);
-		}
-
-		const next: Field[] = [];
-		for (const s of sortedSections) {
-			next.push(...(lists.get(s.id) ?? []));
-		}
-		next.push(...(lists.get(UNGROUPED) ?? ungrouped.filter((f) => f.id !== movedFieldId)));
-
-		if (fromKey === toKey) {
-			const initialIndex =
-				typeof source.initialIndex === "number"
-					? (source.initialIndex as number)
-					: actualFrom;
-			if (initialIndex === toIndex) return;
-			onPersistOrder(next);
-		} else {
-			onPersistOrder(next, { [movedFieldId]: toSectionId });
-		}
+		const prevSig =
+			fields.map((f) => f.id).join(",") +
+			"#" +
+			fields.map((f) => f.sectionId ?? "").join(",");
+		const nextSig =
+			next.map((f) => f.id).join(",") +
+			"#" +
+			next.map((f) => f.sectionId ?? "").join(",");
+		if (prevSig === nextSig) return;
+		onPersistOrder(
+			next,
+			Object.keys(sectionIdByField).length > 0 ? sectionIdByField : undefined,
+		);
 	}
+
+	if (!selected) return null;
 
 	let body: ReactNode;
 	if (isLoadingFields) {
@@ -506,13 +549,67 @@ export function BuilderCard({
 			</p>
 		);
 	} else {
+		const ungroupedIds = groups[UNGROUPED] ?? [];
 		body = (
 			<DragDropProvider
 				key={selected.id}
-				onDragStart={() => {
+				onDragStart={(event) => {
 					isDraggingRef.current = true;
+					setDragType(getSourceType(event.operation.source));
 				}}
-				onDragEnd={handleDragEnd}
+				onDragOver={(event) => {
+					const { source } = event.operation;
+					if (!source || getSourceType(source) !== FIELD_TYPE) return;
+					const next = move(groupsRef.current, event);
+					// `move` returns the same reference when nothing changed,
+					// in which case React bails out of the re-render.
+					setFieldPreview(next);
+				}}
+				onDragEnd={(event) => {
+					isDraggingRef.current = false;
+					setDragType(null);
+					const { source } = event.operation;
+					if (!source || !isSortable(source)) {
+						setFieldPreview(null);
+						return;
+					}
+					const sourceType = getSourceType(source);
+					if (sourceType === SECTION_TYPE) {
+						setFieldPreview(null);
+						if (event.canceled) return;
+						const ids = sortedSections.map((s) => sectionSortId(s.id));
+						const nextIds = move(ids, event);
+						if (nextIds.join(",") === ids.join(",")) return;
+						const bySortId = new Map(
+							sortedSections.map((s) => [sectionSortId(s.id), s]),
+						);
+						const next: Section[] = [];
+						for (const id of nextIds) {
+							const s = bySortId.get(id);
+							if (s) next.push(s);
+						}
+						if (next.length !== sortedSections.length) {
+							onRevertOrder();
+							return;
+						}
+						onPersistSectionOrder(next);
+						return;
+					}
+					if (sourceType !== FIELD_TYPE) {
+						setFieldPreview(null);
+						return;
+					}
+					if (event.canceled) {
+						// Previews never touched `displayFields`, just drop them.
+						setFieldPreview(null);
+						return;
+					}
+					// Apply the final hover position (in case the last dragover
+					// before drop wasn't flushed) and commit to the server.
+					const finalGroups = move(groupsRef.current, event);
+					setFieldPreview(null);
+					commitFieldGroups(finalGroups);
+				}}
 			>
 				<div ref={listRef} className="flex flex-col gap-4">
 					{sortedSections.map((section, si) => (
@@ -523,11 +620,12 @@ export function BuilderCard({
 							total={sortedSections.length}
 							selectedId={selected.id}
 							isPublished={isPublished}
-							sectionFields={fieldsBySection.get(section.id) ?? []}
+							fieldIds={groups[section.id] ?? baseGroups[section.id] ?? []}
+							fieldById={fieldById}
 							fields={fields}
 							sortedSections={sortedSections}
-							fieldsBySection={fieldsBySection}
 							orphanHalfIds={orphanHalfIds}
+							highlightDrop={draggingField}
 							upsertSection={upsertSection}
 							onMoveSection={onMoveSection}
 							onDeleteSection={onDeleteSection}
@@ -535,75 +633,19 @@ export function BuilderCard({
 							onDelete={onDelete}
 						/>
 					))}
-					{ungrouped.length > 0 && (
-						<div className="flex flex-col gap-2 rounded-lg border border-dashed p-3">
-							<div className="flex flex-wrap items-center gap-2">
-								<span className="font-bold">Sem seção</span>
-								<Badge variant="outline">{ungrouped.length}</Badge>
-							</div>
-							<p className="text-muted-foreground text-xs">
-								Arraste para uma seção ou edite cada campo para atribuí-lo a
-								uma seção.
-							</p>
-							<div className="flex flex-col gap-3">
-								{ungrouped.map((f, i) => {
-									const globalIndex = fields.findIndex(
-										(gf) => gf.id === f.id,
-									);
-									return (
-										<SortableFieldRow
-											key={f.id}
-											field={f}
-											index={i}
-											group={UNGROUPED}
-											disabled={isPublished}
-											isOrphanHalf={orphanHalfIds.has(f.id)}
-											actions={
-												!isPublished ? (
-													<>
-														<Button
-															size="sm"
-															variant="outline"
-															disabled={i === 0}
-															onClick={() => onMove(globalIndex, -1)}
-														>
-															↑
-														</Button>
-														<Button
-															size="sm"
-															variant="outline"
-															disabled={i === ungrouped.length - 1}
-															onClick={() => onMove(globalIndex, 1)}
-														>
-															↓
-														</Button>
-														<FieldDialog
-															key={f.id}
-															versionId={selected.id}
-															initial={f}
-															onDone={() => undefined}
-															siblings={fields}
-															position={globalIndex}
-															sections={sortedSections}
-															defaultSectionId={null}
-														/>
-														<Button
-															size="sm"
-															variant="ghost"
-															onClick={() => onDelete(f)}
-														>
-															<TrashIcon />
-															Excluir
-														</Button>
-													</>
-												) : undefined
-											}
-										/>
-									);
-								})}
-							</div>
-						</div>
-					)}
+					<UngroupedBox
+						visible={ungroupedIds.length > 0 || draggingField}
+						fieldIds={ungroupedIds}
+						fieldById={fieldById}
+						fields={fields}
+						selectedId={selected.id}
+						isPublished={isPublished}
+						orphanHalfIds={orphanHalfIds}
+						sortedSections={sortedSections}
+						highlightDrop={draggingField}
+						onMove={onMove}
+						onDelete={onDelete}
+					/>
 				</div>
 			</DragDropProvider>
 		);
