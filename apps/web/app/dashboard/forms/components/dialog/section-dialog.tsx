@@ -23,8 +23,8 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
-import type { Section } from "../types";
-import type { UseFormsBuilder } from "../hooks/use-forms-builder";
+import type { Section } from "../../types";
+import type { UseFormsBuilder } from "../../hooks/use-forms-builder";
 
 const sectionFormSchema = z.object({
 	title: z.string().trim().min(1, "Obrigatório").max(120),
@@ -38,7 +38,11 @@ interface SectionDialogProps {
 	upsertSection: UseFormsBuilder["upsertSection"];
 }
 
-export function SectionDialog({ versionId, initial, upsertSection }: SectionDialogProps) {
+export function SectionDialog({
+	versionId,
+	initial,
+	upsertSection,
+}: SectionDialogProps) {
 	const [open, setOpen] = useState(false);
 	const form = useForm<SectionFormValues>({
 		resolver: zodResolver(sectionFormSchema) as never,
@@ -70,10 +74,15 @@ export function SectionDialog({ versionId, initial, upsertSection }: SectionDial
 			</DialogTrigger>
 			<DialogContent className="sm:max-w-[440px]">
 				<DialogHeader>
-					<DialogTitle>{initial ? "Renomear seção" : "Nova seção"}</DialogTitle>
+					<DialogTitle>
+						{initial ? "Renomear seção" : "Nova seção"}
+					</DialogTitle>
 				</DialogHeader>
 				<Form {...form}>
-					<form onSubmit={form.handleSubmit(submit)} className="flex flex-col gap-4">
+					<form
+						onSubmit={form.handleSubmit(submit)}
+						className="flex flex-col gap-4"
+					>
 						<FormField
 							control={form.control}
 							name="title"
@@ -81,14 +90,22 @@ export function SectionDialog({ versionId, initial, upsertSection }: SectionDial
 								<FormItem>
 									<FormLabel>Título da seção</FormLabel>
 									<FormControl>
-										<Input placeholder="Ex: Dados pessoais" {...field} />
+										<Input
+											placeholder="Ex: Dados pessoais"
+											{...field}
+										/>
 									</FormControl>
 									<FormMessage />
 								</FormItem>
 							)}
 						/>
-						<Button type="submit" disabled={upsertSection.isPending}>
-							{upsertSection.isPending ? "Salvando..." : "Salvar seção"}
+						<Button
+							type="submit"
+							disabled={upsertSection.isPending}
+						>
+							{upsertSection.isPending
+								? "Salvando..."
+								: "Salvar seção"}
 						</Button>
 					</form>
 				</Form>

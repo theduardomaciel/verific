@@ -9,7 +9,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import type { Field } from "../types";
+import type { Field } from "../../types";
 
 interface DeleteFieldDialogProps {
 	field: Field | null;
