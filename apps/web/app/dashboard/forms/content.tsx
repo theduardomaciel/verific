@@ -30,6 +30,7 @@ export function FormsContent() {
 		isDraggingRef,
 		createVersion,
 		publishVersion,
+		deleteVersion,
 		deleteField,
 		persistOrder,
 		revertOrder,
@@ -67,7 +68,11 @@ export function FormsContent() {
 								cloneFromVersionId: v.id,
 							})
 						}
+						onDelete={(v) =>
+							deleteVersion.mutate({ versionId: v.id })
+						}
 						isCreating={createVersion.isPending}
+						isDeleting={deleteVersion.isPending}
 					/>
 
 					{selected && (
