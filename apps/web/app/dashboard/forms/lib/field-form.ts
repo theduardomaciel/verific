@@ -1,24 +1,40 @@
 import { z } from "@verific/zod";
-import { formFieldTypes } from "@verific/api/schemas";
+import { formFieldTypes, hasOutroOption, OTHER_LABEL } from "@verific/api/schemas";
 import { groupFieldsIntoRows } from "@/lib/forms/layout";
 import type { Field } from "../types";
 
-export const fieldFormSchema = z.object({
-	fieldId: z.string().optional(),
-	label: z.string().min(1, "Obrigatório").max(200),
-	type: z.enum(formFieldTypes),
-	helpText: z.string().max(500).optional(),
-	required: z.boolean().default(false),
-	optionsText: z.string().optional(),
-	min: z.string().optional(),
-	max: z.string().optional(),
-	minLength: z.string().optional(),
-	maxLength: z.string().optional(),
-	isVisible: z.boolean().default(true),
-	editableAfterSignup: z.boolean().default(true),
-	halfWidth: z.boolean().default(false),
-	sectionId: z.string().min(1, "Obrigatório").nullable().optional(),
-});
+export const fieldFormSchema = z
+	.object({
+		fieldId: z.string().optional(),
+		label: z.string().min(1, "Obrigatório").max(200),
+		type: z.enum(formFieldTypes),
+		helpText: z.string().max(500).optional(),
+		required: z.boolean().default(false),
+		optionsText: z.string().optional(),
+		allowOther: z.boolean().default(false),
+		min: z.string().optional(),
+		max: z.string().optional(),
+		minLength: z.string().optional(),
+		maxLength: z.string().optional(),
+		isVisible: z.boolean().default(true),
+		editableAfterSignup: z.boolean().default(true),
+		halfWidth: z.boolean().default(false),
+		sectionId: z.string().min(1, "Obrigatório").nullable().optional(),
+	})
+	.superRefine((values, ctx) => {
+		if (!values.allowOther) return;
+		if (values.type !== "select_single" && values.type !== "select_multiple") return;
+		const hasOutro = hasOutroOption(
+			(values.optionsText ?? "").split("\n"),
+		);
+		if (hasOutro) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["optionsText"],
+				message: `Remova a opção “${OTHER_LABEL}” da lista — ela já é adicionada automaticamente.`,
+			});
+		}
+	});
 
 export type FieldFormValues = z.infer<typeof fieldFormSchema>;
 
@@ -30,6 +46,7 @@ export function defaultFieldValues(initial?: Field, sectionId?: string | null): 
 		helpText: initial?.helpText ?? "",
 		required: initial?.required ?? true,
 		optionsText: (initial?.options ?? []).join("\n"),
+		allowOther: (initial as { allowOther?: boolean } | undefined)?.allowOther ?? false,
 		min: initial?.validation?.min?.toString() ?? "",
 		max: initial?.validation?.max?.toString() ?? "",
 		minLength: initial?.validation?.minLength?.toString() ?? "",
@@ -53,6 +70,7 @@ interface UpsertFieldInput {
 	helpText: string | null;
 	required: boolean;
 	options?: string[];
+	allowOther: boolean;
 	validation?: Record<string, unknown>;
 	isVisible: boolean;
 	editableAfterSignup: boolean;
@@ -92,6 +110,8 @@ export function toUpsertFieldInput(
 		helpText: values.helpText || null,
 		required: values.required,
 		options,
+		// A stale flag must not survive a type change to a non-select type.
+		allowOther: needsOptions && values.allowOther === true,
 		validation,
 		isVisible: values.isVisible,
 		editableAfterSignup: values.editableAfterSignup,
