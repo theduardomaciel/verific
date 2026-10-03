@@ -53,8 +53,8 @@ export async function DashboardHeader({
 				) : null}
 			</div>
 			<MainNav prefix={prefix} links={links} />
-			<Link href="/dashboard">
-				<Logo className="h-5 mr-4" />
+			<Link href="/dashboard" className="hidden md:flex">
+				<Logo className="mr-4 h-5" />
 			</Link>
 		</div>
 	);
