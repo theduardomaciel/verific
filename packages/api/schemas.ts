@@ -80,6 +80,7 @@ export const upsertFormFieldInput = z.object({
 	helpText: z.string().max(500).optional().nullable(),
 	required: z.boolean().default(false),
 	halfWidth: z.boolean().default(false),
+	sectionId: z.uuid().nullable().optional(),
 	options: formFieldOptionsSchema,
 	validation: formFieldValidationSchema,
 	isVisible: z.boolean().default(true),
@@ -87,6 +88,25 @@ export const upsertFormFieldInput = z.object({
 });
 
 export type UpsertFormFieldInput = z.infer<typeof upsertFormFieldInput>;
+
+export const upsertFormSectionInput = z.object({
+	versionId: z.uuid(),
+	sectionId: z.uuid().optional(),
+	title: z.string().trim().min(1, "Obrigatório").max(120),
+});
+
+export type UpsertFormSectionInput = z.infer<typeof upsertFormSectionInput>;
+
+export const reorderFormSectionsInput = z.object({
+	versionId: z.uuid(),
+	orderedIds: z.array(z.uuid()),
+});
+
+export const reorderFormFieldsInput = z.object({
+	versionId: z.uuid(),
+	orderedIds: z.array(z.uuid()),
+	sectionIdByField: z.record(z.string(), z.uuid().nullable()).optional(),
+});
 
 export const answerValueSchema = z.union([
 	z.string(),

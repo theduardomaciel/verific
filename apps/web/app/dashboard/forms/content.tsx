@@ -6,6 +6,7 @@ import { useFormsBuilder } from "./hooks/use-forms-builder";
 import { AnswersPanel } from "./components/answers-panel";
 import { BuilderCard } from "./components/builder-card";
 import { DeleteFieldDialog } from "./components/delete-field-dialog";
+import { DeleteSectionDialog } from "./components/delete-section-dialog";
 import { FormsHeader } from "./components/forms-header";
 import { VersionsCard } from "./components/versions-card";
 
@@ -22,19 +23,25 @@ export function FormsContent() {
 		selected,
 		isPublished,
 		fields,
+		sections,
 		isLoadingFields,
 		orphanHalfIds,
 		fieldToDelete,
 		setFieldToDelete,
+		sectionToDelete,
+		setSectionToDelete,
 		listRef,
 		isDraggingRef,
 		createVersion,
 		publishVersion,
 		deleteVersion,
 		deleteField,
+		upsertSection,
+		deleteSection,
 		persistOrder,
 		revertOrder,
 		move,
+		moveSection,
 	} = builder;
 
 	if (versionsQuery.isPending) {
@@ -45,6 +52,10 @@ export function FormsContent() {
 		);
 	}
 
+	const sectionToDeleteFieldCount = sectionToDelete
+		? fields.filter((f) => f.sectionId === sectionToDelete.id).length
+		: 0;
+
 	return (
 		<div className="container-d py-container-v flex min-h-screen flex-col gap-6">
 			<FormsHeader tab={tab} onTabChange={setTab} />
@@ -52,7 +63,7 @@ export function FormsContent() {
 			{tab === "answers" ? (
 				<AnswersPanel projectId={projectId} />
 			) : tab === "preview" ? (
-				<FormPreview fields={fields} isLoading={isLoadingFields} />
+				<FormPreview fields={fields} sections={sections} isLoading={isLoadingFields} />
 			) : (
 				<>
 					<VersionsCard
@@ -80,11 +91,13 @@ export function FormsContent() {
 							selected={selected}
 							isPublished={isPublished}
 							fields={fields}
+							sections={sections}
 							isLoadingFields={isLoadingFields}
 							orphanHalfIds={orphanHalfIds}
 							listRef={listRef}
 							isDraggingRef={isDraggingRef}
 							isPublishing={publishVersion.isPending}
+							upsertSection={upsertSection}
 							onPublish={() =>
 								publishVersion.mutate({
 									versionId: selected.id,
@@ -93,7 +106,9 @@ export function FormsContent() {
 							onPersistOrder={persistOrder}
 							onRevertOrder={revertOrder}
 							onMove={move}
+							onMoveSection={moveSection}
 							onDelete={setFieldToDelete}
+							onDeleteSection={setSectionToDelete}
 						/>
 					)}
 				</>
@@ -104,6 +119,15 @@ export function FormsContent() {
 				onClose={() => setFieldToDelete(null)}
 				onConfirm={(f) =>
 					deleteField.mutate({ fieldId: f.id })
+				}
+			/>
+			<DeleteSectionDialog
+				section={sectionToDelete}
+				fieldCount={sectionToDeleteFieldCount}
+				isPending={deleteSection.isPending}
+				onClose={() => setSectionToDelete(null)}
+				onConfirm={(s) =>
+					deleteSection.mutate({ sectionId: s.id })
 				}
 			/>
 		</div>

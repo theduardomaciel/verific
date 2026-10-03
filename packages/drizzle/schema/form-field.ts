@@ -11,6 +11,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { formVersion } from "./form-version";
+import { formSection } from "./form-section";
 import { project } from "./project";
 import { formAnswer } from "./form-answer";
 import { formFieldTypeEnum } from "../enum/form-field-type";
@@ -54,6 +55,10 @@ export const formField = pgTable(
 		helpText: text("help_text"),
 		required: boolean("required").default(false).notNull(),
 		order: integer("order").default(0).notNull(),
+		sectionId: uuid("section_id").references(() => formSection.id, {
+			onDelete: "set null",
+			onUpdate: "cascade",
+		}),
 		halfWidth: boolean("half_width").default(false).notNull(),
 		options: jsonb("options").$type<FormFieldOption[]>(),
 		validation: jsonb("validation").$type<FormFieldValidation>(),
@@ -75,6 +80,10 @@ export const formFieldRelations = relations(formField, ({ one, many }) => ({
 	project: one(project, {
 		fields: [formField.projectId],
 		references: [project.id],
+	}),
+	section: one(formSection, {
+		fields: [formField.sectionId],
+		references: [formSection.id],
 	}),
 	answers: many(formAnswer),
 }));

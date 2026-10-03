@@ -50,3 +50,43 @@ export function findOrphanHalfIds<T extends RowGroupable>(fields: T[]): Set<stri
 	}
 	return orphans;
 }
+
+export interface SectionGroupable {
+	id: string;
+	title: string;
+	order: number;
+}
+
+export interface FieldWithSection extends RowGroupable {
+	order: number;
+	sectionId?: string | null;
+}
+
+export interface SectionGroup<S extends SectionGroupable, F extends FieldWithSection> {
+	section: S;
+	fields: F[];
+	rows: FieldRow<F>[];
+}
+
+/**
+ * Groups order-sorted fields into their sections (ordered by section.order).
+ * Fields with a missing/null sectionId fall back to the first section so
+ * legacy data never disappears from the UI.
+ */
+export function groupFieldsBySection<S extends SectionGroupable, F extends FieldWithSection>(
+	fields: F[],
+	sections: S[],
+): SectionGroup<S, F>[] {
+	const sortedSections = [...sections].sort((a, b) => a.order - b.order);
+	const sortedFields = [...fields].sort((a, b) => a.order - b.order);
+	const bySection = new Map<string, F[]>();
+	for (const f of sortedFields) {
+		const key = f.sectionId ?? sortedSections[0]?.id ?? "__ungrouped__";
+		if (!bySection.has(key)) bySection.set(key, []);
+		bySection.get(key)!.push(f);
+	}
+	return sortedSections.map((section) => {
+		const sectionFields = bySection.get(section.id) ?? [];
+		return { section, fields: sectionFields, rows: groupFieldsIntoRows(sectionFields) };
+	});
+}

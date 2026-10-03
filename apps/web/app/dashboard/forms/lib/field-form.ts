@@ -17,11 +17,12 @@ export const fieldFormSchema = z.object({
 	isVisible: z.boolean().default(true),
 	editableAfterSignup: z.boolean().default(true),
 	halfWidth: z.boolean().default(false),
+	sectionId: z.string().min(1, "Obrigatório").nullable().optional(),
 });
 
 export type FieldFormValues = z.infer<typeof fieldFormSchema>;
 
-export function defaultFieldValues(initial?: Field): FieldFormValues {
+export function defaultFieldValues(initial?: Field, defaultSectionId?: string | null): FieldFormValues {
 	return {
 		fieldId: initial?.id,
 		label: initial?.label ?? "",
@@ -36,6 +37,7 @@ export function defaultFieldValues(initial?: Field): FieldFormValues {
 		isVisible: initial?.isVisible ?? true,
 		editableAfterSignup: initial?.editableAfterSignup ?? true,
 		halfWidth: initial?.halfWidth ?? false,
+		sectionId: initial?.sectionId ?? defaultSectionId ?? null,
 	} as FieldFormValues;
 }
 
@@ -55,6 +57,7 @@ interface UpsertFieldInput {
 	isVisible: boolean;
 	editableAfterSignup: boolean;
 	halfWidth: boolean;
+	sectionId?: string | null;
 }
 
 export function toUpsertFieldInput(
@@ -93,6 +96,7 @@ export function toUpsertFieldInput(
 		isVisible: values.isVisible,
 		editableAfterSignup: values.editableAfterSignup,
 		halfWidth: values.halfWidth,
+		sectionId: values.sectionId ?? null,
 	};
 }
 

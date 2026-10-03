@@ -12,6 +12,7 @@ export * from "./template";
 export * from "./user";
 export * from "./verification";
 export * from "./form-version";
+export * from "./form-section";
 export * from "./form-field";
 export * from "./form-answer";
 

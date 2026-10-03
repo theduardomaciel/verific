@@ -7,7 +7,7 @@ import { z } from "@verific/zod";
 import { toast } from "sonner";
 
 import { buildAnswersSchema } from "@verific/api/schemas";
-import { groupFieldsIntoRows } from "@/lib/forms/layout";
+import { groupFieldsBySection } from "@/lib/forms/layout";
 import { DynamicField } from "@/components/forms/dynamic/DynamicField";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import type { RouterOutput } from "@verific/api";
 
 type BuilderField = RouterOutput["getVersion"]["fields"][number];
+type BuilderSection = RouterOutput["getVersion"]["sections"][number];
 
 /**
  * Faithful, interactive preview of what the participant will see.
@@ -34,9 +35,11 @@ type BuilderField = RouterOutput["getVersion"]["fields"][number];
  */
 export function FormPreview({
 	fields,
+	sections,
 	isLoading = false,
 }: {
 	fields: BuilderField[];
+	sections: BuilderSection[];
 	isLoading?: boolean;
 }) {
 	const visible = useMemo(
@@ -45,7 +48,7 @@ export function FormPreview({
 	);
 	const hiddenCount = fields.length - visible.length;
 
-	const rows = useMemo(() => groupFieldsIntoRows(visible), [visible]);
+	const grouped = useMemo(() => groupFieldsBySection(visible, sections), [visible, sections]);
 
 	const schema = useMemo(() => {
 		const answers = buildAnswersSchema(
@@ -138,54 +141,81 @@ export function FormPreview({
 						onSubmit={form.handleSubmit(onSubmit, onInvalid)}
 						className="flex w-full flex-col gap-6"
 					>
-						<FormField
-							control={form.control}
-							name="name"
-							render={({ field }) => (
-								<FormItem className="w-full">
-									<FormLabel>
-										Nome completo{" "}
-										<span className="text-destructive ml-1">
-											*
-										</span>
-									</FormLabel>
-									<FormControl>
-										<Input
-											placeholder="Fulano da Silva"
-											{...field}
-											value={field.value ?? ""}
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-						{rows.length > 0 && (
-							<div className="flex w-full flex-col gap-6">
-								{rows.map((row, ri) => (
-									<div
-										key={
-											row.fields
-												.map((f) => f.id)
-												.join("-") || `row-${ri}`
-										}
-										className={
-											row.fields.length === 2
-												? "grid w-full grid-cols-1 gap-6 md:grid-cols-2"
-												: "w-full"
-										}
-									>
-										{row.fields.map((f) => (
-											<DynamicField
-												key={f.id}
-												field={f}
-												control={form.control as never}
-												name={`answers.${f.key}`}
-											/>
+						{grouped.map((group, gi) => (
+							<div key={group.section.id} className="flex w-full flex-col gap-3">
+								<h4 className="text-sm font-bold">
+									{gi + 1}. {group.section.title}
+								</h4>
+								{gi === 0 && (
+									<FormField
+										control={form.control}
+										name="name"
+										render={({ field }) => (
+											<FormItem className="w-full">
+												<FormLabel>
+													Nome completo{" "}
+													<span className="text-destructive ml-1">*</span>
+												</FormLabel>
+												<FormControl>
+													<Input
+														placeholder="Fulano da Silva"
+														{...field}
+														value={field.value ?? ""}
+													/>
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+								)}
+								{group.rows.length > 0 && (
+									<div className="flex w-full flex-col gap-6">
+										{group.rows.map((row, ri) => (
+											<div
+												key={
+													row.fields.map((f) => f.id).join("-") || `row-${ri}`
+												}
+												className={
+													row.fields.length === 2
+														? "grid w-full grid-cols-1 gap-6 md:grid-cols-2"
+														: "w-full"
+												}
+											>
+												{row.fields.map((f) => (
+													<DynamicField
+														key={f.id}
+														field={f}
+														control={form.control as never}
+														name={`answers.${f.key}`}
+													/>
+												))}
+											</div>
 										))}
 									</div>
-								))}
+								)}
 							</div>
+						))}
+						{grouped.length === 0 && (
+							<FormField
+								control={form.control}
+								name="name"
+								render={({ field }) => (
+									<FormItem className="w-full">
+										<FormLabel>
+											Nome completo{" "}
+											<span className="text-destructive ml-1">*</span>
+										</FormLabel>
+										<FormControl>
+											<Input
+												placeholder="Fulano da Silva"
+												{...field}
+												value={field.value ?? ""}
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
 						)}
 						<div className="flex w-full flex-row items-center justify-between gap-4">
 							<p className="text-muted-foreground text-sm">
