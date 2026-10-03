@@ -11,7 +11,7 @@ export function CreateActivityContent() {
 
 	return (
 		<main className="container-p py-container-v flex min-h-screen flex-col items-center justify-start">
-			<MutateActivityForm projectId={projectId} />
+			<MutateActivityForm projectId={projectId} enableConfigureAfterSave />
 		</main>
 	);
 }

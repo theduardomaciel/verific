@@ -7,6 +7,7 @@ import { trpc } from "@/lib/trpc/react";
 import { findOrphanHalfIds, groupFieldsBySection } from "@/lib/forms/layout";
 import { animateFlip, animateSectionFlip } from "../lib/animate-flip";
 import type { Field, FormsTab, Section, Version } from "../types";
+import type { UpsertFormSectionInput } from "@verific/api/schemas";
 
 export function useFormsBuilder() {
 	const { projectId } = useDashboard();
@@ -273,4 +274,18 @@ export function useFormsBuilder() {
 	};
 }
 
-export type UseFormsBuilder = ReturnType<typeof useFormsBuilder>;
+/**
+ * Structural type for the section upsert mutation.
+ * Preferred over `ReturnType` indexing into the hook: that forces
+ * TypeScript to name tRPC internals (TS2742). This interface only
+ * promises what callers use.
+ */
+export interface SectionMutation {
+	mutate: (
+		input: UpsertFormSectionInput,
+		options?: {
+			onSuccess?: () => void;
+		},
+	) => void;
+	isPending: boolean;
+}

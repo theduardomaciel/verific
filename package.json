@@ -21,7 +21,8 @@
 	},
 	"devDependencies": {
 		"@verific/prettier-config": "workspace:*",
-		"turbo": "2.11.4"
+		"turbo": "2.11.4",
+		"typescript": "^7.0.2"
 	},
 	"prettier": "@verific/prettier-config"
 }

@@ -10,6 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { project } from "./project";
+import { activity } from "./activity";
 import { user } from "./user";
 import { formField } from "./form-field";
 import { formSection } from "./form-section";
@@ -25,6 +26,11 @@ export const formVersion = pgTable(
 				onDelete: "cascade",
 				onUpdate: "cascade",
 			}),
+		// Null = event form. Set = form of a specific activity.
+		activityId: uuid("activity_id").references(() => activity.id, {
+			onDelete: "cascade",
+			onUpdate: "cascade",
+		}),
 		version: integer("version").notNull(),
 		isPublished: boolean("is_published").default(false).notNull(),
 		createdBy: uuid("created_by").references(() => user.id, {
@@ -41,6 +47,10 @@ export const formVersionRelations = relations(formVersion, ({ one, many }) => ({
 	project: one(project, {
 		fields: [formVersion.projectId],
 		references: [project.id],
+	}),
+	activity: one(activity, {
+		fields: [formVersion.activityId],
+		references: [activity.id],
 	}),
 	fields: many(formField),
 	sections: many(formSection),

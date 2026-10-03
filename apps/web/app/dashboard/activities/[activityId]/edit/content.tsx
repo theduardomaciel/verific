@@ -2,6 +2,7 @@
 
 // Components
 import MutateActivityForm from "@/components/forms/MutateActivityForm";
+import { ActivityRegistrationFormAction } from "@/components/forms/MutateActivityForm/registration-form-action";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Hooks
@@ -46,6 +47,12 @@ export function EditActivityContent({ activityId }: { activityId: string }) {
 				activity={activity}
 				startDate={projectStartDate!}
 				endDate={projectEndDate!}
+				registrationFormAction={
+					<ActivityRegistrationFormAction
+						activityId={activity.id}
+						form={activity.form}
+					/>
+				}
 			/>
 		</main>
 	);

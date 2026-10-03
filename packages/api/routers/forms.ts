@@ -2,6 +2,7 @@ import { z } from "@verific/zod";
 
 import { db } from "@verific/drizzle";
 import {
+	activity,
 	formAnswer,
 	formField,
 	formSection,
@@ -11,7 +12,7 @@ import {
 	projectModerator,
 	user,
 } from "@verific/drizzle/schema";
-import { and, asc, count, desc, eq, ilike, inArray, or } from "@verific/drizzle/orm";
+import { and, asc, count, desc, eq, ilike, inArray, isNull, or } from "@verific/drizzle/orm";
 
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
@@ -47,6 +48,22 @@ async function requireProjectAccess(projectId: string, userId: string) {
 	return data;
 }
 
+/** Matches versions of one scope: event form (null) or a specific activity. */
+function versionScope(activityId?: string | null) {
+	return activityId ? eq(formVersion.activityId, activityId) : isNull(formVersion.activityId);
+}
+
+async function requireActivityInProject(activityId: string, projectId: string) {
+	const found = await db.query.activity.findFirst({
+		where: and(eq(activity.id, activityId), eq(activity.projectId, projectId)),
+		columns: { id: true },
+	});
+	if (!found) {
+		throw new TRPCError({ code: "BAD_REQUEST", message: "Atividade não pertence a este evento." });
+	}
+	return found;
+}
+
 async function resolveProjectId(input: { projectId?: string; projectUrl?: string }) {
 	if (input.projectId) return input.projectId;
 	if (input.projectUrl) {
@@ -62,7 +79,7 @@ async function resolveProjectId(input: { projectId?: string; projectUrl?: string
 	throw new TRPCError({ code: "BAD_REQUEST", message: "projectId ou projectUrl é obrigatório." });
 }
 
-function toValidationFields(
+export function toValidationFields(
 	fields: typeof formField.$inferSelect[],
 ): FormFieldForValidation[] {
 	return fields.map((f) => ({
@@ -80,7 +97,7 @@ function toValidationFields(
 	}));
 }
 
-function toVisibilitySections(
+export function toVisibilitySections(
 	sections: typeof formSection.$inferSelect[],
 ): { id: string; visibilityRule: { sourceFieldId: string; operator: "is_checked" | "is_not_checked" | "equals" | "includes_any" | "includes_all"; values?: string[] } | null }[] {
 	return sections.map((s) => ({
@@ -123,6 +140,74 @@ function answerToValue(row: typeof formAnswer.$inferSelect): unknown {
 	return row.valueText;
 }
 
+/** Latest published version of a scope (event or activity) with active fields + sections. */
+export async function getPublishedVersionWithFields(
+	projectId: string,
+	activityId?: string | null,
+) {
+	const version = await db.query.formVersion.findFirst({
+		where: and(
+			eq(formVersion.projectId, projectId),
+			versionScope(activityId),
+			eq(formVersion.isPublished, true),
+		),
+		orderBy: desc(formVersion.version),
+	});
+	if (!version) return { version: null, fields: [], sections: [] };
+	const [fields, sections] = await Promise.all([
+		db.query.formField.findMany({
+			where: and(eq(formField.formVersionId, version.id), eq(formField.isActive, true)),
+			orderBy: asc(formField.order),
+		}),
+		db.query.formSection.findMany({
+			where: eq(formSection.formVersionId, version.id),
+			orderBy: asc(formSection.order),
+		}),
+	]);
+	return { version, fields, sections };
+}
+
+/** Builds answer rows (with snapshots + typed columns) for already-validated data. */
+export function buildAnswerRows(args: {
+	participantId: string;
+	projectId: string;
+	versionId: string;
+	fields: typeof formField.$inferSelect[];
+	sections: typeof formSection.$inferSelect[];
+	data: Record<string, unknown>;
+}) {
+	const { participantId, projectId, versionId, fields, sections, data } = args;
+	const validationFields = toValidationFields(fields);
+	const visibilitySections = toVisibilitySections(sections);
+	const visibleFields = filterVisibleFields(validationFields, visibilitySections, data);
+	const visibleKeys = new Set(visibleFields.map((f) => f.key));
+	const rows = [];
+	for (const field of fields) {
+		if (!field.isVisible) continue;
+		if (!visibleKeys.has(field.key)) continue;
+		const raw = data[field.key];
+		if (raw === undefined) continue;
+		const mapped = mapValueToColumns(field.type, raw);
+		if (!mapped) continue;
+		rows.push({
+			participantId,
+			fieldId: field.id,
+			formVersionId: versionId,
+			projectId,
+			fieldSnapshot: {
+				key: field.key,
+				label: field.label,
+				type: field.type,
+				required: field.required,
+				options: field.options,
+				allowOther: field.allowOther,
+			},
+			...mapped,
+		});
+	}
+	return rows;
+}
+
 function slugifyKey(label: string): string {
 	const slug = label
 		.normalize("NFD")
@@ -148,18 +233,126 @@ async function resolveUniqueKey(versionId: string, base: string, excludeFieldId?
 	return `${base}_${Date.now().toString(36)}`.slice(0, 64);
 }
 
+/** Copies sections + fields (+ visibility rules) from one version to another. */
+async function cloneVersionContents(newVersionId: string, sourceVersionId: string, projectId: string) {
+	const sourceSections = await db.query.formSection.findMany({
+		where: eq(formSection.formVersionId, sourceVersionId),
+		orderBy: asc(formSection.order),
+	});
+	const sectionIdMap = new Map<string, string>();
+	for (const s of sourceSections) {
+		const inserted = await db
+			.insert(formSection)
+			.values({
+				formVersionId: newVersionId,
+				projectId,
+				title: s.title,
+				order: s.order,
+				visibilityRule: s.visibilityRule ?? null,
+			})
+			.returning({ id: formSection.id });
+		if (inserted[0]) sectionIdMap.set(s.id, inserted[0].id);
+	}
+	const sourceFields = await db.query.formField.findMany({
+		where: eq(formField.formVersionId, sourceVersionId),
+	});
+	const fieldIdMap = new Map<string, string>();
+	if (sourceFields.length > 0) {
+		const insertedFields = await db
+			.insert(formField)
+			.values(
+				sourceFields.map((f) => ({
+					formVersionId: newVersionId,
+					projectId,
+					key: f.key,
+					label: f.label,
+					type: f.type,
+					helpText: f.helpText,
+					required: f.required,
+					order: f.order,
+					sectionId: f.sectionId ? (sectionIdMap.get(f.sectionId) ?? null) : null,
+					halfWidth: f.halfWidth,
+					options: f.options,
+					allowOther: f.allowOther,
+					validation: f.validation,
+					isVisible: f.isVisible,
+					editableAfterSignup: f.editableAfterSignup,
+					isActive: f.isActive,
+				})),
+			)
+			.returning({ id: formField.id, key: formField.key });
+		// Map old field ids to new ids by key (keys are unique per version).
+		const keyToNewId = new Map(insertedFields.map((f) => [f.key, f.id]));
+		for (const f of sourceFields) {
+			const nid = keyToNewId.get(f.key);
+			if (nid) fieldIdMap.set(f.id, nid);
+		}
+		// Remap visibility rules to the cloned field ids.
+		for (const s of sourceSections) {
+			const rule = s.visibilityRule as {
+				sourceFieldId?: string;
+				operator?: "is_checked" | "is_not_checked" | "equals" | "includes_any" | "includes_all";
+				values?: string[];
+			} | null;
+			if (!rule?.sourceFieldId || !rule.operator) continue;
+			const newSectionId = sectionIdMap.get(s.id);
+			const newSourceId = fieldIdMap.get(rule.sourceFieldId);
+			if (!newSectionId) continue;
+			if (!newSourceId) {
+				await db
+					.update(formSection)
+					.set({ visibilityRule: null })
+					.where(eq(formSection.id, newSectionId));
+				continue;
+			}
+			await db
+				.update(formSection)
+				.set({
+					visibilityRule: {
+						sourceFieldId: newSourceId,
+						operator: rule.operator,
+						...(rule.values ? { values: rule.values } : {}),
+					},
+				})
+				.where(eq(formSection.id, newSectionId));
+		}
+	}
+	if (sourceSections.length === 0 && sourceFields.length > 0) {
+		const fallback = await db
+			.insert(formSection)
+			.values({
+				formVersionId: newVersionId,
+				projectId,
+				title: "Dados da inscrição",
+				order: 0,
+			})
+			.returning({ id: formSection.id });
+		if (fallback[0]) {
+			await db
+				.update(formField)
+				.set({ sectionId: fallback[0].id })
+				.where(eq(formField.formVersionId, newVersionId));
+		}
+	}
+}
+
 export const formsRouter = createTRPCRouter({
 	getPublishedForm: publicProcedure
 		.input(
 			z.object({
 				projectId: z.uuid().optional(),
 				projectUrl: z.string().optional(),
+				activityId: z.uuid().optional(),
 			}),
 		)
 		.query(async ({ input }) => {
 			const projectId = await resolveProjectId(input);
 			const version = await db.query.formVersion.findFirst({
-				where: and(eq(formVersion.projectId, projectId), eq(formVersion.isPublished, true)),
+				where: and(
+					eq(formVersion.projectId, projectId),
+					versionScope(input.activityId),
+					eq(formVersion.isPublished, true),
+				),
 				orderBy: desc(formVersion.version),
 			});
 			if (!version) return { version: null, fields: [], sections: [] };
@@ -177,11 +370,17 @@ export const formsRouter = createTRPCRouter({
 		}),
 
 	listVersions: protectedProcedure
-		.input(z.object({ projectId: z.uuid() }))
+		.input(z.object({ projectId: z.uuid(), activityId: z.uuid().optional() }))
 		.query(async ({ input, ctx }) => {
 			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			if (input.activityId) {
+				await requireActivityInProject(input.activityId, input.projectId);
+			}
 			const versions = await db.query.formVersion.findMany({
-				where: eq(formVersion.projectId, input.projectId),
+				where: and(
+					eq(formVersion.projectId, input.projectId),
+					versionScope(input.activityId),
+				),
 				orderBy: desc(formVersion.version),
 			});
 			const counts = await Promise.all(
@@ -218,11 +417,15 @@ export const formsRouter = createTRPCRouter({
 		.input(
 			z.object({
 				projectId: z.uuid(),
+				activityId: z.uuid().optional(),
 				cloneFromVersionId: z.uuid().optional(),
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
 			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			if (input.activityId) {
+				await requireActivityInProject(input.activityId, input.projectId);
+			}
 			const existing = await db.query.formVersion.findMany({
 				where: eq(formVersion.projectId, input.projectId),
 				orderBy: desc(formVersion.version),
@@ -232,6 +435,7 @@ export const formsRouter = createTRPCRouter({
 				.insert(formVersion)
 				.values({
 					projectId: input.projectId,
+					activityId: input.activityId ?? null,
 					version: next,
 					isPublished: false,
 					createdBy: ctx.session.user.id,
@@ -241,105 +445,7 @@ export const formsRouter = createTRPCRouter({
 			if (!newVersion) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Falha ao criar versão." });
 
 			if (input.cloneFromVersionId) {
-				const sourceSections = await db.query.formSection.findMany({
-					where: eq(formSection.formVersionId, input.cloneFromVersionId),
-					orderBy: asc(formSection.order),
-				});
-				const sectionIdMap = new Map<string, string>();
-				for (const s of sourceSections) {
-					const inserted = await db
-						.insert(formSection)
-						.values({
-							formVersionId: newVersion.id,
-							projectId: input.projectId,
-							title: s.title,
-							order: s.order,
-							visibilityRule: s.visibilityRule ?? null,
-						})
-						.returning({ id: formSection.id });
-					if (inserted[0]) sectionIdMap.set(s.id, inserted[0].id);
-				}
-				const sourceFields = await db.query.formField.findMany({
-					where: eq(formField.formVersionId, input.cloneFromVersionId),
-				});
-				const fieldIdMap = new Map<string, string>();
-				if (sourceFields.length > 0) {
-					const insertedFields = await db
-						.insert(formField)
-						.values(
-							sourceFields.map((f) => ({
-								formVersionId: newVersion.id,
-								projectId: input.projectId,
-								key: f.key,
-								label: f.label,
-								type: f.type,
-								helpText: f.helpText,
-								required: f.required,
-								order: f.order,
-								sectionId: f.sectionId ? (sectionIdMap.get(f.sectionId) ?? null) : null,
-								halfWidth: f.halfWidth,
-								options: f.options,
-								allowOther: f.allowOther,
-								validation: f.validation,
-								isVisible: f.isVisible,
-								editableAfterSignup: f.editableAfterSignup,
-								isActive: f.isActive,
-							})),
-						)
-						.returning({ id: formField.id, key: formField.key });
-					// Map old field ids to new ids by key (keys are unique per version).
-					const keyToNewId = new Map(insertedFields.map((f) => [f.key, f.id]));
-					for (const f of sourceFields) {
-						const nid = keyToNewId.get(f.key);
-						if (nid) fieldIdMap.set(f.id, nid);
-					}
-					// Remap visibility rules to the cloned field ids.
-					for (const s of sourceSections) {
-						const rule = s.visibilityRule as {
-							sourceFieldId?: string;
-							operator?: "is_checked" | "is_not_checked" | "equals" | "includes_any" | "includes_all";
-							values?: string[];
-						} | null;
-						if (!rule?.sourceFieldId || !rule.operator) continue;
-						const newSectionId = sectionIdMap.get(s.id);
-						const newSourceId = fieldIdMap.get(rule.sourceFieldId);
-						if (!newSectionId) continue;
-						if (!newSourceId) {
-							await db
-								.update(formSection)
-								.set({ visibilityRule: null })
-								.where(eq(formSection.id, newSectionId));
-							continue;
-						}
-						await db
-							.update(formSection)
-							.set({
-								visibilityRule: {
-									sourceFieldId: newSourceId,
-									operator: rule.operator,
-									...(rule.values ? { values: rule.values } : {}),
-								},
-							})
-							.where(eq(formSection.id, newSectionId));
-					}
-				}
-				if (sourceSections.length === 0 && sourceFields.length > 0) {
-					const fallback = await db
-						.insert(formSection)
-						.values({
-							formVersionId: newVersion.id,
-							projectId: input.projectId,
-							title: "Dados da inscrição",
-							order: 0,
-						})
-						.returning({ id: formSection.id });
-					if (fallback[0]) {
-						await db
-							.update(formField)
-							.set({ sectionId: fallback[0].id })
-							.where(eq(formField.formVersionId, newVersion.id));
-					}
-				}
+				await cloneVersionContents(newVersion.id, input.cloneFromVersionId, input.projectId);
 			} else {
 				await db.insert(formSection).values({
 					formVersionId: newVersion.id,
@@ -731,7 +837,12 @@ export const formsRouter = createTRPCRouter({
 				await tx
 					.update(formVersion)
 					.set({ isPublished: false })
-					.where(eq(formVersion.projectId, version.projectId));
+					.where(
+						and(
+							eq(formVersion.projectId, version.projectId),
+							versionScope(version.activityId),
+						),
+					);
 				await tx
 					.update(formVersion)
 					.set({ isPublished: true, publishedAt: new Date() })
@@ -772,6 +883,121 @@ export const formsRouter = createTRPCRouter({
 			return { success: true };
 		}),
 
+	unpublishVersion: protectedProcedure
+		.input(z.object({ versionId: z.uuid() }))
+		.mutation(async ({ input, ctx }) => {
+			const version = await db.query.formVersion.findFirst({
+				where: eq(formVersion.id, input.versionId),
+			});
+			if (!version) throw new TRPCError({ code: "NOT_FOUND", message: "Versão não encontrada." });
+			await requireProjectAccess(version.projectId, ctx.session.user.id);
+			await db
+				.update(formVersion)
+				.set({ isPublished: false })
+				.where(eq(formVersion.id, input.versionId));
+			return { success: true };
+		}),
+
+	/**
+	 * Hybrid editing entry point for activity forms (versioning hidden).
+	 * Returns the version the organizer should edit:
+	 * - latest version when it is still a draft, or published without answers;
+	 * - a fresh clone when the published version already has answers
+	 *   (old answers stay linked to the old version).
+	 */
+	getOrCreateEditableActivityForm: protectedProcedure
+		.input(z.object({ activityId: z.uuid() }))
+		.mutation(async ({ input, ctx }) => {
+			const foundActivity = await db.query.activity.findFirst({
+				where: eq(activity.id, input.activityId),
+				columns: { id: true, projectId: true },
+			});
+			if (!foundActivity) throw new TRPCError({ code: "NOT_FOUND", message: "Atividade não encontrada." });
+			await requireProjectAccess(foundActivity.projectId, ctx.session.user.id);
+
+			const latest = await db.query.formVersion.findFirst({
+				where: and(
+					eq(formVersion.projectId, foundActivity.projectId),
+					eq(formVersion.activityId, input.activityId),
+				),
+				orderBy: desc(formVersion.version),
+			});
+
+			const loadFull = async (versionId: string) => {
+				const [fields, sections] = await Promise.all([
+					db.query.formField.findMany({
+						where: eq(formField.formVersionId, versionId),
+						orderBy: asc(formField.order),
+					}),
+					db.query.formSection.findMany({
+						where: eq(formSection.formVersionId, versionId),
+						orderBy: asc(formSection.order),
+					}),
+				]);
+				return { fields, sections };
+			};
+
+			if (!latest) {
+				const existing = await db.query.formVersion.findMany({
+					where: eq(formVersion.projectId, foundActivity.projectId),
+					orderBy: desc(formVersion.version),
+				});
+				const next = (existing[0]?.version ?? 0) + 1;
+				const created = await db
+					.insert(formVersion)
+					.values({
+						projectId: foundActivity.projectId,
+						activityId: input.activityId,
+						version: next,
+						isPublished: false,
+						createdBy: ctx.session.user.id,
+					})
+					.returning();
+				const draft = created[0];
+				if (!draft) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Falha ao criar versão." });
+				await db.insert(formSection).values({
+					formVersionId: draft.id,
+					projectId: foundActivity.projectId,
+					title: "Dados da inscrição",
+					order: 0,
+				});
+				const full = await loadFull(draft.id);
+				return { version: draft, ...full, cloned: false };
+			}
+
+			const answersCount = await db
+				.select({ amount: count() })
+				.from(formAnswer)
+				.where(eq(formAnswer.formVersionId, latest.id));
+			const hasAnswers = (answersCount[0]?.amount ?? 0) > 0;
+
+			if (latest.isPublished && hasAnswers) {
+				const existing = await db.query.formVersion.findMany({
+					where: eq(formVersion.projectId, foundActivity.projectId),
+					orderBy: desc(formVersion.version),
+				});
+				const next = (existing[0]?.version ?? 0) + 1;
+				const created = await db
+					.insert(formVersion)
+					.values({
+						projectId: foundActivity.projectId,
+						activityId: input.activityId,
+						version: next,
+						isPublished: false,
+						createdBy: ctx.session.user.id,
+					})
+					.returning();
+				const draft = created[0];
+				if (!draft) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Falha ao criar versão." });
+				await cloneVersionContents(draft.id, latest.id, foundActivity.projectId);
+				const full = await loadFull(draft.id);
+				return { version: draft, ...full, cloned: true };
+			}
+
+			const full = await loadFull(latest.id);
+			return { version: latest, ...full, cloned: false };
+		}),
+
 	submitAnswers: protectedProcedure
 		.input(submitAnswersInput)
 		.mutation(async ({ input, ctx }) => {
@@ -789,22 +1015,8 @@ export const formsRouter = createTRPCRouter({
 			if (existingParticipant) {
 				throw new TRPCError({ code: "CONFLICT", message: "Você já está inscrito neste evento." });
 			}
-			const version = await db.query.formVersion.findFirst({
-				where: and(eq(formVersion.projectId, input.projectId), eq(formVersion.isPublished, true)),
-				orderBy: desc(formVersion.version),
-			});
-			const fields = version
-				? await db.query.formField.findMany({
-						where: and(eq(formField.formVersionId, version.id), eq(formField.isActive, true)),
-						orderBy: asc(formField.order),
-					})
-				: [];
-			const sections = version
-				? await db.query.formSection.findMany({
-						where: eq(formSection.formVersionId, version.id),
-						orderBy: asc(formSection.order),
-					})
-				: [];
+			const { version, fields, sections } =
+				await getPublishedVersionWithFields(input.projectId);
 
 			const validation = validateAnswers(
 				toValidationFields(fields),
@@ -829,38 +1041,14 @@ export const formsRouter = createTRPCRouter({
 			if (!participantId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Falha ao criar inscrição." });
 
 			if (version && fields.length > 0) {
-				const validationFields = toValidationFields(fields);
-				const visibilitySections = toVisibilitySections(sections);
-				const visibleFields = filterVisibleFields(
-					validationFields,
-					visibilitySections,
-					(validation.data ?? {}) as Record<string, unknown>,
-				);
-				const visibleKeys = new Set(visibleFields.map((f) => f.key));
-				const rows = [];
-				for (const field of fields) {
-					if (!field.isVisible) continue;
-					if (!visibleKeys.has(field.key)) continue;
-					const raw = (validation.data ?? {})[field.key];
-					if (raw === undefined) continue;
-					const mapped = mapValueToColumns(field.type, raw);
-					if (!mapped) continue;
-					rows.push({
-						participantId,
-						fieldId: field.id,
-						formVersionId: version.id,
-						projectId: input.projectId,
-						fieldSnapshot: {
-							key: field.key,
-							label: field.label,
-							type: field.type,
-							required: field.required,
-							options: field.options,
-							allowOther: field.allowOther,
-						},
-						...mapped,
-					});
-				}
+				const rows = buildAnswerRows({
+					participantId,
+					projectId: input.projectId,
+					versionId: version.id,
+					fields,
+					sections,
+					data: (validation.data ?? {}) as Record<string, unknown>,
+				});
 				if (rows.length > 0) await db.insert(formAnswer).values(rows);
 			}
 			return { participantId };

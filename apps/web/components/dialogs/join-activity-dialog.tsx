@@ -1,6 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "@verific/zod";
 
 import { Loader2, BookLock, InfoIcon } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -17,10 +20,16 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Form } from "@/components/ui/form";
+import { DynamicField } from "@/components/forms/dynamic/DynamicField";
 
 // API
 import { RouterOutput } from "@verific/api";
 import { trpc } from "@/lib/trpc/react";
+import {
+	buildAnswersSchema,
+} from "@verific/api/schemas";
+import { groupFieldsBySection } from "@/lib/forms/layout";
 import { FormState } from "@/lib/types/forms";
 import { ErrorDialog, LoadingDialog, SuccessDialog } from "../forms/dialogs";
 import Link from "next/link";
@@ -44,6 +53,16 @@ interface Props {
 	activity: RouterOutput["getActivity"]["activity"];
 }
 
+type ActivityAnswerValue =
+	| string
+	| number
+	| boolean
+	| string[]
+	| null
+	| undefined;
+
+type ActivityAnswers = Record<string, ActivityAnswerValue>;
+
 export function JoinActivityDialog({ userId, participantId, activity }: Props) {
 	const [currentState, setCurrentState] = useState<FormState>(false);
 	const isLoading = currentState === "submitting";
@@ -53,11 +72,101 @@ export function JoinActivityDialog({ userId, participantId, activity }: Props) {
 
 	const addMutation = trpc.addActivityParticipants.useMutation();
 
+	const { data: publishedForm } = trpc.getPublishedForm.useQuery({
+		projectId: activity.projectId,
+		activityId: activity.id,
+	});
+
+	const formFields = useMemo(
+		() => (publishedForm?.fields ?? []).filter((f) => f.isVisible),
+		[publishedForm],
+	);
+	const formSections = useMemo(
+		() => publishedForm?.sections ?? [],
+		[publishedForm],
+	);
+	const hasActivityForm = formFields.length > 0;
+
+	const fieldsForValidation = useMemo(
+		() =>
+			formFields.map((f) => ({
+				id: f.id,
+				sectionId: f.sectionId,
+				key: f.key,
+				label: f.label,
+				type: f.type,
+				required: f.required,
+				options: f.options,
+				allowOther: f.allowOther,
+				validation: f.validation,
+				isVisible: f.isVisible,
+				isActive: f.isActive,
+			})),
+		[formFields],
+	);
+
+	const sectionsForVisibility = useMemo(
+		() =>
+			formSections.map((s) => ({
+				id: s.id,
+				visibilityRule: (
+					s as {
+						visibilityRule?: {
+							sourceFieldId: string;
+							operator:
+								| "is_checked"
+								| "is_not_checked"
+								| "equals"
+								| "includes_any"
+								| "includes_all";
+							values?: string[];
+						} | null;
+					}
+				).visibilityRule ?? null,
+			})),
+		[formSections],
+	);
+
+	const answersResolver = useMemo(() => {
+		return async (
+			values: unknown,
+			context: unknown,
+			options: unknown,
+		) => {
+			const v = (values ?? {}) as { answers?: ActivityAnswers };
+			const answersSchema = buildAnswersSchema(
+				fieldsForValidation,
+				sectionsForVisibility,
+				(v.answers ?? {}) as Record<string, unknown>,
+			);
+			const zod = zodResolver(
+				z.object({ answers: answersSchema }) as never,
+			);
+			return (
+				zod as (
+					a: unknown,
+					b: unknown,
+					c: unknown,
+				) => Promise<unknown>
+			)(values, context, options) as never;
+		};
+	}, [fieldsForValidation, sectionsForVisibility]);
+
+	const answersForm = useForm<{ answers: ActivityAnswers }>({
+		resolver: answersResolver as never,
+		defaultValues: { answers: {} },
+	});
+
+	const groupedSections = useMemo(
+		() => groupFieldsBySection(formFields, formSections),
+		[formFields, formSections],
+	);
+
 	function onDismiss() {
 		router.back();
 	}
 
-	async function onSubmit() {
+	async function onSubmit(values?: { answers: ActivityAnswers }) {
 		setCurrentState("submitting");
 
 		if (!participantId) {
@@ -69,6 +178,13 @@ export function JoinActivityDialog({ userId, participantId, activity }: Props) {
 			await addMutation.mutateAsync({
 				activityId: activity.id,
 				participantsIdsToAdd: [participantId],
+				...(hasActivityForm
+					? {
+							formAnswers: {
+								answers: values?.answers ?? {},
+							},
+						}
+					: {}),
 			});
 
 			if (userId) {
@@ -132,7 +248,11 @@ export function JoinActivityDialog({ userId, participantId, activity }: Props) {
 			open={true}
 			onOpenChange={(open) => !open && !isLoading && onDismiss()}
 		>
-			<DialogContent className="sm:max-w-[425px]">
+			<DialogContent
+				className={
+					hasActivityForm ? "sm:max-w-[600px]" : "sm:max-w-[425px]"
+				}
+			>
 				<DialogHeader className="w-full items-center justify-center text-center">
 					<Badge className="mb-2">
 						{activityCategoryLabels[activity.category]}
@@ -159,6 +279,53 @@ export function JoinActivityDialog({ userId, participantId, activity }: Props) {
 						tagsClassName="bg-muted"
 						activity={activity}
 					/>
+					{hasActivityForm ? (
+						<Form {...answersForm}>
+							<div className="flex w-full flex-col gap-4 rounded-sm border p-4">
+								<p className="text-sm font-medium">
+									Formulário de inscrição
+								</p>
+								{groupedSections.map((group) => (
+									<div
+										key={group.section.id}
+										className="flex w-full flex-col gap-4"
+									>
+										{group.section.title ? (
+											<p className="text-muted-foreground text-sm font-medium">
+												{group.section.title}
+											</p>
+										) : null}
+										{group.rows.map((row, ri) => (
+											<div
+												key={
+													row.fields
+														.map((f) => f.id)
+														.join("-") ||
+													`row-${ri}`
+												}
+												className={
+													row.fields.length === 2
+														? "grid w-full grid-cols-1 gap-4 md:grid-cols-2"
+														: "w-full"
+												}
+											>
+												{row.fields.map((f) => (
+													<DynamicField
+														key={f.id}
+														field={f}
+														control={
+															answersForm.control as never
+														}
+														name={`answers.${f.key}`}
+													/>
+												))}
+											</div>
+										))}
+									</div>
+								))}
+							</div>
+						</Form>
+					) : null}
 					{activity?.tolerance ? (
 						<div className="bg-muted/50 flex flex-row items-center justify-between gap-3 rounded-sm p-4 text-sm select-none">
 							<span className="text-muted-foreground text-sm">
@@ -225,7 +392,13 @@ export function JoinActivityDialog({ userId, participantId, activity }: Props) {
 					<Button
 						disabled={isLoading}
 						type="button"
-						onClick={onSubmit}
+						onClick={() => {
+							if (hasActivityForm) {
+								void answersForm.handleSubmit(onSubmit)();
+							} else {
+								void onSubmit();
+							}
+						}}
 					>
 						{isLoading ? (
 							<Loader2 className="h-4 w-4 animate-spin" />

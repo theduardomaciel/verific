@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 // Icons
 import {
 	ArrowLeft,
+	ClipboardList,
 	CloudUpload,
 	Edit,
 	EditIcon,
@@ -75,6 +76,11 @@ interface Props {
 	 * (name + field count + edit/remove). Falls back to a disabled placeholder.
 	 */
 	registrationFormAction?: React.ReactNode;
+	/**
+	 * Secondary save action (e.g. "save and configure form").
+	 * Rendered next to the primary submit when provided.
+	 */
+	onSecondarySubmit?: () => void;
 }
 
 type Speaker = RouterOutput["getSpeakers"][number];
@@ -90,11 +96,6 @@ function RegistrationSettings({
 	form: UseFormReturn<MutateActivityFormSchema>;
 	formAction: React.ReactNode;
 }) {
-	const isOpen = useWatch({
-		control: form.control,
-		name: "isRegistrationOpen",
-	});
-
 	return (
 		<div className="w-full rounded-lg border">
 			<FormField
@@ -371,14 +372,13 @@ function TagsPicker({
 	projectId: string;
 }) {
 	const utils = trpc.useUtils();
-	const { data: tags, isLoading } =
-		trpc.getProjectTags.useQuery({ projectId });
+	const { data: tags, isLoading } = trpc.getProjectTags.useQuery({
+		projectId,
+	});
 	const createTag = trpc.createTag.useMutation();
 
 	const [newTagName, setNewTagName] = React.useState("");
-	const [newTagColor, setNewTagColor] = React.useState<string>(
-		tagColors[1]!,
-	);
+	const [newTagColor, setNewTagColor] = React.useState<string>(tagColors[1]!);
 
 	const createAndSelect = async () => {
 		const name = newTagName.trim();
@@ -454,9 +454,7 @@ function TagsPicker({
 								placeholder="Nova trilha (ex.: Hardware)"
 								value={newTagName}
 								maxLength={30}
-								onChange={(e) =>
-									setNewTagName(e.target.value)
-								}
+								onChange={(e) => setNewTagName(e.target.value)}
 							/>
 							<Button
 								type="button"
@@ -480,7 +478,7 @@ function TagsPicker({
 										onClick={() => setNewTagColor(color)}
 										className={`h-6 w-6 rounded-full border-2 transition-transform ${
 											newTagColor === color
-												? "scale-110 border-foreground"
+												? "border-foreground scale-110"
 												: "border-transparent"
 										}`}
 										style={{ backgroundColor: color }}
@@ -490,8 +488,8 @@ function TagsPicker({
 						) : null}
 					</div>
 					<FormDescription>
-						Agrupe atividades em trilhas como Hardware e
-						Software. Máximo de 5 por atividade.
+						Agrupe atividades em trilhas como Hardware e Software.
+						Máximo de 5 por atividade.
 					</FormDescription>
 					<FormMessage />
 				</FormItem>
@@ -510,6 +508,7 @@ export function MutateActivityFormContent({
 	endDate,
 	isEditing,
 	registrationFormAction,
+	onSecondarySubmit,
 }: Props) {
 	const {
 		data: speakers,
@@ -550,7 +549,23 @@ export function MutateActivityFormContent({
 						{isEditing ? "Editar" : "Nova"} atividade
 					</h1>
 				</div>
-				<Button type="submit" size="lg" className="shrink-0 !px-5">
+				<div className="flex shrink-0 items-center gap-2">
+					{onSecondarySubmit && !isEditing ? (
+						<Button
+							type="button"
+							size="lg"
+							variant="outline"
+							className="shrink-0"
+							onClick={onSecondarySubmit}
+						>
+							<ClipboardList className="h-5 w-5" />
+							<span className="hidden sm:inline">
+								Cadastrar e configurar formulário
+							</span>
+							<span className="sm:hidden">+ Formulário</span>
+						</Button>
+					) : null}
+					<Button type="submit" size="lg" className="shrink-0 !px-5">
 					{isEditing ? (
 						<>
 							<Edit className="h-5 w-5" />
@@ -568,7 +583,8 @@ export function MutateActivityFormContent({
 							<span className="sm:hidden">Cadastrar</span>
 						</>
 					)}
-				</Button>
+					</Button>
+				</div>
 			</header>
 
 			<div className="flex w-full flex-col items-start gap-10 md:flex-row xl:gap-24">
@@ -684,7 +700,8 @@ export function MutateActivityFormContent({
 																	sumSessionsHours(
 																		buildSessionIntervals(
 																			form.getValues()
-																				.sessions ?? [],
+																				.sessions ??
+																				[],
 																		),
 																	),
 																)
