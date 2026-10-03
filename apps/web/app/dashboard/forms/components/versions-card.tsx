@@ -1,5 +1,6 @@
 "use client";
 
+import { TrashIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,7 +16,9 @@ interface VersionsCardProps {
 	onSelect: (id: string) => void;
 	onCreate: () => void;
 	onDuplicate: (version: Version) => void;
+	onDelete: (version: Version) => void;
 	isCreating: boolean;
+	isDeleting: boolean;
 }
 
 export function VersionsCard({
@@ -24,10 +27,13 @@ export function VersionsCard({
 	onSelect,
 	onCreate,
 	onDuplicate,
+	onDelete,
 	isCreating,
+	isDeleting,
 }: VersionsCardProps) {
 	const selected = versions.find((v) => v.id === selectedId) ?? null;
 	const { confirm, dialogProps } = useConfirmDialog();
+	const isBusy = isCreating || isDeleting;
 
 	async function handleCreate() {
 		const ok = await confirm({
@@ -49,6 +55,17 @@ export function VersionsCard({
 		if (ok) onDuplicate(selected);
 	}
 
+	async function handleDelete() {
+		if (!selected || selected.isPublished) return;
+		const ok = await confirm({
+			title: `Excluir v${selected.version}?`,
+			description: `A v${selected.version} e todos os seus campos serão removidos permanentemente. Essa ação não pode ser desfeita.`,
+			confirmLabel: "Excluir versão",
+			confirmVariant: "destructive",
+		});
+		if (ok) onDelete(selected);
+	}
+
 	return (
 		<Card>
 			<CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
@@ -58,7 +75,7 @@ export function VersionsCard({
 						size="sm"
 						variant="outline"
 						onClick={() => void handleCreate()}
-						disabled={isCreating}
+						disabled={isBusy}
 					>
 						Nova versão
 					</Button>
@@ -67,9 +84,20 @@ export function VersionsCard({
 							size="sm"
 							variant="outline"
 							onClick={() => void handleDuplicate()}
-							disabled={isCreating}
+							disabled={isBusy}
 						>
 							Duplicar v{selected.version}
+						</Button>
+					)}
+					{selected && !selected.isPublished && (
+						<Button
+							size="sm"
+							variant="outline"
+							onClick={() => void handleDelete()}
+							disabled={isBusy}
+						>
+							<TrashIcon />
+							Excluir
 						</Button>
 					)}
 				</div>

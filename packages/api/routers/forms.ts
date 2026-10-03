@@ -368,6 +368,37 @@ export const formsRouter = createTRPCRouter({
 			return { success: true };
 		}),
 
+	deleteVersion: protectedProcedure
+		.input(z.object({ versionId: z.uuid() }))
+		.mutation(async ({ input, ctx }) => {
+			const version = await db.query.formVersion.findFirst({
+				where: eq(formVersion.id, input.versionId),
+			});
+			if (!version) throw new TRPCError({ code: "NOT_FOUND", message: "Versão não encontrada." });
+			await requireProjectAccess(version.projectId, ctx.session.user.id);
+			if (version.isPublished) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Versão publicada não pode ser excluída.",
+				});
+			}
+			const answersCount = await db
+				.select({ amount: count() })
+				.from(formAnswer)
+				.where(eq(formAnswer.formVersionId, input.versionId));
+			if ((answersCount[0]?.amount ?? 0) > 0) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Esta versão possui respostas vinculadas e não pode ser excluída.",
+				});
+			}
+			await db.transaction(async (tx) => {
+				await tx.delete(formField).where(eq(formField.formVersionId, input.versionId));
+				await tx.delete(formVersion).where(eq(formVersion.id, input.versionId));
+			});
+			return { success: true };
+		}),
+
 	submitAnswers: protectedProcedure
 		.input(submitAnswersInput)
 		.mutation(async ({ input, ctx }) => {

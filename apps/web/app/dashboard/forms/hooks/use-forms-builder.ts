@@ -54,6 +54,17 @@ export function useFormsBuilder() {
 		},
 		onError: (e) => toast.error(e.message),
 	});
+	const deleteVersion = trpc.deleteVersion.useMutation({
+		onSuccess: async (_data, variables) => {
+			await utils.listVersions.invalidate();
+			await utils.getVersion.invalidate();
+			setSelectedId((prev) =>
+				prev === variables.versionId ? null : prev,
+			);
+			toast.success("Versão excluída!");
+		},
+		onError: (e) => toast.error(e.message),
+	});
 	const deleteField = trpc.deleteField.useMutation({
 		onSuccess: async () => {
 			await utils.getVersion.invalidate();
@@ -148,6 +159,7 @@ export function useFormsBuilder() {
 		isDraggingRef,
 		createVersion,
 		publishVersion,
+		deleteVersion,
 		deleteField,
 		persistOrder,
 		revertOrder,
