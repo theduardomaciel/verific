@@ -2,8 +2,7 @@
 
 import { Controller, type Control, type FieldValues } from "react-hook-form";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { PhoneField } from "@/components/ui/phone-field";
+import { Input, PhoneInput } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
 	FormControl,
@@ -203,7 +202,7 @@ export function DynamicField({ field, control, name, disabled }: DynamicFieldPro
 								{label}
 								{field.helpText && <FormDescription>{field.helpText}</FormDescription>}
 								<FormControl>
-									<PhoneField
+									<PhoneInput
 										name={rhf.name}
 										disabled={disabled}
 										value={(value as string) ?? ""}
