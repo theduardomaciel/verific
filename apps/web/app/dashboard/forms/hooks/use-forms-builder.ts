@@ -188,6 +188,14 @@ export function useFormsBuilder() {
 		});
 	}
 
+	function persistSectionOrder(next: Section[]) {
+		if (!selectedId) return;
+		reorderSections.mutate({
+			versionId: selectedId,
+			orderedIds: next.map((s) => s.id),
+		});
+	}
+
 	return {
 		projectId,
 		tab,
@@ -221,6 +229,7 @@ export function useFormsBuilder() {
 		revertOrder,
 		move,
 		moveSection,
+		persistSectionOrder,
 	};
 }
 
