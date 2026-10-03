@@ -41,6 +41,20 @@ export const getActivitiesParams = z.object({
 	pageSize: z.coerce.number().default(10).optional(),
 	category: createEnumArraySchema(activityCategories).optional(),
 	audience: createEnumArraySchema(activityAudiences).optional(),
+	tagIds: z
+		.preprocess(
+			(val) => {
+				if (typeof val === "string") {
+					return val
+						.split(",")
+						.map((v) => v.trim())
+						.filter(Boolean);
+				}
+				return val;
+			},
+			z.array(z.uuid()),
+		)
+		.optional(),
 });
 
 export const getParticipantsParams = z.object({
@@ -50,6 +64,26 @@ export const getParticipantsParams = z.object({
 	pageSize: z.coerce.number().default(10),
 	role: z.array(z.enum(participantRoles)).optional(),
 });
+
+/** Fixed palette for activity tags (trails). Stored as hex in `tags.color`. */
+export const tagColors = [
+	"#ef4444",
+	"#f97316",
+	"#f59e0b",
+	"#eab308",
+	"#84cc16",
+	"#22c55e",
+	"#10b981",
+	"#14b8a6",
+	"#06b6d4",
+	"#0ea5e9",
+	"#3b82f6",
+	"#8b5cf6",
+	"#a855f7",
+	"#ec4899",
+] as const;
+
+export const tagColorSchema = z.enum(tagColors);
 
 export { formFieldTypes };
 

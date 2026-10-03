@@ -17,6 +17,7 @@ import { Empty } from "@/components/empty";
 import { ActivityCard } from "@/components/activity/activity-card/dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ReleaseRegistrationsDialog } from "@/components/dialogs/release-registrations-dialog";
+import { ManageTagsDialog } from "@/components/dialogs/manage-tags-dialog";
 
 // Validation (client-safe: no db / server env imports)
 import { getActivitiesParams } from "@verific/api/schemas";
@@ -72,6 +73,11 @@ export function ActivitiesContent() {
 				refetchOnWindowFocus: false,
 			},
 		);
+
+	const { data: projectTags } = trpc.getProjectTags.useQuery(
+		{ projectId },
+		{ staleTime: 60 * 1000 },
+	);
 
 	if (isPending) {
 		return <ActivitiesSkeleton />;
@@ -150,6 +156,8 @@ export function ActivitiesContent() {
 
 					<ReleaseRegistrationsDialog projectId={projectId} />
 
+					<ManageTagsDialog projectId={projectId} />
+
 					<FiltersPanel>
 						<Filter
 							type="checkbox"
@@ -162,6 +170,17 @@ export function ActivitiesContent() {
 								],
 							}))}
 						/>
+						{(projectTags ?? []).length > 0 ? (
+							<Filter
+								type="checkbox"
+								prefix="tagIds"
+								title="Filtrar por Trilha"
+								items={(projectTags ?? []).map((tag) => ({
+									value: tag.id,
+									name: tag.name,
+								}))}
+							/>
+						) : null}
 					</FiltersPanel>
 				</div>
 			</div>

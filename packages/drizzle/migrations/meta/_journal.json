@@ -1,75 +1,19 @@
 {
-  "version": "7",
+  "version": "0",
   "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
       "version": "7",
-      "when": 1790360089768,
-      "tag": "0000_minor_sheva_callister",
+      "when": 1791063314520,
+      "tag": "0000_empty_shinobi_shaw",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1790885620028,
-      "tag": "0001_greedy_karen_page",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1790910458075,
-      "tag": "0002_soft_silverclaw",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1791000000000,
-      "tag": "0003_phone_email_fields",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1791100000000,
-      "tag": "0004_form_sections",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1791200000000,
-      "tag": "0005_allow_other",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1791300000000,
-      "tag": "0006_conditional_sections",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1791061725612,
-      "tag": "0007_broad_blockbuster",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1791061889152,
-      "tag": "0008_romantic_jigsaw",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1791062352407,
-      "tag": "0009_bumpy_clea",
+      "when": 1791064192277,
+      "tag": "0001_zippy_scream",
       "breakpoints": true
     }
   ]

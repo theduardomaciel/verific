@@ -55,6 +55,7 @@ export const mutateActivityFormSchema = z
 			}),
 		audience: z.enum(activityAudiences).default("internal").optional(),
 		speakerIds: z.array(z.number()).optional(),
+		tagIds: z.array(z.uuid()).max(5).optional(),
 		sessions: z
 			.array(activitySessionFormSchema)
 			.min(1, { message: "A atividade precisa de pelo menos uma sessão" })

@@ -11,6 +11,7 @@ import {
 
 import { participantOnActivity } from "./participant-on-activity";
 import { activitySession } from "./activity-session";
+import { tagOnActivity } from "./tag-on-activity";
 import { project } from "./project";
 import { categoryEnum } from "../enum/category";
 import { audienceEnum } from "../enum/audience";
@@ -55,6 +56,7 @@ export const activityRelations = relations(activity, ({ one, many }) => ({
 	participantOnActivity: many(participantOnActivity),
 	speakerOnActivity: many(speakerOnActivity),
 	sessions: many(activitySession),
+	tagOnActivity: many(tagOnActivity),
 	conflictsAsBlocking: many(activityConflict, {
 		relationName: "blockingActivities",
 	}),

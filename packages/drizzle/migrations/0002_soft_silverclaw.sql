@@ -1,1 +1,0 @@
-ALTER TABLE "form_fields" ADD COLUMN "half_width" boolean DEFAULT false NOT NULL;

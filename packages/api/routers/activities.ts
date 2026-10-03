@@ -8,6 +8,8 @@ import {
 	participant,
 	participantOnActivity,
 	project,
+	tag,
+	tagOnActivity,
 	user,
 } from "@verific/drizzle/schema";
 import {
@@ -90,7 +92,7 @@ const sessionsSchema = z
 /** SQL expression for the earliest session start of an activity. */
 const firstSessionStart = sql`(SELECT MIN(${activitySession.startsAt}) FROM ${activitySession} WHERE ${activitySession.activityId} = ${activity.id})`;
 
-/** SQL expression matching activities with at least one session not yet ended. */
+/** Matches activities with at least one session not yet ended. */
 function hasUpcomingSession(now: Date = new Date()) {
 	return exists(
 		db
@@ -110,6 +112,7 @@ const mutateActivityParams = z.object({
 	description: z.string().optional(),
 	isRegistrationOpen: z.boolean().optional(),
 	sessions: sessionsSchema,
+	tagIds: z.array(z.uuid()).max(5).optional(),
 	category: z.enum(activityCategories),
 	audience: z.enum(activityAudiences),
 	speakerIds: z.array(z.coerce.number()).optional(),
@@ -121,6 +124,46 @@ const mutateActivityParams = z.object({
 	workload: z.coerce.number().optional(),
 	projectId: z.uuid(),
 });
+
+/** Replaces the tag links of an activity. Tags must belong to the project. */
+async function setActivityTags(
+	tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+	activityId: string,
+	tagIds: string[],
+	projectId: string,
+) {
+	const uniqueTagIds = [...new Set(tagIds)];
+
+	await tx
+		.delete(tagOnActivity)
+		.where(eq(tagOnActivity.activityId, activityId));
+
+	if (uniqueTagIds.length === 0) return;
+
+	const rows = await tx
+		.select({ id: tag.id })
+		.from(tag)
+		.where(
+			and(
+				eq(tag.projectId, projectId),
+				inArray(tag.id, uniqueTagIds),
+			),
+		);
+
+	if (rows.length !== uniqueTagIds.length) {
+		throw new TRPCError({
+			message: "Algumas trilhas não pertencem a este evento.",
+			code: "BAD_REQUEST",
+		});
+	}
+
+	await tx.insert(tagOnActivity).values(
+		uniqueTagIds.map((tagId) => ({
+			activityId,
+			tagId,
+		})),
+	);
+}
 
 export const activitiesRouter = createTRPCRouter({
 	getActivity: publicProcedure
@@ -142,6 +185,11 @@ export const activitiesRouter = createTRPCRouter({
 					speakerOnActivity: {
 						with: {
 							speaker: true,
+						},
+					},
+					tagOnActivity: {
+						with: {
+							tag: true,
 						},
 					},
 				},
@@ -317,6 +365,7 @@ export const activitiesRouter = createTRPCRouter({
 			const formattedActivity = {
 				...selectedActivity,
 				sessions: sessionsWithCounts,
+				tags: (selectedActivity.tagOnActivity ?? []).map((t) => t.tag),
 				participants: participantsWithAttendance,
 			};
 
@@ -338,6 +387,7 @@ export const activitiesRouter = createTRPCRouter({
 				projectId: z.uuid().optional(),
 				projectUrl: z.string().optional(),
 				fullQuery: z.boolean().optional(),
+				tagIds: z.array(z.uuid()).optional(),
 			}),
 		)
 		.query(async ({ input }) => {
@@ -351,6 +401,7 @@ export const activitiesRouter = createTRPCRouter({
 				category: rawCategory,
 				audience: rawAudience,
 				fullQuery,
+				tagIds,
 			} = input;
 
 			const categories = rawCategory as
@@ -388,6 +439,19 @@ export const activitiesRouter = createTRPCRouter({
 				projectWhere,
 				categories ? inArray(activity.category, categories) : undefined,
 				audiences ? inArray(activity.audience, audiences) : undefined,
+				tagIds && tagIds.length > 0
+					? exists(
+							db
+								.select({ id: tagOnActivity.activityId })
+								.from(tagOnActivity)
+								.where(
+									and(
+										eq(tagOnActivity.activityId, activity.id),
+										inArray(tagOnActivity.tagId, tagIds),
+									),
+								),
+						)
+					: undefined,
 				query
 					? or(
 							ilike(activity.name, `%${query}%`),
@@ -423,6 +487,11 @@ export const activitiesRouter = createTRPCRouter({
 						speaker: typeof speaker.$inferSelect;
 					}
 				>;
+				tagOnActivity: Array<
+					typeof tagOnActivity.$inferSelect & {
+						tag: typeof tag.$inferSelect;
+					}
+				>;
 				participantOnActivity?: Array<
 					typeof participantOnActivity.$inferSelect & {
 						participant: typeof participant.$inferSelect & {
@@ -444,6 +513,11 @@ export const activitiesRouter = createTRPCRouter({
 								speaker: true,
 							},
 						},
+						tagOnActivity: {
+							with: {
+								tag: true,
+							},
+						},
 						participantOnActivity: {
 							with: {
 								participant: {
@@ -462,6 +536,11 @@ export const activitiesRouter = createTRPCRouter({
 						speakerOnActivity: {
 							with: {
 								speaker: true,
+							},
+						},
+						tagOnActivity: {
+							with: {
+								tag: true,
 							},
 						},
 					};
@@ -518,6 +597,7 @@ export const activitiesRouter = createTRPCRouter({
 				(act: ActivityWithRelations) => ({
 					...act,
 					participantsCount: participantsCountMap[act.id] ?? 0,
+					tags: (act.tagOnActivity ?? []).map((t) => t.tag),
 					participants: act.participantOnActivity
 						? act.participantOnActivity.map(
 								(
@@ -576,6 +656,7 @@ export const activitiesRouter = createTRPCRouter({
 				name,
 				description,
 				sessions,
+				tagIds,
 				category,
 				audience,
 				speakerIds,
@@ -623,6 +704,10 @@ export const activitiesRouter = createTRPCRouter({
 						address: session.address,
 					})),
 				);
+
+				if (tagIds !== undefined) {
+					await setActivityTags(tx, activityId, tagIds, projectId);
+				}
 
 				return activityId;
 			});
@@ -678,6 +763,7 @@ export const activitiesRouter = createTRPCRouter({
 				description,
 				isRegistrationOpen,
 				sessions,
+				tagIds,
 				category,
 				audience,
 				speakerIds,
@@ -694,6 +780,18 @@ export const activitiesRouter = createTRPCRouter({
 			});
 
 			if (error) throw new TRPCError(error);
+
+			const existing = await db.query.activity.findFirst({
+				where: eq(activity.id, activityId),
+				columns: { projectId: true },
+			});
+
+			if (!existing) {
+				throw new TRPCError({
+					message: "Activity not found.",
+					code: "NOT_FOUND",
+				});
+			}
 
 			await db.transaction(async (tx) => {
 				await tx
@@ -743,6 +841,16 @@ export const activitiesRouter = createTRPCRouter({
 							})),
 						);
 					}
+				}
+
+				// Replace tags
+				if (tagIds !== undefined) {
+					await setActivityTags(
+						tx,
+						activityId,
+						tagIds,
+						existing.projectId,
+					);
 				}
 			});
 			return { success: true };
