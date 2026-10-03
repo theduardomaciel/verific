@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ParticipantQuitButton } from "@/components/participant/participant-quit-button";
 import { ActivitySpeakers } from "./speakers";
 import { ActivityCardTags } from "./tags";
+import { TagBadges } from "../tag-badge";
 import { ExpandableDescription } from "@/components/shared/expandable-description";
 
 // Types
@@ -93,6 +94,7 @@ export function ActivityCard({
 							{occurrenceLabel}
 						</span>
 					) : null}
+					<TagBadges tags={activity.tags ?? []} />
 					{activity.description && (
 						<ExpandableDescription activity={activity} />
 					)}

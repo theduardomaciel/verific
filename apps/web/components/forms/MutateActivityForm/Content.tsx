@@ -1,4 +1,5 @@
 "use client";
+import * as React from "react";
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 
@@ -46,6 +47,7 @@ import { TimePicker } from "@/components/pickers/time-picker";
 
 // API
 import { trpc } from "@/lib/trpc/react";
+import { tagColors } from "@verific/api/schemas";
 
 // Types
 import { RouterOutput } from "@verific/api";
@@ -358,6 +360,147 @@ function SessionsEditor({
 }
 
 /* -------------------------------------------------------------------------- */
+/*                                 Tags picker                                */
+/* -------------------------------------------------------------------------- */
+
+function TagsPicker({
+	form,
+	projectId,
+}: {
+	form: UseFormReturn<MutateActivityFormSchema>;
+	projectId: string;
+}) {
+	const utils = trpc.useUtils();
+	const { data: tags, isLoading } =
+		trpc.getProjectTags.useQuery({ projectId });
+	const createTag = trpc.createTag.useMutation();
+
+	const [newTagName, setNewTagName] = React.useState("");
+	const [newTagColor, setNewTagColor] = React.useState<string>(
+		tagColors[1]!,
+	);
+
+	const createAndSelect = async () => {
+		const name = newTagName.trim();
+		if (!name) return;
+		try {
+			const created = await createTag.mutateAsync({
+				projectId,
+				name,
+				color: newTagColor as (typeof tagColors)[number],
+			});
+			await utils.getProjectTags.invalidate({ projectId });
+			const current = form.getValues("tagIds") ?? [];
+			if (created?.id && !current.includes(created.id)) {
+				form.setValue("tagIds", [...current, created.id]);
+			}
+			setNewTagName("");
+		} catch {
+			toast.error("Não foi possível criar a trilha.");
+		}
+	};
+
+	return (
+		<FormField
+			control={form.control}
+			name="tagIds"
+			render={({ field }) => (
+				<FormItem className="w-full">
+					<FormLabel>Trilhas</FormLabel>
+					<div className="flex flex-wrap gap-2">
+						{isLoading ? (
+							<p className="text-muted-foreground text-sm">
+								Carregando trilhas...
+							</p>
+						) : null}
+						{(tags ?? []).map((tag) => {
+							const selected = (field.value ?? []).includes(
+								tag.id,
+							);
+							return (
+								<button
+									key={tag.id}
+									type="button"
+									onClick={() => {
+										const current = field.value ?? [];
+										field.onChange(
+											selected
+												? current.filter(
+														(id) => id !== tag.id,
+													)
+												: [...current, tag.id],
+										);
+									}}
+									className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+										selected
+											? "border-primary bg-primary/10"
+											: "hover:bg-muted"
+									}`}
+								>
+									<span
+										className="h-2.5 w-2.5 rounded-full"
+										style={{
+											backgroundColor: tag.color,
+										}}
+									/>
+									{tag.name}
+								</button>
+							);
+						})}
+					</div>
+					<div className="flex flex-col gap-2">
+						<div className="flex gap-2">
+							<Input
+								placeholder="Nova trilha (ex.: Hardware)"
+								value={newTagName}
+								maxLength={30}
+								onChange={(e) =>
+									setNewTagName(e.target.value)
+								}
+							/>
+							<Button
+								type="button"
+								variant="outline"
+								disabled={
+									!newTagName.trim() || createTag.isPending
+								}
+								onClick={createAndSelect}
+							>
+								<Plus size={16} />
+								Criar
+							</Button>
+						</div>
+						{newTagName.trim() ? (
+							<div className="flex flex-wrap gap-1.5">
+								{tagColors.map((color) => (
+									<button
+										key={color}
+										type="button"
+										title={color}
+										onClick={() => setNewTagColor(color)}
+										className={`h-6 w-6 rounded-full border-2 transition-transform ${
+											newTagColor === color
+												? "scale-110 border-foreground"
+												: "border-transparent"
+										}`}
+										style={{ backgroundColor: color }}
+									/>
+								))}
+							</div>
+						) : null}
+					</div>
+					<FormDescription>
+						Agrupe atividades em trilhas como Hardware e
+						Software. Máximo de 5 por atividade.
+					</FormDescription>
+					<FormMessage />
+				</FormItem>
+			)}
+		/>
+	);
+}
+
+/* -------------------------------------------------------------------------- */
 /*                                 Main content                               */
 /* -------------------------------------------------------------------------- */
 
@@ -616,6 +759,8 @@ export function MutateActivityFormContent({
 							)}
 						/>
 					</div>
+
+					<TagsPicker form={form} projectId={projectId} />
 
 					<FormField
 						control={form.control}

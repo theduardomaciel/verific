@@ -118,6 +118,15 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 							? ` (${sessions.length} sessões)`
 							: ""}
 					</Badge>
+					{(activity.tags ?? []).map((tag) => (
+						<Badge key={tag.id} variant={"secondary"}>
+							<span
+								className="h-2 w-2 rounded-full"
+								style={{ backgroundColor: tag.color }}
+							/>
+							{tag.name}
+						</Badge>
+					))}
 					{sessions.map((session, i) => (
 						<Badge key={i} variant={"secondary"}>
 							<Clock className="h-4 w-4" />

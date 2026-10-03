@@ -114,7 +114,34 @@ async function seedSpeakers(projects: any[]) {
 	return inserted;
 }
 
-async function seedActivities(projects: any[], speakers: any[]) {
+async function seedTags(projects: any[]) {
+	const namesAndColors: Array<[string, string]> = [
+		["Hardware", "#f97316"],
+		["Software", "#3b82f6"],
+		["Keynotes", "#a855f7"],
+		["Workshops", "#22c55e"],
+		["Redes", "#06b6d4"],
+	];
+	const rows: (typeof schema.tag.$inferInsert)[] = [];
+	for (const project of projects) {
+		for (const [name, color] of namesAndColors.slice(
+			0,
+			3 + Math.floor(Math.random() * 3),
+		)) {
+			rows.push({ projectId: project.id, name, color });
+		}
+	}
+	console.log("🌱 Semeando trilhas...");
+	const inserted = await db.insert(schema.tag).values(rows).returning();
+	console.log("✅ Trilhas inseridas!");
+	return inserted;
+}
+
+async function seedActivities(
+	projects: any[],
+	speakers: any[],
+	tags: any[],
+) {
 	const activities: (typeof schema.activity.$inferInsert)[] = [];
 	const randomAmount = Math.floor(Math.random() * 100) + 50; // Entre 50 e 150 atividades
 	for (let i = 0; i < randomAmount; i++) {
@@ -167,6 +194,30 @@ async function seedActivities(projects: any[], speakers: any[]) {
 		.values(sessions)
 		.returning();
 	console.log("✅ Sessões inseridas!");
+
+	// 0-2 trilhas aleatórias do mesmo projeto por atividade
+	const tagsByProject = new Map<string, any[]>();
+	for (const tag of tags) {
+		const list = tagsByProject.get(tag.projectId) ?? [];
+		list.push(tag);
+		tagsByProject.set(tag.projectId, list);
+	}
+	const tagLinks: (typeof schema.tagOnActivity.$inferInsert)[] = [];
+	for (const activity of inserted) {
+		const projectTags = tagsByProject.get(activity.projectId) ?? [];
+		const shuffled = [...projectTags].sort(() => Math.random() - 0.5);
+		for (const tag of shuffled.slice(
+			0,
+			Math.floor(Math.random() * 3),
+		)) {
+			tagLinks.push({ activityId: activity.id, tagId: tag.id });
+		}
+	}
+	if (tagLinks.length > 0) {
+		console.log("🌱 Semeando trilhas em atividades...");
+		await db.insert(schema.tagOnActivity).values(tagLinks);
+		console.log("✅ Trilhas em atividades inseridas!");
+	}
 	return { activities: inserted, sessions: insertedSessions };
 }
 
@@ -254,7 +305,12 @@ export async function seed() {
 	const projects = await seedProjects(users);
 	const participants = await seedParticipants(users, projects);
 	const speakers = await seedSpeakers(projects);
-	const { activities, sessions } = await seedActivities(projects, speakers);
+	const tags = await seedTags(projects);
+	const { activities, sessions } = await seedActivities(
+		projects,
+		speakers,
+		tags,
+	);
 	await seedParticipantOnActivity(participants, activities, sessions);
 	// await seedCertificates(participants, activities, projects);
 }

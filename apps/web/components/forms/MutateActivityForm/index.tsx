@@ -64,6 +64,7 @@ export default function MutateActivityForm({
 				activity?.speakerOnActivity.map(
 					(speakerOnActivity) => speakerOnActivity.speaker.id,
 				) || [],
+			tagIds: activity?.tags?.map((tag) => tag.id) || [],
 			sessions: activity?.sessions?.length
 				? activity.sessions.map((session) => ({
 						date: new Date(session.startsAt),

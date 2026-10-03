@@ -54,12 +54,26 @@ export function ScheduleContent({
 	const [searchQuery, setSearchQuery] = useState<string>("");
 	const [sortBy, setSortBy] = useState<string | undefined>(undefined);
 	const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
+	const [tagFilter, setTagFilter] = useState<string[]>([]);
 
 	const cleanFilters = () => {
 		setSearchQuery("");
 		setCategoryFilter([]);
+		setTagFilter([]);
 		setSortBy(undefined);
 	};
+
+	const availableTags = useMemo(() => {
+		const map = new Map<string, { id: string; name: string; color: string }>();
+		for (const activity of activities) {
+			for (const tag of activity.tags ?? []) {
+				if (!map.has(tag.id)) map.set(tag.id, tag);
+			}
+		}
+		return [...map.values()].sort((a, b) =>
+			a.name.localeCompare(b.name, "pt-BR"),
+		);
+	}, [activities]);
 
 	const filteredActivities = useMemo(() => {
 		let filtered = activities;
@@ -76,6 +90,12 @@ export function ScheduleContent({
 		if (categoryFilter.length > 0) {
 			filtered = filtered.filter((a) =>
 				categoryFilter.includes(a.category),
+			);
+		}
+
+		if (tagFilter.length > 0) {
+			filtered = filtered.filter((a) =>
+				(a.tags ?? []).some((tag) => tagFilter.includes(tag.id)),
 			);
 		}
 
@@ -100,7 +120,7 @@ export function ScheduleContent({
 		}
 
 		return sorted;
-	}, [activities, searchQuery, categoryFilter, sortBy]);
+	}, [activities, searchQuery, categoryFilter, tagFilter, sortBy]);
 
 	const { grouped, categories, initialExpanded } = useMemo(() => {
 		const occurrences = expandSessionOccurrences(filteredActivities);
@@ -136,6 +156,17 @@ export function ScheduleContent({
 							label: sortOptionsLabels[option],
 						}))}
 					/>
+					{availableTags.length > 0 ? (
+						<FilterBy
+							value={tagFilter}
+							onChange={setTagFilter}
+							placeholder="Filtrar trilhas"
+							items={availableTags.map((tag) => ({
+								value: tag.id,
+								label: tag.name,
+							}))}
+						/>
+					) : null}
 					<FilterBy
 						value={categoryFilter}
 						onChange={setCategoryFilter}
@@ -206,7 +237,9 @@ export function ScheduleContent({
 							</AccordionItem>
 						))}
 					</Accordion>
-				) : searchQuery || categoryFilter.length > 0 ? (
+				) : searchQuery ||
+				  categoryFilter.length > 0 ||
+				  tagFilter.length > 0 ? (
 					<Empty>
 						<button
 							onClick={cleanFilters}

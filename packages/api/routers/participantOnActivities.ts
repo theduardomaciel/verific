@@ -74,6 +74,11 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 										},
 									},
 								},
+								tagOnActivity: {
+									with: {
+										tag: true,
+									},
+								},
 								speakerOnActivity: {
 									with: {
 										speaker: true,
@@ -134,12 +139,13 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 			);
 
 			const formattedActivities = activities.map((onActivity) => {
-				const { speakerOnActivity, sessions, ...activityData } =
+				const { speakerOnActivity, sessions, tagOnActivity, ...activityData } =
 					onActivity.activity;
 
 				return {
 					...activityData,
 					speakers: speakerOnActivity.map(s => s.speaker),
+					tags: (tagOnActivity ?? []).map((t) => t.tag),
 					sessions: (sessions ?? []).map((session) => ({
 						...session,
 						joinedAt:
