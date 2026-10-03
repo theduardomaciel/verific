@@ -81,6 +81,8 @@ interface SectionBlockProps {
 	selectedId: string;
 	isPublished: boolean;
 	fieldIds: string[];
+	baseCount: number;
+	draggedId: string | null;
 	fieldById: Map<string, Field>;
 	fields: Field[];
 	sortedSections: Section[];
@@ -104,6 +106,8 @@ function SectionBlock({
 	selectedId,
 	isPublished,
 	fieldIds,
+	baseCount,
+	draggedId,
 	fieldById,
 	fields,
 	sortedSections,
@@ -136,6 +140,14 @@ function SectionBlock({
 		collisionPriority: CollisionPriority.Low,
 		disabled: isPublished,
 	});
+
+	const isEmpty = fieldIds.length === 0;
+	// The section was empty before the drag and the dragged field is currently
+	// previewed inside it. The hint stays visible (stacked under the row) until
+	// the drag ends, instead of vanishing as soon as the row enters.
+	const showDropHint =
+		baseCount === 0 && draggedId !== null && fieldIds.includes(draggedId);
+	const hintActive = showDropHint || isListTarget;
 
 	return (
 		<div
@@ -213,94 +225,88 @@ function SectionBlock({
 				ref={listRef}
 				className={cn(
 					"flex flex-col gap-3 rounded-lg transition-colors",
-					fieldIds.length === 0 && "p-1",
+					isEmpty && "p-1",
+					// Single-cell grid: the hint and the row overlap instead of
+					// stacking, so the container never grows during the drag.
+					showDropHint && "grid [&>*]:col-start-1 [&>*]:row-start-1",
 					highlightDrop &&
-						isListTarget &&
+						hintActive &&
 						"bg-primary/5 ring-primary/30 ring-2",
 				)}
 			>
-				{fieldIds.length === 0 ? (
+				{(isEmpty || showDropHint) && (
 					<div
 						className={cn(
-							"rounded-lg border border-dashed p-4 text-center text-sm",
-							isListTarget
+							"flex items-center justify-center rounded-lg border border-dashed p-4 text-center text-sm",
+							hintActive
 								? "text-foreground"
 								: "text-muted-foreground",
 						)}
 					>
-						{isListTarget
+						{hintActive
 							? "Solte aqui para mover o campo para esta seção"
 							: "Nenhum campo nesta seção ainda. Arraste um campo para cá."}
 					</div>
-				) : (
-					fieldIds.map((id, i) => {
-						const f = fieldById.get(id);
-						if (!f) return null;
-						const globalIndex = fields.findIndex(
-							(gf) => gf.id === f.id,
-						);
-						return (
-							<SortableFieldRow
-								key={f.id}
-								field={f}
-								index={i}
-								group={section.id}
-								disabled={isPublished}
-								isOrphanHalf={orphanHalfIds.has(f.id)}
-								actions={
-									<>
-										<Button
-											size="sm"
-											variant="outline"
-											disabled={i === 0}
-											onClick={() =>
-												moveWithinSection(
-													section.id,
-													i,
-													-1,
-												)
-											}
-										>
-											↑
-										</Button>
-										<Button
-											size="sm"
-											variant="outline"
-											disabled={i === fieldIds.length - 1}
-											onClick={() =>
-												moveWithinSection(
-													section.id,
-													i,
-													1,
-												)
-											}
-										>
-											↓
-										</Button>
-										<FieldDialog
-											key={f.id}
-											versionId={selectedId}
-											initial={f}
-											onDone={() => undefined}
-											siblings={fields}
-											position={globalIndex}
-											sections={sortedSections}
-											defaultSectionId={section.id}
-										/>
-										<Button
-											size="sm"
-											variant="ghost"
-											onClick={() => onDelete(f)}
-										>
-											<TrashIcon />
-											Excluir
-										</Button>
-									</>
-								}
-							/>
-						);
-					})
 				)}
+				{fieldIds.map((id, i) => {
+					const f = fieldById.get(id);
+					if (!f) return null;
+					const globalIndex = fields.findIndex(
+						(gf) => gf.id === f.id,
+					);
+					return (
+						<SortableFieldRow
+							key={f.id}
+							field={f}
+							index={i}
+							group={section.id}
+							disabled={isPublished}
+							isOrphanHalf={orphanHalfIds.has(f.id)}
+							actions={
+								<>
+									<Button
+										size="sm"
+										variant="outline"
+										disabled={i === 0}
+										onClick={() =>
+											moveWithinSection(section.id, i, -1)
+										}
+									>
+										↑
+									</Button>
+									<Button
+										size="sm"
+										variant="outline"
+										disabled={i === fieldIds.length - 1}
+										onClick={() =>
+											moveWithinSection(section.id, i, 1)
+										}
+									>
+										↓
+									</Button>
+									<FieldDialog
+										key={f.id}
+										versionId={selectedId}
+										initial={f}
+										onDone={() => undefined}
+										siblings={fields}
+										position={globalIndex}
+										sections={sortedSections}
+										defaultSectionId={section.id}
+									/>
+									<Button
+										size="sm"
+										variant="ghost"
+										onClick={() => onDelete(f)}
+									>
+										<TrashIcon />
+										Excluir
+									</Button>
+								</>
+							}
+						/>
+					);
+				})}
 			</div>
 		</div>
 	);
@@ -497,6 +503,7 @@ export function BuilderCard({
 	// `fields` (see the effect below); discarded immediately on cancel.
 	const [fieldPreview, setFieldPreview] = useState<FieldGroups | null>(null);
 	const [dragType, setDragType] = useState<string | null>(null);
+	const [draggedId, setDraggedId] = useState<string | null>(null);
 	const groups = fieldPreview ?? baseGroups;
 	const groupsRef = useRef(groups);
 	groupsRef.current = groups;
@@ -621,7 +628,14 @@ export function BuilderCard({
 				key={selected.id}
 				onDragStart={(event) => {
 					isDraggingRef.current = true;
-					setDragType(getSourceType(event.operation.source));
+					const { source } = event.operation;
+					const type = getSourceType(source);
+					setDragType(type);
+					setDraggedId(
+						type === FIELD_TYPE && source
+							? String(source.id)
+							: null,
+					);
 				}}
 				onDragOver={(event) => {
 					const { source } = event.operation;
@@ -634,6 +648,7 @@ export function BuilderCard({
 				onDragEnd={(event) => {
 					isDraggingRef.current = false;
 					setDragType(null);
+					setDraggedId(null);
 					const { source } = event.operation;
 					if (!source || !isSortable(source)) {
 						setFieldPreview(null);
@@ -692,6 +707,8 @@ export function BuilderCard({
 								baseGroups[section.id] ??
 								[]
 							}
+							baseCount={baseGroups[section.id]?.length ?? 0}
+							draggedId={draggedId}
 							fieldById={fieldById}
 							fields={fields}
 							sortedSections={sortedSections}
