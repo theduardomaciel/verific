@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 import { trpc } from "@/lib/trpc/react";
 import { buildAnswersSchema } from "@verific/api/schemas";
-import { groupFieldsIntoRows } from "@/lib/forms/layout";
+import { groupFieldsBySection } from "@/lib/forms/layout";
 import { DynamicField } from "@/components/forms/dynamic/DynamicField";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
@@ -23,8 +23,9 @@ export function EditMyAnswersForm({ projectId }: { projectId: string }) {
 		() => (published.data?.fields ?? []).filter((f) => f.isVisible && f.editableAfterSignup),
 		[published.data],
 	);
+	const sections = useMemo(() => published.data?.sections ?? [], [published.data]);
 
-	const rows = useMemo(() => groupFieldsIntoRows(fields), [fields]);
+	const grouped = useMemo(() => groupFieldsBySection(fields, sections), [fields, sections]);
 
 	const schema = useMemo(
 		() =>
@@ -86,20 +87,25 @@ export function EditMyAnswersForm({ projectId }: { projectId: string }) {
 						onSubmit={form.handleSubmit((values) => mutation.mutate({ projectId, answers: values as Record<string, string | number | boolean | string[] | null> }))}
 						className="flex flex-col gap-4"
 					>
-						{rows.map((row, ri) => (
-							<div
-								key={row.fields.map((f) => f.id).join("-") || `row-${ri}`}
-								className={
-									row.fields.length === 2
-										? "grid w-full grid-cols-1 gap-4 md:grid-cols-2"
-										: "w-full"
-								}
-							>
-								{row.fields.map((f) => (
-									<DynamicField key={f.id} field={f} control={form.control as never} name={f.key} />
-								))}
-							</div>
-						))}
+						{grouped.map((group) => (
+						<div key={group.section.id} className="flex flex-col gap-4">
+							<h4 className="text-sm font-bold">{group.section.title}</h4>
+							{group.rows.map((row, ri) => (
+								<div
+									key={row.fields.map((f) => f.id).join("-") || `row-${ri}`}
+									className={
+										row.fields.length === 2
+											? "grid w-full grid-cols-1 gap-4 md:grid-cols-2"
+											: "w-full"
+									}
+								>
+									{row.fields.map((f) => (
+										<DynamicField key={f.id} field={f} control={form.control as never} name={f.key} />
+									))}
+								</div>
+							))}
+						</div>
+					))}
 						<Button type="submit" disabled={mutation.isPending}>
 							{mutation.isPending ? "Salvando..." : "Salvar respostas"}
 						</Button>

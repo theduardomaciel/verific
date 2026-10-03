@@ -26,7 +26,7 @@ import JoinForm0 from "./Section0";
 
 // Validation
 import { buildAnswersSchema } from "@verific/api/schemas";
-import { groupFieldsIntoRows } from "@/lib/forms/layout";
+import { groupFieldsBySection } from "@/lib/forms/layout";
 import type { GenericForm } from "..";
 
 // Types
@@ -61,10 +61,12 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 	const submitMutation = trpc.submitAnswers.useMutation();
 
 	const fields = useMemo(() => formData?.fields ?? [], [formData]);
+	const sections = useMemo(() => formData?.sections ?? [], [formData]);
 
-	const visibleRows = useMemo(
-		() => groupFieldsIntoRows(fields.filter((f) => f.isVisible)),
-		[fields],
+	const visibleFields = useMemo(() => fields.filter((f) => f.isVisible), [fields]);
+	const groupedSections = useMemo(
+		() => groupFieldsBySection(visibleFields, sections),
+		[visibleFields, sections],
 	);
 
 	const dynamicSchema = useMemo(() => {
@@ -140,58 +142,94 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 						form={form as unknown as GenericForm}
 						email={user?.email}
 					/>
-					<FormSection
-						title="Dados da inscrição"
-						section={1}
-						form={form as unknown as GenericForm}
-						fields={fields.map((f) => ({ name: f.label, value: false }))}
-					>
-						<FormField
-							control={form.control}
-							name="name"
-							render={({ field }) => (
-								<FormItem className="w-full">
-									<FormLabel>
-										Nome completo <span className="text-destructive ml-1">*</span>
-									</FormLabel>
-									<FormControl>
-										<Input placeholder="Fulano da Silva" {...field} value={field.value ?? ""} />
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-						{isFormPending ? (
+					{isFormPending ? (
+						<FormSection
+							title="Dados da inscrição"
+							section={1}
+							form={form as unknown as GenericForm}
+							fields={[]}
+						>
 							<p className="text-muted-foreground text-sm">Carregando formulário do evento...</p>
-						) : fields.length === 0 ? (
+							<SectionFooter isFinalSection />
+						</FormSection>
+					) : groupedSections.length === 0 ? (
+						<FormSection
+							title="Dados da inscrição"
+							section={1}
+							form={form as unknown as GenericForm}
+							fields={[]}
+						>
+							<FormField
+								control={form.control}
+								name="name"
+								render={({ field }) => (
+									<FormItem className="w-full">
+										<FormLabel>
+											Nome completo <span className="text-destructive ml-1">*</span>
+										</FormLabel>
+										<FormControl>
+											<Input placeholder="Fulano da Silva" {...field} value={field.value ?? ""} />
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
 							<p className="text-muted-foreground text-sm">
 								Este evento não exige informações adicionais.
 							</p>
-						) : (
-							<div className="flex w-full flex-col gap-6">
-								{visibleRows.map((row, ri) => (
-									<div
-										key={row.fields.map((f) => f.id).join("-") || `row-${ri}`}
-										className={
-											row.fields.length === 2
-												? "grid w-full grid-cols-1 gap-6 md:grid-cols-2"
-												: "w-full"
-										}
-									>
-										{row.fields.map((f) => (
-											<DynamicField
-												key={f.id}
-												field={f}
-												control={form.control as never}
-												name={`answers.${f.key}`}
-											/>
-										))}
-									</div>
-								))}
-							</div>
-						)}
-						<SectionFooter isFinalSection />
-					</FormSection>
+							<SectionFooter isFinalSection />
+						</FormSection>
+					) : (
+						groupedSections.map((group, gi) => (
+							<FormSection
+								key={group.section.id}
+								title={group.section.title}
+								section={gi + 1}
+								form={form as unknown as GenericForm}
+								fields={group.fields.map((f) => ({ name: f.label, value: false }))}
+							>
+								{gi === 0 && (
+									<FormField
+										control={form.control}
+										name="name"
+										render={({ field }) => (
+											<FormItem className="w-full">
+												<FormLabel>
+													Nome completo <span className="text-destructive ml-1">*</span>
+												</FormLabel>
+												<FormControl>
+													<Input placeholder="Fulano da Silva" {...field} value={field.value ?? ""} />
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+								)}
+								<div className="flex w-full flex-col gap-6">
+									{group.rows.map((row, ri) => (
+										<div
+											key={row.fields.map((f) => f.id).join("-") || `row-${ri}`}
+											className={
+												row.fields.length === 2
+													? "grid w-full grid-cols-1 gap-6 md:grid-cols-2"
+													: "w-full"
+											}
+										>
+											{row.fields.map((f) => (
+												<DynamicField
+													key={f.id}
+													field={f}
+													control={form.control as never}
+													name={`answers.${f.key}`}
+												/>
+											))}
+										</div>
+									))}
+								</div>
+								<SectionFooter isFinalSection={gi === groupedSections.length - 1} />
+							</FormSection>
+						))
+					)}
 				</form>
 			</FormWrapper>
 			<LoadingDialog isOpen={currentState === "submitting"} title="Estamos realizando seu cadastro..." />

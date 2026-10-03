@@ -4,9 +4,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
 import { trpc } from "@/lib/trpc/react";
-import { findOrphanHalfIds } from "@/lib/forms/layout";
+import { findOrphanHalfIds, groupFieldsBySection } from "@/lib/forms/layout";
 import { animateFlip } from "../lib/animate-flip";
-import type { Field, FormsTab, Version } from "../types";
+import type { Field, FormsTab, Section, Version } from "../types";
 
 export function useFormsBuilder() {
 	const { projectId } = useDashboard();
@@ -15,6 +15,7 @@ export function useFormsBuilder() {
 	const [tab, setTab] = useState<FormsTab>("builder");
 	const [displayFields, setDisplayFields] = useState<Field[]>([]);
 	const [fieldToDelete, setFieldToDelete] = useState<Field | null>(null);
+	const [sectionToDelete, setSectionToDelete] = useState<Section | null>(null);
 	const isDraggingRef = useRef(false);
 	const listRef = useRef<HTMLDivElement>(null);
 
@@ -80,10 +81,39 @@ export function useFormsBuilder() {
 		},
 		onError: (e) => toast.error(e.message),
 	});
+	const upsertSection = trpc.upsertSection.useMutation({
+		onSuccess: async () => {
+			await utils.getVersion.invalidate();
+			toast.success("Seção salva!");
+		},
+		onError: (e) => toast.error(e.message),
+	});
+	const deleteSection = trpc.deleteSection.useMutation({
+		onSuccess: async () => {
+			await utils.getVersion.invalidate();
+			setSectionToDelete(null);
+			toast.success("Seção removida!");
+		},
+		onError: (e) => toast.error(e.message),
+	});
+	const reorderSections = trpc.reorderSections.useMutation({
+		onSuccess: async () => {
+			await utils.getVersion.invalidate();
+		},
+		onError: (e) => toast.error(e.message),
+	});
 
 	const serverFields: Field[] = useMemo(
 		() =>
 			(versionQuery.data?.fields ?? [])
+				.slice()
+				.sort((a, b) => a.order - b.order),
+		[versionQuery.data],
+	);
+
+	const sections: Section[] = useMemo(
+		() =>
+			(versionQuery.data?.sections ?? [])
 				.slice()
 				.sort((a, b) => a.order - b.order),
 		[versionQuery.data],
@@ -105,6 +135,10 @@ export function useFormsBuilder() {
 	const selected = versions.find((v) => v.id === selectedId) ?? null;
 	const isPublished = !!selected?.isPublished;
 	const orphanHalfIds = useMemo(() => findOrphanHalfIds(fields), [fields]);
+	const groupedSections = useMemo(
+		() => groupFieldsBySection(fields, sections),
+		[fields, sections],
+	);
 
 	// True while the fields for the current `selectedId` are not yet available.
 	// Covers initial fetch (`isPending`) and version switches where the cached
@@ -115,12 +149,13 @@ export function useFormsBuilder() {
 		(versionQuery.isPending ||
 			versionQuery.data?.version.id !== selectedId);
 
-	function persistOrder(next: Field[]) {
+	function persistOrder(next: Field[], sectionIdByField?: Record<string, string | null>) {
 		if (!selectedId) return;
 		setDisplayFields(next);
 		reorderFields.mutate({
 			versionId: selectedId,
 			orderedIds: next.map((f) => f.id),
+			...(sectionIdByField ? { sectionIdByField } : {}),
 		});
 	}
 
@@ -139,6 +174,20 @@ export function useFormsBuilder() {
 		persistOrder(next);
 	}
 
+	function moveSection(index: number, dir: -1 | 1) {
+		if (!selectedId) return;
+		const next = [...sections];
+		const j = index + dir;
+		if (j < 0 || j >= next.length) return;
+		const [item] = next.splice(index, 1);
+		if (!item) return;
+		next.splice(j, 0, item);
+		reorderSections.mutate({
+			versionId: selectedId,
+			orderedIds: next.map((s) => s.id),
+		});
+	}
+
 	return {
 		projectId,
 		tab,
@@ -151,19 +200,27 @@ export function useFormsBuilder() {
 		isPublished,
 		versionQuery,
 		fields,
+		sections,
+		groupedSections,
 		isLoadingFields,
 		orphanHalfIds,
 		fieldToDelete,
 		setFieldToDelete,
+		sectionToDelete,
+		setSectionToDelete,
 		listRef,
 		isDraggingRef,
 		createVersion,
 		publishVersion,
 		deleteVersion,
 		deleteField,
+		upsertSection,
+		deleteSection,
+		reorderSections,
 		persistOrder,
 		revertOrder,
 		move,
+		moveSection,
 	};
 }
 

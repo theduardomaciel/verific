@@ -12,6 +12,7 @@ import {
 import { project } from "./project";
 import { user } from "./user";
 import { formField } from "./form-field";
+import { formSection } from "./form-section";
 import { formAnswer } from "./form-answer";
 
 export const formVersion = pgTable(
@@ -42,5 +43,6 @@ export const formVersionRelations = relations(formVersion, ({ one, many }) => ({
 		references: [project.id],
 	}),
 	fields: many(formField),
+	sections: many(formSection),
 	answers: many(formAnswer),
 }));

@@ -4,6 +4,7 @@ import { db } from "@verific/drizzle";
 import {
 	formAnswer,
 	formField,
+	formSection,
 	formVersion,
 	participant,
 	project,
@@ -15,8 +16,11 @@ import { and, asc, count, desc, eq, ilike, inArray, or } from "@verific/drizzle/
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import {
+	reorderFormFieldsInput,
+	reorderFormSectionsInput,
 	submitAnswersInput,
 	upsertFormFieldInput,
+	upsertFormSectionInput,
 	validateAnswers,
 	type FormFieldForValidation,
 } from "../schemas";
@@ -138,12 +142,18 @@ export const formsRouter = createTRPCRouter({
 				where: and(eq(formVersion.projectId, projectId), eq(formVersion.isPublished, true)),
 				orderBy: desc(formVersion.version),
 			});
-			if (!version) return { version: null, fields: [] };
-			const fields = await db.query.formField.findMany({
-				where: and(eq(formField.formVersionId, version.id), eq(formField.isActive, true)),
-				orderBy: asc(formField.order),
-			});
-			return { version, fields };
+			if (!version) return { version: null, fields: [], sections: [] };
+			const [fields, sections] = await Promise.all([
+				db.query.formField.findMany({
+					where: and(eq(formField.formVersionId, version.id), eq(formField.isActive, true)),
+					orderBy: asc(formField.order),
+				}),
+				db.query.formSection.findMany({
+					where: eq(formSection.formVersionId, version.id),
+					orderBy: asc(formSection.order),
+				}),
+			]);
+			return { version, fields, sections };
 		}),
 
 	listVersions: protectedProcedure
@@ -177,7 +187,11 @@ export const formsRouter = createTRPCRouter({
 				where: eq(formField.formVersionId, version.id),
 				orderBy: asc(formField.order),
 			});
-			return { version, fields };
+			const sections = await db.query.formSection.findMany({
+				where: eq(formSection.formVersionId, version.id),
+				orderBy: asc(formSection.order),
+			});
+			return { version, fields, sections };
 		}),
 
 	createVersion: protectedProcedure
@@ -207,6 +221,23 @@ export const formsRouter = createTRPCRouter({
 			if (!newVersion) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Falha ao criar versão." });
 
 			if (input.cloneFromVersionId) {
+				const sourceSections = await db.query.formSection.findMany({
+					where: eq(formSection.formVersionId, input.cloneFromVersionId),
+					orderBy: asc(formSection.order),
+				});
+				const sectionIdMap = new Map<string, string>();
+				for (const s of sourceSections) {
+					const inserted = await db
+						.insert(formSection)
+						.values({
+							formVersionId: newVersion.id,
+							projectId: input.projectId,
+							title: s.title,
+							order: s.order,
+						})
+						.returning({ id: formSection.id });
+					if (inserted[0]) sectionIdMap.set(s.id, inserted[0].id);
+				}
 				const sourceFields = await db.query.formField.findMany({
 					where: eq(formField.formVersionId, input.cloneFromVersionId),
 				});
@@ -221,6 +252,7 @@ export const formsRouter = createTRPCRouter({
 							helpText: f.helpText,
 							required: f.required,
 							order: f.order,
+							sectionId: f.sectionId ? (sectionIdMap.get(f.sectionId) ?? null) : null,
 							halfWidth: f.halfWidth,
 							options: f.options,
 							validation: f.validation,
@@ -230,6 +262,30 @@ export const formsRouter = createTRPCRouter({
 						})),
 					);
 				}
+				if (sourceSections.length === 0 && sourceFields.length > 0) {
+					const fallback = await db
+						.insert(formSection)
+						.values({
+							formVersionId: newVersion.id,
+							projectId: input.projectId,
+							title: "Dados da inscrição",
+							order: 0,
+						})
+						.returning({ id: formSection.id });
+					if (fallback[0]) {
+						await db
+							.update(formField)
+							.set({ sectionId: fallback[0].id })
+							.where(eq(formField.formVersionId, newVersion.id));
+					}
+				}
+			} else {
+				await db.insert(formSection).values({
+					formVersionId: newVersion.id,
+					projectId: input.projectId,
+					title: "Dados da inscrição",
+					order: 0,
+				});
 			}
 			return newVersion;
 		}),
@@ -251,6 +307,19 @@ export const formsRouter = createTRPCRouter({
 			if ((input.type === "select_single" || input.type === "select_multiple") && (!input.options || input.options.length === 0)) {
 				throw new TRPCError({ code: "BAD_REQUEST", message: "Campos de seleção exigem ao menos uma opção." });
 			}
+			let sectionId: string | null | undefined;
+			if (input.sectionId !== undefined) {
+				if (input.sectionId === null) {
+					sectionId = null;
+				} else {
+					const section = await db.query.formSection.findFirst({
+						where: and(eq(formSection.id, input.sectionId), eq(formSection.formVersionId, input.versionId)),
+						columns: { id: true },
+					});
+					if (!section) throw new TRPCError({ code: "BAD_REQUEST", message: "Seção não encontrada nesta versão." });
+					sectionId = section.id;
+				}
+			}
 			if (input.fieldId) {
 				const updated = await db
 					.update(formField)
@@ -260,6 +329,7 @@ export const formsRouter = createTRPCRouter({
 						helpText: input.helpText ?? null,
 						required: input.required,
 						halfWidth: input.halfWidth,
+						...(sectionId !== undefined ? { sectionId } : {}),
 						options: input.options ?? null,
 						validation: input.validation ?? null,
 						isVisible: input.isVisible,
@@ -288,6 +358,16 @@ export const formsRouter = createTRPCRouter({
 					helpText: input.helpText ?? null,
 					required: input.required,
 					order: nextOrder,
+					sectionId:
+						sectionId !== undefined
+							? sectionId
+							: (
+									await db.query.formSection.findFirst({
+										where: eq(formSection.formVersionId, input.versionId),
+										orderBy: asc(formSection.order),
+										columns: { id: true },
+									})
+								)?.id ?? null,
 					halfWidth: input.halfWidth,
 					options: input.options ?? null,
 					validation: input.validation ?? null,
@@ -326,7 +406,117 @@ export const formsRouter = createTRPCRouter({
 		}),
 
 	reorderFields: protectedProcedure
-		.input(z.object({ versionId: z.uuid(), orderedIds: z.array(z.uuid()) }))
+		.input(reorderFormFieldsInput)
+		.mutation(async ({ input, ctx }) => {
+			const version = await db.query.formVersion.findFirst({
+				where: eq(formVersion.id, input.versionId),
+			});
+			if (!version) throw new TRPCError({ code: "NOT_FOUND", message: "Versão não encontrada." });
+			await requireProjectAccess(version.projectId, ctx.session.user.id);
+			if (version.isPublished) {
+				throw new TRPCError({ code: "BAD_REQUEST", message: "Versão publicada é imutável." });
+			}
+			if (input.sectionIdByField) {
+				for (const sid of Object.values(input.sectionIdByField)) {
+					if (sid === null || sid === undefined) continue;
+					const section = await db.query.formSection.findFirst({
+						where: and(eq(formSection.id, sid), eq(formSection.formVersionId, input.versionId)),
+						columns: { id: true },
+					});
+					if (!section) throw new TRPCError({ code: "BAD_REQUEST", message: "Seção inválida para esta versão." });
+				}
+			}
+			await db.transaction(async (tx) => {
+				for (let i = 0; i < input.orderedIds.length; i++) {
+					const fid = input.orderedIds[i]!;
+					const sid = input.sectionIdByField?.[fid];
+					await tx
+						.update(formField)
+						.set({ order: i, ...(sid !== undefined ? { sectionId: sid } : {}) })
+						.where(and(eq(formField.id, fid), eq(formField.formVersionId, input.versionId)));
+				}
+			});
+			return { success: true };
+		}),
+
+	upsertSection: protectedProcedure
+		.input(upsertFormSectionInput)
+		.mutation(async ({ input, ctx }) => {
+			const version = await db.query.formVersion.findFirst({
+				where: eq(formVersion.id, input.versionId),
+			});
+			if (!version) throw new TRPCError({ code: "NOT_FOUND", message: "Versão não encontrada." });
+			await requireProjectAccess(version.projectId, ctx.session.user.id);
+			if (version.isPublished) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Versão publicada é imutável. Crie uma nova versão para editar.",
+				});
+			}
+			if (input.sectionId) {
+				const updated = await db
+					.update(formSection)
+					.set({ title: input.title })
+					.where(and(eq(formSection.id, input.sectionId), eq(formSection.formVersionId, input.versionId)))
+					.returning();
+				if (!updated[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Seção não encontrada." });
+				return updated[0];
+			}
+			const orderRows = await db.query.formSection.findMany({
+				where: eq(formSection.formVersionId, input.versionId),
+				columns: { order: true },
+			});
+			const nextOrder = orderRows.reduce((max, r) => Math.max(max, r.order), -1) + 1;
+			const created = await db
+				.insert(formSection)
+				.values({
+					formVersionId: input.versionId,
+					projectId: version.projectId,
+					title: input.title,
+					order: nextOrder,
+				})
+				.returning();
+			return created[0];
+		}),
+
+	deleteSection: protectedProcedure
+		.input(z.object({ sectionId: z.uuid() }))
+		.mutation(async ({ input, ctx }) => {
+			const section = await db.query.formSection.findFirst({
+				where: eq(formSection.id, input.sectionId),
+				with: { version: true },
+			});
+			if (!section) throw new TRPCError({ code: "NOT_FOUND", message: "Seção não encontrada." });
+			await requireProjectAccess(section.projectId, ctx.session.user.id);
+			if (section.version.isPublished) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Versão publicada é imutável. Crie uma nova versão para editar.",
+				});
+			}
+			const siblings = await db.query.formSection.findMany({
+				where: eq(formSection.formVersionId, section.formVersionId),
+				columns: { id: true },
+			});
+			if (siblings.length <= 1) {
+				throw new TRPCError({ code: "BAD_REQUEST", message: "O formulário precisa de ao menos uma seção." });
+			}
+			const fieldsCount = await db
+				.select({ amount: count() })
+				.from(formField)
+				.where(eq(formField.sectionId, input.sectionId));
+			if ((fieldsCount[0]?.amount ?? 0) > 0) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Mova ou exclua os campos desta seção antes de excluí-la.",
+				});
+			}
+			await db.delete(formSection).where(eq(formSection.id, input.sectionId));
+			return { success: true };
+		}),
+
+	reorderSections: protectedProcedure
+		.input(reorderFormSectionsInput)
 		.mutation(async ({ input, ctx }) => {
 			const version = await db.query.formVersion.findFirst({
 				where: eq(formVersion.id, input.versionId),
@@ -339,9 +529,9 @@ export const formsRouter = createTRPCRouter({
 			await db.transaction(async (tx) => {
 				for (let i = 0; i < input.orderedIds.length; i++) {
 					await tx
-						.update(formField)
+						.update(formSection)
 						.set({ order: i })
-						.where(and(eq(formField.id, input.orderedIds[i]!), eq(formField.formVersionId, input.versionId)));
+						.where(and(eq(formSection.id, input.orderedIds[i]!), eq(formSection.formVersionId, input.versionId)));
 				}
 			});
 			return { success: true };
@@ -394,6 +584,7 @@ export const formsRouter = createTRPCRouter({
 			}
 			await db.transaction(async (tx) => {
 				await tx.delete(formField).where(eq(formField.formVersionId, input.versionId));
+				await tx.delete(formSection).where(eq(formSection.formVersionId, input.versionId));
 				await tx.delete(formVersion).where(eq(formVersion.id, input.versionId));
 			});
 			return { success: true };
