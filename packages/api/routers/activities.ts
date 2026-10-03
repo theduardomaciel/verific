@@ -69,13 +69,7 @@ export const activitiesRouter = createTRPCRouter({
 	getActivity: publicProcedure
 		.input(getActivityParams.extend({ activityId: z.uuid() }))
 		.query(async ({ input, ctx }) => {
-			const {
-				activityId,
-				page = 1,
-				pageSize = 5,
-				search,
-				sort
-			} = input;
+			const { activityId, page = 1, pageSize = 5, search, sort } = input;
 
 			const userId = ctx.session?.user.id;
 
@@ -246,11 +240,15 @@ export const activitiesRouter = createTRPCRouter({
 				sort,
 				category: rawCategory,
 				audience: rawAudience,
-				fullQuery
+				fullQuery,
 			} = input;
 
-			const categories = rawCategory as (typeof activityCategories)[number][] | undefined;
-			const audiences = rawAudience as (typeof activityAudiences)[number][] | undefined;
+			const categories = rawCategory as
+				| (typeof activityCategories)[number][]
+				| undefined;
+			const audiences = rawAudience as
+				| (typeof activityAudiences)[number][]
+				| undefined;
 
 			let projectIdToUse = projectId;
 
@@ -282,9 +280,9 @@ export const activitiesRouter = createTRPCRouter({
 				audiences ? inArray(activity.audience, audiences) : undefined,
 				query
 					? or(
-						ilike(activity.name, `%${query}%`),
-						ilike(activity.description, `%${query}%`),
-					)
+							ilike(activity.name, `%${query}%`),
+							ilike(activity.description, `%${query}%`),
+						)
 					: undefined,
 			].filter(Boolean);
 
@@ -308,51 +306,57 @@ export const activitiesRouter = createTRPCRouter({
 			}
 
 			type ActivityWithRelations = typeof activity.$inferSelect & {
-				participantsCount: number,
+				participantsCount: number;
 				project: typeof project.$inferSelect;
-				speakerOnActivity: Array<typeof speakerOnActivity.$inferSelect & {
-					speaker: typeof speaker.$inferSelect;
-				}>;
-				participantOnActivity?: Array<typeof participantOnActivity.$inferSelect & {
-					participant: typeof participant.$inferSelect & {
-						user: typeof user.$inferSelect;
-					};
-				}>;
+				speakerOnActivity: Array<
+					typeof speakerOnActivity.$inferSelect & {
+						speaker: typeof speaker.$inferSelect;
+					}
+				>;
+				participantOnActivity?: Array<
+					typeof participantOnActivity.$inferSelect & {
+						participant: typeof participant.$inferSelect & {
+							user: typeof user.$inferSelect;
+						};
+					}
+				>;
 			};
 
 			// Only include participators if fullQuery is true
-			const withObj = fullQuery ? {
-				project: true,
-				speakerOnActivity: {
-					with: {
-						speaker: true,
-					},
-				},
-				participantOnActivity: {
-					with: {
-						participant: {
+			const withObj = fullQuery
+				? {
+						project: true,
+						speakerOnActivity: {
 							with: {
-								user: true,
+								speaker: true,
 							},
 						},
-					},
-				},
-			} : {
-				project: true,
-				speakerOnActivity: {
-					with: {
-						speaker: true,
-					},
-				},
-			};
+						participantOnActivity: {
+							with: {
+								participant: {
+									with: {
+										user: true,
+									},
+								},
+							},
+						},
+					}
+				: {
+						project: true,
+						speakerOnActivity: {
+							with: {
+								speaker: true,
+							},
+						},
+					};
 
-			const activities = await db.query.activity.findMany({
+			const activities = (await db.query.activity.findMany({
 				where: and(...activitiesWhere),
 				with: withObj as any,
 				orderBy: orderByClause,
 				offset: page ? (page - 1) * pageSize : 0,
 				limit: pageSize,
-			}) as ActivityWithRelations[];
+			})) as ActivityWithRelations[];
 
 			// Query de contagem
 			// Get activities count and participants count per activity
@@ -364,20 +368,26 @@ export const activitiesRouter = createTRPCRouter({
 				fullQuery
 					? null
 					: db
-						.select({
-							activityId: participantOnActivity.activityId,
-							count: count(),
-						})
-						.from(participantOnActivity)
-						.innerJoin(
-							activity,
-							and(
-								eq(participantOnActivity.activityId, activity.id),
-								eq(participantOnActivity.role, "participant")
-							),
-						)
-						.where(and(...activitiesWhere))
-						.groupBy(participantOnActivity.activityId),
+							.select({
+								activityId: participantOnActivity.activityId,
+								count: count(),
+							})
+							.from(participantOnActivity)
+							.innerJoin(
+								activity,
+								and(
+									eq(
+										participantOnActivity.activityId,
+										activity.id,
+									),
+									eq(
+										participantOnActivity.role,
+										"participant",
+									),
+								),
+							)
+							.where(and(...activitiesWhere))
+							.groupBy(participantOnActivity.activityId),
 			]);
 
 			// Map activityId to participant count
@@ -388,29 +398,42 @@ export const activitiesRouter = createTRPCRouter({
 				}
 			}
 
-			const formattedActivities = activities.map((act: ActivityWithRelations) => ({
-				...act,
-				participantsCount: participantsCountMap[act.id] ?? 0,
-				participants: act.participantOnActivity
-					? act.participantOnActivity.map((p: NonNullable<ActivityWithRelations['participantOnActivity']>[0]) => ({
-						id: p.participant.id,
-						role: p.role,
-						userId: p.participant.userId,
-						user: {
-							name: p.participant.user?.name,
-							image_url: p.participant.user?.image_url,
-						},
-					}))
-					: [],
-				speakers: act.speakerOnActivity
-					? act.speakerOnActivity.map((s: ActivityWithRelations['speakerOnActivity'][0]) => ({
-						id: s.speaker.id,
-						name: s.speaker.name,
-						description: s.speaker.description,
-						imageUrl: s.speaker.imageUrl,
-					}))
-					: [],
-			}));
+			const formattedActivities = activities.map(
+				(act: ActivityWithRelations) => ({
+					...act,
+					participantsCount: participantsCountMap[act.id] ?? 0,
+					participants: act.participantOnActivity
+						? act.participantOnActivity.map(
+								(
+									p: NonNullable<
+										ActivityWithRelations["participantOnActivity"]
+									>[0],
+								) => ({
+									id: p.participant.id,
+									role: p.role,
+									userId: p.participant.userId,
+									user: {
+										name: p.participant.user?.name,
+										image_url:
+											p.participant.user?.image_url,
+									},
+								}),
+							)
+						: [],
+					speakers: act.speakerOnActivity
+						? act.speakerOnActivity.map(
+								(
+									s: ActivityWithRelations["speakerOnActivity"][0],
+								) => ({
+									id: s.speaker.id,
+									name: s.speaker.name,
+									description: s.speaker.description,
+									imageUrl: s.speaker.imageUrl,
+								}),
+							)
+						: [],
+				}),
+			);
 
 			const amount = amountDb[0]?.amount ?? 0;
 			const pageCount = Math.ceil(amount / pageSize);
@@ -690,7 +713,8 @@ export const activitiesRouter = createTRPCRouter({
 
 			if (projectParticipants.length !== participantsIdsToAdd.length) {
 				throw new TRPCError({
-					message: "Participants must belong to the activity project.",
+					message:
+						"Participants must belong to the activity project.",
 					code: "FORBIDDEN",
 				});
 			}
@@ -707,11 +731,13 @@ export const activitiesRouter = createTRPCRouter({
 					);
 
 				const currentCount = currentCountResult?.[0]?.amount ?? 0;
-				const availableSpots = foundActivity.participantsLimit - currentCount;
+				const availableSpots =
+					foundActivity.participantsLimit - currentCount;
 
 				if (participantsIdsToAdd.length > availableSpots) {
 					throw new TRPCError({
-						message: "Adding these participants exceeds the activity limit.",
+						message:
+							"Adding these participants exceeds the activity limit.",
 						code: "BAD_REQUEST",
 					});
 				}
@@ -754,23 +780,26 @@ export const activitiesRouter = createTRPCRouter({
 			});
 			if (error) throw new TRPCError(error);
 
-			const toInsert: (typeof participantOnActivity.$inferInsert)[] = participantsIdsToAdd.map((participantId) => ({
-				activityId,
-				participantId,
-				role: "monitor"
-			}));
+			const toInsert: (typeof participantOnActivity.$inferInsert)[] =
+				participantsIdsToAdd.map((participantId) => ({
+					activityId,
+					participantId,
+					role: "monitor",
+				}));
 
 			// Add to activity
 			await db
 				.insert(participantOnActivity)
 				.values(toInsert)
 				.onConflictDoUpdate({
-					target: [participantOnActivity.activityId, participantOnActivity.participantId],
+					target: [
+						participantOnActivity.activityId,
+						participantOnActivity.participantId,
+					],
 					set: {
 						role: "monitor",
 					},
 				});
-
 		}),
 	deleteActivity: protectedProcedure
 		.input(z.object({ activityId: z.string().uuid() }))
@@ -823,26 +852,47 @@ export const activitiesRouter = createTRPCRouter({
 
 			// Total participants (role = 'participant')
 			const totalParticipantsResult = await db
-				.select({ count: countDistinct(participantOnActivity.participantId) })
+				.select({
+					count: countDistinct(participantOnActivity.participantId),
+				})
 				.from(participantOnActivity)
-				.innerJoin(activity, eq(participantOnActivity.activityId, activity.id))
-				.where(and(eq(activity.projectId, projectId), eq(participantOnActivity.role, "participant")));
+				.innerJoin(
+					activity,
+					eq(participantOnActivity.activityId, activity.id),
+				)
+				.where(
+					and(
+						eq(activity.projectId, projectId),
+						eq(participantOnActivity.role, "participant"),
+					),
+				);
 
 			const totalParticipants = totalParticipantsResult[0]?.count ?? 0;
 
 			// Participants in last hour
 			const participantsInLastHourResult = await db
-				.select({ count: countDistinct(participantOnActivity.participantId) })
+				.select({
+					count: countDistinct(participantOnActivity.participantId),
+				})
 				.from(participantOnActivity)
-				.innerJoin(activity, eq(participantOnActivity.activityId, activity.id))
-				.innerJoin(participant, eq(participantOnActivity.participantId, participant.id))
-				.where(and(
-					eq(activity.projectId, projectId),
-					eq(participantOnActivity.role, "participant"),
-					gte(participant.joinedAt, lastHour)
-				));
+				.innerJoin(
+					activity,
+					eq(participantOnActivity.activityId, activity.id),
+				)
+				.innerJoin(
+					participant,
+					eq(participantOnActivity.participantId, participant.id),
+				)
+				.where(
+					and(
+						eq(activity.projectId, projectId),
+						eq(participantOnActivity.role, "participant"),
+						gte(participant.joinedAt, lastHour),
+					),
+				);
 
-			const participantsInLastHour = participantsInLastHourResult[0]?.count ?? 0;
+			const participantsInLastHour =
+				participantsInLastHourResult[0]?.count ?? 0;
 
 			// Total workload from activities
 			const totalWorkloadResult = await db
@@ -854,15 +904,25 @@ export const activitiesRouter = createTRPCRouter({
 
 			// Active participants in last 24h
 			const activeParticipantsResult = await db
-				.select({ count: countDistinct(participantOnActivity.participantId) })
+				.select({
+					count: countDistinct(participantOnActivity.participantId),
+				})
 				.from(participantOnActivity)
-				.innerJoin(activity, eq(participantOnActivity.activityId, activity.id))
-				.innerJoin(participant, eq(participantOnActivity.participantId, participant.id))
-				.where(and(
-					eq(activity.projectId, projectId),
-					eq(participantOnActivity.role, "participant"),
-					gte(participant.joinedAt, lastDay)
-				));
+				.innerJoin(
+					activity,
+					eq(participantOnActivity.activityId, activity.id),
+				)
+				.innerJoin(
+					participant,
+					eq(participantOnActivity.participantId, participant.id),
+				)
+				.where(
+					and(
+						eq(activity.projectId, projectId),
+						eq(participantOnActivity.role, "participant"),
+						gte(participant.joinedAt, lastDay),
+					),
+				);
 
 			const activeParticipants = activeParticipantsResult[0]?.count ?? 0;
 
@@ -870,7 +930,12 @@ export const activitiesRouter = createTRPCRouter({
 			const totalPossibleResult = await db
 				.select({ sum: sum(activity.participantsLimit) })
 				.from(activity)
-				.where(and(eq(activity.projectId, projectId), isNotNull(activity.participantsLimit)));
+				.where(
+					and(
+						eq(activity.projectId, projectId),
+						isNotNull(activity.participantsLimit),
+					),
+				);
 
 			const totalPossible = totalPossibleResult[0]?.sum ?? 0;
 
@@ -878,68 +943,120 @@ export const activitiesRouter = createTRPCRouter({
 			const totalEnrollmentsResult = await db
 				.select({ count: count() })
 				.from(participantOnActivity)
-				.innerJoin(participant, eq(participantOnActivity.participantId, participant.id))
-				.innerJoin(activity, eq(participantOnActivity.activityId, activity.id))
-				.where(and(
-					eq(activity.projectId, projectId),
-					eq(participantOnActivity.role, "participant"),
-					isNotNull(activity.participantsLimit)
-				));
+				.innerJoin(
+					participant,
+					eq(participantOnActivity.participantId, participant.id),
+				)
+				.innerJoin(
+					activity,
+					eq(participantOnActivity.activityId, activity.id),
+				)
+				.where(
+					and(
+						eq(activity.projectId, projectId),
+						eq(participantOnActivity.role, "participant"),
+						isNotNull(activity.participantsLimit),
+					),
+				);
 
 			const totalEnrollments = totalEnrollmentsResult[0]?.count ?? 0;
 
 			// Calculations
-			const participantsInLastHourPercentage = totalParticipants > 0 ? (participantsInLastHour / totalParticipants) * 100 : 0;
-			const meanWorkloadPerParticipant = totalParticipants > 0 ? Number(totalWorkload) / totalParticipants : 0;
-			const meanPercentageFromTotalWorkload = Number(totalWorkload) > 0 ? (meanWorkloadPerParticipant / Number(totalWorkload)) * 100 : 0;
-			const activeParticipantsInLastDay = totalParticipants > 0 ? (activeParticipants / totalParticipants) * 100 : 0;
-			const occupancyRate = Number(totalPossible) > 0 ? (totalEnrollments / Number(totalPossible)) * 100 : 0;
+			const participantsInLastHourPercentage =
+				totalParticipants > 0
+					? (participantsInLastHour / totalParticipants) * 100
+					: 0;
+			const meanWorkloadPerParticipant =
+				totalParticipants > 0
+					? Number(totalWorkload) / totalParticipants
+					: 0;
+			const meanPercentageFromTotalWorkload =
+				Number(totalWorkload) > 0
+					? (meanWorkloadPerParticipant / Number(totalWorkload)) * 100
+					: 0;
+			const activeParticipantsInLastDay =
+				totalParticipants > 0
+					? (activeParticipants / totalParticipants) * 100
+					: 0;
+			const occupancyRate =
+				Number(totalPossible) > 0
+					? (totalEnrollments / Number(totalPossible)) * 100
+					: 0;
 
 			// Graph data: participants per day for last 7 days
-			const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+			const sevenDaysAgo = new Date(
+				now.getTime() - 7 * 24 * 60 * 60 * 1000,
+			);
 			let graphDataQuery = await db
 				.select({
 					date: sql<string>`date(${participant.joinedAt})`,
 					count: countDistinct(participantOnActivity.participantId),
 				})
 				.from(participantOnActivity)
-				.innerJoin(activity, eq(participantOnActivity.activityId, activity.id))
-				.innerJoin(participant, eq(participantOnActivity.participantId, participant.id))
-				.where(and(
-					eq(activity.projectId, projectId),
-					eq(participantOnActivity.role, "participant"),
-					gte(participant.joinedAt, sevenDaysAgo)
-				))
+				.innerJoin(
+					activity,
+					eq(participantOnActivity.activityId, activity.id),
+				)
+				.innerJoin(
+					participant,
+					eq(participantOnActivity.participantId, participant.id),
+				)
+				.where(
+					and(
+						eq(activity.projectId, projectId),
+						eq(participantOnActivity.role, "participant"),
+						gte(participant.joinedAt, sevenDaysAgo),
+					),
+				)
 				.groupBy(sql`date(${participant.joinedAt})`)
 				.orderBy(sql`date(${participant.joinedAt})`);
 
-			let graphData: Array<{ date: string; total: number; active: number }> = [];
+			let graphData: Array<{
+				date: string;
+				total: number;
+				active: number;
+			}> = [];
 			if (graphDataQuery.length > 0) {
 				let cumulative = 0;
 				graphData = graphDataQuery.map((row) => {
 					cumulative += row.count;
 					return {
-						date: new Date(row.date).toLocaleDateString('pt-BR', { month: 'short', day: 'numeric' }),
+						date: new Date(row.date).toLocaleDateString("pt-BR", {
+							month: "short",
+							day: "numeric",
+						}),
 						total: cumulative,
 						active: row.count,
 					};
 				});
 			} else {
 				// Fallback to hours for last 24 hours
-				const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+				const twentyFourHoursAgo = new Date(
+					now.getTime() - 24 * 60 * 60 * 1000,
+				);
 				const hoursDataQuery = await db
 					.select({
 						hour: sql<string>`date_trunc('hour', ${participant.joinedAt})`,
-						count: countDistinct(participantOnActivity.participantId),
+						count: countDistinct(
+							participantOnActivity.participantId,
+						),
 					})
 					.from(participantOnActivity)
-					.innerJoin(activity, eq(participantOnActivity.activityId, activity.id))
-					.innerJoin(participant, eq(participantOnActivity.participantId, participant.id))
-					.where(and(
-						eq(activity.projectId, projectId),
-						eq(participantOnActivity.role, "participant"),
-						gte(participant.joinedAt, twentyFourHoursAgo)
-					))
+					.innerJoin(
+						activity,
+						eq(participantOnActivity.activityId, activity.id),
+					)
+					.innerJoin(
+						participant,
+						eq(participantOnActivity.participantId, participant.id),
+					)
+					.where(
+						and(
+							eq(activity.projectId, projectId),
+							eq(participantOnActivity.role, "participant"),
+							gte(participant.joinedAt, twentyFourHoursAgo),
+						),
+					)
 					.groupBy(sql`date_trunc('hour', ${participant.joinedAt})`)
 					.orderBy(sql`date_trunc('hour', ${participant.joinedAt})`);
 
@@ -948,7 +1065,10 @@ export const activitiesRouter = createTRPCRouter({
 					cumulative += row.count;
 					const hourDate = new Date(row.hour);
 					return {
-						date: hourDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+						date: hourDate.toLocaleTimeString("pt-BR", {
+							hour: "2-digit",
+							minute: "2-digit",
+						}),
 						total: cumulative,
 						active: row.count,
 					};
@@ -966,5 +1086,82 @@ export const activitiesRouter = createTRPCRouter({
 				graphData,
 				coursesData: [] as Array<{ course: string; count: number }>,
 			};
+		}),
+	getReleasableActivities: protectedProcedure
+		.input(z.object({ projectId: z.uuid() }))
+		.query(async ({ input, ctx }) => {
+			const error = await isMemberAuthenticated({
+				userId: ctx.session.user.id,
+			});
+			if (error) throw new TRPCError(error);
+
+			// Closed registrations, and not yet ended
+			const rows = await db.query.activity.findMany({
+				where: and(
+					eq(activity.projectId, input.projectId),
+					eq(activity.isRegistrationOpen, false),
+					gte(activity.dateTo, new Date()),
+				),
+				with: {
+					tagOnActivity: {
+						with: { tag: true },
+					},
+				},
+				orderBy: asc(activity.dateFrom),
+			});
+
+			return rows.map((row) => ({
+				id: row.id,
+				name: row.name,
+				dateFrom: row.dateFrom,
+				category: row.category,
+				participantsLimit: row.participantsLimit,
+				tags: row.tagOnActivity.map((t) => ({
+					id: t.tag.id,
+					name: t.tag.name,
+				})),
+			}));
+		}),
+
+	setActivitiesRegistration: protectedProcedure
+		.input(
+			z.object({
+				projectId: z.uuid(),
+				activityIds: z.array(z.uuid()).min(1).max(200),
+				isRegistrationOpen: z.boolean(),
+			}),
+		)
+		.mutation(async ({ input, ctx }) => {
+			const { projectId, isRegistrationOpen } = input;
+			const activityIds = [...new Set(input.activityIds)];
+
+			const error = await isMemberAuthenticated({
+				userId: ctx.session.user.id,
+			});
+			if (error) throw new TRPCError(error);
+
+			await db.transaction(async (tx) => {
+				const updated = await tx
+					.update(activity)
+					.set({ isRegistrationOpen })
+					.where(
+						and(
+							eq(activity.projectId, projectId),
+							inArray(activity.id, activityIds),
+						),
+					)
+					.returning({ id: activity.id });
+
+				// Every id must belong to this project; otherwise roll everything back
+				if (updated.length !== activityIds.length) {
+					throw new TRPCError({
+						message:
+							"Some activities were not found in this project.",
+						code: "BAD_REQUEST",
+					});
+				}
+			});
+
+			return { updatedCount: activityIds.length };
 		}),
 });
