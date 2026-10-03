@@ -9,6 +9,7 @@ import type { Field } from "../types";
 interface SortableFieldRowProps {
 	field: Field;
 	index: number;
+	group: string;
 	disabled: boolean;
 	actions?: React.ReactNode;
 	isOrphanHalf?: boolean;
@@ -17,6 +18,7 @@ interface SortableFieldRowProps {
 export function SortableFieldRow({
 	field,
 	index,
+	group,
 	disabled,
 	actions,
 	isOrphanHalf,
@@ -24,6 +26,7 @@ export function SortableFieldRow({
 	const { ref, handleRef, isDragging, isDropTarget } = useSortable({
 		id: field.id,
 		index,
+		group,
 		disabled,
 		type: "form-field",
 		accept: "form-field",

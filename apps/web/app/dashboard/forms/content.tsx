@@ -42,6 +42,7 @@ export function FormsContent() {
 		revertOrder,
 		move,
 		moveSection,
+		persistSectionOrder,
 	} = builder;
 
 	if (versionsQuery.isPending) {
@@ -104,6 +105,7 @@ export function FormsContent() {
 								})
 							}
 							onPersistOrder={persistOrder}
+							onPersistSectionOrder={persistSectionOrder}
 							onRevertOrder={revertOrder}
 							onMove={move}
 							onMoveSection={moveSection}
