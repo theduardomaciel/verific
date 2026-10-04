@@ -3,6 +3,7 @@ import { db } from "@verific/drizzle";
 import { z } from "@verific/zod";
 
 import { participant, project, projectModerator } from "@verific/drizzle/schema";
+import { eventThemeSchema } from "@verific/drizzle/theme";
 import { eq } from "@verific/drizzle/orm";
 
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
@@ -26,9 +27,30 @@ export const updateProjectSchema = z.object({
 	thumbnailUrl: z.string().optional(),
 	primaryColor: z.string().optional().nullable(),
 	secondaryColor: z.string().optional().nullable(),
+	theme: eventThemeSchema.optional(),
 	startDate: z.coerce.date().optional(),
 	endDate: z.coerce.date().optional(),
 });
+
+async function requireProjectAccess(projectId: string, userId: string) {
+	const data = await db.query.project.findFirst({
+		where: eq(project.id, projectId),
+		with: { moderators: { columns: { userId: true } } },
+	});
+	if (!data) {
+		throw new TRPCError({ code: "NOT_FOUND", message: "Evento não encontrado." });
+	}
+	const allowed =
+		data.ownerId === userId ||
+		data.moderators.some((m) => m.userId === userId);
+	if (!allowed) {
+		throw new TRPCError({
+			code: "FORBIDDEN",
+			message: "Sem permissão neste evento.",
+		});
+	}
+	return data;
+}
 
 export const projectsRouter = createTRPCRouter({
 	createProject: protectedProcedure
@@ -105,8 +127,10 @@ export const projectsRouter = createTRPCRouter({
 
 	updateProject: protectedProcedure
 		.input(updateProjectSchema)
-		.mutation(async ({ input }) => {
+		.mutation(async ({ input, ctx }) => {
 			const { id, ...rest } = input;
+
+			await requireProjectAccess(id, ctx.session.user.id);
 
 			// Remove undefined fields so only provided fields are updated
 			const updateData = Object.fromEntries(

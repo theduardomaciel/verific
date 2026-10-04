@@ -6,6 +6,7 @@ import {
 	uuid,
 	doublePrecision,
 	boolean,
+	jsonb,
 } from "drizzle-orm/pg-core";
 
 import { activity } from "./activity";
@@ -16,6 +17,7 @@ import { projectModerator } from "./project-moderator";
 import { formVersion } from "./form-version";
 import { formField } from "./form-field";
 import { formAnswer } from "./form-answer";
+import type { EventTheme } from "../theme";
 
 export const project = pgTable("projects", {
 	id: uuid("id").primaryKey().defaultRandom(),
@@ -40,6 +42,8 @@ export const project = pgTable("projects", {
 
 	primaryColor: text("primary_color"), // quando nulo, usar a cor padrão do sistema
 	secondaryColor: text("secondary_color"), // quando nulo, usar a cor padrão do sistema
+
+	theme: jsonb("theme").$type<EventTheme>(),
 
 	startDate: timestamp("start_date").notNull(),
 	endDate: timestamp("end_date").notNull(),

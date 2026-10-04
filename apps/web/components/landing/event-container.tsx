@@ -21,7 +21,7 @@ interface EventHeroProps {
 
 export function Hero({ children, coverUrl }: EventHeroProps) {
 	return (
-		<section className="from-primary bg-primary px-landing border-secondary relative flex w-full border-b-10 py-24">
+		<section className="relative flex w-full overflow-hidden py-24">
 			<div className="container-p z-10 mx-auto flex w-full flex-col gap-8 md:flex-row">
 				{children}
 			</div>
@@ -29,8 +29,15 @@ export function Hero({ children, coverUrl }: EventHeroProps) {
 			<Image
 				src={coverUrl || "/images/hero-bg.png"}
 				className="z-0 object-cover"
-				alt="Background"
+				alt=""
+				aria-hidden
 				fill
+				sizes="100vw"
+			/>
+			<div
+				aria-hidden
+				className="bg-primary absolute inset-0 z-[1]"
+				style={{ opacity: "var(--ev-hero-overlay-opacity, 0.45)" }}
 			/>
 		</section>
 	);
@@ -45,6 +52,42 @@ export function Content({ children, className }: HolderProps) {
 			)}
 		>
 			{children}
+		</div>
+	);
+}
+
+/**
+ * Efeitos de fundo da página do evento (grade/pontos/sólido + gradientes
+ * superior/inferior), 100% dirigidos pelas variáveis do tema.
+ * `pointer-events-none`: nunca intercepta cliques.
+ */
+export function EventBackgroundEffects() {
+	return (
+		<div aria-hidden className="pointer-events-none absolute inset-0 z-0">
+			<div
+				className="absolute inset-0"
+				style={{
+					backgroundImage: "var(--ev-bg-image, none)",
+					backgroundSize: "var(--ev-bg-size, 32px 32px)",
+					opacity: "var(--ev-bg-opacity, 0)",
+				}}
+			/>
+			<div
+				className="absolute inset-x-0 top-0 w-full"
+				style={{
+					height: "var(--ev-top-height, 0px)",
+					backgroundImage: "var(--ev-top-gradient, none)",
+					opacity: "var(--ev-top-opacity, 0)",
+				}}
+			/>
+			<div
+				className="absolute inset-x-0 bottom-0 w-full"
+				style={{
+					height: "var(--ev-bottom-height, 0px)",
+					backgroundImage: "var(--ev-bottom-gradient, none)",
+					opacity: "var(--ev-bottom-opacity, 0)",
+				}}
+			/>
 		</div>
 	);
 }

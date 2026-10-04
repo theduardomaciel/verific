@@ -59,10 +59,26 @@
 	scrollbar-width: none;
 	-ms-overflow-style: none;
 }
-
 .scrollbar-none::-webkit-scrollbar {
 	width: 0px;
 	background: transparent;
+}
+
+/* ---- Per-event theme tokens (Fase 2) ---- */
+
+/* Fonte de títulos do evento (cai para a fonte padrão fora do escopo) */
+.font-heading {
+	font-family: var(--ev-font-heading, var(--font-sans));
+}
+
+/* CTA primário do evento (fundo e texto derivados do tema) */
+.ev-button {
+	background-color: var(--ev-button-bg, var(--primary));
+	color: var(--ev-button-fg, var(--primary-foreground));
+}
+
+.ev-button:hover {
+	opacity: 0.92;
 }
 
 .container-p {

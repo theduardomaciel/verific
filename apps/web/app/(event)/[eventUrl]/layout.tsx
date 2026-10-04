@@ -5,16 +5,14 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import Logo from "@/public/logo.svg";
-import { REM } from "next/font/google";
 import { EventHeader } from "@/components/event-header";
 import { Footer } from "@/components/footer";
+import { EventBackgroundEffects } from "@/components/landing/event-container";
 import { getEventStaticParams, getProject } from "@/lib/data";
+import { FONT_PRESETS } from "@/lib/theme/fonts";
+import { resolveEventTheme } from "@/lib/theme/resolve";
+import type { FontPreset } from "@verific/drizzle/theme";
 import { env } from "@verific/env";
-
-const rem = REM({
-	variable: "--font-rem",
-	subsets: ["latin"],
-});
 
 export async function generateMetadata({
 	params,
@@ -31,10 +29,10 @@ export async function generateMetadata({
 	const { project } = result;
 	const baseUrl = env.NEXT_PUBLIC_VERCEL_URL.replace(/\/$/, "");
 	const imageUrl =
+		project.thumbnailUrl ||
 		project.coverUrl ||
 		project.largeLogoUrl ||
-		project.logoUrl ||
-		project.thumbnailUrl;
+		project.logoUrl;
 	const fullImageUrl = imageUrl ? `${baseUrl}${imageUrl}` : undefined;
 
 	return {
@@ -95,22 +93,32 @@ async function EventLayoutContent({
 	}
 
 	const { project } = result;
+	const { cssVars, theme } = resolveEventTheme({
+		theme: (project as { theme?: unknown }).theme,
+		primaryColor: project.primaryColor,
+		secondaryColor: project.secondaryColor,
+	});
+	const fontVariables = [
+		FONT_PRESETS[theme.fonts.heading as FontPreset]?.variable,
+		FONT_PRESETS[theme.fonts.body as FontPreset]?.variable,
+		// TODO(Fase 3): remover; `font-dashboard` ainda é usado em páginas
+		// de evento e migra para `font-heading`.
+		FONT_PRESETS.rem.variable,
+	]
+		.filter(Boolean)
+		.join(" ");
 
 	return (
 		<div
-			className={`${rem.variable} flex w-full flex-1 flex-col`}
+			className={`dark ${fontVariables} relative flex w-full flex-1 flex-col`}
 			style={
 				{
-					"--primary": project.primaryColor,
-					"--secondary": project.secondaryColor,
-					"--ring": project.primaryColor,
-					"--muted": project.secondaryColor,
-					"--accent":
-						"color-mix(in oklab, var(--foreground) 2%, transparent)",
-					"--accent-foreground": "var(--foreground)",
+					...cssVars,
+					"--font-sans": "var(--ev-font-body)",
 				} as React.CSSProperties
 			}
 		>
+			<EventBackgroundEffects />
 			<EventHeader
 				eventUrl={eventUrl}
 				project={{
@@ -123,9 +131,8 @@ async function EventLayoutContent({
 						project.isRegistrationEnabled,
 					),
 				}}
-				className="!bg-primary relative h-21 border-none py-0"
-				mobileMenuClassName="bg-primary"
-				buttonClassName="bg-primary text-white text-primary-foreground !hover:text-white"
+				className="relative h-21 border-none py-0"
+				buttonClassName="text-white"
 				logo={
 					<Link href={`/${eventUrl}`} className="text-white">
 						{project.largeLogoUrl || project.logoUrl ? (
@@ -142,8 +149,11 @@ async function EventLayoutContent({
 				}
 			/>
 			{children}
-			<div className="container-p flex w-full items-center justify-center py-6">
-				<div className="bg-primary w-full rounded-xl md:rounded-full">
+			<div className="container-p relative z-10 flex w-full items-center justify-center py-6">
+				<div
+					className="w-full rounded-xl md:rounded-full"
+					style={{ background: "var(--ev-footer-bg)" }}
+				>
 					<Footer
 						className="border-none px-4 py-4 !text-white md:px-12"
 						showWatermark
