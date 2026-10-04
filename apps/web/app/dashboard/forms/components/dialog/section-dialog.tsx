@@ -37,7 +37,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { isConditionalTriggerType } from "@verific/api/schemas";
 import type { Field, Section } from "../../types";
-import type { UseFormsBuilder } from "../../hooks/use-forms-builder";
+import type { SectionMutation } from "../../hooks/use-forms-builder";
 
 const sectionFormSchema = z
 	.object({
@@ -93,7 +93,7 @@ interface SectionDialogProps {
 	initial?: Section;
 	fields?: Pick<Field, "id" | "label" | "type" | "options" | "sectionId">[];
 	sections?: Pick<Section, "id" | "order" | "title">[];
-	upsertSection: UseFormsBuilder["upsertSection"];
+	upsertSection: SectionMutation;
 }
 
 function defaultOperatorFor(type: string): SectionFormValues["operator"] {

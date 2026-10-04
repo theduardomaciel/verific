@@ -26,7 +26,7 @@ import {
 import { cn } from "@/lib/utils";
 import { animateFlip } from "../lib/animate-flip";
 import type { Field, Section, Version } from "../types";
-import type { UseFormsBuilder } from "../hooks/use-forms-builder";
+import type { SectionMutation } from "../hooks/use-forms-builder";
 import { FieldDialog } from "./dialog/field-dialog";
 import { SectionDialog } from "./dialog/section-dialog";
 import { SortableFieldRow } from "./field-row";
@@ -61,7 +61,7 @@ interface BuilderCardProps {
 	listRef: RefObject<HTMLDivElement | null>;
 	isDraggingRef: RefObject<boolean>;
 	isPublishing: boolean;
-	upsertSection: UseFormsBuilder["upsertSection"];
+	upsertSection: SectionMutation;
 	onPublish: () => void;
 	onPersistOrder: (
 		next: Field[],
@@ -87,7 +87,7 @@ interface SectionBlockProps {
 	sections: Section[];
 	orphanHalfIds: Set<string>;
 	highlightDrop: boolean;
-	upsertSection: UseFormsBuilder["upsertSection"];
+	upsertSection: SectionMutation;
 	onMoveSection: (index: number, dir: -1 | 1) => void;
 	onDeleteSection: (section: Section) => void;
 	moveWithinSection: (

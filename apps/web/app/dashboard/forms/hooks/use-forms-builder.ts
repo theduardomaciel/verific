@@ -7,7 +7,35 @@ import { trpc } from "@/lib/trpc/react";
 import { findOrphanHalfIds, groupFieldsBySection } from "@/lib/forms/layout";
 import { animateFlip, animateSectionFlip } from "../lib/animate-flip";
 import type { Field, FormsTab, Section, Version } from "../types";
+import type {
+	RouterInputs,
+	RouterOutput,
+} from "@verific/api";
 import type { UpsertFormSectionInput } from "@verific/api/schemas";
+
+/**
+ * Structural, nameable wrappers around tRPC results.
+ *
+ * Returning the raw `useQuery`/`useMutation` results makes the hook's
+ * inferred return type reference tRPC internals that TypeScript cannot
+ * name without a deep import (TS2742/TS2883). Annotating each result
+ * with these interfaces keeps the public type portable.
+ */
+export interface QueryResult<T> {
+	data: T | undefined;
+	isPending: boolean;
+}
+
+export interface MutationResult<Input> {
+	mutate: (
+		input: Input,
+		options?: {
+			onSuccess?: () => void;
+			onError?: (error: { message: string }) => void;
+		},
+	) => unknown;
+	isPending: boolean;
+}
 
 export function useFormsBuilder() {
 	const { projectId } = useDashboard();
@@ -21,7 +49,8 @@ export function useFormsBuilder() {
 	const isDraggingRef = useRef(false);
 	const listRef = useRef<HTMLDivElement>(null);
 
-	const versionsQuery = trpc.listVersions.useQuery({ projectId });
+	const versionsQuery: QueryResult<RouterOutput["listVersions"]> =
+		trpc.listVersions.useQuery({ projectId });
 	const versions: Version[] = useMemo(
 		() => versionsQuery.data ?? [],
 		[versionsQuery.data],
@@ -35,63 +64,70 @@ export function useFormsBuilder() {
 		}
 	}, [versions, selectedId]);
 
-	const versionQuery = trpc.getVersion.useQuery(
-		{ versionId: selectedId ?? "" },
-		{ enabled: !!selectedId },
-	);
+	const versionQuery: QueryResult<RouterOutput["getVersion"]> =
+		trpc.getVersion.useQuery(
+			{ versionId: selectedId ?? "" },
+			{ enabled: !!selectedId },
+		);
 
-	const createVersion = trpc.createVersion.useMutation({
-		onSuccess: async (v) => {
-			await utils.listVersions.invalidate();
-			setSelectedId(v.id);
-			toast.success(`Versão ${v.version} criada!`);
-		},
-		onError: (e) => toast.error(e.message),
-	});
-	const publishVersion = trpc.publishVersion.useMutation({
-		onSuccess: async () => {
-			await utils.listVersions.invalidate();
-			await utils.getVersion.invalidate();
-			await utils.getPublishedForm.invalidate();
-			toast.success("Versão publicada!");
-		},
-		onError: (e) => toast.error(e.message),
-	});
-	const deleteVersion = trpc.deleteVersion.useMutation({
-		onSuccess: async (_data, variables) => {
-			await utils.listVersions.invalidate();
-			await utils.getVersion.invalidate();
-			setSelectedId((prev) =>
-				prev === variables.versionId ? null : prev,
-			);
-			toast.success("Versão excluída!");
-		},
-		onError: (e) => toast.error(e.message),
-	});
-	const deleteField = trpc.deleteField.useMutation({
-		onSuccess: async () => {
-			await utils.getVersion.invalidate();
-			await utils.listVersions.invalidate();
-			setFieldToDelete(null);
-			toast.success("Campo removido!");
-		},
-		onError: (e) => toast.error(e.message),
-	});
-	const upsertSection = trpc.upsertSection.useMutation({
-		onSuccess: async () => {
-			await utils.getVersion.invalidate();
-			toast.success("Seção salva!");
-		},
-		onError: (e) => toast.error(e.message),
-	});
-	const deleteSection = trpc.deleteSection.useMutation({
-		onSuccess: async () => {
-			await utils.getVersion.invalidate();
-			setSectionToDelete(null);
-			toast.success("Seção removida!");
-		},
-		onError: (e) => toast.error(e.message),
-	});
+	const createVersion: MutationResult<RouterInputs["createVersion"]> =
+		trpc.createVersion.useMutation({
+			onSuccess: async (v) => {
+				await utils.listVersions.invalidate();
+				setSelectedId(v.id);
+				toast.success(`Versão ${v.version} criada!`);
+			},
+			onError: (e) => toast.error(e.message),
+		});
+	const publishVersion: MutationResult<RouterInputs["publishVersion"]> =
+		trpc.publishVersion.useMutation({
+			onSuccess: async () => {
+				await utils.listVersions.invalidate();
+				await utils.getVersion.invalidate();
+				await utils.getPublishedForm.invalidate();
+				toast.success("Versão publicada!");
+			},
+			onError: (e) => toast.error(e.message),
+		});
+	const deleteVersion: MutationResult<RouterInputs["deleteVersion"]> =
+		trpc.deleteVersion.useMutation({
+			onSuccess: async (_data, variables) => {
+				await utils.listVersions.invalidate();
+				await utils.getVersion.invalidate();
+				setSelectedId((prev) =>
+					prev === variables.versionId ? null : prev,
+				);
+				toast.success("Versão excluída!");
+			},
+			onError: (e) => toast.error(e.message),
+		});
+	const deleteField: MutationResult<RouterInputs["deleteField"]> =
+		trpc.deleteField.useMutation({
+			onSuccess: async () => {
+				await utils.getVersion.invalidate();
+				await utils.listVersions.invalidate();
+				setFieldToDelete(null);
+				toast.success("Campo removido!");
+			},
+			onError: (e) => toast.error(e.message),
+		});
+	const upsertSection: MutationResult<UpsertFormSectionInput> =
+		trpc.upsertSection.useMutation({
+			onSuccess: async () => {
+				await utils.getVersion.invalidate();
+				toast.success("Seção salva!");
+			},
+			onError: (e) => toast.error(e.message),
+		});
+	const deleteSection: MutationResult<RouterInputs["deleteSection"]> =
+		trpc.deleteSection.useMutation({
+			onSuccess: async () => {
+				await utils.getVersion.invalidate();
+				setSectionToDelete(null);
+				toast.success("Seção removida!");
+			},
+			onError: (e) => toast.error(e.message),
+		});
 	const serverSections: Section[] = useMemo(
 		() =>
 			(versionQuery.data?.sections ?? [])
@@ -100,17 +136,18 @@ export function useFormsBuilder() {
 		[versionQuery.data],
 	);
 
-	const reorderSections = trpc.reorderSections.useMutation({
-		onSuccess: async () => {
-			await utils.getVersion.invalidate();
-		},
-		onError: (e) => {
-			// Roll back the optimistic section order, mirroring the
-			// fields rollback below.
-			setDisplaySections(serverSections);
-			toast.error(e.message);
-		},
-	});
+	const reorderSections: MutationResult<RouterInputs["reorderSections"]> =
+		trpc.reorderSections.useMutation({
+			onSuccess: async () => {
+				await utils.getVersion.invalidate();
+			},
+			onError: (e) => {
+				// Roll back the optimistic section order, mirroring the
+				// fields rollback below.
+				setDisplaySections(serverSections);
+				toast.error(e.message);
+			},
+		});
 
 	const serverFields: Field[] = useMemo(
 		() =>
@@ -121,18 +158,19 @@ export function useFormsBuilder() {
 	);
 
 	// Declared after `serverFields` so the rollback can reference it.
-	const reorderFields = trpc.reorderFields.useMutation({
-		onSuccess: async () => {
-			await utils.getVersion.invalidate();
-		},
-		onError: (e) => {
-			// Roll back the optimistic order. Setting state directly is needed
-			// because a refetch returning identical data keeps the same
-			// reference and would not re-trigger the sync effect below.
-			setDisplayFields(serverFields);
-			toast.error(e.message);
-		},
-	});
+	const reorderFields: MutationResult<RouterInputs["reorderFields"]> =
+		trpc.reorderFields.useMutation({
+			onSuccess: async () => {
+				await utils.getVersion.invalidate();
+			},
+			onError: (e) => {
+				// Roll back the optimistic order. Setting state directly is needed
+				// because a refetch returning identical data keeps the same
+				// reference and would not re-trigger the sync effect below.
+				setDisplayFields(serverFields);
+				toast.error(e.message);
+			},
+		});
 
 	useEffect(() => {
 		if (isDraggingRef.current) return;
@@ -275,17 +313,7 @@ export function useFormsBuilder() {
 }
 
 /**
- * Structural type for the section upsert mutation.
- * Preferred over `ReturnType` indexing into the hook: that forces
- * TypeScript to name tRPC internals (TS2742). This interface only
- * promises what callers use.
+ * Structural type for the section upsert mutation, kept as a named alias
+ * for callers (builder-card, section-dialog).
  */
-export interface SectionMutation {
-	mutate: (
-		input: UpsertFormSectionInput,
-		options?: {
-			onSuccess?: () => void;
-		},
-	) => void;
-	isPending: boolean;
-}
+export type SectionMutation = MutationResult<UpsertFormSectionInput>;
