@@ -1,105 +1,23 @@
-"use client";
-
-import Link from "next/link";
-import { useTransition } from "react";
-
-import { LogOut } from "lucide-react";
-
 import { Header } from "@/components/header/landing-header";
 import type { MainNavProps } from "@/components/header/main-nav";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { authClient } from "@/lib/auth-client";
-import { isAfterEnd } from "@/lib/date";
-import { getInitials } from "@/lib/i18n";
-import { trpc } from "@/lib/trpc/react";
+import { getEventRegistration } from "@/lib/data";
 
 interface EventHeaderProps {
 	eventUrl: string;
-	project: {
-		id: string;
-		name: string;
-		url: string;
-		endDate: Date | string;
-		isArchived: boolean;
-		isRegistrationEnabled: boolean;
-		logo?: string | null;
-		largeLogo?: string | null;
-	};
 	logo: React.ReactNode;
 	className?: string;
-	style?: React.CSSProperties;
-	mobileMenuClassName?: string;
-	buttonClassName?: string;
-	languageSelectorClassName?: string;
 }
 
-function EventUserActions({ eventUrl }: { eventUrl: string }) {
-	const session = authClient.useSession();
-	const [isPending, startTransition] = useTransition();
-
-	if (!session.data?.user) {
-		return (
-			<Button asChild size="sm" variant="ghost">
-				<Link
-					href={`/auth?callbackUrl=${encodeURIComponent(`/${eventUrl}`)}`}
-				>
-					Entrar
-				</Link>
-			</Button>
-		);
-	}
-
-	const user = session.data.user;
-
-	function handleSignOut() {
-		startTransition(async () => {
-			await authClient.signOut();
-			window.location.assign("/");
-		});
-	}
-
-	return (
-		<div className="flex items-center gap-2">
-			<Avatar className="h-8 w-8">
-				<AvatarImage src={user.image || ""} alt={user.name} />
-				<AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-			</Avatar>
-			<Button
-				type="button"
-				size="icon"
-				variant="ghost"
-				onClick={handleSignOut}
-				disabled={isPending}
-				aria-label="Sair"
-			>
-				<LogOut className="h-4 w-4" />
-			</Button>
-		</div>
-	);
-}
-
-export function EventHeader({
-	eventUrl,
-	project,
-	logo,
-	className,
-	style,
-	mobileMenuClassName,
-	buttonClassName,
-	languageSelectorClassName,
-}: EventHeaderProps) {
-	const session = authClient.useSession();
-	const userId = session.data?.user.id;
-	const enrollment = trpc.checkParticipant.useQuery(
-		{ projectUrl: eventUrl },
-		{ enabled: Boolean(userId) },
-	);
-	const isParticipant = enrollment.data === true;
-	const registrationOpen =
-		project.isRegistrationEnabled &&
-		!project.isArchived &&
-		!isAfterEnd(new Date(project.endDate));
+/**
+ * Cabeçalho do evento: 100% estático e idêntico para todo visitante.
+ * Três itens fixos — "Sobre", "Programação" e o CTA "INSCRIÇÃO"
+ * (oculto apenas quando as inscrições estão fechadas ou o evento está
+ * arquivado, decidido server-side a partir dos dados do evento).
+ * Sem login, avatar, logout ou qualquer conteúdo de sessão.
+ */
+export async function EventHeader({ eventUrl, logo, className }: EventHeaderProps) {
+	const registration = await getEventRegistration(eventUrl);
+	const registrationOpen = registration?.isOpen ?? false;
 
 	const links: MainNavProps["links"] = [
 		{
@@ -118,38 +36,29 @@ export function EventHeader({
 			activeClassName: "!bg-primary-foreground !text-primary",
 			mobileClassName: "text-primary-foreground",
 		},
-		isParticipant
-			? {
-					href: "/my",
-					label: "Sua Conta",
-					className:
-						"hover:text-primary-foreground hover:bg-secondary dark:hover:bg-secondary border-secondary font-semibold uppercase border text-primary-foreground text-xs",
-					activeClassName: "!text-primary-foreground !bg-secondary",
-					mobileClassName:
-						"text-primary-foreground uppercase py-3 border border-secondary w-full rounded text-center items-center text-sm bg-secondary",
-				}
-			: registrationOpen && {
-					href: "/subscribe",
-					label: "Inscrições",
-					className:
-						"hover:text-primary-foreground hover:bg-secondary dark:hover:bg-secondary border-secondary font-semibold uppercase border text-primary-foreground text-xs",
-					activeClassName: "!text-primary-foreground !bg-secondary",
-					mobileClassName:
-						"text-primary-foreground uppercase py-3 border border-secondary w-full rounded text-center items-center text-sm bg-secondary",
-				},
-	].filter(Boolean) as MainNavProps["links"];
+		...(registrationOpen
+			? [
+					{
+						href: "/subscribe",
+						label: "Inscrição",
+						className:
+							"hover:text-primary-foreground hover:bg-secondary dark:hover:bg-secondary border-secondary font-semibold uppercase border text-primary-foreground text-xs",
+						activeClassName: "!text-primary-foreground !bg-secondary",
+						mobileClassName:
+							"text-primary-foreground uppercase py-3 border border-secondary w-full rounded text-center items-center text-sm bg-secondary",
+					} as const,
+				]
+			: []),
+	];
 
 	return (
 		<Header
 			className={className}
-			style={{ background: "var(--ev-header-bg)", ...style }}
-			mobileMenuClassName={mobileMenuClassName}
-			buttonClassName={buttonClassName}
-			languageSelectorClassName={languageSelectorClassName}
+			style={{ background: "var(--ev-header-bg)" }}
+			buttonClassName="text-white"
 			links={links}
 			prefix={`/${eventUrl}`}
 			logo={logo}
-			userActions={<EventUserActions eventUrl={eventUrl} />}
 		/>
 	);
 }

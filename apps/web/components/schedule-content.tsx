@@ -133,8 +133,11 @@ export function ScheduleContent({
 		return { grouped, categories, initialExpanded };
 	}, [filteredActivities]);
 
-	const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+	const [expandedCategories, setExpandedCategories] =
+		useState<string[]>(initialExpanded);
 
+	// Só reage a mudanças de filtro/busca (estado inicial já correto,
+	// sem flash de abrir/fechar no carregamento).
 	useEffect(() => {
 		setExpandedCategories(initialExpanded);
 	}, [initialExpanded]);
@@ -188,7 +191,7 @@ export function ScheduleContent({
 					>
 						{categories.map((category) => (
 							<AccordionItem key={category} value={category}>
-								<AccordionTrigger className="text-xl font-bold">
+								<AccordionTrigger className="font-heading text-xl font-bold">
 									{category}
 								</AccordionTrigger>
 								<AccordionContent className="-m-4 p-4">
