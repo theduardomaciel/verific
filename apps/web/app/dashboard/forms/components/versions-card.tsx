@@ -1,6 +1,6 @@
 "use client";
 
-import { TrashIcon } from "lucide-react";
+import { FilePlusIcon, CopyIcon, TrashIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import {
 	useConfirmDialog,
 } from "@/components/ui/confirm-dialog";
 import type { Version } from "../types";
+import type { ReactNode } from "react";
 
 interface VersionsCardProps {
 	versions: Version[];
@@ -19,6 +20,7 @@ interface VersionsCardProps {
 	onDelete: (version: Version) => void;
 	isCreating: boolean;
 	isDeleting: boolean;
+	actions?: ReactNode;
 }
 
 export function VersionsCard({
@@ -30,6 +32,7 @@ export function VersionsCard({
 	onDelete,
 	isCreating,
 	isDeleting,
+	actions,
 }: VersionsCardProps) {
 	const selected = versions.find((v) => v.id === selectedId) ?? null;
 	const { confirm, dialogProps } = useConfirmDialog();
@@ -77,6 +80,7 @@ export function VersionsCard({
 						onClick={() => void handleCreate()}
 						disabled={isBusy}
 					>
+						<FilePlusIcon />
 						Nova versão
 					</Button>
 					{selected && (
@@ -86,6 +90,7 @@ export function VersionsCard({
 							onClick={() => void handleDuplicate()}
 							disabled={isBusy}
 						>
+							<CopyIcon />
 							Duplicar v{selected.version}
 						</Button>
 					)}
@@ -100,6 +105,7 @@ export function VersionsCard({
 							Excluir
 						</Button>
 					)}
+					{actions}
 				</div>
 			</CardHeader>
 			<CardContent className="flex flex-wrap gap-2">

@@ -9,6 +9,7 @@ import { DeleteFieldDialog } from "./components/dialog/delete-field-dialog";
 import { DeleteSectionDialog } from "./components/dialog/delete-section-dialog";
 import { FormsHeader } from "./components/forms-header";
 import { VersionsCard } from "./components/versions-card";
+import { ExportImportActions } from "./components/export-import-actions";
 
 export function FormsContent() {
 	const builder = useFormsBuilder();
@@ -87,6 +88,15 @@ export function FormsContent() {
 						}
 						isCreating={createVersion.isPending}
 						isDeleting={deleteVersion.isPending}
+						actions={
+							<ExportImportActions
+								projectId={projectId}
+								version={selected}
+								fields={fields}
+								sections={sections}
+								onImported={setSelectedId}
+							/>
+						}
 					/>
 
 					{selected && (
