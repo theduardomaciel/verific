@@ -23,6 +23,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import JoinForm0 from "./Section0";
+import {
+	ProfileFieldsSection,
+	toProfileInput,
+} from "@/components/forms/profile-fields-section";
+import { profileInputSchema } from "@verific/drizzle/profile";
 
 // Validation
 import { buildAnswersSchema, filterVisibleFields } from "@verific/api/schemas";
@@ -46,6 +51,8 @@ interface JoinFormProps {
 		name?: string;
 		logo?: string;
 		colors?: string[];
+		profilesEnabled?: boolean;
+		profileFillAtSignup?: boolean;
 	};
 }
 
@@ -55,6 +62,7 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 		false | "submitting" | "error" | "submitted"
 	>(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+	const [createdShortId, setCreatedShortId] = useState<string | null>(null);
 
 	const { data: formData, isPending: isFormPending } = trpc.getPublishedForm.useQuery({
 		projectId: project.id,
@@ -135,10 +143,18 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 		};
 	}, [fieldsForValidation, sectionsForVisibility, nameSchema]);
 
-	const form = useForm<{ name: string; answers: Record<string, unknown> }>({
+	const form = useForm<{
+		name: string;
+		answers: Record<string, unknown>;
+		profile: Record<string, unknown>;
+	}>({
 		resolver: resolver as never,
-		defaultValues: { name: user?.name || "", answers: {} },
+		defaultValues: { name: user?.name || "", answers: {}, profile: {} },
 	});
+
+	const showProfileSection = Boolean(
+		project.profilesEnabled && project.profileFillAtSignup,
+	);
 
 	const watchedAnswers = form.watch("answers") ?? {};
 
@@ -179,12 +195,30 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 		if (!user) form.setValue("name", "");
 	}, [user, form]);
 
-	async function onSubmit(values: { name: string; answers: Record<string, unknown> }) {
+	async function onSubmit(values: {
+		name: string;
+		answers: Record<string, unknown>;
+		profile?: Record<string, unknown>;
+	}) {
 		setCurrentState("submitting");
 		if (!user) {
 			setErrorMessage("Você precisa estar logado para se inscrever.");
 			setCurrentState("error");
 			return;
+		}
+		let profile: Record<string, unknown> | undefined;
+		if (showProfileSection) {
+			const parsed = profileInputSchema.safeParse(
+				toProfileInput((values.profile ?? {}) as never),
+			);
+			if (!parsed.success) {
+				setErrorMessage(
+					"Verifique os dados do perfil (URLs e e-mail devem ser válidos).",
+				);
+				setCurrentState("error");
+				return;
+			}
+			profile = parsed.data as Record<string, unknown>;
 		}
 		// Preserve in-memory, discard on submit: strip hidden-section answers.
 		const visible = hasConditional
@@ -196,11 +230,15 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 			if (allowed.has(k)) stripped[k] = v;
 		}
 		try {
-			await submitMutation.mutateAsync({
+			const result = await submitMutation.mutateAsync({
 				projectId: project.id,
 				name: values.name,
 				answers: stripped as Record<string, string | number | boolean | string[] | null | undefined>,
+				...(profile
+					? { profile: profile as never }
+					: {}),
 			});
+			setCreatedShortId(result.shortId);
 		} catch (error) {
 			setErrorMessage(error instanceof Error ? error.message : "Erro desconhecido");
 			setCurrentState("error");
@@ -219,10 +257,13 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 						form={form as unknown as GenericForm}
 						email={user?.email}
 					/>
+					{showProfileSection && (
+						<ProfileFieldsSection form={form as unknown as GenericForm} />
+					)}
 					{isFormPending ? (
 						<FormSection
 							title="Dados da inscrição"
-							section={1}
+							section={showProfileSection ? 2 : 1}
 							form={form as unknown as GenericForm}
 							fields={[]}
 						>
@@ -232,7 +273,7 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 					) : groupedSections.length === 0 ? (
 						<FormSection
 							title="Dados da inscrição"
-							section={1}
+							section={showProfileSection ? 2 : 1}
 							form={form as unknown as GenericForm}
 							fields={[]}
 						>
@@ -261,7 +302,7 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 							<FormSection
 								key={group.section.id}
 								title={group.section.title}
-								section={gi + 1}
+								section={gi + (showProfileSection ? 2 : 1)}
 								form={form as unknown as GenericForm}
 								fields={group.fields.map((f) => ({ name: f.label, value: false }))}
 							>
@@ -314,7 +355,13 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 				isOpen={currentState === "submitted"}
 				onClose={() => {
 					setCurrentState(false);
-					router.push(`/${project.url}/my`);
+					// Ponto de integração do e-mail de confirmação (sem provider
+					// ainda): link do perfil `/${project.url}/profile/${shortId}`.
+					router.push(
+						createdShortId
+							? `/${project.url}/profile/${createdShortId}?me=1`
+							: `/${project.url}/subscribe`,
+					);
 				}}
 				confettiColors={project.colors}
 				className="py-8 sm:!max-w-[40vw]"

@@ -8,10 +8,12 @@ import {
 	formSection,
 	formVersion,
 	participant,
+	profile,
 	project,
 	projectModerator,
 	user,
 } from "@verific/drizzle/schema";
+import { generateShortId } from "./profiles";
 import {
 	and,
 	asc,
@@ -1520,10 +1522,15 @@ export const formsRouter = createTRPCRouter({
 
 			const createdParticipants = await db
 				.insert(participant)
-				.values({ userId, projectId: input.projectId })
-				.returning({ id: participant.id });
+				.values({
+					userId,
+					projectId: input.projectId,
+					shortId: generateShortId(),
+				})
+				.returning({ id: participant.id, shortId: participant.shortId });
 			const participantId = createdParticipants[0]?.id;
-			if (!participantId)
+			const shortId = createdParticipants[0]?.shortId;
+			if (!participantId || !shortId)
 				throw new TRPCError({
 					code: "INTERNAL_SERVER_ERROR",
 					message: "Falha ao criar inscrição.",
@@ -1540,7 +1547,23 @@ export const formsRouter = createTRPCRouter({
 				});
 				if (rows.length > 0) await db.insert(formAnswer).values(rows);
 			}
-			return { participantId };
+			if (projectData.profilesEnabled && input.profile) {
+				const p = input.profile;
+				await db.insert(profile).values({
+					participantId,
+					roleTitle: p.roleTitle ?? null,
+					birthDate: p.birthDate ? new Date(p.birthDate) : null,
+					city: p.city ?? null,
+					institution: p.institution ?? null,
+					bio: p.bio ?? null,
+					socials: p.socials,
+					publicEmail: p.publicEmail ?? null,
+					avatarSource: p.avatarSource,
+					avatarGithubHandle: p.avatarGithubHandle ?? null,
+					privacy: p.privacy,
+				});
+			}
+			return { participantId, shortId };
 		}),
 
 	getMyAnswers: protectedProcedure

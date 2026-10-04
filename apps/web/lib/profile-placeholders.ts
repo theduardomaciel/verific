@@ -1,0 +1,21 @@
+/**
+ * PLACEHOLDERS do perfil — fonte única para todo valor sem origem real.
+ * Cada export indica o que vai substituí-lo. Nunca espalhar placeholders
+ * pelos componentes. Avatares neutros por iniciais (sem URLs externas).
+ *
+ * - badgesCount -> toggle de adesivos + ranking interno (organizer toggle,
+ *   pontos por tarefas dos moderadores). Ver §6.1 da task.
+ * - connections -> tabela de conexões (visita ao perfil durante o evento).
+ */
+
+// TODO(badges): substituir por contagem real de adesivos do participante.
+export const PLACEHOLDER_BADGES_COUNT = 12;
+
+// TODO(connections): substituir por conexões reais do participante no evento.
+export const PLACEHOLDER_CONNECTIONS = {
+	total: 39,
+	firstNames: ["Ana", "Bruno", "Carla"] as string[],
+	/** Iniciais para a pilha de avatares (6) + contador "+33". */
+	stackInitials: ["AN", "BR", "CA", "DI", "EL", "FE"] as string[],
+	remaining: 33,
+} as const;

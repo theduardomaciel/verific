@@ -5,6 +5,7 @@ import { z } from "@verific/zod";
 import { participant, project, projectModerator } from "@verific/drizzle/schema";
 import { eventThemeSchema } from "@verific/drizzle/theme";
 import { eq } from "@verific/drizzle/orm";
+import { generateShortId } from "./profiles";
 
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
@@ -28,6 +29,8 @@ export const updateProjectSchema = z.object({
 	primaryColor: z.string().optional().nullable(),
 	secondaryColor: z.string().optional().nullable(),
 	theme: eventThemeSchema.optional(),
+	profilesEnabled: z.boolean().optional(),
+	profileFillAtSignup: z.boolean().optional(),
 	startDate: z.coerce.date().optional(),
 	endDate: z.coerce.date().optional(),
 });
@@ -120,6 +123,7 @@ export const projectsRouter = createTRPCRouter({
 			await db.insert(participant).values({
 				projectId: created[0]!.id,
 				userId: userId,
+				shortId: generateShortId(),
 			});
 
 			return { id: created[0]!.id, url: created[0]!.url };

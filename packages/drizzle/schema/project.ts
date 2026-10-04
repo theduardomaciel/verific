@@ -35,6 +35,9 @@ export const project = pgTable("projects", {
 	isRegistrationEnabled: boolean("is_registration_enabled").default(false),
 	isArchived: boolean("is_archived").default(false),
 
+	profilesEnabled: boolean("profiles_enabled").default(false),
+	profileFillAtSignup: boolean("profile_fill_at_signup").default(true),
+
 	logoUrl: text("logo_url"),
 	largeLogoUrl: text("large_logo_url"),
 	coverUrl: text("cover_url"),

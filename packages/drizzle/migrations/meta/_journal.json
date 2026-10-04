@@ -15,6 +15,13 @@
       "when": 1791130405880,
       "tag": "0001_wild_micromax",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791131935303,
+      "tag": "0002_little_monster_badoon",
+      "breakpoints": true
     }
   ]
 }
