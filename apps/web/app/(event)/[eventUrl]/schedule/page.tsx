@@ -38,7 +38,7 @@ async function SchedulePageContent({ params }: Props) {
 							)}
 						</span>
 					</div>
-					<h1 className="mb-4 text-5xl font-bold text-white">
+					<h1 className="font-heading mb-4 text-5xl font-bold text-white">
 						Programação
 					</h1>
 					<p className="text-primary-foreground text-base font-semibold md:max-w-md">

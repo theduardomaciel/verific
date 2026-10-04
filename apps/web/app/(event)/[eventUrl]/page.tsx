@@ -63,7 +63,7 @@ async function EventPageContent({
 				coverUrl={project.coverUrl || "/images/hero-bg.png"}
 			>
 				<div className="z-10 flex flex-1 flex-col items-start justify-center">
-					<h1 className="mb-4 text-5xl font-bold text-white">
+					<h1 className="font-heading mb-4 text-5xl font-bold text-white">
 						{project.name}
 					</h1>
 					<div className="mb-6 flex items-center text-lg text-white/90">
@@ -95,21 +95,15 @@ async function EventPageContent({
 							<span>Emite certificado</span>
 						</Badge>
 					</div>
-					<EventAction
-						eventUrl={eventUrl}
-						endDate={project.endDate}
-						isArchived={Boolean(project.isArchived)}
-						isRegistrationEnabled={Boolean(
-							project.isRegistrationEnabled,
-						)}
-					/>
+					<EventAction eventUrl={eventUrl} />
 				</div>
 				<div className="relative z-20 flex h-60 items-center justify-center">
 					<Image
 						src={project.thumbnailUrl || "/images/cover.png"}
-						alt="SECOMP24"
+						alt={`Imagem de divulgação de ${project.name}`}
 						width={400}
 						height={240}
+						sizes="(max-width: 768px) 100vw, 400px"
 						className="border-primary max-w-md overflow-hidden rounded-3xl border-2"
 					/>
 					<ShareDialog
@@ -130,7 +124,7 @@ async function EventPageContent({
 			<EventContainer.Content>
 				<div className="container-p relative mx-auto flex flex-col gap-16 lg:flex-row">
 					<div className="lg:w-2/3">
-						<h2 className="mb-6 text-2xl font-bold">
+						<h2 className="font-heading mb-6 text-2xl font-bold">
 							Descrição do Evento
 						</h2>
 						<div className="space-y-6">
@@ -145,8 +139,8 @@ async function EventPageContent({
 						</div>
 					</div>
 					<div className="sticky top-16 right-0 lg:w-1/3">
-						<div className="mb-6 rounded-lg border p-6">
-							<h3 className="mb-4 text-xl font-medium">Local</h3>
+						<div className="mb-6 rounded-[var(--ev-card-radius,1.5rem)] border p-6">
+							<h3 className="font-heading mb-4 text-xl font-medium">Local</h3>
 							<p className="mb-4">{project.address}</p>
 							{project.latitude && project.longitude && (
 								<div className="mb-4 overflow-hidden rounded-lg border">
@@ -181,8 +175,8 @@ async function EventPageContent({
 								</a>
 							</Button>
 						</div>
-						<div className="flex flex-col rounded-lg border p-6">
-							<h3 className="mb-4 text-xl font-medium">
+						<div className="flex flex-col rounded-[var(--ev-card-radius,1.5rem)] border p-6">
+							<h3 className="font-heading mb-4 text-xl font-medium">
 								Sobre o produtor
 							</h3>
 							<p className="mb-4">{project.owner.name}</p>

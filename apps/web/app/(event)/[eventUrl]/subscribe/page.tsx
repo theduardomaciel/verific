@@ -3,11 +3,10 @@ import { Suspense } from "react";
 
 import { Calendar } from "lucide-react";
 
-import JoinForm from "@/components/forms/JoinForm";
 import * as EventContainer from "@/components/landing/event-container";
+import { SubscribeGate } from "@/components/subscribe-gate";
 
-import { getSession } from "@/lib/session";
-import { getCachedCheckParticipantEnrollment, getProject } from "@/lib/data";
+import { getEventRegistration, getProject } from "@/lib/data";
 
 async function SubscribeContent({
 	params,
@@ -15,7 +14,6 @@ async function SubscribeContent({
 	params: Promise<{ eventUrl: string }>;
 }) {
 	const { eventUrl } = await params;
-	const session = await getSession();
 	const result = await getProject(eventUrl);
 
 	if (!result?.project) {
@@ -23,18 +21,10 @@ async function SubscribeContent({
 	}
 
 	const { project } = result;
+	const registration = await getEventRegistration(eventUrl);
 
-	if (!project.isRegistrationEnabled) {
+	if (!registration?.isRegistrationEnabled) {
 		redirect(`/${eventUrl}`);
-	}
-
-	const userId = session?.user.id;
-	const isParticipant = userId
-		? await getCachedCheckParticipantEnrollment(eventUrl, userId)
-		: false;
-
-	if (isParticipant) {
-		redirect(`/${eventUrl}/my`);
 	}
 
 	return (
@@ -43,7 +33,7 @@ async function SubscribeContent({
 				coverUrl={project.coverUrl || "/images/hero-bg.png"}
 			>
 				<div className="z-10 flex flex-1 flex-col items-center justify-center">
-					<h1 className="mb-4 text-5xl font-bold text-white">
+					<h1 className="font-heading mb-4 text-center text-5xl font-bold text-white">
 						Inscreva-se em <br />
 						{project.name}
 					</h1>
@@ -63,19 +53,20 @@ async function SubscribeContent({
 				</div>
 			</EventContainer.Hero>
 			<EventContainer.Content>
-				<JoinForm
-					user={session?.user}
-					project={{
-						id: project.id,
-						url: project.url,
-						name: project.name,
-						logo: project.logoUrl || undefined,
-						colors: [
-							project.primaryColor,
-							project.secondaryColor,
-						].filter(Boolean) as string[],
-					}}
-				/>
+				<div className="container-p w-full">
+					<SubscribeGate
+						project={{
+							id: project.id,
+							url: project.url,
+							name: project.name,
+							logo: project.logoUrl || undefined,
+							colors: [
+								project.primaryColor,
+								project.secondaryColor,
+							].filter(Boolean) as string[],
+						}}
+					/>
+				</div>
 			</EventContainer.Content>
 		</EventContainer.Holder>
 	);

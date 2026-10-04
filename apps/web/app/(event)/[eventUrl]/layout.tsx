@@ -121,18 +121,7 @@ async function EventLayoutContent({
 			<EventBackgroundEffects />
 			<EventHeader
 				eventUrl={eventUrl}
-				project={{
-					id: project.id,
-					name: project.name,
-					url: project.url,
-					endDate: project.endDate,
-					isArchived: Boolean(project.isArchived),
-					isRegistrationEnabled: Boolean(
-						project.isRegistrationEnabled,
-					),
-				}}
 				className="relative h-21 border-none py-0"
-				buttonClassName="text-white"
 				logo={
 					<Link href={`/${eventUrl}`} className="text-white">
 						{project.largeLogoUrl || project.logoUrl ? (
