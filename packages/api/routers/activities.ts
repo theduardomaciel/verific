@@ -30,7 +30,6 @@ import {
 	not,
 	isNotNull,
 	sql,
-	exists,
 } from "@verific/drizzle/orm";
 import { z } from "@verific/zod";
 
@@ -100,22 +99,24 @@ const sessionsSchema = z
 		}
 	});
 
-/** SQL expression for the earliest session start of an activity. */
-const firstSessionStart = sql`(SELECT MIN(${activitySession.startsAt}) FROM ${activitySession} WHERE ${activitySession.activityId} = ${activity.id})`;
+/**
+ * SQL expression for the earliest session start of an activity.
+ *
+ * Uses explicit aliased identifiers (`s`) rather than interpolating
+ * `activitySession` columns: inside a raw `sql` template Drizzle maps those
+ * columns to the root `activities` alias, emitting `MIN("activity"."starts_at")`
+ * (a column that doesn't exist). Only the outer `activity.id` is interpolated.
+ */
+const firstSessionStart = sql`(SELECT MIN(s."starts_at") FROM "activity_sessions" s WHERE s."activity_id" = ${activity.id})`;
 
-/** Matches activities with at least one session not yet ended. */
+/**
+ * Matches activities with at least one session not yet ended.
+ * Written as raw SQL for the same reason as `firstSessionStart`: the query
+ * builder would qualify the outer table as `activities` while it is actually
+ * aliased `activity` in the relation query.
+ */
 function hasUpcomingSession(now: Date = new Date()) {
-	return exists(
-		db
-			.select({ id: activitySession.id })
-			.from(activitySession)
-			.where(
-				and(
-					eq(activitySession.activityId, activity.id),
-					gte(activitySession.endsAt, now),
-				),
-			),
-	);
+	return sql`EXISTS (SELECT 1 FROM "activity_sessions" s WHERE s."activity_id" = ${activity.id} AND s."ends_at" >= ${now})`;
 }
 
 const mutateActivityParams = z.object({
@@ -481,22 +482,23 @@ export const activitiesRouter = createTRPCRouter({
 
 			const projectWhere = eq(activity.projectId, projectIdToUse);
 
+			// Raw SQL for correlated subqueries: the query builder would emit
+			// the outer table as `activities`, but the relation query aliases it
+			// as `activity` (see `firstSessionStart`).
+			const tagIdList =
+				tagIds && tagIds.length > 0
+					? sql.join(
+							tagIds.map((id) => sql`${id}`),
+							sql`, `,
+						)
+					: null;
+
 			const activitiesWhere = [
 				projectWhere,
 				categories ? inArray(activity.category, categories) : undefined,
 				audiences ? inArray(activity.audience, audiences) : undefined,
-				tagIds && tagIds.length > 0
-					? exists(
-							db
-								.select({ id: tagOnActivity.activityId })
-								.from(tagOnActivity)
-								.where(
-									and(
-										eq(tagOnActivity.activityId, activity.id),
-										inArray(tagOnActivity.tagId, tagIds),
-									),
-								),
-						)
+				tagIdList
+					? sql`EXISTS (SELECT 1 FROM "tag_activities" ta WHERE ta."activity_id" = ${activity.id} AND ta."tag_id" IN (${tagIdList}))`
 					: undefined,
 				query
 					? or(

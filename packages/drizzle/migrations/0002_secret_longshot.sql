@@ -1,2 +1,0 @@
-ALTER TABLE "form_versions" ADD COLUMN "activity_id" uuid;--> statement-breakpoint
-ALTER TABLE "form_versions" ADD CONSTRAINT "form_versions_activity_id_activities_id_fk" FOREIGN KEY ("activity_id") REFERENCES "public"."activities"("id") ON DELETE cascade ON UPDATE cascade;
