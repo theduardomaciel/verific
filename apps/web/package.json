@@ -13,6 +13,7 @@
 		"codegen:css-colors": "tsx tools/scripts/codegen-css-colors.ts"
 	},
 	"dependencies": {
+		"@aws-sdk/client-s3": "^3.1146.0",
 		"@dnd-kit/abstract": "^0.5.0",
 		"@dnd-kit/helpers": "^0.5.0",
 		"@dnd-kit/react": "^0.5.0",

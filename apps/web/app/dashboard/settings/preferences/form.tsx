@@ -15,8 +15,8 @@ import { Card } from "@/components/ui/card";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
 import { FormField } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { ColorPicker } from "@/components/pickers/color-picker";
+import { ImageUploader } from "@/components/ui/image-uploader";
 
 // Validations
 import {
@@ -123,16 +123,28 @@ export function ProjectSettingsPreferencesForm({ project }: Props) {
 							control={form.control}
 							name="logoUrl"
 							render={({ field }) => (
-								<Input {...field} placeholder="URL da logo" />
+								<ImageUploader
+									label="Logo quadrada"
+									hint="PNG/JPG/WebP/SVG até 512px"
+									aspect="aspect-square max-h-48"
+									purpose="event-logo"
+									projectId={project.id}
+									value={field.value}
+									onChange={(url) => field.onChange(url)}
+								/>
 							)}
 						/>
 						<FormField
 							control={form.control}
 							name="largeLogoUrl"
 							render={({ field }) => (
-								<Input
-									{...field}
-									placeholder="URL da logo horizontal"
+								<ImageUploader
+									label="Logo horizontal"
+									hint="PNG/JPG/WebP/SVG até 1024px"
+									purpose="event-logo-wide"
+									projectId={project.id}
+									value={field.value}
+									onChange={(url) => field.onChange(url)}
 								/>
 							)}
 						/>
@@ -140,23 +152,34 @@ export function ProjectSettingsPreferencesForm({ project }: Props) {
 							control={form.control}
 							name="bannerUrl"
 							render={({ field }) => (
-								<Input {...field} placeholder="URL da capa" />
+								<ImageUploader
+									label="Capa do evento"
+									hint="Fundo do hero, até 1920px"
+									purpose="event-cover"
+									projectId={project.id}
+									value={field.value}
+									onChange={(url) => field.onChange(url)}
+								/>
 							)}
 						/>
 						<FormField
 							control={form.control}
 							name="thumbnailUrl"
 							render={({ field }) => (
-								<Input
-									{...field}
-									placeholder="URL da miniatura"
+								<ImageUploader
+									label="Miniatura"
+									hint="Cartões e prévia social, até 1200px"
+									purpose="event-thumbnail"
+									projectId={project.id}
+									value={field.value}
+									onChange={(url) => field.onChange(url)}
 								/>
 							)}
 						/>
 					</div>
 				)}
 				footer={{
-					text: "Para inserir uma imagem, clique no elemento correspondente",
+					text: "As imagens são otimizadas e enviadas direto ao armazenamento",
 				}}
 			/>
 
