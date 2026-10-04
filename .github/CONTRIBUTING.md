@@ -84,6 +84,20 @@ Quando terminar uma feature ou correção em sua branch, abra um **Pull Request 
 
 ---
 
+## 🗄️ Escrevendo queries com Drizzle
+
+Se você for mexer em queries do banco (`db.query.*`, `db.select()`, subqueries
+ou `sql` cru), leia antes **[docs/drizzle-queries.md](../docs/drizzle-queries.md)**.
+
+O resumo: dentro de `db.query.*`, subqueries correlacionadas **precisam** ser
+construídas a partir da tabela entregue pelo callback (`(table) => ...`) — nunca
+a partir da tabela importada no módulo. Usar a tabela do módulo gera um alias
+errado (`"activities"` em vez de `"activity"`) e a query quebra em runtime. Para
+reaproveitar filtros entre a query relacional e a de contagem, use uma fábrica
+`(table) => ...`.
+
+---
+
 ## 🙋‍♂️ Dúvidas?
 
 Se tiver qualquer dúvida sobre Git, código ou qualquer outra coisa, chama no grupo! Pode ser a pergunta de mais alguém :)
