@@ -3,8 +3,6 @@ import Link from "next/link";
 import * as EventContainer from "@/components/landing/event-container";
 import { Card } from "@/components/ui/card";
 
-import Logo from "@/public/logo.svg";
-
 import GithubIcon from "@/public/icons/github.svg";
 import InstagramIcon from "@/public/icons/instagram.svg";
 import {
@@ -12,9 +10,10 @@ import {
 	GraduationCapIcon,
 	MailIcon,
 	MapPinIcon,
+	SettingsIcon,
 } from "lucide-react";
-import { connection } from "next/server";
 import { Footer } from "@/components/footer";
+import { Button } from "@/components/ui/button";
 
 const userSocials = [
 	{
@@ -125,7 +124,7 @@ export default function ProfilePage() {
 
 			<EventContainer.Content>
 				<div className="container-d mb-8 flex w-full flex-col gap-4 md:gap-12">
-					<header className="from-primary to-secondary flex w-full flex-col items-start justify-start gap-4 rounded-3xl bg-linear-to-l p-8 md:h-96">
+					<header className="from-primary to-secondary relative flex w-full flex-col items-start justify-start gap-4 rounded-3xl bg-linear-to-l p-8 md:h-96">
 						<img
 							src="https://github.com/jessica.png"
 							alt="Profile picture"
@@ -163,7 +162,17 @@ export default function ProfilePage() {
 								</li>
 							))}
 						</ul>
+
+						<Button
+							variant="ghost"
+							size="lg"
+							className="from-primary/50 to-secondary/80 bg-background absolute top-8 right-8 rounded-full bg-linear-to-l"
+						>
+							<SettingsIcon />
+							Editar perfil
+						</Button>
 					</header>
+
 					{/* PROFILE */}
 					<div className="flex flex-col items-start justify-center gap-6">
 						<div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2">
@@ -192,6 +201,7 @@ export default function ProfilePage() {
 									</li>
 								</ul>
 							</Card>
+							{/* TODO: Badges are a completely placeholder for now */}
 							<div className="from-primary/50 to-secondary/60 flex flex-row items-center justify-between gap-6 rounded-3xl bg-linear-to-l p-6 md:p-9">
 								<span className="text-xl font-medium">
 									<span className="text-3xl font-semibold">
@@ -205,6 +215,7 @@ export default function ProfilePage() {
 								</span>
 							</div>
 						</div>
+						{/* TODO: Connections are also not implemented yet. A user connects to another from the event after visiting their profile */}
 						<Card className="w-full items-start rounded-3xl p-6 md:flex-row md:items-center md:justify-between md:p-9">
 							<div className="flex flex-col items-start gap-2">
 								<h6 className="text-xl font-semibold">
