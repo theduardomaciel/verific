@@ -19,6 +19,7 @@ interface Props {
 	userActions?: React.ReactNode;
 	logo?: React.ReactNode;
 	className?: string;
+	style?: React.CSSProperties;
 	buttonClassName?: string;
 	languageSelectorClassName?: string;
 	mobileMenuClassName?: string;
@@ -26,6 +27,7 @@ interface Props {
 
 export function Header({
 	className,
+	style,
 	prefix,
 	links,
 	userActions,
@@ -37,6 +39,7 @@ export function Header({
 
 	return (
 		<header
+			style={style}
 			className={cn(
 				"border-border/40 bg-background/95 supports-backdrop-filter:bg-background/60 px-landing sticky top-0 z-50 flex w-full justify-center border-b backdrop-blur",
 				className,
@@ -89,6 +92,7 @@ export function Header({
 
 			<MobileMenu
 				className={mobileMenuClassName}
+				style={style}
 				prefix={prefix}
 				links={links}
 				isOpen={isMenuOpen}

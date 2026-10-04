@@ -28,6 +28,7 @@ interface EventHeaderProps {
 	};
 	logo: React.ReactNode;
 	className?: string;
+	style?: React.CSSProperties;
 	mobileMenuClassName?: string;
 	buttonClassName?: string;
 	languageSelectorClassName?: string;
@@ -83,6 +84,7 @@ export function EventHeader({
 	project,
 	logo,
 	className,
+	style,
 	mobileMenuClassName,
 	buttonClassName,
 	languageSelectorClassName,
@@ -140,6 +142,7 @@ export function EventHeader({
 	return (
 		<Header
 			className={className}
+			style={{ background: "var(--ev-header-bg)", ...style }}
 			mobileMenuClassName={mobileMenuClassName}
 			buttonClassName={buttonClassName}
 			languageSelectorClassName={languageSelectorClassName}

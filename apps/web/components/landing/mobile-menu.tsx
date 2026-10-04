@@ -3,13 +3,13 @@
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
-
 // Components
 import { MainNavProps } from "../header/main-nav";
 
 interface MobileMenuProps {
 	prefix?: string;
 	className?: string;
+	style?: React.CSSProperties;
 	links: MainNavProps["links"];
 	isOpen: boolean;
 	onClose: () => void;
@@ -18,12 +18,14 @@ interface MobileMenuProps {
 export function MobileMenu({
 	prefix,
 	className,
+	style,
 	links,
 	isOpen,
 	onClose,
 }: MobileMenuProps) {
 	return (
 		<div
+			style={style}
 			className={cn(
 				"bg-background pointer-events-none absolute inset-x-0 top-full h-screen -translate-x-full transform opacity-0 transition-all duration-300 ease-in-out select-none",
 				className,
