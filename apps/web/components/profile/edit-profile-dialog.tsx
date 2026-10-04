@@ -16,6 +16,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Form } from "@/components/ui/form";
 import { EditMyAnswersForm } from "@/components/forms/dynamic/EditAnswersForm";
 import {
 	ProfileFieldsSection,
@@ -153,7 +154,9 @@ export function EditProfileDialog({
 						<TabsTrigger value="privacidade">Privacidade</TabsTrigger>
 						<TabsTrigger value="inscricao">Inscrição</TabsTrigger>
 					</TabsList>
-					<TabsContent value="perfil">
+					{/* Provider do RHF para os FormField da seção de perfil. */}
+					<Form {...form}>
+						<TabsContent value="perfil">
 						<form
 							onSubmit={form.handleSubmit(onSubmit)}
 							className="flex flex-col gap-4"
@@ -222,6 +225,7 @@ export function EditProfileDialog({
 					<TabsContent value="inscricao">
 						<EditMyAnswersForm projectId={projectId} />
 					</TabsContent>
+					</Form>
 				</Tabs>
 			</DialogContent>
 		</Dialog>
