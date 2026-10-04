@@ -30,6 +30,8 @@ import {
 	not,
 	isNotNull,
 	sql,
+	exists,
+	min,
 } from "@verific/drizzle/orm";
 import { z } from "@verific/zod";
 
@@ -99,24 +101,106 @@ const sessionsSchema = z
 		}
 	});
 
-/**
- * SQL expression for the earliest session start of an activity.
- *
- * Uses explicit aliased identifiers (`s`) rather than interpolating
- * `activitySession` columns: inside a raw `sql` template Drizzle maps those
- * columns to the root `activities` alias, emitting `MIN("activity"."starts_at")`
- * (a column that doesn't exist). Only the outer `activity.id` is interpolated.
- */
-const firstSessionStart = sql`(SELECT MIN(s."starts_at") FROM "activity_sessions" s WHERE s."activity_id" = ${activity.id})`;
+type ActivityTable = typeof activity;
 
 /**
- * Matches activities with at least one session not yet ended.
- * Written as raw SQL for the same reason as `firstSessionStart`: the query
- * builder would qualify the outer table as `activities` while it is actually
- * aliased `activity` in the relation query.
+ * Column-only types for the correlated helpers.
+ *
+ * A relational-query callback (`(table) => ...`) hands you a plain object of
+ * columns, not the table (no `$inferSelect`/`getSQL`/etc.), so the helpers
+ * cannot take `typeof activity`. These `Pick`s derive the exact columns each
+ * helper reads from the schema, which is the single source of truth:
+ * - adding a column to `activities` never affects them;
+ * - removing a referenced column fails to compile here (intended);
+ * - a helper that starts reading a new column must widen its own `Pick`.
  */
-function hasUpcomingSession(now: Date = new Date()) {
-	return sql`EXISTS (SELECT 1 FROM "activity_sessions" s WHERE s."activity_id" = ${activity.id} AND s."ends_at" >= ${now})`;
+type ActivityRef = Pick<ActivityTable, "id">;
+type ActivityFilterColumns = Pick<
+	ActivityTable,
+	| "id"
+	| "projectId"
+	| "category"
+	| "audience"
+	| "name"
+	| "description"
+>;
+
+/**
+ * Correlated helpers.
+ *
+ * They take the *table columns* as an argument so the caller can pass the
+ * correctly aliased table from a relational-query callback (`(table) => ...`).
+ * A relational query aliases the root table to its schema key (`"activity"`),
+ * while plain `db.select()` uses the SQL name (`"activities"`); building the
+ * subquery from whatever table the current query actually uses keeps both
+ * correct and avoids hand-written raw SQL.
+ */
+function firstSessionStart(table: ActivityRef) {
+	return db
+		.select({ value: min(activitySession.startsAt) })
+		.from(activitySession)
+		.where(eq(activitySession.activityId, table.id));
+}
+
+/** Matches activities with at least one session not yet ended. */
+function hasUpcomingSession(table: ActivityRef, now: Date = new Date()) {
+	return exists(
+		db
+			.select({ id: activitySession.id })
+			.from(activitySession)
+			.where(
+				and(
+					eq(activitySession.activityId, table.id),
+					gte(activitySession.endsAt, now),
+				),
+			),
+	);
+}
+
+/** Matches activities that have at least one of `tagIds`. */
+function hasAnyTag(table: ActivityRef, tagIds: string[]) {
+	return exists(
+		db
+			.select({ id: tagOnActivity.activityId })
+			.from(tagOnActivity)
+			.where(
+				and(
+					eq(tagOnActivity.activityId, table.id),
+					inArray(tagOnActivity.tagId, tagIds),
+				),
+			),
+	);
+}
+
+/**
+ * Builds the shared activity filter for a given (possibly aliased) table.
+ * Used by the relation query and by the plain count queries so both get
+ * correctly-qualified subqueries.
+ */
+function buildActivitiesWhere(
+	table: ActivityFilterColumns,
+	opts: {
+		projectId: string;
+		categories?: (typeof activityCategories)[number][] | undefined;
+		audiences?: (typeof activityAudiences)[number][] | undefined;
+		tagIds?: string[] | undefined;
+		query?: string | undefined;
+	},
+) {
+	return and(
+		eq(table.projectId, opts.projectId),
+		opts.categories ? inArray(table.category, opts.categories) : undefined,
+		opts.audiences ? inArray(table.audience, opts.audiences) : undefined,
+		opts.tagIds && opts.tagIds.length > 0
+			? hasAnyTag(table, opts.tagIds)
+			: undefined,
+		opts.query
+			? or(
+					ilike(table.name, `%${opts.query}%`),
+					ilike(table.description, `%${opts.query}%`),
+				)
+			: undefined,
+	);
 }
 
 const mutateActivityParams = z.object({
@@ -480,52 +564,13 @@ export const activitiesRouter = createTRPCRouter({
 				});
 			}
 
-			const projectWhere = eq(activity.projectId, projectIdToUse);
-
-			// Raw SQL for correlated subqueries: the query builder would emit
-			// the outer table as `activities`, but the relation query aliases it
-			// as `activity` (see `firstSessionStart`).
-			const tagIdList =
-				tagIds && tagIds.length > 0
-					? sql.join(
-							tagIds.map((id) => sql`${id}`),
-							sql`, `,
-						)
-					: null;
-
-			const activitiesWhere = [
-				projectWhere,
-				categories ? inArray(activity.category, categories) : undefined,
-				audiences ? inArray(activity.audience, audiences) : undefined,
-				tagIdList
-					? sql`EXISTS (SELECT 1 FROM "tag_activities" ta WHERE ta."activity_id" = ${activity.id} AND ta."tag_id" IN (${tagIdList}))`
-					: undefined,
-				query
-					? or(
-							ilike(activity.name, `%${query}%`),
-							ilike(activity.description, `%${query}%`),
-						)
-					: undefined,
-			].filter(Boolean);
-
-			let orderByClause;
-
-			switch (sort) {
-				case "desc":
-					orderByClause = desc(firstSessionStart);
-					break;
-				case "asc":
-					orderByClause = asc(firstSessionStart);
-					break;
-				case "name_asc":
-					orderByClause = asc(activity.name);
-					break;
-				case "name_desc":
-					orderByClause = desc(activity.name);
-					break;
-				default:
-					orderByClause = asc(firstSessionStart);
-			}
+			const filterOpts = {
+				projectId: projectIdToUse,
+				categories,
+				audiences,
+				tagIds,
+				query,
+			} as const;
 
 			type ActivityWithRelations = typeof activity.$inferSelect & {
 				participantsCount: number;
@@ -595,9 +640,22 @@ export const activitiesRouter = createTRPCRouter({
 					};
 
 			const activities = (await db.query.activity.findMany({
-				where: and(...activitiesWhere),
+				where: (table) => buildActivitiesWhere(table, filterOpts),
 				with: withObj as any,
-				orderBy: orderByClause,
+				orderBy: (table, { asc: _asc, desc: _desc }) => {
+					switch (sort) {
+						case "desc":
+							return _desc(firstSessionStart(table));
+						case "asc":
+							return _asc(firstSessionStart(table));
+						case "name_asc":
+							return _asc(table.name);
+						case "name_desc":
+							return _desc(table.name);
+						default:
+							return _asc(firstSessionStart(table));
+					}
+				},
 				offset: page ? (page - 1) * pageSize : 0,
 				limit: pageSize,
 			})) as ActivityWithRelations[];
@@ -608,7 +666,7 @@ export const activitiesRouter = createTRPCRouter({
 				db
 					.select({ amount: countDistinct(activity.id) })
 					.from(activity)
-					.where(and(...activitiesWhere)),
+					.where(buildActivitiesWhere(activity, filterOpts)),
 				fullQuery
 					? null
 					: db
@@ -630,7 +688,9 @@ export const activitiesRouter = createTRPCRouter({
 									),
 								),
 							)
-							.where(and(...activitiesWhere))
+							.where(
+								buildActivitiesWhere(activity, filterOpts),
+							)
 							.groupBy(participantOnActivity.activityId),
 			]);
 
@@ -1498,11 +1558,12 @@ export const activitiesRouter = createTRPCRouter({
 
 			// Closed registrations, and not yet ended
 			const rows = await db.query.activity.findMany({
-				where: and(
-					eq(activity.projectId, input.projectId),
-					eq(activity.isRegistrationOpen, false),
-					hasUpcomingSession(),
-				),
+				where: (table, { and: _and, eq: _eq }) =>
+					_and(
+						_eq(table.projectId, input.projectId),
+						_eq(table.isRegistrationOpen, false),
+						hasUpcomingSession(table),
+					),
 				with: {
 					sessions: {
 						orderBy: asc(activitySession.startsAt),
@@ -1511,7 +1572,8 @@ export const activitiesRouter = createTRPCRouter({
 						with: { tag: true },
 					},
 				},
-				orderBy: asc(firstSessionStart),
+				orderBy: (table, { asc: _asc }) =>
+					_asc(firstSessionStart(table)),
 			});
 
 			return rows.map((row) => ({
