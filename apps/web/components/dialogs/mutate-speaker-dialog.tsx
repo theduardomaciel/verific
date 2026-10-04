@@ -33,6 +33,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
+import { ImageUploader } from "@/components/ui/image-uploader";
 import { Input } from "@/components/ui/input";
 import { ErrorDialog, LoadingDialog, SuccessDialog } from "../forms/dialogs";
 
@@ -163,7 +164,7 @@ export function MutateSpeakerDialog({
 										: "Adicionar palestrante"}
 								</DialogTitle>
 							</DialogHeader>
-							<MutateSpeakerForm form={form} />
+							<MutateSpeakerForm form={form} projectId={projectId} />
 							<DialogFooter className="w-full grid-cols-2 gap-3 md:grid">
 								<DialogClose asChild>
 									<Button type="button" variant={"outline"}>
@@ -232,7 +233,7 @@ export function MutateSpeakerDialog({
 							</DrawerTitle>
 						</DrawerHeader>
 						<div className="space-y-6 px-4">
-							<MutateSpeakerForm form={form} />
+							<MutateSpeakerForm form={form} projectId={projectId} />
 						</div>
 						<DrawerFooter className="flex w-full gap-2">
 							<Button
@@ -311,7 +312,10 @@ interface MutateSpeakerForm {
 	form: UseFormReturn<z.infer<typeof formSchema>>;
 }
 
-function MutateSpeakerForm({ form }: MutateSpeakerForm) {
+function MutateSpeakerForm({
+	form,
+	projectId,
+}: MutateSpeakerForm & { projectId: string }) {
 	return (
 		<>
 			<FormField
@@ -351,11 +355,15 @@ function MutateSpeakerForm({ form }: MutateSpeakerForm) {
 				name="imageUrl"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>URL da imagem</FormLabel>
 						<FormControl>
-							<Input
-								placeholder="https://exemplo.com/imagem.jpg"
-								{...field}
+							<ImageUploader
+								label="Foto do palestrante"
+								hint="PNG/JPG/WebP/SVG até 800px"
+								aspect="aspect-square max-h-48"
+								purpose="speaker"
+								projectId={projectId}
+								value={field.value}
+								onChange={(url) => field.onChange(url)}
 							/>
 						</FormControl>
 						<FormMessage />
