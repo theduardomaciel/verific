@@ -40,8 +40,10 @@ export function AccountWrapper({
 		return { grouped, categories, initialExpanded };
 	}, [activities]);
 
-	const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+	const [expandedCategories, setExpandedCategories] =
+		useState<string[]>(initialExpanded);
 
+	// Reage a mudanças de dados (estado inicial já correto, sem flash).
 	useEffect(() => {
 		setExpandedCategories(initialExpanded);
 	}, [initialExpanded]);

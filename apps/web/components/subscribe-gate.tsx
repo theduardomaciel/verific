@@ -18,6 +18,8 @@ interface SubscribeGateProps {
 		name?: string;
 		logo?: string;
 		colors?: string[];
+		profilesEnabled?: boolean;
+		profileFillAtSignup?: boolean;
 	};
 }
 
@@ -39,7 +41,7 @@ function SubscribeSkeleton() {
 export function SubscribeGate({ project }: SubscribeGateProps) {
 	const session = authClient.useSession();
 	const user = session.data?.user;
-	const enrollment = trpc.checkParticipant.useQuery(
+	const enrollment = trpc.getMyParticipant.useQuery(
 		{ projectUrl: project.url },
 		{ enabled: Boolean(user?.id) },
 	);
@@ -48,9 +50,8 @@ export function SubscribeGate({ project }: SubscribeGateProps) {
 		return <SubscribeSkeleton />;
 	}
 
-	// TODO(Fase 4): apontar para /{eventUrl}/profile/{shortId} (ou modo
-	// conta quando perfis estiverem desativados) e remover /my.
-	if (user && enrollment.data === true) {
+	if (user && enrollment.data) {
+		const { shortId } = enrollment.data;
 		return (
 			<Card className="mx-auto flex w-full max-w-xl flex-col items-center gap-4 p-8 text-center">
 				<CircleCheckBig className="text-secondary h-12 w-12" />
@@ -58,11 +59,13 @@ export function SubscribeGate({ project }: SubscribeGateProps) {
 					Você já está inscrito!
 				</h2>
 				<p className="text-muted-foreground">
-					Sua inscrição neste evento já foi confirmada. Acesse sua
-					conta para ver suas atividades e seu QR Code.
+					Sua inscrição neste evento já foi confirmada. Acesse seu
+					perfil para ver suas atividades e seu QR Code.
 				</p>
 				<Button className="ev-button font-semibold uppercase" asChild>
-					<Link href={`/${project.url}/my`}>Acessar minha conta</Link>
+					<Link href={`/${project.url}/profile/${shortId}?me=1`}>
+						Acessar meu perfil
+					</Link>
 				</Button>
 			</Card>
 		);

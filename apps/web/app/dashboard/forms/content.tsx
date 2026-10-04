@@ -5,6 +5,7 @@ import { FormPreview } from "./preview";
 import { useFormsBuilder } from "./hooks/use-forms-builder";
 import { AnswersPanel } from "./components/answers-panel";
 import { BuilderCard } from "./components/builder-card";
+import { ProfileSectionCard } from "./components/profile-section-card";
 import { DeleteFieldDialog } from "./components/dialog/delete-field-dialog";
 import { DeleteSectionDialog } from "./components/dialog/delete-section-dialog";
 import { FormsHeader } from "./components/forms-header";
@@ -100,7 +101,15 @@ export function FormsContent() {
 					/>
 
 					{selected && (
-						<BuilderCard
+						<>
+							<ProfileSectionCard
+								projectId={projectId}
+								fields={fields.map((f) => ({
+									id: f.id,
+									label: f.label,
+								}))}
+							/>
+							<BuilderCard
 							selected={selected}
 							isPublished={isPublished}
 							fields={fields}
@@ -124,6 +133,7 @@ export function FormsContent() {
 							onDelete={setFieldToDelete}
 							onDeleteSection={setSectionToDelete}
 						/>
+						</>
 					)}
 				</>
 			)}

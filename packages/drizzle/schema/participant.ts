@@ -4,6 +4,7 @@ import {
 	timestamp,
 	uniqueIndex,
 	uuid,
+	text,
 } from "drizzle-orm/pg-core";
 
 import { participantOnActivity } from "./participant-on-activity";
@@ -11,6 +12,7 @@ import { sessionAttendance } from "./session-attendance";
 import { project } from "./project";
 import { user } from "./user";
 import { formAnswer } from "./form-answer";
+import { profile } from "./profile";
 
 export const participant = pgTable(
 	"participants",
@@ -30,8 +32,13 @@ export const participant = pgTable(
 			}),
 
 		joinedAt: timestamp("joined_at").notNull().defaultNow(),
+
+		shortId: text("short_id").notNull(),
 	},
-	(table) => [uniqueIndex().on(table.userId, table.projectId)],
+	(table) => [
+		uniqueIndex().on(table.userId, table.projectId),
+		uniqueIndex().on(table.projectId, table.shortId),
+	],
 );
 
 export const participantRelations = relations(participant, ({ one, many }) => ({
@@ -46,4 +53,8 @@ export const participantRelations = relations(participant, ({ one, many }) => ({
 	participantOnActivity: many(participantOnActivity),
 	sessionAttendances: many(sessionAttendance),
 	answers: many(formAnswer),
+	profile: one(profile, {
+		fields: [participant.id],
+		references: [profile.participantId],
+	}),
 }));

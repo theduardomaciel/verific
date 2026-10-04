@@ -40,6 +40,8 @@ export function ProjectSettingsSubscriptionsForm({ project }: Props) {
 			await updateMutation.mutateAsync({
 				id: project.id,
 				isRegistrationEnabled: data.enableSubscription,
+				profilesEnabled: data.profilesEnabled,
+				profileFillAtSignup: data.profileFillAtSignup,
 			});
 			toast.success("Configurações de inscrição atualizadas!");
 			form.reset(data);
@@ -57,31 +59,94 @@ export function ProjectSettingsSubscriptionsForm({ project }: Props) {
 				description="Decida se usuários poderão utilizar a página de inscrição para se cadastrarem ou não"
 				initialState={{
 					enableSubscription: project.isRegistrationEnabled || false,
+					profilesEnabled: project.profilesEnabled || false,
+					profileFillAtSignup: project.profileFillAtSignup ?? true,
 				}}
 				onSubmit={onSubmitSubscriptionManagement}
 				renderField={(form) => (
-					<FormField
-						control={form.control}
-						name="enableSubscription"
-						render={({ field }) => (
-							<FormItem>
-								<FormControl>
-									<div className="flex items-center space-x-2">
-										<Switch
-											id="enableSubscription"
-											checked={field.value}
-											onCheckedChange={field.onChange}
-											size={"lg"}
-										/>
-										<Label htmlFor="enableSubscription">
-											Habilitar Inscrições
-										</Label>
-									</div>
-								</FormControl>
-								<FormMessage />
-							</FormItem>
+					<div className="flex flex-col gap-6">
+						<FormField
+							control={form.control}
+							name="enableSubscription"
+							render={({ field }) => (
+								<FormItem>
+									<FormControl>
+										<div className="flex items-center space-x-2">
+											<Switch
+												id="enableSubscription"
+												checked={field.value}
+												onCheckedChange={field.onChange}
+												size={"lg"}
+											/>
+											<Label htmlFor="enableSubscription">
+												Habilitar Inscrições
+											</Label>
+										</div>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="profilesEnabled"
+							render={({ field }) => (
+								<FormItem>
+									<FormControl>
+										<div className="flex items-center space-x-2">
+											<Switch
+												id="profilesEnabled"
+												checked={field.value}
+												onCheckedChange={field.onChange}
+												size={"lg"}
+											/>
+											<Label htmlFor="profilesEnabled">
+												Habilitar perfis de participantes
+											</Label>
+										</div>
+									</FormControl>
+									<p className="text-muted-foreground text-sm">
+										Com perfis ativos, cada inscrito ganha uma
+										página pública no evento com foto, bio,
+										redes e conexões.
+									</p>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						{form.watch("profilesEnabled") && (
+							<FormField
+								control={form.control}
+								name="profileFillAtSignup"
+								render={({ field }) => (
+									<FormItem>
+										<FormControl>
+											<div className="flex items-center space-x-2">
+												<Switch
+													id="profileFillAtSignup"
+													checked={field.value}
+													onCheckedChange={
+														field.onChange
+													}
+													size={"lg"}
+												/>
+												<Label htmlFor="profileFillAtSignup">
+													Preencher perfil na inscrição
+												</Label>
+											</div>
+										</FormControl>
+										<p className="text-muted-foreground text-sm">
+											Ativo: o perfil aparece no formulário
+											de inscrição. Desligado: o participante
+											preenche depois, no diálogo “Editar
+											perfil”.
+										</p>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
 						)}
-					/>
+					</div>
 				)}
 				footer={{
 					text: "As mudanças podem levar alguns minutos para tomar efeito",
