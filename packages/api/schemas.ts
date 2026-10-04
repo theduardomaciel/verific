@@ -9,10 +9,7 @@ import { activityCategories } from "@verific/drizzle/enum/category";
 import { formFieldTypes } from "@verific/drizzle/enum/form-field-type";
 import { participantRoles } from "@verific/drizzle/enum/role";
 
-import {
-	createEnumArraySchema,
-	sortOptions,
-} from "./utils";
+import { createEnumArraySchema, sortOptions } from "./utils";
 
 /**
  * Client-safe query param schemas.
@@ -42,18 +39,15 @@ export const getActivitiesParams = z.object({
 	category: createEnumArraySchema(activityCategories).optional(),
 	audience: createEnumArraySchema(activityAudiences).optional(),
 	tagIds: z
-		.preprocess(
-			(val) => {
-				if (typeof val === "string") {
-					return val
-						.split(",")
-						.map((v) => v.trim())
-						.filter(Boolean);
-				}
-				return val;
-			},
-			z.array(z.uuid()),
-		)
+		.preprocess((val) => {
+			if (typeof val === "string") {
+				return val
+					.split(",")
+					.map((v) => v.trim())
+					.filter(Boolean);
+			}
+			return val;
+		}, z.array(z.uuid()))
 		.optional(),
 });
 
@@ -117,7 +111,9 @@ export const OTHER_SENTINEL = "__other__";
 
 /** True when `options` already contain an "Outro" entry (case-insensitive). */
 export function hasOutroOption(options: string[] | null | undefined): boolean {
-	return (options ?? []).some((o) => o.trim().toLowerCase() === OTHER_LABEL.toLowerCase());
+	return (options ?? []).some(
+		(o) => o.trim().toLowerCase() === OTHER_LABEL.toLowerCase(),
+	);
 }
 
 export const formFieldValidationSchema = z
@@ -210,6 +206,65 @@ export const reorderFormFieldsInput = z.object({
 	sectionIdByField: z.record(z.string(), z.uuid().nullable()).optional(),
 });
 
+/**
+ * Portable, version-independent description of a form version.
+ *
+ * Field→section links use the section's `order` (not a database id) and
+ * section visibility rules reference the trigger field by `key` (keys are
+ * unique per version), so the JSON can be exported from one project and
+ * imported into another.
+ */
+export const formVersionExportSchema = z.object({
+	kind: z.literal("verific-form-version"),
+	version: z.literal(1),
+	exportedAt: z.string().optional(),
+	sections: z
+		.array(
+			z.object({
+				title: z.string().trim().min(1).max(120),
+				order: z.number().int().min(0),
+				visibilityRule: z
+					.object({
+						sourceFieldKey: z.string().min(1),
+						operator: z.enum([
+							"is_checked",
+							"is_not_checked",
+							"equals",
+							"includes_any",
+							"includes_all",
+						]),
+						values: z
+							.array(z.string().min(1).max(200))
+							.max(20)
+							.optional(),
+					})
+					.nullable()
+					.optional(),
+			}),
+		)
+		.default([]),
+	fields: z.array(
+		z.object({
+			key: z.string().min(1).max(64),
+			label: z.string().min(1).max(200),
+			type: z.enum(formFieldTypes),
+			helpText: z.string().max(500).nullable().optional(),
+			required: z.boolean().default(false),
+			halfWidth: z.boolean().default(false),
+			order: z.number().int().min(0),
+			sectionOrder: z.number().int().min(0).nullable().optional(),
+			options: formFieldOptionsSchema,
+			allowOther: z.boolean().default(false),
+			validation: formFieldValidationSchema.nullable().optional(),
+			isVisible: z.boolean().default(true),
+			editableAfterSignup: z.boolean().default(true),
+			isActive: z.boolean().default(true),
+		}),
+	),
+});
+
+export type FormVersionExport = z.infer<typeof formVersionExportSchema>;
+
 export const answerValueSchema = z.union([
 	z.string(),
 	z.number(),
@@ -294,11 +349,7 @@ export function evaluateSectionVisibility(
 export function getVisibleSectionIds<
 	S extends SectionForVisibility,
 	F extends { id?: string; key: string },
->(
-	sections: S[],
-	fields: F[],
-	answers: Record<string, unknown>,
-): Set<string> {
+>(sections: S[], fields: F[], answers: Record<string, unknown>): Set<string> {
 	const keyById = new Map<string, string>();
 	for (const f of fields) {
 		if (f.id) keyById.set(f.id, f.key);
@@ -324,11 +375,7 @@ export function getVisibleSectionIds<
 export function filterVisibleFields<
 	F extends { key: string; id?: string; sectionId?: string | null },
 	S extends SectionForVisibility,
->(
-	fields: F[],
-	sections: S[],
-	answers: Record<string, unknown>,
-): F[] {
+>(fields: F[], sections: S[], answers: Record<string, unknown>): F[] {
 	if (!sections.some((s) => s.visibilityRule)) return fields;
 	const visibleIds = getVisibleSectionIds(sections, fields, answers);
 	return fields.filter((f) => {
@@ -354,7 +401,9 @@ export function stripHiddenAnswers(
 
 export function validateSectionVisibilityRule(args: {
 	rule: SectionVisibilityRule | null | undefined;
-	sourceField: { id: string; type: string; options?: string[] | null } | undefined;
+	sourceField:
+		| { id: string; type: string; options?: string[] | null }
+		| undefined;
 	sectionId?: string | null;
 	sourceSectionId?: string | null;
 }): string | null {
@@ -364,32 +413,49 @@ export function validateSectionVisibilityRule(args: {
 	if (!isConditionalTriggerType(sourceField.type)) {
 		return "O campo de origem deve ser checkbox, seleção única, múltipla seleção ou grupo de rádio.";
 	}
-	if (sectionId && rule.sourceFieldId && sourceSectionId && sourceSectionId === sectionId) {
+	if (
+		sectionId &&
+		rule.sourceFieldId &&
+		sourceSectionId &&
+		sourceSectionId === sectionId
+	) {
 		return "A seção não pode depender de um campo dela mesma.";
 	}
 	switch (sourceField.type) {
 		case "checkbox":
-			if (rule.operator !== "is_checked" && rule.operator !== "is_not_checked") {
+			if (
+				rule.operator !== "is_checked" &&
+				rule.operator !== "is_not_checked"
+			) {
 				return "Para checkbox use “está marcado” ou “não está marcado”.";
 			}
 			break;
 		case "select_single":
 		case "radio_group":
-			if (rule.operator !== "equals") return "Para este campo use “é igual a”.";
-			if (!rule.values || rule.values.length === 0) return "Escolha ao menos um valor.";
+			if (rule.operator !== "equals")
+				return "Para este campo use “é igual a”.";
+			if (!rule.values || rule.values.length === 0)
+				return "Escolha ao menos um valor.";
 			break;
 		case "select_multiple":
-			if (rule.operator !== "includes_any" && rule.operator !== "includes_all") {
+			if (
+				rule.operator !== "includes_any" &&
+				rule.operator !== "includes_all"
+			) {
 				return "Para múltipla seleção use “contém” ou “contém todos”.";
 			}
-			if (!rule.values || rule.values.length === 0) return "Escolha ao menos um valor.";
+			if (!rule.values || rule.values.length === 0)
+				return "Escolha ao menos um valor.";
 			break;
 		default:
 			break;
 	}
 	if (rule.values && rule.values.length > 0 && sourceField.options) {
-		const unknown = rule.values.filter((v) => !sourceField.options!.includes(v));
-		if (unknown.length > 0) return "A regra contém valores que não existem mais no campo de origem.";
+		const unknown = rule.values.filter(
+			(v) => !sourceField.options!.includes(v),
+		);
+		if (unknown.length > 0)
+			return "A regra contém valores que não existem mais no campo de origem.";
 	}
 	return null;
 }
@@ -431,7 +497,10 @@ function fieldValueSchema(field: FormFieldForValidation) {
 		}
 		case "select_single":
 		case "radio_group": {
-			const opts = field.options && field.options.length > 0 ? field.options : null;
+			const opts =
+				field.options && field.options.length > 0
+					? field.options
+					: null;
 			if (!opts) {
 				base = z.string().min(1);
 				break;
@@ -465,7 +534,10 @@ function fieldValueSchema(field: FormFieldForValidation) {
 			break;
 		}
 		case "select_multiple": {
-			const opts = field.options && field.options.length > 0 ? field.options : null;
+			const opts =
+				field.options && field.options.length > 0
+					? field.options
+					: null;
 			if (!opts) {
 				base = z.array(z.string().min(1));
 				break;
@@ -539,11 +611,14 @@ function fieldValueSchema(field: FormFieldForValidation) {
 	}
 
 	if (!field.required) {
-		return base.optional().nullable().transform((v) => {
-			if (v === "" || v === null) return undefined;
-			if (Array.isArray(v) && v.length === 0) return undefined;
-			return v;
-		});
+		return base
+			.optional()
+			.nullable()
+			.transform((v) => {
+				if (v === "" || v === null) return undefined;
+				if (Array.isArray(v) && v.length === 0) return undefined;
+				return v;
+			});
 	}
 
 	if (field.type === "text" || field.type === "textarea") {
@@ -552,9 +627,12 @@ function fieldValueSchema(field: FormFieldForValidation) {
 	if (field.type === "email" || field.type === "phone") {
 		// Base is a ZodEffects (refine), so require non-empty via refine
 		// instead of .min() to keep the "Obrigatório" message for blanks.
-		return base.refine((v) => typeof v === "string" && v.trim().length > 0, {
-			message: "Obrigatório",
-		});
+		return base.refine(
+			(v) => typeof v === "string" && v.trim().length > 0,
+			{
+				message: "Obrigatório",
+			},
+		);
 	}
 	if (field.type === "select_multiple") {
 		return (base as z.ZodArray<any>).min(1, { message: "Obrigatório" });
@@ -571,7 +649,9 @@ export function buildAnswersSchema(
 	answers?: Record<string, unknown>,
 ) {
 	const effective =
-		sections && answers ? filterVisibleFields(fields, sections, answers) : fields;
+		sections && answers
+			? filterVisibleFields(fields, sections, answers)
+			: fields;
 	const shape: Record<string, z.ZodTypeAny> = {};
 	for (const field of effective) {
 		if (!field.isActive || !field.isVisible) continue;
@@ -584,9 +664,15 @@ export function validateAnswers(
 	fields: FormFieldForValidation[],
 	answers: Record<string, unknown>,
 	sections?: SectionForVisibility[],
-): { success: boolean; errors?: Record<string, string[]>; data?: Record<string, unknown> } {
+): {
+	success: boolean;
+	errors?: Record<string, string[]>;
+	data?: Record<string, unknown>;
+} {
 	const schema = buildAnswersSchema(fields, sections, answers);
-	const parsed = schema.safeParse(stripHiddenForValidation(fields, sections, answers));
+	const parsed = schema.safeParse(
+		stripHiddenForValidation(fields, sections, answers),
+	);
 	if (parsed.success) return { success: true, data: parsed.data };
 	const flat = parsed.error.flatten();
 	const errors: Record<string, string[]> = {};
@@ -607,7 +693,9 @@ function stripHiddenForValidation(
 	answers: Record<string, unknown>,
 ): Record<string, unknown> {
 	if (!sections || !sections.some((s) => s.visibilityRule)) return answers;
-	const visible = new Set(filterVisibleFields(fields, sections, answers).map((f) => f.key));
+	const visible = new Set(
+		filterVisibleFields(fields, sections, answers).map((f) => f.key),
+	);
 	const next: Record<string, unknown> = {};
 	for (const [k, v] of Object.entries(answers)) {
 		if (visible.has(k) || !fields.some((f) => f.key === k)) next[k] = v;
