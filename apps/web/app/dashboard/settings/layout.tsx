@@ -14,6 +14,10 @@ const settingsLinks = [
 		label: "Inscrições",
 	},
 	{
+		href: "/settings/theme",
+		label: "Tema",
+	},
+	{
 		href: "/settings/security",
 		label: "Segurança",
 		disabled: true,
