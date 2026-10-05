@@ -141,7 +141,7 @@ export function ThemeEditor({
 				onValueChange={(v) =>
 					setMobileView(v as "controls" | "preview")
 				}
-				className="lg:hidden"
+				className="xl:hidden"
 			>
 				<TabsList className="grid w-full grid-cols-2">
 					<TabsTrigger value="controls">Editar</TabsTrigger>
@@ -149,11 +149,11 @@ export function ThemeEditor({
 				</TabsList>
 			</Tabs>
 
-			<div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(320px,400px)_minmax(0,1fr)]">
+			<div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(320px,400px)_minmax(0,1fr)]">
 				<div
 					className={cn(
 						"rounded-xl border px-4",
-						"lg:sticky lg:top-16 lg:block lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto",
+						"xl:sticky xl:top-16 xl:block xl:max-h-[calc(100dvh-6rem)] xl:overflow-y-auto",
 						mobileView === "controls" ? "block" : "hidden",
 					)}
 				>
@@ -166,7 +166,7 @@ export function ThemeEditor({
 
 				<div
 					className={cn(
-						"min-w-0 lg:sticky lg:top-16 lg:block",
+						"min-w-0 xl:sticky xl:top-16 xl:block",
 						mobileView === "preview" ? "block" : "hidden",
 					)}
 				>
