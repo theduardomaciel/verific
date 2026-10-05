@@ -29,6 +29,63 @@ const optionalChoiceField: FormFieldForValidation = {
 	isActive: true,
 };
 
+const requiredSocialField: FormFieldForValidation = {
+	key: "redes",
+	label: "Redes",
+	type: "social_links",
+	required: true,
+	isVisible: true,
+	isActive: true,
+};
+
+describe("social_links", () => {
+	it("accepts handles and normalizes to URLs", () => {
+		const result = validateAnswers([requiredSocialField], {
+			redes: [
+				{ service: "github", value: "fulana" },
+				{ service: "instagram", value: "https://instagram.com/fulana" },
+			],
+		});
+
+		expect(result.success).toBe(true);
+		expect(result.data).toEqual({
+			redes: [
+				{ service: "github", value: "https://github.com/fulana" },
+				{ service: "instagram", value: "https://instagram.com/fulana" },
+			],
+		});
+	});
+
+	it("requires at least one entry when required", () => {
+		const result = validateAnswers([requiredSocialField], { redes: [] });
+
+		expect(result.success).toBe(false);
+		expect(result.errors?.redes).toBeDefined();
+	});
+
+	it("rejects unknown services and disallowed ones", () => {
+		const unknown = validateAnswers([requiredSocialField], {
+			redes: [{ service: "myspace", value: "x" }],
+		});
+		expect(unknown.success).toBe(false);
+
+		const restricted = validateAnswers(
+			[{ ...requiredSocialField, options: ["github"] }],
+			{ redes: [{ service: "instagram", value: "fulana" }] },
+		);
+		expect(restricted.success).toBe(false);
+	});
+
+	it("formats entries as URLs for export", () => {
+		expect(
+			formatAnswerValue("social_links", [
+				{ service: "github", value: "https://github.com/fulana" },
+				{ service: "lattes", value: "http://lattes.cnpq.br/123" },
+			]),
+		).toBe("https://github.com/fulana; http://lattes.cnpq.br/123");
+	});
+});
+
 describe("validateAnswers", () => {
 	it("accepts valid answers", () => {
 		const result = validateAnswers([textField], { name: "Ada" });

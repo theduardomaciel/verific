@@ -2,6 +2,7 @@
 
 import { Controller, type Control, type FieldValues } from "react-hook-form";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input, PhoneInput } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,6 +28,10 @@ import {
 	OTHER_SENTINEL,
 	OTHER_TEXT_MAX_LENGTH,
 } from "@verific/api/schemas";
+import {
+	SOCIAL_SERVICES,
+	socialServiceById,
+} from "@verific/drizzle/profile-layout";
 
 export type DynamicFormField = NonNullable<
 	RouterOutput["getPublishedForm"]
@@ -131,6 +136,88 @@ function SelectMultipleWithOther({
 }
 
 const EMPTY_SELECT_VALUE = "__verific_empty__";
+
+type SocialEntry = { service: string; value: string };
+
+/**
+ * Editor incremental de links sociais: começa vazio, adiciona serviço +
+ * valor sob demanda, remove por entrada. Sem inputs pré-renderizados.
+ */
+function SocialLinksEditor({
+	services,
+	value,
+	disabled,
+	onChange,
+}: {
+	services: Array<(typeof SOCIAL_SERVICES)[number]>;
+	value: SocialEntry[];
+	disabled?: boolean;
+	onChange: (next: SocialEntry[]) => void;
+}) {
+	function setEntry(index: number, patch: Partial<SocialEntry>) {
+		onChange(value.map((e, i) => (i === index ? { ...e, ...patch } : e)));
+	}
+
+	return (
+		<div className="flex flex-col gap-3">
+			{value.map((entry, i) => {
+				const service = socialServiceById(entry.service) ?? services[0]!;
+				return (
+					<div key={i} className="flex items-end gap-2">
+						<div className="w-36 shrink-0">
+							<Select
+								disabled={disabled}
+								value={service.id}
+								onValueChange={(s) => setEntry(i, { service: s })}
+							>
+								<SelectTrigger>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{services.map((s) => (
+										<SelectItem key={s.id} value={s.id}>
+											{s.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+						<Input
+							type="text"
+							placeholder="usuário ou URL"
+							disabled={disabled}
+							value={entry.value}
+							onChange={(e) => setEntry(i, { value: e.target.value })}
+						/>
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							disabled={disabled}
+							onClick={() => onChange(value.filter((_, j) => j !== i))}
+							aria-label="Remover link"
+						>
+							✕
+						</Button>
+					</div>
+				);
+			})}
+			<div>
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					disabled={disabled}
+					onClick={() =>
+						onChange([...value, { service: services[0]!.id, value: "" }])
+					}
+				>
+					+ Adicionar link
+				</Button>
+			</div>
+		</div>
+	);
+}
 
 export function DynamicField({
 	field,
@@ -549,6 +636,39 @@ export function DynamicField({
 								<FormMessage />
 							</FormItem>
 						);
+					case "social_links": {
+						const configured = field.options ?? [];
+						const allowed =
+							configured.length > 0
+								? SOCIAL_SERVICES.filter((s) =>
+										configured.includes(s.id),
+									)
+								: [...SOCIAL_SERVICES];
+						const services =
+							allowed.length > 0 ? allowed : [...SOCIAL_SERVICES];
+						const entries = (
+							Array.isArray(value) ? value : []
+						) as SocialEntry[];
+						return (
+							<FormItem className="w-full">
+								{label}
+								{field.helpText && (
+									<FormDescription>
+										{field.helpText}
+									</FormDescription>
+								)}
+								<FormControl>
+									<SocialLinksEditor
+										services={services}
+										value={entries}
+										disabled={disabled}
+										onChange={(next) => rhf.onChange(next)}
+									/>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						);
+					}
 					case "text":
 					default:
 						return (

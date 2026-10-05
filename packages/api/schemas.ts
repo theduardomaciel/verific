@@ -9,6 +9,11 @@ import { activityCategories } from "@verific/drizzle/enum/category";
 import { formFieldTypes } from "@verific/drizzle/enum/form-field-type";
 import { participantRoles } from "@verific/drizzle/enum/role";
 import { profileInputSchema } from "@verific/drizzle/profile";
+import {
+	normalizeSocialLink,
+	socialEntrySchema,
+	socialServiceById,
+} from "@verific/drizzle/profile-layout";
 
 import { createEnumArraySchema, sortOptions } from "./utils";
 
@@ -271,6 +276,7 @@ export const answerValueSchema = z.union([
 	z.number(),
 	z.boolean(),
 	z.array(z.string()),
+	z.array(socialEntrySchema),
 	z.null(),
 	z.undefined(),
 ]);
@@ -608,6 +614,36 @@ function fieldValueSchema(field: FormFieldForValidation) {
 				});
 			break;
 		}
+		case "social_links": {
+			const allowed =
+				field.options && field.options.length > 0 ? field.options : null;
+			const entry = z
+				.object({
+					service: z.string().min(1),
+					value: z.string().min(1).max(300),
+				})
+				.superRefine((e, ctx) => {
+					const service = socialServiceById(e.service);
+					if (!service) {
+						ctx.addIssue({ code: "custom", message: "Serviço inválido." });
+						return;
+					}
+					if (allowed && !allowed.includes(service.id)) {
+						ctx.addIssue({ code: "custom", message: "Serviço inválido." });
+						return;
+					}
+					const url = normalizeSocialLink(service.id, e.value);
+					if (!url || !/^https?:\/\//i.test(url)) {
+						ctx.addIssue({ code: "custom", message: "Link inválido." });
+					}
+				})
+				.transform((e) => ({
+					service: e.service,
+					value: normalizeSocialLink(e.service, e.value) ?? e.value,
+				}));
+			base = z.array(entry).max(8);
+			break;
+		}
 		default:
 			base = z.string();
 	}
@@ -637,6 +673,9 @@ function fieldValueSchema(field: FormFieldForValidation) {
 		);
 	}
 	if (field.type === "select_multiple") {
+		return (base as z.ZodArray<any>).min(1, { message: "Obrigatório" });
+	}
+	if (field.type === "social_links") {
 		return (base as z.ZodArray<any>).min(1, { message: "Obrigatório" });
 	}
 	if (field.type === "checkbox") {
@@ -711,6 +750,16 @@ export function formatAnswerValue(
 	value: unknown,
 ): string {
 	if (value === null || value === undefined || value === "") return "";
+	if (type === "social_links" && Array.isArray(value)) {
+		return value
+			.map((e) => {
+				if (typeof e === "object" && e !== null && "value" in e) {
+					return String((e as { value: unknown }).value);
+				}
+				return String(e);
+			})
+			.join("; ");
+	}
 	if (Array.isArray(value)) return value.join("; ");
 	if (value instanceof Date) return value.toISOString().slice(0, 10);
 	if (typeof value === "boolean") return value ? "Sim" : "Não";

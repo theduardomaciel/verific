@@ -12,6 +12,10 @@ import {
 	socialUrl,
 	isFilled,
 } from "@/components/forms/profile-normalize";
+import {
+	normalizeSocialLink,
+	socialDisplayHandle,
+} from "@verific/drizzle/profile-layout";
 
 describe("profile schema", () => {
 	it("aplica privacidade padrão (e-mail e nascimento privados)", () => {
@@ -100,5 +104,28 @@ describe("profile normalize", () => {
 		expect(isFilled(true)).toBe(true);
 		expect(isFilled(false)).toBe(false);
 		expect(isFilled(null)).toBe(false);
+	});
+});
+
+describe("shared social normalize", () => {
+	it("normaliza handle e URL (inclusive Lattes http)", () => {
+		expect(normalizeSocialLink("github", "fulana")).toBe(
+			"https://github.com/fulana",
+		);
+		expect(normalizeSocialLink("lattes", "0993964740433171")).toBe(
+			"http://lattes.cnpq.br/0993964740433171",
+		);
+		expect(
+			normalizeSocialLink("lattes", "lattes.cnpq.br/0993964740433171"),
+		).toBe("http://lattes.cnpq.br/0993964740433171");
+		expect(normalizeSocialLink("github", "")).toBeNull();
+		expect(normalizeSocialLink("unknown", "x")).toBeNull();
+	});
+
+	it("extrai handle p/ exibição", () => {
+		expect(socialDisplayHandle("https://github.com/fulana")).toBe("fulana");
+		expect(socialDisplayHandle("http://lattes.cnpq.br/0993964740433171")).toBe(
+			"0993964740433171",
+		);
 	});
 });

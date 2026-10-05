@@ -28,6 +28,7 @@ import {
 
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
+import { socialServiceById } from "@verific/drizzle/profile-layout";
 import {
 	PROFILE_SECTION_TITLE,
 	PROFILE_SYSTEM_KEY,
@@ -823,6 +824,15 @@ export const formsRouter = createTRPCRouter({
 					message:
 						"Remova a opção “Outro” da lista — ela já é adicionada automaticamente.",
 				});
+			}
+			if (input.type === "social_links" && input.options) {
+				const unknown = input.options.filter((o) => !socialServiceById(o));
+				if (unknown.length > 0) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: `Serviços inválidos: ${unknown.join(", ")}.`,
+					});
+				}
 			}
 			let sectionId: string | null | undefined;
 			if (input.sectionId !== undefined) {
