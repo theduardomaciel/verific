@@ -3,6 +3,8 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { FormPreview } from "./preview";
 import { useFormsBuilder } from "./hooks/use-forms-builder";
+import { trpc } from "@/lib/trpc/react";
+import { shouldShowProfileAtSignup } from "@verific/drizzle/profile";
 import { AnswersPanel } from "./components/answers-panel";
 import { BuilderCard } from "./components/builder-card";
 import { ProfileSectionCard } from "./components/profile-section-card";
@@ -47,6 +49,13 @@ export function FormsContent() {
 		persistSectionOrder,
 	} = builder;
 
+	// Única query do projeto aqui: flags derivadas uma vez e repassadas
+	// (prévia puramente apresentacional, sem fetch próprio).
+	const projectQuery = trpc.getProject.useQuery({ id: projectId });
+	const showProfileSection = shouldShowProfileAtSignup(
+		projectQuery.data?.project,
+	);
+
 	if (versionsQuery.isPending) {
 		return (
 			<div className="container-d py-container-v min-h-screen">
@@ -69,8 +78,8 @@ export function FormsContent() {
 				<FormPreview
 					fields={fields}
 					sections={sections}
-					isLoading={isLoadingFields}
-					projectId={projectId}
+					isLoading={isLoadingFields || projectQuery.isPending}
+					showProfileSection={showProfileSection}
 				/>
 			) : (
 				<>
@@ -109,6 +118,14 @@ export function FormsContent() {
 									id: f.id,
 									label: f.label,
 								}))}
+								profilesEnabled={Boolean(
+									projectQuery.data?.project.profilesEnabled,
+								)}
+								profileFillAtSignup={Boolean(
+									projectQuery.data?.project.profileFillAtSignup ??
+										true,
+								)}
+								isLoadingProject={projectQuery.isPending}
 							/>
 							<BuilderCard
 							selected={selected}

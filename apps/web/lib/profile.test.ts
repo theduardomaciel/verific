@@ -4,6 +4,7 @@ import {
 	detectProfileDuplicates,
 	profileInputSchema,
 	profilePath,
+	shouldShowProfileAtSignup,
 	DEFAULT_PRIVACY,
 } from "@verific/drizzle/profile";
 import {
@@ -51,6 +52,18 @@ describe("profile schema", () => {
 
 	it("monta o caminho do perfil", () => {
 		expect(profilePath("secomp", "abc123")).toBe("/secomp/profile/abc123");
+	});
+
+	it("uma fonte da verdade p/ exibir perfil na inscrição", () => {
+		expect(
+			shouldShowProfileAtSignup({ profilesEnabled: true, profileFillAtSignup: true }),
+		).toBe(true);
+		expect(
+			shouldShowProfileAtSignup({ profilesEnabled: true, profileFillAtSignup: false }),
+		).toBe(false);
+		expect(shouldShowProfileAtSignup({ profilesEnabled: false })).toBe(false);
+		expect(shouldShowProfileAtSignup(null)).toBe(false);
+		expect(shouldShowProfileAtSignup({ profilesEnabled: true })).toBe(true);
 	});
 });
 
