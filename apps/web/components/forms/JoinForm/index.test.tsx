@@ -82,6 +82,52 @@ vi.mock("@/lib/trpc/react", () => ({
 
 const project = { id: "p1", url: "evento" };
 
+const formData = {
+	version: null,
+	fields: [
+		{
+			id: "f1",
+			key: "apelido",
+			label: "Apelido",
+			type: "text",
+			required: true,
+			options: null,
+			allowOther: false,
+			validation: null,
+			isVisible: true,
+			isActive: true,
+			sectionId: "s1",
+			order: 0,
+			halfWidth: false,
+		},
+		{
+			id: "f2",
+			key: "termo",
+			label: "Termo",
+			type: "text",
+			required: true,
+			options: null,
+			allowOther: false,
+			validation: null,
+			isVisible: true,
+			isActive: true,
+			sectionId: "s2",
+			order: 1,
+			halfWidth: false,
+		},
+	],
+	sections: [
+		{ id: "s1", title: "Dados", order: 0, visibilityRule: null },
+		{ id: "s2", title: "Termos", order: 1, visibilityRule: null },
+	],
+} as never;
+
+function renderForm() {
+	return render(
+		<JoinForm project={project} formData={formData} profileLayout={null} />,
+	);
+}
+
 function sectionContinuars() {
 	// Nome acessível exato exclui o "Continuar com Google" da Seção 0.
 	return screen.getAllByRole("button", { name: "Continuar" });
@@ -89,7 +135,7 @@ function sectionContinuars() {
 
 describe("JoinForm wizard", () => {
 	it("trava a seção 2 até a 1 estar válida", () => {
-		render(<JoinForm project={project} />);
+		renderForm();
 
 		expect(document.getElementById("section2")).toHaveClass(
 			"pointer-events-none",
@@ -97,7 +143,7 @@ describe("JoinForm wizard", () => {
 	});
 
 	it("bloqueia o avanço com obrigatório vazio e mostra o erro", async () => {
-		render(<JoinForm project={project} />);
+		renderForm();
 
 		fireEvent.click(sectionContinuars()[1]!);
 
@@ -109,7 +155,7 @@ describe("JoinForm wizard", () => {
 	});
 
 	it("avança p/ a próxima seção após preencher os obrigatórios", async () => {
-		render(<JoinForm project={project} />);
+		renderForm();
 
 		const boxes = screen.getAllByRole("textbox");
 		fireEvent.change(boxes[0]!, { target: { value: "Fulano da Silva" } });

@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc/react";
+import type { RouterOutput } from "@verific/api";
 
 interface SubscribeGateProps {
 	project: {
@@ -35,6 +36,11 @@ function SubscribeSkeleton() {
  * tamanho reservado até a sessão resolver, sem layout shift.
  * - Anônimo ou inscrito em nada: formulário (o login acontece nele).
  * - Já inscrito: aviso com link da conta em vez do formulário.
+ *
+ * As queries do formulário (`getPublishedForm` + `getProfileLayout`) vivem
+ * aqui — e não dentro do JoinForm — para que o esqueleto cubra o
+ * carregamento inteiro: sem elas, o gate resolvia (sessão pronta) e o
+ * formulário exibia um segundo estado de "Carregando...".
  */
 export function SubscribeGate({ project }: SubscribeGateProps) {
 	const session = authClient.useSession();
@@ -43,8 +49,19 @@ export function SubscribeGate({ project }: SubscribeGateProps) {
 		{ projectUrl: project.url },
 		{ enabled: Boolean(user?.id) },
 	);
+	const formQuery = trpc.getPublishedForm.useQuery({
+		projectId: project.id,
+	});
+	const layoutQuery = trpc.getProfileLayout.useQuery({
+		projectUrl: project.url,
+	});
 
-	if (session.isPending || (user && enrollment.isPending)) {
+	if (
+		session.isPending ||
+		(user && enrollment.isPending) ||
+		formQuery.isPending ||
+		layoutQuery.isPending
+	) {
 		return <SubscribeSkeleton />;
 	}
 
@@ -69,5 +86,12 @@ export function SubscribeGate({ project }: SubscribeGateProps) {
 		);
 	}
 
-	return <JoinForm user={user ?? undefined} project={project} />;
+	return (
+		<JoinForm
+			user={user ?? undefined}
+			project={project}
+			formData={formQuery.data as RouterOutput["getPublishedForm"]}
+			profileLayout={layoutQuery.data ?? null}
+		/>
+	);
 }

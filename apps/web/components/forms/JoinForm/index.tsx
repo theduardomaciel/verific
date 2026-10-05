@@ -36,6 +36,7 @@ import type { GenericForm } from "..";
 
 // Types
 import type { User } from "@verific/auth";
+import type { RouterOutput } from "@verific/api";
 
 // API
 import { trpc } from "@/lib/trpc/react";
@@ -51,9 +52,18 @@ interface JoinFormProps {
 		logo?: string;
 		colors?: string[];
 	};
+	/** Dados do formulário já carregados pelo SubscribeGate (evita cascata). */
+	formData: RouterOutput["getPublishedForm"];
+	/** Layout do perfil já carregado pelo SubscribeGate (pode ser nulo). */
+	profileLayout: RouterOutput["getProfileLayout"] | null;
 }
 
-export default function JoinForm({ user, project }: JoinFormProps) {
+export default function JoinForm({
+	user,
+	project,
+	formData,
+	profileLayout,
+}: JoinFormProps) {
 	const router = useRouter();
 	const [currentState, setCurrentState] = useState<
 		false | "submitting" | "error" | "submitted"
@@ -61,14 +71,8 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [createdShortId, setCreatedShortId] = useState<string | null>(null);
 
-	const { data: formData, isPending: isFormPending } = trpc.getPublishedForm.useQuery({
-		projectId: project.id,
-	});
 	const submitMutation = trpc.submitAnswers.useMutation();
-	const layoutQuery = trpc.getProfileLayout.useQuery({
-		projectUrl: project.url,
-	});
-	const layout = layoutQuery.data ?? null;
+	const layout = profileLayout;
 
 	const fields = useMemo(() => formData?.fields ?? [], [formData]);
 	const sections = useMemo(() => formData?.sections ?? [], [formData]);
@@ -282,19 +286,7 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 						email={user?.email}
 						onContinue={() => advanceTo(1)}
 					/>
-					{isFormPending ? (
-						<FormSection
-							title="Dados da inscrição"
-							section={1}
-							form={form as unknown as GenericForm}
-							fields={[
-								{ name: "Nome completo", value: isFilled(watchedName) },
-							]}
-						>
-							<p className="text-muted-foreground text-sm">Carregando formulário do evento...</p>
-							<SectionFooter isFinalSection />
-						</FormSection>
-					) : planned.length === 0 ? (
+					{planned.length === 0 ? (
 						<FormSection
 							title="Dados da inscrição"
 							section={1}
