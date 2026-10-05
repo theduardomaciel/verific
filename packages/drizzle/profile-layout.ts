@@ -191,6 +191,33 @@ export function parseProfileLayout(input: unknown): ProfileLayout {
 	return parsed.success ? parsed.data : DEFAULT_PROFILE_LAYOUT;
 }
 
+export function slotForField(
+	layout: ProfileLayout,
+	fieldId: string,
+): { slot: ProfileSlotKey; statIndex: number | null } | null {
+	if (layout.subtitleFieldId === fieldId)
+		return { slot: "subtitle", statIndex: null };
+	if (layout.bioFieldId === fieldId) return { slot: "bio", statIndex: null };
+	if (layout.socialsFieldId === fieldId)
+		return { slot: "socials", statIndex: null };
+	if (layout.emailFieldId === fieldId)
+		return { slot: "email", statIndex: null };
+	const statIndex = layout.stats.findIndex((s) => s.fieldId === fieldId);
+	if (statIndex >= 0) return { slot: "stats", statIndex };
+	return null;
+}
+
+export function isCompatible(slot: ProfileSlotKey, type: string): boolean {
+	return (PROFILE_SLOTS[slot].accepts as readonly string[]).includes(type);
+}
+
+export function isFieldLinked(
+	layout: ProfileLayout | null | undefined,
+	fieldId: string,
+): boolean {
+	return slotForField(layout ?? DEFAULT_PROFILE_LAYOUT, fieldId) !== null;
+}
+
 /**
  * Valor de resposta p/ exibição no perfil (pt-BR). Retorna null quando
  * vazio; nunca lança (renderer pula o slot em erro).

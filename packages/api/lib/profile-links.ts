@@ -5,12 +5,14 @@ import {
 	project,
 } from "@verific/drizzle/schema";
 import {
+	isCompatible,
 	parseProfileLayout,
-	PROFILE_SLOTS,
+	slotForField,
 	type ProfileLayout,
-	type ProfileSlotKey,
 } from "@verific/drizzle/profile-layout";
 import { eq, inArray } from "@verific/drizzle/orm";
+
+export { isCompatible, slotForField };
 
 /** Lê o layout do evento (sempre válido: fallback p/ padrão). */
 export async function readProjectLayout(
@@ -42,26 +44,6 @@ export function linkedFieldIds(layout: ProfileLayout): string[] {
 		...layout.stats.map((s) => s.fieldId),
 	].filter((id): id is string => Boolean(id));
 	return [...new Set(ids)];
-}
-
-export function slotForField(
-	layout: ProfileLayout,
-	fieldId: string,
-): { slot: ProfileSlotKey; statIndex: number | null } | null {
-	if (layout.subtitleFieldId === fieldId)
-		return { slot: "subtitle", statIndex: null };
-	if (layout.bioFieldId === fieldId) return { slot: "bio", statIndex: null };
-	if (layout.socialsFieldId === fieldId)
-		return { slot: "socials", statIndex: null };
-	if (layout.emailFieldId === fieldId)
-		return { slot: "email", statIndex: null };
-	const statIndex = layout.stats.findIndex((s) => s.fieldId === fieldId);
-	if (statIndex >= 0) return { slot: "stats", statIndex };
-	return null;
-}
-
-export function isCompatible(slot: ProfileSlotKey, type: string): boolean {
-	return (PROFILE_SLOTS[slot].accepts as readonly string[]).includes(type);
 }
 
 /**

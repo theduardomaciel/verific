@@ -16,7 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye } from "lucide-react";
-import { linkedSlotForField } from "@/lib/profile-links-client";
+import { slotForField } from "@verific/drizzle/profile-layout";
 
 export function EditMyAnswersForm({
 	projectId,
@@ -182,7 +182,9 @@ export function EditMyAnswersForm({
 									}
 								>
 									{row.fields.map((f) => {
-										const slot = linkedSlotForField(layout, f.id);
+										const slot = layout
+											? slotForField(layout, f.id)
+											: null;
 										const showToggle = Boolean(
 											slot && f.required && myProfile.data,
 										);

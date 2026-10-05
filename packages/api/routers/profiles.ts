@@ -7,6 +7,7 @@ import { db } from "@verific/drizzle";
 import {
 	formAnswer,
 	formField,
+	formVersion,
 	participant,
 	profileFieldVisibility,
 	project,
@@ -15,20 +16,45 @@ import {
 	formatProfileValue,
 	normalizeSocialLink,
 	parseProfileLayout,
+	profileLayoutSchema,
 	socialDisplayHandle,
 	socialServiceById,
 	type ProfileLayout,
 	type ProfileSlotKey,
 	type StatIconKey,
 } from "@verific/drizzle/profile-layout";
-import { and, eq, inArray } from "@verific/drizzle/orm";
+import { and, asc, desc, eq, inArray, isNull } from "@verific/drizzle/orm";
 
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import {
+	dropVisibilityForFields,
 	isCompatible,
 	readProjectLayout,
+	removeProfileLinksForFields,
 	slotForField,
+	writeProjectLayout,
 } from "../lib/profile-links";
+
+async function requireProjectAccess(projectId: string, userId: string) {
+	const data = await db.query.project.findFirst({
+		where: eq(project.id, projectId),
+		with: {
+			moderators: { columns: { userId: true } },
+		},
+	});
+	if (!data) {
+		throw new TRPCError({ code: "NOT_FOUND", message: "Evento não encontrado." });
+	}
+	const isOwner = data.ownerId === userId;
+	const isModerator = data.moderators.some((m) => m.userId === userId);
+	if (!isOwner && !isModerator) {
+		throw new TRPCError({
+			code: "FORBIDDEN",
+			message: "Sem permissão neste evento.",
+		});
+	}
+	return data;
+}
 
 /** Identificador curto por participante/evento (URL + QR). */
 export function generateShortId(length = 10): string {
@@ -273,6 +299,113 @@ export const profilesRouter = createTRPCRouter({
 		.query(async ({ input }) => {
 			const projectId = await resolveProjectId(input.projectUrl);
 			return readProjectLayout(projectId);
+		}),
+
+	/** Campos elegíveis p/ links: última versão do formulário do evento. */
+	getProfileFieldOptions: protectedProcedure
+		.input(z.object({ projectId: z.string().uuid() }))
+		.query(async ({ input, ctx }) => {
+			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			const versions = await db.query.formVersion.findMany({
+				where: and(
+					eq(formVersion.projectId, input.projectId),
+					isNull(formVersion.activityId),
+				),
+				orderBy: desc(formVersion.version),
+				columns: { id: true, version: true, isPublished: true },
+			});
+			const version = versions[0];
+			if (!version) return { version: null, fields: [] };
+			const fields = await db.query.formField.findMany({
+				where: and(
+					eq(formField.formVersionId, version.id),
+					eq(formField.isActive, true),
+				),
+				columns: {
+					id: true,
+					key: true,
+					label: true,
+					type: true,
+					required: true,
+				},
+				orderBy: asc(formField.order),
+			});
+			return {
+				version: {
+					id: version.id,
+					version: version.version,
+					isPublished: version.isPublished,
+				},
+				fields,
+			};
+		}),
+
+	/** Salva o layout do perfil (valida compatibilidade tipo/slot). */
+	updateProfileLayout: protectedProcedure
+		.input(
+			z.object({ projectId: z.string().uuid(), layout: profileLayoutSchema }),
+		)
+		.mutation(async ({ input, ctx }) => {
+			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			const layout = input.layout;
+			const ids = [
+				layout.subtitleFieldId,
+				layout.bioFieldId,
+				layout.socialsFieldId,
+				layout.emailFieldId,
+				...layout.stats.map((s) => s.fieldId),
+			].filter((id): id is string => Boolean(id));
+			if (ids.length > 0) {
+				const rows = await db.query.formField.findMany({
+					where: and(
+						eq(formField.projectId, input.projectId),
+						inArray(formField.id, ids),
+					),
+					columns: { id: true, type: true },
+				});
+				const byId = new Map(rows.map((r) => [r.id, r.type]));
+			 const check = (
+					slot: "subtitle" | "bio" | "socials" | "email",
+					id: string | null | undefined,
+				) => {
+					if (!id) return;
+					const type = byId.get(id);
+					if (!type || !isCompatible(slot, type)) {
+						throw new TRPCError({
+							code: "BAD_REQUEST",
+							message: "Campo ligado incompatível ou inexistente.",
+						});
+					}
+				};
+				check("subtitle", layout.subtitleFieldId);
+				check("bio", layout.bioFieldId);
+				check("socials", layout.socialsFieldId);
+				check("email", layout.emailFieldId);
+				layout.stats.forEach((s, i) => {
+					const type = byId.get(s.fieldId);
+					if (!type || !isCompatible("stats", type)) {
+						throw new TRPCError({
+							code: "BAD_REQUEST",
+							message: `Item ${i + 1} dos stats incompatível ou inexistente.`,
+						});
+					}
+				});
+			}
+			const before = await readProjectLayout(input.projectId);
+			const beforeIds = new Set(
+				[
+					before.subtitleFieldId,
+					before.bioFieldId,
+					before.socialsFieldId,
+					before.emailFieldId,
+					...before.stats.map((s) => s.fieldId),
+				].filter((id): id is string => Boolean(id)),
+			);
+			const afterIds = new Set(ids);
+			const removed = [...beforeIds].filter((id) => !afterIds.has(id));
+			await writeProjectLayout(input.projectId, layout);
+			await dropVisibilityForFields(removed);
+			return { saved: true };
 		}),
 
 	/** Dados públicos do perfil: layout + respostas + visibilidade aplicada. */

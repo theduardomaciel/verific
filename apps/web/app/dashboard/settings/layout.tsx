@@ -14,6 +14,10 @@ const settingsLinks = [
 		label: "Inscrições",
 	},
 	{
+		href: "/settings/profile-layout",
+		label: "Perfil",
+	},
+	{
 		href: "/settings/theme",
 		label: "Tema",
 	},
