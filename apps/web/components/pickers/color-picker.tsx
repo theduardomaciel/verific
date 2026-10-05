@@ -315,7 +315,12 @@ export function ColorPicker({
 					</Button>
 				)}
 			</PopoverTrigger>
-			<PopoverContent>
+			<PopoverContent
+				side="bottom"
+				align="end"
+				collisionPadding={16}
+				className="w-[280px] max-w-[calc(100vw-2rem)]"
+			>
 				{/* Color gradient */}
 				<div
 					ref={colorPickerRef}
