@@ -83,7 +83,7 @@ export function ProfileSectionCard({
 
 	return (
 		<Card className="border-dashed">
-			<CardContent className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
+			<CardContent className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
 				<div className="min-w-0 flex-1">
 					<p className="font-semibold">Layout do perfil</p>
 					<p className="text-muted-foreground mt-1 text-xs">

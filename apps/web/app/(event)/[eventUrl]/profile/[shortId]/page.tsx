@@ -40,7 +40,9 @@ async function ProfilePageContent({ params }: ProfilePageProps) {
 				<EventContainer.Content>
 					<div className="container-d mb-8 flex w-full flex-col gap-4 md:gap-12">
 						<Suspense
-							fallback={<Skeleton className="h-96 w-full rounded-3xl" />}
+							fallback={
+								<Skeleton className="h-96 w-full rounded-3xl" />
+							}
 						>
 							<ProfileAccountIsland
 								eventUrl={eventUrl}
@@ -70,7 +72,7 @@ async function ProfilePageContent({ params }: ProfilePageProps) {
 	return (
 		<EventContainer.Holder>
 			<EventContainer.Content>
-				<div className="container-d mb-8 flex w-full flex-col gap-4 md:gap-12">
+				<div className="container-p mb-8 flex w-full flex-col gap-4 md:gap-12">
 					<ProfileBanner
 						name={pageData.name}
 						avatarUrl={pageData.avatarUrl}
@@ -91,29 +93,44 @@ async function ProfilePageContent({ params }: ProfilePageProps) {
 					/>
 					{hasPublicContent ? (
 						<Suspense>
-							<ProfileOwnerSection eventUrl={eventUrl} shortId={shortId}>
+							<ProfileOwnerSection
+								eventUrl={eventUrl}
+								shortId={shortId}
+							>
 								<ProfileStats
 									data={{
 										name: pageData.name,
 										stats: slots.stats,
-										showConnections: modules.connectionsEnabled,
+										showConnections:
+											modules.connectionsEnabled,
 										showBadges: modules.badgesEnabled,
 									}}
 								/>
 								<Suspense>
-									<ProfileOwnerHidden eventUrl={eventUrl} shortId={shortId} />
+									<ProfileOwnerHidden
+										eventUrl={eventUrl}
+										shortId={shortId}
+									/>
 								</Suspense>
 							</ProfileOwnerSection>
 						</Suspense>
 					) : (
 						<Suspense>
-							<ProfileOwnerHidden eventUrl={eventUrl} shortId={shortId} />
+							<ProfileOwnerHidden
+								eventUrl={eventUrl}
+								shortId={shortId}
+							/>
 						</Suspense>
 					)}
 					<Suspense
-						fallback={<Skeleton className="min-h-64 w-full rounded-3xl" />}
+						fallback={
+							<Skeleton className="min-h-64 w-full rounded-3xl" />
+						}
 					>
-						<ProfileOwnerTickets eventUrl={eventUrl} shortId={shortId} />
+						<ProfileOwnerTickets
+							eventUrl={eventUrl}
+							shortId={shortId}
+						/>
 					</Suspense>
 				</div>
 			</EventContainer.Content>

@@ -130,9 +130,7 @@ export function socialDisplayHandle(url: string): string {
 }
 
 export const socialEntrySchema = z.object({
-	service: z.enum(
-		SOCIAL_SERVICES.map((s) => s.id) as [string, ...string[]],
-	),
+	service: z.enum(SOCIAL_SERVICES.map((s) => s.id) as [string, ...string[]]),
 	value: z.string().min(1).max(300),
 });
 export type SocialEntry = z.infer<typeof socialEntrySchema>;
@@ -169,7 +167,7 @@ export const profileLayoutSchema = z.object({
 		.array(
 			z.object({
 				fieldId: z.uuid(),
-				label: z.string().trim().min(1).max(60),
+				label: z.string().trim().max(60),
 				icon: z.enum(STAT_ICON_KEYS),
 			}),
 		)
@@ -222,7 +220,10 @@ export function isFieldLinked(
  * Valor de resposta p/ exibição no perfil (pt-BR). Retorna null quando
  * vazio; nunca lança (renderer pula o slot em erro).
  */
-export function formatProfileValue(value: unknown, type: string): string | null {
+export function formatProfileValue(
+	value: unknown,
+	type: string,
+): string | null {
 	try {
 		if (value === null || value === undefined) return null;
 		if (typeof value === "string") {
