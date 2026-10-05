@@ -4,7 +4,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { FormPreview } from "./preview";
 import { useFormsBuilder } from "./hooks/use-forms-builder";
 import { trpc } from "@/lib/trpc/react";
-import { shouldShowProfileAtSignup } from "@verific/drizzle/profile";
 import { AnswersPanel } from "./components/answers-panel";
 import { BuilderCard } from "./components/builder-card";
 import { ProfileSectionCard } from "./components/profile-section-card";
@@ -49,12 +48,8 @@ export function FormsContent() {
 		persistSectionOrder,
 	} = builder;
 
-	// Única query do projeto aqui: flags derivadas uma vez e repassadas
-	// (prévia puramente apresentacional, sem fetch próprio).
+	// Única query do projeto aqui: flags repassadas ao totem de perfil.
 	const projectQuery = trpc.getProject.useQuery({ id: projectId });
-	const showProfileSection = shouldShowProfileAtSignup(
-		projectQuery.data?.project,
-	);
 
 	if (versionsQuery.isPending) {
 		return (
@@ -79,7 +74,6 @@ export function FormsContent() {
 					fields={fields}
 					sections={sections}
 					isLoading={isLoadingFields || projectQuery.isPending}
-					showProfileSection={showProfileSection}
 				/>
 			) : (
 				<>

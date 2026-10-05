@@ -28,6 +28,14 @@ import {
 
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
+import {
+	dropVisibilityForFields,
+	remapProfileLinksOnClone,
+	removeProfileLinksForFields,
+	slotForField,
+	isCompatible,
+	readProjectLayout,
+} from "../lib/profile-links";
 import { socialServiceById } from "@verific/drizzle/profile-layout";
 import {
 	PROFILE_SECTION_TITLE,
@@ -48,7 +56,7 @@ import {
 	type FormFieldForValidation,
 } from "../schemas";
 
-async function requireProjectAccess(projectId: string, userId: string) {
+export async function requireProjectAccess(projectId: string, userId: string) {
 	const data = await db.query.project.findFirst({
 		where: eq(project.id, projectId),
 		with: {
@@ -407,6 +415,17 @@ async function cloneVersionContents(
 				})
 				.where(eq(formSection.id, newSectionId));
 		}
+		// Links do layout do perfil acompanham os novos ids (só no
+		// formulário do evento); o resto é descartado sem quebrar nada.
+		const clonedVersion = await db.query.formVersion.findFirst({
+			where: eq(formVersion.id, newVersionId),
+			columns: { activityId: true },
+		});
+		await remapProfileLinksOnClone(
+			projectId,
+			!clonedVersion?.activityId,
+			fieldIdMap,
+		);
 	}
 	if (sourceSections.length === 0 && sourceFields.length > 0) {
 		const fallback = await db
@@ -922,6 +941,15 @@ export const formsRouter = createTRPCRouter({
 						}
 					}
 				}
+				const before = input.fieldId
+					? await db.query.formField.findFirst({
+							where: and(
+								eq(formField.id, input.fieldId),
+								eq(formField.formVersionId, input.versionId),
+							),
+							columns: { type: true, required: true },
+						})
+					: null;
 				const updated = await db
 					.update(formField)
 					.set({
@@ -949,6 +977,24 @@ export const formsRouter = createTRPCRouter({
 						code: "NOT_FOUND",
 						message: "Campo não encontrado.",
 					});
+				if (input.fieldId) {
+					const layout = await readProjectLayout(version.projectId);
+					const slot = slotForField(layout, input.fieldId);
+					if (slot && !isCompatible(slot.slot, input.type)) {
+						// Tipo incompatível com o slot: link some (sem quebrar nada).
+						await removeProfileLinksForFields(version.projectId, [
+							input.fieldId,
+						]);
+					} else if (
+						slot &&
+						before?.required === true &&
+						input.required === false
+					) {
+						// Virou opcional: flags somem (sem estado morto). Valores
+						// preenchidos passam a aparecer (aviso no editor).
+						await dropVisibilityForFields([input.fieldId]);
+					}
+				}
 				return updated[0];
 			}
 			const baseKey = input.key?.trim() || slugifyKey(input.label);
@@ -1032,6 +1078,9 @@ export const formsRouter = createTRPCRouter({
 				.select({ amount: count() })
 				.from(formAnswer)
 				.where(eq(formAnswer.fieldId, input.fieldId));
+			// Links do perfil p/ este campo somem junto (sem referência
+			// pendurada); flags de visibilidade vão junto.
+			await removeProfileLinksForFields(field.projectId, [input.fieldId]);
 			if ((answersCount[0]?.amount ?? 0) > 0) {
 				await db
 					.update(formField)
@@ -1427,6 +1476,14 @@ export const formsRouter = createTRPCRouter({
 						"Esta versão possui respostas vinculadas e não pode ser excluída.",
 				});
 			}
+			const versionFields = await db.query.formField.findMany({
+				where: eq(formField.formVersionId, input.versionId),
+				columns: { id: true },
+			});
+			await removeProfileLinksForFields(
+				version.projectId,
+				versionFields.map((f) => f.id),
+			);
 			await db.transaction(async (tx) => {
 				await tx
 					.delete(formField)

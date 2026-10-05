@@ -35,7 +35,7 @@ export function ProfileOwnerSection({
 	const hasHint = searchParams.get("me") !== null;
 	const session = authClient.useSession();
 	const userId = session.data?.user.id;
-	const myProfile = trpc.getMyProfile.useQuery(
+	const myProfile = trpc.getMyProfileData.useQuery(
 		{ projectUrl: eventUrl },
 		{ enabled: hasHint && Boolean(userId) },
 	);

@@ -1,35 +1,20 @@
-import { Globe, MailIcon } from "lucide-react";
-
-import GithubIcon from "@/public/icons/github.svg";
-import InstagramIcon from "@/public/icons/instagram.svg";
-import LinkedinIcon from "@/public/icons/linkedin.svg";
+import { MailIcon } from "lucide-react";
 
 import { getInitials } from "@/lib/i18n";
+import { SocialServiceIcon } from "./social-icons";
 
-function handleFromUrl(url: string) {
-	try {
-		const parsed = new URL(url);
-		if (parsed.protocol === "mailto:") return parsed.pathname;
-		return parsed.pathname.split("/").filter(Boolean).pop() ?? url;
-	} catch {
-		return url.split("/").pop()?.replace(/\?.*$/, "") ?? url;
-	}
+export interface BannerSocial {
+	service: string;
+	url: string;
+	display: string;
 }
-
-const SOCIAL_META = {
-	github: { Icon: GithubIcon, label: "GitHub" },
-	instagram: { Icon: InstagramIcon, label: "Instagram" },
-	linkedin: { Icon: LinkedinIcon, label: "LinkedIn" },
-	x: { Icon: Globe, label: "X" },
-	site: { Icon: Globe, label: "Site" },
-} as const;
 
 interface ProfileBannerProps {
 	name: string;
 	avatarUrl: string | null;
 	subtitle: string;
 	bio: string | null;
-	socials: Array<{ network: string; url: string }>;
+	socials: BannerSocial[];
 	publicEmail: string | null;
 	showBioAndSocials: boolean;
 	actions?: React.ReactNode;
@@ -93,26 +78,19 @@ export function ProfileBanner({
 				)}
 				{showBioAndSocials && (socials.length > 0 || publicEmail) && (
 					<ul className="flex flex-row flex-wrap items-start justify-start gap-4">
-						{socials.map((social) => {
-							const meta =
-								SOCIAL_META[
-									social.network as keyof typeof SOCIAL_META
-								] ?? SOCIAL_META.site;
-							const Icon = meta.Icon;
-							return (
-								<li key={`${social.network}-${social.url}`}>
-									<a
-										className="flex flex-row items-center justify-start gap-2 rounded-md bg-black/30 px-2 py-1.5 text-sm leading-none font-medium text-white"
-										href={social.url}
-										target="_blank"
-										rel="noopener noreferrer"
-									>
-										<Icon width={16} height={16} />
-										<span>{handleFromUrl(social.url)}</span>
-									</a>
-								</li>
-							);
-						})}
+						{socials.map((social) => (
+							<li key={`${social.service}-${social.url}`}>
+								<a
+									className="flex flex-row items-center justify-start gap-2 rounded-md bg-black/30 px-2 py-1.5 text-sm leading-none font-medium text-white"
+									href={social.url}
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									<SocialServiceIcon service={social.service} />
+									<span>{social.display}</span>
+								</a>
+							</li>
+						))}
 						{publicEmail && (
 							<li key={publicEmail}>
 								<a

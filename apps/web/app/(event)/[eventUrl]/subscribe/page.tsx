@@ -64,10 +64,6 @@ async function SubscribeContent({
 								project.primaryColor,
 								project.secondaryColor,
 							].filter(Boolean) as string[],
-							profilesEnabled: Boolean(project.profilesEnabled),
-							profileFillAtSignup: Boolean(
-								project.profileFillAtSignup ?? true,
-							),
 						}}
 					/>
 				</div>

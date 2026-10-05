@@ -4,12 +4,13 @@ import { Suspense } from "react";
 import * as EventContainer from "@/components/landing/event-container";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProfileBanner } from "@/components/profile/profile-banner";
-import { ProfileInfo } from "@/components/profile/profile-info";
+import { ProfileStats } from "@/components/profile/profile-stats";
 import { ProfileOwnerActions } from "@/components/profile/profile-owner-actions";
+import { ProfileOwnerHidden } from "@/components/profile/profile-owner-hidden";
 import { ProfileOwnerSection } from "@/components/profile/profile-owner-section";
 import { ProfileOwnerTickets } from "@/components/profile/profile-owner-tickets";
 import { ProfileAccountIsland } from "@/components/profile/profile-account-island";
-import { getProject, getPublicProfile } from "@/lib/data";
+import { getProject, getProfilePageData } from "@/lib/data";
 
 interface ProfilePageProps {
 	params: Promise<{ eventUrl: string; shortId: string }>;
@@ -17,8 +18,8 @@ interface ProfilePageProps {
 
 /**
  * Perfil do participante no evento (ISR por participante+evento).
- * - Perfis ativados: shell estático com conteúdo público (privacidade
- *   aplicada no servidor) + ilhas do dono (?me=1).
+ * Slots dinâmicos: layout do evento + respostas + visibilidade.
+ * - Perfis ativados: shell estático público + ilhas do dono (?me=1).
  * - Perfis desativados: mesmo URL em modo conta privado — shell estático
  *   sem nenhum dado pessoal; só o dono (via link ?me=1) carrega conteúdo.
  */
@@ -53,24 +54,26 @@ async function ProfilePageContent({ params }: ProfilePageProps) {
 		);
 	}
 
-	let publicProfile;
+	let pageData;
 	try {
-		publicProfile = await getPublicProfile(eventUrl, shortId);
+		pageData = await getProfilePageData(eventUrl, shortId);
 	} catch {
 		notFound();
 	}
+
+	const { slots, modules } = pageData;
 
 	return (
 		<EventContainer.Holder>
 			<EventContainer.Content>
 				<div className="container-d mb-8 flex w-full flex-col gap-4 md:gap-12">
 					<ProfileBanner
-						name={publicProfile.name}
-						avatarUrl={publicProfile.avatar.url}
-						subtitle={publicProfile.roleTitle ?? ""}
-						bio={publicProfile.bio}
-						socials={publicProfile.socials}
-						publicEmail={publicProfile.publicEmail}
+						name={pageData.name}
+						avatarUrl={pageData.avatarUrl}
+						subtitle={slots.subtitle?.value ?? ""}
+						bio={slots.bio?.value ?? null}
+						socials={slots.socials}
+						publicEmail={slots.email?.value ?? null}
 						showBioAndSocials
 						actions={
 							<Suspense>
@@ -84,7 +87,16 @@ async function ProfilePageContent({ params }: ProfilePageProps) {
 					/>
 					<Suspense>
 						<ProfileOwnerSection eventUrl={eventUrl} shortId={shortId}>
-							<ProfileInfo data={publicProfile} />
+							<ProfileStats
+								data={{
+									name: pageData.name,
+									stats: slots.stats,
+									showConnections: modules.connectionsEnabled,
+								}}
+							/>
+							<Suspense>
+								<ProfileOwnerHidden eventUrl={eventUrl} shortId={shortId} />
+							</Suspense>
 						</ProfileOwnerSection>
 					</Suspense>
 					<Suspense

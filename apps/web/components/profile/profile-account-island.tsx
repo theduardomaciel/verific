@@ -39,7 +39,7 @@ export function ProfileAccountIsland({
 	const hasHint = searchParams.get("me") !== null;
 	const session = authClient.useSession();
 	const userId = session.data?.user.id;
-	const myProfile = trpc.getMyProfile.useQuery(
+	const myProfile = trpc.getMyProfileData.useQuery(
 		{ projectUrl: eventUrl },
 		{ enabled: hasHint && Boolean(userId) },
 	);
@@ -72,16 +72,11 @@ export function ProfileAccountIsland({
 		notFound();
 	}
 
-	const avatarUrl =
-		data.profile?.avatarSource === "github" && data.profile.avatarGithubHandle
-			? `https://github.com/${data.profile.avatarGithubHandle}.png`
-			: (data.googleImage ?? null);
-
 	return (
 		<div className="flex w-full flex-col gap-6">
 			<ProfileBanner
 				name={data.name}
-				avatarUrl={avatarUrl}
+				avatarUrl={data.avatarUrl}
 				subtitle={data.accountEmail}
 				bio={null}
 				socials={[]}
@@ -100,7 +95,7 @@ export function ProfileAccountIsland({
 								<DialogHeader>
 									<DialogTitle>Editar inscrição</DialogTitle>
 								</DialogHeader>
-								<EditMyAnswersForm projectId={projectId} />
+								<EditMyAnswersForm projectId={projectId} projectUrl={eventUrl} />
 							</DialogContent>
 						</Dialog>
 						<LogoutForm redirectTo={`/${eventUrl}`}>

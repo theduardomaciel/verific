@@ -18,8 +18,6 @@ interface SubscribeGateProps {
 		name?: string;
 		logo?: string;
 		colors?: string[];
-		profilesEnabled?: boolean;
-		profileFillAtSignup?: boolean;
 	};
 }
 
