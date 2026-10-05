@@ -47,7 +47,26 @@ function PreviewShell({
 			style={cssVars as React.CSSProperties}
 		>
 			<EventBackgroundEffects />
-			<div className="relative z-10">{children}</div>
+			<div className="relative z-10">
+				<div
+					className="flex w-full items-center justify-between px-4 py-4 md:px-8"
+					style={{ background: "var(--ev-header-bg)" }}
+				>
+					<span
+						className="h-6 w-28 rounded"
+						style={{ background: "var(--ev-content-accent)" }}
+						aria-label="Logo do evento (prévia)"
+					/>
+					<nav className="flex items-center gap-4 text-xs font-semibold text-white">
+						<span>Sobre</span>
+						<span>Programação</span>
+						<span className="rounded-full border border-white/40 px-3 py-1 uppercase">
+							Inscrição
+						</span>
+					</nav>
+				</div>
+				{children}
+			</div>
 		</div>
 	);
 }

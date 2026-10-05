@@ -27,6 +27,7 @@ import {
 	ProfileFieldsSection,
 	toProfileInput,
 } from "@/components/forms/profile-fields-section";
+import { isFilled } from "@/components/forms/profile-normalize";
 import { profileInputSchema } from "@verific/drizzle/profile";
 
 // Validation
@@ -157,6 +158,7 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 	);
 
 	const watchedAnswers = form.watch("answers") ?? {};
+	const watchedName = form.watch("name") ?? "";
 
 	const { visibleFields, groupedSections } = useMemo(() => {
 		if (!hasConditional) {
@@ -265,7 +267,9 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 							title="Dados da inscrição"
 							section={showProfileSection ? 2 : 1}
 							form={form as unknown as GenericForm}
-							fields={[]}
+							fields={[
+								{ name: "Nome completo", value: isFilled(watchedName) },
+							]}
 						>
 							<p className="text-muted-foreground text-sm">Carregando formulário do evento...</p>
 							<SectionFooter isFinalSection />
@@ -275,7 +279,9 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 							title="Dados da inscrição"
 							section={showProfileSection ? 2 : 1}
 							form={form as unknown as GenericForm}
-							fields={[]}
+							fields={[
+								{ name: "Nome completo", value: isFilled(watchedName) },
+							]}
 						>
 							<FormField
 								control={form.control}
@@ -304,7 +310,10 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 								title={group.section.title}
 								section={gi + (showProfileSection ? 2 : 1)}
 								form={form as unknown as GenericForm}
-								fields={group.fields.map((f) => ({ name: f.label, value: false }))}
+								fields={group.fields.map((f) => ({
+									name: f.label,
+									value: isFilled(watchedAnswers[f.key]),
+								}))}
 							>
 								{gi === 0 && (
 									<FormField

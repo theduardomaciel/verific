@@ -27,10 +27,18 @@ export type FontPreset = z.infer<typeof fontPresetSchema>;
 export const themeRoleSchema = z.enum(["primary", "secondary"]);
 export type ThemeRole = z.infer<typeof themeRoleSchema>;
 
+/** Origens de cor para paradas de gradiente (permite fade p/ transparente). */
+export const gradientStopSchema = z.enum(["primary", "secondary", "transparent"]);
+export type GradientStop = z.infer<typeof gradientStopSchema>;
+
+/** Origens de cor para efeitos de fundo (inclui neutro do tema). */
+export const effectColorSchema = z.enum(["primary", "secondary", "foreground"]);
+export type EffectColor = z.infer<typeof effectColorSchema>;
+
 const gradientEndSchema = z.object({
 	height: z.number().int().min(0).max(600).default(240),
-	from: themeRoleSchema.default("primary"),
-	to: themeRoleSchema.default("secondary"),
+	from: gradientStopSchema.default("primary"),
+	to: gradientStopSchema.default("secondary"),
 	opacity: z.number().min(0).max(1).default(0.35),
 });
 
@@ -75,7 +83,7 @@ export const eventThemeSchema = z.object({
 			effect: z.enum(["none", "grid", "dots", "solid"]).default("none"),
 			effectSize: z.number().int().min(8).max(96).default(32),
 			effectOpacity: z.number().min(0).max(0.5).default(0.12),
-			effectColor: themeRoleSchema.default("primary"),
+			effectColor: effectColorSchema.default("primary"),
 			topGradient: gradientEndSchema.nullable().default(null),
 			bottomGradient: gradientEndSchema.nullable().default(null),
 		})

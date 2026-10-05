@@ -162,6 +162,7 @@ export function EditProfileDialog({
 							className="flex flex-col gap-4"
 						>
 							<ProfileFieldsSection
+								bare
 								form={form as unknown as GenericForm}
 							/>
 							<Button

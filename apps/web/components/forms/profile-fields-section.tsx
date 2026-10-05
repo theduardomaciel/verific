@@ -18,6 +18,12 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import type { GenericForm } from "@/components/forms";
+import {
+	githubHandle,
+	isFilled,
+	socialUrl,
+	str,
+} from "./profile-normalize";
 
 export interface ProfileFormValue {
 	roleTitle?: string | null;
@@ -35,21 +41,18 @@ export interface ProfileFormValue {
 }
 
 function toProfileInput(value: ProfileFormValue) {
-	const str = (v: string | null | undefined) => (v ?? "").trim();
 	const socials: Array<{
 		network: "github" | "instagram" | "linkedin" | "site";
 		url: string;
 	}> = [];
-	const github = str(value.github).replace(/^@/, "");
+	const github = githubHandle(value.github);
 	if (github) socials.push({ network: "github", url: `https://github.com/${github}` });
-	for (const [network, raw] of [
-		["instagram", value.instagram],
-		["linkedin", value.linkedin],
-		["site", value.site],
-	] as const) {
-		const url = str(raw);
-		if (url) socials.push({ network, url });
-	}
+	const instagram = socialUrl(value.instagram, "https://instagram.com/");
+	if (instagram) socials.push({ network: "instagram", url: instagram });
+	const linkedin = socialUrl(value.linkedin, "https://linkedin.com/in/");
+	if (linkedin) socials.push({ network: "linkedin", url: linkedin });
+	const site = socialUrl(value.site);
+	if (site) socials.push({ network: "site", url: site });
 	const birth = str(value.birthDate);
 	return {
 		roleTitle: str(value.roleTitle) || null,
@@ -60,7 +63,8 @@ function toProfileInput(value: ProfileFormValue) {
 		socials,
 		publicEmail: str(value.publicEmail) || null,
 		avatarSource: value.avatarSource ?? "google",
-		avatarGithubHandle: str(value.avatarGithubHandle) || str(value.github) || null,
+		// Mesmo campo do GitHub social serve p/ a foto (sem campo separado).
+		avatarGithubHandle: str(value.avatarGithubHandle) || github,
 	};
 }
 
@@ -68,6 +72,8 @@ export { toProfileInput };
 
 interface ProfileFieldsSectionProps {
 	form: GenericForm;
+	/** Sem o invólucro FormSection (ex: dentro do diálogo, que já tem aba). */
+	bare?: boolean;
 }
 
 /**
@@ -75,15 +81,13 @@ interface ProfileFieldsSectionProps {
  * formulário hospedeiro sob `profile.*`. Usada na inscrição e no diálogo
  * "Editar perfil" com as mesmas definições/validação.
  */
-export function ProfileFieldsSection({ form }: ProfileFieldsSectionProps) {
-	return (
-		<FormSection
-			title="Perfil no evento"
-			section={0}
-			form={form}
-			fields={[{ name: "Perfil", value: true }]}
-		>
-			<div className="flex w-full flex-col gap-6">
+export function ProfileFieldsSection({ form, bare = false }: ProfileFieldsSectionProps) {
+	const profileValues = form.watch("profile") as Record<string, unknown> | undefined;
+	const profileFilled = profileValues
+		? Object.values(profileValues).some(isFilled)
+		: false;
+	const fields = (
+		<div className="flex w-full flex-col gap-6">
 				<div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2">
 					<FormField
 						control={form.control}
@@ -175,10 +179,10 @@ export function ProfileFieldsSection({ form }: ProfileFieldsSectionProps) {
 						name="profile.github"
 						render={({ field }) => (
 							<FormItem className="w-full">
-								<FormLabel>GitHub (usuário)</FormLabel>
+								<FormLabel>GitHub (usuário ou URL)</FormLabel>
 								<FormControl>
 									<Input
-										placeholder="seu-usuario"
+										placeholder="seu-usuario ou https://github.com/voce"
 										{...field}
 										value={field.value ?? ""}
 									/>
@@ -192,10 +196,10 @@ export function ProfileFieldsSection({ form }: ProfileFieldsSectionProps) {
 						name="profile.instagram"
 						render={({ field }) => (
 							<FormItem className="w-full">
-								<FormLabel>Instagram (URL)</FormLabel>
+								<FormLabel>Instagram (usuário ou URL)</FormLabel>
 								<FormControl>
 									<Input
-										placeholder="https://instagram.com/voce"
+										placeholder="voce ou https://instagram.com/voce"
 										{...field}
 										value={field.value ?? ""}
 									/>
@@ -211,10 +215,10 @@ export function ProfileFieldsSection({ form }: ProfileFieldsSectionProps) {
 						name="profile.linkedin"
 						render={({ field }) => (
 							<FormItem className="w-full">
-								<FormLabel>LinkedIn (URL)</FormLabel>
+								<FormLabel>LinkedIn (usuário ou URL)</FormLabel>
 								<FormControl>
 									<Input
-										placeholder="https://linkedin.com/in/voce"
+										placeholder="voce ou https://linkedin.com/in/voce"
 										{...field}
 										value={field.value ?? ""}
 									/>
@@ -259,54 +263,45 @@ export function ProfileFieldsSection({ form }: ProfileFieldsSectionProps) {
 						</FormItem>
 					)}
 				/>
-				<div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2">
-					<FormField
-						control={form.control}
-						name="profile.avatarSource"
-						render={({ field }) => (
-							<FormItem className="w-full">
-								<FormLabel>Foto do perfil</FormLabel>
-								<Select
-									onValueChange={field.onChange}
-									value={field.value ?? "google"}
-								>
-									<FormControl>
-										<SelectTrigger>
-											<SelectValue placeholder="Escolha a foto" />
-										</SelectTrigger>
-									</FormControl>
-									<SelectContent>
-										<SelectItem value="google">
-											Foto da conta Google
-										</SelectItem>
-										<SelectItem value="github">
-											Foto do GitHub
-										</SelectItem>
-									</SelectContent>
-								</Select>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-					<FormField
-						control={form.control}
-						name="profile.avatarGithubHandle"
-						render={({ field }) => (
-							<FormItem className="w-full">
-								<FormLabel>Usuário do GitHub (foto)</FormLabel>
+				<FormField
+					control={form.control}
+					name="profile.avatarSource"
+					render={({ field }) => (
+						<FormItem className="w-full">
+							<FormLabel>Foto do perfil</FormLabel>
+							<Select
+								onValueChange={field.onChange}
+								value={field.value ?? "google"}
+							>
 								<FormControl>
-									<Input
-										placeholder="seu-usuario"
-										{...field}
-										value={field.value ?? ""}
-									/>
+									<SelectTrigger>
+										<SelectValue placeholder="Escolha a foto" />
+									</SelectTrigger>
 								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-				</div>
+								<SelectContent>
+									<SelectItem value="google">
+										Foto da conta Google
+									</SelectItem>
+									<SelectItem value="github">
+										Foto do GitHub (usa o campo GitHub acima)
+									</SelectItem>
+								</SelectContent>
+							</Select>
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
 			</div>
+		);
+	if (bare) return fields;
+	return (
+		<FormSection
+			title="Perfil no evento"
+			section={0}
+			form={form}
+			fields={[{ name: "Perfil", value: profileFilled }]}
+		>
+			{fields}
 		</FormSection>
 	);
 }
