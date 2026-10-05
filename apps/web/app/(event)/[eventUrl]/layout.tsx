@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { cacheLife, cacheTag } from "next/cache";
 
 import Logo from "@/public/logo.svg";
 import { EventHeader } from "@/components/event-header";
@@ -19,7 +20,11 @@ export async function generateMetadata({
 }: {
 	params: Promise<{ eventUrl: string }>;
 }): Promise<Metadata> {
+	"use cache";
+	cacheLife("hours");
+
 	const { eventUrl } = await params;
+	cacheTag("projects", `project:${eventUrl}`);
 	const result = await getProject(eventUrl);
 
 	if (!result?.project) {

@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { Calendar } from "lucide-react";
 
 import * as EventContainer from "@/components/landing/event-container";
+import { Skeleton } from "@/components/ui/skeleton";
 import { SubscribeGate } from "@/components/subscribe-gate";
 
 import { getEventRegistration, getProject } from "@/lib/data";
@@ -78,8 +79,34 @@ export default function EventSubscribePage({
 	params: Promise<{ eventUrl: string }>;
 }) {
 	return (
-		<Suspense fallback={<div className="min-h-[50vh]" />}>
+		<Suspense fallback={<SubscribePageFallback />}>
 			<SubscribeContent params={params} />
 		</Suspense>
+	);
+}
+
+/**
+ * Esqueleto em tamanho real da inscrição: espelha o Hero (py-24) e o
+ * `SubscribeSkeleton` do gate para que o rodapé não suba enquanto o
+ * shell estático resolve.
+ */
+function SubscribePageFallback() {
+	return (
+		<EventContainer.Holder>
+			<section className="relative flex w-full overflow-hidden py-24">
+				<div className="container-p z-10 mx-auto flex w-full flex-col items-center gap-4">
+					<Skeleton className="h-12 w-full max-w-xl" />
+					<Skeleton className="h-6 w-64" />
+				</div>
+			</section>
+			<EventContainer.Content>
+				<div className="container-p w-full">
+					<div className="flex min-h-[50vh] w-full flex-col gap-6">
+						<Skeleton className="h-40 w-full" />
+						<Skeleton className="h-64 w-full" />
+					</div>
+				</div>
+			</EventContainer.Content>
+		</EventContainer.Holder>
 	);
 }

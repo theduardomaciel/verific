@@ -17,6 +17,25 @@ interface ProfilePageProps {
 }
 
 /**
+ * Esqueleto em tamanho real do perfil: mesmos contêineres e alturas do
+ * conteúdo final (banner h-96,Tickets min-h-64) para que o rodapé do
+ * layout não suba para o topo enquanto o shell estático resolve.
+ */
+function ProfilePageSkeleton() {
+	return (
+		<EventContainer.Holder>
+			<EventContainer.Content>
+				<div className="container-p mb-8 flex min-h-[60vh] w-full flex-col gap-4 md:gap-12">
+					<Skeleton className="h-96 w-full rounded-3xl" />
+					<Skeleton className="h-40 w-full rounded-3xl" />
+					<Skeleton className="min-h-64 w-full rounded-3xl" />
+				</div>
+			</EventContainer.Content>
+		</EventContainer.Holder>
+	);
+}
+
+/**
  * Perfil do participante no evento (ISR por participante+evento).
  * Slots dinâmicos: layout do evento + respostas + visibilidade.
  * - Perfis ativados: shell estático público + ilhas do dono (?me=1).
@@ -82,7 +101,7 @@ async function ProfilePageContent({ params }: ProfilePageProps) {
 						publicEmail={slots.email?.value ?? null}
 						showBioAndSocials
 						actions={
-							<Suspense>
+							<Suspense fallback={null}>
 								<ProfileOwnerActions
 									eventUrl={eventUrl}
 									projectId={project.id}
@@ -92,7 +111,11 @@ async function ProfilePageContent({ params }: ProfilePageProps) {
 						}
 					/>
 					{hasPublicContent ? (
-						<Suspense>
+						<Suspense
+							fallback={
+								<Skeleton className="h-40 w-full rounded-3xl" />
+							}
+						>
 							<ProfileOwnerSection
 								eventUrl={eventUrl}
 								shortId={shortId}
@@ -106,7 +129,7 @@ async function ProfilePageContent({ params }: ProfilePageProps) {
 										showBadges: modules.badgesEnabled,
 									}}
 								/>
-								<Suspense>
+								<Suspense fallback={null}>
 									<ProfileOwnerHidden
 										eventUrl={eventUrl}
 										shortId={shortId}
@@ -115,7 +138,7 @@ async function ProfilePageContent({ params }: ProfilePageProps) {
 							</ProfileOwnerSection>
 						</Suspense>
 					) : (
-						<Suspense>
+						<Suspense fallback={null}>
 							<ProfileOwnerHidden
 								eventUrl={eventUrl}
 								shortId={shortId}
@@ -140,7 +163,7 @@ async function ProfilePageContent({ params }: ProfilePageProps) {
 
 export default function EventProfilePage({ params }: ProfilePageProps) {
 	return (
-		<Suspense>
+		<Suspense fallback={<ProfilePageSkeleton />}>
 			<ProfilePageContent params={params} />
 		</Suspense>
 	);
