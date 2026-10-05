@@ -55,6 +55,18 @@ export async function revalidateParticipants() {
 	revalidateTag("participants", "max");
 }
 
+/**
+ * Invalida o cache do evento recém-criado (entradas de `getProject` /
+ * `getEventRegistration` para aquela URL, incluindo `null`s cacheados de
+ * visitas anteriores à criação). Tag por projeto: os demais eventos
+ * mantêm o cache intacto. A lista de `generateStaticParams` (tag
+ * "projects") expira por tempo — sem papel em runtime pós-build, já que
+ * caminhos novos renderizam on-demand.
+ */
+export async function revalidateProjects(projectUrl: string) {
+	updateTag(`project:${projectUrl}`);
+}
+
 export async function revalidateParticipantActivities(userId: string) {
 	updateTag(`activities-from-participant-${userId}`);
 }

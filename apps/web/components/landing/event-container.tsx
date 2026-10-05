@@ -19,7 +19,9 @@ interface EventHeroProps {
 	coverUrl?: string | null;
 }
 
-export function Hero({ children, coverUrl }: EventHeroProps) {
+export async function Hero({ children, coverUrl }: EventHeroProps) {
+	const teste = await new Promise((r) => setTimeout(r, 500));
+
 	return (
 		<section className="relative flex w-full overflow-hidden py-24">
 			<div className="container-p z-10 mx-auto flex w-full flex-col gap-8 md:flex-row">
@@ -29,9 +31,10 @@ export function Hero({ children, coverUrl }: EventHeroProps) {
 			<Image
 				src={coverUrl || "/images/hero-bg.png"}
 				className="z-0 object-cover"
-				alt=""
+				alt="Capa do evento"
 				aria-hidden
 				fill
+				loading="eager"
 				sizes="100vw"
 			/>
 			<div
