@@ -34,7 +34,7 @@ export function ProfileOwnerTickets({
 	);
 
 	if (!hasHint) return null;
-	if (session.isPending || (userId && myProfile.isPending) || !myProfile.data) {
+	if (session.isPending || (userId && myProfile.isPending)) {
 		return (
 			<div className="flex w-full flex-col gap-4">
 				<Skeleton className="h-7 w-40" />
@@ -42,8 +42,8 @@ export function ProfileOwnerTickets({
 			</div>
 		);
 	}
-	if (!isOwner || activities.isPending) {
-		if (!isOwner) return null;
+	if (!isOwner) return null;
+	if (activities.isPending) {
 		return (
 			<div className="flex w-full flex-col gap-4">
 				<Skeleton className="h-7 w-40" />
