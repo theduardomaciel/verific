@@ -10,10 +10,6 @@ const settingsLinks = [
 		label: "Preferências",
 	},
 	{
-		href: "/settings/subscriptions",
-		label: "Inscrições",
-	},
-	{
 		href: "/settings/profile-layout",
 		label: "Perfil",
 	},

@@ -17,6 +17,12 @@ interface ProfilePageProps {
 	params: Promise<{ eventUrl: string; shortId: string }>;
 }
 
+// Rota inerentemente dinâmica (`shortId` ilimitado + ilhas do dono via
+// `?me=1`): nunca será pré-renderizada, então opta por navegação com
+// bloqueio em vez de "instant". Isso preserva o gate `notFound` real
+// antes do `<Suspense>` abaixo.
+export const instant = false;
+
 type ProfileServerData = {
 	eventUrl: string;
 	shortId: string;

@@ -4,7 +4,7 @@ import { EventPageSkeleton } from "@/app/(event)/[eventUrl]/skeleton";
 import { SchedulePageSkeleton } from "@/app/(event)/[eventUrl]/schedule/skeleton";
 import { SubscribePageSkeleton } from "@/app/(event)/[eventUrl]/subscribe/skeleton";
 import { ProfilePageSkeleton } from "@/app/(event)/[eventUrl]/profile/[shortId]/skeleton";
-import ScheduleLoading from "@/app/(event)/[eventUrl]/schedule/content-skeleton";
+import { ScheduleLoading } from "@/app/(event)/[eventUrl]/schedule/content-skeleton";
 
 /**
  * DEV-ONLY: renders every event-route skeleton at rest, so sizes can be

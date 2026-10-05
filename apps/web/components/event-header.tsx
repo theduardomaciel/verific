@@ -1,7 +1,12 @@
 import { Header } from "@/components/header/landing-header";
 import type { MainNavProps } from "@/components/header/main-nav";
-import { getEventRegistration, getProject } from "@/lib/data";
-import { resolveEventTheme } from "@/lib/theme/resolve";
+import {
+	EVENT_CTA_CLASS,
+	EVENT_MENU_BUTTON_CLASS,
+	MOBILE_CTA_CLASS,
+	MOBILE_NAV_CLASS,
+} from "@/components/landing/event-nav";
+import { getEventRegistration } from "@/lib/data";
 
 interface EventHeaderProps {
 	eventUrl: string;
@@ -10,98 +15,64 @@ interface EventHeaderProps {
 }
 
 /**
- * Cabeçalho do evento: 100% estático e idêntico para todo visitante.
- * Três itens fixos — "Sobre", "Programação" e o CTA "INSCRIÇÃO"
- * (oculto apenas quando as inscrições estão fechadas ou o evento está
- * arquivado, decidido server-side a partir dos dados do evento).
- * Sem login, avatar, logout ou qualquer conteúdo de sessão.
+ * Links do cabeçalho do evento: dados estáticos de módulo, sem lógica de
+ * tema. As cores vêm todas dos tokens `--ev-nav-*`/`--ev-cta-*` derivados
+ * server-side, então o mesmo conjunto funciona em qualquer estilo/cor de
+ * cabeçalho e nos dois modos de cor.
  */
-export async function EventHeader({ eventUrl, logo, className }: EventHeaderProps) {
+const NAV_LINKS: MainNavProps["links"] = [
+	{
+		href: "",
+		label: "Sobre",
+		variant: "event-nav",
+		mobileClassName: MOBILE_NAV_CLASS,
+	},
+	{
+		href: "/schedule",
+		label: "Programação",
+		variant: "event-nav",
+		mobileClassName: MOBILE_NAV_CLASS,
+	},
+];
+
+/**
+ * Cabeçalho do evento: 100% estático e idêntico para todo visitante.
+ * Dois links fixos — "Sobre" e "Programação" — e o CTA "Inscrição" (apenas
+ * quando as inscrições estão abertas, decidido server-side a partir dos
+ * dados do evento). Sem login, avatar, logout ou qualquer conteúdo de
+ * sessão.
+ */
+export async function EventHeader({
+	eventUrl,
+	logo,
+	className,
+}: EventHeaderProps) {
 	const registration = await getEventRegistration(eventUrl);
-	const registrationOpen = registration?.isOpen ?? false;
 
-	// `getProject` tem cache (`"use cache"`), então esta segunda leitura é
-	// barata: serve só para derivar as classes do cabeçalho a partir do tema.
-	const result = await getProject(eventUrl);
-	const { theme } = resolveEventTheme({
-		theme: (result?.project as { theme?: unknown } | undefined)?.theme,
-		primaryColor: result?.project?.primaryColor,
-		secondaryColor: result?.project?.secondaryColor,
-	});
-
-	// Realce na cor oposta à do cabeçalho sólido (primário → secundário e
-	// vice-versa). Gradiente/transparente mantêm o padrão (secundário).
-	// O hover vai em `buttonClassName` (no `Button`, não no `Link`): o
-	// variant `ghost` traz `dark:hover:bg-accent/50`, que vence por
-	// especificidade no modo escuro quando ambos coexistem. Mesclado via
-	// `cn` no `Button`, o `tailwind-merge` remove as regras do variant —
-	// incluindo as empilhadas `dark:hover:`, daí as duplicatas abaixo.
-	// Classes literais — sem interpolação — para o Tailwind gerá-las.
-	// Isso também aposenta o `hover:text-primary-foreground/90` quebrado
-	// (mistura via `color-mix` sem suporte garantido).
-	const solidSecondary =
-		theme.header.style === "solid" && theme.header.bg === "secondary";
-	const navClass = solidSecondary
-		? "text-secondary-foreground text-sm"
-		: "text-primary-foreground text-sm";
-	const navButtonClass = solidSecondary
-		? "hover:bg-primary hover:text-primary-foreground dark:hover:bg-primary dark:hover:text-primary-foreground"
-		: "hover:bg-secondary hover:text-secondary-foreground dark:hover:bg-secondary dark:hover:text-secondary-foreground";
-	const navActiveClass = solidSecondary
-		? "!bg-secondary-foreground !text-secondary"
-		: "!bg-primary-foreground !text-primary";
-	const navMobileClass = solidSecondary
-		? "text-secondary-foreground"
-		: "text-primary-foreground";
-	const ctaClass = solidSecondary
-		? "border-primary font-semibold uppercase border text-secondary-foreground text-xs"
-		: "border-secondary font-semibold uppercase border text-primary-foreground text-xs";
-	const ctaButtonClass = solidSecondary
-		? "hover:text-primary-foreground hover:bg-primary dark:hover:text-primary-foreground dark:hover:bg-primary"
-		: "hover:text-secondary-foreground hover:bg-secondary dark:hover:text-secondary-foreground dark:hover:bg-secondary";
-	const ctaActiveClass = solidSecondary
-		? "!text-primary-foreground !bg-primary"
-		: "!text-secondary-foreground !bg-secondary";
-	const ctaMobileClass = solidSecondary
-		? "text-primary-foreground uppercase py-3 border border-primary w-full rounded text-center items-center text-sm bg-primary"
-		: "text-secondary-foreground uppercase py-3 border border-secondary w-full rounded text-center items-center text-sm bg-secondary";
-
-	const links: MainNavProps["links"] = [
-		{
-			href: "",
-			label: "Sobre",
-			className: navClass,
-			buttonClassName: navButtonClass,
-			activeClassName: navActiveClass,
-			mobileClassName: navMobileClass,
-		},
-		{
-			href: "/schedule",
-			label: "Programação",
-			className: navClass,
-			buttonClassName: navButtonClass,
-			activeClassName: navActiveClass,
-			mobileClassName: navMobileClass,
-		},
-		...(registrationOpen
-			? [
-					{
-						href: "/subscribe",
-						label: "Inscrição",
-						className: ctaClass,
-						buttonClassName: ctaButtonClass,
-						activeClassName: ctaActiveClass,
-						mobileClassName: ctaMobileClass,
-					} as const,
-				]
-			: []),
-	];
+	// `isOpen` é o campo derivado que já considera o toggle, o arquivamento
+	// e o fim do evento — o mesmo que `EventAction` usa para habilitar o CTA.
+	// (a página de inscrição redireciona com `isRegistrationEnabled`, que é
+	// só o switch do organizador: divergir dos dois deixaria um CTA
+	// apontando para um redirect.)
+	const links = registration?.isOpen
+		? [
+				...NAV_LINKS,
+				{
+					href: "/subscribe",
+					label: "Inscrição",
+					variant: "event-cta" as const,
+					className: EVENT_CTA_CLASS,
+					mobileClassName: MOBILE_CTA_CLASS,
+				},
+			]
+		: NAV_LINKS;
 
 	return (
 		<Header
 			className={className}
 			style={{ background: "var(--ev-header-bg)" }}
-			buttonClassName="text-white"
+			buttonClassName={EVENT_MENU_BUTTON_CLASS}
+			eventMenu
 			links={links}
 			prefix={`/${eventUrl}`}
 			logo={logo}

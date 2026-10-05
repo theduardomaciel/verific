@@ -24,7 +24,6 @@
 	},
 	"devDependencies": {
 		"@types/ws": "^8.18.1",
-		"@verific/eslint-config": "workspace:*",
 		"@verific/prettier-config": "workspace:*",
 		"@verific/typescript-config": "workspace:*",
 		"drizzle-kit": "^0.31.11"

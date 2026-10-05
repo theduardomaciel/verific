@@ -7,16 +7,20 @@ import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
+/** Links podem forjar o próprio `Button` quando o header tem estilo próprio. */
+export interface MainNavLink {
+	href: string;
+	label: string;
+	className?: string; // Classe CSS adicional para o link
+	/** Sobrescreve o variant padrão (`secondary`/`ghost`) do `Button`. */
+	variant?: React.ComponentProps<typeof Button>["variant"];
+	/** Classe adicional só no menu mobile (`MobileMenu`). */
+	mobileClassName?: string;
+}
+
 export interface MainNavProps {
 	prefix?: string; // Prefixo para as rotas
-	links: {
-		href: string;
-		label: string;
-		className?: string; // Classe CSS adicional para o link
-		activeClassName?: string; // Classe CSS adicional para o link ativo
-		mobileClassName?: string; // Classe CSS adicional para o link no mobile
-		buttonClassName?: string; // Classe do `Button` (mesclada via `cn`, sobrescreve o hover do variant)
-	}[];
+	links: MainNavLink[];
 }
 
 export default function MainNav({
@@ -73,20 +77,17 @@ export default function MainNav({
 					return (
 						<Button
 							key={href}
-							variant={isActive ? "secondary" : "ghost"}
-							className={link.buttonClassName}
+							variant={link.variant ?? (isActive ? "secondary" : "ghost")}
 							asChild
 						>
 							<Link
 								className={cn(
 									"font-medium whitespace-nowrap",
 									link.className,
-									{
-										[link.activeClassName ?? ""]: isActive,
-									},
 								)}
 								href={href}
 								ref={isActive ? activeButtonRef : null}
+								aria-current={isActive ? "page" : undefined}
 							>
 								{link.label}
 							</Link>

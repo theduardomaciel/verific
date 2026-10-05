@@ -129,7 +129,6 @@ export function EditMyAnswersForm({
 		);
 		const hidden = fieldsForValidation.map((f) => f.key).filter((k) => !allowed.has(k));
 		if (hidden.length > 0) form.clearErrors(hidden as never);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [grouped]);
 
 	const mutation = trpc.updateMyAnswers.useMutation({

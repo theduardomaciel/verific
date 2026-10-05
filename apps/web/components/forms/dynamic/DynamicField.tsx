@@ -78,7 +78,6 @@ function SelectMultipleWithOther({
 	const othersKey = others.join("");
 	useEffect(() => {
 		if (others.length > 0) setOtherOpen(true);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [othersKey]);
 	const otherText = others[0] ?? "";
 

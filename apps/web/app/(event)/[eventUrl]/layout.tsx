@@ -84,6 +84,50 @@ function EventLayoutFallback() {
 	return <div className="min-h-screen" />;
 }
 
+interface EventLogoProps {
+	light: string | null;
+	dark: string | null;
+	href: string;
+}
+
+/**
+ * Logo do evento no cabeçalho.
+ *
+ * A variante escura só recebe `dark:hidden`/`hidden dark:block` quando
+ * existe de fato: antes, a clara sumia no modo escuro e a escura não era
+ * renderizada sem URL própria — o logo desaparecia por completo.
+ */
+function EventLogo({ light, dark, href }: EventLogoProps) {
+	if (!light) {
+		return (
+			<Link href={href} className="text-[var(--ev-header-fg)]">
+				<Logo className="h-8" />
+			</Link>
+		);
+	}
+
+	return (
+		<Link href={href} className="text-[var(--ev-header-fg)]">
+			<Image
+				src={light}
+				width={150}
+				height={28}
+				alt="Event logo"
+				className={dark ? "dark:hidden" : undefined}
+			/>
+			{dark && (
+				<Image
+					src={dark}
+					width={150}
+					height={28}
+					alt="Event logo"
+					className="hidden dark:block"
+				/>
+			)}
+		</Link>
+	);
+}
+
 /**
  * Checks (`getProject` + `notFound`) run before the `<Suspense>`
  * boundary below is even created — so an unknown `eventUrl` produces a
@@ -134,7 +178,7 @@ export default async function EventLayout({
 			<style>{`:root{${rootCssText}}`}</style>
 			<EventThemeSync cssVars={cssVars} />
 			<div
-				className={`dark ${fontVariables} relative flex w-full flex-1 flex-col`}
+				className={`event-public ${fontVariables} relative flex w-full flex-1 flex-col`}
 				style={
 					{
 						...cssVars,
@@ -147,18 +191,11 @@ export default async function EventLayout({
 					eventUrl={eventUrl}
 					className="relative h-21 border-none py-0"
 					logo={
-						<Link href={`/${eventUrl}`} className="text-white">
-							{project.largeLogoUrl || project.logoUrl ? (
-								<Image
-									src={project.largeLogoUrl || project.logoUrl!}
-									width={150}
-									height={28}
-									alt="Event logo"
-								/>
-							) : (
-								<Logo className="h-8" />
-							)}
-						</Link>
+						<EventLogo
+							href={`/${eventUrl}`}
+							light={project.largeLogoUrl || project.logoUrl}
+							dark={project.largeLogoDarkUrl || project.logoDarkUrl}
+						/>
 					}
 				/>
 				{children}
@@ -168,7 +205,7 @@ export default async function EventLayout({
 						style={{ background: "var(--ev-footer-bg)" }}
 					>
 						<Footer
-							className="border-none px-4 py-4 !text-white md:px-12"
+							className="border-none px-4 py-4 text-[var(--ev-footer-fg)] md:px-12"
 							showWatermark
 						/>
 					</div>

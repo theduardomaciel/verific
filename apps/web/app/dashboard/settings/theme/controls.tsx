@@ -27,8 +27,14 @@ import {
 	type EventTheme,
 	type FontPreset,
 	type GradientStop,
+	type HeroOverlayColor,
+	type SkeletonBg,
 	type ThemeRole,
 } from "@verific/drizzle/theme";
+import {
+	darkenUntilContrast,
+	HERO_NEUTRAL_TINT,
+} from "@/lib/theme/resolve";
 
 interface ContrastInfo {
 	primary: { fg: string; ratio: number };
@@ -212,6 +218,21 @@ const EFFECT_COLOR_OPTIONS: Array<{ value: EffectColor; label: string }> = [
 	{ value: "primary", label: "Primária" },
 	{ value: "secondary", label: "Secundária" },
 	{ value: "foreground", label: "Texto (neutro)" },
+];
+
+const SKELETON_OPTIONS: Array<{ value: SkeletonBg; label: string }> = [
+	{ value: "muted", label: "Neutra" },
+	{ value: "primary", label: "Primária" },
+	{ value: "secondary", label: "Secundária" },
+];
+
+const HERO_OVERLAY_OPTIONS: Array<{
+	value: HeroOverlayColor;
+	label: string;
+}> = [
+	{ value: "primary", label: "Primária" },
+	{ value: "secondary", label: "Secundária" },
+	{ value: "dark", label: "Escura" },
 ];
 
 function RangeRow({
@@ -442,6 +463,14 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 		secondary: draft.secondary,
 		foreground: "var(--foreground)",
 	} as const;
+	// A amostra mostra o tom realmente aplicado sobre a capa (a cor
+	// escolhida já escurecida até atingir AA contra o texto branco), e não
+	// a cor crua — é o que o visitante vai ver.
+	const heroSwatches = {
+		primary: darkenUntilContrast(draft.primary),
+		secondary: darkenUntilContrast(draft.secondary),
+		dark: darkenUntilContrast(HERO_NEUTRAL_TINT),
+	} as const;
 
 	const changed = {
 		cores: !eq(
@@ -588,9 +617,11 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 					</div>
 					{draft.header.style === "transparent" && (
 						<p className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-2 text-xs">
-							Cabeçalho transparente: o menu aparece sobre a capa.
-							Se a capa for clara, o texto branco pode perder
-							contraste — confira na prévia.
+							Cabeçalho transparente: ele fica no fluxo, sobre o
+							fundo da página (não sobre a capa), então o texto
+							segue a preferência de cor do visitante — claro no
+							modo claro. O menu mobile usa o fundo da página
+							para continuar legível. Confira na prévia.
 						</p>
 					)}
 					<SectionReset
@@ -627,7 +658,21 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 						value={draft.content.accent}
 						options={ROLE_OPTIONS}
 						swatches={roleSwatches}
-						onChange={(accent) => patch({ content: { accent } })}
+						onChange={(accent) =>
+							patch({ content: { ...draft.content, accent } })
+						}
+					/>
+					<RoleRow
+						label="Cor dos carregamentos"
+						value={draft.content.skeleton}
+						options={SKELETON_OPTIONS}
+						swatches={{
+							...roleSwatches,
+							muted: "var(--muted)",
+						}}
+						onChange={(skeleton) =>
+							patch({ content: { ...draft.content, skeleton } })
+						}
 					/>
 					<SectionReset
 						visible={changed.elementos}
@@ -650,17 +695,36 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 					</span>
 				</AccordionTrigger>
 				<AccordionContent className="flex flex-col gap-4">
+					<RoleRow
+						label="Cor sobre a capa"
+						value={draft.hero.overlayColor}
+						options={HERO_OVERLAY_OPTIONS}
+						/*
+						 * Amostra o tom realmente aplicado: a cor escolhida
+						 * escurecida até passar AA contra o branco.
+						 */
+						swatches={heroSwatches}
+						onChange={(overlayColor) =>
+							patch({
+								hero: { ...draft.hero, overlayColor },
+							})
+						}
+					/>
 					<RangeRow
-						label="Opacidade da cor sobre a capa"
+						label="Intensidade da cor"
 						value={draft.hero.overlayOpacity}
 						min={0}
 						max={0.85}
 						step={0.05}
 						onChange={(overlayOpacity) =>
-							patch({ hero: { overlayOpacity } })
+							patch({ hero: { ...draft.hero, overlayOpacity } })
 						}
 						format={(v) => `${Math.round(v * 100)}%`}
 					/>
+					<p className="text-muted-foreground text-xs">
+						O texto da capa é sempre branco; a cor é escurecida
+						automaticamente para manter a leitura.
+					</p>
 					<SectionReset
 						visible={changed.hero}
 						onReset={() => patch({ hero: DEFAULT_THEME.hero })}

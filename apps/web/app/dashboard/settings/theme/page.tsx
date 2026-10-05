@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentProject } from "@/hooks/use-current-project";
 import { parseEventTheme } from "@verific/drizzle/theme";
 import { ThemeEditor } from "./editor";
+import { ProjectBrandingForm } from "./branding-form";
 
 export default function ThemeSettingsPage() {
 	const { data, isPending, isError } = useCurrentProject();
@@ -35,12 +36,15 @@ export default function ThemeSettingsPage() {
 	});
 
 	return (
-		<ThemeEditor
-			key={project.id}
-			projectId={project.id}
-			projectUrl={project.url}
-			projectName={project.name}
-			initial={initial}
-		/>
+		<>
+			<ThemeEditor
+				key={project.id}
+				projectId={project.id}
+				projectUrl={project.url}
+				projectName={project.name}
+				initial={initial}
+			/>
+			<ProjectBrandingForm project={project} />
+		</>
 	);
 }
