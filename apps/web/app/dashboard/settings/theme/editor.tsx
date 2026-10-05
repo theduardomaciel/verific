@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { RotateCcw, Save } from "lucide-react";
+import { Eye, RotateCcw, Save } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -39,6 +39,15 @@ export function ThemeEditor({
 		() => JSON.stringify(draft) !== JSON.stringify(initial),
 		[draft, initial],
 	);
+
+	useEffect(() => {
+		if (!dirty) return;
+		function onBeforeUnload(e: BeforeUnloadEvent) {
+			e.preventDefault();
+		}
+		window.addEventListener("beforeunload", onBeforeUnload);
+		return () => window.removeEventListener("beforeunload", onBeforeUnload);
+	}, [dirty]);
 
 	const contrast = useMemo(() => {
 		// Texto sobre as cores é sempre o de melhor contraste (derivado no
@@ -173,6 +182,17 @@ export function ThemeEditor({
 					<ThemePreview draft={draft} projectName={projectName} />
 				</div>
 			</div>
+
+			{mobileView === "controls" && (
+				<Button
+					type="button"
+					onClick={() => setMobileView("preview")}
+					className="fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 shadow-lg xl:hidden"
+				>
+					<Eye className="mr-2 h-4 w-4" />
+					Ver prévia
+				</Button>
+			)}
 		</div>
 	);
 }
