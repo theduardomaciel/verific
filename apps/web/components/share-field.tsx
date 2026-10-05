@@ -35,14 +35,14 @@ export function ShareField({ url, className }: ShareFieldProps) {
 
 	return (
 		<Button
+			variant="ghost"
 			className={cn(
-				"bg-muted flex h-auto max-w-full px-4 py-2 text-left whitespace-normal",
+				"bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground flex h-auto max-w-full px-4 py-2 text-left whitespace-normal",
 				className,
 			)}
-			variant={"secondary"}
 			onClick={copyLink}
 		>
-			<p className="text-neutral text-sm font-medium break-all">{url}</p>
+			<p className="text-sm font-medium break-all">{url}</p>
 			<div className="relative min-w-5">
 				<Share2Icon
 					className={cn(

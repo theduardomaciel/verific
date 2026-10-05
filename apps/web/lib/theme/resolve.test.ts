@@ -43,6 +43,40 @@ describe("theme resolve", () => {
 		expect(cssVars["--ev-card-radius"]).toBe("24px");
 	});
 
+	it("deriva --accent do content.accent e --ev-loader oposto ao header", () => {
+		// Padrão: header primário sólido → loader secundário, accent primário.
+		const def = resolveEventTheme({});
+		expect(def.cssVars["--accent"]).toBe("#6D28D9");
+		expect(def.cssVars["--accent-foreground"]).toBe(def.onPrimary);
+		expect(def.cssVars["--ev-loader"]).toBe("#14B8A6");
+
+		// Header secundário sólido → loader primário.
+		const sec = resolveEventTheme({
+			theme: { version: 1, header: { bg: "secondary", style: "solid" } },
+		});
+		expect(sec.cssVars["--ev-loader"]).toBe(sec.theme.primary);
+
+		// Gradiente usa ambas → secundária; transparente → primária.
+		const grad = resolveEventTheme({
+			theme: { version: 1, header: { bg: "primary", style: "gradient" } },
+		});
+		expect(grad.cssVars["--ev-loader"]).toBe(grad.theme.secondary);
+		const transp = resolveEventTheme({
+			theme: {
+				version: 1,
+				header: { bg: "secondary", style: "transparent" },
+			},
+		});
+		expect(transp.cssVars["--ev-loader"]).toBe(transp.theme.primary);
+
+		// content.accent secundário → accent secundário com contraste próprio.
+		const acc = resolveEventTheme({
+			theme: { version: 1, content: { accent: "secondary" } },
+		});
+		expect(acc.cssVars["--accent"]).toBe(acc.theme.secondary);
+		expect(acc.cssVars["--accent-foreground"]).toBe(acc.onSecondary);
+	});
+
 	it("header transparente e fundo em grade via tema", () => {
 		const { cssVars } = resolveEventTheme({
 			theme: {
