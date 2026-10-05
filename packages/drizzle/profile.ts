@@ -139,6 +139,14 @@ export function detectProfileDuplicates(
 	return out;
 }
 
+/** Uma fonte da verdade p/ "perfil aparece na inscrição?" (form real + prévia). */
+export function shouldShowProfileAtSignup(flags: {
+	profilesEnabled?: boolean | null;
+	profileFillAtSignup?: boolean | null;
+} | null | undefined): boolean {
+	return Boolean(flags?.profilesEnabled && (flags?.profileFillAtSignup ?? true));
+}
+
 /** Formato do link do perfil (usado no aviso da inscrição + futuro e-mail). */
 export function profilePath(eventUrl: string, shortId: string): string {
 	return `/${eventUrl}/profile/${shortId}`;

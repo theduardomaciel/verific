@@ -6,6 +6,7 @@ import { Lock, TriangleAlert, UserRound } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc/react";
 import {
 	detectProfileDuplicates,
@@ -15,6 +16,9 @@ import {
 interface ProfileSectionCardProps {
 	projectId: string;
 	fields: Array<{ id: string; label: string }>;
+	profilesEnabled: boolean;
+	profileFillAtSignup: boolean;
+	isLoadingProject: boolean;
 }
 
 /**
@@ -22,18 +26,24 @@ interface ProfileSectionCardProps {
  * desligado; bloco pré-definido não-removível + aviso de duplicados
  * quando ligado.
  */
-export function ProfileSectionCard({ projectId, fields }: ProfileSectionCardProps) {
+export function ProfileSectionCard({
+	projectId,
+	fields,
+	profilesEnabled,
+	profileFillAtSignup,
+	isLoadingProject,
+}: ProfileSectionCardProps) {
 	const utils = trpc.useUtils();
-	const projectQuery = trpc.getProject.useQuery({ id: projectId });
 	const updateMutation = trpc.updateProject.useMutation({
 		onSuccess: () => {
 			utils.getProject.invalidate();
 		},
 	});
 
-	if (projectQuery.isPending) return null;
-	const project = projectQuery.data?.project;
-	if (!project) return null;
+	// Espaço reservado enquanto os flags carregam (sem pop-in).
+	if (isLoadingProject) {
+		return <Skeleton className="h-24 w-full" />;
+	}
 
 	async function setProfilesEnabled(enabled: boolean) {
 		try {
@@ -46,7 +56,7 @@ export function ProfileSectionCard({ projectId, fields }: ProfileSectionCardProp
 		}
 	}
 
-	if (!project.profilesEnabled) {
+	if (!profilesEnabled) {
 		return (
 			<Card className="border-dashed">
 				<CardContent className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
@@ -89,7 +99,7 @@ export function ProfileSectionCard({ projectId, fields }: ProfileSectionCardProp
 						<div className="flex flex-wrap items-center gap-2 font-semibold">
 							<span className="truncate">Perfil do participante</span>
 							<Badge variant="outline">Fixa</Badge>
-							{project.profileFillAtSignup ? (
+							{profileFillAtSignup ? (
 								<Badge>Na inscrição</Badge>
 							) : (
 								<Badge variant="secondary">Só no “Editar perfil”</Badge>

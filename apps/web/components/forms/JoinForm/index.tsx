@@ -28,7 +28,10 @@ import {
 	toProfileInput,
 } from "@/components/forms/profile-fields-section";
 import { isFilled } from "@/components/forms/profile-normalize";
-import { profileInputSchema } from "@verific/drizzle/profile";
+import {
+	profileInputSchema,
+	shouldShowProfileAtSignup,
+} from "@verific/drizzle/profile";
 
 // Validation
 import { buildAnswersSchema, filterVisibleFields } from "@verific/api/schemas";
@@ -153,9 +156,7 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 		defaultValues: { name: user?.name || "", answers: {}, profile: {} },
 	});
 
-	const showProfileSection = Boolean(
-		project.profilesEnabled && project.profileFillAtSignup,
-	);
+	const showProfileSection = shouldShowProfileAtSignup(project);
 
 	const watchedAnswers = form.watch("answers") ?? {};
 	const watchedName = form.watch("name") ?? "";
