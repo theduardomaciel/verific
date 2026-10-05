@@ -62,6 +62,10 @@ export const profileInputSchema = z.object({
 });
 export type ProfileInput = z.infer<typeof profileInputSchema>;
 
+/** Chave da seção de sistema do perfil + título único nos dois lados. */
+export const PROFILE_SYSTEM_KEY = "profile";
+export const PROFILE_SECTION_TITLE = "Perfil do participante";
+
 /** Rótulo pt-BR de cada conceito do perfil (builder + avisos). */
 export const PROFILE_FIELD_LABELS = {
 	roleTitle: "Cargo / curso",

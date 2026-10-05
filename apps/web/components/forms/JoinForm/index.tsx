@@ -35,7 +35,7 @@ import {
 
 // Validation
 import { buildAnswersSchema, filterVisibleFields } from "@verific/api/schemas";
-import { groupFieldsBySection } from "@/lib/forms/layout";
+import { groupFieldsBySection, planFormSections } from "@/lib/forms/layout";
 import { getVisibleSectionIds } from "@verific/api/schemas";
 import type { GenericForm } from "..";
 
@@ -181,6 +181,29 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 		return { visibleFields: visible, groupedSections: grouped };
 	}, [hasConditional, baseVisibleFields, sections, sectionsForVisibility, fieldsForValidation, watchedAnswers]);
 
+	const planned = useMemo(
+		() => planFormSections(groupedSections, showProfileSection),
+		[groupedSections, showProfileSection],
+	);
+
+	const nameField = (
+		<FormField
+			control={form.control}
+			name="name"
+			render={({ field }) => (
+				<FormItem className="w-full">
+					<FormLabel>
+						Nome completo <span className="text-destructive ml-1">*</span>
+					</FormLabel>
+					<FormControl>
+						<Input placeholder="Fulano da Silva" {...field} value={field.value ?? ""} />
+					</FormControl>
+					<FormMessage />
+				</FormItem>
+			)}
+		/>
+	);
+
 	useEffect(() => {
 		if (user?.name) form.setValue("name", user.name);
 	}, [user?.name, form]);
@@ -260,13 +283,10 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 						form={form as unknown as GenericForm}
 						email={user?.email}
 					/>
-					{showProfileSection && (
-						<ProfileFieldsSection form={form as unknown as GenericForm} />
-					)}
 					{isFormPending ? (
 						<FormSection
 							title="Dados da inscrição"
-							section={showProfileSection ? 2 : 1}
+							section={1}
 							form={form as unknown as GenericForm}
 							fields={[
 								{ name: "Nome completo", value: isFilled(watchedName) },
@@ -275,88 +295,70 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 							<p className="text-muted-foreground text-sm">Carregando formulário do evento...</p>
 							<SectionFooter isFinalSection />
 						</FormSection>
-					) : groupedSections.length === 0 ? (
+					) : planned.length === 0 ? (
 						<FormSection
 							title="Dados da inscrição"
-							section={showProfileSection ? 2 : 1}
+							section={1}
 							form={form as unknown as GenericForm}
 							fields={[
 								{ name: "Nome completo", value: isFilled(watchedName) },
 							]}
 						>
-							<FormField
-								control={form.control}
-								name="name"
-								render={({ field }) => (
-									<FormItem className="w-full">
-										<FormLabel>
-											Nome completo <span className="text-destructive ml-1">*</span>
-										</FormLabel>
-										<FormControl>
-											<Input placeholder="Fulano da Silva" {...field} value={field.value ?? ""} />
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
+							{nameField}
 							<p className="text-muted-foreground text-sm">
 								Este evento não exige informações adicionais.
 							</p>
 							<SectionFooter isFinalSection />
 						</FormSection>
 					) : (
-						groupedSections.map((group, gi) => (
-							<FormSection
-								key={group.section.id}
-								title={group.section.title}
-								section={gi + (showProfileSection ? 2 : 1)}
-								form={form as unknown as GenericForm}
-								fields={group.fields.map((f) => ({
-									name: f.label,
-									value: isFilled(watchedAnswers[f.key]),
-								}))}
-							>
-								{gi === 0 && (
-									<FormField
-										control={form.control}
-										name="name"
-										render={({ field }) => (
-											<FormItem className="w-full">
-												<FormLabel>
-													Nome completo <span className="text-destructive ml-1">*</span>
-												</FormLabel>
-												<FormControl>
-													<Input placeholder="Fulano da Silva" {...field} value={field.value ?? ""} />
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
+						planned.map((p) =>
+							p.isProfile ? (
+								<ProfileFieldsSection
+									key={p.group.section.id}
+									form={form as unknown as GenericForm}
+									sectionNumber={p.displayNumber}
+								/>
+							) : (
+								<FormSection
+									key={p.group.section.id}
+									title={p.group.section.title}
+									section={p.displayNumber}
+									form={form as unknown as GenericForm}
+									fields={p.group.fields.map((f) => ({
+										name: f.label,
+										value: isFilled(watchedAnswers[f.key]),
+									}))}
+								>
+									{p.isFirstContent && nameField}
+									<div className="flex w-full flex-col gap-6">
+										{p.group.rows.map((row, ri) => (
+											<div
+												key={row.fields.map((f) => f.id).join("-") || `row-${ri}`}
+												className={
+													row.fields.length === 2
+														? "grid w-full grid-cols-1 gap-6 md:grid-cols-2"
+														: "w-full"
+												}
+											>
+												{row.fields.map((f) => (
+													<DynamicField
+														key={f.id}
+														field={f}
+														control={form.control as never}
+														name={`answers.${f.key}`}
+													/>
+												))}
+											</div>
+										))}
+									</div>
+									<SectionFooter
+										isFinalSection={
+											p.displayNumber === planned[planned.length - 1]?.displayNumber
+										}
 									/>
-								)}
-								<div className="flex w-full flex-col gap-6">
-									{group.rows.map((row, ri) => (
-										<div
-											key={row.fields.map((f) => f.id).join("-") || `row-${ri}`}
-											className={
-												row.fields.length === 2
-													? "grid w-full grid-cols-1 gap-6 md:grid-cols-2"
-													: "w-full"
-											}
-										>
-											{row.fields.map((f) => (
-												<DynamicField
-													key={f.id}
-													field={f}
-													control={form.control as never}
-													name={`answers.${f.key}`}
-												/>
-											))}
-										</div>
-									))}
-								</div>
-								<SectionFooter isFinalSection={gi === groupedSections.length - 1} />
-							</FormSection>
-						))
+								</FormSection>
+							),
+						)
 					)}
 				</form>
 			</FormWrapper>

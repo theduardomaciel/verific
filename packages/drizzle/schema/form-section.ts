@@ -42,6 +42,8 @@ export const formSection = pgTable("form_sections", {
 	title: text("title").notNull(),
 	order: integer("order").default(0).notNull(),
 	visibilityRule: jsonb("visibility_rule").$type<SectionVisibilityRule>(),
+	/** Marcador de seção fixa do sistema (ex: "profile"). Null = seção normal. */
+	isSystem: text("is_system"),
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -126,6 +126,9 @@ export function FormsContent() {
 										true,
 								)}
 								isLoadingProject={projectQuery.isPending}
+								draftVersionId={selected.id}
+								isPublished={isPublished}
+								hasSystemSection={sections.some((s) => s.isSystem)}
 							/>
 							<BuilderCard
 							selected={selected}
