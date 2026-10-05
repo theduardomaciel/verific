@@ -22,8 +22,6 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { ProfileFieldsSection } from "@/components/forms/profile-fields-section";
-import type { GenericForm } from "@/components/forms";
 import type { RouterOutput } from "@verific/api";
 
 type BuilderField = RouterOutput["getVersion"]["fields"][number];
@@ -39,13 +37,10 @@ export function FormPreview({
 	fields,
 	sections,
 	isLoading = false,
-	showProfileSection = false,
 }: {
 	fields: BuilderField[];
 	sections: BuilderSection[];
 	isLoading?: boolean;
-	/** Componente puramente apresentacional: quem chama decide via helper. */
-	showProfileSection?: boolean;
 }) {
 	const baseVisible = useMemo(
 		() => fields.filter((f) => f.isActive && f.isVisible),
@@ -130,8 +125,8 @@ export function FormPreview({
 	}, [baseVisible, sections, sectionsForVisibility, fieldsForValidation, watchedAnswers]);
 
 	const planned = useMemo(
-		() => planFormSections(grouped, showProfileSection),
-		[grouped, showProfileSection],
+		() => planFormSections(grouped, false),
+		[grouped],
 	);
 
 	function onSubmit() {
@@ -196,99 +191,84 @@ export function FormPreview({
 						onSubmit={form.handleSubmit(onSubmit, onInvalid)}
 						className="flex w-full flex-col gap-6"
 					>
-						{planned.map((p) =>
-							p.isProfile ? (
-								<ProfileFieldsSection
-									key={p.group.section.id}
-									form={form as unknown as GenericForm}
-									sectionNumber={p.displayNumber}
-								/>
-							) : (
-								<div
-									key={p.group.section.id}
-									className="flex w-full flex-col gap-3"
-								>
-									<h4 className="text-sm font-bold">
-										{p.displayNumber}. {p.group.section.title}
-									</h4>
-									{p.isFirstContent && (
-										<FormField
-											control={form.control}
-											name="name"
-											render={({ field }) => (
-												<FormItem className="w-full">
-													<FormLabel>
-														Nome completo{" "}
-														<span className="text-destructive ml-1">*</span>
-													</FormLabel>
-													<FormControl>
-														<Input
-															placeholder="Fulano da Silva"
-															{...field}
-															value={field.value ?? ""}
-														/>
-													</FormControl>
-													<FormMessage />
-												</FormItem>
-											)}
-										/>
-									)}
-									{p.group.rows.length > 0 && (
-										<div className="flex w-full flex-col gap-6">
-											{p.group.rows.map((row, ri) => (
-												<div
-													key={
-														row.fields.map((f) => f.id).join("-") || `row-${ri}`
-													}
-													className={
-														row.fields.length === 2
-															? "grid w-full grid-cols-1 gap-6 md:grid-cols-2"
-															: "w-full"
-													}
-												>
-													{row.fields.map((f) => (
-														<DynamicField
-															key={f.id}
-															field={f}
-															control={form.control as never}
-															name={`answers.${f.key}`}
-														/>
-													))}
-												</div>
-											))}
-										</div>
-									)}
-								</div>
-							),
-						)}
-						{planned.length === 0 && (
-							<>
-								<FormField
-									control={form.control}
-									name="name"
-									render={({ field }) => (
-										<FormItem className="w-full">
-											<FormLabel>
-												Nome completo{" "}
-												<span className="text-destructive ml-1">*</span>
-											</FormLabel>
-											<FormControl>
-												<Input
-													placeholder="Fulano da Silva"
-													{...field}
-													value={field.value ?? ""}
-												/>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-								{showProfileSection && (
-									<ProfileFieldsSection
-										form={form as unknown as GenericForm}
+						{planned.map((p) => (
+							<div
+								key={p.group.section.id}
+								className="flex w-full flex-col gap-3"
+							>
+								<h4 className="text-sm font-bold">
+									{p.displayNumber}. {p.group.section.title}
+								</h4>
+								{p.isFirstContent && (
+									<FormField
+										control={form.control}
+										name="name"
+										render={({ field }) => (
+											<FormItem className="w-full">
+												<FormLabel>
+													Nome completo{" "}
+													<span className="text-destructive ml-1">*</span>
+												</FormLabel>
+												<FormControl>
+													<Input
+														placeholder="Fulano da Silva"
+														{...field}
+														value={field.value ?? ""}
+													/>
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
 									/>
 								)}
-							</>
+								{p.group.rows.length > 0 && (
+									<div className="flex w-full flex-col gap-6">
+										{p.group.rows.map((row, ri) => (
+											<div
+												key={
+													row.fields.map((f) => f.id).join("-") || `row-${ri}`
+												}
+												className={
+													row.fields.length === 2
+														? "grid w-full grid-cols-1 gap-6 md:grid-cols-2"
+														: "w-full"
+												}
+											>
+												{row.fields.map((f) => (
+													<DynamicField
+														key={f.id}
+														field={f}
+														control={form.control as never}
+														name={`answers.${f.key}`}
+													/>
+												))}
+											</div>
+										))}
+									</div>
+								)}
+							</div>
+						))}
+						{planned.length === 0 && (
+							<FormField
+								control={form.control}
+								name="name"
+								render={({ field }) => (
+									<FormItem className="w-full">
+										<FormLabel>
+											Nome completo{" "}
+											<span className="text-destructive ml-1">*</span>
+										</FormLabel>
+										<FormControl>
+											<Input
+												placeholder="Fulano da Silva"
+												{...field}
+												value={field.value ?? ""}
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
 						)}
 						<div className="flex w-full flex-row items-center justify-between gap-4">
 							<p className="text-muted-foreground text-sm">

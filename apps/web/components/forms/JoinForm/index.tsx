@@ -23,15 +23,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import JoinForm0 from "./Section0";
-import {
-	ProfileFieldsSection,
-	toProfileInput,
-} from "@/components/forms/profile-fields-section";
 import { isFilled } from "@/components/forms/profile-normalize";
-import {
-	profileInputSchema,
-	shouldShowProfileAtSignup,
-} from "@verific/drizzle/profile";
+import { Eye } from "lucide-react";
+import { isFieldLinked } from "@/lib/profile-links-client";
 
 // Validation
 import { buildAnswersSchema, filterVisibleFields } from "@verific/api/schemas";
@@ -55,8 +49,6 @@ interface JoinFormProps {
 		name?: string;
 		logo?: string;
 		colors?: string[];
-		profilesEnabled?: boolean;
-		profileFillAtSignup?: boolean;
 	};
 }
 
@@ -72,6 +64,10 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 		projectId: project.id,
 	});
 	const submitMutation = trpc.submitAnswers.useMutation();
+	const layoutQuery = trpc.getProfileLayout.useQuery({
+		projectUrl: project.url,
+	});
+	const layout = layoutQuery.data ?? null;
 
 	const fields = useMemo(() => formData?.fields ?? [], [formData]);
 	const sections = useMemo(() => formData?.sections ?? [], [formData]);
@@ -150,13 +146,10 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 	const form = useForm<{
 		name: string;
 		answers: Record<string, unknown>;
-		profile: Record<string, unknown>;
 	}>({
 		resolver: resolver as never,
-		defaultValues: { name: user?.name || "", answers: {}, profile: {} },
+		defaultValues: { name: user?.name || "", answers: {} },
 	});
-
-	const showProfileSection = shouldShowProfileAtSignup(project);
 
 	const watchedAnswers = form.watch("answers") ?? {};
 	const watchedName = form.watch("name") ?? "";
@@ -182,8 +175,8 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 	}, [hasConditional, baseVisibleFields, sections, sectionsForVisibility, fieldsForValidation, watchedAnswers]);
 
 	const planned = useMemo(
-		() => planFormSections(groupedSections, showProfileSection),
-		[groupedSections, showProfileSection],
+		() => planFormSections(groupedSections, false),
+		[groupedSections],
 	);
 
 	const nameField = (
@@ -224,27 +217,12 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 	async function onSubmit(values: {
 		name: string;
 		answers: Record<string, unknown>;
-		profile?: Record<string, unknown>;
 	}) {
 		setCurrentState("submitting");
 		if (!user) {
 			setErrorMessage("Você precisa estar logado para se inscrever.");
 			setCurrentState("error");
 			return;
-		}
-		let profile: Record<string, unknown> | undefined;
-		if (showProfileSection) {
-			const parsed = profileInputSchema.safeParse(
-				toProfileInput((values.profile ?? {}) as never),
-			);
-			if (!parsed.success) {
-				setErrorMessage(
-					"Verifique os dados do perfil (URLs e e-mail devem ser válidos).",
-				);
-				setCurrentState("error");
-				return;
-			}
-			profile = parsed.data as Record<string, unknown>;
 		}
 		// Preserve in-memory, discard on submit: strip hidden-section answers.
 		const visible = hasConditional
@@ -260,9 +238,6 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 				projectId: project.id,
 				name: values.name,
 				answers: stripped as Record<string, string | number | boolean | string[] | null | undefined>,
-				...(profile
-					? { profile: profile as never }
-					: {}),
 			});
 			setCreatedShortId(result.shortId);
 		} catch (error) {
@@ -311,54 +286,56 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 							<SectionFooter isFinalSection />
 						</FormSection>
 					) : (
-						planned.map((p) =>
-							p.isProfile ? (
-								<ProfileFieldsSection
-									key={p.group.section.id}
-									form={form as unknown as GenericForm}
-									sectionNumber={p.displayNumber}
-								/>
-							) : (
-								<FormSection
-									key={p.group.section.id}
-									title={p.group.section.title}
-									section={p.displayNumber}
-									form={form as unknown as GenericForm}
-									fields={p.group.fields.map((f) => ({
-										name: f.label,
-										value: isFilled(watchedAnswers[f.key]),
-									}))}
-								>
-									{p.isFirstContent && nameField}
-									<div className="flex w-full flex-col gap-6">
-										{p.group.rows.map((row, ri) => (
-											<div
-												key={row.fields.map((f) => f.id).join("-") || `row-${ri}`}
-												className={
-													row.fields.length === 2
-														? "grid w-full grid-cols-1 gap-6 md:grid-cols-2"
-														: "w-full"
-												}
-											>
-												{row.fields.map((f) => (
+						planned.map((p) => (
+							<FormSection
+								key={p.group.section.id}
+								title={p.group.section.title}
+								section={p.displayNumber}
+								form={form as unknown as GenericForm}
+								fields={p.group.fields.map((f) => ({
+									name: f.label,
+									value: isFilled(watchedAnswers[f.key]),
+								}))}
+							>
+								{p.isFirstContent && nameField}
+								<div className="flex w-full flex-col gap-6">
+									{p.group.rows.map((row, ri) => (
+										<div
+											key={row.fields.map((f) => f.id).join("-") || `row-${ri}`}
+											className={
+												row.fields.length === 2
+													? "grid w-full grid-cols-1 gap-6 md:grid-cols-2"
+													: "w-full"
+											}
+										>
+											{row.fields.map((f) => (
+												<div
+													key={f.id}
+													className="flex w-full flex-col gap-1"
+												>
 													<DynamicField
-														key={f.id}
 														field={f}
 														control={form.control as never}
 														name={`answers.${f.key}`}
 													/>
-												))}
-											</div>
-										))}
-									</div>
-									<SectionFooter
-										isFinalSection={
-											p.displayNumber === planned[planned.length - 1]?.displayNumber
-										}
-									/>
-								</FormSection>
-							),
-						)
+													{isFieldLinked(layout, f.id) && (
+														<p className="text-muted-foreground flex items-center gap-1 text-xs">
+															<Eye className="h-3 w-3" />
+															Visível no seu perfil
+														</p>
+													)}
+												</div>
+											))}
+										</div>
+									))}
+								</div>
+								<SectionFooter
+									isFinalSection={
+										p.displayNumber === planned[planned.length - 1]?.displayNumber
+									}
+								/>
+							</FormSection>
+						))
 					)}
 				</form>
 			</FormWrapper>

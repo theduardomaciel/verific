@@ -11,7 +11,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import * as EventContainer from "@/components/landing/event-container";
 import { EventBackgroundEffects } from "@/components/landing/event-container";
 import { ProfileBanner } from "@/components/profile/profile-banner";
-import { ProfileInfo } from "@/components/profile/profile-info";
+import { ProfileStats } from "@/components/profile/profile-stats";
 import { FormSection, type GenericForm } from "@/components/forms";
 import { resolveEventTheme } from "@/lib/theme/resolve";
 import type { EventTheme } from "@verific/drizzle/theme";
@@ -29,11 +29,17 @@ const FAKE_PROFILE = {
 	avatarUrl: null,
 	roleTitle: "Estudante de Psicologia",
 	bio: "Bio de demonstração para ver o tema aplicado no perfil.",
-	socials: [{ network: "github", url: "https://github.com/fulana" }],
+	socials: [
+		{
+			service: "github",
+			url: "https://github.com/fulana",
+			display: "fulana",
+		},
+	],
 	publicEmail: "fulana@exemplo.com",
-	birth: { age: 22, formatted: "16 de março de 2004" },
-	city: "Maceió, AL",
-	institution: "Universidade Federal de Alagoas",
+	stats: [
+		{ label: "Cidade", icon: "map-pin", value: "Maceió, AL", hidden: false },
+	],
 } as const;
 
 /** Mesma largura/padding horizontal para todo o conteúdo da prévia. */
@@ -129,12 +135,11 @@ function ProfileContent() {
 				publicEmail={FAKE_PROFILE.publicEmail}
 				showBioAndSocials
 			/>
-			<ProfileInfo
+			<ProfileStats
 				data={{
-					...FAKE_PROFILE,
-					shortId: "demo",
-					avatar: { kind: "initials" as const, url: null },
-					socials: [...FAKE_PROFILE.socials],
+					name: FAKE_PROFILE.name,
+					stats: [...FAKE_PROFILE.stats],
+					showConnections: true,
 				}}
 			/>
 		</div>

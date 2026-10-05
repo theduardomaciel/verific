@@ -142,9 +142,9 @@ export async function getCachedUser(userId: string) {
 	return createClientForUser(userId).getUser();
 }
 
-export async function getPublicProfile(projectUrl: string, shortId: string) {
+export async function getProfilePageData(projectUrl: string, shortId: string) {
 	"use cache";
 	cacheLife("minutes");
 	cacheTag(`profiles-${projectUrl}`, `profile-${projectUrl}-${shortId}`);
-	return publicClient.getPublicProfile({ projectUrl, shortId });
+	return publicClient.getProfilePageData({ projectUrl, shortId });
 }

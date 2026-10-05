@@ -11,13 +11,38 @@ import { groupFieldsBySection } from "@/lib/forms/layout";
 import { DynamicField } from "@/components/forms/dynamic/DynamicField";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Eye } from "lucide-react";
+import { linkedSlotForField } from "@/lib/profile-links-client";
 
-export function EditMyAnswersForm({ projectId }: { projectId: string }) {
+export function EditMyAnswersForm({
+	projectId,
+	projectUrl,
+}: {
+	projectId: string;
+	projectUrl?: string;
+}) {
 	const utils = trpc.useUtils();
 	const published = trpc.getPublishedForm.useQuery({ projectId });
 	const myAnswers = trpc.getMyAnswers.useQuery({ projectId });
+	const layoutQuery = trpc.getProfileLayout.useQuery(
+		{ projectUrl: projectUrl ?? "" },
+		{ enabled: Boolean(projectUrl) },
+	);
+	const myProfile = trpc.getMyProfileData.useQuery(
+		{ projectUrl: projectUrl ?? "" },
+		{ enabled: Boolean(projectUrl), retry: false },
+	);
+	const setVisibility = trpc.setFieldVisibility.useMutation({
+		onSuccess: () => {
+			utils.getMyProfileData.invalidate();
+		},
+	});
+	const layout = layoutQuery.data ?? null;
+	const visibility = (myProfile.data?.visibility ?? {}) as Record<string, boolean>;
 
 	const fields = useMemo(
 		() => (published.data?.fields ?? []).filter((f) => f.isVisible && f.editableAfterSignup),
@@ -156,9 +181,45 @@ export function EditMyAnswersForm({ projectId }: { projectId: string }) {
 											: "w-full"
 									}
 								>
-									{row.fields.map((f) => (
-										<DynamicField key={f.id} field={f} control={form.control as never} name={f.key} />
-									))}
+									{row.fields.map((f) => {
+										const slot = linkedSlotForField(layout, f.id);
+										const showToggle = Boolean(
+											slot && f.required && myProfile.data,
+										);
+										const showHint = Boolean(slot && !showToggle);
+										return (
+											<div key={f.id} className="flex flex-col gap-1">
+												<DynamicField key={f.id} field={f} control={form.control as never} name={f.key} />
+												{showToggle && (
+													<div className="flex items-center justify-between gap-2 rounded-md border px-2 py-1.5">
+														<Label
+															htmlFor={`profile-visible-${f.id}`}
+															className="text-xs font-normal"
+														>
+															Visível no perfil
+														</Label>
+														<Switch
+															id={`profile-visible-${f.id}`}
+															checked={visibility[f.id] ?? true}
+															onCheckedChange={(checked) =>
+																setVisibility.mutate({
+																	projectUrl: projectUrl ?? "",
+																	fieldId: f.id,
+																	visible: checked,
+																})
+															}
+														/>
+													</div>
+												)}
+												{showHint && (
+													<p className="text-muted-foreground flex items-center gap-1 text-xs">
+														<Eye className="h-3 w-3" />
+														Visível no seu perfil
+													</p>
+												)}
+											</div>
+										);
+									})}
 								</div>
 							))}
 						</div>

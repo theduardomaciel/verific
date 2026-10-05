@@ -190,3 +190,47 @@ export function parseProfileLayout(input: unknown): ProfileLayout {
 	const parsed = profileLayoutSchema.safeParse(input ?? {});
 	return parsed.success ? parsed.data : DEFAULT_PROFILE_LAYOUT;
 }
+
+/**
+ * Valor de resposta p/ exibição no perfil (pt-BR). Retorna null quando
+ * vazio; nunca lança (renderer pula o slot em erro).
+ */
+export function formatProfileValue(value: unknown, type: string): string | null {
+	try {
+		if (value === null || value === undefined) return null;
+		if (typeof value === "string") {
+			const trimmed = value.trim();
+			if (!trimmed) return null;
+			if (type === "date") {
+				const d = new Date(trimmed);
+				if (!Number.isNaN(d.getTime())) {
+					return d.toLocaleDateString("pt-BR", {
+						day: "numeric",
+						month: "long",
+						year: "numeric",
+					});
+				}
+			}
+			return trimmed;
+		}
+		if (value instanceof Date) {
+			if (Number.isNaN(value.getTime())) return null;
+			return value.toLocaleDateString("pt-BR", {
+				day: "numeric",
+				month: "long",
+				year: "numeric",
+			});
+		}
+		if (typeof value === "number") return value.toLocaleString("pt-BR");
+		if (typeof value === "boolean") return value ? "Sim" : "Não";
+		if (Array.isArray(value)) {
+			const parts = value
+				.map((v) => formatProfileValue(v, "text"))
+				.filter((v): v is string => v !== null);
+			return parts.length > 0 ? parts.join("; ") : null;
+		}
+		return String(value);
+	} catch {
+		return null;
+	}
+}

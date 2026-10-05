@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc/react";
 import { useSearchParams } from "next/navigation";
-import { EditProfileDialog, type MyProfileData } from "./edit-profile-dialog";
+import { EditProfileDialog } from "./edit-profile-dialog";
 
 interface ProfileOwnerActionsProps {
 	eventUrl: string;
@@ -30,7 +30,7 @@ export function ProfileOwnerActions({
 	const hasHint = searchParams.get("me") !== null;
 	const session = authClient.useSession();
 	const userId = session.data?.user.id;
-	const myProfile = trpc.getMyProfile.useQuery(
+	const myProfile = trpc.getMyProfileData.useQuery(
 		{ projectUrl: eventUrl },
 		{ enabled: hasHint && Boolean(userId) },
 	);
@@ -53,7 +53,6 @@ export function ProfileOwnerActions({
 				eventUrl={eventUrl}
 				projectId={projectId}
 				shortId={shortId}
-				initial={data as MyProfileData}
 			/>
 			<LogoutForm redirectTo={`/${eventUrl}`}>
 				<Button type="submit" variant="outline" size="lg" className="rounded-full">
