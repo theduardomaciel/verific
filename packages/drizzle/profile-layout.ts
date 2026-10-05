@@ -66,10 +66,17 @@ export const SOCIAL_SERVICES = [
 	},
 	{
 		id: "x",
-		label: "X",
+		label: "X (antigo Twitter)",
 		hostnames: ["x.com", "twitter.com"],
 		handleBase: "https://x.com/",
 		icon: "x",
+	},
+	{
+		id: "lattes",
+		label: "Lattes",
+		hostnames: ["lattes.cnpq.br"],
+		handleBase: "http://lattes.cnpq.br/",
+		icon: "lattes",
 	},
 	{
 		id: "website",
@@ -78,16 +85,10 @@ export const SOCIAL_SERVICES = [
 		handleBase: null,
 		icon: "globe",
 	},
-	{
-		id: "lattes",
-		label: "Lattes",
-		hostnames: ["lattes.cnpq.br"],
-		handleBase: "http://lattes.cnpq.br/",
-		// TODO(lattes): trocar pelo SVG da marca (organizador fornece).
-		icon: "globe",
-	},
 ] as const;
+
 export type SocialServiceId = (typeof SOCIAL_SERVICES)[number]["id"];
+export type SocialServiceIcon = (typeof SOCIAL_SERVICES)[number]["icon"];
 
 export function socialServiceById(id: string) {
 	return SOCIAL_SERVICES.find((s) => s.id === id);
