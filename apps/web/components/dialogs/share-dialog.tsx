@@ -5,7 +5,7 @@ import { ArrowRightIcon, CheckIcon, Share2Icon } from "lucide-react";
 
 // Components
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogClose,
@@ -79,15 +79,12 @@ export function ShareDialog({
 					</div>
 
 					<DialogFooter className="w-full sm:justify-start">
-						<DialogClose asChild>
-							<Button
-								className="w-full"
-								type="button"
-								size={"lg"}
-							>
-								<ArrowRightIcon className="-scale-100" />
-								Fechar
-							</Button>
+						<DialogClose
+							className={cn(buttonVariants({ size: "lg" }), "w-full")}
+							type="button"
+						>
+							<ArrowRightIcon className="-scale-100" />
+							Fechar
 						</DialogClose>
 					</DialogFooter>
 				</DialogContent>

@@ -11,18 +11,19 @@ import {
 	MapPin,
 	Share2,
 	Mail,
-	Flag,
 	Check,
 	TicketCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EventAction } from "@/components/event-action";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Components
 import * as EventContainer from "@/components/landing/event-container";
 import { ShareDialog } from "@/components/dialogs/share-dialog";
 import { ReportEventDialog } from "@/components/dialogs/report-event-dialog";
+import { EventPageSkeleton } from "./skeleton";
 
 import { getEventStaticParams, getProject } from "@/lib/data";
 
@@ -43,19 +44,12 @@ export async function generateStaticParams() {
 	return getEventStaticParams();
 }
 
-async function EventPageContent({
-	params,
-}: {
-	params: Promise<{ eventUrl: string }>;
-}) {
-	const { eventUrl } = await params;
-	const result = await getProject(eventUrl);
+type EventPageProject = NonNullable<
+	Awaited<ReturnType<typeof getProject>>
+>["project"];
 
-	if (!result?.project) {
-		notFound();
-	}
-
-	const { project } = result;
+function EventPageBody({ project }: { project: EventPageProject }) {
+	const eventUrl = project.url;
 
 	return (
 		<EventContainer.Holder>
@@ -82,20 +76,22 @@ async function EventPageContent({
 					<div className="mb-8 flex flex-wrap gap-3">
 						<Badge
 							variant={"secondary"}
-							className="text-primary rounded-xl bg-white px-4 py-1.5"
+							className="text-primary rounded-xl bg-white px-4 py-3"
 						>
 							<Check className="mr-2 !h-4 !w-4" />
 							<span>Aberto para o público externo</span>
 						</Badge>
 						<Badge
 							variant={"secondary"}
-							className="text-primary rounded-xl bg-white px-4 py-1.5"
+							className="text-primary rounded-xl bg-white px-4 py-3"
 						>
 							<TicketCheck className="mr-2 !h-4 !w-4" />
 							<span>Emite certificado</span>
 						</Badge>
 					</div>
-					<EventAction eventUrl={eventUrl} />
+					<Suspense fallback={<Skeleton className="h-12 w-44" />}>
+						<EventAction eventUrl={eventUrl} />
+					</Suspense>
 				</div>
 				<div className="relative z-20 flex h-60 items-center justify-center">
 					<Image
@@ -140,7 +136,9 @@ async function EventPageContent({
 					</div>
 					<div className="sticky top-16 right-0 lg:w-1/3">
 						<div className="mb-6 rounded-[var(--ev-card-radius,1.5rem)] border p-6">
-							<h3 className="font-heading mb-4 text-xl font-medium">Local</h3>
+							<h3 className="font-heading mb-4 text-xl font-medium">
+								Local
+							</h3>
 							<p className="mb-4">{project.address}</p>
 							{project.latitude && project.longitude && (
 								<div className="mb-4 overflow-hidden rounded-lg border">
@@ -192,16 +190,7 @@ async function EventPageContent({
 							</Button>
 						</div>
 						<span className="flex w-full items-end justify-end">
-							<ReportEventDialog>
-								<Button
-									variant={"outline"}
-									size={"lg"}
-									className="mt-4 max-lg:w-full"
-								>
-									<Flag className="mr-2 h-4 w-4" />
-									<span>Denunciar este evento</span>
-								</Button>
-							</ReportEventDialog>
+							<ReportEventDialog />
 						</span>
 					</div>
 				</div>
@@ -210,14 +199,26 @@ async function EventPageContent({
 	);
 }
 
-export default function EventPage({
+/**
+ * Gate antes de qualquer `<Suspense>`: evento desconhecido responde
+ * 404 real. (O gate do layout já cobre isso; este `notFound` fica como
+ * rede de segurança + narrowing de tipos.)
+ */
+export default async function EventPage({
 	params,
 }: {
 	params: Promise<{ eventUrl: string }>;
 }) {
+	const { eventUrl } = await params;
+	const result = await getProject(eventUrl);
+
+	if (!result?.project) {
+		notFound();
+	}
+
 	return (
-		<Suspense fallback={<div className="min-h-[50vh]" />}>
-			<EventPageContent params={params} />
+		<Suspense fallback={<EventPageSkeleton />}>
+			<EventPageBody project={result.project} />
 		</Suspense>
 	);
 }

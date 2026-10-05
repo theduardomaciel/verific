@@ -3,24 +3,20 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import * as EventContainer from "@/components/landing/event-container";
-import ScheduleLoading from "./skeleton";
+import { ScheduleLoading } from "./content-skeleton";
 import { ScheduleWrapper } from "@/components/schedule-wrapper";
+import { SchedulePageSkeleton } from "./skeleton";
 import { getProject } from "@/lib/data";
 
 interface Props {
 	params: Promise<{ eventUrl: string }>;
 }
 
-async function SchedulePageContent({ params }: Props) {
-	const { eventUrl } = await params;
-	const result = await getProject(eventUrl);
+type SchedulePageProject = NonNullable<
+	Awaited<ReturnType<typeof getProject>>
+>["project"];
 
-	if (!result?.project) {
-		notFound();
-	}
-
-	const { project } = result;
-
+function SchedulePageBody({ project }: { project: SchedulePageProject }) {
 	return (
 		<EventContainer.Holder>
 			<EventContainer.Hero coverUrl={project.coverUrl}>
@@ -62,10 +58,22 @@ async function SchedulePageContent({ params }: Props) {
 	);
 }
 
-export default function EventSchedulePage(props: Props) {
+/**
+ * Gate antes de qualquer `<Suspense>`: evento desconhecido responde
+ * 404 real. (O gate do layout já cobre isso; este `notFound` fica como
+ * rede de segurança + narrowing de tipos.)
+ */
+export default async function EventSchedulePage({ params }: Props) {
+	const { eventUrl } = await params;
+	const result = await getProject(eventUrl);
+
+	if (!result?.project) {
+		notFound();
+	}
+
 	return (
-		<Suspense fallback={<ScheduleLoading />}>
-			<SchedulePageContent params={props.params} />
+		<Suspense fallback={<SchedulePageSkeleton />}>
+			<SchedulePageBody project={result.project} />
 		</Suspense>
 	);
 }

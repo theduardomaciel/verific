@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Flag } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogClose,
@@ -13,6 +13,7 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -23,7 +24,7 @@ import {
 } from "@/components/forms/dialogs";
 
 interface ReportEventDialogProps {
-	children: React.ReactNode;
+	className?: string;
 }
 
 const reportReasons = [
@@ -33,7 +34,7 @@ const reportReasons = [
 	{ value: "other", label: "Outros" },
 ];
 
-export function ReportEventDialog({ children }: ReportEventDialogProps) {
+export function ReportEventDialog({ className }: ReportEventDialogProps) {
 	const [currentState, setCurrentState] = useState<
 		boolean | "submitting" | "submitted" | "error"
 	>(false);
@@ -68,7 +69,19 @@ export function ReportEventDialog({ children }: ReportEventDialogProps) {
 					else setCurrentState(open);
 				}}
 			>
-				<DialogTrigger asChild>{children}</DialogTrigger>
+				{/* Sem `asChild`: o Slot do Radix clona o filho e o HTML
+					pré-renderizado diverge do hidratado (hydration mismatch).
+					O gatilho é um botão nativo estilizado diretamente. */}
+				<DialogTrigger
+					className={cn(
+						buttonVariants({ variant: "outline", size: "lg" }),
+						"mt-4 max-lg:w-full",
+						className,
+					)}
+				>
+					<Flag className="mr-2 h-4 w-4" />
+					<span>Denunciar este evento</span>
+				</DialogTrigger>
 				<DialogContent className="gap-2 sm:max-w-[425px]">
 					<DialogHeader>
 						<DialogTitle className="flex items-center gap-2">
@@ -125,8 +138,10 @@ export function ReportEventDialog({ children }: ReportEventDialogProps) {
 						</div>
 					</div>
 					<DialogFooter>
-						<DialogClose asChild>
-							<Button variant="outline">Cancelar</Button>
+						<DialogClose
+							className={cn(buttonVariants({ variant: "outline" }))}
+						>
+							Cancelar
 						</DialogClose>
 						<Button
 							onClick={handleReport}
