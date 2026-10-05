@@ -22,6 +22,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Combobox } from "@/components/ui/combobox";
 import type { RouterOutput } from "@verific/api";
 import {
 	OTHER_LABEL,
@@ -137,6 +138,12 @@ function SelectMultipleWithOther({
 }
 
 const EMPTY_SELECT_VALUE = "__verific_empty__";
+
+/**
+ * Above this number of options, `select_single` renders a searchable
+ * combobox instead of a plain select so long lists remain usable.
+ */
+const COMBOBOX_THRESHOLD = 10;
 
 type SocialEntry = { service: string; value: string };
 
@@ -362,6 +369,48 @@ export function DynamicField({
 							!singleOptions.includes(singleRaw)
 								? singleRaw
 								: "";
+						const handleSingleChange = (v?: string) => {
+							if (v === OTHER_SENTINEL) {
+								// Keep already-typed custom text when re-picking.
+								rhf.onChange(
+									typeof singleRaw === "string" &&
+									singleRaw !== "" &&
+									!singleOptions.includes(singleRaw)
+									? singleRaw
+									: "",
+								);
+							} else {
+								rhf.onChange(
+									!field.required &&
+									(v === EMPTY_SELECT_VALUE ||
+										v === undefined ||
+										v === "")
+										? undefined
+										: v,
+								);
+							}
+						};
+						// Long lists get a searchable combobox instead of a
+						// plain select.
+						const useCombobox =
+							singleOptions.length > COMBOBOX_THRESHOLD;
+						const singleComboItems = [
+							...(!field.required
+								? [
+										{
+											label: "Limpar seleção",
+											value: EMPTY_SELECT_VALUE,
+										},
+									]
+								: []),
+							...singleOptions.map((opt) => ({
+								label: opt,
+								value: opt,
+							})),
+							...(singleAllowOther
+								? [{ label: OTHER_LABEL, value: OTHER_SENTINEL }]
+								: []),
+						];
 						return (
 							<FormItem className="w-full">
 								{label}
@@ -370,25 +419,24 @@ export function DynamicField({
 										{field.helpText}
 									</FormDescription>
 								)}
+								{useCombobox ? (
+									<FormControl>
+										<Combobox
+											value={singleSelectValue}
+											onChange={handleSingleChange}
+											onBlur={rhf.onBlur}
+											disabled={disabled}
+											placeholder="Selecione uma opção"
+											searchMessage="Pesquisar..."
+											emptyMessage="Nenhuma opção encontrada."
+											items={singleComboItems}
+										/>
+									</FormControl>
+								) : (
 								<Select
 									disabled={disabled}
 									value={singleSelectValue}
-									onValueChange={(v) => {
-										if (v === OTHER_SENTINEL) {
-											// Keep already-typed custom text when re-picking.
-											rhf.onChange(
-												typeof singleRaw === "string" &&
-												singleRaw !== "" &&
-												!singleOptions.includes(singleRaw)
-												? singleRaw
-												: "",
-											);
-										} else {
-											rhf.onChange(
-												!field.required && v === EMPTY_SELECT_VALUE ? undefined : v,
-											);
-										}
-									}}
+									onValueChange={handleSingleChange}
 								>
 									<FormControl>
 										<SelectTrigger className="w-full">
@@ -416,6 +464,7 @@ export function DynamicField({
 										)}
 									</SelectContent>
 								</Select>
+								)}
 								{singleOtherSelected && (
 									<FormControl>
 										<Input
