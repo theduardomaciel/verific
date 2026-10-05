@@ -64,7 +64,7 @@ export function SocialLinksEditor({
 	);
 
 	return (
-		<div className="flex flex-col gap-3">
+		<div className="grid grid-cols-1 gap-3 @lg:grid-cols-2">
 			{value.map((entry, i) => {
 				const service =
 					socialServiceById(entry.service) ?? services[0]!;
