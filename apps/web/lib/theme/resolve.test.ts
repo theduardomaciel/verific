@@ -61,4 +61,27 @@ describe("theme resolve", () => {
 		expect(cssVars["--ev-header-bg"]).toBe("transparent");
 		expect(cssVars["--ev-bg-image"]).toContain("linear-gradient");
 	});
+
+	it("gradiente com parada transparente e efeito neutro", () => {
+		const { cssVars } = resolveEventTheme({
+			theme: {
+				version: 1,
+				page: {
+					effect: "grid",
+					effectSize: 32,
+					effectOpacity: 0.12,
+					effectColor: "foreground",
+					topGradient: {
+						height: 240,
+						from: "secondary",
+						to: "transparent",
+						opacity: 0.35,
+					},
+					bottomGradient: null,
+				},
+			},
+		});
+		expect(cssVars["--ev-bg-image"]).toContain("var(--foreground)");
+		expect(cssVars["--ev-top-gradient"]).toContain("transparent");
+	});
 });

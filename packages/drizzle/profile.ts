@@ -111,15 +111,22 @@ const norm = (s: string) =>
 		.normalize("NFD")
 		.replace(/[\u0300-\u036f]/g, "");
 
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 /** Avio, não bloqueio: sugere remover campos que duplicam a seção de perfil. */
 export function detectProfileDuplicates(
 	fields: Array<{ id: string; label: string }>,
 ): Array<{ fieldId: string; label: string; profileField: string }> {
 	const out: Array<{ fieldId: string; label: string; profileField: string }> = [];
 	for (const f of fields) {
-		const hay = norm(f.label);
+		// Palavras inteiras (com fronteira), nunca substring: "cidade" e
+		// "atividades" não disparam o "idade" de nascimento.
+		const hay = ` ${norm(f.label)} `;
 		for (const { field, keywords } of DUPLICATE_KEYWORDS) {
-			if (keywords.some((k) => hay.includes(norm(k)))) {
+			const hit = keywords.some((k) =>
+				new RegExp(`(^|\\W)${escapeRegExp(norm(k))}(\\W|$)`).test(hay),
+			);
+			if (hit) {
 				out.push({
 					fieldId: f.id,
 					label: f.label,

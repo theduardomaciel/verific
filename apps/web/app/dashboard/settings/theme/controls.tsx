@@ -17,7 +17,13 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { ColorPicker } from "@/components/pickers/color-picker";
-import type { EventTheme, FontPreset, ThemeRole } from "@verific/drizzle/theme";
+import type {
+	EffectColor,
+	EventTheme,
+	FontPreset,
+	GradientStop,
+	ThemeRole,
+} from "@verific/drizzle/theme";
 
 interface ContrastInfo {
 	primary: { fg: string; ratio: number };
@@ -66,30 +72,52 @@ function ColorRow({
 	);
 }
 
-function RoleRow({
+function RoleRow<T extends string>({
 	label,
 	value,
 	onChange,
+	options,
 }: {
 	label: string;
-	value: ThemeRole;
-	onChange: (v: ThemeRole) => void;
+	value: T;
+	onChange: (v: T) => void;
+	options: Array<{ value: T; label: string }>;
 }) {
 	return (
 		<div className="flex items-center justify-between gap-2">
 			<Label>{label}</Label>
-			<Select value={value} onValueChange={(v) => onChange(v as ThemeRole)}>
+			<Select value={value} onValueChange={(v) => onChange(v as T)}>
 				<SelectTrigger className="w-36">
 					<SelectValue />
 				</SelectTrigger>
 				<SelectContent>
-					<SelectItem value="primary">Primária</SelectItem>
-					<SelectItem value="secondary">Secundária</SelectItem>
+					{options.map((opt) => (
+						<SelectItem key={opt.value} value={opt.value}>
+							{opt.label}
+						</SelectItem>
+					))}
 				</SelectContent>
 			</Select>
 		</div>
 	);
 }
+
+const ROLE_OPTIONS: Array<{ value: ThemeRole; label: string }> = [
+	{ value: "primary", label: "Primária" },
+	{ value: "secondary", label: "Secundária" },
+];
+
+const GRADIENT_STOP_OPTIONS: Array<{ value: GradientStop; label: string }> = [
+	{ value: "primary", label: "Primária" },
+	{ value: "secondary", label: "Secundária" },
+	{ value: "transparent", label: "Transparente" },
+];
+
+const EFFECT_COLOR_OPTIONS: Array<{ value: EffectColor; label: string }> = [
+	{ value: "primary", label: "Primária" },
+	{ value: "secondary", label: "Secundária" },
+	{ value: "foreground", label: "Texto (neutro)" },
+];
 
 function RangeRow({
 	label,
@@ -214,6 +242,7 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 					<RoleRow
 						label="Fundo"
 						value={draft.header.bg}
+						options={ROLE_OPTIONS}
 						onChange={(bg) => patch({ header: { ...draft.header, bg } })}
 					/>
 					<div className="flex items-center justify-between gap-2">
@@ -248,16 +277,19 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 					<RoleRow
 						label="Fundo do rodapé"
 						value={draft.footer.bg}
+						options={ROLE_OPTIONS}
 						onChange={(bg) => patch({ footer: { bg } })}
 					/>
 					<RoleRow
 						label="Fundo dos botões"
 						value={draft.buttons.bg}
+						options={ROLE_OPTIONS}
 						onChange={(bg) => patch({ buttons: { bg } })}
 					/>
 					<RoleRow
 						label="Destaque do conteúdo"
 						value={draft.content.accent}
+						options={ROLE_OPTIONS}
 						onChange={(accent) => patch({ content: { accent } })}
 					/>
 				</AccordionContent>
@@ -312,6 +344,7 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 							<RoleRow
 								label="Cor do efeito"
 								value={draft.page.effectColor}
+								options={EFFECT_COLOR_OPTIONS}
 								onChange={(effectColor) =>
 									patch({ page: { ...draft.page, effectColor } })
 								}
@@ -433,11 +466,13 @@ function GradientRow({
 					<RoleRow
 						label="De"
 						value={g.from}
+						options={GRADIENT_STOP_OPTIONS}
 						onChange={(from) => onChange({ ...g, from })}
 					/>
 					<RoleRow
 						label="Para"
 						value={g.to}
+						options={GRADIENT_STOP_OPTIONS}
 						onChange={(to) => onChange({ ...g, to })}
 					/>
 				</>

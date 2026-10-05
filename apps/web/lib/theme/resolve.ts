@@ -1,7 +1,6 @@
 import {
 	parseEventTheme,
 	type EventTheme,
-	type ThemeRole,
 } from "@verific/drizzle/theme";
 
 import { FONT_FAMILIES } from "./presets";
@@ -45,8 +44,11 @@ export interface ResolvedEventTheme {
 	cssVars: Record<string, string>;
 }
 
-function roleColor(theme: EventTheme, role: ThemeRole): string {
-	return role === "primary" ? theme.primary : theme.secondary;
+function roleColor(theme: EventTheme, role: string): string {
+	if (role === "secondary") return theme.secondary;
+	if (role === "transparent") return "transparent";
+	if (role === "foreground") return "var(--foreground)";
+	return theme.primary;
 }
 
 /**
@@ -86,7 +88,12 @@ export function resolveEventTheme(input: {
 	}
 
 	const gradient = (
-		g: { height: number; from: ThemeRole; to: ThemeRole; opacity: number } | null,
+		g: {
+			height: number;
+			from: string;
+			to: string;
+			opacity: number;
+		} | null,
 		dir: string,
 	) =>
 		g

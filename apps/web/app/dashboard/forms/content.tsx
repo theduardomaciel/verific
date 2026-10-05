@@ -70,6 +70,7 @@ export function FormsContent() {
 					fields={fields}
 					sections={sections}
 					isLoading={isLoadingFields}
+					projectId={projectId}
 				/>
 			) : (
 				<>

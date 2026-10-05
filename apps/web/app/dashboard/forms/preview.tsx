@@ -22,7 +22,10 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { ProfileFieldsSection } from "@/components/forms/profile-fields-section";
+import type { GenericForm } from "@/components/forms";
 import type { RouterOutput } from "@verific/api";
+import { trpc } from "@/lib/trpc/react";
 
 type BuilderField = RouterOutput["getVersion"]["fields"][number];
 type BuilderSection = RouterOutput["getVersion"]["sections"][number];
@@ -37,11 +40,22 @@ export function FormPreview({
 	fields,
 	sections,
 	isLoading = false,
+	projectId,
 }: {
 	fields: BuilderField[];
 	sections: BuilderSection[];
 	isLoading?: boolean;
+	/** Opcional: só o formulário do evento mostra a seção de perfil. */
+	projectId?: string;
 }) {
+	const projectQuery = trpc.getProject.useQuery(
+		{ id: projectId ?? "" },
+		{ enabled: Boolean(projectId) },
+	);
+	const showProfileSection = Boolean(
+		projectQuery.data?.project.profilesEnabled &&
+			projectQuery.data?.project.profileFillAtSignup,
+	);
 	const baseVisible = useMemo(
 		() => fields.filter((f) => f.isActive && f.isVisible),
 		[fields],
@@ -104,9 +118,13 @@ export function FormPreview({
 		};
 	}, [fieldsForValidation, sectionsForVisibility, nameSchema]);
 
-	const form = useForm<{ name: string; answers: Record<string, unknown> }>({
+	const form = useForm<{
+		name: string;
+		answers: Record<string, unknown>;
+		profile: Record<string, unknown>;
+	}>({
 		resolver: resolver as never,
-		defaultValues: { name: "", answers: {} },
+		defaultValues: { name: "", answers: {}, profile: {} },
 	});
 
 	const watchedAnswers = (form.watch("answers") ?? {}) as Record<string, unknown>;
@@ -188,26 +206,33 @@ export function FormPreview({
 									{gi + 1}. {group.section.title}
 								</h4>
 								{gi === 0 && (
-									<FormField
-										control={form.control}
-										name="name"
-										render={({ field }) => (
-											<FormItem className="w-full">
-												<FormLabel>
-													Nome completo{" "}
-													<span className="text-destructive ml-1">*</span>
-												</FormLabel>
-												<FormControl>
-													<Input
-														placeholder="Fulano da Silva"
-														{...field}
-														value={field.value ?? ""}
-													/>
-												</FormControl>
-												<FormMessage />
-											</FormItem>
+									<>
+										<FormField
+											control={form.control}
+											name="name"
+											render={({ field }) => (
+												<FormItem className="w-full">
+													<FormLabel>
+														Nome completo{" "}
+														<span className="text-destructive ml-1">*</span>
+													</FormLabel>
+													<FormControl>
+														<Input
+															placeholder="Fulano da Silva"
+															{...field}
+															value={field.value ?? ""}
+														/>
+													</FormControl>
+													<FormMessage />
+												</FormItem>
+											)}
+										/>
+										{showProfileSection && (
+											<ProfileFieldsSection
+												form={form as unknown as GenericForm}
+											/>
 										)}
-									/>
+									</>
 								)}
 								{group.rows.length > 0 && (
 									<div className="flex w-full flex-col gap-6">
@@ -237,26 +262,33 @@ export function FormPreview({
 							</div>
 						))}
 						{grouped.length === 0 && (
-							<FormField
-								control={form.control}
-								name="name"
-								render={({ field }) => (
-									<FormItem className="w-full">
-										<FormLabel>
-											Nome completo{" "}
-											<span className="text-destructive ml-1">*</span>
-										</FormLabel>
-										<FormControl>
-											<Input
-												placeholder="Fulano da Silva"
-												{...field}
-												value={field.value ?? ""}
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
+							<>
+								<FormField
+									control={form.control}
+									name="name"
+									render={({ field }) => (
+										<FormItem className="w-full">
+											<FormLabel>
+												Nome completo{" "}
+												<span className="text-destructive ml-1">*</span>
+											</FormLabel>
+											<FormControl>
+												<Input
+													placeholder="Fulano da Silva"
+													{...field}
+													value={field.value ?? ""}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								{showProfileSection && (
+									<ProfileFieldsSection
+										form={form as unknown as GenericForm}
+									/>
 								)}
-							/>
+							</>
 						)}
 						<div className="flex w-full flex-row items-center justify-between gap-4">
 							<p className="text-muted-foreground text-sm">
