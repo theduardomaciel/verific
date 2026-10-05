@@ -24,6 +24,7 @@ import {
 	socialUrl,
 	str,
 } from "./profile-normalize";
+import { PROFILE_SECTION_TITLE } from "@verific/drizzle/profile";
 
 export interface ProfileFormValue {
 	roleTitle?: string | null;
@@ -74,6 +75,8 @@ interface ProfileFieldsSectionProps {
 	form: GenericForm;
 	/** Sem o invólucro FormSection (ex: dentro do diálogo, que já tem aba). */
 	bare?: boolean;
+	/** Numeração exibida no cabeçalho da seção. */
+	sectionNumber?: number;
 }
 
 /**
@@ -81,7 +84,7 @@ interface ProfileFieldsSectionProps {
  * formulário hospedeiro sob `profile.*`. Usada na inscrição e no diálogo
  * "Editar perfil" com as mesmas definições/validação.
  */
-export function ProfileFieldsSection({ form, bare = false }: ProfileFieldsSectionProps) {
+export function ProfileFieldsSection({ form, bare = false, sectionNumber = 1 }: ProfileFieldsSectionProps) {
 	const profileValues = form.watch("profile") as Record<string, unknown> | undefined;
 	const profileFilled = profileValues
 		? Object.values(profileValues).some(isFilled)
@@ -296,8 +299,8 @@ export function ProfileFieldsSection({ form, bare = false }: ProfileFieldsSectio
 	if (bare) return fields;
 	return (
 		<FormSection
-			title="Perfil no evento"
-			section={0}
+			title={PROFILE_SECTION_TITLE}
+			section={sectionNumber}
 			form={form}
 			fields={[{ name: "Perfil", value: profileFilled }]}
 		>

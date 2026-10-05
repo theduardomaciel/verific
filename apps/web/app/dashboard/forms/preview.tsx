@@ -7,7 +7,7 @@ import { z } from "@verific/zod";
 import { toast } from "sonner";
 
 import { buildAnswersSchema, filterVisibleFields, getVisibleSectionIds } from "@verific/api/schemas";
-import { groupFieldsBySection } from "@/lib/forms/layout";
+import { groupFieldsBySection, planFormSections } from "@/lib/forms/layout";
 import { DynamicField } from "@/components/forms/dynamic/DynamicField";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -129,6 +129,11 @@ export function FormPreview({
 		return groupFieldsBySection(visible, sections).filter((g) => ids.has(g.section.id));
 	}, [baseVisible, sections, sectionsForVisibility, fieldsForValidation, watchedAnswers]);
 
+	const planned = useMemo(
+		() => planFormSections(grouped, showProfileSection),
+		[grouped, showProfileSection],
+	);
+
 	function onSubmit() {
 		toast.success("Pré-visualização válida! Nenhum dado foi enviado.");
 	}
@@ -191,13 +196,22 @@ export function FormPreview({
 						onSubmit={form.handleSubmit(onSubmit, onInvalid)}
 						className="flex w-full flex-col gap-6"
 					>
-						{grouped.map((group, gi) => (
-							<div key={group.section.id} className="flex w-full flex-col gap-3">
-								<h4 className="text-sm font-bold">
-									{gi + 1}. {group.section.title}
-								</h4>
-								{gi === 0 && (
-									<>
+						{planned.map((p) =>
+							p.isProfile ? (
+								<ProfileFieldsSection
+									key={p.group.section.id}
+									form={form as unknown as GenericForm}
+									sectionNumber={p.displayNumber}
+								/>
+							) : (
+								<div
+									key={p.group.section.id}
+									className="flex w-full flex-col gap-3"
+								>
+									<h4 className="text-sm font-bold">
+										{p.displayNumber}. {p.group.section.title}
+									</h4>
+									{p.isFirstContent && (
 										<FormField
 											control={form.control}
 											name="name"
@@ -218,41 +232,36 @@ export function FormPreview({
 												</FormItem>
 											)}
 										/>
-										{showProfileSection && (
-											<ProfileFieldsSection
-												form={form as unknown as GenericForm}
-											/>
-										)}
-									</>
-								)}
-								{group.rows.length > 0 && (
-									<div className="flex w-full flex-col gap-6">
-										{group.rows.map((row, ri) => (
-											<div
-												key={
-													row.fields.map((f) => f.id).join("-") || `row-${ri}`
-												}
-												className={
-													row.fields.length === 2
-														? "grid w-full grid-cols-1 gap-6 md:grid-cols-2"
-														: "w-full"
-												}
-											>
-												{row.fields.map((f) => (
-													<DynamicField
-														key={f.id}
-														field={f}
-														control={form.control as never}
-														name={`answers.${f.key}`}
-													/>
-												))}
-											</div>
-										))}
-									</div>
-								)}
-							</div>
-						))}
-						{grouped.length === 0 && (
+									)}
+									{p.group.rows.length > 0 && (
+										<div className="flex w-full flex-col gap-6">
+											{p.group.rows.map((row, ri) => (
+												<div
+													key={
+														row.fields.map((f) => f.id).join("-") || `row-${ri}`
+													}
+													className={
+														row.fields.length === 2
+															? "grid w-full grid-cols-1 gap-6 md:grid-cols-2"
+															: "w-full"
+													}
+												>
+													{row.fields.map((f) => (
+														<DynamicField
+															key={f.id}
+															field={f}
+															control={form.control as never}
+															name={`answers.${f.key}`}
+														/>
+													))}
+												</div>
+											))}
+										</div>
+									)}
+								</div>
+							),
+						)}
+						{planned.length === 0 && (
 							<>
 								<FormField
 									control={form.control}

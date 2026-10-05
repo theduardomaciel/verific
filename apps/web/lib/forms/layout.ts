@@ -69,6 +69,41 @@ export interface SectionGroup<S extends SectionGroupable, F extends FieldWithSec
 }
 
 /**
+ * Plano de render das seções: interpola a seção de sistema (perfil) na
+ * ordem real, pula quando oculta e numera o que é visível. Nome vai na
+ * primeira seção de conteúdo (não-sistema).
+ */
+export function planFormSections<
+	S extends SectionGroupable & { isSystem?: string | null },
+	F extends FieldWithSection,
+>(
+	groups: SectionGroup<S, F>[],
+	showProfile: boolean,
+): Array<{
+	group: SectionGroup<S, F>;
+	displayNumber: number;
+	isProfile: boolean;
+	isFirstContent: boolean;
+}> {
+	let n = 0;
+	let firstContentSeen = false;
+	const planned: Array<{
+		group: SectionGroup<S, F>;
+		displayNumber: number;
+		isProfile: boolean;
+		isFirstContent: boolean;
+	}> = [];
+	for (const group of groups) {
+		const isProfile = Boolean(group.section.isSystem);
+		if (isProfile && !showProfile) continue;
+		n += 1;
+		const isFirstContent = !isProfile && !firstContentSeen;
+		if (!isProfile) firstContentSeen = true;
+		planned.push({ group, displayNumber: n, isProfile, isFirstContent });
+	}
+	return planned;
+}
+/**
  * Groups order-sorted fields into their sections (ordered by section.order).
  * Fields with a missing/null sectionId fall back to the first section so
  * legacy data never disappears from the UI.
