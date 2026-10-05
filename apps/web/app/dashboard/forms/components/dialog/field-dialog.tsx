@@ -23,6 +23,7 @@ import {
 
 import { trpc } from "@/lib/trpc/react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -68,6 +69,7 @@ import {
 	formFieldTypeLabels,
 	formFieldTypes,
 } from "@verific/drizzle/enum/form-field-type";
+import { SOCIAL_SERVICES } from "@verific/drizzle/profile-layout";
 
 interface FieldDialogProps {
 	versionId: string;
@@ -384,6 +386,50 @@ export function FieldDialog({
 									name="allowOther"
 									label="Permitir “Outro”"
 									description="Adiciona a opção “Outro” por último, com campo de texto livre (máx. 200 caracteres)."
+								/>
+							</Section>
+						)}
+
+						{/* Type-specific: allowed services */}
+						{watchedType === "social_links" && (
+							<Section title="Serviços permitidos">
+								<FormField
+									control={form.control}
+									name="allowedServices"
+									render={({ field }) => {
+										const selected = new Set(
+											(field.value ?? []) as string[],
+										);
+										return (
+											<FormItem>
+												<div className="flex flex-col gap-2">
+													{SOCIAL_SERVICES.map((s) => (
+														<label
+															key={s.id}
+															className="flex cursor-pointer items-center gap-2 text-sm"
+														>
+															<Checkbox
+																checked={selected.has(s.id)}
+																onCheckedChange={(c) => {
+																	const next = new Set(selected);
+																	if (c) next.add(s.id);
+																	else next.delete(s.id);
+																	field.onChange([...next]);
+																}}
+															/>
+															{s.label}
+														</label>
+													))}
+												</div>
+												<FormDescription className="text-xs">
+													Nenhum marcado = todos liberados.
+													Obrigatório passa a exigir ao menos uma
+													entrada.
+												</FormDescription>
+												<FormMessage />
+											</FormItem>
+										);
+									}}
 								/>
 							</Section>
 						)}
