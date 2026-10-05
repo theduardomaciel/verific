@@ -1,6 +1,6 @@
 "use client";
 
-import { Controller, type Control, type FieldValues } from "react-hook-form";
+import { type Control, type FieldValues } from "react-hook-form";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,6 +12,7 @@ import {
 	FormItem,
 	FormLabel,
 	FormMessage,
+	FormField as RHFFormField,
 } from "@/components/ui/form";
 import {
 	Select,
@@ -233,7 +234,7 @@ export function DynamicField({
 	);
 
 	return (
-		<Controller
+		<RHFFormField
 			control={control}
 			name={name}
 			render={({ field: rhf }) => {
