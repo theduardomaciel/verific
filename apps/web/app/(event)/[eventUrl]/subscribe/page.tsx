@@ -9,7 +9,13 @@ import { SubscribeGate } from "@/components/subscribe-gate";
 
 import { getEventRegistration, getProject } from "@/lib/data";
 
-async function SubscribeContent({
+/**
+ * Checks (`getProject`/`getEventRegistration` + `notFound`/`redirect`)
+ * run here, before any `<Suspense>` boundary renders — real 404/redirect
+ * statuses instead of streamed soft-404s. Both reads are cached
+ * ("use cache"), so the gate itself still prerenders.
+ */
+export default async function EventSubscribePage({
 	params,
 }: {
 	params: Promise<{ eventUrl: string }>;
@@ -29,58 +35,48 @@ async function SubscribeContent({
 	}
 
 	return (
-		<EventContainer.Holder>
-			<EventContainer.Hero
-				coverUrl={project.coverUrl || "/images/hero-bg.png"}
-			>
-				<div className="z-10 flex flex-1 flex-col items-center justify-center">
-					<h1 className="font-heading mb-4 text-center text-5xl font-bold text-white">
-						Inscreva-se em <br />
-						{project.name}
-					</h1>
-					<div className="mb-4 flex items-center text-lg text-white/90">
-						<Calendar className="mr-2 h-4.5 w-4.5" />
-						<span className="-mt-0.5 text-base">
-							De{" "}
-							{new Date(project.startDate).toLocaleDateString(
-								"pt-BR",
-							)}{" "}
-							a{" "}
-							{new Date(project.endDate).toLocaleDateString(
-								"pt-BR",
-							)}
-						</span>
-					</div>
-				</div>
-			</EventContainer.Hero>
-			<EventContainer.Content>
-				<div className="container-p w-full">
-					<SubscribeGate
-						project={{
-							id: project.id,
-							url: project.url,
-							name: project.name,
-							logo: project.logoUrl || undefined,
-							colors: [
-								project.primaryColor,
-								project.secondaryColor,
-							].filter(Boolean) as string[],
-						}}
-					/>
-				</div>
-			</EventContainer.Content>
-		</EventContainer.Holder>
-	);
-}
-
-export default function EventSubscribePage({
-	params,
-}: {
-	params: Promise<{ eventUrl: string }>;
-}) {
-	return (
 		<Suspense fallback={<SubscribePageFallback />}>
-			<SubscribeContent params={params} />
+			<EventContainer.Holder>
+				<EventContainer.Hero
+					coverUrl={project.coverUrl || "/images/hero-bg.png"}
+				>
+					<div className="z-10 flex flex-1 flex-col items-center justify-center">
+						<h1 className="font-heading mb-4 text-center text-5xl font-bold text-white">
+							Inscreva-se em <br />
+							{project.name}
+						</h1>
+						<div className="mb-4 flex items-center text-lg text-white/90">
+							<Calendar className="mr-2 h-4.5 w-4.5" />
+							<span className="-mt-0.5 text-base">
+								De{" "}
+								{new Date(project.startDate).toLocaleDateString(
+									"pt-BR",
+								)}{" "}
+								a{" "}
+								{new Date(project.endDate).toLocaleDateString(
+									"pt-BR",
+								)}
+							</span>
+						</div>
+					</div>
+				</EventContainer.Hero>
+				<EventContainer.Content>
+					<div className="container-p w-full">
+						<SubscribeGate
+							project={{
+								id: project.id,
+								url: project.url,
+								name: project.name,
+								logo: project.logoUrl || undefined,
+								colors: [
+									project.primaryColor,
+									project.secondaryColor,
+								].filter(Boolean) as string[],
+							}}
+						/>
+					</div>
+				</EventContainer.Content>
+			</EventContainer.Holder>
 		</Suspense>
 	);
 }
