@@ -274,6 +274,7 @@ export const answerValueSchema = z.union([
 	z.string(),
 	z.number(),
 	z.boolean(),
+	z.date(),
 	z.array(z.string()),
 	z.array(socialEntrySchema),
 	z.null(),
@@ -471,7 +472,7 @@ function fieldValueSchema(field: FormFieldForValidation) {
 
 	switch (field.type) {
 		case "text": {
-			base = z.string();
+			base = z.string({ error: "Obrigatório" });
 			const v = field.validation;
 			if (typeof v?.minLength === "number")
 				base = (base as z.ZodString).min(v.minLength);
@@ -480,7 +481,7 @@ function fieldValueSchema(field: FormFieldForValidation) {
 			break;
 		}
 		case "textarea": {
-			base = z.string();
+			base = z.string({ error: "Obrigatório" });
 			const v = field.validation;
 			if (typeof v?.minLength === "number")
 				base = (base as z.ZodString).min(v.minLength);
@@ -508,12 +509,12 @@ function fieldValueSchema(field: FormFieldForValidation) {
 					? field.options
 					: null;
 			if (!opts) {
-				base = z.string().min(1);
+				base = z.string({ error: "Obrigatório" }).min(1);
 				break;
 			}
 			const allowOther = field.allowOther === true;
 			base = z
-				.string()
+				.string({ error: "Obrigatório" })
 				.min(1, { message: "Obrigatório" })
 				.superRefine((v, ctx) => {
 					if (opts.includes(v)) return;
@@ -545,7 +546,7 @@ function fieldValueSchema(field: FormFieldForValidation) {
 					? field.options
 					: null;
 			if (!opts) {
-				base = z.array(z.string().min(1));
+				base = z.array(z.string().min(1), { error: "Obrigatório" });
 				break;
 			}
 			const allowOther = field.allowOther === true;
@@ -576,7 +577,7 @@ function fieldValueSchema(field: FormFieldForValidation) {
 				});
 			// "Outro" counts as one selection: the custom text is stored
 			// as-is as a single array element, so no extra handling needed.
-			base = z.array(element);
+			base = z.array(element, { error: "Obrigatório" });
 			break;
 		}
 		case "checkbox": {
@@ -584,7 +585,7 @@ function fieldValueSchema(field: FormFieldForValidation) {
 			break;
 		}
 		case "email": {
-			let emailBase = z.string();
+			let emailBase = z.string({ error: "Obrigatório" });
 			const v = field.validation;
 			if (typeof v?.minLength === "number")
 				emailBase = emailBase.min(v.minLength, {
@@ -606,7 +607,7 @@ function fieldValueSchema(field: FormFieldForValidation) {
 			// Stored form is always E.164 (e.g. "+5582999991234"), so no
 			// default region is needed. See DOCS/i18n.md.
 			base = z
-				.string()
+				.string({ error: "Obrigatório" })
 				.refine((val) => val === "" || isValidPhoneNumber(val), {
 					message: "Telefone inválido.",
 				});
@@ -639,7 +640,7 @@ function fieldValueSchema(field: FormFieldForValidation) {
 					service: e.service,
 					value: normalizeSocialLink(e.service, e.value) ?? e.value,
 				}));
-			base = z.array(entry).max(8);
+			base = z.array(entry, { error: "Obrigatório" }).max(8);
 			break;
 		}
 		default:
@@ -658,6 +659,7 @@ function fieldValueSchema(field: FormFieldForValidation) {
 	}
 
 	if (field.type === "text" || field.type === "textarea") {
+		// `error` cobre ausência (invalid_type) e vazio (min): sempre "Obrigatório".
 		return (base as z.ZodString).min(1, { message: "Obrigatório" });
 	}
 	if (field.type === "email" || field.type === "phone") {

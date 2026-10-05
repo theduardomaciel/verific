@@ -5,6 +5,7 @@ import {
 	filterVisibleFields,
 	formatAnswerValue,
 	getVisibleSectionIds,
+	submitAnswersInput,
 	validateAnswers,
 	validateSectionVisibilityRule,
 	type FormFieldForValidation,
@@ -371,5 +372,38 @@ describe("validateSectionVisibilityRule", () => {
 			sourceSectionId: "s1",
 		});
 		expect(err).toBeNull();
+	});
+});
+
+describe("answer transport values (RHF-coerced)", () => {
+	const birthField = {
+		key: "data_de_nascimento",
+		label: "Data de nascimento",
+		type: "date",
+		required: true,
+		isVisible: true,
+		isActive: true,
+	} satisfies FormFieldForValidation;
+
+	it("submitAnswersInput accepts Date instances (SuperJSON)", () => {
+		const parsed = submitAnswersInput.safeParse({
+			projectId: "11111111-1111-4111-8111-111111111111",
+			name: "Fulana de Tal",
+			answers: { data_de_nascimento: new Date("2004-03-16T12:00:00") },
+		});
+
+		expect(parsed.success).toBe(true);
+	});
+
+	it("validateAnswers accepts Date and ISO strings for date fields", () => {
+		const fromDate = validateAnswers([birthField], {
+			data_de_nascimento: new Date("2004-03-16T12:00:00"),
+		});
+		expect(fromDate.success).toBe(true);
+
+		const fromString = validateAnswers([birthField], {
+			data_de_nascimento: "2004-03-16",
+		});
+		expect(fromString.success).toBe(true);
 	});
 });

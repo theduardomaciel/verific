@@ -43,7 +43,9 @@ export function ProfileSectionCard({
 				profilesEnabled: enabled,
 			});
 			toast.success(
-				enabled ? "Perfis de participantes ativados!" : "Perfis desativados.",
+				enabled
+					? "Perfis de participantes ativados!"
+					: "Perfis desativados.",
 			);
 		} catch {
 			toast.error("Erro ao atualizar configuração de perfis.");
@@ -53,14 +55,17 @@ export function ProfileSectionCard({
 	if (!profilesEnabled) {
 		return (
 			<Card className="border-dashed">
-				<CardContent className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
+				<CardContent className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
 					<div className="flex min-w-0 flex-1 items-start gap-2">
 						<UserRound className="text-muted-foreground mt-0.5 h-5 w-5 shrink-0" />
 						<div className="min-w-0 flex-1">
-							<p className="font-semibold">Ativar perfis de participantes?</p>
+							<p className="font-semibold">
+								Ativar perfis de participantes?
+							</p>
 							<p className="text-muted-foreground mt-1 text-xs">
-								Cada inscrito ganha uma página pública no evento. Ao
-								ativar, configure o layout em Configurações → Perfil.
+								Cada inscrito ganha uma página pública no
+								evento. Ao ativar, configure o layout em
+								Configurações → Perfil.
 							</p>
 						</div>
 					</div>

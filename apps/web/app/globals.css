@@ -129,13 +129,13 @@
 	@media (width >=80rem
 
 		/* 1280px */) {
-		padding-inline: calc((100% - 64rem) / 2);
+		padding-inline: calc((100% - 72rem) / 2);
 	}
 
 	@media (width >=96rem
 
 		/* 1536px */) {
-		padding-inline: calc((100% - 96rem) / 2);
+		padding-inline: calc((100% - 92rem) / 2);
 	}
 }
 

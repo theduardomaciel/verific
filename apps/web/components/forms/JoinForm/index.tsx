@@ -26,6 +26,7 @@ import JoinForm0 from "./Section0";
 import { isFilled } from "@/lib/forms/layout";
 import { Eye } from "lucide-react";
 import { isFieldLinked } from "@verific/drizzle/profile-layout";
+import { scrollToNextSection } from "@/lib/validations";
 
 // Validation
 import { buildAnswersSchema, filterVisibleFields } from "@verific/api/schemas";
@@ -214,6 +215,28 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 		if (!user) form.setValue("name", "");
 	}, [user, form]);
 
+	// Wizard: começa na identificação; "Continuar" valida a seção atual
+	// e avança (só a última seção conclui/submete).
+	useEffect(() => {
+		if (form.getValues("formType" as never) === undefined) {
+			form.setValue("formType" as never, "section0" as never);
+		}
+	}, [form]);
+
+	function advanceTo(sectionNumber: number) {
+		form.setValue("formType" as never, `section${sectionNumber}` as never);
+		scrollToNextSection(sectionNumber);
+	}
+
+	async function handleContinueSection(p: (typeof planned)[number]) {
+		const names: string[] = [];
+		if (p.isFirstContent) names.push("name");
+		for (const f of p.group.fields) names.push(`answers.${f.key}`);
+		const ok = await form.trigger(names as never);
+		if (!ok) return;
+		advanceTo(p.displayNumber + 1);
+	}
+
 	async function onSubmit(values: {
 		name: string;
 		answers: Record<string, unknown>;
@@ -257,6 +280,7 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 						projectUrl={project.url}
 						form={form as unknown as GenericForm}
 						email={user?.email}
+						onContinue={() => advanceTo(1)}
 					/>
 					{isFormPending ? (
 						<FormSection
@@ -332,6 +356,12 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 								<SectionFooter
 									isFinalSection={
 										p.displayNumber === planned[planned.length - 1]?.displayNumber
+									}
+									onContinue={
+										p.displayNumber ===
+										planned[planned.length - 1]?.displayNumber
+											? undefined
+											: () => void handleContinueSection(p)
 									}
 								/>
 							</FormSection>

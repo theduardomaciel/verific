@@ -37,6 +37,7 @@ import {
 } from "../lib/profile-links";
 import { socialServiceById } from "@verific/drizzle/profile-layout";
 import {
+	answerValueSchema,
 	filterVisibleFields,
 	formVersionExportSchema,
 	hasOutroOption,
@@ -1651,16 +1652,7 @@ export const formsRouter = createTRPCRouter({
 		.input(
 			z.object({
 				projectId: z.uuid(),
-				answers: z.record(
-					z.string(),
-					z.union([
-						z.string(),
-						z.number(),
-						z.boolean(),
-						z.array(z.string()),
-						z.null(),
-					]),
-				),
+				answers: z.record(z.string(), answerValueSchema),
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
