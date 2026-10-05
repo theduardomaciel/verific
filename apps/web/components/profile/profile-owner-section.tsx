@@ -42,24 +42,34 @@ export function ProfileOwnerSection({
 
 	const isOwner = myProfile.data?.shortId === shortId;
 
-	if (!hasHint || (!session.isPending && !userId) || (myProfile.data && !isOwner)) {
+	if (
+		!hasHint ||
+		(!session.isPending && !userId) ||
+		(myProfile.data && !isOwner)
+	) {
 		return <>{children}</>;
 	}
 
 	return (
 		<div className="flex w-full flex-col gap-6">
 			{myProfile.data && isOwner ? (
-				<Collapsible open={open} onOpenChange={setOpen} className="w-full">
-					<CollapsibleTrigger className="flex items-center gap-2 text-xl font-semibold">
+				<Collapsible
+					open={open}
+					onOpenChange={setOpen}
+					className="w-full"
+				>
+					<CollapsibleTrigger className="flex items-center gap-3 text-xl font-semibold">
 						Seu perfil
 						<ChevronDown
 							className={cn(
-								"h-5 w-5 transition-transform",
+								"mt-0.5 h-5 w-5 transition-transform",
 								open && "rotate-180",
 							)}
 						/>
 					</CollapsibleTrigger>
-					<CollapsibleContent className="pt-6">{children}</CollapsibleContent>
+					<CollapsibleContent className="pt-6">
+						{children}
+					</CollapsibleContent>
 				</Collapsible>
 			) : (
 				<>

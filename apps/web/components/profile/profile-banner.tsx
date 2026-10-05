@@ -2,6 +2,7 @@ import { MailIcon } from "lucide-react";
 
 import { getInitials } from "@/lib/i18n";
 import { SocialServiceIcon } from "./social-icons";
+import { cn } from "@/lib/utils";
 
 export interface BannerSocial {
 	service: string;
@@ -35,10 +36,15 @@ export function ProfileBanner({
 	actions,
 }: ProfileBannerProps) {
 	return (
-		<header className="relative flex w-full flex-col items-start justify-start gap-4 overflow-hidden rounded-3xl p-8 md:h-96">
+		<header
+			className={cn(
+				"relative flex w-full flex-col items-start justify-start gap-4 overflow-hidden rounded-3xl p-8",
+				[showBioAndSocials && bio && "md:h-96"],
+			)}
+		>
 			<div
 				aria-hidden
-				className="absolute inset-0"
+				className="absolute inset-0 dark:opacity-50"
 				style={{
 					background:
 						"linear-gradient(135deg, var(--secondary) 0%, var(--primary) 65%)",
@@ -70,7 +76,9 @@ export function ProfileBanner({
 						{name}
 					</h1>
 					{subtitle && (
-						<h2 className="text-lg font-normal text-white/80">{subtitle}</h2>
+						<h2 className="text-lg font-normal text-white/80">
+							{subtitle}
+						</h2>
 					)}
 				</div>
 				{showBioAndSocials && bio && (
@@ -86,7 +94,9 @@ export function ProfileBanner({
 									target="_blank"
 									rel="noopener noreferrer"
 								>
-									<SocialServiceIcon service={social.service} />
+									<SocialServiceIcon
+										service={social.service}
+									/>
 									<span>{social.display}</span>
 								</a>
 							</li>

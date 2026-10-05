@@ -675,11 +675,7 @@ export function DynamicField({
 						return (
 							<FormItem className="w-full">
 								{label}
-								{field.helpText && (
-									<FormDescription>
-										{field.helpText}
-									</FormDescription>
-								)}
+
 								<FormControl>
 									<Input
 										type="text"
@@ -701,6 +697,11 @@ export function DynamicField({
 										name={rhf.name}
 									/>
 								</FormControl>
+								{field.helpText && (
+									<FormDescription>
+										{field.helpText}
+									</FormDescription>
+								)}
 								<FormMessage />
 							</FormItem>
 						);

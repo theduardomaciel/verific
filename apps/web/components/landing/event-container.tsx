@@ -47,7 +47,7 @@ export function Content({ children, className }: HolderProps) {
 	return (
 		<div
 			className={cn(
-				"mx-auto flex w-full flex-col items-center justify-center pt-16",
+				"mx-auto flex w-full flex-col items-center justify-center py-16",
 				className,
 			)}
 		>

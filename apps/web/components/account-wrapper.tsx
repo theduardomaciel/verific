@@ -49,68 +49,69 @@ export function AccountWrapper({
 	}, [initialExpanded]);
 
 	return (
-		<EventContainer.Content>
-			<div className="container-p mb-8 flex w-full flex-col gap-4 md:gap-12">
-				{activities.length > 0 ? (
-					<>
-						<h2 className="text-foreground font-dashboard text-3xl font-semibold">
-							Seus eventos
-						</h2>
-						<Accordion
-							type="multiple"
-							value={expandedCategories}
-							onValueChange={setExpandedCategories}
-							className="w-full"
-						>
-							{categories.map((category) => (
-								<AccordionItem key={category} value={category}>
-									<AccordionTrigger className="text-foreground font-dashboard text-xl font-semibold">
-										{category}
-									</AccordionTrigger>
-									<AccordionContent>
-										<ul className="flex w-full flex-col gap-4">
-											{grouped
-												.get(category)!
-												.map((activity) => (
-													<li
-														key={activity.id}
-														className="w-full"
-													>
-														<ActivityTicket
-															activity={activity}
-															participantId={
-																participantId ||
-																""
-															}
-														/>
-													</li>
-												))}
-										</ul>
-									</AccordionContent>
-								</AccordionItem>
-							))}
-						</Accordion>
-					</>
-				) : (
-					<Empty
-						title="Nenhuma atividade encontrada"
-						description={
-							<div className="flex flex-col items-center justify-center gap-4">
-								Você ainda não se inscreveu em nenhuma
-								atividade.
-								<Button size={"lg"} asChild>
-									<Link href={`/${eventUrl}/schedule`}>
-										Explore a programação e inscreva-se
-										<span className="text-xs">
-											<ExternalLinkIcon className="ml-2" />
-										</span>
-									</Link>
-								</Button>
-							</div>
-						}
-					/>
-				)}
-			</div>
-		</EventContainer.Content>
+		<div className="flex w-full flex-col gap-4 md:gap-12">
+			{activities.length > 0 ? (
+				<>
+					<h2 className="text-foreground font-dashboard text-3xl font-semibold">
+						Seus eventos
+					</h2>
+					<Accordion
+						type="multiple"
+						value={expandedCategories}
+						onValueChange={setExpandedCategories}
+						className="w-full"
+					>
+						{categories.map((category) => (
+							<AccordionItem key={category} value={category}>
+								<AccordionTrigger className="text-foreground font-dashboard text-xl font-semibold">
+									{category}
+								</AccordionTrigger>
+								<AccordionContent>
+									<ul className="flex w-full flex-col gap-4">
+										{grouped
+											.get(category)!
+											.map((activity) => (
+												<li
+													key={activity.id}
+													className="w-full"
+												>
+													<ActivityTicket
+														activity={activity}
+														participantId={
+															participantId || ""
+														}
+													/>
+												</li>
+											))}
+									</ul>
+								</AccordionContent>
+							</AccordionItem>
+						))}
+					</Accordion>
+				</>
+			) : (
+				<Empty
+					title="Nenhuma atividade encontrada"
+					description={
+						<div className="flex w-full flex-col items-center justify-center gap-4 px-6 text-center">
+							Você ainda não se inscreveu em nenhuma atividade.
+							<Button
+								size="lg"
+								asChild
+								className="h-fit! py-2 whitespace-normal max-sm:w-full"
+							>
+								<Link
+									href={`/${eventUrl}/schedule`}
+									className="text-center"
+								>
+									Explore a programação e inscreva-se
+									<ExternalLinkIcon />
+								</Link>
+							</Button>
+						</div>
+					}
+				/>
+			)}
+		</div>
 	);
 }
