@@ -37,27 +37,21 @@ export default async function EventSubscribePage({
 	return (
 		<Suspense fallback={<SubscribePageSkeleton />}>
 			<EventContainer.Holder>
-				<EventContainer.Hero
-					coverUrl={project.coverUrl || "/images/hero-bg.png"}
-				>
+				<EventContainer.Hero coverUrl={project.coverUrl}>
 					<div className="z-10 flex flex-1 flex-col items-center justify-center">
-						<h1 className="font-heading mb-4 text-center text-5xl font-bold text-white">
+						<EventContainer.Hero.Title className="text-center">
 							Inscreva-se em <br />
 							{project.name}
-						</h1>
-						<div className="mb-4 flex items-center text-lg text-white/90">
+						</EventContainer.Hero.Title>
+						<EventContainer.Hero.Meta>
 							<Calendar className="mr-2 h-4.5 w-4.5" />
 							<span className="-mt-0.5 text-base">
-								De{" "}
-								{new Date(project.startDate).toLocaleDateString(
-									"pt-BR",
-								)}{" "}
-								a{" "}
-								{new Date(project.endDate).toLocaleDateString(
-									"pt-BR",
-								)}
+								<EventContainer.EventDateRange
+									startDate={project.startDate}
+									endDate={project.endDate}
+								/>
 							</span>
-						</div>
+						</EventContainer.Hero.Meta>
 					</div>
 				</EventContainer.Hero>
 				<EventContainer.Content>

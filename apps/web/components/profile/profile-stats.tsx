@@ -72,11 +72,11 @@ export function ProfileStats({ data }: { data: ProfileStatsData }) {
 				)}
 				{data.showBadges && (
 					<div className="from-secondary/60 to-primary/50 flex flex-row items-center justify-between gap-6 rounded-3xl bg-linear-to-l p-6 md:p-9">
-						<span className="text-xl font-medium text-white">
+						<span className="text-xl font-medium text-foreground">
 							<span className="text-3xl font-semibold">Adesivos</span> <br />
 							Coletados
 						</span>
-						<span className="mx-auto text-5xl font-bold text-white md:pl-24">
+						<span className="mx-auto text-5xl font-bold text-foreground md:pl-24">
 							{PLACEHOLDER_BADGES_COUNT}
 						</span>
 					</div>

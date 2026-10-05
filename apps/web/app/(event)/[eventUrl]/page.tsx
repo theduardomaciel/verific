@@ -2,7 +2,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { env } from "@verific/env";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 // Icons
@@ -27,15 +27,19 @@ import { EventPageSkeleton } from "./skeleton";
 
 import { getEventStaticParams, getProject } from "@/lib/data";
 
-const markdownComponents = {
-	img: ({ src, alt, ...props }: any) => (
+/**
+ * `next/image` exige `src`/`width`/`height` próprios, então a imagem do
+ * markdown é reconstruída em vez de repassada: as props do `react-markdown`
+ * (`node`, `title`, …) não são válidas no `Image`.
+ */
+const markdownComponents: Components = {
+	img: ({ src, alt }) => (
 		<Image
-			src={src || ""}
-			alt={alt || ""}
+			src={typeof src === "string" ? src : ""}
+			alt={alt ?? ""}
 			width={800}
 			height={600}
 			className="rounded-lg"
-			{...props}
 		/>
 	),
 };
@@ -53,37 +57,29 @@ function EventPageBody({ project }: { project: EventPageProject }) {
 
 	return (
 		<EventContainer.Holder>
-			<EventContainer.Hero
-				coverUrl={project.coverUrl || "/images/hero-bg.png"}
-			>
+			<EventContainer.Hero coverUrl={project.coverUrl}>
 				<div className="z-10 flex flex-1 flex-col items-start justify-center">
-					<h1 className="font-heading mb-4 text-5xl font-bold text-white">
-						{project.name}
-					</h1>
-					<div className="mb-6 flex items-center text-lg text-white/90">
+					<EventContainer.Hero.Title>{project.name}</EventContainer.Hero.Title>
+					<EventContainer.Hero.Meta className="mb-6">
 						<Calendar className="mr-2 h-4.5 w-4.5" />
 						<span className="-mt-0.5 text-base">
-							De{" "}
-							{new Date(project.startDate).toLocaleDateString(
-								"pt-BR",
-							)}{" "}
-							a{" "}
-							{new Date(project.endDate).toLocaleDateString(
-								"pt-BR",
-							)}
+							<EventContainer.EventDateRange
+								startDate={project.startDate}
+								endDate={project.endDate}
+							/>
 						</span>
-					</div>
+					</EventContainer.Hero.Meta>
 					<div className="mb-8 flex flex-wrap gap-3">
 						<Badge
 							variant={"secondary"}
-							className="text-primary rounded-xl bg-white px-4 py-3"
+							className="rounded-xl bg-white px-4 py-3 text-neutral-900"
 						>
 							<Check className="mr-2 !h-4 !w-4" />
 							<span>Aberto para o público externo</span>
 						</Badge>
 						<Badge
 							variant={"secondary"}
-							className="text-primary rounded-xl bg-white px-4 py-3"
+							className="rounded-xl bg-white px-4 py-3 text-neutral-900"
 						>
 							<TicketCheck className="mr-2 !h-4 !w-4" />
 							<span>Emite certificado</span>

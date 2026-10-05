@@ -19,10 +19,18 @@ interface Props {
 	userActions?: React.ReactNode;
 	logo?: React.ReactNode;
 	className?: string;
+	/** Fundo do cabeçalho (ex.: `var(--ev-header-bg)`). */
 	style?: React.CSSProperties;
+	/**
+	 * Classes do botão de menu mobile. Na página do evento recebe
+	 * `text-[var(--ev-nav-fg)] hover:bg-[var(--ev-nav-hover-bg)]`, que lê
+	 * sobre qualquer estilo/cor de cabeçalho.
+	 */
 	buttonClassName?: string;
-	languageSelectorClassName?: string;
+	/** `class` extra do painel do menu mobile. */
 	mobileMenuClassName?: string;
+	/** Menu mobile usa os tokens `--ev-mobile-menu-*` do evento. */
+	eventMenu?: boolean;
 }
 
 export function Header({
@@ -34,6 +42,7 @@ export function Header({
 	logo,
 	buttonClassName,
 	mobileMenuClassName,
+	eventMenu = false,
 }: Props) {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -90,9 +99,11 @@ export function Header({
 				</Button>
 			</div>
 
+			{/* `style` NÃO é repassado aqui: ele carrega o fundo do cabeçalho
+			    (pode ser `transparent`) e sobrescreveria o fundo do painel. */}
 			<MobileMenu
 				className={mobileMenuClassName}
-				style={style}
+				eventTheme={eventMenu}
 				prefix={prefix}
 				links={links}
 				isOpen={isMenuOpen}

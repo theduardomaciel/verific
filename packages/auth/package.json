@@ -4,9 +4,6 @@
 	"types": "./index.ts",
 	"version": "0.0.0",
 	"private": true,
-	"scripts": {
-		"lint": "pnpm biome lint ."
-	},
 	"dependencies": {
 		"@better-auth/drizzle-adapter": "1.7.6",
 		"@verific/drizzle": "workspace:*",
@@ -14,7 +11,6 @@
 		"better-auth": "1.7.6"
 	},
 	"devDependencies": {
-		"@verific/eslint-config": "workspace:*",
 		"@verific/prettier-config": "workspace:*",
 		"@verific/typescript-config": "workspace:*"
 	},

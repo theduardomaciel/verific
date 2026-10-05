@@ -193,7 +193,6 @@ export function SectionDialog({
 			});
 			form.setValue("values", [], { shouldValidate: true });
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [watchedSourceId]);
 
 	const orderWarning = useMemo(() => {

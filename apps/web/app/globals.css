@@ -81,6 +81,12 @@
 	opacity: 0.92;
 }
 
+/* Esqueleto de carregamento: cor escolhida no tema do evento; fora do
+   escopo do evento cai para `--secondary` (comportamento atual). */
+.ev-skeleton {
+	background-color: var(--ev-skeleton-bg, var(--secondary));
+}
+
 .container-p {
 	width: 100%;
 	padding-inline: 2rem;

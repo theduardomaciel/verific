@@ -3,11 +3,15 @@ import { z } from "@verific/zod";
 /**
  * Tema por evento (JSON versionado em `projects.theme`).
  *
- * Eventos sempre renderizam em escopo escuro (`dark` forçado no layout),
- * por isso há um único par primary/secondary (sem variantes light/dark):
- * variantes seriam dados mortos. Cores de texto sobre as cores do tema
- * (`onPrimary`/`onSecondary`) são sempre derivadas server-side por contraste
- * WCAG AA, nunca armazenadas.
+ * Eventos seguem a preferência de cor do visitante (`next-themes`), então
+ * não existe um par light/dark de cores: o mesmo primary/secondary vale
+ * para os dois modos e variantes seriam dados mortos. Cores de texto sobre
+ * as cores do tema (`onPrimary`/`onSecondary`, tokens da navegação, etc.)
+ * nunca são armazenadas: são derivadas server-side por contraste WCAG AA.
+ *
+ * O texto da capa é sempre branco (o fundo é uma imagem, não uma cor de
+ * tema); o que o organizador escolhe é a cor do véu sobre a capa
+ * (`hero.overlayColor`), escurecida automaticamente até ficar legível.
  */
 export const THEME_VERSION = 1 as const;
 
@@ -34,6 +38,21 @@ export type GradientStop = z.infer<typeof gradientStopSchema>;
 /** Origens de cor para efeitos de fundo (inclui neutro do tema). */
 export const effectColorSchema = z.enum(["primary", "secondary", "foreground"]);
 export type EffectColor = z.infer<typeof effectColorSchema>;
+
+/**
+ * Cor dos esqueletos de carregamento. `muted` preserva o cinza global
+ * (igual ao dashboard); `primary`/`secondary` usam as cores do evento.
+ */
+export const skeletonBgSchema = z.enum(["primary", "secondary", "muted"]);
+export type SkeletonBg = z.infer<typeof skeletonBgSchema>;
+
+/**
+ * Cor do véu sobre a capa do evento. O texto da capa é sempre branco, então
+ * qualquer cor escolhida é escurecida até atingir AA contra o branco
+ * (`darkenUntilContrast` em `resolve.ts`); `dark` é um quase-preto neutro.
+ */
+export const heroOverlayColorSchema = z.enum(["primary", "secondary", "dark"]);
+export type HeroOverlayColor = z.infer<typeof heroOverlayColorSchema>;
 
 const gradientEndSchema = z.object({
 	height: z.number().int().min(0).max(600).default(240),
@@ -71,13 +90,15 @@ export const eventThemeSchema = z.object({
 	content: z
 		.object({
 			accent: themeRoleSchema.default("primary"),
+			skeleton: skeletonBgSchema.default("muted"),
 		})
-		.default({ accent: "primary" }),
+		.default({ accent: "primary", skeleton: "muted" }),
 	hero: z
 		.object({
+			overlayColor: heroOverlayColorSchema.default("primary"),
 			overlayOpacity: z.number().min(0).max(0.85).default(0.45),
 		})
-		.default({ overlayOpacity: 0.45 }),
+		.default({ overlayColor: "primary", overlayOpacity: 0.45 }),
 	page: z
 		.object({
 			effect: z.enum(["none", "grid", "dots", "solid"]).default("none"),

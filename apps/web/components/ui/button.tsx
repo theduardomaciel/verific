@@ -19,6 +19,18 @@ const buttonVariants = cva(
 					"bg-secondary text-secondary-foreground hover:bg-secondary/80",
 				ghost: "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
 				link: "text-primary underline-offset-4 hover:underline",
+
+				/**
+				 * Navegação da página pública do evento. Lê **apenas** os
+				 * tokens derivados server-side (`--ev-nav-*`), então funciona
+				 * em qualquer cor/estilo de cabeçalho sem `dark:` nem `!`.
+				 * O estado ativo vem do próprio `aria-current="page"` que o
+				 * `MainNav` marca — nada de classe condicional duplicada.
+				 */
+				"event-nav":
+					"text-[var(--ev-nav-fg)] hover:bg-[var(--ev-nav-hover-bg)] hover:text-[var(--ev-nav-hover-fg)] aria-[current=page]:bg-[var(--ev-nav-active-bg)] aria-[current=page]:text-[var(--ev-nav-active-fg)]",
+				"event-cta":
+					"border border-[var(--ev-cta-border)] text-[var(--ev-cta-fg)] hover:bg-[var(--ev-cta-hover-bg)] hover:text-[var(--ev-cta-hover-fg)] aria-[current=page]:bg-[var(--ev-cta-hover-bg)] aria-[current=page]:text-[var(--ev-cta-hover-fg)]",
 			},
 			size: {
 				default: "h-9 px-4 py-2 has-[>svg]:px-3",

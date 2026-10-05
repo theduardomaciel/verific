@@ -21,26 +21,22 @@ function SchedulePageBody({ project }: { project: SchedulePageProject }) {
 		<EventContainer.Holder>
 			<EventContainer.Hero coverUrl={project.coverUrl}>
 				<div className="z-10 flex flex-1 flex-col items-start justify-center">
-					<div className="mb-4 flex items-center text-lg text-white/90">
+					<EventContainer.Hero.Meta>
 						<Calendar className="mr-2 h-4.5 w-4.5" />
 						<span className="-mt-0.5 text-base">
-							De{" "}
-							{new Date(project.startDate).toLocaleDateString(
-								"pt-BR",
-							)}{" "}
-							a{" "}
-							{new Date(project.endDate).toLocaleDateString(
-								"pt-BR",
-							)}
+							<EventContainer.EventDateRange
+								startDate={project.startDate}
+								endDate={project.endDate}
+							/>
 						</span>
-					</div>
-					<h1 className="font-heading mb-4 text-5xl font-bold text-white">
+					</EventContainer.Hero.Meta>
+					<EventContainer.Hero.Title>
 						Programação
-					</h1>
-					<p className="text-primary-foreground text-base font-semibold md:max-w-md">
+					</EventContainer.Hero.Title>
+					<EventContainer.Hero.Description>
 						Acompanhe as próximas atividades de {project.name} e
 						saiba como e quando participar!
-					</p>
+					</EventContainer.Hero.Description>
 				</div>
 			</EventContainer.Hero>
 

@@ -38,7 +38,9 @@ export const project = pgTable("projects", {
 	profilesEnabled: boolean("profiles_enabled").default(false),
 
 	logoUrl: text("logo_url"),
+	logoDarkUrl: text("logo_dark_url"),
 	largeLogoUrl: text("large_logo_url"),
+	largeLogoDarkUrl: text("large_logo_dark_url"),
 	coverUrl: text("cover_url"),
 	thumbnailUrl: text("thumbnail_url"),
 

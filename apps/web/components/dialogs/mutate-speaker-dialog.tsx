@@ -101,7 +101,6 @@ export function MutateSpeakerDialog({
 			description: speaker?.description ?? "",
 			imageUrl: speaker?.imageUrl ?? "",
 		});
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [speaker]);
 
 	// Trocar para o endpoint correto, pois speakers está na raiz do router

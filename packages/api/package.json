@@ -21,7 +21,6 @@
 		"superjson": "^2.2.2"
 	},
 	"devDependencies": {
-		"@verific/eslint-config": "workspace:*",
 		"@verific/prettier-config": "workspace:*",
 		"@verific/typescript-config": "workspace:*",
 		"@vitest/coverage-v8": "^5.0.3",

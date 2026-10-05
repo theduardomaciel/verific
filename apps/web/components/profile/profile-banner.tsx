@@ -44,7 +44,7 @@ export function ProfileBanner({
 		>
 			<div
 				aria-hidden
-				className="absolute inset-0 dark:opacity-50"
+				className="absolute inset-0 opacity-45"
 				style={{
 					background:
 						"linear-gradient(135deg, var(--secondary) 0%, var(--primary) 65%)",
@@ -72,24 +72,24 @@ export function ProfileBanner({
 					</span>
 				)}
 				<div className="flex flex-col items-start justify-start gap-2">
-					<h1 className="font-heading text-3xl font-bold text-white">
+					<h1 className="font-heading text-3xl font-bold text-foreground">
 						{name}
 					</h1>
 					{subtitle && (
-						<h2 className="text-lg font-normal text-white/80">
+						<h2 className="text-lg font-normal text-muted-foreground">
 							{subtitle}
 						</h2>
 					)}
 				</div>
 				{showBioAndSocials && bio && (
-					<p className="text-white/90 md:max-w-3/4">{bio}</p>
+					<p className="text-foreground/90 md:max-w-3/4">{bio}</p>
 				)}
 				{showBioAndSocials && (socials.length > 0 || publicEmail) && (
 					<ul className="flex flex-row flex-wrap items-start justify-start gap-4">
 						{socials.map((social) => (
 							<li key={`${social.service}-${social.url}`}>
 								<a
-									className="flex flex-row items-center justify-start gap-2 rounded-md bg-black/30 px-2 py-1.5 text-sm leading-none font-medium text-white"
+									className="flex flex-row items-center justify-start gap-2 rounded-md bg-black/30 px-2 py-1.5 text-sm leading-none font-medium text-white/90"
 									href={social.url}
 									target="_blank"
 									rel="noopener noreferrer"
@@ -104,7 +104,7 @@ export function ProfileBanner({
 						{publicEmail && (
 							<li key={publicEmail}>
 								<a
-									className="flex flex-row items-center justify-start gap-2 rounded-md bg-black/30 px-2 py-1.5 text-sm leading-none font-medium text-white"
+									className="flex flex-row items-center justify-start gap-2 rounded-md bg-black/30 px-2 py-1.5 text-sm leading-none font-medium text-white/90"
 									href={`mailto:${publicEmail}`}
 								>
 									<MailIcon width={16} height={16} />

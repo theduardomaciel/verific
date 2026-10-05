@@ -16,12 +16,15 @@ export function Screenshots() {
 						alt="Dashboard desktop"
 						className="hidden h-full object-contain object-bottom dark:flex"
 						style={{ width: "auto" }}
+						loading="eager"
+						priority
 					/>
 					<Image
 						src={desktopLight}
 						alt="Dashboard desktop"
 						className="flex h-full object-contain object-bottom dark:hidden"
 						style={{ width: "auto" }}
+						loading="eager"
 						priority
 					/>
 				</div>

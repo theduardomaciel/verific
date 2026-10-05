@@ -94,7 +94,7 @@ export function ThemeEditor({
 	}
 
 	return (
-		<div className="flex flex-col gap-4">
+		<div className="mb-6 flex flex-col gap-4">
 			{/* Barra de ações fixa: salvar/descartar sempre à mão */}
 			<div className="bg-background/90 sticky top-0 z-30 -mx-1 flex flex-wrap items-center justify-between gap-2 px-1 py-2 backdrop-blur">
 				<div>

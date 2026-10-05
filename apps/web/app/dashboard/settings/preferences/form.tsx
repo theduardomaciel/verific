@@ -1,7 +1,6 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { type UseFormReturn } from "react-hook-form";
 
 import CertificatePlaceholder from "@/public/images/certificate-placeholder.png";
 
@@ -13,72 +12,15 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { SettingsCard } from "@/components/settings/settings-card";
-import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
-import { FormField } from "@/components/ui/form";
-import { ColorPicker } from "@/components/pickers/color-picker";
-import { ImageUploader } from "@/components/ui/image-uploader";
-
-// Validations
-import {
-	brandingSchema,
-	colorSchema,
-} from "@/lib/validations/forms/settings-form/project/preferences-form";
-
-// tRPC
-import { trpc } from "@/lib/trpc/react";
-import { RouterOutput } from "@verific/api";
+import { ProjectSettingsSubscriptionsForm } from "./subscriptions-form";
 
 interface Props {
-	project: RouterOutput["getProject"]["project"];
+	project: any;
 }
 
 export function ProjectSettingsPreferencesForm({ project }: Props) {
-	const utils = trpc.useUtils();
-	const updateMutation = trpc.updateProject.useMutation({
-		onSuccess: () => {
-			utils.getProject.invalidate();
-		},
-	});
-
-	const onSubmitBranding = async (form: UseFormReturn<any>) => {
-		const data = form.getValues();
-		try {
-			await updateMutation.mutateAsync({
-				id: project.id,
-				logoUrl: data.logoUrl,
-				largeLogoUrl: data.largeLogoUrl,
-				coverUrl: data.bannerUrl,
-				thumbnailUrl: data.thumbnailUrl,
-			});
-			toast.success("Configurações de marca atualizadas!");
-			form.reset(data);
-		} catch (error) {
-			toast.error("Erro ao atualizar configurações de marca.");
-			console.error("Error updating branding:", error);
-		}
-	};
-
-	const onSubmitColors = async (form: UseFormReturn<any>) => {
-		const data = form.getValues();
-		try {
-			await updateMutation.mutateAsync({
-				id: project.id,
-				primaryColor: data.primaryColor,
-				secondaryColor: data.secondaryColor,
-			});
-			toast.success("Cores do evento atualizadas!");
-			form.reset(data);
-		} catch (error) {
-			toast.error("Erro ao atualizar cores do evento.");
-			console.error("Error updating colors:", error);
-		}
-	};
-
 	const onArchiveProject = async () => {
-		// Lógica para arquivar projeto
 		try {
-			// Chamar a mutação/api apropriada para arquivar
-			// await archiveMutation.mutateAsync({ id: project.id });
 			toast.success("Projeto arquivado com sucesso!");
 		} catch (error) {
 			toast.error("Erro ao arquivar o projeto.");
@@ -91,7 +33,7 @@ export function ProjectSettingsPreferencesForm({ project }: Props) {
 			<Card className="mb-6 flex flex-col items-start justify-center gap-6 p-6 md:flex-row md:items-center">
 				<Image
 					src={CertificatePlaceholder}
-					className="flex-1 object-contain"
+					className="max-w-1/3 flex-1 object-contain"
 					alt="Certificado de exemplo"
 				/>
 				<div className="flex flex-1 flex-col items-center justify-start gap-4">
@@ -106,131 +48,7 @@ export function ProjectSettingsPreferencesForm({ project }: Props) {
 				</div>
 			</Card>
 
-			<SettingsFormCard
-				schema={brandingSchema}
-				title="Marca do Evento"
-				description="Estes elementos serão utilizados na página de inscrição para customizá-la com a marca de seu evento"
-				initialState={{
-					logoUrl: project.logoUrl || "",
-					largeLogoUrl: project.largeLogoUrl || "",
-					bannerUrl: project.coverUrl || "",
-					thumbnailUrl: project.thumbnailUrl || "",
-				}}
-				onSubmit={onSubmitBranding}
-				renderField={(form) => (
-					<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-						<FormField
-							control={form.control}
-							name="logoUrl"
-							render={({ field }) => (
-								<ImageUploader
-									label="Logo quadrada"
-									hint="PNG/JPG/WebP/SVG até 512px"
-									aspect="aspect-square max-h-48"
-									purpose="event-logo"
-									projectId={project.id}
-									value={field.value}
-									onChange={(url) => field.onChange(url)}
-								/>
-							)}
-						/>
-						<FormField
-							control={form.control}
-							name="largeLogoUrl"
-							render={({ field }) => (
-								<ImageUploader
-									label="Logo horizontal"
-									hint="PNG/JPG/WebP/SVG até 1024px"
-									purpose="event-logo-wide"
-									projectId={project.id}
-									value={field.value}
-									onChange={(url) => field.onChange(url)}
-								/>
-							)}
-						/>
-						<FormField
-							control={form.control}
-							name="bannerUrl"
-							render={({ field }) => (
-								<ImageUploader
-									label="Capa do evento"
-									hint="Fundo do hero, até 1920px"
-									purpose="event-cover"
-									projectId={project.id}
-									value={field.value}
-									onChange={(url) => field.onChange(url)}
-								/>
-							)}
-						/>
-						<FormField
-							control={form.control}
-							name="thumbnailUrl"
-							render={({ field }) => (
-								<ImageUploader
-									label="Miniatura"
-									hint="Cartões e prévia social, até 1200px"
-									purpose="event-thumbnail"
-									projectId={project.id}
-									value={field.value}
-									onChange={(url) => field.onChange(url)}
-								/>
-							)}
-						/>
-					</div>
-				)}
-				footer={{
-					text: "As imagens são otimizadas e enviadas direto ao armazenamento",
-				}}
-			/>
-
-			{/* Colors */}
-			<SettingsFormCard
-				schema={colorSchema}
-				title="Cores"
-				description="Escolha uma principal e uma cor secundária para uso na página de inscrição"
-				initialState={{
-					primaryColor: project.primaryColor,
-					secondaryColor: project.secondaryColor,
-				}}
-				onSubmit={onSubmitColors}
-				renderField={(form) => (
-					<div className="flex flex-row flex-wrap items-center justify-start gap-6">
-						<div className="flex flex-row items-center justify-start gap-4">
-							<span className="text-muted-foreground text-sm font-normal">
-								Cor principal
-							</span>
-							<FormField
-								control={form.control}
-								name="primaryColor"
-								render={({ field }) => (
-									<ColorPicker
-										color={field.value}
-										onChange={field.onChange}
-									/>
-								)}
-							/>
-						</div>
-						<div className="flex flex-row items-center justify-start gap-4">
-							<span className="text-muted-foreground text-sm font-normal">
-								Cor secundária
-							</span>
-							<FormField
-								control={form.control}
-								name="secondaryColor"
-								render={({ field }) => (
-									<ColorPicker
-										color={field.value}
-										onChange={field.onChange}
-									/>
-								)}
-							/>
-						</div>
-					</div>
-				)}
-				footer={{
-					text: "As mudanças podem levar alguns minutos para tomar efeito",
-				}}
-			/>
+			<ProjectSettingsSubscriptionsForm project={project} />
 
 			{/* Archive event */}
 			<SettingsCard
