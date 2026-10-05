@@ -62,6 +62,10 @@ async function ProfilePageContent({ params }: ProfilePageProps) {
 	}
 
 	const { slots, modules } = pageData;
+	const hasPublicContent =
+		slots.stats.length > 0 ||
+		modules.connectionsEnabled ||
+		modules.badgesEnabled;
 
 	return (
 		<EventContainer.Holder>
@@ -85,20 +89,27 @@ async function ProfilePageContent({ params }: ProfilePageProps) {
 							</Suspense>
 						}
 					/>
-					<Suspense>
-						<ProfileOwnerSection eventUrl={eventUrl} shortId={shortId}>
-							<ProfileStats
-								data={{
-									name: pageData.name,
-									stats: slots.stats,
-									showConnections: modules.connectionsEnabled,
-								}}
-							/>
-							<Suspense>
-								<ProfileOwnerHidden eventUrl={eventUrl} shortId={shortId} />
-							</Suspense>
-						</ProfileOwnerSection>
-					</Suspense>
+					{hasPublicContent ? (
+						<Suspense>
+							<ProfileOwnerSection eventUrl={eventUrl} shortId={shortId}>
+								<ProfileStats
+									data={{
+										name: pageData.name,
+										stats: slots.stats,
+										showConnections: modules.connectionsEnabled,
+										showBadges: modules.badgesEnabled,
+									}}
+								/>
+								<Suspense>
+									<ProfileOwnerHidden eventUrl={eventUrl} shortId={shortId} />
+								</Suspense>
+							</ProfileOwnerSection>
+						</Suspense>
+					) : (
+						<Suspense>
+							<ProfileOwnerHidden eventUrl={eventUrl} shortId={shortId} />
+						</Suspense>
+					)}
 					<Suspense
 						fallback={<Skeleton className="min-h-64 w-full rounded-3xl" />}
 					>
