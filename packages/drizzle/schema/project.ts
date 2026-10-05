@@ -8,7 +8,6 @@ import {
 	boolean,
 	jsonb,
 } from "drizzle-orm/pg-core";
-
 import { activity } from "./activity";
 import { participant } from "./participant";
 import { speaker } from "./speaker";
@@ -18,6 +17,7 @@ import { formVersion } from "./form-version";
 import { formField } from "./form-field";
 import { formAnswer } from "./form-answer";
 import type { EventTheme } from "../theme";
+import type { ProfileLayout } from "../profile-layout";
 
 export const project = pgTable("projects", {
 	id: uuid("id").primaryKey().defaultRandom(),
@@ -47,6 +47,8 @@ export const project = pgTable("projects", {
 	secondaryColor: text("secondary_color"), // quando nulo, usar a cor padrão do sistema
 
 	theme: jsonb("theme").$type<EventTheme>(),
+
+	profileLayout: jsonb("profile_layout").$type<ProfileLayout>(),
 
 	startDate: timestamp("start_date").notNull(),
 	endDate: timestamp("end_date").notNull(),

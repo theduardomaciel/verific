@@ -11,6 +11,7 @@ export const formFieldTypes = [
 	"checkbox",
 	"phone",
 	"email",
+	"social_links",
 ] as const;
 
 export const formFieldTypeEnum = pgEnum("form_field_type", formFieldTypes);
@@ -28,4 +29,5 @@ export const formFieldTypeLabels: Record<FormFieldType, string> = {
 	checkbox: "Checkbox",
 	phone: "Telefone",
 	email: "E-mail",
+	social_links: "Links sociais",
 };
