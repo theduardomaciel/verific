@@ -2,16 +2,15 @@
 
 import * as React from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
 	Command,
 	CommandEmpty,
-	CommandGroup,
 	CommandInput,
 	CommandItem,
-	CommandList,
 } from "@/components/ui/command";
 import {
 	Popover,
@@ -30,14 +29,10 @@ interface Props extends Omit<React.ComponentProps<"button">, "onChange"> {
 	}[];
 	value: string;
 	onChange: (value?: string) => void;
-	/**
-	 * Max rows mounted in the dropdown. cmdk mounts one node per item, so
-	 * rendering thousands of rows makes open/filter noticeably slow. The
-	 * list is filtered manually and sliced to this size; the user refines
-	 * the search to reach the rest. Defaults to 100.
-	 */
-	maxVisibleItems?: number;
 }
+
+/** Fixed row height so virtualizer math stays exact (h-8). */
+const ROW_HEIGHT = 32;
 
 /** Accent-insensitive lowercase for pt-BR search ("otica" matches "ótica"). */
 function normalizeSearch(text: string): string {
@@ -55,26 +50,27 @@ export function Combobox({
 	value,
 	type = "button",
 	onChange,
-	maxVisibleItems = 100,
 	...rest
 }: Props) {
 	const [open, setOpen] = React.useState(false);
 	const [query, setQuery] = React.useState("");
+	// Highlighted item, controlled so keyboard navigation can scroll it
+	// into the virtualized window.
+	const [activeValue, setActiveValue] = React.useState("");
+	const keyboardNavRef = React.useRef(false);
+	// State (not an object ref) so the virtualizer re-measures when the
+	// portaled content mounts/unmounts.
+	const [scrollEl, setScrollEl] = React.useState<HTMLDivElement | null>(null);
 
 	const selectedLabel = React.useMemo(
 		() => items.find((item) => item.value === value)?.label,
 		[items, value],
 	);
 
-	const { visibleItems, hiddenCount } = React.useMemo(() => {
+	const visibleItems = React.useMemo(() => {
 		const q = normalizeSearch(query.trim());
-		if (q === "") {
-			return {
-				visibleItems: items.slice(0, maxVisibleItems),
-				hiddenCount: Math.max(items.length - maxVisibleItems, 0),
-			};
-		}
-		const matched = items.filter(
+		if (q === "") return items;
+		return items.filter(
 			(item) =>
 				normalizeSearch(item.label).includes(q) ||
 				(item.value !== undefined &&
@@ -82,11 +78,35 @@ export function Combobox({
 					normalizeSearch(item.value).includes(q)) ||
 				item.keywords?.some((k) => normalizeSearch(k).includes(q)),
 		);
-		return {
-			visibleItems: matched.slice(0, maxVisibleItems),
-			hiddenCount: Math.max(matched.length - maxVisibleItems, 0),
-		};
-	}, [items, query, maxVisibleItems]);
+	}, [items, query]);
+
+	const rowVirtualizer = useVirtualizer({
+		count: visibleItems.length,
+		getScrollElement: () => scrollEl,
+		estimateSize: () => ROW_HEIGHT,
+		overscan: 8,
+	});
+
+	// New search (or fresh open) → reset highlight and jump to the top.
+	React.useEffect(() => {
+		setActiveValue("");
+		scrollEl?.scrollTo({ top: 0 });
+	}, [query, scrollEl]);
+
+	// A keyboard-driven highlight may land outside the rendered window, so
+	// scroll it into view. Mouse hover also changes activeValue but must
+	// not yank the scroll position.
+	React.useEffect(() => {
+		if (!keyboardNavRef.current) return;
+		keyboardNavRef.current = false;
+		if (!activeValue) return;
+		const index = visibleItems.findIndex(
+			(item) => item.label === activeValue,
+		);
+		if (index >= 0) rowVirtualizer.scrollToIndex(index, { align: "auto" });
+	}, [activeValue, visibleItems, rowVirtualizer]);
+
+	const virtualRows = rowVirtualizer.getVirtualItems();
 
 	return (
 		<Popover
@@ -121,54 +141,96 @@ export function Combobox({
 				align="start"
 			>
 				{/* shouldFilter={false}: filtering is done above so cmdk
-					never has to diff thousands of nodes per keystroke;
-					only the sliced rows are mounted. */}
-				<Command shouldFilter={false}>
+					never diffs thousands of nodes per keystroke, and only
+					the virtualized window is mounted. */}
+				<Command
+					shouldFilter={false}
+					value={activeValue}
+					onValueChange={setActiveValue}
+					onKeyDown={(e) => {
+						if (
+							e.key === "ArrowDown" ||
+							e.key === "ArrowUp" ||
+							e.key === "Home" ||
+							e.key === "End" ||
+							e.key === "PageUp" ||
+							e.key === "PageDown"
+						) {
+							keyboardNavRef.current = true;
+						}
+					}}
+				>
 					<CommandInput
 						placeholder={searchMessage ?? "Pesquisar..."}
 						value={query}
 						onValueChange={setQuery}
 					/>
-					<CommandList>
+					<div
+						ref={setScrollEl}
+						className="max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto"
+					>
 						<CommandEmpty>
 							{emptyMessage ?? "Nenhum item encontrado."}
 						</CommandEmpty>
-						<CommandGroup>
-							{visibleItems.map((item) => (
-								<CommandItem
-									key={item.value || item.label}
-									value={item.label}
-									keywords={
-										item.keywords ??
-										(item.value && item.value !== item.label
-											? [item.value]
-											: undefined)
-									}
-									onSelect={() => {
-										onChange(item.value);
-										setOpen(false);
-									}}
-								>
-									<Check
-										className={cn(
-											"mr-2 h-4 w-4",
-											value === item.value
-												? "opacity-100"
-												: "opacity-0",
-										)}
-									/>
-									{item.label}
-								</CommandItem>
-							))}
-						</CommandGroup>
-						{hiddenCount > 0 && (
-							<div className="text-muted-foreground px-2 py-1.5 text-xs">
-								Mostrando {visibleItems.length} de{" "}
-								{visibleItems.length + hiddenCount} — refine a
-								pesquisa…
+						{virtualRows.length > 0 && (
+							<div
+								style={{
+									height: rowVirtualizer.getTotalSize(),
+									position: "relative",
+									width: "100%",
+								}}
+							>
+								{virtualRows.map((virtualRow) => {
+									const item =
+										visibleItems[virtualRow.index]!;
+									return (
+										<div
+											key={item.value || item.label}
+											style={{
+												position: "absolute",
+												top: 0,
+												left: 0,
+												width: "100%",
+												height: `${virtualRow.size}px`,
+												transform: `translateY(${virtualRow.start}px)`,
+											}}
+										>
+											<CommandItem
+												value={item.label}
+												keywords={
+													item.keywords ??
+													(item.value &&
+													item.value !== item.label
+														? [item.value]
+														: undefined)
+												}
+												onSelect={() => {
+													onChange(item.value);
+													setOpen(false);
+												}}
+												className="h-8"
+											>
+												<Check
+													className={cn(
+														"mr-2 h-4 w-4",
+														value === item.value
+															? "opacity-100"
+															: "opacity-0",
+													)}
+												/>
+												<span
+													className="truncate"
+													title={item.label}
+												>
+													{item.label}
+												</span>
+											</CommandItem>
+										</div>
+									);
+								})}
 							</div>
 						)}
-					</CommandList>
+					</div>
 				</Command>
 			</PopoverContent>
 		</Popover>
