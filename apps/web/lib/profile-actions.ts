@@ -8,3 +8,9 @@ export async function revalidateProfile(projectUrl: string, shortId: string) {
 	updateTag(`profile-${projectUrl}-${shortId}`);
 	return { revalidated: true };
 }
+
+/** Revalida todos os perfis do evento após salvar o layout. */
+export async function revalidateEventProfiles(projectUrl: string) {
+	updateTag(`profiles-${projectUrl}`);
+	return { revalidated: true };
+}

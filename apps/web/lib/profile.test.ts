@@ -15,6 +15,10 @@ import {
 import {
 	normalizeSocialLink,
 	socialDisplayHandle,
+	parseProfileLayout,
+	isCompatible,
+	isFieldLinked,
+	slotForField,
 } from "@verific/drizzle/profile-layout";
 
 describe("profile schema", () => {
@@ -127,5 +131,42 @@ describe("shared social normalize", () => {
 		expect(socialDisplayHandle("http://lattes.cnpq.br/0993964740433171")).toBe(
 			"0993964740433171",
 		);
+	});
+});
+
+describe("profile layout", () => {
+	const F_SUB = "11111111-1111-4111-8111-111111111111";
+	const F_CITY = "22222222-2222-4222-8222-222222222222";
+	const layout = parseProfileLayout({
+		version: 1,
+		subtitleFieldId: F_SUB,
+		bioFieldId: null,
+		stats: [{ fieldId: F_CITY, label: "Cidade", icon: "map-pin" }],
+		socialsFieldId: null,
+		emailFieldId: null,
+		connectionsEnabled: true,
+		badgesEnabled: false,
+	});
+
+	it("resolve slots e compatibilidade", () => {
+		expect(slotForField(layout, F_SUB)).toMatchObject({ slot: "subtitle" });
+		expect(slotForField(layout, F_CITY)).toMatchObject({
+			slot: "stats",
+			statIndex: 0,
+		});
+		expect(slotForField(layout, "nope")).toBeNull();
+		expect(isFieldLinked(layout, F_SUB)).toBe(true);
+		expect(isFieldLinked(layout, "nope")).toBe(false);
+		expect(isCompatible("subtitle", "text")).toBe(true);
+		expect(isCompatible("subtitle", "textarea")).toBe(false);
+		expect(isCompatible("bio", "text")).toBe(true);
+		expect(isCompatible("socials", "social_links")).toBe(true);
+	});
+
+	it("aplica padrões", () => {
+		const d = parseProfileLayout(null);
+		expect(d.stats).toEqual([]);
+		expect(d.connectionsEnabled).toBe(true);
+		expect(d.badgesEnabled).toBe(false);
 	});
 });

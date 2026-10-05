@@ -108,21 +108,10 @@ export function FormsContent() {
 						<>
 							<ProfileSectionCard
 								projectId={projectId}
-								fields={fields.map((f) => ({
-									id: f.id,
-									label: f.label,
-								}))}
 								profilesEnabled={Boolean(
 									projectQuery.data?.project.profilesEnabled,
 								)}
-								profileFillAtSignup={Boolean(
-									projectQuery.data?.project.profileFillAtSignup ??
-										true,
-								)}
 								isLoadingProject={projectQuery.isPending}
-								draftVersionId={selected.id}
-								isPublished={isPublished}
-								hasSystemSection={sections.some((s) => s.isSystem)}
 							/>
 							<BuilderCard
 							selected={selected}

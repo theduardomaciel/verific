@@ -25,7 +25,7 @@ import { Input } from "@/components/ui/input";
 import JoinForm0 from "./Section0";
 import { isFilled } from "@/components/forms/profile-normalize";
 import { Eye } from "lucide-react";
-import { isFieldLinked } from "@/lib/profile-links-client";
+import { isFieldLinked } from "@verific/drizzle/profile-layout";
 
 // Validation
 import { buildAnswersSchema, filterVisibleFields } from "@verific/api/schemas";
