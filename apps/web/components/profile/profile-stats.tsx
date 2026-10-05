@@ -18,6 +18,7 @@ export interface ProfileStatsData {
 		hidden: boolean;
 	}>;
 	showConnections: boolean;
+	showBadges: boolean;
 	/** Dono vê itens ocultos marcados (visitantes nunca os recebem). */
 	ownerView?: boolean;
 }
@@ -31,6 +32,14 @@ export function ProfileStats({ data }: { data: ProfileStatsData }) {
 	const visibleStats = data.ownerView
 		? data.stats
 		: data.stats.filter((s) => !s.hidden);
+
+	if (
+		visibleStats.length === 0 &&
+		!data.showConnections &&
+		!data.showBadges
+	) {
+		return null;
+	}
 
 	return (
 		<div className="flex flex-col items-start justify-center gap-6">
@@ -61,15 +70,17 @@ export function ProfileStats({ data }: { data: ProfileStatsData }) {
 						</ul>
 					</Card>
 				)}
-				<div className="from-secondary/60 to-primary/50 flex flex-row items-center justify-between gap-6 rounded-3xl bg-linear-to-l p-6 md:p-9">
-					<span className="text-xl font-medium text-white">
-						<span className="text-3xl font-semibold">Adesivos</span> <br />
-						Coletados
-					</span>
-					<span className="mx-auto text-5xl font-bold text-white md:pl-24">
-						{PLACEHOLDER_BADGES_COUNT}
-					</span>
-				</div>
+				{data.showBadges && (
+					<div className="from-secondary/60 to-primary/50 flex flex-row items-center justify-between gap-6 rounded-3xl bg-linear-to-l p-6 md:p-9">
+						<span className="text-xl font-medium text-white">
+							<span className="text-3xl font-semibold">Adesivos</span> <br />
+							Coletados
+						</span>
+						<span className="mx-auto text-5xl font-bold text-white md:pl-24">
+							{PLACEHOLDER_BADGES_COUNT}
+						</span>
+					</div>
+				)}
 			</div>
 			{data.showConnections && (
 				<Card className="w-full items-start rounded-3xl p-6 md:flex-row md:items-center md:justify-between md:p-9">

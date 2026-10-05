@@ -140,6 +140,7 @@ function ProfileContent() {
 					name: FAKE_PROFILE.name,
 					stats: [...FAKE_PROFILE.stats],
 					showConnections: true,
+					showBadges: true,
 				}}
 			/>
 		</div>
