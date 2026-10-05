@@ -59,13 +59,31 @@ export function SocialLinksEditor({
 		onChange(value.map((e, i) => (i === index ? { ...e, ...patch } : e)));
 	}
 
+	const firstUnused = services.find(
+		(s) => !value.some((e) => e.service === s.id),
+	);
+
 	return (
 		<div className="flex flex-col gap-3">
 			{value.map((entry, i) => {
 				const service =
 					socialServiceById(entry.service) ?? services[0]!;
+				const takenByOthers = new Set(
+					value.flatMap((e, j) => (j === i ? [] : [e.service])),
+				);
+				const options = services.filter(
+					(s) => s.id === service.id || !takenByOthers.has(s.id),
+				);
+				// Key by service, not just index: Radix Select keeps
+				// internal display state per instance, so reusing the
+				// instance of a removed row for a different service can
+				// leave the trigger showing the wrong service. A key
+				// change remounts the row with fresh state instead.
 				return (
-					<div key={i} className="flex items-end gap-2">
+					<div
+						key={`${service.id}-${i}`}
+						className="flex items-end gap-2"
+					>
 						{/* <div className="w-36 shrink-0"> */}
 						<Select
 							disabled={disabled}
@@ -76,7 +94,7 @@ export function SocialLinksEditor({
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
-								{services.map((s) => (
+								{options.map((s) => (
 									<SelectItem key={s.id} value={s.id}>
 										<SocialServiceIcon icon={s.icon} />
 										{s.label}
@@ -114,12 +132,13 @@ export function SocialLinksEditor({
 					type="button"
 					variant="outline"
 					size="sm"
-					disabled={disabled}
+					disabled={disabled || !firstUnused}
 					className="min-w-36"
 					onClick={() =>
+						firstUnused &&
 						onChange([
 							...value,
-							{ service: services[0]!.id, value: "" },
+							{ service: firstUnused.id, value: "" },
 						])
 					}
 				>
