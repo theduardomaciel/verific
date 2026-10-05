@@ -16,6 +16,7 @@ import {
 	SquareCheckIcon,
 	PhoneIcon,
 	MailIcon,
+	Share2Icon,
 	ChevronDownIcon,
 	CircleDotIcon,
 } from "lucide-react";
@@ -93,6 +94,7 @@ const formFieldIcons: Record<FieldType, React.ReactNode> = {
 	checkbox: <SquareCheckIcon />,
 	phone: <PhoneIcon />,
 	email: <MailIcon />,
+	social_links: <Share2Icon />,
 };
 
 type SwitchName =
