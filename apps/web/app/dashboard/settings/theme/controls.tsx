@@ -484,15 +484,6 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 					</span>
 				</AccordionTrigger>
 				<AccordionContent className="flex flex-col gap-4">
-					<SectionReset
-						visible={changed.cores}
-						onReset={() =>
-							patch({
-								primary: DEFAULT_THEME.primary,
-								secondary: DEFAULT_THEME.secondary,
-							})
-						}
-					/>
 					<PresetGrid draft={draft} patch={patch} />
 					<ColorRow
 						label="Primária"
@@ -510,6 +501,15 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 						O texto sobre cada cor é derivado automaticamente com
 						alvo AA.
 					</p>
+					<SectionReset
+						visible={changed.cores}
+						onReset={() =>
+							patch({
+								primary: DEFAULT_THEME.primary,
+								secondary: DEFAULT_THEME.secondary,
+							})
+						}
+					/>
 				</AccordionContent>
 			</AccordionItem>
 
@@ -521,10 +521,6 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 					</span>
 				</AccordionTrigger>
 				<AccordionContent className="flex flex-col gap-4">
-					<SectionReset
-						visible={changed.fontes}
-						onReset={() => patch({ fonts: DEFAULT_THEME.fonts })}
-					/>
 					<FontRow
 						label="Títulos"
 						value={draft.fonts.heading}
@@ -539,6 +535,10 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 							patch({ fonts: { ...draft.fonts, body } })
 						}
 					/>
+					<SectionReset
+						visible={changed.fontes}
+						onReset={() => patch({ fonts: DEFAULT_THEME.fonts })}
+					/>
 				</AccordionContent>
 			</AccordionItem>
 
@@ -550,10 +550,6 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 					</span>
 				</AccordionTrigger>
 				<AccordionContent className="flex flex-col gap-4">
-					<SectionReset
-						visible={changed.cabecalho}
-						onReset={() => patch({ header: DEFAULT_THEME.header })}
-					/>
 					<RoleRow
 						label="Fundo"
 						value={draft.header.bg}
@@ -597,6 +593,10 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 							contraste — confira na prévia.
 						</p>
 					)}
+					<SectionReset
+						visible={changed.cabecalho}
+						onReset={() => patch({ header: DEFAULT_THEME.header })}
+					/>
 				</AccordionContent>
 			</AccordionItem>
 
@@ -608,16 +608,6 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 					</span>
 				</AccordionTrigger>
 				<AccordionContent className="flex flex-col gap-4">
-					<SectionReset
-						visible={changed.elementos}
-						onReset={() =>
-							patch({
-								footer: DEFAULT_THEME.footer,
-								buttons: DEFAULT_THEME.buttons,
-								content: DEFAULT_THEME.content,
-							})
-						}
-					/>
 					<RoleRow
 						label="Fundo do rodapé"
 						value={draft.footer.bg}
@@ -639,6 +629,16 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 						swatches={roleSwatches}
 						onChange={(accent) => patch({ content: { accent } })}
 					/>
+					<SectionReset
+						visible={changed.elementos}
+						onReset={() =>
+							patch({
+								footer: DEFAULT_THEME.footer,
+								buttons: DEFAULT_THEME.buttons,
+								content: DEFAULT_THEME.content,
+							})
+						}
+					/>
 				</AccordionContent>
 			</AccordionItem>
 
@@ -650,10 +650,6 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 					</span>
 				</AccordionTrigger>
 				<AccordionContent className="flex flex-col gap-4">
-					<SectionReset
-						visible={changed.hero}
-						onReset={() => patch({ hero: DEFAULT_THEME.hero })}
-					/>
 					<RangeRow
 						label="Opacidade da cor sobre a capa"
 						value={draft.hero.overlayOpacity}
@@ -664,6 +660,10 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 							patch({ hero: { overlayOpacity } })
 						}
 						format={(v) => `${Math.round(v * 100)}%`}
+					/>
+					<SectionReset
+						visible={changed.hero}
+						onReset={() => patch({ hero: DEFAULT_THEME.hero })}
 					/>
 				</AccordionContent>
 			</AccordionItem>
@@ -676,10 +676,6 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 					</span>
 				</AccordionTrigger>
 				<AccordionContent className="flex flex-col gap-4">
-					<SectionReset
-						visible={changed.fundo}
-						onReset={() => patch({ page: DEFAULT_THEME.page })}
-					/>
 					<div className="flex items-center justify-between gap-2">
 						<Label>Efeito</Label>
 						<Select
@@ -763,6 +759,10 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 						}
 						swatches={gradientSwatches}
 					/>
+					<SectionReset
+						visible={changed.fundo}
+						onReset={() => patch({ page: DEFAULT_THEME.page })}
+					/>
 				</AccordionContent>
 			</AccordionItem>
 
@@ -774,10 +774,6 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 					</span>
 				</AccordionTrigger>
 				<AccordionContent className="flex flex-col gap-4">
-					<SectionReset
-						visible={changed.cartoes}
-						onReset={() => patch({ card: DEFAULT_THEME.card })}
-					/>
 					<div className="flex items-center justify-between gap-2">
 						<Label>Arredondamento</Label>
 						<Select
@@ -798,6 +794,10 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 							</SelectContent>
 						</Select>
 					</div>
+					<SectionReset
+						visible={changed.cartoes}
+						onReset={() => patch({ card: DEFAULT_THEME.card })}
+					/>
 				</AccordionContent>
 			</AccordionItem>
 		</Accordion>
