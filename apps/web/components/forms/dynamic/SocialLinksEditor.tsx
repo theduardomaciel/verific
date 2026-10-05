@@ -12,10 +12,31 @@ import {
 import {
 	SOCIAL_SERVICES,
 	socialServiceById,
+	type SocialServiceIcon,
 } from "@verific/drizzle/profile-layout";
-import { Link2Icon } from "lucide-react";
+import { Globe, type LucideIcon, Link2Icon } from "lucide-react";
+
+import Github from "@/public/icons/github.svg";
+import Instagram from "@/public/icons/instagram.svg";
+import Linkedin from "@/public/icons/linkedin.svg";
+import Twitter from "@/public/icons/twitter.svg";
+import Lattes from "@/public/icons/lattes.svg";
 
 export type SocialEntry = { service: string; value: string };
+
+const SOCIAL_ICONS: Record<SocialServiceIcon, LucideIcon> = {
+	github: Github,
+	instagram: Instagram,
+	linkedin: Linkedin,
+	x: Twitter,
+	globe: Globe,
+	lattes: Lattes,
+};
+
+function SocialServiceIcon({ icon }: { icon: SocialServiceIcon }) {
+	const Icon = SOCIAL_ICONS[icon] ?? Globe;
+	return <Icon className="size-4 shrink-0" aria-hidden />;
+}
 
 interface SocialLinksEditorProps {
 	services: Array<(typeof SOCIAL_SERVICES)[number]>;
@@ -51,12 +72,13 @@ export function SocialLinksEditor({
 							value={service.id}
 							onValueChange={(s) => setEntry(i, { service: s })}
 						>
-							<SelectTrigger>
+							<SelectTrigger className="min-w-36">
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
 								{services.map((s) => (
 									<SelectItem key={s.id} value={s.id}>
+										<SocialServiceIcon icon={s.icon} />
 										{s.label}
 									</SelectItem>
 								))}
@@ -93,6 +115,7 @@ export function SocialLinksEditor({
 					variant="outline"
 					size="sm"
 					disabled={disabled}
+					className="min-w-36"
 					onClick={() =>
 						onChange([
 							...value,
