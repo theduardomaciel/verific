@@ -83,7 +83,14 @@ function EventLayoutFallback() {
 	return <div className="min-h-screen" />;
 }
 
-async function EventLayoutContent({
+/**
+ * Checks (`getProject` + `notFound`) run before the `<Suspense>`
+ * boundary below is even created — so an unknown `eventUrl` produces a
+ * real 404 instead of a streamed soft-404. The boundary itself stays:
+ * the header tree (`EventHeader` → `MainNav`) reads `usePathname()`,
+ * which is runtime-only and must stream inside a boundary.
+ */
+export default async function EventLayout({
 	children,
 	params,
 }: {
@@ -114,60 +121,48 @@ async function EventLayoutContent({
 		.join(" ");
 
 	return (
-		<div
-			className={`dark ${fontVariables} relative flex w-full flex-1 flex-col`}
-			style={
-				{
-					...cssVars,
-					"--font-sans": "var(--ev-font-body)",
-				} as React.CSSProperties
-			}
-		>
-			<EventBackgroundEffects />
-			<EventHeader
-				eventUrl={eventUrl}
-				className="relative h-21 border-none py-0"
-				logo={
-					<Link href={`/${eventUrl}`} className="text-white">
-						{project.largeLogoUrl || project.logoUrl ? (
-							<Image
-								src={project.largeLogoUrl || project.logoUrl!}
-								width={150}
-								height={28}
-								alt="Event logo"
-							/>
-						) : (
-							<Logo className="h-8" />
-						)}
-					</Link>
+		<Suspense fallback={<EventLayoutFallback />}>
+			<div
+				className={`dark ${fontVariables} relative flex w-full flex-1 flex-col`}
+				style={
+					{
+						...cssVars,
+						"--font-sans": "var(--ev-font-body)",
+					} as React.CSSProperties
 				}
-			/>
-			{children}
-			<div className="container-p relative z-10 flex w-full items-center justify-center py-6">
-				<div
-					className="w-full rounded-xl md:rounded-full"
-					style={{ background: "var(--ev-footer-bg)" }}
-				>
-					<Footer
-						className="border-none px-4 py-4 !text-white md:px-12"
-						showWatermark
-					/>
+			>
+				<EventBackgroundEffects />
+				<EventHeader
+					eventUrl={eventUrl}
+					className="relative h-21 border-none py-0"
+					logo={
+						<Link href={`/${eventUrl}`} className="text-white">
+							{project.largeLogoUrl || project.logoUrl ? (
+								<Image
+									src={project.largeLogoUrl || project.logoUrl!}
+									width={150}
+									height={28}
+									alt="Event logo"
+								/>
+							) : (
+								<Logo className="h-8" />
+							)}
+						</Link>
+					}
+				/>
+				{children}
+				<div className="container-p relative z-10 flex w-full items-center justify-center py-6">
+					<div
+						className="w-full rounded-xl md:rounded-full"
+						style={{ background: "var(--ev-footer-bg)" }}
+					>
+						<Footer
+							className="border-none px-4 py-4 !text-white md:px-12"
+							showWatermark
+						/>
+					</div>
 				</div>
 			</div>
-		</div>
-	);
-}
-
-export default function EventLayout({
-	children,
-	params,
-}: {
-	children: React.ReactNode;
-	params: Promise<{ eventUrl: string }>;
-}) {
-	return (
-		<Suspense fallback={<EventLayoutFallback />}>
-			<EventLayoutContent params={params}>{children}</EventLayoutContent>
 		</Suspense>
 	);
 }

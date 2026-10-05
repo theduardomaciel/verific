@@ -16,6 +16,14 @@ interface ProfilePageProps {
 	params: Promise<{ eventUrl: string; shortId: string }>;
 }
 
+type ProfileServerData = {
+	eventUrl: string;
+	shortId: string;
+	projectId: string;
+	profilesEnabled: boolean;
+	pageData: Awaited<ReturnType<typeof getProfilePageData>> | null;
+};
+
 /**
  * Esqueleto em tamanho real do perfil: mesmos contêineres e alturas do
  * conteúdo final (banner h-96,Tickets min-h-64) para que o rodapé do
@@ -36,24 +44,19 @@ function ProfilePageSkeleton() {
 }
 
 /**
- * Perfil do participante no evento (ISR por participante+evento).
- * Slots dinâmicos: layout do evento + respostas + visibilidade.
- * - Perfis ativados: shell estático público + ilhas do dono (?me=1).
- * - Perfis desativados: mesmo URL em modo conta privado — shell estático
- *   sem nenhum dado pessoal; só o dono (via link ?me=1) carrega conteúdo.
+ * Checks (`getProject`/`getProfilePageData` + `notFound`) run in the
+ * page export below, before any `<Suspense>` boundary renders — real
+ * 404s instead of streamed soft-404s. This body only presents data that
+ * is already resolved; dynamism lives in the owner islands.
  */
-async function ProfilePageContent({ params }: ProfilePageProps) {
-	const { eventUrl, shortId } = await params;
-	const result = await getProject(eventUrl);
-
-	if (!result?.project) {
-		notFound();
-	}
-
-	const { project } = result;
-	const profilesEnabled = Boolean(project.profilesEnabled);
-
-	if (!profilesEnabled) {
+function ProfileBody({
+	eventUrl,
+	shortId,
+	projectId,
+	profilesEnabled,
+	pageData,
+}: ProfileServerData) {
+	if (!profilesEnabled || !pageData) {
 		return (
 			<EventContainer.Holder>
 				<EventContainer.Content>
@@ -65,7 +68,7 @@ async function ProfilePageContent({ params }: ProfilePageProps) {
 						>
 							<ProfileAccountIsland
 								eventUrl={eventUrl}
-								projectId={project.id}
+								projectId={projectId}
 								shortId={shortId}
 							/>
 						</Suspense>
@@ -73,13 +76,6 @@ async function ProfilePageContent({ params }: ProfilePageProps) {
 				</EventContainer.Content>
 			</EventContainer.Holder>
 		);
-	}
-
-	let pageData;
-	try {
-		pageData = await getProfilePageData(eventUrl, shortId);
-	} catch {
-		notFound();
 	}
 
 	const { slots, modules } = pageData;
@@ -104,7 +100,7 @@ async function ProfilePageContent({ params }: ProfilePageProps) {
 							<Suspense fallback={null}>
 								<ProfileOwnerActions
 									eventUrl={eventUrl}
-									projectId={project.id}
+									projectId={projectId}
 									shortId={shortId}
 								/>
 							</Suspense>
@@ -161,10 +157,42 @@ async function ProfilePageContent({ params }: ProfilePageProps) {
 	);
 }
 
-export default function EventProfilePage({ params }: ProfilePageProps) {
+/**
+ * Perfil do participante no evento (ISR por participante+evento).
+ * Slots dinâmicos: layout do evento + respostas + visibilidade.
+ * - Perfis ativados: shell estático público + ilhas do dono (?me=1).
+ * - Perfis desativados: mesmo URL em modo conta privado — shell estático
+ *   sem nenhum dado pessoal; só o dono (via link ?me=1) carrega conteúdo.
+ */
+export default async function EventProfilePage({ params }: ProfilePageProps) {
+	const { eventUrl, shortId } = await params;
+	const result = await getProject(eventUrl);
+
+	if (!result?.project) {
+		notFound();
+	}
+
+	const { project } = result;
+	const profilesEnabled = Boolean(project.profilesEnabled);
+
+	let pageData: ProfileServerData["pageData"] = null;
+	if (profilesEnabled) {
+		try {
+			pageData = await getProfilePageData(eventUrl, shortId);
+		} catch {
+			notFound();
+		}
+	}
+
 	return (
 		<Suspense fallback={<ProfilePageSkeleton />}>
-			<ProfilePageContent params={params} />
+			<ProfileBody
+				eventUrl={eventUrl}
+				shortId={shortId}
+				projectId={project.id}
+				profilesEnabled={profilesEnabled}
+				pageData={pageData}
+			/>
 		</Suspense>
 	);
 }
