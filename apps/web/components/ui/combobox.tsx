@@ -58,13 +58,18 @@ export function Combobox({
 					type={type}
 					{...rest}
 				>
-					{value
-						? items.find((item) => item.value === value)?.label
-						: (placeholder ?? "Selecione um item...")}
+					<span className="truncate">
+						{value
+							? items.find((item) => item.value === value)?.label
+							: (placeholder ?? "Selecione um item...")}
+					</span>
 					<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
 				</Button>
 			</PopoverTrigger>
-			<PopoverContent className="w-full p-0">
+			<PopoverContent
+				className="w-(--radix-popover-trigger-width) p-0"
+				align="start"
+			>
 				<Command>
 					<CommandInput
 						placeholder={searchMessage ?? "Pesquisar..."}
@@ -77,8 +82,13 @@ export function Combobox({
 							{items.map((item) => (
 								<CommandItem
 									key={item.value || item.label}
-									value={item.value}
-									keywords={item.keywords}
+									value={item.label}
+									keywords={
+										item.keywords ??
+										(item.value && item.value !== item.label
+											? [item.value]
+											: undefined)
+									}
 									onSelect={() => {
 										onChange(item.value);
 										setOpen(false);
