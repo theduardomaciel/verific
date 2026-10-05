@@ -41,7 +41,6 @@ export function ProjectSettingsSubscriptionsForm({ project }: Props) {
 				id: project.id,
 				isRegistrationEnabled: data.enableSubscription,
 				profilesEnabled: data.profilesEnabled,
-				profileFillAtSignup: data.profileFillAtSignup,
 			});
 			toast.success("Configurações de inscrição atualizadas!");
 			form.reset(data);
@@ -60,7 +59,6 @@ export function ProjectSettingsSubscriptionsForm({ project }: Props) {
 				initialState={{
 					enableSubscription: project.isRegistrationEnabled || false,
 					profilesEnabled: project.profilesEnabled || false,
-					profileFillAtSignup: project.profileFillAtSignup ?? true,
 				}}
 				onSubmit={onSubmitSubscriptionManagement}
 				renderField={(form) => (
@@ -106,46 +104,14 @@ export function ProjectSettingsSubscriptionsForm({ project }: Props) {
 										</div>
 									</FormControl>
 									<p className="text-muted-foreground text-sm">
-										Com perfis ativos, cada inscrito ganha uma
-										página pública no evento com foto, bio,
-										redes e conexões.
+										Com perfis ativos, cada inscrito ganha uma página
+										pública no evento a partir das respostas ligadas
+										no layout (Configurações → Perfil).
 									</p>
 									<FormMessage />
 								</FormItem>
 							)}
 						/>
-						{form.watch("profilesEnabled") && (
-							<FormField
-								control={form.control}
-								name="profileFillAtSignup"
-								render={({ field }) => (
-									<FormItem>
-										<FormControl>
-											<div className="flex items-center space-x-2">
-												<Switch
-													id="profileFillAtSignup"
-													checked={field.value}
-													onCheckedChange={
-														field.onChange
-													}
-													size={"lg"}
-												/>
-												<Label htmlFor="profileFillAtSignup">
-													Preencher perfil na inscrição
-												</Label>
-											</div>
-										</FormControl>
-										<p className="text-muted-foreground text-sm">
-											Ativo: o perfil aparece no formulário
-											de inscrição. Desligado: o participante
-											preenche depois, no diálogo “Editar
-											perfil”.
-										</p>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-						)}
 					</div>
 				)}
 				footer={{

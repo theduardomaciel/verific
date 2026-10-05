@@ -12,7 +12,6 @@ import { sessionAttendance } from "./session-attendance";
 import { project } from "./project";
 import { user } from "./user";
 import { formAnswer } from "./form-answer";
-import { profile } from "./profile";
 
 export const participant = pgTable(
 	"participants",
@@ -53,8 +52,4 @@ export const participantRelations = relations(participant, ({ one, many }) => ({
 	participantOnActivity: many(participantOnActivity),
 	sessionAttendances: many(sessionAttendance),
 	answers: many(formAnswer),
-	profile: one(profile, {
-		fields: [participant.id],
-		references: [profile.participantId],
-	}),
 }));

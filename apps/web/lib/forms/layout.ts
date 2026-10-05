@@ -3,6 +3,14 @@ export interface RowGroupable {
 	halfWidth?: boolean | null;
 }
 
+/** Preenchido? (p/ o progresso da seção: chips com check). */
+export function isFilled(v: unknown): boolean {
+	if (v === undefined || v === null || v === "") return false;
+	if (Array.isArray(v)) return v.length > 0;
+	if (typeof v === "boolean") return v;
+	return true;
+}
+
 export interface FieldRow<T extends RowGroupable> {
 	fields: T[];
 	/** True when a half-width field ended up alone. Render it full-width so the layout never breaks. */

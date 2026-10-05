@@ -8,7 +8,6 @@ import { activityAudiences } from "@verific/drizzle/enum/audience";
 import { activityCategories } from "@verific/drizzle/enum/category";
 import { formFieldTypes } from "@verific/drizzle/enum/form-field-type";
 import { participantRoles } from "@verific/drizzle/enum/role";
-import { profileInputSchema } from "@verific/drizzle/profile";
 import {
 	normalizeSocialLink,
 	socialEntrySchema,
@@ -285,7 +284,6 @@ export const submitAnswersInput = z.object({
 	projectId: z.uuid(),
 	name: z.string().min(2),
 	answers: z.record(z.string(), answerValueSchema),
-	profile: profileInputSchema.optional(),
 });
 
 export type SubmitAnswersInput = z.infer<typeof submitAnswersInput>;

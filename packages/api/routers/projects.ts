@@ -30,7 +30,6 @@ export const updateProjectSchema = z.object({
 	secondaryColor: z.string().optional().nullable(),
 	theme: eventThemeSchema.optional(),
 	profilesEnabled: z.boolean().optional(),
-	profileFillAtSignup: z.boolean().optional(),
 	startDate: z.coerce.date().optional(),
 	endDate: z.coerce.date().optional(),
 });

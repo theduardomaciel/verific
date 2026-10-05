@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import JoinForm0 from "./Section0";
-import { isFilled } from "@/components/forms/profile-normalize";
+import { isFilled } from "@/lib/forms/layout";
 import { Eye } from "lucide-react";
 import { isFieldLinked } from "@verific/drizzle/profile-layout";
 

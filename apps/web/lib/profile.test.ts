@@ -1,115 +1,15 @@
 import { describe, expect, it } from "vitest";
 
+import { isFilled } from "@/lib/forms/layout";
 import {
-	detectProfileDuplicates,
-	profileInputSchema,
-	profilePath,
-	shouldShowProfileAtSignup,
-	DEFAULT_PRIVACY,
-} from "@verific/drizzle/profile";
-import {
-	githubHandle,
-	socialUrl,
-	isFilled,
-} from "@/components/forms/profile-normalize";
-import {
-	normalizeSocialLink,
-	socialDisplayHandle,
-	parseProfileLayout,
+	formatProfileValue,
 	isCompatible,
 	isFieldLinked,
+	normalizeSocialLink,
+	parseProfileLayout,
+	socialDisplayHandle,
 	slotForField,
 } from "@verific/drizzle/profile-layout";
-
-describe("profile schema", () => {
-	it("aplica privacidade padrão (e-mail e nascimento privados)", () => {
-		expect(DEFAULT_PRIVACY.email).toBe("private");
-		expect(DEFAULT_PRIVACY.birthDate).toBe("private");
-		expect(DEFAULT_PRIVACY.github).toBe("public");
-	});
-
-	it("aceita perfil mínimo vazio", () => {
-		const parsed = profileInputSchema.safeParse({});
-		expect(parsed.success).toBe(true);
-	});
-
-	it("rejeita URL social inválida", () => {
-		const parsed = profileInputSchema.safeParse({
-			socials: [{ network: "github", url: "não-url" }],
-		});
-		expect(parsed.success).toBe(false);
-	});
-
-	it("detecta campos duplicados em pt-BR", () => {
-		const dups = detectProfileDuplicates([
-			{ id: "1", label: "Universidade onde estuda" },
-			{ id: "2", label: "Cor favorita" },
-			{ id: "3", label: "Seu GitHub" },
-		]);
-		expect(dups.map((d) => d.fieldId).sort()).toEqual(["1", "3"]);
-	});
-
-	it("não confunde substrings: cidade/atividades não são nascimento", () => {
-		const dups = detectProfileDuplicates([
-			{ id: "1", label: "Cidade de Residência" },
-			{ id: "2", label: "De quais atividades pretende participar?" },
-		]);
-		expect(dups.map((d) => d.fieldId)).toEqual(["1"]);
-		expect(dups[0]?.profileField).toBe("Cidade");
-	});
-
-	it("monta o caminho do perfil", () => {
-		expect(profilePath("secomp", "abc123")).toBe("/secomp/profile/abc123");
-	});
-
-	it("uma fonte da verdade p/ exibir perfil na inscrição", () => {
-		expect(
-			shouldShowProfileAtSignup({ profilesEnabled: true, profileFillAtSignup: true }),
-		).toBe(true);
-		expect(
-			shouldShowProfileAtSignup({ profilesEnabled: true, profileFillAtSignup: false }),
-		).toBe(false);
-		expect(shouldShowProfileAtSignup({ profilesEnabled: false })).toBe(false);
-		expect(shouldShowProfileAtSignup(null)).toBe(false);
-		expect(shouldShowProfileAtSignup({ profilesEnabled: true })).toBe(true);
-	});
-});
-
-describe("profile normalize", () => {
-	it("extrai handle do GitHub de usuário ou URL", () => {
-		expect(githubHandle("fulana")).toBe("fulana");
-		expect(githubHandle("@fulana")).toBe("fulana");
-		expect(githubHandle("https://github.com/fulana")).toBe("fulana");
-		expect(githubHandle("github.com/fulana?tab=repos")).toBe("fulana");
-		expect(githubHandle("")).toBeNull();
-	});
-
-	it("aceita usuário ou URL nas redes", () => {
-		expect(socialUrl("fulana", "https://instagram.com/")).toBe(
-			"https://instagram.com/fulana",
-		);
-		expect(socialUrl("@fulana", "https://instagram.com/")).toBe(
-			"https://instagram.com/fulana",
-		);
-		expect(socialUrl("https://instagram.com/fulana")).toBe(
-			"https://instagram.com/fulana",
-		);
-		expect(socialUrl("instagram.com/fulana")).toBe(
-			"https://instagram.com/fulana",
-		);
-		expect(socialUrl("", "https://instagram.com/")).toBeNull();
-	});
-
-	it("mede preenchimento", () => {
-		expect(isFilled("x")).toBe(true);
-		expect(isFilled("")).toBe(false);
-		expect(isFilled(["a"])).toBe(true);
-		expect(isFilled([])).toBe(false);
-		expect(isFilled(true)).toBe(true);
-		expect(isFilled(false)).toBe(false);
-		expect(isFilled(null)).toBe(false);
-	});
-});
 
 describe("shared social normalize", () => {
 	it("normaliza handle e URL (inclusive Lattes http)", () => {
@@ -168,5 +68,29 @@ describe("profile layout", () => {
 		expect(d.stats).toEqual([]);
 		expect(d.connectionsEnabled).toBe(true);
 		expect(d.badgesEnabled).toBe(false);
+	});
+
+	it("formata valores por tipo (pt-BR)", () => {
+		expect(formatProfileValue("  x  ", "text")).toBe("x");
+		expect(formatProfileValue("", "text")).toBeNull();
+		expect(formatProfileValue(1500, "number")).toBe("1.500");
+		expect(formatProfileValue(new Date("2004-03-16T12:00:00"), "date")).toContain(
+			"2004",
+		);
+		expect(formatProfileValue(true, "checkbox")).toBe("Sim");
+		expect(formatProfileValue(["a", "b"], "select_multiple")).toBe("a; b");
+		expect(formatProfileValue(null, "text")).toBeNull();
+	});
+});
+
+describe("isFilled", () => {
+	it("mede preenchimento", () => {
+		expect(isFilled("x")).toBe(true);
+		expect(isFilled("")).toBe(false);
+		expect(isFilled(["a"])).toBe(true);
+		expect(isFilled([])).toBe(false);
+		expect(isFilled(true)).toBe(true);
+		expect(isFilled(false)).toBe(false);
+		expect(isFilled(null)).toBe(false);
 	});
 });

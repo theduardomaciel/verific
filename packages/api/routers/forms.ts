@@ -8,7 +8,6 @@ import {
 	formSection,
 	formVersion,
 	participant,
-	profile,
 	project,
 	projectModerator,
 	user,
@@ -37,10 +36,6 @@ import {
 	readProjectLayout,
 } from "../lib/profile-links";
 import { socialServiceById } from "@verific/drizzle/profile-layout";
-import {
-	PROFILE_SECTION_TITLE,
-	PROFILE_SYSTEM_KEY,
-} from "@verific/drizzle/profile";
 import {
 	filterVisibleFields,
 	formVersionExportSchema,
@@ -340,7 +335,6 @@ async function cloneVersionContents(
 				title: s.title,
 				order: s.order,
 				visibilityRule: s.visibilityRule ?? null,
-				isSystem: s.isSystem ?? null,
 			})
 			.returning({ id: formSection.id });
 		if (inserted[0]) sectionIdMap.set(s.id, inserted[0].id);
@@ -552,10 +546,7 @@ export const formsRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			const proj = await requireProjectAccess(
-				input.projectId,
-				ctx.session.user.id,
-			);
+			await requireProjectAccess(input.projectId, ctx.session.user.id);
 			if (input.activityId) {
 				await requireActivityInProject(
 					input.activityId,
@@ -591,24 +582,12 @@ export const formsRouter = createTRPCRouter({
 					input.projectId,
 				);
 			} else {
-				// Perfil primeiro (padrão), dados da inscrição em seguida.
-				const withProfile =
-					proj.profilesEnabled && !input.activityId;
 				await db.insert(formSection).values({
 					formVersionId: newVersion.id,
 					projectId: input.projectId,
 					title: "Dados da inscrição",
-					order: withProfile ? 1 : 0,
+					order: 0,
 				});
-				if (withProfile) {
-					await db.insert(formSection).values({
-						formVersionId: newVersion.id,
-						projectId: input.projectId,
-						title: PROFILE_SECTION_TITLE,
-						order: 0,
-						isSystem: PROFILE_SYSTEM_KEY,
-					});
-				}
 			}
 			return newVersion;
 		}),
@@ -722,7 +701,6 @@ export const formsRouter = createTRPCRouter({
 						title: s.title,
 						order: i,
 						visibilityRule: null,
-						isSystem: null,
 					})
 					.returning({ id: formSection.id });
 				if (inserted[0]) sectionIdByOrder.set(s.order, inserted[0].id);
@@ -863,17 +841,12 @@ export const formsRouter = createTRPCRouter({
 							eq(formSection.id, input.sectionId),
 							eq(formSection.formVersionId, input.versionId),
 						),
-						columns: { id: true, isSystem: true },
+						columns: { id: true },
 					});
 					if (!section)
 						throw new TRPCError({
 							code: "BAD_REQUEST",
 							message: "Seção não encontrada nesta versão.",
-						});
-					if (section.isSystem)
-						throw new TRPCError({
-							code: "BAD_REQUEST",
-							message: "A seção de perfil não aceita campos.",
 						});
 					sectionId = section.id;
 				}
@@ -1118,17 +1091,12 @@ export const formsRouter = createTRPCRouter({
 							eq(formSection.id, sid),
 							eq(formSection.formVersionId, input.versionId),
 						),
-						columns: { id: true, isSystem: true },
+						columns: { id: true },
 					});
 					if (!section)
 						throw new TRPCError({
 							code: "BAD_REQUEST",
 							message: "Seção inválida para esta versão.",
-						});
-					if (section.isSystem)
-						throw new TRPCError({
-							code: "BAD_REQUEST",
-							message: "A seção de perfil não aceita campos.",
 						});
 				}
 				const allSections = await db.query.formSection.findMany({
@@ -1223,18 +1191,6 @@ export const formsRouter = createTRPCRouter({
 					throw new TRPCError({ code: "BAD_REQUEST", message: err });
 			}
 			if (input.sectionId) {
-				const existing = await db.query.formSection.findFirst({
-					where: and(
-						eq(formSection.id, input.sectionId),
-						eq(formSection.formVersionId, input.versionId),
-					),
-					columns: { id: true, isSystem: true },
-				});
-				if (existing?.isSystem)
-					throw new TRPCError({
-						code: "BAD_REQUEST",
-						message: "A seção de perfil é fixa e não pode ser editada.",
-					});
 				const updated = await db
 					.update(formSection)
 					.set({
@@ -1287,11 +1243,6 @@ export const formsRouter = createTRPCRouter({
 					message: "Seção não encontrada.",
 				});
 			await requireProjectAccess(section.projectId, ctx.session.user.id);
-			if (section.isSystem)
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: "A seção de perfil é fixa e não pode ser excluída.",
-				});
 			if (section.version.isPublished) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
@@ -1301,9 +1252,9 @@ export const formsRouter = createTRPCRouter({
 			}
 			const siblings = await db.query.formSection.findMany({
 				where: eq(formSection.formVersionId, section.formVersionId),
-				columns: { id: true, isSystem: true },
+				columns: { id: true },
 			});
-			if (siblings.filter((s) => !s.isSystem).length <= 1) {
+			if (siblings.length <= 1) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
 					message: "O formulário precisa de ao menos uma seção.",
@@ -1358,63 +1309,6 @@ export const formsRouter = createTRPCRouter({
 				}
 			});
 			return { success: true };
-		}),
-
-	/** Garante a seção fixa de perfil na versão (padrão: primeira posição). */
-	ensureProfileSection: protectedProcedure
-		.input(z.object({ versionId: z.uuid() }))
-		.mutation(async ({ input, ctx }) => {
-			const version = await db.query.formVersion.findFirst({
-				where: eq(formVersion.id, input.versionId),
-			});
-			if (!version)
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Versão não encontrada.",
-				});
-			await requireProjectAccess(version.projectId, ctx.session.user.id);
-			if (version.isPublished) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: "Versão publicada é imutável.",
-				});
-			}
-			const existing = await db.query.formSection.findFirst({
-				where: and(
-					eq(formSection.formVersionId, input.versionId),
-					eq(formSection.isSystem, PROFILE_SYSTEM_KEY),
-				),
-			});
-			if (existing) return existing;
-			const created = await db.transaction(async (tx) => {
-				const siblings = await tx.query.formSection.findMany({
-					where: eq(formSection.formVersionId, input.versionId),
-					orderBy: asc(formSection.order),
-				});
-				for (let i = 0; i < siblings.length; i++) {
-					await tx
-						.update(formSection)
-						.set({ order: i + 1 })
-						.where(eq(formSection.id, siblings[i]!.id));
-				}
-				const inserted = await tx
-					.insert(formSection)
-					.values({
-						formVersionId: input.versionId,
-						projectId: version.projectId,
-						title: PROFILE_SECTION_TITLE,
-						order: 0,
-						isSystem: PROFILE_SYSTEM_KEY,
-					})
-					.returning();
-				return inserted[0];
-			});
-			if (!created)
-				throw new TRPCError({
-					code: "INTERNAL_SERVER_ERROR",
-					message: "Falha ao criar seção de perfil.",
-				});
-			return created;
 		}),
 
 	publishVersion: protectedProcedure
@@ -1718,22 +1612,6 @@ export const formsRouter = createTRPCRouter({
 					data: (validation.data ?? {}) as Record<string, unknown>,
 				});
 				if (rows.length > 0) await db.insert(formAnswer).values(rows);
-			}
-			if (projectData.profilesEnabled && input.profile) {
-				const p = input.profile;
-				await db.insert(profile).values({
-					participantId,
-					roleTitle: p.roleTitle ?? null,
-					birthDate: p.birthDate ? new Date(p.birthDate) : null,
-					city: p.city ?? null,
-					institution: p.institution ?? null,
-					bio: p.bio ?? null,
-					socials: p.socials,
-					publicEmail: p.publicEmail ?? null,
-					avatarSource: p.avatarSource,
-					avatarGithubHandle: p.avatarGithubHandle ?? null,
-					privacy: p.privacy,
-				});
 			}
 			return { participantId, shortId };
 		}),
