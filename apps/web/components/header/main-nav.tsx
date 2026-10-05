@@ -15,6 +15,7 @@ export interface MainNavProps {
 		className?: string; // Classe CSS adicional para o link
 		activeClassName?: string; // Classe CSS adicional para o link ativo
 		mobileClassName?: string; // Classe CSS adicional para o link no mobile
+		buttonClassName?: string; // Classe do `Button` (mesclada via `cn`, sobrescreve o hover do variant)
 	}[];
 }
 
@@ -73,6 +74,7 @@ export default function MainNav({
 						<Button
 							key={href}
 							variant={isActive ? "secondary" : "ghost"}
+							className={link.buttonClassName}
 							asChild
 						>
 							<Link

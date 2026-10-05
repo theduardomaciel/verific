@@ -69,6 +69,24 @@ export function resolveEventTheme(input: {
 	const buttonFg =
 		theme.buttons.bg === "primary" ? onPrimary : onSecondary;
 
+	// `--accent`: superfícies/hover `ghost`/`outline` (`Button`, `Select`,
+	// `DropdownMenu`…) seguem o `content.accent` do tema do evento.
+	const accentBg = roleColor(theme, theme.content.accent);
+	const accentFg =
+		theme.content.accent === "primary" ? onPrimary : onSecondary;
+
+	// Barra do `NextTopLoader`: cor oposta ao cabeçalho (cabeçalho primário
+	// → barra secundária). Gradiente usa ambas → secundária; transparente
+	// mostra o fundo da página → primária.
+	let loader: string;
+	if (theme.header.style === "gradient") {
+		loader = theme.secondary;
+	} else if (theme.header.style === "transparent") {
+		loader = theme.primary;
+	} else {
+		loader = theme.header.bg === "secondary" ? theme.primary : theme.secondary;
+	}
+
 	let headerBg = "transparent";
 	if (theme.header.style === "solid") {
 		headerBg = roleColor(theme, theme.header.bg);
@@ -105,7 +123,10 @@ export function resolveEventTheme(input: {
 		"--secondary": theme.secondary,
 		"--primary-foreground": onPrimary,
 		"--secondary-foreground": onSecondary,
+		"--accent": accentBg,
+		"--accent-foreground": accentFg,
 		"--ring": theme.primary,
+		"--ev-loader": loader,
 		"--ev-header-bg": headerBg,
 		"--ev-footer-bg": roleColor(theme, theme.footer.bg),
 		"--ev-button-bg": buttonBg,

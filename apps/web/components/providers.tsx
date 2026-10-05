@@ -43,7 +43,10 @@ export function Providers({ children }: { children: ReactNode }) {
 		>
 			<trpc.Provider client={trpcClient} queryClient={queryClient}>
 				<QueryClientProvider client={queryClient}>
-					<NextTopLoader showSpinner={false} color="var(--primary)" />
+					<NextTopLoader
+						showSpinner={false}
+						color="var(--ev-loader, var(--primary))"
+					/>
 					{children}
 					<Toaster richColors closeButton />
 				</QueryClientProvider>

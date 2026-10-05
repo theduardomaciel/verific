@@ -7,6 +7,7 @@ import { cacheLife, cacheTag } from "next/cache";
 
 import Logo from "@/public/logo.svg";
 import { EventHeader } from "@/components/event-header";
+import { EventThemeSync } from "@/components/event-theme-sync";
 import { Footer } from "@/components/footer";
 import { EventBackgroundEffects } from "@/components/landing/event-container";
 import { getEventStaticParams, getProject } from "@/lib/data";
@@ -119,9 +120,19 @@ export default async function EventLayout({
 	]
 		.filter(Boolean)
 		.join(" ");
+	// Espelha o tema no `:root` para elementos que escapam da `div` temada:
+	// `Dialog` (portal em `document.body`), `Toaster` e `NextTopLoader`
+	// (ambos fora do escopo, no `Providers`). Sem isso eles usam as cores
+	// globais em vez de `--primary`/`--secondary` do evento. O `dark` para
+	// esses portais é garantido via `EventThemeSync` (efeito cliente).
+	const rootCssText = Object.entries(cssVars)
+		.map(([key, value]) => `${key}:${value}`)
+		.join(";");
 
 	return (
 		<Suspense fallback={<EventLayoutFallback />}>
+			<style>{`:root{${rootCssText}}`}</style>
+			<EventThemeSync cssVars={cssVars} />
 			<div
 				className={`dark ${fontVariables} relative flex w-full flex-1 flex-col`}
 				style={

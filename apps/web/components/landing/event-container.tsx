@@ -20,7 +20,7 @@ interface EventHeroProps {
 }
 
 export async function Hero({ children, coverUrl }: EventHeroProps) {
-	const teste = await new Promise((r) => setTimeout(r, 500));
+	// const teste = await new Promise((r) => setTimeout(r, 500));
 
 	return (
 		<section className="relative flex w-full overflow-hidden py-24">
