@@ -27,7 +27,6 @@ import { cn } from "@/lib/utils";
 import { animateFlip } from "../lib/animate-flip";
 import type { Field, Section, Version } from "../types";
 import type { SectionMutation } from "../hooks/use-forms-builder";
-import { PROFILE_FIELD_LABELS } from "@verific/drizzle/profile";
 import { FieldDialog } from "./dialog/field-dialog";
 import { SectionDialog } from "./dialog/section-dialog";
 import { SortableFieldRow } from "./field-row";
@@ -343,101 +342,8 @@ function SectionBlock({
 	);
 }
 
-interface SystemSectionBlockProps {
-	section: Section;
-	position: number;
-	total: number;
-	isPublished: boolean;
-	onMoveSection: (index: number, dir: -1 | 1) => void;
-}
-
-/**
- * Seção fixa de perfil: participa da ordenação (arrasto + setas) mas não
- * pode ser editada, excluída nem receber campos.
- */
-function SystemSectionBlock({
-	section,
-	position,
-	total,
-	isPublished,
-	onMoveSection,
-}: SystemSectionBlockProps) {
-	const {
-		ref: sectionRef,
-		handleRef: sectionHandleRef,
-		isDragging: isSectionDragging,
-		isDropTarget: isSectionDropTarget,
-	} = useSortable({
-		id: sectionSortId(section.id),
-		index: position,
-		group: SECTIONS_GROUP,
-		type: SECTION_TYPE,
-		accept: SECTION_TYPE,
-		disabled: isPublished,
-		transition: { duration: 200, easing: "ease-in-out" },
-	});
-
-	return (
-		<div
-			ref={sectionRef}
-			data-section-id={section.id}
-			className={cn(
-				"flex flex-col gap-2 rounded-lg border border-dashed bg-transparent p-3 transition-all duration-200 will-change-transform",
-				isSectionDragging && "border-primary/60 opacity-60 shadow-lg",
-				isSectionDropTarget &&
-					!isSectionDragging &&
-					"border-primary ring-primary/30 ring-2",
-			)}
-		>
-			<div className="flex flex-wrap items-center justify-between gap-2">
-				<div className="flex min-w-0 flex-wrap items-center gap-2">
-					{!isPublished && (
-						<span
-							ref={sectionHandleRef}
-							title="Arrastar para reordenar seção"
-							className="text-muted-foreground hover:bg-muted hover:text-foreground shrink-0 cursor-grab touch-none rounded p-1 transition-colors active:cursor-grabbing"
-						>
-							<GripVertical className="h-5 w-5" />
-						</span>
-					)}
-					<span className="font-bold">
-						{position + 1}. {section.title}
-					</span>
-					<Badge variant="outline">Fixa</Badge>
-				</div>
-				{!isPublished && (
-					<div className="flex flex-wrap items-center gap-2">
-						<Button
-							size="sm"
-							variant="outline"
-							disabled={position === 0}
-							onClick={() => onMoveSection(position, -1)}
-						>
-							↑
-						</Button>
-						<Button
-							size="sm"
-							variant="outline"
-							disabled={position === total - 1}
-							onClick={() => onMoveSection(position, 1)}
-						>
-							↓
-						</Button>
-					</div>
-				)}
-			</div>
-			<div className="text-muted-foreground flex items-start gap-2 text-xs">
-				<Lock className="mt-0.5 h-4 w-4 shrink-0" />
-				<span>
-					Seção do sistema (posição livre, conteúdo fixo):{" "}
-					{Object.values(PROFILE_FIELD_LABELS).join(" · ")}
-				</span>
-			</div>
-		</div>
-	);
-}
-
-interface UngroupedBoxProps {	visible: boolean;
+interface UngroupedBoxProps {
+	visible: boolean;
 	fieldIds: string[];
 	fieldById: Map<string, Field>;
 	fields: Field[];
@@ -807,18 +713,8 @@ export function BuilderCard({
 				}}
 			>
 				<div ref={listRef} className="flex flex-col gap-4">
-					{sortedSections.map((section, si) =>
-						section.isSystem ? (
-							<SystemSectionBlock
-								key={section.id}
-								section={section}
-								position={si}
-								total={sortedSections.length}
-								isPublished={isPublished}
-								onMoveSection={onMoveSection}
-							/>
-						) : (
-							<SectionBlock
+					{sortedSections.map((section, si) => (
+						<SectionBlock
 							key={section.id}
 							section={section}
 							position={si}
@@ -841,8 +737,7 @@ export function BuilderCard({
 							moveWithinSection={moveWithinSection}
 							onDelete={onDelete}
 						/>
-						)
-					)}
+					))}
 					<UngroupedBox
 						visible={ungroupedIds.length > 0 || draggingField}
 						fieldIds={ungroupedIds}

@@ -167,9 +167,7 @@ export function EditMyAnswersForm({
 						})}
 						className="flex flex-col gap-4"
 					>
-						{grouped
-						.filter((group) => !group.section.isSystem)
-						.map((group) => (
+						{grouped.map((group) => (
 						<div key={group.section.id} className="flex flex-col gap-4">
 							<h4 className="text-sm font-bold">{group.section.title}</h4>
 							{group.rows.map((row, ri) => (
