@@ -6,7 +6,7 @@
 		"packages/*",
 		"config/*"
 	],
-	"packageManager": "pnpm@9.0.2",
+	"packageManager": "pnpm@12.8.1",
 	"scripts": {
 		"dev": "turbo run dev",
 		"build": "turbo run build",
