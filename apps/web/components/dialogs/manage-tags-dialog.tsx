@@ -37,8 +37,7 @@ export function ManageTagsDialog({ projectId }: ManageTagsDialogProps) {
 	const renameTag = trpc.renameTag.useMutation();
 	const deleteTag = trpc.deleteTag.useMutation();
 
-	const invalidate = () =>
-		utils.getProjectTags.invalidate({ projectId });
+	const invalidate = () => utils.getProjectTags.invalidate({ projectId });
 
 	const handleCreate = async () => {
 		const name = newName.trim();
@@ -179,9 +178,7 @@ export function ManageTagsDialog({ projectId }: ManageTagsDialogProps) {
 											variant="ghost"
 											className="h-8 w-8"
 											disabled={deleteTag.isPending}
-											onClick={() =>
-												handleDelete(tag.id)
-											}
+											onClick={() => handleDelete(tag.id)}
 										>
 											<Trash2 size={14} />
 										</Button>
@@ -221,7 +218,7 @@ export function ManageTagsDialog({ projectId }: ManageTagsDialogProps) {
 								onClick={() => setNewColor(color)}
 								className={`h-6 w-6 rounded-full border-2 transition-transform ${
 									newColor === color
-										? "scale-110 border-foreground"
+										? "border-foreground scale-110"
 										: "border-transparent"
 								}`}
 								style={{ backgroundColor: color }}

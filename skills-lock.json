@@ -1,23 +1,23 @@
 {
-  "version": 1,
-  "skills": {
-    "better-auth-best-practices": {
-      "source": "better-auth/skills",
-      "sourceType": "github",
-      "skillPath": "better-auth/best-practices/SKILL.md",
-      "computedHash": "f35281e7a0c07b3fd3c4e96c7833dafb294a3a8662cb68a8544f4225008d6568"
-    },
-    "better-auth-security-best-practices": {
-      "source": "better-auth/skills",
-      "sourceType": "github",
-      "skillPath": "security/SKILL.md",
-      "computedHash": "087c1094fa5f1834af4785c058dcc8c9abe4c1321b853883c76ea46c93a21cfe"
-    },
-    "organization-best-practices": {
-      "source": "better-auth/skills",
-      "sourceType": "github",
-      "skillPath": "better-auth/organization/SKILL.md",
-      "computedHash": "f03e41bc2995c4fceec98f3db85f9638d71cc391fb10f9d85460304d6642efc2"
-    }
-  }
+	"version": 1,
+	"skills": {
+		"better-auth-best-practices": {
+			"source": "better-auth/skills",
+			"sourceType": "github",
+			"skillPath": "better-auth/best-practices/SKILL.md",
+			"computedHash": "f35281e7a0c07b3fd3c4e96c7833dafb294a3a8662cb68a8544f4225008d6568"
+		},
+		"better-auth-security-best-practices": {
+			"source": "better-auth/skills",
+			"sourceType": "github",
+			"skillPath": "security/SKILL.md",
+			"computedHash": "087c1094fa5f1834af4785c058dcc8c9abe4c1321b853883c76ea46c93a21cfe"
+		},
+		"organization-best-practices": {
+			"source": "better-auth/skills",
+			"sourceType": "github",
+			"skillPath": "better-auth/organization/SKILL.md",
+			"computedHash": "f03e41bc2995c4fceec98f3db85f9638d71cc391fb10f9d85460304d6642efc2"
+		}
+	}
 }

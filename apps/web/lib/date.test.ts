@@ -18,6 +18,8 @@ describe("calculateWorkloadFromTimes", () => {
 	it("returns undefined when either time is missing", () => {
 		expect(calculateWorkloadFromTimes(undefined, "10:00")).toBeUndefined();
 		expect(calculateWorkloadFromTimes("08:00", undefined)).toBeUndefined();
-		expect(calculateWorkloadFromTimes(undefined, undefined)).toBeUndefined();
+		expect(
+			calculateWorkloadFromTimes(undefined, undefined),
+		).toBeUndefined();
 	});
 });

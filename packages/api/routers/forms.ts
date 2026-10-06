@@ -823,7 +823,9 @@ export const formsRouter = createTRPCRouter({
 				});
 			}
 			if (input.type === "social_links" && input.options) {
-				const unknown = input.options.filter((o) => !socialServiceById(o));
+				const unknown = input.options.filter(
+					(o) => !socialServiceById(o),
+				);
 				if (unknown.length > 0) {
 					throw new TRPCError({
 						code: "BAD_REQUEST",
@@ -1593,7 +1595,10 @@ export const formsRouter = createTRPCRouter({
 					projectId: input.projectId,
 					shortId: generateShortId(),
 				})
-				.returning({ id: participant.id, shortId: participant.shortId });
+				.returning({
+					id: participant.id,
+					shortId: participant.shortId,
+				});
 			const participantId = createdParticipants[0]?.id;
 			const shortId = createdParticipants[0]?.shortId;
 			if (!participantId || !shortId)

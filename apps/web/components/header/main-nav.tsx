@@ -77,7 +77,10 @@ export default function MainNav({
 					return (
 						<Button
 							key={href}
-							variant={link.variant ?? (isActive ? "secondary" : "ghost")}
+							variant={
+								link.variant ??
+								(isActive ? "secondary" : "ghost")
+							}
 							asChild
 						>
 							<Link

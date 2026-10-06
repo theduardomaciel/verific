@@ -22,7 +22,9 @@ describe("theme resolve", () => {
 		const { onPrimary, onSecondary } = resolveEventTheme({});
 		expect(onPrimary).toBe("#FFFFFF");
 		expect(contrastRatio(onPrimary, "#6D28D9")).toBeGreaterThanOrEqual(4.5);
-		expect(contrastRatio(onSecondary, "#14B8A6")).toBeGreaterThanOrEqual(4.5);
+		expect(contrastRatio(onSecondary, "#14B8A6")).toBeGreaterThanOrEqual(
+			4.5,
+		);
 	});
 
 	it("prefere texto escuro sobre amarelo claro", () => {
@@ -215,9 +217,15 @@ describe("theme resolve", () => {
 		expect(def.cssVars["--ev-hero-border"]).toBe("transparent");
 
 		const { cssVars, theme } = resolveEventTheme({
-			theme: { version: 2, hero: { border: { width: 6, color: "secondary" } } },
+			theme: {
+				version: 2,
+				hero: { border: { width: 6, color: "secondary" } },
+			},
 		});
-		expect(theme.hero.border).toMatchObject({ width: 6, color: "secondary" });
+		expect(theme.hero.border).toMatchObject({
+			width: 6,
+			color: "secondary",
+		});
 		expect(cssVars["--ev-hero-border-width"]).toBe("6px");
 		expect(cssVars["--ev-hero-border"]).toBe(theme.secondary);
 	});
@@ -237,7 +245,11 @@ describe("theme resolve", () => {
 		});
 
 		it("escurece a cor escolhida até o branco passar AA", () => {
-			for (const overlayColor of ["primary", "secondary", "dark"] as const) {
+			for (const overlayColor of [
+				"primary",
+				"secondary",
+				"dark",
+			] as const) {
 				const { cssVars } = resolveEventTheme({
 					theme: {
 						version: 2,
@@ -246,7 +258,9 @@ describe("theme resolve", () => {
 					},
 				});
 				const tint = cssVars["--ev-hero-tint"]!;
-				expect(contrastRatio("#FFFFFF", tint)).toBeGreaterThanOrEqual(4.5);
+				expect(contrastRatio("#FFFFFF", tint)).toBeGreaterThanOrEqual(
+					4.5,
+				);
 			}
 		});
 
@@ -262,7 +276,9 @@ describe("theme resolve", () => {
 					hero: { overlayColor: "dark" },
 				},
 			});
-			expect(a.cssVars["--ev-hero-tint"]).toBe(b.cssVars["--ev-hero-tint"]);
+			expect(a.cssVars["--ev-hero-tint"]).toBe(
+				b.cssVars["--ev-hero-tint"],
+			);
 		});
 	});
 
@@ -276,7 +292,10 @@ describe("theme resolve", () => {
 				});
 				expect(cssVars["--ev-nav-active-bg"]).toBe(theme.primary);
 				expect(
-					contrastRatio(cssVars["--ev-nav-active-fg"]!, theme.primary),
+					contrastRatio(
+						cssVars["--ev-nav-active-fg"]!,
+						theme.primary,
+					),
 				).toBeGreaterThanOrEqual(4.5);
 			}
 
@@ -299,8 +318,12 @@ describe("theme resolve", () => {
 			});
 			expect(cssVars["--ev-nav-active-bg"]).toBe("var(--foreground)");
 			expect(cssVars["--ev-nav-active-fg"]).toBe("var(--background)");
-			expect(cssVars["--ev-nav-active-bg-dark"]).toBe("var(--foreground)");
-			expect(cssVars["--ev-nav-active-fg-dark"]).toBe("var(--background)");
+			expect(cssVars["--ev-nav-active-bg-dark"]).toBe(
+				"var(--foreground)",
+			);
+			expect(cssVars["--ev-nav-active-fg-dark"]).toBe(
+				"var(--background)",
+			);
 		});
 
 		it("accentDark: primária no claro, neutra no escuro", () => {
@@ -312,17 +335,21 @@ describe("theme resolve", () => {
 			});
 			expect(cssVars["--ev-nav-active-bg"]).toBe(theme.primary);
 			expect(cssVars["--ev-nav-active-fg"]).toBe(onPrimary);
-			expect(cssVars["--ev-nav-active-bg-dark"]).toBe("var(--foreground)");
-			expect(cssVars["--ev-nav-active-fg-dark"]).toBe("var(--background)");
+			expect(cssVars["--ev-nav-active-bg-dark"]).toBe(
+				"var(--foreground)",
+			);
+			expect(cssVars["--ev-nav-active-fg-dark"]).toBe(
+				"var(--background)",
+			);
 
 			// Selos acompanham: neutros no escuro com texto roxo (passa AA
 			// no branco) e contraste derivado no claro.
 			expect(cssVars["--ev-badge-bg"]).toBe(theme.primary);
 			expect(cssVars["--ev-badge-bg-dark"]).toBe("var(--foreground)");
 			expect(cssVars["--ev-badge-fg-dark"]).toBe(theme.primary);
-			expect(contrastRatio(theme.primary, "#FFFFFF")).toBeGreaterThanOrEqual(
-				4.5,
-			);
+			expect(
+				contrastRatio(theme.primary, "#FFFFFF"),
+			).toBeGreaterThanOrEqual(4.5);
 			// Primária sobre o neutro claro reprova → texto derivado (branco).
 			expect(contrastRatio(theme.primary, "#333333")).toBeLessThan(4.5);
 			expect(cssVars["--ev-badge-fg"]).toBe("#FFFFFF");
@@ -332,9 +359,15 @@ describe("theme resolve", () => {
 			// Sólido primário + botões secundários: borda teal, texto branco
 			// (a cor derivada do cabeçalho).
 			const solid = resolveEventTheme({});
-			expect(solid.cssVars["--ev-cta-border"]).toBe(solid.theme.secondary);
-			expect(solid.cssVars["--ev-cta-fg"]).toBe(solid.cssVars["--ev-header-fg"]);
-			expect(solid.cssVars["--ev-cta-hover-bg"]).toBe(solid.theme.secondary);
+			expect(solid.cssVars["--ev-cta-border"]).toBe(
+				solid.theme.secondary,
+			);
+			expect(solid.cssVars["--ev-cta-fg"]).toBe(
+				solid.cssVars["--ev-header-fg"],
+			);
+			expect(solid.cssVars["--ev-cta-hover-bg"]).toBe(
+				solid.theme.secondary,
+			);
 			expect(
 				contrastRatio(
 					solid.cssVars["--ev-cta-hover-fg"]!,
@@ -349,7 +382,9 @@ describe("theme resolve", () => {
 					header: { bg: "primary", style: "transparent" },
 				},
 			});
-			expect(transp.cssVars["--ev-cta-border"]).toBe(transp.theme.secondary);
+			expect(transp.cssVars["--ev-cta-border"]).toBe(
+				transp.theme.secondary,
+			);
 			expect(transp.cssVars["--ev-cta-fg"]).toBe("var(--foreground)");
 
 			// Botões primários: CTA acompanha (borda primária).
@@ -371,10 +406,9 @@ describe("theme resolve", () => {
 			});
 			// Não dá para escolher branco nem escuro: a cor clara do
 			// gradiente reprova com um deles.
-			expect(cssVars["--ev-header-fg"]).toBe(bestOnColors([
-				theme.secondary,
-				theme.primary,
-			]));
+			expect(cssVars["--ev-header-fg"]).toBe(
+				bestOnColors([theme.secondary, theme.primary]),
+			);
 			// Nenhuma das duas opções atinge AA nas duas paradas, então a
 			// escolha é pelo maior contraste *mínimo* — não por um papel fixo.
 			const fg = cssVars["--ev-nav-fg"]!;
@@ -410,7 +444,10 @@ describe("theme resolve", () => {
 
 		it("menu mobile usa uma cor sólida no gradiente", () => {
 			const { cssVars, theme } = resolveEventTheme({
-				theme: { version: 2, header: { bg: "primary", style: "gradient" } },
+				theme: {
+					version: 2,
+					header: { bg: "primary", style: "gradient" },
+				},
 			});
 			expect([theme.primary, theme.secondary]).toContain(
 				cssVars["--ev-mobile-menu-bg"],
@@ -453,13 +490,17 @@ describe("theme resolve", () => {
 		} as const;
 
 		it("A: cabeçalho transparente, capa sem imagem, filete teal", () => {
-			const { theme, cssVars } = resolveEventTheme({ theme: SECOMP_2026 });
+			const { theme, cssVars } = resolveEventTheme({
+				theme: SECOMP_2026,
+			});
 			expect(theme.hero.image).toBe(false);
 			expect(cssVars["--ev-header-bg"]).toBe("transparent");
 			// Sem imagem: sem véu na capa, texto segue a página.
 			expect(cssVars["--ev-hero-fg"]).toBe("var(--foreground)");
 			// Gradiente do topo da página até o filete (capa desenha).
-			expect(cssVars["--ev-hero-bg"]).toContain("linear-gradient(180deg,");
+			expect(cssVars["--ev-hero-bg"]).toContain(
+				"linear-gradient(180deg,",
+			);
 			expect(cssVars["--ev-top-gradient"]).toBe("none");
 			// Filete de 6px na cor dos botões.
 			expect(cssVars["--ev-hero-border-width"]).toBe("6px");
@@ -476,15 +517,21 @@ describe("theme resolve", () => {
 		});
 
 		it("B: mesmos valores, modo escuro resolve neutro + AA", () => {
-			const { theme, cssVars } = resolveEventTheme({ theme: SECOMP_2026 });
+			const { theme, cssVars } = resolveEventTheme({
+				theme: SECOMP_2026,
+			});
 			// Escuro: ativo e selos neutros (branco), texto AA.
-			expect(cssVars["--ev-nav-active-bg-dark"]).toBe("var(--foreground)");
-			expect(cssVars["--ev-nav-active-fg-dark"]).toBe("var(--background)");
+			expect(cssVars["--ev-nav-active-bg-dark"]).toBe(
+				"var(--foreground)",
+			);
+			expect(cssVars["--ev-nav-active-fg-dark"]).toBe(
+				"var(--background)",
+			);
 			expect(cssVars["--ev-badge-bg-dark"]).toBe("var(--foreground)");
 			expect(cssVars["--ev-badge-fg-dark"]).toBe(theme.primary);
-			expect(contrastRatio(theme.primary, "#FFFFFF")).toBeGreaterThanOrEqual(
-				4.5,
-			);
+			expect(
+				contrastRatio(theme.primary, "#FFFFFF"),
+			).toBeGreaterThanOrEqual(4.5);
 			// Teal e roxo não mudam com o modo.
 			expect(cssVars["--ev-cta-border"]).toBe(theme.secondary);
 			expect(cssVars["--ev-hero-border"]).toBe(theme.secondary);

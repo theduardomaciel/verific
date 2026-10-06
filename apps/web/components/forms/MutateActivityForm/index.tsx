@@ -146,9 +146,7 @@ export default function MutateActivityForm({
 					configureAfterSave.current = false;
 					await revalidateActivities();
 					utils.getActivities.invalidate();
-					router.push(
-						`/dashboard/activities/${activityId}/form`,
-					);
+					router.push(`/dashboard/activities/${activityId}/form`);
 					return;
 				}
 

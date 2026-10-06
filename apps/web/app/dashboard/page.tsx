@@ -17,7 +17,7 @@ import { trpc } from "@/lib/trpc/react";
 
 function DashboardSkeleton() {
 	return (
-		<main className="container-d py-container-v flex w-full flex-1 flex-col items-center justify-start gap-8 min-h-screen">
+		<main className="container-d py-container-v flex min-h-screen w-full flex-1 flex-col items-center justify-start gap-8">
 			<div className="grid w-full gap-4 md:grid-cols-2 lg:grid-cols-4">
 				{Array.from({ length: 4 }).map((_, i) => (
 					<Skeleton key={i} className="h-32 w-full" />
@@ -49,7 +49,7 @@ export default function Overview() {
 
 	if (activitiesQuery.isError || statsQuery.isError) {
 		return (
-			<main className="container-d py-container-v flex w-full flex-1 flex-col items-center justify-start min-h-screen">
+			<main className="container-d py-container-v flex min-h-screen w-full flex-1 flex-col items-center justify-start">
 				<p className="text-muted-foreground text-sm">
 					Não foi possível carregar o dashboard. Tente recarregar a
 					página.
@@ -62,7 +62,7 @@ export default function Overview() {
 	const stats = statsQuery.data;
 
 	return (
-		<main className="container-d py-container-v flex w-full flex-1 flex-col items-center justify-start gap-8 min-h-screen">
+		<main className="container-d py-container-v flex min-h-screen w-full flex-1 flex-col items-center justify-start gap-8">
 			<Tabs
 				defaultValue="overview"
 				className="flex w-full flex-1 space-y-4"
@@ -132,7 +132,10 @@ export default function Overview() {
 								<CardTitle>Participantes</CardTitle>
 								<div className="hidden items-center space-x-2 md:flex">
 									<Button disabled asChild>
-										<Link target="_blank" href={`/${projectUrl}`}>
+										<Link
+											target="_blank"
+											href={`/${projectUrl}`}
+										>
 											<Globe className="mr-2" size={24} />
 											Acessar página do evento
 										</Link>
@@ -140,9 +143,7 @@ export default function Overview() {
 								</div>
 							</CardHeader>
 							<CardContent className="relative flex flex-1">
-								<GraphSelector
-									graphData={stats.graphData}
-								/>
+								<GraphSelector graphData={stats.graphData} />
 							</CardContent>
 						</Card>
 						<ActivitiesList

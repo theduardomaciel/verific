@@ -7,10 +7,7 @@ import { ImagePlus, Loader2, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc/react";
-import {
-	processImageFile,
-	type ImagePurpose,
-} from "@/lib/images/optimization";
+import { processImageFile, type ImagePurpose } from "@/lib/images/optimization";
 
 interface ImageUploaderProps {
 	value?: string;

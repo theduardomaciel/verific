@@ -565,23 +565,23 @@ export function MutateActivityFormContent({
 						</Button>
 					) : null}
 					<Button type="submit" size="lg" className="shrink-0 !px-5">
-					{isEditing ? (
-						<>
-							<Edit className="h-5 w-5" />
-							<span className="hidden sm:inline">
-								Editar atividade
-							</span>
-							<span className="sm:hidden">Editar</span>
-						</>
-					) : (
-						<>
-							<CloudUpload className="h-5 w-5" />
-							<span className="hidden sm:inline">
-								Cadastrar atividade
-							</span>
-							<span className="sm:hidden">Cadastrar</span>
-						</>
-					)}
+						{isEditing ? (
+							<>
+								<Edit className="h-5 w-5" />
+								<span className="hidden sm:inline">
+									Editar atividade
+								</span>
+								<span className="sm:hidden">Editar</span>
+							</>
+						) : (
+							<>
+								<CloudUpload className="h-5 w-5" />
+								<span className="hidden sm:inline">
+									Cadastrar atividade
+								</span>
+								<span className="sm:hidden">Cadastrar</span>
+							</>
+						)}
 					</Button>
 				</div>
 			</header>
@@ -835,9 +835,7 @@ export function MutateActivityFormContent({
 										}
 										onSelect={(items: string[]) => {
 											field.onChange(
-												items.map((id) =>
-													parseInt(id),
-												),
+												items.map((id) => parseInt(id)),
 											);
 										}}
 										placeholder={

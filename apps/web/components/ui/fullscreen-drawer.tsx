@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { XIcon } from "lucide-react";
-import type { ReactNode} from "react";
+import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 

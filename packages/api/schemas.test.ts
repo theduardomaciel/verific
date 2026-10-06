@@ -113,7 +113,9 @@ describe("validateAnswers", () => {
 	});
 
 	it("normalizes empty optional answers to undefined", () => {
-		const result = validateAnswers([optionalChoiceField], { interests: [] });
+		const result = validateAnswers([optionalChoiceField], {
+			interests: [],
+		});
 
 		expect(result.success).toBe(true);
 		expect(result.data).toEqual({ interests: undefined });
@@ -132,9 +134,9 @@ describe("validateAnswers", () => {
 		expect(
 			validateAnswers([email], { email: "not-an-email" }).success,
 		).toBe(false);
-		expect(validateAnswers([email], { email: "ada@example.com" }).success).toBe(
-			true,
-		);
+		expect(
+			validateAnswers([email], { email: "ada@example.com" }).success,
+		).toBe(true);
 	});
 
 	it("rejects unknown options when allowOther is off", () => {
@@ -150,7 +152,9 @@ describe("validateAnswers", () => {
 		} satisfies FormFieldForValidation;
 
 		expect(validateAnswers([single], { color: "azul" }).success).toBe(true);
-		expect(validateAnswers([single], { color: "roxo" }).success).toBe(false);
+		expect(validateAnswers([single], { color: "roxo" }).success).toBe(
+			false,
+		);
 	});
 
 	it("accepts custom text as-is when allowOther is on", () => {
@@ -206,9 +210,9 @@ describe("formatAnswerValue", () => {
 		expect(formatAnswerValue("select_multiple", ["a", "b"])).toBe("a; b");
 		expect(formatAnswerValue("checkbox", true)).toBe("Sim");
 		expect(formatAnswerValue("checkbox", false)).toBe("Não");
-		expect(formatAnswerValue("date", new Date("2026-04-12T00:00:00Z"))).toBe(
-			"2026-04-12",
-		);
+		expect(
+			formatAnswerValue("date", new Date("2026-04-12T00:00:00Z")),
+		).toBe("2026-04-12");
 	});
 
 	it("returns an empty string for empty values", () => {
@@ -231,8 +235,12 @@ describe("radio_group", () => {
 			isActive: true,
 		} satisfies FormFieldForValidation;
 
-		expect(validateAnswers([radio], { modality: "online" }).success).toBe(true);
-		expect(validateAnswers([radio], { modality: "hibrido" }).success).toBe(false);
+		expect(validateAnswers([radio], { modality: "online" }).success).toBe(
+			true,
+		);
+		expect(validateAnswers([radio], { modality: "hibrido" }).success).toBe(
+			false,
+		);
 	});
 
 	it("accepts custom text when allowOther is on", () => {
@@ -247,7 +255,9 @@ describe("radio_group", () => {
 			isActive: true,
 		} satisfies FormFieldForValidation;
 
-		expect(validateAnswers([radio], { modality: "hibrido" }).success).toBe(true);
+		expect(validateAnswers([radio], { modality: "hibrido" }).success).toBe(
+			true,
+		);
 	});
 });
 
@@ -258,26 +268,64 @@ describe("evaluateSectionVisibility", () => {
 	});
 
 	it("evaluates checkbox operators", () => {
-		expect(evaluateSectionVisibility({ sourceFieldId: "f", operator: "is_checked" }, true)).toBe(true);
-		expect(evaluateSectionVisibility({ sourceFieldId: "f", operator: "is_checked" }, false)).toBe(false);
-		expect(evaluateSectionVisibility({ sourceFieldId: "f", operator: "is_not_checked" }, false)).toBe(true);
+		expect(
+			evaluateSectionVisibility(
+				{ sourceFieldId: "f", operator: "is_checked" },
+				true,
+			),
+		).toBe(true);
+		expect(
+			evaluateSectionVisibility(
+				{ sourceFieldId: "f", operator: "is_checked" },
+				false,
+			),
+		).toBe(false);
+		expect(
+			evaluateSectionVisibility(
+				{ sourceFieldId: "f", operator: "is_not_checked" },
+				false,
+			),
+		).toBe(true);
 	});
 
 	it("evaluates equals and includes operators", () => {
 		expect(
-			evaluateSectionVisibility({ sourceFieldId: "f", operator: "equals", values: ["a", "b"] }, "b"),
+			evaluateSectionVisibility(
+				{ sourceFieldId: "f", operator: "equals", values: ["a", "b"] },
+				"b",
+			),
 		).toBe(true);
 		expect(
-			evaluateSectionVisibility({ sourceFieldId: "f", operator: "equals", values: ["a"] }, "c"),
+			evaluateSectionVisibility(
+				{ sourceFieldId: "f", operator: "equals", values: ["a"] },
+				"c",
+			),
 		).toBe(false);
 		expect(
-			evaluateSectionVisibility({ sourceFieldId: "f", operator: "includes_any", values: ["a"] }, ["a", "b"]),
+			evaluateSectionVisibility(
+				{ sourceFieldId: "f", operator: "includes_any", values: ["a"] },
+				["a", "b"],
+			),
 		).toBe(true);
 		expect(
-			evaluateSectionVisibility({ sourceFieldId: "f", operator: "includes_all", values: ["a", "b"] }, ["a"]),
+			evaluateSectionVisibility(
+				{
+					sourceFieldId: "f",
+					operator: "includes_all",
+					values: ["a", "b"],
+				},
+				["a"],
+			),
 		).toBe(false);
 		expect(
-			evaluateSectionVisibility({ sourceFieldId: "f", operator: "includes_all", values: ["a", "b"] }, ["a", "b", "c"]),
+			evaluateSectionVisibility(
+				{
+					sourceFieldId: "f",
+					operator: "includes_all",
+					values: ["a", "b"],
+				},
+				["a", "b", "c"],
+			),
 		).toBe(true);
 	});
 });
@@ -306,16 +354,31 @@ describe("conditional validation", () => {
 	} satisfies FormFieldForValidation;
 	const sections = [
 		{ id: "s1", visibilityRule: null },
-		{ id: "s2", visibilityRule: { sourceFieldId: "f1", operator: "equals" as const, values: ["sim"] } },
+		{
+			id: "s2",
+			visibilityRule: {
+				sourceFieldId: "f1",
+				operator: "equals" as const,
+				values: ["sim"],
+			},
+		},
 	];
 
 	it("ignores required fields in hidden sections", () => {
-		const result = validateAnswers([trigger, conditionalField], { hosting: "nao" }, sections);
+		const result = validateAnswers(
+			[trigger, conditionalField],
+			{ hosting: "nao" },
+			sections,
+		);
 		expect(result.success).toBe(true);
 	});
 
 	it("requires fields in visible sections", () => {
-		const result = validateAnswers([trigger, conditionalField], { hosting: "sim" }, sections);
+		const result = validateAnswers(
+			[trigger, conditionalField],
+			{ hosting: "sim" },
+			sections,
+		);
 		expect(result.success).toBe(false);
 		expect(result.errors?.restriction).toBeDefined();
 	});
@@ -331,14 +394,26 @@ describe("conditional validation", () => {
 	});
 
 	it("resolves visibility by field id", () => {
-		const ids = getVisibleSectionIds(sections, [trigger, conditionalField], { hosting: "sim" });
+		const ids = getVisibleSectionIds(
+			sections,
+			[trigger, conditionalField],
+			{ hosting: "sim" },
+		);
 		expect(ids.has("s2")).toBe(true);
-		const hidden = getVisibleSectionIds(sections, [trigger, conditionalField], { hosting: "nao" });
+		const hidden = getVisibleSectionIds(
+			sections,
+			[trigger, conditionalField],
+			{ hosting: "nao" },
+		);
 		expect(hidden.has("s2")).toBe(false);
 	});
 
 	it("filters fields by visibility", () => {
-		const visible = filterVisibleFields([trigger, conditionalField], sections, { hosting: "nao" });
+		const visible = filterVisibleFields(
+			[trigger, conditionalField],
+			sections,
+			{ hosting: "nao" },
+		);
 		expect(visible.map((f) => f.key)).toEqual(["hosting"]);
 	});
 });

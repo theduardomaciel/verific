@@ -25,7 +25,10 @@ function SchedulePageBody({ project }: { project: SchedulePageProject }) {
 	});
 	return (
 		<EventContainer.Holder>
-			<EventContainer.Hero coverUrl={project.coverUrl} showImage={theme.hero.image}>
+			<EventContainer.Hero
+				coverUrl={project.coverUrl}
+				showImage={theme.hero.image}
+			>
 				<div className="z-10 flex flex-1 flex-col items-start justify-center">
 					<EventContainer.Hero.Meta>
 						<Calendar className="mr-2 h-4.5 w-4.5" />

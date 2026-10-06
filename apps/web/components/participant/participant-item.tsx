@@ -81,9 +81,7 @@ export const ParticipantListItem = {
 		url,
 	}: ActivityParticipantCardProps) {
 		const attendances = participant.sessionAttendances ?? [];
-		const attendedSessionIds = new Set(
-			attendances.map((a) => a.sessionId),
-		);
+		const attendedSessionIds = new Set(attendances.map((a) => a.sessionId));
 		const attendedCount = sessions
 			? sessions.filter((s) => attendedSessionIds.has(s.id)).length
 			: attendances.length;
@@ -109,8 +107,8 @@ export const ParticipantListItem = {
 									<p className="text-left text-sm leading-tight font-medium">
 										{attendedCount > 0 ? (
 											<>
-												Presente em {attendedCount}{" "}
-												de {sessions?.length ?? 0}{" "}
+												Presente em {attendedCount} de{" "}
+												{sessions?.length ?? 0}{" "}
 												{sessions?.length === 1
 													? "sessão"
 													: "sessões"}

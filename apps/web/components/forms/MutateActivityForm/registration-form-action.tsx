@@ -26,7 +26,12 @@ export function ActivityRegistrationFormAction({
 
 	if (!form) {
 		return (
-			<Button type="button" variant="outline" className="shrink-0" asChild>
+			<Button
+				type="button"
+				variant="outline"
+				className="shrink-0"
+				asChild
+			>
 				<Link href={`/dashboard/activities/${activityId}/form`}>
 					<Plus size={16} />
 					Adicionar formulário

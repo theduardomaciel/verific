@@ -1,5 +1,11 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import {
+	pgTable,
+	text,
+	timestamp,
+	uniqueIndex,
+	uuid,
+} from "drizzle-orm/pg-core";
 
 import { project } from "./project";
 import { tagOnActivity } from "./tag-on-activity";

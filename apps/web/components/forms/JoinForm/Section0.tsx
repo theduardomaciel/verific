@@ -25,7 +25,12 @@ interface JoinForm0Props {
 	onContinue?: () => void;
 }
 
-export default function JoinForm0({ projectUrl, form, email, onContinue }: JoinForm0Props) {
+export default function JoinForm0({
+	projectUrl,
+	form,
+	email,
+	onContinue,
+}: JoinForm0Props) {
 	return (
 		<FormSection
 			title="Identificação"

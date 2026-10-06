@@ -140,16 +140,14 @@ export function ActivityCard({
 								</Link>
 							</Button>
 						) : null}
-						{!!participantId &&
-							!!userId &&
-							!hasEnded && (
-								<ParticipantQuitButton
-									activityId={activity.id}
-									userId={userId}
-									participantId={participantId}
-									projectUrl={activity.project?.url}
-								/>
-							)}
+						{!!participantId && !!userId && !hasEnded && (
+							<ParticipantQuitButton
+								activityId={activity.id}
+								userId={userId}
+								participantId={participantId}
+								projectUrl={activity.project?.url}
+							/>
+						)}
 					</div>
 				</div>
 			</div>

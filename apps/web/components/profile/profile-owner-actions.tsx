@@ -55,7 +55,12 @@ export function ProfileOwnerActions({
 				shortId={shortId}
 			/>
 			<LogoutForm redirectTo={`/${eventUrl}`}>
-				<Button type="submit" variant="outline" size="lg" className="rounded-full">
+				<Button
+					type="submit"
+					variant="outline"
+					size="lg"
+					className="rounded-full"
+				>
 					<LogOut className="h-4 w-4" />
 					Sair
 				</Button>

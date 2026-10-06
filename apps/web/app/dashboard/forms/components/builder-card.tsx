@@ -102,7 +102,15 @@ function describeRule(
 	section: Section,
 	fieldById: Map<string, Field>,
 ): string | null {
-	const rule = (section as { visibilityRule?: { sourceFieldId: string; operator: string; values?: string[] } | null }).visibilityRule;
+	const rule = (
+		section as {
+			visibilityRule?: {
+				sourceFieldId: string;
+				operator: string;
+				values?: string[];
+			} | null;
+		}
+	).visibilityRule;
 	if (!rule) return null;
 	const source = fieldById.get(rule.sourceFieldId);
 	const name = source?.label ?? "campo removido";
@@ -193,7 +201,10 @@ function SectionBlock({
 						{fieldIds.length === 1 ? "" : "s"}
 					</Badge>
 					{describeRule(section, fieldById) && (
-						<Badge variant="outline" title={describeRule(section, fieldById) ?? ""}>
+						<Badge
+							variant="outline"
+							title={describeRule(section, fieldById) ?? ""}
+						>
 							Condicional
 						</Badge>
 					)}

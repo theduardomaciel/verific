@@ -161,7 +161,10 @@ export function MutateSpeakerDialog({
 										: "Adicionar palestrante"}
 								</DialogTitle>
 							</DialogHeader>
-							<MutateSpeakerForm form={form} projectId={projectId} />
+							<MutateSpeakerForm
+								form={form}
+								projectId={projectId}
+							/>
 							<DialogFooter className="w-full grid-cols-2 gap-3 md:grid">
 								<DialogClose asChild>
 									<Button type="button" variant={"outline"}>
@@ -230,7 +233,10 @@ export function MutateSpeakerDialog({
 							</DrawerTitle>
 						</DrawerHeader>
 						<div className="space-y-6 px-4">
-							<MutateSpeakerForm form={form} projectId={projectId} />
+							<MutateSpeakerForm
+								form={form}
+								projectId={projectId}
+							/>
 						</div>
 						<DrawerFooter className="flex w-full gap-2">
 							<Button

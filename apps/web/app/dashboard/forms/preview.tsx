@@ -6,7 +6,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "@verific/zod";
 import { toast } from "sonner";
 
-import { buildAnswersSchema, filterVisibleFields, getVisibleSectionIds } from "@verific/api/schemas";
+import {
+	buildAnswersSchema,
+	filterVisibleFields,
+	getVisibleSectionIds,
+} from "@verific/api/schemas";
 import { groupFieldsBySection, planFormSections } from "@/lib/forms/layout";
 import { DynamicField } from "@/components/forms/dynamic/DynamicField";
 import { Button } from "@/components/ui/button";
@@ -70,7 +74,21 @@ export function FormPreview({
 		() =>
 			sections.map((s) => ({
 				id: s.id,
-				visibilityRule: (s as { visibilityRule?: { sourceFieldId: string; operator: "is_checked" | "is_not_checked" | "equals" | "includes_any" | "includes_all"; values?: string[] } | null }).visibilityRule ?? null,
+				visibilityRule:
+					(
+						s as {
+							visibilityRule?: {
+								sourceFieldId: string;
+								operator:
+									| "is_checked"
+									| "is_not_checked"
+									| "equals"
+									| "includes_any"
+									| "includes_all";
+								values?: string[];
+							} | null;
+						}
+					).visibilityRule ?? null,
 			})),
 		[sections],
 	);
@@ -94,13 +112,14 @@ export function FormPreview({
 				sectionsForVisibility,
 				(v.answers ?? {}) as Record<string, unknown>,
 			);
-			const schema = z.object({ name: nameSchema, answers: answersSchema });
+			const schema = z.object({
+				name: nameSchema,
+				answers: answersSchema,
+			});
 			const zod = zodResolver(schema as never);
-			return (zod as (a: unknown, b: unknown, c: unknown) => Promise<unknown>)(
-				values,
-				context,
-				options,
-			) as never;
+			return (
+				zod as (a: unknown, b: unknown, c: unknown) => Promise<unknown>
+			)(values, context, options) as never;
 		};
 	}, [fieldsForValidation, sectionsForVisibility, nameSchema]);
 
@@ -113,21 +132,37 @@ export function FormPreview({
 		defaultValues: { name: "", answers: {}, profile: {} },
 	});
 
-	const watchedAnswers = (form.watch("answers") ?? {}) as Record<string, unknown>;
+	const watchedAnswers = (form.watch("answers") ?? {}) as Record<
+		string,
+		unknown
+	>;
 
 	const grouped = useMemo(() => {
 		if (!sectionsForVisibility.some((s) => s.visibilityRule)) {
 			return groupFieldsBySection(baseVisible, sections);
 		}
-		const visible = filterVisibleFields(baseVisible, sectionsForVisibility, watchedAnswers);
-		const ids = getVisibleSectionIds(sectionsForVisibility, fieldsForValidation, watchedAnswers);
-		return groupFieldsBySection(visible, sections).filter((g) => ids.has(g.section.id));
-	}, [baseVisible, sections, sectionsForVisibility, fieldsForValidation, watchedAnswers]);
+		const visible = filterVisibleFields(
+			baseVisible,
+			sectionsForVisibility,
+			watchedAnswers,
+		);
+		const ids = getVisibleSectionIds(
+			sectionsForVisibility,
+			fieldsForValidation,
+			watchedAnswers,
+		);
+		return groupFieldsBySection(visible, sections).filter((g) =>
+			ids.has(g.section.id),
+		);
+	}, [
+		baseVisible,
+		sections,
+		sectionsForVisibility,
+		fieldsForValidation,
+		watchedAnswers,
+	]);
 
-	const planned = useMemo(
-		() => planFormSections(grouped, false),
-		[grouped],
-	);
+	const planned = useMemo(() => planFormSections(grouped, false), [grouped]);
 
 	function onSubmit() {
 		toast.success("Pré-visualização válida! Nenhum dado foi enviado.");
@@ -207,13 +242,17 @@ export function FormPreview({
 											<FormItem className="w-full">
 												<FormLabel>
 													Nome completo{" "}
-													<span className="text-destructive ml-1">*</span>
+													<span className="text-destructive ml-1">
+														*
+													</span>
 												</FormLabel>
 												<FormControl>
 													<Input
 														placeholder="Fulano da Silva"
 														{...field}
-														value={field.value ?? ""}
+														value={
+															field.value ?? ""
+														}
 													/>
 												</FormControl>
 												<FormMessage />
@@ -226,7 +265,10 @@ export function FormPreview({
 										{p.group.rows.map((row, ri) => (
 											<div
 												key={
-													row.fields.map((f) => f.id).join("-") || `row-${ri}`
+													row.fields
+														.map((f) => f.id)
+														.join("-") ||
+													`row-${ri}`
 												}
 												className={
 													row.fields.length === 2
@@ -238,7 +280,9 @@ export function FormPreview({
 													<DynamicField
 														key={f.id}
 														field={f}
-														control={form.control as never}
+														control={
+															form.control as never
+														}
 														name={`answers.${f.key}`}
 													/>
 												))}
@@ -256,7 +300,9 @@ export function FormPreview({
 									<FormItem className="w-full">
 										<FormLabel>
 											Nome completo{" "}
-											<span className="text-destructive ml-1">*</span>
+											<span className="text-destructive ml-1">
+												*
+											</span>
 										</FormLabel>
 										<FormControl>
 											<Input

@@ -51,7 +51,9 @@ describe("ConfirmDialog", () => {
 			/>,
 		);
 
-		expect(screen.getByRole("button", { name: "Criando..." })).toBeDisabled();
+		expect(
+			screen.getByRole("button", { name: "Criando..." }),
+		).toBeDisabled();
 		expect(screen.getByRole("button", { name: "Cancelar" })).toBeDisabled();
 	});
 });

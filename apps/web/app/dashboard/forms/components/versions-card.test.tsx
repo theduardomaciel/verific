@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { VersionsCard } from "@/app/dashboard/forms/components/versions-card";
@@ -46,7 +52,9 @@ describe("VersionsCard delete", () => {
 		fireEvent.click(screen.getByRole("button", { name: /^excluir$/i }));
 		expect(screen.getByText("Excluir v2?")).toBeInTheDocument();
 
-		fireEvent.click(screen.getByRole("button", { name: /^excluir versão$/i }));
+		fireEvent.click(
+			screen.getByRole("button", { name: /^excluir versão$/i }),
+		);
 		await waitFor(() => expect(onDelete).toHaveBeenCalledWith(draft));
 	});
 

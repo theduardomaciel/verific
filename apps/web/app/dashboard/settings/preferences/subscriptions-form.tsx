@@ -99,14 +99,16 @@ export function ProjectSettingsSubscriptionsForm({ project }: Props) {
 												size={"lg"}
 											/>
 											<Label htmlFor="profilesEnabled">
-												Habilitar perfis de participantes
+												Habilitar perfis de
+												participantes
 											</Label>
 										</div>
 									</FormControl>
 									<p className="text-muted-foreground text-sm">
-										Com perfis ativos, cada inscrito ganha uma página
-										pública no evento a partir das respostas ligadas
-										no layout (Configurações → Perfil).
+										Com perfis ativos, cada inscrito ganha
+										uma página pública no evento a partir
+										das respostas ligadas no layout
+										(Configurações → Perfil).
 									</p>
 									<FormMessage />
 								</FormItem>

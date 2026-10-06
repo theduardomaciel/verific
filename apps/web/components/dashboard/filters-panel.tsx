@@ -8,16 +8,16 @@ import {
 export function FiltersPanel({ children }: { children: React.ReactNode }) {
 	return (
 		<Accordion
-			className="border rounded-md px-4 md:px-6"
+			className="rounded-md border px-4 md:px-6"
 			type="single"
 			defaultValue="main"
 			collapsible
 		>
 			<AccordionItem className="gap-9" value="main">
-				<AccordionTrigger className="px-y md:py-6 cursor-pointer font-semibold">
+				<AccordionTrigger className="px-y cursor-pointer font-semibold md:py-6">
 					Filtros
 				</AccordionTrigger>
-				<AccordionContent className="pb-4 md:pb-6 space-y-8">
+				<AccordionContent className="space-y-8 pb-4 md:pb-6">
 					{children}
 				</AccordionContent>
 			</AccordionItem>

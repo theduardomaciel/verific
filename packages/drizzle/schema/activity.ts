@@ -23,8 +23,8 @@ export const activity = pgTable("activities", {
 	name: text("name").notNull(),
 	description: text("description"),
 	bannerUrl: text("banner_url"),
-	isPublished: boolean("is_published").notNull().default(true),  // Controls if the activity is visible/discoverable to users
-	isRegistrationOpen: boolean("is_registration_open").notNull().default(true),  // Controls if users can sign up
+	isPublished: boolean("is_published").notNull().default(true), // Controls if the activity is visible/discoverable to users
+	isRegistrationOpen: boolean("is_registration_open").notNull().default(true), // Controls if users can sign up
 
 	audience: audienceEnum("audience").notNull().default("internal"),
 	category: categoryEnum("category").notNull().default("other"),

@@ -1,4 +1,4 @@
-import { z } from "@verific/zod"
+import { z } from "@verific/zod";
 
 // Nome
 const nameSchema = z.object({

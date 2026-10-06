@@ -139,7 +139,9 @@ export function ReportEventDialog({ className }: ReportEventDialogProps) {
 					</div>
 					<DialogFooter>
 						<DialogClose
-							className={cn(buttonVariants({ variant: "outline" }))}
+							className={cn(
+								buttonVariants({ variant: "outline" }),
+							)}
 						>
 							Cancelar
 						</DialogClose>

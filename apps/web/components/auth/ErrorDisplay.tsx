@@ -68,10 +68,7 @@ export function ErrorDisplay({ error }: { error?: string }) {
 	const errorObj = ERRORS[error as keyof typeof ERRORS] || ERRORS.default!;
 
 	return (
-		<Panel
-			type={errorObj.type}
-			showIcon
-		>
+		<Panel type={errorObj.type} showIcon>
 			{errorObj.content}
 		</Panel>
 	);

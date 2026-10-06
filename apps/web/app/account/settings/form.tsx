@@ -55,8 +55,7 @@ export function AccountSettingsGeneral() {
 	if (isError || !user) {
 		return (
 			<p className="text-muted-foreground text-sm">
-				Não foi possível carregar seus dados. Tente recarregar a
-				página.
+				Não foi possível carregar seus dados. Tente recarregar a página.
 			</p>
 		);
 	}

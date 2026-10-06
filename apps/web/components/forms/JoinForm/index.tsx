@@ -7,12 +7,15 @@ import { z } from "@verific/zod";
 
 // Components
 import { FormSection, SectionFooter } from "@/components/forms";
-import { Form, FormWrapper,
+import {
+	Form,
+	FormWrapper,
 	FormControl,
 	FormField,
 	FormItem,
 	FormLabel,
-	FormMessage } from "@/components/ui/form";
+	FormMessage,
+} from "@/components/ui/form";
 import { DynamicField } from "@/components/forms/dynamic/DynamicField";
 import {
 	ErrorDialog,
@@ -22,7 +25,11 @@ import {
 
 import { Input } from "@/components/ui/input";
 import JoinForm0 from "./Section0";
-import { isFilled,groupFieldsBySection,planFormSections } from "@/lib/forms/layout";
+import {
+	isFilled,
+	groupFieldsBySection,
+	planFormSections,
+} from "@/lib/forms/layout";
 import { Eye } from "lucide-react";
 import { isFieldLinked } from "@verific/drizzle/profile-layout";
 import { scrollToNextSection } from "@/lib/validations";
@@ -78,7 +85,10 @@ export default function JoinForm({
 	const fields = useMemo(() => formData?.fields ?? [], [formData]);
 	const sections = useMemo(() => formData?.sections ?? [], [formData]);
 
-	const baseVisibleFields = useMemo(() => fields.filter((f) => f.isVisible), [fields]);
+	const baseVisibleFields = useMemo(
+		() => fields.filter((f) => f.isVisible),
+		[fields],
+	);
 
 	const fieldsForValidation = useMemo(
 		() =>
@@ -102,7 +112,21 @@ export default function JoinForm({
 		() =>
 			sections.map((s) => ({
 				id: s.id,
-				visibilityRule: (s as { visibilityRule?: { sourceFieldId: string; operator: "is_checked" | "is_not_checked" | "equals" | "includes_any" | "includes_all"; values?: string[] } | null }).visibilityRule ?? null,
+				visibilityRule:
+					(
+						s as {
+							visibilityRule?: {
+								sourceFieldId: string;
+								operator:
+									| "is_checked"
+									| "is_not_checked"
+									| "equals"
+									| "includes_any"
+									| "includes_all";
+								values?: string[];
+							} | null;
+						}
+					).visibilityRule ?? null,
 			})),
 		[sections],
 	);
@@ -127,25 +151,25 @@ export default function JoinForm({
 	// submitted values on every validation, so required fields in hidden
 	// sections never block submit.
 	const resolver = useMemo(() => {
-		return async (
-			values: unknown,
-			context: unknown,
-			options: unknown,
-		) => {
-			const v = (values ?? {}) as { name?: unknown; answers?: Record<string, unknown> };
+		return async (values: unknown, context: unknown, options: unknown) => {
+			const v = (values ?? {}) as {
+				name?: unknown;
+				answers?: Record<string, unknown>;
+			};
 			const answers = (v.answers ?? {}) as Record<string, unknown>;
 			const answersSchema = buildAnswersSchema(
 				fieldsForValidation,
 				sectionsForVisibility,
 				answers,
 			);
-			const schema = z.object({ name: nameSchema, answers: answersSchema });
+			const schema = z.object({
+				name: nameSchema,
+				answers: answersSchema,
+			});
 			const zod = zodResolver(schema as never);
-			return (zod as (a: unknown, b: unknown, c: unknown) => Promise<unknown>)(
-				values,
-				context,
-				options,
-			) as never;
+			return (
+				zod as (a: unknown, b: unknown, c: unknown) => Promise<unknown>
+			)(values, context, options) as never;
 		};
 	}, [fieldsForValidation, sectionsForVisibility, nameSchema]);
 
@@ -164,7 +188,10 @@ export default function JoinForm({
 		if (!hasConditional) {
 			return {
 				visibleFields: baseVisibleFields,
-				groupedSections: groupFieldsBySection(baseVisibleFields, sections),
+				groupedSections: groupFieldsBySection(
+					baseVisibleFields,
+					sections,
+				),
 			};
 		}
 		const visible = filterVisibleFields(
@@ -175,10 +202,21 @@ export default function JoinForm({
 		// Keep trigger answers even when their section is hidden is handled
 		// by filterVisibleFields; just regroup.
 		const grouped = groupFieldsBySection(visible, sections).filter((g) =>
-			getVisibleSectionIds(sectionsForVisibility, fieldsForValidation, watchedAnswers as Record<string, unknown>).has(g.section.id),
+			getVisibleSectionIds(
+				sectionsForVisibility,
+				fieldsForValidation,
+				watchedAnswers as Record<string, unknown>,
+			).has(g.section.id),
 		);
 		return { visibleFields: visible, groupedSections: grouped };
-	}, [hasConditional, baseVisibleFields, sections, sectionsForVisibility, fieldsForValidation, watchedAnswers]);
+	}, [
+		hasConditional,
+		baseVisibleFields,
+		sections,
+		sectionsForVisibility,
+		fieldsForValidation,
+		watchedAnswers,
+	]);
 
 	const planned = useMemo(
 		() => planFormSections(groupedSections, false),
@@ -192,10 +230,15 @@ export default function JoinForm({
 			render={({ field }) => (
 				<FormItem className="w-full">
 					<FormLabel>
-						Nome completo <span className="text-destructive ml-1">*</span>
+						Nome completo{" "}
+						<span className="text-destructive ml-1">*</span>
 					</FormLabel>
 					<FormControl>
-						<Input placeholder="Fulano da Silva" {...field} value={field.value ?? ""} />
+						<Input
+							placeholder="Fulano da Silva"
+							{...field}
+							value={field.value ?? ""}
+						/>
 					</FormControl>
 					<FormMessage />
 				</FormItem>
@@ -210,7 +253,9 @@ export default function JoinForm({
 	useEffect(() => {
 		if (!hasConditional) return;
 		const allowed = new Set(visibleFields.map((f) => f.key));
-		const hidden = fieldsForValidation.map((f) => f.key).filter((k) => !allowed.has(k));
+		const hidden = fieldsForValidation
+			.map((f) => f.key)
+			.filter((k) => !allowed.has(k));
 		if (hidden.length > 0) {
 			form.clearErrors(hidden.map((k) => `answers.${k}` as never));
 		}
@@ -254,7 +299,11 @@ export default function JoinForm({
 		}
 		// Preserve in-memory, discard on submit: strip hidden-section answers.
 		const visible = hasConditional
-			? filterVisibleFields(fieldsForValidation, sectionsForVisibility, values.answers)
+			? filterVisibleFields(
+					fieldsForValidation,
+					sectionsForVisibility,
+					values.answers,
+				)
 			: fieldsForValidation;
 		const allowed = new Set(visible.map((f) => f.key));
 		const stripped: Record<string, unknown> = {};
@@ -265,11 +314,16 @@ export default function JoinForm({
 			const result = await submitMutation.mutateAsync({
 				projectId: project.id,
 				name: values.name,
-				answers: stripped as Record<string, string | number | boolean | string[] | null | undefined>,
+				answers: stripped as Record<
+					string,
+					string | number | boolean | string[] | null | undefined
+				>,
 			});
 			setCreatedShortId(result.shortId);
 		} catch (error) {
-			setErrorMessage(error instanceof Error ? error.message : "Erro desconhecido");
+			setErrorMessage(
+				error instanceof Error ? error.message : "Erro desconhecido",
+			);
 			setCurrentState("error");
 			return;
 		}
@@ -293,7 +347,10 @@ export default function JoinForm({
 							section={1}
 							form={form as unknown as GenericForm}
 							fields={[
-								{ name: "Nome completo", value: isFilled(watchedName) },
+								{
+									name: "Nome completo",
+									value: isFilled(watchedName),
+								},
 							]}
 						>
 							{nameField}
@@ -318,7 +375,11 @@ export default function JoinForm({
 								<div className="flex w-full flex-col gap-6">
 									{p.group.rows.map((row, ri) => (
 										<div
-											key={row.fields.map((f) => f.id).join("-") || `row-${ri}`}
+											key={
+												row.fields
+													.map((f) => f.id)
+													.join("-") || `row-${ri}`
+											}
 											className={
 												row.fields.length === 2
 													? "grid w-full grid-cols-1 gap-6 md:grid-cols-2"
@@ -332,13 +393,19 @@ export default function JoinForm({
 												>
 													<DynamicField
 														field={f}
-														control={form.control as never}
+														control={
+															form.control as never
+														}
 														name={`answers.${f.key}`}
 													/>
-													{isFieldLinked(layout, f.id) && (
+													{isFieldLinked(
+														layout,
+														f.id,
+													) && (
 														<p className="text-muted-foreground flex items-center gap-1 text-xs">
 															<Eye className="h-3 w-3" />
-															Visível no seu perfil
+															Visível no seu
+															perfil
 														</p>
 													)}
 												</div>
@@ -348,13 +415,19 @@ export default function JoinForm({
 								</div>
 								<SectionFooter
 									isFinalSection={
-										p.displayNumber === planned[planned.length - 1]?.displayNumber
+										p.displayNumber ===
+										planned[planned.length - 1]
+											?.displayNumber
 									}
 									onContinue={
 										p.displayNumber ===
-										planned[planned.length - 1]?.displayNumber
+										planned[planned.length - 1]
+											?.displayNumber
 											? undefined
-											: () => void handleContinueSection(p)
+											: () =>
+													void handleContinueSection(
+														p,
+													)
 									}
 								/>
 							</FormSection>
@@ -362,7 +435,10 @@ export default function JoinForm({
 					)}
 				</form>
 			</FormWrapper>
-			<LoadingDialog isOpen={currentState === "submitting"} title="Estamos realizando seu cadastro..." />
+			<LoadingDialog
+				isOpen={currentState === "submitting"}
+				title="Estamos realizando seu cadastro..."
+			/>
 			<SuccessDialog
 				isOpen={currentState === "submitted"}
 				onClose={() => {
@@ -381,7 +457,8 @@ export default function JoinForm({
 					<div className="flex flex-col items-center justify-center gap-4">
 						<span className="flex w-full sm:px-12">
 							🎉 Parabéns! <br /> Sua inscrição
-							{project.name ? ` em ${project.name}` : ""} foi confirmada com sucesso!
+							{project.name ? ` em ${project.name}` : ""} foi
+							confirmada com sucesso!
 						</span>
 					</div>
 				}
@@ -394,7 +471,9 @@ export default function JoinForm({
 					setCurrentState(false);
 					setErrorMessage(null);
 				}}
-				description={errorMessage || "Por favor, tente novamente mais tarde."}
+				description={
+					errorMessage || "Por favor, tente novamente mais tarde."
+				}
 			/>
 		</Form>
 	);

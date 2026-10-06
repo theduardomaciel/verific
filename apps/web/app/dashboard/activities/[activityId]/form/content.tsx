@@ -54,8 +54,7 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 		projectId,
 		activityId,
 	});
-	const selected =
-		activityVersions?.find((v) => v.id === versionId) ?? null;
+	const selected = activityVersions?.find((v) => v.id === versionId) ?? null;
 	const isPublished = !!selected?.isPublished;
 
 	const runEnsure = () => {
@@ -141,8 +140,8 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 					{selected && isPublished ? (
 						<div className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
 							<p className="text-sm">
-								Este formulário está publicado. Editar cria
-								uma nova versão; as respostas anteriores são
+								Este formulário está publicado. Editar cria uma
+								nova versão; as respostas anteriores são
 								mantidas.
 							</p>
 							<Button
