@@ -102,7 +102,9 @@ function HomeContent({
 				<div
 					className={`z-10 flex flex-1 flex-col items-start justify-center ${PAGE_X}`}
 				>
-					<EventContainer.Hero.Title>{projectName}</EventContainer.Hero.Title>
+					<EventContainer.Hero.Title>
+						{projectName}
+					</EventContainer.Hero.Title>
 					<Badge
 						className={cn(
 							"mb-4 rounded-xl px-4 py-1.5",
@@ -215,11 +217,19 @@ function PreviewHeader({
 				aria-label="Logo do evento (prévia)"
 			/>
 			<nav className="flex items-center gap-2 text-xs font-medium md:gap-4">
-				<span className={buttonVariants({ variant: "event-nav", size: "sm" })}>
+				<span
+					className={buttonVariants({
+						variant: "event-nav",
+						size: "sm",
+					})}
+				>
 					Sobre
 				</span>
 				<span
-					className={buttonVariants({ variant: "event-nav", size: "sm" })}
+					className={buttonVariants({
+						variant: "event-nav",
+						size: "sm",
+					})}
 					aria-current="page"
 				>
 					Programação
@@ -249,7 +259,7 @@ function PreviewHeader({
 			    em posição absoluta dentro do container do preview. */}
 			<div
 				className={cn(
-					"bg-(--ev-mobile-menu-bg) text-(--ev-mobile-menu-fg) absolute inset-x-0 top-full z-20 flex h-96 flex-col items-start justify-center gap-8 px-8 transition-opacity",
+					"absolute inset-x-0 top-full z-20 flex h-96 flex-col items-start justify-center gap-8 bg-(--ev-mobile-menu-bg) px-8 text-(--ev-mobile-menu-fg) transition-opacity",
 					menuOpen ? "opacity-100" : "pointer-events-none opacity-0",
 				)}
 			>
@@ -289,7 +299,10 @@ export function ThemePreview({ draft, projectName }: ThemePreviewProps) {
 	return (
 		<div className="flex min-w-0 flex-col gap-3">
 			<div className="flex items-center justify-between gap-2">
-				<Tabs value={tab} onValueChange={(v) => setTab(v as PreviewTab)}>
+				<Tabs
+					value={tab}
+					onValueChange={(v) => setTab(v as PreviewTab)}
+				>
 					<TabsList className="grid w-full grid-cols-3">
 						<TabsTrigger value="inicio">Início</TabsTrigger>
 						<TabsTrigger value="inscricao">Inscrição</TabsTrigger>
@@ -300,10 +313,14 @@ export function ThemePreview({ draft, projectName }: ThemePreviewProps) {
 					variant="outline"
 					size="icon"
 					title={
-						dark ? "Ver prévia no modo claro" : "Ver prévia no modo escuro"
+						dark
+							? "Ver prévia no modo claro"
+							: "Ver prévia no modo escuro"
 					}
 					aria-label={
-						dark ? "Ver prévia no modo claro" : "Ver prévia no modo escuro"
+						dark
+							? "Ver prévia no modo claro"
+							: "Ver prévia no modo escuro"
 					}
 					onClick={() => setDark((d) => !d)}
 				>
@@ -313,9 +330,13 @@ export function ThemePreview({ draft, projectName }: ThemePreviewProps) {
 
 			{/* Um único "navegador": header + conteúdo + footer, rolando por dentro.
 			    translateZ(0) faz descendentes `fixed` se posicionarem em relação a ele.
-			    O invólucro `min-h-full` ancora os efeitos (topo/fundo) na altura
-			    total do conteúdo: direto no rolador, o `inset-0` cobriria só a
-			    caixa visível e o gradiente inferior não chegaria ao rodapé. */}
+			    O invólucro ancora os efeitos (topo/fundo) na altura total do
+			    conteúdo: direto no rolador, o `inset-0` cobriria só a caixa
+			    visível e o gradiente inferior não chegaria ao rodapé.
+			    Importante: o invólucro NÃO usa `flex-1` (basis 0 o prenderia à
+			    altura visível, deixando o conteúdo transbordar). Com basis
+			    `auto` + `shrink-0` ele cresce com o conteúdo, e `min-h-full`
+			    garante pelo menos a altura da caixa. */}
 			<div
 				className={cn(
 					"bg-background text-foreground relative isolate flex h-[70dvh] min-h-[480px] transform-[translateZ(0)] flex-col overflow-x-hidden overflow-y-auto rounded-2xl border lg:h-[calc(100dvh-11rem)]",
@@ -323,7 +344,7 @@ export function ThemePreview({ draft, projectName }: ThemePreviewProps) {
 				)}
 				style={cssVars as React.CSSProperties}
 			>
-				<div className="relative flex min-h-full flex-1 flex-col">
+				<div className="relative flex min-h-full shrink-0 flex-col">
 					<EventBackgroundEffects />
 
 					<PreviewHeader
@@ -333,31 +354,39 @@ export function ThemePreview({ draft, projectName }: ThemePreviewProps) {
 
 					<main className="relative z-10 flex-1">
 						{tab === "inicio" && (
-							<HomeContent draft={draft} projectName={projectName} />
+							<HomeContent
+								draft={draft}
+								projectName={projectName}
+							/>
 						)}
 						{tab === "inscricao" && (
-							<SubscribeContent draft={draft} projectName={projectName} />
+							<SubscribeContent
+								draft={draft}
+								projectName={projectName}
+							/>
 						)}
 						{tab === "perfil" && <ProfileContent />}
 					</main>
 
-				<footer className="relative z-10 shrink-0 px-4 py-4 md:px-8">
-					<div
-						className="rounded-full px-4 py-3 md:px-8"
-						style={{
-							background: "var(--ev-footer-bg)",
-							color: "var(--ev-footer-fg)",
-						}}
-					>
-						<div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-							<span>Feito com tecnologia verifIC (prévia)</span>
-							<span className="text-(--ev-footer-fg-soft)">
-								Copyright 2026 verifIC. Todos os direitos
-								reservados
-							</span>
+					<footer className="relative z-10 shrink-0 px-4 py-4 md:px-8">
+						<div
+							className="rounded-full px-4 py-3 md:px-8"
+							style={{
+								background: "var(--ev-footer-bg)",
+								color: "var(--ev-footer-fg)",
+							}}
+						>
+							<div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+								<span>
+									Feito com tecnologia verifIC (prévia)
+								</span>
+								<span className="text-(--ev-footer-fg-soft)">
+									Copyright 2026 verifIC. Todos os direitos
+									reservados
+								</span>
+							</div>
 						</div>
-					</div>
-				</footer>
+					</footer>
 				</div>
 			</div>
 		</div>
