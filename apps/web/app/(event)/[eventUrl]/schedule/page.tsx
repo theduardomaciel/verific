@@ -7,6 +7,7 @@ import { ScheduleLoading } from "./content-skeleton";
 import { ScheduleWrapper } from "@/components/schedule-wrapper";
 import { SchedulePageSkeleton } from "./skeleton";
 import { getProject } from "@/lib/data";
+import { parseEventTheme } from "@verific/drizzle/theme";
 
 interface Props {
 	params: Promise<{ eventUrl: string }>;
@@ -17,9 +18,14 @@ type SchedulePageProject = NonNullable<
 >["project"];
 
 function SchedulePageBody({ project }: { project: SchedulePageProject }) {
+	const theme = parseEventTheme({
+		theme: (project as { theme?: unknown }).theme,
+		primaryColor: project.primaryColor,
+		secondaryColor: project.secondaryColor,
+	});
 	return (
 		<EventContainer.Holder>
-			<EventContainer.Hero coverUrl={project.coverUrl}>
+			<EventContainer.Hero coverUrl={project.coverUrl} showImage={theme.hero.image}>
 				<div className="z-10 flex flex-1 flex-col items-start justify-center">
 					<EventContainer.Hero.Meta>
 						<Calendar className="mr-2 h-4.5 w-4.5" />

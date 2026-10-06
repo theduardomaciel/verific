@@ -18,6 +18,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EventAction } from "@/components/event-action";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EVENT_BADGE_COLORS } from "@/components/landing/event-nav";
+import { cn } from "@/lib/utils";
+import { parseEventTheme } from "@verific/drizzle/theme";
 
 // Components
 import * as EventContainer from "@/components/landing/event-container";
@@ -54,10 +57,15 @@ type EventPageProject = NonNullable<
 
 function EventPageBody({ project }: { project: EventPageProject }) {
 	const eventUrl = project.url;
+	const theme = parseEventTheme({
+		theme: (project as { theme?: unknown }).theme,
+		primaryColor: project.primaryColor,
+		secondaryColor: project.secondaryColor,
+	});
 
 	return (
 		<EventContainer.Holder>
-			<EventContainer.Hero coverUrl={project.coverUrl}>
+			<EventContainer.Hero coverUrl={project.coverUrl} showImage={theme.hero.image}>
 				<div className="z-10 flex flex-1 flex-col items-start justify-center">
 					<EventContainer.Hero.Title>{project.name}</EventContainer.Hero.Title>
 					<EventContainer.Hero.Meta className="mb-6">
@@ -72,14 +80,14 @@ function EventPageBody({ project }: { project: EventPageProject }) {
 					<div className="mb-8 flex flex-wrap gap-3">
 						<Badge
 							variant={"secondary"}
-							className="rounded-xl bg-white px-4 py-3 text-neutral-900"
+							className={cn("rounded-xl px-4 py-3", EVENT_BADGE_COLORS)}
 						>
 							<Check className="mr-2 !h-4 !w-4" />
 							<span>Aberto para o público externo</span>
 						</Badge>
 						<Badge
 							variant={"secondary"}
-							className="rounded-xl bg-white px-4 py-3 text-neutral-900"
+							className={cn("rounded-xl px-4 py-3", EVENT_BADGE_COLORS)}
 						>
 							<TicketCheck className="mr-2 !h-4 !w-4" />
 							<span>Emite certificado</span>

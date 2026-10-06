@@ -4,16 +4,21 @@ import { z } from "@verific/zod";
  * Tema por evento (JSON versionado em `projects.theme`).
  *
  * Eventos seguem a preferência de cor do visitante (`next-themes`), então
- * não existe um par light/dark de cores: o mesmo primary/secondary vale
- * para os dois modos e variantes seriam dados mortos. Cores de texto sobre
+ * cores hex não têm variantes light/dark: o mesmo primary/secondary vale
+ * para os dois modos. O único valor sensível ao modo é uma *seleção de
+ * papel* (`content.accentDark`): "neutro" (`foreground`/`background`) já
+ * resolve diferente por modo via `var(--foreground)`/`var(--background)`,
+ * então nenhum hex por modo precisa ser armazenado. Cores de texto sobre
  * as cores do tema (`onPrimary`/`onSecondary`, tokens da navegação, etc.)
  * nunca são armazenadas: são derivadas server-side por contraste WCAG AA.
  *
- * O texto da capa é sempre branco (o fundo é uma imagem, não uma cor de
- * tema); o que o organizador escolhe é a cor do véu sobre a capa
- * (`hero.overlayColor`), escurecida automaticamente até ficar legível.
+ * A capa com imagem tem texto sempre branco (o fundo é uma imagem, não uma
+ * cor de tema); o que o organizador escolhe é a cor do véu sobre a capa
+ * (`hero.overlayColor`), escurecida automaticamente até ficar legível. Sem
+ * imagem (`hero.image: false`), a capa não renderiza fundo nem véu e o
+ * texto herda a cor da página.
  */
-export const THEME_VERSION = 1 as const;
+export const THEME_VERSION = 2 as const;
 
 const hexColor = z
 	.string()
@@ -31,8 +36,23 @@ export type FontPreset = z.infer<typeof fontPresetSchema>;
 export const themeRoleSchema = z.enum(["primary", "secondary"]);
 export type ThemeRole = z.infer<typeof themeRoleSchema>;
 
-/** Origens de cor para paradas de gradiente (permite fade p/ transparente). */
-export const gradientStopSchema = z.enum(["primary", "secondary", "transparent"]);
+/** Origens de cor para paradas de gradiente, efeitos e papéis de conteúdo.
+ * `foreground` = neutro (texto da página: escuro no claro, claro no
+ * escuro); `background` = fundo da página (claro no claro, quase-preto no
+ * escuro) — ambos resolvem por modo via variáveis CSS, sem config extra. */
+export const themeColorSourceSchema = z.enum([
+	"primary",
+	"secondary",
+	"foreground",
+	"background",
+]);
+export type ThemeColorSource = z.infer<typeof themeColorSourceSchema>;
+
+/** Uma parada de gradiente: cor (papel do tema) + opacidade própria. */
+export const gradientStopSchema = z.object({
+	color: themeColorSourceSchema.default("primary"),
+	opacity: z.number().min(0).max(1).default(1),
+});
 export type GradientStop = z.infer<typeof gradientStopSchema>;
 
 /** Origens de cor para efeitos de fundo (inclui neutro do tema). */
@@ -54,12 +74,16 @@ export type SkeletonBg = z.infer<typeof skeletonBgSchema>;
 export const heroOverlayColorSchema = z.enum(["primary", "secondary", "dark"]);
 export type HeroOverlayColor = z.infer<typeof heroOverlayColorSchema>;
 
-const gradientEndSchema = z.object({
-	height: z.number().int().min(0).max(600).default(240),
-	from: gradientStopSchema.default("primary"),
-	to: gradientStopSchema.default("secondary"),
-	opacity: z.number().min(0).max(1).default(0.35),
+const gradientSchema = z.object({
+	// `"hero"`: acompanha cabeçalho + capa (a altura real varia por
+	// conteúdo/tela, então nenhum valor fixo serve); número: altura fixa.
+	height: z
+		.union([z.literal("hero"), z.number().int().min(0).max(1200)])
+		.default(240),
+	from: gradientStopSchema.default({ color: "primary", opacity: 1 }),
+	to: gradientStopSchema.default({ color: "secondary", opacity: 1 }),
 });
+export type PageGradient = z.infer<typeof gradientSchema>;
 
 export const eventThemeSchema = z.object({
 	version: z.literal(THEME_VERSION).default(THEME_VERSION),
@@ -89,24 +113,45 @@ export const eventThemeSchema = z.object({
 		.default({ bg: "secondary" }),
 	content: z
 		.object({
-			accent: themeRoleSchema.default("primary"),
+			// Superfícies de "conteúdo": navegação ativa e selos da capa.
+			// `accentDark` (opcional) permite primária no claro e neutra no
+			// escuro; `null` = igual ao `accent` nos dois modos.
+			accent: effectColorSchema.default("primary"),
+			accentDark: effectColorSchema.nullable().default(null),
 			skeleton: skeletonBgSchema.default("muted"),
 		})
-		.default({ accent: "primary", skeleton: "muted" }),
+		.default({ accent: "primary", accentDark: null, skeleton: "muted" }),
 	hero: z
 		.object({
+			// `false`: sem imagem de capa — a capa não renderiza fundo nem
+			// véu e o texto herda a cor da página (só o gradiente dá o tom).
+			image: z.boolean().default(true),
 			overlayColor: heroOverlayColorSchema.default("primary"),
 			overlayOpacity: z.number().min(0).max(0.85).default(0.45),
+			// Filete na borda inferior da capa; `null` = sem filete (padrão
+			// atual — temas antigos não ganham faixa sozinhos).
+			border: z
+				.object({
+					width: z.number().int().min(1).max(16).default(4),
+					color: effectColorSchema.default("secondary"),
+				})
+				.nullable()
+				.default(null),
 		})
-		.default({ overlayColor: "primary", overlayOpacity: 0.45 }),
+		.default({
+			image: true,
+			overlayColor: "primary",
+			overlayOpacity: 0.45,
+			border: null,
+		}),
 	page: z
 		.object({
 			effect: z.enum(["none", "grid", "dots", "solid"]).default("none"),
 			effectSize: z.number().int().min(8).max(96).default(32),
 			effectOpacity: z.number().min(0).max(0.5).default(0.12),
 			effectColor: effectColorSchema.default("primary"),
-			topGradient: gradientEndSchema.nullable().default(null),
-			bottomGradient: gradientEndSchema.nullable().default(null),
+			topGradient: gradientSchema.nullable().default(null),
+			bottomGradient: gradientSchema.nullable().default(null),
 		})
 		.default({
 			effect: "none",

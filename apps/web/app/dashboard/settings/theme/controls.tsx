@@ -26,9 +26,10 @@ import {
 	type EffectColor,
 	type EventTheme,
 	type FontPreset,
-	type GradientStop,
 	type HeroOverlayColor,
+	type PageGradient,
 	type SkeletonBg,
+	type ThemeColorSource,
 	type ThemeRole,
 } from "@verific/drizzle/theme";
 import {
@@ -208,10 +209,23 @@ const ROLE_OPTIONS: Array<{ value: ThemeRole; label: string }> = [
 	{ value: "secondary", label: "Secundária" },
 ];
 
-const GRADIENT_STOP_OPTIONS: Array<{ value: GradientStop; label: string }> = [
+/**
+ * Origens de cor (papéis do tema, nunca hex): primária, secundária, neutra
+ * (`foreground`, resolve por modo) e fundo da página (`background`, também
+ * por modo — o que permite o mesmo gradiente no claro e no escuro).
+ */
+const SOURCE_OPTIONS: Array<{ value: ThemeColorSource; label: string }> = [
 	{ value: "primary", label: "Primária" },
 	{ value: "secondary", label: "Secundária" },
-	{ value: "transparent", label: "Transparente" },
+	{ value: "foreground", label: "Neutra" },
+	{ value: "background", label: "Fundo" },
+];
+
+/** Destaque do conteúdo e cor do filete: papéis sem o fundo da página. */
+const ACCENT_OPTIONS: Array<{ value: EffectColor; label: string }> = [
+	{ value: "primary", label: "Primária" },
+	{ value: "secondary", label: "Secundária" },
+	{ value: "foreground", label: "Neutra" },
 ];
 
 const EFFECT_COLOR_OPTIONS: Array<{ value: EffectColor; label: string }> = [
@@ -219,7 +233,6 @@ const EFFECT_COLOR_OPTIONS: Array<{ value: EffectColor; label: string }> = [
 	{ value: "secondary", label: "Secundária" },
 	{ value: "foreground", label: "Texto (neutro)" },
 ];
-
 const SKELETON_OPTIONS: Array<{ value: SkeletonBg; label: string }> = [
 	{ value: "muted", label: "Neutra" },
 	{ value: "primary", label: "Primária" },
@@ -234,6 +247,55 @@ const HERO_OVERLAY_OPTIONS: Array<{
 	{ value: "secondary", label: "Secundária" },
 	{ value: "dark", label: "Escura" },
 ];
+
+/**
+ * Controle reutilizável de origem de cor: botões de amostra (Primária /
+ * Secundária / Neutra / Fundo) mais um slider opcional de opacidade. Usado
+ * nas paradas dos gradientes, na cor do filete da capa e no destaque do
+ * conteúdo — nunca seletores hex aqui, só papéis do tema.
+ */
+function ColorSourceRow<T extends string>({
+	label,
+	value,
+	onChange,
+	options,
+	swatches,
+	opacity,
+	opacityLabel,
+	onOpacityChange,
+}: {
+	label: string;
+	value: T;
+	onChange: (v: T) => void;
+	options: Array<{ value: T; label: string }>;
+	swatches?: Partial<Record<T, string | null>>;
+	opacity?: number;
+	opacityLabel?: string;
+	onOpacityChange?: (v: number) => void;
+}) {
+	return (
+		<div className="flex flex-col gap-1">
+			<RoleRow
+				label={label}
+				value={value}
+				options={options}
+				swatches={swatches}
+				onChange={onChange}
+			/>
+			{opacity !== undefined && onOpacityChange && (
+				<RangeRow
+					label={opacityLabel ?? "Opacidade"}
+					value={opacity}
+					min={0}
+					max={1}
+					step={0.05}
+					onChange={onOpacityChange}
+					format={(v) => `${Math.round(v * 100)}%`}
+				/>
+			)}
+		</div>
+	);
+}
 
 function RangeRow({
 	label,
@@ -456,7 +518,8 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 	const gradientSwatches = {
 		primary: draft.primary,
 		secondary: draft.secondary,
-		transparent: null,
+		foreground: "var(--foreground)",
+		background: "var(--background)",
 	} as const;
 	const effectSwatches = {
 		primary: draft.primary,
@@ -653,15 +716,44 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 						swatches={roleSwatches}
 						onChange={(bg) => patch({ buttons: { bg } })}
 					/>
-					<RoleRow
+					<ColorSourceRow
 						label="Destaque do conteúdo"
 						value={draft.content.accent}
-						options={ROLE_OPTIONS}
-						swatches={roleSwatches}
+						options={ACCENT_OPTIONS}
+						swatches={effectSwatches}
 						onChange={(accent) =>
 							patch({ content: { ...draft.content, accent } })
 						}
 					/>
+					<div className="flex flex-wrap items-center justify-between gap-2">
+						<Label>Diferente no modo escuro</Label>
+						<Switch
+							checked={draft.content.accentDark !== null}
+							onCheckedChange={(checked) =>
+								patch({
+									content: {
+										...draft.content,
+										accentDark: checked ? "foreground" : null,
+									},
+								})
+							}
+						/>
+					</div>
+					{draft.content.accentDark !== null && (
+						<ColorSourceRow
+							label="Destaque no escuro"
+							value={draft.content.accentDark}
+							options={ACCENT_OPTIONS}
+							swatches={effectSwatches}
+							onChange={(accentDark) =>
+								patch({ content: { ...draft.content, accentDark } })
+							}
+						/>
+					)}
+					<p className="text-muted-foreground text-xs">
+						Navegação ativa e selos da capa. O texto sobre o destaque
+						é derivado por contraste.
+					</p>
 					<RoleRow
 						label="Cor dos carregamentos"
 						value={draft.content.skeleton}
@@ -695,36 +787,108 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 					</span>
 				</AccordionTrigger>
 				<AccordionContent className="flex flex-col gap-4">
-					<RoleRow
-						label="Cor sobre a capa"
-						value={draft.hero.overlayColor}
-						options={HERO_OVERLAY_OPTIONS}
-						/*
-						 * Amostra o tom realmente aplicado: a cor escolhida
-						 * escurecida até passar AA contra o branco.
-						 */
-						swatches={heroSwatches}
-						onChange={(overlayColor) =>
-							patch({
-								hero: { ...draft.hero, overlayColor },
-							})
-						}
-					/>
-					<RangeRow
-						label="Intensidade da cor"
-						value={draft.hero.overlayOpacity}
-						min={0}
-						max={0.85}
-						step={0.05}
-						onChange={(overlayOpacity) =>
-							patch({ hero: { ...draft.hero, overlayOpacity } })
-						}
-						format={(v) => `${Math.round(v * 100)}%`}
-					/>
-					<p className="text-muted-foreground text-xs">
-						O texto da capa é sempre branco; a cor é escurecida
-						automaticamente para manter a leitura.
-					</p>
+					<div className="flex flex-wrap items-center justify-between gap-2">
+						<Label>Mostrar imagem da capa</Label>
+						<Switch
+							checked={draft.hero.image}
+							onCheckedChange={(image) =>
+								patch({ hero: { ...draft.hero, image } })
+							}
+						/>
+					</div>
+					{!draft.hero.image && (
+						<p className="text-muted-foreground text-xs">
+							Sem imagem, a capa não tem fundo nem véu: o tom vem do
+							gradiente superior (altura “capa”) e o texto segue a
+							página.
+						</p>
+					)}
+					{draft.hero.image && (
+						<>
+							<RoleRow
+								label="Cor sobre a capa"
+								value={draft.hero.overlayColor}
+								options={HERO_OVERLAY_OPTIONS}
+								/*
+								 * Amostra o tom realmente aplicado: a cor escolhida
+								 * escurecida até passar AA contra o branco.
+								 */
+								swatches={heroSwatches}
+								onChange={(overlayColor) =>
+									patch({
+										hero: { ...draft.hero, overlayColor },
+									})
+								}
+							/>
+							<RangeRow
+								label="Intensidade da cor"
+								value={draft.hero.overlayOpacity}
+								min={0}
+								max={0.85}
+								step={0.05}
+								onChange={(overlayOpacity) =>
+									patch({ hero: { ...draft.hero, overlayOpacity } })
+								}
+								format={(v) => `${Math.round(v * 100)}%`}
+							/>
+							<p className="text-muted-foreground text-xs">
+								O texto da capa é sempre branco; a cor é escurecida
+								automaticamente para manter a leitura.
+							</p>
+						</>
+					)}
+					<div className="flex flex-col gap-3 rounded-lg border p-3">
+						<div className="flex flex-wrap items-center justify-between gap-2">
+							<Label>Filete inferior</Label>
+							<Switch
+								checked={draft.hero.border !== null}
+								onCheckedChange={(checked) =>
+									patch({
+										hero: {
+											...draft.hero,
+											border: checked
+												? { width: 4, color: "secondary" as const }
+												: null,
+										},
+									})
+								}
+							/>
+						</div>
+						{draft.hero.border && (
+							<>
+								<RangeRow
+									label="Espessura"
+									value={draft.hero.border.width}
+									min={1}
+									max={16}
+									step={1}
+									onChange={(width) =>
+										patch({
+											hero: {
+												...draft.hero,
+												border: { ...draft.hero.border!, width },
+											},
+										})
+									}
+									format={(v) => `${v}px`}
+								/>
+								<ColorSourceRow
+									label="Cor"
+									value={draft.hero.border.color}
+									options={ACCENT_OPTIONS}
+									swatches={effectSwatches}
+									onChange={(color) =>
+										patch({
+											hero: {
+												...draft.hero,
+												border: { ...draft.hero.border!, color },
+											},
+										})
+									}
+								/>
+							</>
+						)}
+					</div>
 					<SectionReset
 						visible={changed.hero}
 						onReset={() => patch({ hero: DEFAULT_THEME.hero })}
@@ -822,6 +986,7 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 							patch({ page: { ...draft.page, bottomGradient } })
 						}
 						swatches={gradientSwatches}
+						allowHeroHeight={false}
 					/>
 					<SectionReset
 						visible={changed.fundo}
@@ -873,19 +1038,22 @@ function GradientRow({
 	value,
 	onChange,
 	swatches,
+	allowHeroHeight = true,
 }: {
 	label: string;
 	value: EventTheme["page"]["topGradient"];
 	onChange: (v: EventTheme["page"]["topGradient"]) => void;
-	swatches: Partial<Record<GradientStop, string | null>>;
+	swatches: Partial<Record<ThemeColorSource, string | null>>;
+	/** Só o gradiente superior acompanha a capa; o inferior é sempre fixo. */
+	allowHeroHeight?: boolean;
 }) {
 	const enabled = value !== null;
-	const g = value ?? {
+	const g: PageGradient = value ?? {
 		height: 240,
-		from: "primary" as const,
-		to: "secondary" as const,
-		opacity: 0.35,
+		from: { color: "primary", opacity: 0.35 },
+		to: { color: "secondary", opacity: 0.35 },
 	};
+	const heroHeight = allowHeroHeight && g.height === "hero";
 	return (
 		<div className="flex flex-col gap-3 rounded-lg border p-3">
 			<div className="flex items-center justify-between gap-2">
@@ -899,37 +1067,61 @@ function GradientRow({
 			</div>
 			{enabled && (
 				<>
-					<RangeRow
-						label="Altura"
-						value={g.height}
-						min={0}
-						max={600}
-						step={20}
-						onChange={(height) => onChange({ ...g, height })}
-						format={(v) => `${v}px`}
-					/>
-					<RangeRow
-						label="Opacidade"
-						value={g.opacity}
-						min={0}
-						max={1}
-						step={0.05}
-						onChange={(opacity) => onChange({ ...g, opacity })}
-						format={(v) => `${Math.round(v * 100)}%`}
-					/>
-					<RoleRow
+					{allowHeroHeight && (
+						<div className="flex flex-wrap items-center justify-between gap-2">
+							<Label>Altura acompanha a capa</Label>
+							<Switch
+								checked={heroHeight}
+								onCheckedChange={(checked) =>
+									onChange({ ...g, height: checked ? "hero" : 240 })
+								}
+							/>
+						</div>
+					)}
+					{!heroHeight && (
+						<RangeRow
+							label="Altura"
+							value={typeof g.height === "number" ? g.height : 240}
+							min={0}
+							max={1200}
+							step={20}
+							onChange={(height) => onChange({ ...g, height })}
+							format={(v) => `${v}px`}
+						/>
+					)}
+					{heroHeight && (
+						<p className="text-muted-foreground text-xs">
+							A capa desenha o gradiente do topo da página até o
+							filete, em qualquer tamanho de tela.
+						</p>
+					)}
+					<ColorSourceRow
 						label="De"
-						value={g.from}
-						options={GRADIENT_STOP_OPTIONS}
+						value={g.from.color}
+						options={SOURCE_OPTIONS}
 						swatches={swatches}
-						onChange={(from) => onChange({ ...g, from })}
+						onChange={(color) =>
+							onChange({ ...g, from: { ...g.from, color } })
+						}
+						opacity={g.from.opacity}
+						opacityLabel="Opacidade inicial"
+						onOpacityChange={(opacity) =>
+							onChange({ ...g, from: { ...g.from, opacity } })
+						}
 					/>
-					<RoleRow
+					<ColorSourceRow
 						label="Para"
-						value={g.to}
-						options={GRADIENT_STOP_OPTIONS}
+						value={g.to.color}
+						options={SOURCE_OPTIONS}
 						swatches={swatches}
-						onChange={(to) => onChange({ ...g, to })}
+						onChange={(color) =>
+							onChange({ ...g, to: { ...g.to, color } })
+						}
+						opacity={g.to.opacity}
+						opacityLabel="Opacidade final"
+						onOpacityChange={(opacity) =>
+							onChange({ ...g, to: { ...g.to, opacity } })
+						}
 					/>
 				</>
 			)}

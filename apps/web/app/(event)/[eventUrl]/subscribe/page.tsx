@@ -6,6 +6,7 @@ import { Calendar } from "lucide-react";
 import * as EventContainer from "@/components/landing/event-container";
 import { SubscribeGate } from "@/components/subscribe-gate";
 import { SubscribePageSkeleton } from "./skeleton";
+import { parseEventTheme } from "@verific/drizzle/theme";
 
 import { getEventRegistration, getProject } from "@/lib/data";
 
@@ -34,10 +35,16 @@ export default async function EventSubscribePage({
 		redirect(`/${eventUrl}`);
 	}
 
+	const theme = parseEventTheme({
+		theme: (project as { theme?: unknown }).theme,
+		primaryColor: project.primaryColor,
+		secondaryColor: project.secondaryColor,
+	});
+
 	return (
 		<Suspense fallback={<SubscribePageSkeleton />}>
 			<EventContainer.Holder>
-				<EventContainer.Hero coverUrl={project.coverUrl}>
+				<EventContainer.Hero coverUrl={project.coverUrl} showImage={theme.hero.image}>
 					<div className="z-10 flex flex-1 flex-col items-center justify-center">
 						<EventContainer.Hero.Title className="text-center">
 							Inscreva-se em <br />
