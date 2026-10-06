@@ -55,6 +55,11 @@ const HEADER_H = "5.25rem";
  * O gradiente superior com `height: "hero"` vive aqui (não nos efeitos da
  * página): atrás de tudo, do topo da página até a borda inferior da capa,
  * onde o filete (`--ev-hero-border`) o encobre e ele "termina" com precisão.
+ *
+ * A camada do gradiente é posicionada sem `z-index` de propósito: assim ela
+ * pinta acima do fundo opaco da página (`bg-background` do `Holder`, que
+ * engoliria um `z` negativo) e abaixo do cabeçalho (`z-50`), dos efeitos
+ * (`z-0`, anteriores no DOM) e do conteúdo da capa (posterior/`z-10`).
  */
 function HeroRoot({ children, coverUrl, showImage = true }: HeroProps) {
 	return (
@@ -68,7 +73,7 @@ function HeroRoot({ children, coverUrl, showImage = true }: HeroProps) {
 			{/* Gradiente "hero": inerte (`none`) salvo com `height: "hero"`. */}
 			<div
 				aria-hidden
-				className="pointer-events-none absolute inset-x-0 bottom-0 -z-10"
+				className="pointer-events-none absolute inset-x-0 bottom-0"
 				style={{
 					top: `calc(-1 * ${HEADER_H})`,
 					backgroundImage: "var(--ev-hero-bg, none)",

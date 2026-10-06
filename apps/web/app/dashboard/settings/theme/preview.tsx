@@ -312,7 +312,10 @@ export function ThemePreview({ draft, projectName }: ThemePreviewProps) {
 			</div>
 
 			{/* Um único "navegador": header + conteúdo + footer, rolando por dentro.
-			    translateZ(0) faz descendentes `fixed` se posicionarem em relação a ele. */}
+			    translateZ(0) faz descendentes `fixed` se posicionarem em relação a ele.
+			    O invólucro `min-h-full` ancora os efeitos (topo/fundo) na altura
+			    total do conteúdo: direto no rolador, o `inset-0` cobriria só a
+			    caixa visível e o gradiente inferior não chegaria ao rodapé. */}
 			<div
 				className={cn(
 					"bg-background text-foreground relative isolate flex h-[70dvh] min-h-[480px] transform-[translateZ(0)] flex-col overflow-x-hidden overflow-y-auto rounded-2xl border lg:h-[calc(100dvh-11rem)]",
@@ -320,22 +323,23 @@ export function ThemePreview({ draft, projectName }: ThemePreviewProps) {
 				)}
 				style={cssVars as React.CSSProperties}
 			>
-				<EventBackgroundEffects />
+				<div className="relative flex min-h-full flex-1 flex-col">
+					<EventBackgroundEffects />
 
-				<PreviewHeader
-					menuOpen={menuOpen}
-					onToggleMenu={() => setMenuOpen((o) => !o)}
-				/>
+					<PreviewHeader
+						menuOpen={menuOpen}
+						onToggleMenu={() => setMenuOpen((o) => !o)}
+					/>
 
-				<main className="relative z-10 flex-1">
-					{tab === "inicio" && (
-						<HomeContent draft={draft} projectName={projectName} />
-					)}
-					{tab === "inscricao" && (
-						<SubscribeContent draft={draft} projectName={projectName} />
-					)}
-					{tab === "perfil" && <ProfileContent />}
-				</main>
+					<main className="relative z-10 flex-1">
+						{tab === "inicio" && (
+							<HomeContent draft={draft} projectName={projectName} />
+						)}
+						{tab === "inscricao" && (
+							<SubscribeContent draft={draft} projectName={projectName} />
+						)}
+						{tab === "perfil" && <ProfileContent />}
+					</main>
 
 				<footer className="relative z-10 shrink-0 px-4 py-4 md:px-8">
 					<div
@@ -354,6 +358,7 @@ export function ThemePreview({ draft, projectName }: ThemePreviewProps) {
 						</div>
 					</div>
 				</footer>
+				</div>
 			</div>
 		</div>
 	);
