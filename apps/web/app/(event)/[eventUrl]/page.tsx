@@ -116,6 +116,7 @@ function EventPageBody({ project }: { project: EventPageProject }) {
 						height={240}
 						sizes="(max-width: 768px) 100vw, 400px"
 						className="border-primary max-w-md overflow-hidden rounded-3xl border-2"
+						loading="eager"
 					/>
 					<ShareDialog
 						url={`${env.NEXT_PUBLIC_VERCEL_URL}/${project.url}`}

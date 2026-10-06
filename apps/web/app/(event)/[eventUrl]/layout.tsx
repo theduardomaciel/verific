@@ -114,6 +114,7 @@ function EventLogo({ light, dark, href }: EventLogoProps) {
 				height={28}
 				alt="Event logo"
 				className={dark ? "h-8 w-auto dark:hidden" : "h-8 w-auto"}
+				loading="eager"
 			/>
 			{dark && (
 				<Image
@@ -122,6 +123,7 @@ function EventLogo({ light, dark, href }: EventLogoProps) {
 					height={28}
 					alt="Event logo"
 					className="hidden h-8 w-auto dark:block"
+					loading="eager"
 				/>
 			)}
 		</Link>
