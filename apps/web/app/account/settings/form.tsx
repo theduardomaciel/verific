@@ -20,8 +20,6 @@ import { toast } from "sonner";
 
 // Validations
 import { nameSchema } from "@/lib/validations/forms/settings-form/project/general-form";
-import type { z } from "@verific/zod";
-type NameFormValues = z.infer<typeof nameSchema>;
 
 interface Props {
 	user: NonNullable<RouterOutput["getUser"]>;
@@ -117,6 +115,7 @@ function AccountSettingsContent({ user }: Props) {
 				headerRight={
 					<div className="flex h-28 w-28 items-center justify-center rounded-full border">
 						{user.image_url ? (
+							// oxlint-disable-next-line next/no-img-element -- URL remota fornecida pelo usuário (OAuth/S3); next/image lançaria erro em hosts fora de remotePatterns.
 							<img
 								src={user.image_url}
 								alt="Avatar"

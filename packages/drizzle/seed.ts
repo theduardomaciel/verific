@@ -44,7 +44,9 @@ async function seedUsers() {
 	return inserted;
 }
 
-async function seedProjects(users: any[]) {
+// NOTE: `users` não é usado aqui — projetos seedados usam `ownerId` do
+// ambiente. Mantido no parâmetro para simetria com `seedParticipants`.
+async function seedProjects(_users: any[]) {
 	const projects: (typeof schema.project.$inferInsert)[] = [];
 	for (let i = 0; i < 2; i++) {
 		const name = faker.company.name();

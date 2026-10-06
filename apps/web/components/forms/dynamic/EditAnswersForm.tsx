@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 
@@ -42,7 +42,7 @@ export function EditMyAnswersForm({
 	);
 	const setVisibility = trpc.setFieldVisibility.useMutation({
 		onSuccess: () => {
-			utils.getMyProfileData.invalidate();
+			void utils.getMyProfileData.invalidate();
 		},
 	});
 	const layout = layoutQuery.data ?? null;
@@ -142,8 +142,12 @@ export function EditMyAnswersForm({
 		values: defaultValues,
 	});
 
-	const watched = (form.watch() ?? {}) as Record<string, unknown>;
+	const watched = (useWatch({ control: form.control }) ?? {}) as Record<
+		string,
+		unknown
+	>;
 
+	// oxlint-disable-line react-hooks/exhaustive-deps -- watched is a RHF watch() result that changes every render; adding it would defeat the memoization purpose.
 	const grouped = useMemo(() => {
 		if (!sectionsForVisibility.some((s) => s.visibilityRule)) {
 			return groupFieldsBySection(fields, sections);
@@ -151,6 +155,7 @@ export function EditMyAnswersForm({
 		const visible = filterVisibleFields(
 			fields,
 			sectionsForVisibility,
+			// oxlint-disable-line react-hooks/exhaustive-deps -- watched is a RHF watch() result that changes every render; adding it would defeat the memoization purpose.
 			watched,
 		);
 		const ids = getVisibleSectionIds(
@@ -163,7 +168,9 @@ export function EditMyAnswersForm({
 		);
 	}, [fields, sections, sectionsForVisibility, fieldsForValidation, watched]);
 
+	// oxlint-disable-line react-hooks/exhaustive-deps -- sectionsForVisibility/fieldsForValidation/form/watched are stable or intentionally excluded to avoid infinite re-renders; the effect only runs when `watched` changes (via the inline filter).
 	useEffect(() => {
+		// oxlint-disable-line react-hooks/exhaustive-deps -- sectionsForVisibility/fieldsForValidation/form/watched are stable or intentionally excluded to avoid infinite re-renders; the effect only runs when `watched` changes (via the inline filter).
 		const allowed = new Set(
 			filterVisibleFields(
 				fieldsForValidation,
@@ -198,27 +205,35 @@ export function EditMyAnswersForm({
 			<CardContent>
 				<Form {...form}>
 					<form
-						onSubmit={form.handleSubmit((values) => {
-							const visible = filterVisibleFields(
-								fieldsForValidation,
-								sectionsForVisibility,
-								values as Record<string, unknown>,
-							);
-							const allowed = new Set(visible.map((f) => f.key));
-							const stripped: Record<string, unknown> = {};
-							for (const [k, v] of Object.entries(
-								(values ?? {}) as Record<string, unknown>,
-							)) {
-								if (allowed.has(k)) stripped[k] = v;
-							}
-							mutation.mutate({
-								projectId,
-								answers: stripped as Record<
-									string,
-									string | number | boolean | string[] | null
-								>,
-							});
-						})}
+						onSubmit={(e) =>
+							void form.handleSubmit((values) => {
+								const visible = filterVisibleFields(
+									fieldsForValidation,
+									sectionsForVisibility,
+									values as Record<string, unknown>,
+								);
+								const allowed = new Set(
+									visible.map((f) => f.key),
+								);
+								const stripped: Record<string, unknown> = {};
+								for (const [k, v] of Object.entries(
+									(values ?? {}) as Record<string, unknown>,
+								)) {
+									if (allowed.has(k)) stripped[k] = v;
+								}
+								mutation.mutate({
+									projectId,
+									answers: stripped as Record<
+										string,
+										| string
+										| number
+										| boolean
+										| string[]
+										| null
+									>,
+								});
+							})(e)
+						}
 						className="flex flex-col gap-4"
 					>
 						{grouped.map((group) => (

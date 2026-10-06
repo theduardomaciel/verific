@@ -1,7 +1,7 @@
 "use client";
 
 import { type Control, type FieldValues } from "react-hook-form";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input, PhoneInput } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -73,9 +73,11 @@ function SelectMultipleWithOther({
 	const others = value.filter((v) => !options.includes(v));
 	const [otherOpen, setOtherOpen] = useState(others.length > 0);
 	const othersKey = others.join("");
-	useEffect(() => {
+	const [prevOthersKey, setPrevOthersKey] = useState(othersKey);
+	if (othersKey !== prevOthersKey) {
+		setPrevOthersKey(othersKey);
 		if (others.length > 0) setOtherOpen(true);
-	}, [othersKey]);
+	}
 	const otherText = others[0] ?? "";
 
 	return (

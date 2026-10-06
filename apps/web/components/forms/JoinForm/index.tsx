@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "@verific/zod";
 
@@ -181,9 +181,11 @@ export default function JoinForm({
 		defaultValues: { name: user?.name || "", answers: {} },
 	});
 
-	const watchedAnswers = form.watch("answers") ?? {};
-	const watchedName = form.watch("name") ?? "";
+	const watchedAnswers =
+		useWatch({ control: form.control, name: "answers" }) ?? {};
+	const watchedName = useWatch({ control: form.control, name: "name" }) ?? "";
 
+	// oxlint-disable-line react-hooks/exhaustive-deps -- watchedAnswers is a RHF watch() result that changes every render; adding it would defeat the memoization purpose.
 	const { visibleFields, groupedSections } = useMemo(() => {
 		if (!hasConditional) {
 			return {
@@ -215,6 +217,7 @@ export default function JoinForm({
 		sections,
 		sectionsForVisibility,
 		fieldsForValidation,
+		// oxlint-disable-line react-hooks/exhaustive-deps -- watchedAnswers is a RHF watch() result that changes every render; adding it would defeat the memoization purpose.
 		watchedAnswers,
 	]);
 
@@ -334,7 +337,7 @@ export default function JoinForm({
 	return (
 		<Form {...form}>
 			<FormWrapper>
-				<form onSubmit={form.handleSubmit(onSubmit)}>
+				<form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)}>
 					<JoinForm0
 						projectUrl={project.url}
 						form={form as unknown as GenericForm}

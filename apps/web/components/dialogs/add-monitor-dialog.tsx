@@ -41,7 +41,8 @@ export function AddMonitorDialog({
 	activityId,
 	alreadyAdded,
 }: AddMonitorDialogProps) {
-	const currentDate = new Date();
+	// Data exibida no cabeçalho, fixada na montagem.
+	const [currentDate] = useState(() => new Date());
 
 	// Dialog state
 	const [isOpen, setIsOpen] = useState(false);
@@ -76,30 +77,37 @@ export function AddMonitorDialog({
 	// Participants data management
 	const [allParticipants, setAllParticipants] = useState<any[]>([]);
 
-	// Update participants list when new data arrives
-	useEffect(() => {
-		if (data && data.participants) {
-			setAllParticipants((prev) => {
-				// If first page (new search), replace completely
-				if (page === 0) {
-					return data.participants;
-				}
-				// Otherwise, add to existing list (infinite scroll)
-				const newParticipants = data.participants.filter(
-					(p: any) => !prev.find((existing) => existing.id === p.id),
-				);
-				return [...prev, ...newParticipants];
-			});
-
-			// Check if there are more pages
-			if (data.pageCount && page >= data.pageCount - 1) {
-				setHasMore(false);
+	// Atualiza a lista quando novos dados chegam (paginação infinita).
+	// Ajuste durante a renderização em vez de efeito: sem render em cascata.
+	// Espelha as dependências do efeito original ([data, page]).
+	const [prevParticipantsSync, setPrevParticipantsSync] = useState({
+		data,
+		page,
+	});
+	if (
+		data?.participants &&
+		(prevParticipantsSync.data !== data ||
+			prevParticipantsSync.page !== page)
+	) {
+		setPrevParticipantsSync({ data, page });
+		setAllParticipants((prev) => {
+			// If first page (new search), replace completely
+			if (page === 0) {
+				return data.participants;
 			}
-
-			// Mark search as finished
-			setIsSearching(false);
+			// Otherwise, add to existing list (infinite scroll)
+			const newParticipants = data.participants.filter(
+				(p: any) => !prev.find((existing) => existing.id === p.id),
+			);
+			return [...prev, ...newParticipants];
+		});
+		// Check if there are more pages
+		if (data.pageCount && page >= data.pageCount - 1) {
+			setHasMore(false);
 		}
-	}, [data, page]);
+		// Mark search as finished
+		setIsSearching(false);
+	}
 
 	// Computed values
 	const filteredParticipants = useMemo(
@@ -133,8 +141,8 @@ export function AddMonitorDialog({
 	const utils = trpc.useUtils();
 	const mutations = trpc.addMonitorsToActivity.useMutation({
 		onSuccess: () => {
-			utils.getActivity.invalidate();
-			utils.getActivities.invalidate();
+			void utils.getActivity.invalidate();
+			void utils.getActivities.invalidate();
 		},
 	});
 
@@ -180,15 +188,29 @@ export function AddMonitorDialog({
 		}
 	}
 
+	// Reseta o formulário quando a mutação conclui. Os sets puros ficam na
+	// renderização (sem cascata); o toast permanece no efeito.
+	const [prevMutationDone, setPrevMutationDone] = useState({
+		isMutating,
+		addedUsersAmount,
+	});
+	if (
+		isMutating === false &&
+		addedUsersAmount &&
+		(prevMutationDone.isMutating !== isMutating ||
+			prevMutationDone.addedUsersAmount !== addedUsersAmount)
+	) {
+		setPrevMutationDone({ isMutating, addedUsersAmount });
+		setIsOpen(false);
+		setPage(0);
+		setSearch("");
+		setAllParticipants([]);
+		clearSelection();
+	}
+
 	// Effects
 	useEffect(() => {
 		if (isMutating === false && addedUsersAmount) {
-			setIsOpen(false);
-			setPage(0);
-			setSearch("");
-			setAllParticipants([]);
-			clearSelection();
-
 			const title =
 				addedUsersAmount > 1
 					? "Monitores adicionados!"
@@ -223,7 +245,7 @@ export function AddMonitorDialog({
 					</DialogDescription>
 				</DialogHeader>
 				<form
-					onSubmit={onSubmit}
+					onSubmit={(e) => void onSubmit(e)}
 					className="flex flex-col items-start justify-start gap-4"
 				>
 					<div className="flex w-full flex-col items-center justify-start gap-4">

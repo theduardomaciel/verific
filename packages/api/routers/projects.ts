@@ -152,7 +152,7 @@ export const projectsRouter = createTRPCRouter({
 
 			// Remove undefined fields so only provided fields are updated
 			const updateData = Object.fromEntries(
-				Object.entries(rest).filter(([_, v]) => v !== undefined),
+				Object.entries(rest).filter(([_key, v]) => v !== undefined),
 			);
 
 			if (Object.keys(updateData).length === 0) {

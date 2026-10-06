@@ -126,7 +126,7 @@ export function ActivityCard({
 									href={`/${activity.project?.url}/schedule/${activity.id}`}
 									scroll={false}
 								>
-									{!!participantId ? (
+									{participantId ? (
 										<>
 											<Check className="mr-2 h-4 w-4" />
 											Inscrito

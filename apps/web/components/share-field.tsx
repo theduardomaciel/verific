@@ -19,7 +19,7 @@ export function ShareField({ url, className }: ShareFieldProps) {
 	const [hasCopied, setHasCopied] = useState(false);
 
 	function copyLink() {
-		navigator.clipboard.writeText(url);
+		void navigator.clipboard.writeText(url);
 		toast.info("Link copiado", {
 			description: "O link foi copiado para a área de transferência",
 		});

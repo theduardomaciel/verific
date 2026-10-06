@@ -181,7 +181,7 @@ async function main() {
 		} catch (e) {
 			failed.push(t);
 			console.warn(
-				`[falha] ${t.table}.${t.column} [${t.id}]: ${e instanceof Error ? e.message : e}`,
+				`[falha] ${t.table}.${t.column} [${t.id}]: ${String(e instanceof Error ? e.message : e)}`,
 			);
 		}
 	}

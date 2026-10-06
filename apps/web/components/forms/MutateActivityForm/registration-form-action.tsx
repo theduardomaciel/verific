@@ -96,7 +96,7 @@ export function ActivityRegistrationFormAction({
 					size="sm"
 					className="flex-1"
 					disabled={unpublish.isPending || remove.isPending}
-					onClick={handleRemove}
+					onClick={() => void handleRemove()}
 				>
 					<Trash2 size={14} />
 					Remover

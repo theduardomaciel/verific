@@ -29,7 +29,7 @@ export default function ErrorPage({
 							página ou tente novamente em alguns instantes.
 						</p>
 						<span className="bg-muted w-full rounded-md border p-4 font-mono text-sm">
-							{error.message && error.message}
+							{error.message}
 						</span>
 						<Button size={"lg"} onClick={() => reset()}>
 							<RefreshCcw />

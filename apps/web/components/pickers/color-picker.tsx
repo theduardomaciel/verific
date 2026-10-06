@@ -38,8 +38,10 @@ export function ColorPicker({
 	const sliderRef = useRef<HTMLDivElement>(null);
 
 	// Inicializa a posição do seletor de cores com base na cor inicial (inputColor).
+	// oxlint-disable-line react-hooks/exhaustive-deps -- inputColor is a prop that only changes on external reset; the effect intentionally runs once on mount to initialize the picker state.
 	useEffect(() => {
 		if (colorPickerRef.current) {
+			// oxlint-disable-line react-hooks/exhaustive-deps -- inputColor is a prop that only changes on external reset; the effect intentionally runs once on mount to initialize the picker state.
 			const initialHsl = hexToHsl(inputColor);
 			setHsl(initialHsl);
 

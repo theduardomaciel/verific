@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "@verific/zod";
 import { toast } from "sonner";
@@ -132,11 +132,12 @@ export function FormPreview({
 		defaultValues: { name: "", answers: {}, profile: {} },
 	});
 
-	const watchedAnswers = (form.watch("answers") ?? {}) as Record<
-		string,
-		unknown
-	>;
+	const watchedAnswers = (useWatch({
+		control: form.control,
+		name: "answers",
+	}) ?? {}) as Record<string, unknown>;
 
+	// oxlint-disable-line react-hooks/exhaustive-deps -- watchedAnswers is a RHF watch() result that changes every render; adding it would defeat the memoization purpose.
 	const grouped = useMemo(() => {
 		if (!sectionsForVisibility.some((s) => s.visibilityRule)) {
 			return groupFieldsBySection(baseVisible, sections);
@@ -144,6 +145,7 @@ export function FormPreview({
 		const visible = filterVisibleFields(
 			baseVisible,
 			sectionsForVisibility,
+			// oxlint-disable-line react-hooks/exhaustive-deps -- watchedAnswers is a RHF watch() result that changes every render; adding it would defeat the memoization purpose.
 			watchedAnswers,
 		);
 		const ids = getVisibleSectionIds(
@@ -223,7 +225,9 @@ export function FormPreview({
 			<CardContent>
 				<Form {...form}>
 					<form
-						onSubmit={form.handleSubmit(onSubmit, onInvalid)}
+						onSubmit={(e) =>
+							void form.handleSubmit(onSubmit, onInvalid)(e)
+						}
 						className="flex w-full flex-col gap-6"
 					>
 						{planned.map((p) => (

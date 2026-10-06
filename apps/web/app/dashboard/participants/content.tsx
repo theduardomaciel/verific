@@ -102,6 +102,7 @@ export function ParticipantsContent() {
 						{participants && participants.length > 0 ? (
 							<div className="flex flex-col items-start justify-start gap-4">
 								{participants.map((participant) => (
+									// oxlint-disable-next-line typescript/unbound-method -- expressão membro JSX (`<A.B />`), não extração de método; sem `this` envolvido.
 									<ParticipantListItem.General
 										key={participant.id}
 										participant={participant}

@@ -300,7 +300,7 @@ function ChartLegendContent({
 			)}
 		>
 			{payload.map((item) => {
-				const key = `${nameKey || item.dataKey || "value"}`;
+				const key = `${String(nameKey || item.dataKey || "value")}`;
 				const itemConfig = getPayloadConfigFromPayload(
 					config,
 					item,

@@ -34,13 +34,28 @@ export function useParticipantSearch({
 		},
 	);
 
-	// Reset when debouncedSearch changes
-	useEffect(() => {
+	// Reseta a paginação quando a busca ou a visibilidade mudam. Os sets
+	// puros ficam na renderização (sem cascata); o refetch é efeito
+	// colateral e permanece no efeito abaixo.
+	const [prevSearchReset, setPrevSearchReset] = useState({
+		debouncedSearch,
+		isOpen,
+	});
+	if (
+		debouncedSearch !== prevSearchReset.debouncedSearch ||
+		isOpen !== prevSearchReset.isOpen
+	) {
+		setPrevSearchReset({ debouncedSearch, isOpen });
 		if (isOpen) {
 			setPage(0);
 			setHasMore(true);
 			setIsSearching(true);
-			refetch();
+		}
+	}
+
+	useEffect(() => {
+		if (isOpen) {
+			void refetch();
 		}
 	}, [debouncedSearch, isOpen, refetch]);
 

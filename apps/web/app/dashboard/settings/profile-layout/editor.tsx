@@ -174,7 +174,7 @@ export function ProfileLayoutEditor({
 		try {
 			await saveMutation.mutateAsync({ projectId, layout: parsed.data });
 			await revalidateEventProfiles(projectUrl);
-			utils.getProject.invalidate();
+			void utils.getProject.invalidate();
 			toast.success("Layout do perfil aplicado!");
 		} catch (e) {
 			toast.error(

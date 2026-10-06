@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { XIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 
 interface FullScreenDrawerProps {
@@ -20,15 +20,17 @@ export function FullScreenDrawer({
 	className,
 	closeButton,
 }: FullScreenDrawerProps) {
-	const [open, setOpen] = useState(false);
+	const [open, setOpen] = useState(openProp ?? true);
 	const [mounted, setMounted] = useState(false);
+	const [prevOpenProp, setPrevOpenProp] = useState(openProp);
 
-	useEffect(() => {
-		setMounted(true);
-		if (openProp !== undefined) setOpen(openProp);
-		else setOpen(true);
-		return () => setMounted(false);
-	}, [openProp]);
+	// Sincroniza sem efeito em cascata: montagem garante o portal só no
+	// client (sem mismatch de hidratação) e a prop controla o estado.
+	if (!mounted) setMounted(true);
+	if (openProp !== prevOpenProp) {
+		setPrevOpenProp(openProp);
+		setOpen(openProp ?? true);
+	}
 
 	function handleClose() {
 		setOpen(false);
@@ -37,6 +39,7 @@ export function FullScreenDrawer({
 
 	const drawer = (
 		<div
+			// oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- drawer customizado com portal/foco próprios; <dialog> nativo exige API imperativa showModal.
 			role="dialog"
 			aria-modal="true"
 			className={cn(
@@ -57,6 +60,7 @@ export function FullScreenDrawer({
 				{closeButton ? (
 					<div
 						className="absolute top-4 right-4 z-10"
+						// oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- envolve o `closeButton` fornecido pelo chamador (já interativo); div é só posicionamento.
 						onClick={handleClose}
 					>
 						{closeButton}

@@ -22,7 +22,7 @@ export function ActivitiesList({ activities, className }: Props) {
 			</CardHeader>
 			<CardContent className="grid gap-4">
 				{activities.length > 0 ? (
-					activities.map((activity, _) => (
+					activities.map((activity) => (
 						<SimpleActivityCard
 							key={activity.id}
 							activity={activity}

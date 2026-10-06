@@ -40,7 +40,7 @@ export function SettingsCard({
 						<h2 className="text-foreground text-xl font-semibold">
 							{title}
 						</h2>
-						<span>{description && description}</span>
+						<span>{description}</span>
 					</div>
 					{headerRight && <div>{headerRight}</div>}
 				</div>

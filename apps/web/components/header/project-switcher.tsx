@@ -63,7 +63,6 @@ export function ProjectSwitcher({
 			<PopoverTrigger asChild>
 				<Button
 					variant="outline"
-					role="combobox"
 					aria-expanded={open}
 					aria-label="Selecione um projeto"
 					className={cn("w-[200px] justify-between", className)}
@@ -93,7 +92,7 @@ export function ProjectSwitcher({
 							<CommandItem
 								key={project.id}
 								onSelect={() => {
-									updateProjectCookies(project.id);
+									void updateProjectCookies(project.id);
 									setOpen(false);
 								}}
 								className="w-full rounded-none py-2 text-sm"

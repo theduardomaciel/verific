@@ -48,6 +48,7 @@ function PaginationLink({
 	...props
 }: PaginationLinkProps) {
 	return (
+		// oxlint-disable-next-line jsx-a11y/anchor-has-content -- conteúdo acessível vem via props nos usos (aria-label + texto/ícone); componente passthrough.
 		<a
 			aria-current={isActive ? "page" : undefined}
 			data-slot="pagination-link"

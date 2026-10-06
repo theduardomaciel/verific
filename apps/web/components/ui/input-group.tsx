@@ -12,6 +12,7 @@ function InputGroup({ className, ...props }: React.ComponentProps<"div">) {
 	return (
 		<div
 			data-slot="input-group"
+			// oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- grupo visual input+addons (padrão shadcn); fieldset mudaria semântica/estilo.
 			role="group"
 			className={cn(
 				"group/input-group relative flex w-full items-center rounded-md border border-input shadow-xs transition-[color,box-shadow] outline-none dark:bg-input/30",
@@ -64,10 +65,12 @@ function InputGroupAddon({
 }: React.ComponentProps<"div"> & VariantProps<typeof inputGroupAddonVariants>) {
 	return (
 		<div
+			// oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- grupo visual input+addons (padrão shadcn); fieldset mudaria semântica/estilo.
 			role="group"
 			data-slot="input-group-addon"
 			data-align={align}
 			className={cn(inputGroupAddonVariants({ align }), className)}
+			// oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, jsx-a11y/no-noninteractive-element-interactions -- conveniência de ponteiro: foca o input irmão; teclado alcança o input via Tab.
 			onClick={(e) => {
 				if ((e.target as HTMLElement).closest("button")) {
 					return;

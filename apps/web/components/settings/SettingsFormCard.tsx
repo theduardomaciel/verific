@@ -29,7 +29,7 @@ interface SettingsFormCardProps<
 	title: string;
 	description: string;
 	initialState: Partial<z.output<T>>;
-	onSubmit: (form: UseFormReturn<z.output<T>>) => void;
+	onSubmit: (form: UseFormReturn<z.output<T>>) => void | Promise<void>;
 	renderField: (form: UseFormReturn<z.output<T>>) => React.ReactNode;
 	footer?: {
 		text?: SettingsCardFooterProps["text"];
@@ -61,7 +61,9 @@ export function SettingsFormCard<
 	return (
 		<FormProvider {...form}>
 			<form
-				onSubmit={form.handleSubmit(() => onSubmit(form))}
+				onSubmit={(e) =>
+					void form.handleSubmit(() => void onSubmit(form))(e)
+				}
 				className="space-y-0"
 			>
 				<SettingsCard
