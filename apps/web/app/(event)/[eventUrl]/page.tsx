@@ -65,9 +65,14 @@ function EventPageBody({ project }: { project: EventPageProject }) {
 
 	return (
 		<EventContainer.Holder>
-			<EventContainer.Hero coverUrl={project.coverUrl} showImage={theme.hero.image}>
+			<EventContainer.Hero
+				coverUrl={project.coverUrl}
+				showImage={theme.hero.image}
+			>
 				<div className="z-10 flex flex-1 flex-col items-start justify-center">
-					<EventContainer.Hero.Title>{project.name}</EventContainer.Hero.Title>
+					<EventContainer.Hero.Title>
+						{project.name}
+					</EventContainer.Hero.Title>
 					<EventContainer.Hero.Meta className="mb-6">
 						<Calendar className="mr-2 h-4.5 w-4.5" />
 						<span className="-mt-0.5 text-base">
@@ -80,16 +85,22 @@ function EventPageBody({ project }: { project: EventPageProject }) {
 					<div className="mb-8 flex flex-wrap gap-3">
 						<Badge
 							variant={"secondary"}
-							className={cn("rounded-xl px-4 py-3", EVENT_BADGE_COLORS)}
+							className={cn(
+								"rounded-xl px-4 py-3.5 text-sm leading-none font-semibold sm:[&>svg]:size-4!",
+								EVENT_BADGE_COLORS,
+							)}
 						>
-							<Check className="mr-2 !h-4 !w-4" />
+							<Check className="mr-2" />
 							<span>Aberto para o público externo</span>
 						</Badge>
 						<Badge
 							variant={"secondary"}
-							className={cn("rounded-xl px-4 py-3", EVENT_BADGE_COLORS)}
+							className={cn(
+								"rounded-xl px-4 py-3.5 text-sm leading-none font-semibold sm:[&>svg]:size-4!",
+								EVENT_BADGE_COLORS,
+							)}
 						>
-							<TicketCheck className="mr-2 !h-4 !w-4" />
+							<TicketCheck className="mr-2" />
 							<span>Emite certificado</span>
 						</Badge>
 					</div>
@@ -113,7 +124,7 @@ function EventPageBody({ project }: { project: EventPageProject }) {
 							"Use o QR code ou copie o link para compartilhar o evento!"
 						}
 					>
-						<Button className="absolute -bottom-4 left-1/2 h-10 -translate-x-1/2 !px-6">
+						<Button className="absolute -bottom-4 left-1/2 h-10 -translate-x-1/2 px-6!">
 							<Share2 className="h-5 w-5" />
 							<span>Compartilhar</span>
 						</Button>

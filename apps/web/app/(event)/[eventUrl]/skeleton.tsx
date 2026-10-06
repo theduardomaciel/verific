@@ -16,10 +16,10 @@ export function EventPageSkeleton() {
 						<Skeleton className="mb-4 h-12 w-3/4" />
 						<Skeleton className="mb-6 h-6 w-64" />
 						<div className="mb-8 flex flex-wrap gap-3">
-							<Skeleton className="h-6 w-52 rounded-xl" />
-							<Skeleton className="h-6 w-44 rounded-xl" />
+							<Skeleton className="h-7 w-63 rounded-xl" />
+							<Skeleton className="h-7 w-44 rounded-xl" />
 						</div>
-						<Skeleton className="h-12 w-44" />
+						<Skeleton className="h-12 w-45.5" />
 					</div>
 					<div className="relative z-20 flex h-60 items-center justify-center">
 						<Skeleton className="h-60 w-full max-w-md rounded-3xl" />
