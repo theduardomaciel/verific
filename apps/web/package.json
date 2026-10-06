@@ -8,6 +8,7 @@
 		"prebuild": "pnpm codegen:css-colors",
 		"build": "next build",
 		"start": "next start",
+		"typecheck": "next typegen && tsc --noEmit",
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"test:coverage": "vitest run --coverage",
