@@ -6,9 +6,10 @@ import * as EventContainer from "@/components/landing/event-container";
 import { Button } from "@/components/ui/button";
 import { ParticipantCardDialog } from "@/components/dialogs/participant-card-dialog";
 import { ParticipantCard } from "@/components/participant/participant-card";
+import { EditMyAnswersForm } from "@/components/forms/dynamic/EditAnswersForm";
 import AccountLoading from "./skeleton";
 import { AccountWrapper } from "@/components/account-wrapper";
-import { getCachedActivitiesFromParticipant } from "@/lib/data";
+import { getCachedActivitiesFromParticipant, getProject } from "@/lib/data";
 import { getSession } from "@/lib/session";
 
 async function AccountContent({
@@ -51,6 +52,9 @@ async function EventAccountContent({
 		redirect(`/${eventUrl}/subscribe`);
 	}
 
+	const projectResult = await getProject(eventUrl);
+	const projectId = projectResult?.project.id;
+
 	return (
 		<EventContainer.Holder>
 			<EventContainer.Hero coverUrl={"/images/hero-bg.png"}>
@@ -83,6 +87,13 @@ async function EventAccountContent({
 			<Suspense fallback={<AccountLoading />}>
 				<AccountContent data={participantData} eventUrl={eventUrl} />
 			</Suspense>
+			{projectId && (
+				<EventContainer.Content>
+					<div className="container-p flex w-full flex-col">
+						<EditMyAnswersForm projectId={projectId} />
+					</div>
+				</EventContainer.Content>
+			)}
 		</EventContainer.Holder>
 	);
 }

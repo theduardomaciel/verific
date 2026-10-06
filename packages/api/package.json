@@ -4,20 +4,26 @@
 	"types": "./index.ts",
 	"version": "0.0.0",
 	"private": true,
-	"scripts": {},
+	"scripts": {
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:coverage": "vitest run --coverage"
+	},
 	"dependencies": {
 		"@trpc/server": "^11.6.0",
 		"@verific/auth": "workspace:*",
 		"@verific/drizzle": "workspace:*",
 		"@verific/env": "workspace:*",
 		"@verific/zod": "workspace:*",
-		"googleapis": "^164.1.0",
+		"libphonenumber-js": "^1.13.14",
 		"superjson": "^2.2.2"
 	},
 	"devDependencies": {
 		"@verific/eslint-config": "workspace:*",
 		"@verific/prettier-config": "workspace:*",
-		"@verific/typescript-config": "workspace:*"
+		"@verific/typescript-config": "workspace:*",
+		"@vitest/coverage-v8": "^5.0.3",
+		"vitest": "^5.0.3"
 	},
 	"prettier": "@verific/prettier-config"
 }

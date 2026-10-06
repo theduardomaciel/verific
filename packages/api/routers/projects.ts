@@ -10,21 +10,15 @@ import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 // API
 import { TRPCError } from "@trpc/server";
 
-// Google Sheets
-import { google } from "googleapis";
-import { env } from "@verific/env";
-
 export const updateProjectSchema = z.object({
 	id: z.uuid(),
 	name: z.string().optional(),
 	description: z.string().optional(),
 	url: z.string().optional(),
-	researchUrl: z.string().optional().nullable(),
 	address: z.string().optional(),
 	latitude: z.number().optional(),
 	longitude: z.number().optional(),
 	isRegistrationEnabled: z.boolean().optional(),
-	isResearchEnabled: z.boolean().optional(),
 	isArchived: z.boolean().optional(),
 	logoUrl: z.string().optional(),
 	largeLogoUrl: z.string().optional().nullable(),
@@ -121,64 +115,6 @@ export const projectsRouter = createTRPCRouter({
 
 			if (Object.keys(updateData).length === 0) {
 				throw new Error("No fields to update");
-			}
-
-			// Check if the given sheet exists and has permissions
-			if (updateData.researchUrl && typeof updateData.researchUrl === 'string') {
-				try {
-					const auth = new google.auth.GoogleAuth({
-						credentials: {
-							client_email: env.NEXT_PUBLIC_GOOGLE_SHEET_CLIENT_EMAIL,
-							private_key: env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-						},
-						scopes: ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.readonly'],
-					});
-
-					const drive = google.drive({ version: 'v3', auth });
-
-					// First, check if the spreadsheet exists
-					const sheets = google.sheets({ version: 'v4', auth });
-					const test = await sheets.spreadsheets.get({
-						spreadsheetId: updateData.researchUrl,
-					});
-
-					console.log('Spreadsheet exists.', test.data);
-
-					try {
-						// Then, check if the service account has editor permission
-						const permissions = await drive.permissions.list({
-							fileId: updateData.researchUrl,
-							fields: 'permissions(emailAddress,role)',
-						});
-
-						console.log(permissions.data.permissions);
-
-						const hasEditorPermission = permissions.data.permissions?.some(
-							(perm) =>
-								perm.emailAddress === env.NEXT_PUBLIC_GOOGLE_SHEET_CLIENT_EMAIL &&
-								(perm.role === 'writer' || perm.role === 'owner'),
-						);
-
-						console.log('Has editor permission:', hasEditorPermission);
-
-						if (!hasEditorPermission) {
-							throw new Error()
-						}
-					} catch (error) {
-						throw new TRPCError({
-							code: 'BAD_REQUEST',
-							message: 'A conta de serviço não tem permissão de editor na planilha. Compartilhe a planilha com o email do serviço com permissão de edição.',
-						});
-					}
-				} catch (error) {
-					if (error instanceof TRPCError) {
-						throw error;
-					}
-					throw new TRPCError({
-						code: 'BAD_REQUEST',
-						message: 'Não foi possível acessar a planilha. Verifique se o link está correto e se a planilha está compartilhada com o email do serviço.',
-					});
-				}
 			}
 
 			await db.update(project).set(updateData).where(eq(project.id, id));

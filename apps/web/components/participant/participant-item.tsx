@@ -38,6 +38,7 @@ interface BaseProps {
 
 interface ActivityParticipantCardProps extends BaseProps {
 	participant: ActivityParticipant;
+	sessions?: RouterOutput["getActivity"]["activity"]["sessions"];
 }
 
 interface GeneralParticipantCardProps extends BaseProps {
@@ -74,7 +75,20 @@ function ParticipantAvatarAndInfo({
 }
 
 export const ParticipantListItem = {
-	Activity({ className, participant, url }: ActivityParticipantCardProps) {
+	Activity({
+		className,
+		participant,
+		sessions,
+		url,
+	}: ActivityParticipantCardProps) {
+		const attendances = participant.sessionAttendances ?? [];
+		const attendedSessionIds = new Set(
+			attendances.map((a) => a.sessionId),
+		);
+		const attendedCount = sessions
+			? sessions.filter((s) => attendedSessionIds.has(s.id)).length
+			: attendances.length;
+
 		return (
 			<>
 				<li
@@ -84,32 +98,61 @@ export const ParticipantListItem = {
 						{
 							"border-destructive/50":
 								participant.role === "participant" &&
-								!participant.joinedAt,
+								attendedCount === 0,
 						},
 					)}
 				>
 					<ParticipantAvatarAndInfo participant={participant} />
 					<div className="flex w-full flex-row items-center justify-between gap-4">
-						<div className="text-foreground flex flex-row items-center justify-start gap-4">
+						<div className="text-foreground flex flex-col items-start justify-start gap-2">
 							{participant.role === "participant" ? (
-								participant.joinedAt != null ? (
-									<>
-										<Check className="h-4 w-4" />
-										<p className="text-left text-sm leading-tight font-medium">
-											Marcou presença às{" "}
-											{getTimeString(
-												participant.joinedAt,
-											)}
-										</p>
-									</>
-								) : (
-									<>
-										<X className="h-4 w-4" />
-										<p className="text-left text-sm leading-tight font-medium">
-											Ainda não marcou presença
-										</p>
-									</>
-								)
+								<>
+									<p className="text-left text-sm leading-tight font-medium">
+										{attendedCount > 0 ? (
+											<>
+												Presente em {attendedCount}{" "}
+												de {sessions?.length ?? 0}{" "}
+												{sessions?.length === 1
+													? "sessão"
+													: "sessões"}
+											</>
+										) : (
+											"Ainda não marcou presença"
+										)}
+									</p>
+									{sessions && sessions.length > 0 ? (
+										<div className="flex flex-wrap gap-1.5">
+											{sessions.map((session, i) => {
+												const attended =
+													attendedSessionIds.has(
+														session.id,
+													);
+												return (
+													<span
+														key={session.id}
+														className={cn(
+															"flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium",
+															attended
+																? "border-green-600/30 bg-green-600/10 text-green-700 dark:text-green-500"
+																: "text-muted-foreground",
+														)}
+													>
+														{attended ? (
+															<Check className="h-3 w-3" />
+														) : (
+															<X className="h-3 w-3" />
+														)}
+														S{i + 1} ·{" "}
+														{getTimeString(
+															session.startsAt,
+															true,
+														)}
+													</span>
+												);
+											})}
+										</div>
+									) : null}
+								</>
 							) : (
 								<div className="flex flex-row items-center justify-start gap-2">
 									<User className="h-4 w-4" />

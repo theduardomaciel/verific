@@ -11,6 +11,7 @@ import { User, Users } from "lucide-react";
 import { CategoryLabel } from "@/components/dashboard/category-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ActivityStatus } from "../activity-status";
+import { TagBadges } from "../tag-badge";
 
 // Lib
 import { listToString } from "@/lib/i18n";
@@ -65,9 +66,12 @@ export function SimpleActivityCard({ activity, className }: ActivityCardProps) {
 					"flex w-full flex-wrap items-center justify-between gap-2 p-4"
 				}
 			>
-				<CategoryLabel category={activity.category} />
+				<div className="flex flex-wrap items-center gap-2">
+					<CategoryLabel category={activity.category} />
+					<TagBadges tags={activity.tags ?? []} />
+				</div>
 				<ActivityStatus
-					date={activity.dateFrom}
+					sessions={activity.sessions}
 					dateFormat={{ includeDay: true, includeHour: true }}
 				/>
 			</div>
@@ -104,7 +108,7 @@ export function ActivityCard({ activity, className }: ActivityCardProps) {
 						</h3>
 						<span className="text-muted-foreground ml-8 shrink-0 text-sm">
 							<ActivityStatus
-								date={activity.dateFrom}
+								sessions={activity.sessions}
 								dateFormat={{
 									includeDay: true,
 									includeHour: true,

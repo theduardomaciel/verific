@@ -43,6 +43,7 @@ interface ListProps {
 	activityId: string;
 	hasActivity?: boolean;
 	participants: RouterOutput["getActivity"]["activity"]["participants"];
+	sessions?: RouterOutput["getActivity"]["activity"]["sessions"];
 	emptyMessage?: {
 		title: string;
 		description: string;
@@ -53,6 +54,7 @@ function List({
 	activityId,
 	hasActivity = false,
 	participants,
+	sessions,
 	className,
 	emptyMessage,
 }: ListProps) {
@@ -78,6 +80,7 @@ function List({
 				<ParticipantListItem.Activity
 					key={participant.id}
 					participant={participant}
+					sessions={sessions}
 					showJoinedAt={hasActivity}
 					url={`/dashboard/participants`}
 				/>

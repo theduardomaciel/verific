@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { useForm, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,6 +38,8 @@ interface Props {
 	startDate?: Date;
 	endDate?: Date;
 	activity?: RouterOutput["getActivity"]["activity"];
+	registrationFormAction?: React.ReactNode;
+	enableConfigureAfterSave?: boolean;
 }
 
 export default function MutateActivityForm({
@@ -44,11 +47,15 @@ export default function MutateActivityForm({
 	startDate,
 	endDate,
 	activity,
+	registrationFormAction,
+	enableConfigureAfterSave,
 }: Props) {
 	const [currentState, setCurrentState] = useState<
 		false | "submitting" | "submitted" | "error"
 	>(false);
 	const submittedActivityId = useRef<string | undefined>(undefined);
+	const configureAfterSave = useRef(false);
+	const router = useRouter();
 
 	// 1. Define your form.
 	const form = useForm<MutateActivityFormSchema>({
@@ -64,15 +71,24 @@ export default function MutateActivityForm({
 				activity?.speakerOnActivity.map(
 					(speakerOnActivity) => speakerOnActivity.speaker.id,
 				) || [],
-			dateFrom: activity?.dateFrom
-				? new Date(activity.dateFrom)
-				: new Date(startDate || Date.now()),
+			tagIds: activity?.tags?.map((tag) => tag.id) || [],
+			sessions: activity?.sessions?.length
+				? activity.sessions.map((session) => ({
+						date: new Date(session.startsAt),
+						timeFrom: dateToTimeString(session.startsAt),
+						timeTo: dateToTimeString(session.endsAt),
+						address: session.address || "",
+					}))
+				: [
+						{
+							date: new Date(startDate || Date.now()),
+							timeFrom: undefined,
+							timeTo: undefined,
+							address: "",
+						},
+					],
 			tolerance: activity?.tolerance || 0,
-			timeFrom: activity
-				? dateToTimeString(activity.dateFrom)
-				: undefined,
 			workload: activity?.workload || undefined,
-			timeTo: activity ? dateToTimeString(activity.dateTo) : undefined,
 			category: activity?.category || undefined,
 			participantsLimit: activity?.participantsLimit || undefined,
 			audience: activity?.audience || "external",
@@ -91,23 +107,25 @@ export default function MutateActivityForm({
 	async function onSubmit(data: MutateActivityFormSchema) {
 		setCurrentState("submitting");
 
-		// console.log(data);
-		const { dateFrom, timeFrom, timeTo, ...rest } = data;
+		const { sessions, ...rest } = data;
 
-		const dateFromWithTime = new Date(dateFrom);
-		setTimeOnDate(dateFromWithTime, timeFrom);
-
-		// console.log("dateFromWithTime: ", dateFromWithTime);
-
-		const dateToWithTime = new Date(dateFrom);
-		setTimeOnDate(dateToWithTime, timeTo);
+		const apiSessions = sessions.map((session) => {
+			const startsAt = new Date(session.date);
+			setTimeOnDate(startsAt, session.timeFrom);
+			const endsAt = new Date(session.date);
+			setTimeOnDate(endsAt, session.timeTo);
+			return {
+				startsAt,
+				endsAt,
+				address: session.address || undefined,
+			};
+		});
 
 		try {
 			if (activity) {
 				await updateMutation.mutateAsync({
 					activityId: activity.id,
-					dateFrom: dateFromWithTime,
-					dateTo: dateToWithTime,
+					sessions: apiSessions,
 					...rest,
 				});
 
@@ -116,13 +134,23 @@ export default function MutateActivityForm({
 			} else {
 				const { activityId } = await createMutation.mutateAsync({
 					projectId,
-					dateFrom: dateFromWithTime,
-					dateTo: dateToWithTime,
+					sessions: apiSessions,
 					audience: data.audience || "internal",
 					...rest,
 				});
 
 				submittedActivityId.current = activityId;
+
+				if (configureAfterSave.current) {
+					configureAfterSave.current = false;
+					await revalidateActivities();
+					utils.getActivities.invalidate();
+					router.push(
+						`/dashboard/activities/${activityId}/form`,
+					);
+					return;
+				}
+
 				setCurrentState("submitted");
 			}
 
@@ -151,6 +179,15 @@ export default function MutateActivityForm({
 					endDate={endDate}
 					form={form}
 					isEditing={!!activity}
+					registrationFormAction={registrationFormAction}
+					onSecondarySubmit={
+						enableConfigureAfterSave && !activity
+							? () => {
+									configureAfterSave.current = true;
+									void form.handleSubmit(onSubmit)();
+								}
+							: undefined
+					}
 				/>
 			</form>
 			<LoadingDialog

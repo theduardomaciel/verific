@@ -16,6 +16,8 @@ import { Filter } from "@/components/dashboard/filter";
 import { Empty } from "@/components/empty";
 import { ActivityCard } from "@/components/activity/activity-card/dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ReleaseRegistrationsDialog } from "@/components/dialogs/release-registrations-dialog";
+import { ManageTagsDialog } from "@/components/dialogs/manage-tags-dialog";
 
 // Validation (client-safe: no db / server env imports)
 import { getActivitiesParams } from "@verific/api/schemas";
@@ -44,6 +46,7 @@ function ActivitiesSkeleton() {
 				</div>
 				<div className="order-first space-y-4 md:order-last md:col-span-1">
 					<Skeleton className="h-12 w-full" />
+					<Skeleton className="h-12 w-full" />
 					<Skeleton className="h-64 w-full" />
 				</div>
 			</div>
@@ -57,17 +60,23 @@ export function ActivitiesContent() {
 		getActivitiesParams.parse(raw),
 	);
 
-	const { data, isPending, isError, isFetching } = trpc.getActivities.useQuery(
-		{
-			projectId,
-			...parsedParams,
-			fullQuery: true,
-		},
-		{
-			placeholderData: keepPreviousData,
-			staleTime: 30 * 1000,
-			refetchOnWindowFocus: false,
-		},
+	const { data, isPending, isError, isFetching } =
+		trpc.getActivities.useQuery(
+			{
+				projectId,
+				...parsedParams,
+				fullQuery: true,
+			},
+			{
+				placeholderData: keepPreviousData,
+				staleTime: 30 * 1000,
+				refetchOnWindowFocus: false,
+			},
+		);
+
+	const { data: projectTags } = trpc.getProjectTags.useQuery(
+		{ projectId },
+		{ staleTime: 60 * 1000 },
 	);
 
 	if (isPending) {
@@ -145,6 +154,10 @@ export function ActivitiesContent() {
 						</Link>
 					</Button>
 
+					<ReleaseRegistrationsDialog projectId={projectId} />
+
+					<ManageTagsDialog projectId={projectId} />
+
 					<FiltersPanel>
 						<Filter
 							type="checkbox"
@@ -157,6 +170,17 @@ export function ActivitiesContent() {
 								],
 							}))}
 						/>
+						{(projectTags ?? []).length > 0 ? (
+							<Filter
+								type="checkbox"
+								prefix="tagIds"
+								title="Filtrar por Trilha"
+								items={(projectTags ?? []).map((tag) => ({
+									value: tag.id,
+									name: tag.name,
+								}))}
+							/>
+						) : null}
 					</FiltersPanel>
 				</div>
 			</div>

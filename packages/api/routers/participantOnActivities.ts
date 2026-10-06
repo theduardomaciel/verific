@@ -3,12 +3,17 @@ import { z } from "@verific/zod";
 import { db } from "@verific/drizzle";
 import {
 	activity,
+	activitySession,
+	formAnswer,
+	formVersion,
 	participant,
 	participantOnActivity,
 	project,
 	projectModerator,
+	sessionAttendance,
 } from "@verific/drizzle/schema";
-import { and, eq, count, inArray, isNotNull } from "@verific/drizzle/orm";
+import { and, asc, eq, count, countDistinct, inArray } from "@verific/drizzle/orm";
+import type { ParticipantActivitySession } from "../schemas";
 
 // tRPC
 import { TRPCError } from "@trpc/server";
@@ -61,6 +66,22 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 					with: {
 						activity: {
 							with: {
+								sessions: {
+									orderBy: asc(activitySession.startsAt),
+									with: {
+										attendances: {
+											where: eq(
+												sessionAttendance.participantId,
+												participantId,
+											),
+										},
+									},
+								},
+								tagOnActivity: {
+									with: {
+										tag: true,
+									},
+								},
 								speakerOnActivity: {
 									with: {
 										speaker: true,
@@ -76,30 +97,71 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 
 			const activityIds = activities.map(onActivity => onActivity.activity.id);
 
-			const joinedCounts = await db
-				.select({
-					activityId: participantOnActivity.activityId,
-					count: count(),
-				})
-				.from(participantOnActivity)
-				.where(
-					and(
-						inArray(participantOnActivity.activityId, activityIds),
-						isNotNull(participantOnActivity.joinedAt),
-					),
-				)
-				.groupBy(participantOnActivity.activityId);
+			// Presentes = participantes distintos com pelo menos uma presença em sessão
+			const attendedCounts =
+				activityIds.length > 0
+					? await db
+							.select({
+								activityId: activitySession.activityId,
+								count: countDistinct(
+									sessionAttendance.participantId,
+								),
+							})
+							.from(sessionAttendance)
+							.innerJoin(
+								activitySession,
+								eq(
+									sessionAttendance.sessionId,
+									activitySession.id,
+								),
+							)
+							.where(inArray(activitySession.activityId, activityIds))
+							.groupBy(activitySession.activityId)
+					: [];
 
-			const countsMap = new Map(joinedCounts.map(c => [c.activityId, c.count]));
+			const countsMap = new Map(attendedCounts.map(c => [c.activityId, c.count]));
+
+			// Presentes por sessão (para a visão do monitor no ingresso)
+			const sessionIds = activities.flatMap(
+				(onActivity) =>
+					onActivity.activity.sessions?.map((s) => s.id) ?? [],
+			);
+			const sessionCountRows =
+				sessionIds.length > 0
+					? await db
+							.select({
+								sessionId: sessionAttendance.sessionId,
+								count: count(),
+							})
+							.from(sessionAttendance)
+							.where(inArray(sessionAttendance.sessionId, sessionIds))
+							.groupBy(sessionAttendance.sessionId)
+					: [];
+			const sessionCountsMap = new Map(
+				sessionCountRows.map((c) => [c.sessionId, c.count]),
+			);
 
 			const formattedActivities = activities.map((onActivity) => {
-				const { speakerOnActivity, ...activityData } = onActivity.activity;
+				const { speakerOnActivity, sessions, tagOnActivity, ...activityData } =
+					onActivity.activity;
+
+				const dtoSessions: ParticipantActivitySession[] = (
+					sessions ?? []
+				).map((session) => ({
+					id: session.id,
+					startsAt: session.startsAt,
+					endsAt: session.endsAt,
+					address: session.address,
+					joinedAt: session.attendances?.[0]?.joinedAt ?? null,
+					attendedCount: sessionCountsMap.get(session.id) ?? 0,
+				}));
 
 				return {
 					...activityData,
 					speakers: speakerOnActivity.map(s => s.speaker),
+					tags: (tagOnActivity ?? []).map((t) => t.tag),
+					sessions: dtoSessions,
 					role: onActivity.role,
-					joinedAt: onActivity.joinedAt,
 					participantsJoined: countsMap.get(activityData.id) || 0,
 				};
 			});
@@ -192,6 +254,42 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 						eq(participantOnActivity.participantId, participantId),
 					),
 				);
+
+			// Remove presenças em sessões desta atividade (assinatura removida)
+			const activitySessions = await db
+				.select({ id: activitySession.id })
+				.from(activitySession)
+				.where(eq(activitySession.activityId, activityId));
+
+			if (activitySessions.length > 0) {
+				await db.delete(sessionAttendance).where(
+					and(
+						eq(sessionAttendance.participantId, participantId),
+						inArray(
+							sessionAttendance.sessionId,
+							activitySessions.map((s) => s.id),
+						),
+					),
+				);
+			}
+
+			// Remove respostas do formulário da atividade
+			const activityFormVersions = await db
+				.select({ id: formVersion.id })
+				.from(formVersion)
+				.where(eq(formVersion.activityId, activityId));
+
+			if (activityFormVersions.length > 0) {
+				await db.delete(formAnswer).where(
+					and(
+						eq(formAnswer.participantId, participantId),
+						inArray(
+							formAnswer.formVersionId,
+							activityFormVersions.map((v) => v.id),
+						),
+					),
+				);
+			}
 
 			return { success: true };
 		}),

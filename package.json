@@ -10,6 +10,8 @@
 	"scripts": {
 		"dev": "turbo run dev",
 		"build": "turbo run build",
+		"test": "turbo run test",
+		"test:coverage": "turbo run test:coverage",
 		"db:push": "turbo run db:push",
 		"db:generate": "turbo run db:generate",
 		"db:migrate": "turbo run db:migrate",
@@ -19,7 +21,8 @@
 	},
 	"devDependencies": {
 		"@verific/prettier-config": "workspace:*",
-		"turbo": "2.11.4"
+		"turbo": "2.11.4",
+		"typescript": "^7.0.2"
 	},
 	"prettier": "@verific/prettier-config"
 }

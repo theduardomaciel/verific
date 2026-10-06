@@ -14,7 +14,6 @@ import { FormLabel } from "@/components/ui/form";
 
 // Types
 import type { FieldValues, UseFormReturn } from "react-hook-form";
-import type { JoinFormTypeEnum } from "@/lib/validations/forms/join-form";
 
 // Utils
 import { scrollToNextSection } from "@/lib/validations";
@@ -36,9 +35,12 @@ function FormSection({ form, children, ...rest }: FormSectionProps) {
 	const formSection = form.watch("formType");
 	const sectionNumber = Number(formSection?.replace("section", ""));
 
+	// Formulários sem wizard (sem `formType`, ex: formulário dinâmico) exibem todas as seções.
+	const hasWizard = formSection !== undefined;
 	const canSelect =
-		!Number.isNaN(sectionNumber) && rest.section < sectionNumber;
+		!hasWizard || (!Number.isNaN(sectionNumber) && rest.section < sectionNumber);
 	const isSelected =
+		!hasWizard ||
 		formSection === `section${rest.section}` ||
 		(rest.section === 0 && !formSection);
 
@@ -47,7 +49,7 @@ function FormSection({ form, children, ...rest }: FormSectionProps) {
 			// Atualizamos o valor do formulário para o valor da seção atual
 			form.setValue(
 				"formType",
-				`section${rest.section}` as JoinFormTypeEnum,
+				`section${rest.section}`,
 			);
 
 			// Realizamos o scroll para a seção atual
