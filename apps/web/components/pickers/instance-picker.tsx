@@ -149,7 +149,7 @@ export function InstancePicker<T extends Item = Item>({
 				</PopoverTrigger>
 				<PopoverContent
 					className={
-						"max-h-[50vh] w-[var(--radix-popover-trigger-width)] overflow-hidden p-0"
+						"max-h-[50vh] w-(--radix-popover-trigger-width) overflow-hidden p-0"
 					}
 				>
 					{visualContent(

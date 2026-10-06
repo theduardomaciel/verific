@@ -39,8 +39,8 @@ export function EventPageSkeleton() {
 						</div>
 					</div>
 					<div className="lg:w-1/3">
-						<Skeleton className="mb-6 min-h-96 w-full rounded-[var(--ev-card-radius,1.5rem)]" />
-						<Skeleton className="min-h-44 w-full rounded-[var(--ev-card-radius,1.5rem)]" />
+						<Skeleton className="mb-6 min-h-96 w-full rounded-(--ev-card-radius,1.5rem)" />
+						<Skeleton className="min-h-44 w-full rounded-(--ev-card-radius,1.5rem)" />
 					</div>
 				</div>
 			</EventContainer.Content>

@@ -46,7 +46,7 @@ export function MobileMenu({
 		<div
 			className={cn(
 				eventTheme
-					? "bg-[var(--ev-mobile-menu-bg)] text-[var(--ev-mobile-menu-fg)]"
+					? "bg-(--ev-mobile-menu-bg) text-(--ev-mobile-menu-fg)"
 					: "bg-background",
 				"pointer-events-none absolute inset-x-0 top-full h-screen -translate-x-full transform opacity-0 transition-all duration-300 ease-in-out select-none",
 				className,

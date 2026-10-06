@@ -37,7 +37,7 @@ async function getRenderedYear() {
  * num componente síncrono, `getRenderedYear()` era Interpolada no JSX como
  * uma promise não resolvida, e o React a rejeitava como objeto inválido.
  *
- * Cores: o `text-foreground` base e o `text-[var(--ev-footer-fg)]` passado
+ * Cores: o `text-foreground` base e o `text-(--ev-footer-fg)` passado
  * pela página do evento são resolvidos corretamente pelo `tailwind-merge`
  * (o utilitário arbitrário posterior vence o `text-foreground`), então a
  * cor do evento chega ao rodapé sem precisar de variante ou atributo extra.
@@ -101,7 +101,7 @@ async function Footer({
 						</Link>
 					</nav>
 				</div>
-				<p className="text-[var(--ev-footer-fg-soft,var(--muted-foreground))] text-xs">
+				<p className="text-(--ev-footer-fg-soft,var(--muted-foreground)) text-xs">
 					Copyright {year} verifIC. Todos os direitos reservados
 				</p>
 			</div>

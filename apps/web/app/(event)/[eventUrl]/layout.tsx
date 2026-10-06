@@ -100,14 +100,14 @@ interface EventLogoProps {
 function EventLogo({ light, dark, href }: EventLogoProps) {
 	if (!light) {
 		return (
-			<Link href={href} className="text-[var(--ev-header-fg)]">
+			<Link href={href} className="text-(--ev-header-fg)">
 				<Logo className="h-8" />
 			</Link>
 		);
 	}
 
 	return (
-		<Link href={href} className="text-[var(--ev-header-fg)]">
+		<Link href={href} className="text-(--ev-header-fg)">
 			<Image
 				src={light}
 				width={150}
@@ -205,7 +205,7 @@ export default async function EventLayout({
 						style={{ background: "var(--ev-footer-bg)" }}
 					>
 						<Footer
-							className="border-none px-4 py-4 text-[var(--ev-footer-fg)] md:px-12"
+							className="border-none px-4 py-4 text-(--ev-footer-fg) md:px-12"
 							showWatermark
 						/>
 					</div>

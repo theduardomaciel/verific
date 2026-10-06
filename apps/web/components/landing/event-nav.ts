@@ -10,7 +10,7 @@
  */
 
 /** Link comum do menu mobile do evento. */
-export const MOBILE_NAV_CLASS = "text-[var(--ev-mobile-menu-fg)]";
+export const MOBILE_NAV_CLASS = "text-(--ev-mobile-menu-fg)";
 
 /**
  * Bloco do CTA de inscrição no menu mobile: mesmos tokens do CTA do
@@ -18,7 +18,7 @@ export const MOBILE_NAV_CLASS = "text-[var(--ev-mobile-menu-fg)]";
  * mesmo preenchimento — no mobile não existe hover para "descansar".
  */
 export const MOBILE_CTA_CLASS =
-	"w-full rounded-md border border-[var(--ev-cta-border)] bg-[var(--ev-cta-hover-bg)] px-4 py-3 text-center text-sm font-semibold text-[var(--ev-cta-hover-fg)] uppercase";
+	"w-full rounded-md border border-(--ev-cta-border) bg-(--ev-cta-hover-bg) px-4 py-3 text-center text-sm font-semibold text-(--ev-cta-hover-fg) uppercase";
 
 /**
  * Botão de abrir/fechar o menu no cabeçalho do evento: lê a cor da
@@ -26,7 +26,7 @@ export const MOBILE_CTA_CLASS =
  * cabeçalho claro.
  */
 export const EVENT_MENU_BUTTON_CLASS =
-	"text-[var(--ev-nav-fg)] hover:bg-[var(--ev-nav-hover-bg)] hover:text-[var(--ev-nav-hover-fg)]";
+	"text-(--ev-nav-fg) hover:bg-(--ev-nav-hover-bg) hover:text-(--ev-nav-hover-fg)";
 
 /** Formatação (não cor) do CTA no cabeçalho do evento. */
 export const EVENT_CTA_CLASS = "border font-semibold text-xs uppercase";

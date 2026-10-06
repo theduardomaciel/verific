@@ -4,7 +4,16 @@
 
 @plugin "@tailwindcss/typography";
 
-@custom-variant dark (&:is(.dark *));
+/*
+ * `dark` = dentro de `.dark` (classe do `next-themes` no `<html>`).
+ *
+ * A exclusão de `.ev-theme-light` permite à prévia do editor de tema forçar
+ * o modo claro num elemento interno: como tokens são herdados, o `<html>`
+ * continuaria injetando os valores escuros e as variantes `dark:` dos
+ * descendentes continuariam valendo. Um escopo claro explícito vence os
+ * dois. Para todo o resto do app é um no-op — nada mais usa essa classe.
+ */
+@custom-variant dark (&:is(.dark *):not(:is(.ev-theme-light, .ev-theme-light *)));
 
 @theme inline {
 	/* Base design tokens */
