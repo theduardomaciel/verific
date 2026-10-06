@@ -56,7 +56,7 @@ export function RemoveParticipantDialog({
 			toast.success("Participante removido da atividade");
 			setOpen(false);
 			userRouter.refresh();
-		} catch (error) {
+		} catch {
 			toast.error("Erro ao remover participante da atividade");
 		}
 	};
@@ -71,7 +71,7 @@ export function RemoveParticipantDialog({
 			toast.success("Participante removido do evento");
 			setOpen(false);
 			userRouter.back();
-		} catch (error) {
+		} catch {
 			toast.error("Erro ao remover participante do evento");
 		}
 	};
@@ -113,7 +113,7 @@ export function RemoveParticipantDialog({
 					{activityId ? (
 						<Button
 							variant="destructive"
-							onClick={handleRemoveFromActivity}
+							onClick={() => void handleRemoveFromActivity()}
 							disabled={removeFromActivityMutation.isPending}
 						>
 							{removeFromActivityMutation.isPending
@@ -123,7 +123,7 @@ export function RemoveParticipantDialog({
 					) : (
 						<Button
 							variant="destructive"
-							onClick={handleRemoveFromProject}
+							onClick={() => void handleRemoveFromProject()}
 							disabled={removeFromProjectMutation.isPending}
 						>
 							{removeFromProjectMutation.isPending

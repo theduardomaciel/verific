@@ -84,7 +84,7 @@ export function DeleteDialog({
 							type="button"
 							variant={"destructive"}
 							className="flex-1"
-							onClick={handleDelete}
+							onClick={() => void handleDelete()}
 						>
 							{buttonText ?? "Excluir"}
 						</Button>
@@ -131,14 +131,13 @@ export function ActivityDeleteDialog({
 	const utils = trpc.useUtils();
 	const mutation = trpc.deleteActivity.useMutation({
 		onSuccess: () => {
-			utils.getActivities.invalidate();
-			utils.getDashboardStats.invalidate();
+			void utils.getActivities.invalidate();
+			void utils.getDashboardStats.invalidate();
 		},
 	});
 
 	return (
 		<DeleteDialog
-			children={children}
 			title="Você tem certeza que deseja excluir esta atividade?"
 			description={
 				<>
@@ -160,7 +159,9 @@ export function ActivityDeleteDialog({
 				await mutation.mutateAsync({ activityId });
 			}}
 			onSuccessRedirect="/dashboard/activities"
-		/>
+		>
+			{children}
+		</DeleteDialog>
 	);
 }
 
@@ -179,7 +180,6 @@ export function SpeakerDeleteDialog({
 
 	return (
 		<DeleteDialog
-			children={children}
 			title="Você tem certeza que deseja excluir este palestrante?"
 			description={
 				<>
@@ -193,6 +193,8 @@ export function SpeakerDeleteDialog({
 				await mutation.mutateAsync({ id: speakerId });
 				onSuccess();
 			}}
-		/>
+		>
+			{children}
+		</DeleteDialog>
 	);
 }

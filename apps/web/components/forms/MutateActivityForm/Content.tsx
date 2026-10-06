@@ -461,7 +461,7 @@ function TagsPicker({
 								disabled={
 									!newTagName.trim() || createTag.isPending
 								}
-								onClick={createAndSelect}
+								onClick={() => void createAndSelect()}
 							>
 								<Plus size={16} />
 								Criar
@@ -473,6 +473,7 @@ function TagsPicker({
 									<button
 										key={color}
 										type="button"
+										// oxlint-disable-next-line jsx-a11y/control-has-associated-label -- `title={color}` IS an accessible label (ATs announce it on focus); linter only checks for <label> or aria-label.
 										title={color}
 										onClick={() => setNewTagColor(color)}
 										className={`h-6 w-6 rounded-full border-2 transition-transform ${
@@ -504,7 +505,6 @@ function TagsPicker({
 export function MutateActivityFormContent({
 	form,
 	projectId,
-	endDate,
 	isEditing,
 	registrationFormAction,
 	onSecondarySubmit,
@@ -814,17 +814,16 @@ export function MutateActivityFormContent({
 													</Button>
 												}
 												onSuccess={() => {
-													utils.getSpeakers.invalidate();
-													refetch()
-														.catch((error) => {
+													void utils.getSpeakers.invalidate();
+													// Keep existing speakers after adding new one
+													void refetch().catch(
+														(error) => {
 															console.error(
 																"Error refetching speakers:",
 																error,
 															);
-														})
-														.then(() => {
-															// Keep existing speakers after adding new one
-														});
+														},
+													);
 												}}
 											/>
 										}
@@ -889,24 +888,19 @@ export function MutateActivityFormContent({
 																</Button>
 															}
 															onSuccess={() => {
-																refetch()
-																	.catch(
-																		(
+																void (async () => {
+																	try {
+																		await refetch();
+																		toast.success(
+																			"Palestrante atualizado com sucesso!",
+																		);
+																	} catch (error) {
+																		console.error(
+																			"Error refetching speakers:",
 																			error,
-																		) => {
-																			console.error(
-																				"Error refetching speakers:",
-																				error,
-																			);
-																		},
-																	)
-																	.then(
-																		() => {
-																			toast.success(
-																				"Palestrante atualizado com sucesso!",
-																			);
-																		},
-																	);
+																		);
+																	}
+																})();
 															}}
 														/>
 														<SpeakerDeleteDialog
@@ -914,35 +908,30 @@ export function MutateActivityFormContent({
 																speaker.id
 															}
 															onSuccess={() => {
-																refetch()
-																	.catch(
-																		(
+																void (async () => {
+																	try {
+																		await refetch();
+																		toast.success(
+																			"Palestrante excluído com sucesso!",
+																		);
+																		// Remove this speaker from the selected list
+																		field.onChange(
+																			field.value?.filter(
+																				(
+																					id,
+																				) =>
+																					id !==
+																					speaker.id,
+																			) ||
+																				[],
+																		);
+																	} catch (error) {
+																		console.error(
+																			"Error refetching speakers:",
 																			error,
-																		) => {
-																			console.error(
-																				"Error refetching speakers:",
-																				error,
-																			);
-																		},
-																	)
-																	.then(
-																		() => {
-																			toast.success(
-																				"Palestrante excluído com sucesso!",
-																			);
-																			// Remove this speaker from the selected list
-																			field.onChange(
-																				field.value?.filter(
-																					(
-																						id,
-																					) =>
-																						id !==
-																						speaker.id,
-																				) ||
-																					[],
-																			);
-																		},
-																	);
+																		);
+																	}
+																})();
 															}}
 														>
 															<Button

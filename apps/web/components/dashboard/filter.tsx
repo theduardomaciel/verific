@@ -197,7 +197,6 @@ const MAX_VISIBLE_FILTERS = 2;
 
 function CheckboxFilter({
 	items,
-	config,
 	filters,
 	setFilters,
 	isPendingFilterTransition,
@@ -270,7 +269,7 @@ function CheckboxFilter({
 				}}
 			>
 				{items.length > 0 ? (
-					items.map((item, index) => (
+					items.map((item) => (
 						<li
 							key={item.value}
 							className={cn(

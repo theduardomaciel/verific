@@ -21,6 +21,7 @@ export function useControlledParam<T extends string | string[]>({
 	key,
 	value,
 	onChange,
+	// oxlint-disable-next-line typescript/no-useless-default-assignment -- falso positivo: callers omitem `debounce`, o default é usado (removê-lo mudaria o setTimeout para 0ms).
 	debounce = 750,
 	type = "string",
 	defaultValue,
@@ -77,12 +78,8 @@ export function useControlledParam<T extends string | string[]>({
 
 	const [localValue, setLocalValue] = useState<T>(getInitialValue);
 
-	// Sincroniza value externo em modo Client-Driven
-	useEffect(() => {
-		if (isControlled && value !== undefined) {
-			setLocalValue(value);
-		}
-	}, [value, isControlled]);
+	// NOTE: em modo Client-Driven o valor lido é sempre o `value` prop
+	// (`currentValue` abaixo), então não há nada para sincronizar aqui.
 
 	// Refs para gerenciar debounce manualmente (mais eficiente que useDebounce)
 	const timeoutRef = useRef<NodeJS.Timeout | null>(null);

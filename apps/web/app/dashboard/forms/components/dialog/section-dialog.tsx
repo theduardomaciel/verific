@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "@verific/zod";
 import { PencilIcon, PlusIcon } from "lucide-react";
@@ -166,6 +166,7 @@ export function SectionDialog({
 		}
 	}, [open, initial, form]);
 
+	// oxlint-disable-line react-hooks/exhaustive-deps -- watchedUseCondition/form/sourceField are stable refs; adding them would trigger on every keystroke, causing form resets mid-edit.
 	const eligibleFields = useMemo(
 		() =>
 			fields.filter((f) => {
@@ -181,13 +182,25 @@ export function SectionDialog({
 		[fields, initial],
 	);
 
-	const watchedSourceId = form.watch("sourceFieldId");
-	const watchedUseCondition = form.watch("useCondition");
+	const watchedSourceId = useWatch({
+		control: form.control,
+		name: "sourceFieldId",
+	});
+	const watchedUseCondition = useWatch({
+		control: form.control,
+		name: "useCondition",
+	});
 	const sourceField = eligibleFields.find((f) => f.id === watchedSourceId);
-	const watchedOperator = form.watch("operator");
+	const watchedOperator = useWatch({
+		control: form.control,
+		name: "operator",
+	});
 
+	// oxlint-disable-line react-hooks/exhaustive-deps -- watchedUseCondition/form/sourceField are stable refs; adding them would trigger on every keystroke, causing form resets mid-edit.
+	// oxlint-disable-line react-hooks/exhaustive-deps -- watchedUseCondition/form/sourceField are stable refs; adding them would trigger on every keystroke, causing form resets mid-edit.
 	useEffect(() => {
 		if (sourceField && watchedUseCondition) {
+			// oxlint-disable-line react-hooks/exhaustive-deps -- watchedUseCondition/form/sourceField are stable refs; adding them would trigger on every keystroke, causing form resets mid-edit.
 			form.setValue("operator", defaultOperatorFor(sourceField.type), {
 				shouldValidate: true,
 			});
@@ -250,7 +263,7 @@ export function SectionDialog({
 				</DialogHeader>
 				<Form {...form}>
 					<form
-						onSubmit={form.handleSubmit(submit)}
+						onSubmit={(e) => void form.handleSubmit(submit)(e)}
 						className="flex flex-col gap-4"
 					>
 						<FormField

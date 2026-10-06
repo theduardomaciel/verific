@@ -390,7 +390,7 @@ export const activitiesRouter = createTRPCRouter({
 			].map((row) => {
 				// Removemos a data em que o usuário se inscreveu no evento para que o
 				// "joinedAt" de "participant" não seja exposto aqui
-				const { joinedAt, ...rest } = row.participant;
+				const { joinedAt: _joinedAt, ...rest } = row.participant;
 
 				return {
 					...row.participantOnActivity,

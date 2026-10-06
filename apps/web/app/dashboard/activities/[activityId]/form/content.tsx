@@ -77,9 +77,11 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 		);
 	};
 
+	// oxlint-disable-line react-hooks/exhaustive-deps -- runEnsure is stable (ref-captured); adding it would cause the effect to re-run on every render, defeating the once-per-mount guarantee.
 	useEffect(() => {
 		if (ensureRef.current) return;
 		ensureRef.current = true;
+		// oxlint-disable-line react-hooks/exhaustive-deps -- runEnsure is stable (ref-captured); adding it would cause the effect to re-run on every render, defeating the once-per-mount guarantee.
 		runEnsure();
 	}, [activityId]);
 

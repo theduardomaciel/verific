@@ -30,7 +30,7 @@ export function ProjectSettingsSubscriptionsForm({ project }: Props) {
 	const utils = trpc.useUtils();
 	const updateMutation = trpc.updateProject.useMutation({
 		onSuccess: () => {
-			utils.getProject.invalidate();
+			void utils.getProject.invalidate();
 		},
 	});
 

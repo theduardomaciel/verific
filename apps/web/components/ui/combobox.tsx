@@ -80,6 +80,10 @@ export function Combobox({
 		);
 	}, [items, query]);
 
+	// Virtualização via tanstack: biblioteca incompatível com o compiler
+	// (uso imperativo de refs/scroll interno). O componente apenas consome
+	// os itens visíveis; sem acesso a refs no render deste componente.
+	// oxlint-disable-next-line react/incompatible-library -- uso confinado à virtualização; bailout aceito, sem quebra.
 	const rowVirtualizer = useVirtualizer({
 		count: visibleItems.length,
 		getScrollElement: () => scrollEl,
@@ -119,7 +123,6 @@ export function Combobox({
 			<PopoverTrigger asChild>
 				<Button
 					variant="outline"
-					role="combobox"
 					aria-expanded={open}
 					className={cn(
 						"w-full justify-between",

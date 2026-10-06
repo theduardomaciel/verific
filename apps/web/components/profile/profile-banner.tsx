@@ -56,6 +56,7 @@ export function ProfileBanner({
 			/>
 			<div className="relative z-10 flex w-full flex-col items-start gap-4">
 				{avatarUrl ? (
+					// oxlint-disable-next-line next/no-img-element -- URL remota fornecida pelo usuário; next/image lançaria erro em hosts fora de remotePatterns.
 					<img
 						src={avatarUrl}
 						alt={`Foto de ${name}`}

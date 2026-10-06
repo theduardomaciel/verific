@@ -39,11 +39,11 @@ export function ShareDialog({
 
 	const shareData = { title, text: description, url };
 
-	const handleClick = async (e: React.MouseEvent) => {
+	const handleClick = async () => {
 		if (navigator.share) {
 			try {
 				await navigator.share(shareData);
-			} catch (err) {
+			} catch {
 				toast.error("Erro ao compartilhar");
 			}
 		} else {
@@ -60,7 +60,21 @@ export function ShareDialog({
 
 	return (
 		<>
-			<div onClick={handleClick}>{children}</div>
+			<div
+				// oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- role="button" with full keyboard support (Enter/Space); <button> would break layout semantics.
+				role="button"
+				tabIndex={0}
+				aria-label={title}
+				onClick={() => void handleClick()}
+				onKeyDown={(e) => {
+					if (e.key === "Enter" || e.key === " ") {
+						e.preventDefault();
+						void handleClick();
+					}
+				}}
+			>
+				{children}
+			</div>
 			<Dialog open={open} onOpenChange={setOpen}>
 				<DialogContent className="w-full overflow-y-scroll sm:max-w-lg">
 					<DialogHeader className="w-full">

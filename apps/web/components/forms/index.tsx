@@ -69,9 +69,18 @@ function FormSection({ form, children, ...rest }: FormSectionProps) {
 			<FormProgress {...rest} />
 			<div
 				className="bg-card relative flex w-full flex-col items-start justify-start gap-6 rounded-2xl border p-6 md:p-9"
+				// oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- role="button" with full keyboard support (Enter/Space); <button> would break layout semantics.
+				role="button"
+				tabIndex={0}
 				onClick={handleSelect}
 				onKeyUp={(e) => {
 					if (e.key === "Enter") handleSelect();
+				}}
+				onKeyDown={(e) => {
+					if (e.key === " ") {
+						e.preventDefault();
+						handleSelect();
+					}
 				}}
 			>
 				{children}

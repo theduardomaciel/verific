@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 
 // Components
 import { ActivityCard } from "@/components/activity/activity-card";
@@ -137,10 +137,14 @@ export function ScheduleContent({
 		useState<string[]>(initialExpanded);
 
 	// Só reage a mudanças de filtro/busca (estado inicial já correto,
-	// sem flash de abrir/fechar no carregamento).
-	useEffect(() => {
+	// sem flash de abrir/fechar no carregamento). Ajuste durante a
+	// renderização em vez de efeito: sem render cascata.
+	const [prevInitialExpanded, setPrevInitialExpanded] =
+		useState(initialExpanded);
+	if (prevInitialExpanded !== initialExpanded) {
+		setPrevInitialExpanded(initialExpanded);
 		setExpandedCategories(initialExpanded);
-	}, [initialExpanded]);
+	}
 
 	return (
 		<>

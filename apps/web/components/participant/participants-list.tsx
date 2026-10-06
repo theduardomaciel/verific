@@ -51,7 +51,6 @@ interface ListProps {
 }
 
 function List({
-	activityId,
 	hasActivity = false,
 	participants,
 	sessions,
@@ -77,6 +76,7 @@ function List({
 			)}
 		>
 			{participants.map((participant) => (
+				// oxlint-disable-next-line typescript/unbound-method -- expressão membro JSX (`<A.B />`), não extração de método; sem `this` envolvido.
 				<ParticipantListItem.Activity
 					key={participant.id}
 					participant={participant}

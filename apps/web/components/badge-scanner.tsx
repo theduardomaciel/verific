@@ -89,7 +89,7 @@ export function BadgeScanner({ sessionId, buttonLabel }: Props) {
 					</p>
 				</div>
 				<Scanner
-					onScan={handleScan}
+					onScan={(result) => void handleScan(result)}
 					paused={!open}
 					constraints={{
 						facingMode: "environment",

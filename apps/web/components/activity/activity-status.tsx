@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Calendar, Timer } from "lucide-react";
 
 // Components
@@ -23,6 +24,10 @@ interface Props {
 export function ActivityStatus({ className, sessions, dateFormat }: Props) {
 	const live = getLiveSession(sessions);
 	const next = live ? null : getNextSession(sessions);
+	// Congelado na montagem: evita que o selo oscile entre estados em
+	// re-renders não relacionados (não há timer; o valor é recalculado
+	// a cada montagem).
+	const [now] = useState(() => Date.now());
 
 	if (live) {
 		return (
@@ -36,7 +41,7 @@ export function ActivityStatus({ className, sessions, dateFormat }: Props) {
 	}
 
 	if (next) {
-		const startsIn = new Date(next.startsAt).getTime() - Date.now();
+		const startsIn = new Date(next.startsAt).getTime() - now;
 		if (startsIn <= 15 * 60 * 1000) {
 			return (
 				<Badge variant="secondary">
