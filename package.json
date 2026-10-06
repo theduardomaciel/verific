@@ -6,7 +6,7 @@
 		"packages/*",
 		"config/*"
 	],
-	"packageManager": "pnpm@12.8.1",
+	"packageManager": "pnpm@12.9.1",
 	"scripts": {
 		"dev": "turbo run dev",
 		"build": "turbo run build",
@@ -30,16 +30,16 @@
 		"oxfmt": "^0.72.0",
 		"oxlint": "^1.87.0",
 		"oxlint-tsgolint": "^7.0.2003",
-		"turbo": "2.11.4",
+		"turbo": "2.11.7",
 		"typescript": "^7.0.2"
 	},
 	"lint-staged": {
 		"*.{js,mjs,cjs,jsx,ts,mts,cts,tsx}": [
-			"oxfmt --write",
+			"oxfmt --write --no-error-on-unmatched-pattern",
 			"oxlint --type-aware"
 		],
 		"*.{json,jsonc,css,md,mdx,yaml,yml}": [
-			"oxfmt --write"
+			"oxfmt --write --no-error-on-unmatched-pattern"
 		]
 	}
 }
