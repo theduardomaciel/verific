@@ -27,6 +27,7 @@ export function FullScreenDrawer({
 	// Sincroniza sem efeito em cascata: montagem garante o portal só no
 	// client (sem mismatch de hidratação) e a prop controla o estado.
 	if (!mounted) setMounted(true);
+
 	if (openProp !== prevOpenProp) {
 		setPrevOpenProp(openProp);
 		setOpen(openProp ?? true);
@@ -39,7 +40,6 @@ export function FullScreenDrawer({
 
 	const drawer = (
 		<div
-			// oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- drawer customizado com portal/foco próprios; <dialog> nativo exige API imperativa showModal.
 			role="dialog"
 			aria-modal="true"
 			className={cn(
@@ -60,7 +60,6 @@ export function FullScreenDrawer({
 				{closeButton ? (
 					<div
 						className="absolute top-4 right-4 z-10"
-						// oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- envolve o `closeButton` fornecido pelo chamador (já interativo); div é só posicionamento.
 						onClick={handleClose}
 					>
 						{closeButton}

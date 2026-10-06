@@ -61,7 +61,6 @@ export function ShareDialog({
 	return (
 		<>
 			<div
-				// oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- role="button" with full keyboard support (Enter/Space); <button> would break layout semantics.
 				role="button"
 				tabIndex={0}
 				aria-label={title}
