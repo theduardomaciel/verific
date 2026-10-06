@@ -62,6 +62,9 @@ const HEADER_H = "5.25rem";
  * (`z-0`, anteriores no DOM) e do conteúdo da capa (posterior/`z-10`).
  */
 function HeroRoot({ children, coverUrl, showImage = true }: HeroProps) {
+	// DEV: Simulate a 500ms delay to show the skeleton
+	// await new Promise((resolve) => setTimeout(resolve, 500));
+
 	return (
 		<section
 			className={cn(
@@ -97,7 +100,7 @@ function HeroRoot({ children, coverUrl, showImage = true }: HeroProps) {
 					{/* Camada 1: véu base fixo (piso de contraste). */}
 					<div
 						aria-hidden
-						className={cn("absolute inset-0 z-[1]", HERO_BASE_SCRIM)}
+						className={cn("absolute inset-0 z-1", HERO_BASE_SCRIM)}
 					/>
 					{/* Camada 2: cor escolhida no tema, na opacidade escolhida. */}
 					<div
@@ -134,7 +137,7 @@ function HeroTitle({
 	return (
 		<h1
 			className={cn(
-				"font-heading text-(--ev-hero-fg) mb-4 text-5xl font-bold",
+				"font-heading mb-4 text-5xl font-bold text-(--ev-hero-fg)",
 				className,
 			)}
 		>
@@ -154,7 +157,7 @@ function HeroMeta({
 	return (
 		<div
 			className={cn(
-				"text-(--ev-hero-fg-soft) mb-4 flex items-center text-lg",
+				"mb-4 flex items-center text-lg text-(--ev-hero-fg-soft)",
 				className,
 			)}
 		>
@@ -174,7 +177,7 @@ function HeroDescription({
 	return (
 		<p
 			className={cn(
-				"text-(--ev-hero-fg-soft) text-base font-semibold md:max-w-md",
+				"text-base font-semibold text-(--ev-hero-fg-soft) md:max-w-md",
 				className,
 			)}
 		>
