@@ -4,6 +4,9 @@
 	"types": "./index.ts",
 	"version": "0.0.0",
 	"private": true,
+	"scripts": {
+		"typecheck": "tsc --noEmit"
+	},
 	"dependencies": {
 		"@better-auth/drizzle-adapter": "1.7.7",
 		"@verific/drizzle": "workspace:*",
