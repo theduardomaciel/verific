@@ -3,7 +3,7 @@
 	"version": "0.1.0",
 	"private": true,
 	"scripts": {
-		"dev": "next dev --turbopack",
+		"dev": "next dev",
 		"build": "tsx tools/scripts/codegen-css-colors.ts && next build",
 		"start": "next start",
 		"test": "vitest run",
@@ -95,9 +95,6 @@
 		"tailwindcss": "^4.1.15",
 		"tsx": "^4.20.6",
 		"vitest": "^5.0.3"
-	},
-	"overrides": {
-		"react-is": "^19.2.0"
 	},
 	"prettier": "@verific/prettier-config"
 }
