@@ -172,7 +172,6 @@ function CarouselItem({ className, ...props }: React.ComponentProps<"div">) {
 
 	return (
 		<div
-			// oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- slide de carousel (padrão embla/shadcn); nenhuma tag nativa representa um slide.
 			role="group"
 			aria-roledescription="slide"
 			data-slot="carousel-item"

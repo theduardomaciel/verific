@@ -21,7 +21,6 @@ export function useControlledParam<T extends string | string[]>({
 	key,
 	value,
 	onChange,
-	// oxlint-disable-next-line typescript/no-useless-default-assignment -- falso positivo: callers omitem `debounce`, o default é usado (removê-lo mudaria o setTimeout para 0ms).
 	debounce = 750,
 	type = "string",
 	defaultValue,
