@@ -3,8 +3,10 @@
 	"version": "0.1.0",
 	"private": true,
 	"scripts": {
+		"predev": "pnpm codegen:css-colors",
 		"dev": "next dev",
-		"build": "tsx tools/scripts/codegen-css-colors.ts && next build",
+		"prebuild": "pnpm codegen:css-colors",
+		"build": "next build",
 		"start": "next start",
 		"test": "vitest run",
 		"test:watch": "vitest",
