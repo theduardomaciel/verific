@@ -51,7 +51,7 @@ import type { FormState } from "@/lib/types/forms";
 
 // API
 import { trpc } from "@/lib/trpc/react";
-import { updateProjectCookies } from "@/app/actions";
+import { revalidateProjects, updateProjectCookies } from "@/app/actions";
 
 const formSchema = z.object({
 	name: z.string().min(2, {
@@ -106,7 +106,7 @@ export function CreateProjectDialog() {
 
 		// console.log(data);
 		try {
-			const { id } = await createMutation.mutateAsync({
+			const { id, url } = await createMutation.mutateAsync({
 				startDate: date.from,
 				endDate: date.to,
 				address: location.address,
@@ -116,6 +116,7 @@ export function CreateProjectDialog() {
 			});
 
 			// Atualiza o cookie com as informações do projeto
+			await revalidateProjects(url);
 			updateProjectCookies(id);
 		} catch (error) {
 			console.error(error);

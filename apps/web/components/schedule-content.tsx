@@ -46,11 +46,8 @@ export function ScheduleContent({
 	activities,
 	eventUrl,
 }: ScheduleContentProps) {
-	const {
-		userId,
-		subscribedIds,
-		participantId,
-	} = useSubscribedActivities(eventUrl);
+	const { userId, subscribedIds, participantId } =
+		useSubscribedActivities(eventUrl);
 	const [searchQuery, setSearchQuery] = useState<string>("");
 	const [sortBy, setSortBy] = useState<string | undefined>(undefined);
 	const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
@@ -64,7 +61,10 @@ export function ScheduleContent({
 	};
 
 	const availableTags = useMemo(() => {
-		const map = new Map<string, { id: string; name: string; color: string }>();
+		const map = new Map<
+			string,
+			{ id: string; name: string; color: string }
+		>();
 		for (const activity of activities) {
 			for (const tag of activity.tags ?? []) {
 				if (!map.has(tag.id)) map.set(tag.id, tag);
@@ -133,8 +133,11 @@ export function ScheduleContent({
 		return { grouped, categories, initialExpanded };
 	}, [filteredActivities]);
 
-	const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+	const [expandedCategories, setExpandedCategories] =
+		useState<string[]>(initialExpanded);
 
+	// Só reage a mudanças de filtro/busca (estado inicial já correto,
+	// sem flash de abrir/fechar no carregamento).
 	useEffect(() => {
 		setExpandedCategories(initialExpanded);
 	}, [initialExpanded]);
@@ -178,7 +181,7 @@ export function ScheduleContent({
 					/>
 				</div>
 			</div>
-			<div className="container-p mb-10">
+			<div className="container-p">
 				{filteredActivities.length > 0 ? (
 					<Accordion
 						type="multiple"
@@ -188,7 +191,7 @@ export function ScheduleContent({
 					>
 						{categories.map((category) => (
 							<AccordionItem key={category} value={category}>
-								<AccordionTrigger className="text-xl font-bold">
+								<AccordionTrigger className="font-heading text-xl font-bold">
 									{category}
 								</AccordionTrigger>
 								<AccordionContent className="-m-4 p-4">

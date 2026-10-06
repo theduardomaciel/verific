@@ -82,7 +82,6 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 		if (ensureRef.current) return;
 		ensureRef.current = true;
 		runEnsure();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [activityId]);
 
 	const ready =

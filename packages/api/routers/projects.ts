@@ -3,7 +3,9 @@ import { db } from "@verific/drizzle";
 import { z } from "@verific/zod";
 
 import { participant, project, projectModerator } from "@verific/drizzle/schema";
+import { eventThemeSchema } from "@verific/drizzle/theme";
 import { eq } from "@verific/drizzle/orm";
+import { generateShortId } from "./profiles";
 
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
@@ -21,14 +23,38 @@ export const updateProjectSchema = z.object({
 	isRegistrationEnabled: z.boolean().optional(),
 	isArchived: z.boolean().optional(),
 	logoUrl: z.string().optional(),
+	logoDarkUrl: z.string().optional().nullable(),
 	largeLogoUrl: z.string().optional().nullable(),
+	largeLogoDarkUrl: z.string().optional().nullable(),
 	coverUrl: z.string().optional(),
 	thumbnailUrl: z.string().optional(),
 	primaryColor: z.string().optional().nullable(),
 	secondaryColor: z.string().optional().nullable(),
+	theme: eventThemeSchema.optional(),
+	profilesEnabled: z.boolean().optional(),
 	startDate: z.coerce.date().optional(),
 	endDate: z.coerce.date().optional(),
 });
+
+async function requireProjectAccess(projectId: string, userId: string) {
+	const data = await db.query.project.findFirst({
+		where: eq(project.id, projectId),
+		with: { moderators: { columns: { userId: true } } },
+	});
+	if (!data) {
+		throw new TRPCError({ code: "NOT_FOUND", message: "Evento não encontrado." });
+	}
+	const allowed =
+		data.ownerId === userId ||
+		data.moderators.some((m) => m.userId === userId);
+	if (!allowed) {
+		throw new TRPCError({
+			code: "FORBIDDEN",
+			message: "Sem permissão neste evento.",
+		});
+	}
+	return data;
+}
 
 export const projectsRouter = createTRPCRouter({
 	createProject: protectedProcedure
@@ -40,7 +66,9 @@ export const projectsRouter = createTRPCRouter({
 				latitude: z.number(),
 				longitude: z.number(),
 				logoUrl: z.string().optional().nullable(),
+				logoDarkUrl: z.string().optional().nullable(),
 				largeLogoUrl: z.string().optional().nullable(),
+				largeLogoDarkUrl: z.string().optional().nullable(),
 				coverUrl: z.string().optional().nullable(),
 				thumbnailUrl: z.string().optional().nullable(),
 				startDate: z.coerce.date(),
@@ -55,6 +83,8 @@ export const projectsRouter = createTRPCRouter({
 				latitude,
 				longitude,
 				coverUrl,
+				logoDarkUrl,
+				largeLogoDarkUrl,
 				thumbnailUrl,
 				logoUrl,
 				largeLogoUrl,
@@ -83,6 +113,8 @@ export const projectsRouter = createTRPCRouter({
 					logoUrl,
 					largeLogoUrl,
 					coverUrl,
+				logoDarkUrl,
+				largeLogoDarkUrl,
 					thumbnailUrl,
 					startDate,
 					endDate,
@@ -98,6 +130,7 @@ export const projectsRouter = createTRPCRouter({
 			await db.insert(participant).values({
 				projectId: created[0]!.id,
 				userId: userId,
+				shortId: generateShortId(),
 			});
 
 			return { id: created[0]!.id, url: created[0]!.url };
@@ -105,8 +138,10 @@ export const projectsRouter = createTRPCRouter({
 
 	updateProject: protectedProcedure
 		.input(updateProjectSchema)
-		.mutation(async ({ input }) => {
+		.mutation(async ({ input, ctx }) => {
 			const { id, ...rest } = input;
+
+			await requireProjectAccess(id, ctx.session.user.id);
 
 			// Remove undefined fields so only provided fields are updated
 			const updateData = Object.fromEntries(

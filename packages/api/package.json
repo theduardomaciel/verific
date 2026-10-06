@@ -10,6 +10,8 @@
 		"test:coverage": "vitest run --coverage"
 	},
 	"dependencies": {
+		"@aws-sdk/client-s3": "^3.1146.0",
+		"@aws-sdk/s3-request-presigner": "^3.1146.0",
 		"@trpc/server": "^11.6.0",
 		"@verific/auth": "workspace:*",
 		"@verific/drizzle": "workspace:*",
@@ -19,7 +21,6 @@
 		"superjson": "^2.2.2"
 	},
 	"devDependencies": {
-		"@verific/eslint-config": "workspace:*",
 		"@verific/prettier-config": "workspace:*",
 		"@verific/typescript-config": "workspace:*",
 		"@vitest/coverage-v8": "^5.0.3",

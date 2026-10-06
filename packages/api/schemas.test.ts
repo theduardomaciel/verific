@@ -5,6 +5,7 @@ import {
 	filterVisibleFields,
 	formatAnswerValue,
 	getVisibleSectionIds,
+	submitAnswersInput,
 	validateAnswers,
 	validateSectionVisibilityRule,
 	type FormFieldForValidation,
@@ -28,6 +29,63 @@ const optionalChoiceField: FormFieldForValidation = {
 	isVisible: true,
 	isActive: true,
 };
+
+const requiredSocialField: FormFieldForValidation = {
+	key: "redes",
+	label: "Redes",
+	type: "social_links",
+	required: true,
+	isVisible: true,
+	isActive: true,
+};
+
+describe("social_links", () => {
+	it("accepts handles and normalizes to URLs", () => {
+		const result = validateAnswers([requiredSocialField], {
+			redes: [
+				{ service: "github", value: "fulana" },
+				{ service: "instagram", value: "https://instagram.com/fulana" },
+			],
+		});
+
+		expect(result.success).toBe(true);
+		expect(result.data).toEqual({
+			redes: [
+				{ service: "github", value: "https://github.com/fulana" },
+				{ service: "instagram", value: "https://instagram.com/fulana" },
+			],
+		});
+	});
+
+	it("requires at least one entry when required", () => {
+		const result = validateAnswers([requiredSocialField], { redes: [] });
+
+		expect(result.success).toBe(false);
+		expect(result.errors?.redes).toBeDefined();
+	});
+
+	it("rejects unknown services and disallowed ones", () => {
+		const unknown = validateAnswers([requiredSocialField], {
+			redes: [{ service: "myspace", value: "x" }],
+		});
+		expect(unknown.success).toBe(false);
+
+		const restricted = validateAnswers(
+			[{ ...requiredSocialField, options: ["github"] }],
+			{ redes: [{ service: "instagram", value: "fulana" }] },
+		);
+		expect(restricted.success).toBe(false);
+	});
+
+	it("formats entries as URLs for export", () => {
+		expect(
+			formatAnswerValue("social_links", [
+				{ service: "github", value: "https://github.com/fulana" },
+				{ service: "lattes", value: "http://lattes.cnpq.br/123" },
+			]),
+		).toBe("https://github.com/fulana; http://lattes.cnpq.br/123");
+	});
+});
 
 describe("validateAnswers", () => {
 	it("accepts valid answers", () => {
@@ -314,5 +372,38 @@ describe("validateSectionVisibilityRule", () => {
 			sourceSectionId: "s1",
 		});
 		expect(err).toBeNull();
+	});
+});
+
+describe("answer transport values (RHF-coerced)", () => {
+	const birthField = {
+		key: "data_de_nascimento",
+		label: "Data de nascimento",
+		type: "date",
+		required: true,
+		isVisible: true,
+		isActive: true,
+	} satisfies FormFieldForValidation;
+
+	it("submitAnswersInput accepts Date instances (SuperJSON)", () => {
+		const parsed = submitAnswersInput.safeParse({
+			projectId: "11111111-1111-4111-8111-111111111111",
+			name: "Fulana de Tal",
+			answers: { data_de_nascimento: new Date("2004-03-16T12:00:00") },
+		});
+
+		expect(parsed.success).toBe(true);
+	});
+
+	it("validateAnswers accepts Date and ISO strings for date fields", () => {
+		const fromDate = validateAnswers([birthField], {
+			data_de_nascimento: new Date("2004-03-16T12:00:00"),
+		});
+		expect(fromDate.success).toBe(true);
+
+		const fromString = validateAnswers([birthField], {
+			data_de_nascimento: "2004-03-16",
+		});
+		expect(fromString.success).toBe(true);
 	});
 });

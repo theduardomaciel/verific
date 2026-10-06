@@ -84,6 +84,7 @@ async function seedParticipants(users: any[], projects: any[]) {
 			userId: users[i].id,
 			projectId: projects[i % projects.length].id,
 			joinedAt: faker.date.past(),
+			shortId: faker.string.alphanumeric({ length: 10 }),
 		});
 	}
 	console.log("🌱 Semeando participantes...");

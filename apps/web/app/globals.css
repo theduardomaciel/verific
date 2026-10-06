@@ -4,7 +4,16 @@
 
 @plugin "@tailwindcss/typography";
 
-@custom-variant dark (&:is(.dark *));
+/*
+ * `dark` = dentro de `.dark` (classe do `next-themes` no `<html>`).
+ *
+ * A exclusão de `.ev-theme-light` permite à prévia do editor de tema forçar
+ * o modo claro num elemento interno: como tokens são herdados, o `<html>`
+ * continuaria injetando os valores escuros e as variantes `dark:` dos
+ * descendentes continuariam valendo. Um escopo claro explícito vence os
+ * dois. Para todo o resto do app é um no-op — nada mais usa essa classe.
+ */
+@custom-variant dark (&:is(.dark *):not(:is(.ev-theme-light, .ev-theme-light *)));
 
 @theme inline {
 	/* Base design tokens */
@@ -59,10 +68,32 @@
 	scrollbar-width: none;
 	-ms-overflow-style: none;
 }
-
 .scrollbar-none::-webkit-scrollbar {
 	width: 0px;
 	background: transparent;
+}
+
+/* ---- Per-event theme tokens (Fase 2) ---- */
+
+/* Fonte de títulos do evento (cai para a fonte padrão fora do escopo) */
+.font-heading {
+	font-family: var(--ev-font-heading, var(--font-sans));
+}
+
+/* CTA primário do evento (fundo e texto derivados do tema) */
+.ev-button {
+	background-color: var(--ev-button-bg, var(--primary));
+	color: var(--ev-button-fg, var(--primary-foreground));
+}
+
+.ev-button:hover {
+	opacity: 0.92;
+}
+
+/* Esqueleto de carregamento: cor escolhida no tema do evento; fora do
+   escopo do evento cai para `--secondary` (comportamento atual). */
+.ev-skeleton {
+	background-color: var(--ev-skeleton-bg, var(--secondary));
 }
 
 .container-p {
@@ -113,13 +144,13 @@
 	@media (width >=80rem
 
 		/* 1280px */) {
-		padding-inline: calc((100% - 64rem) / 2);
+		padding-inline: calc((100% - 72rem) / 2);
 	}
 
 	@media (width >=96rem
 
 		/* 1536px */) {
-		padding-inline: calc((100% - 96rem) / 2);
+		padding-inline: calc((100% - 92rem) / 2);
 	}
 }
 

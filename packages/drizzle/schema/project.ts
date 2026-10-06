@@ -6,8 +6,8 @@ import {
 	uuid,
 	doublePrecision,
 	boolean,
+	jsonb,
 } from "drizzle-orm/pg-core";
-
 import { activity } from "./activity";
 import { participant } from "./participant";
 import { speaker } from "./speaker";
@@ -16,6 +16,8 @@ import { projectModerator } from "./project-moderator";
 import { formVersion } from "./form-version";
 import { formField } from "./form-field";
 import { formAnswer } from "./form-answer";
+import type { EventTheme } from "../theme";
+import type { ProfileLayout } from "../profile-layout";
 
 export const project = pgTable("projects", {
 	id: uuid("id").primaryKey().defaultRandom(),
@@ -33,13 +35,21 @@ export const project = pgTable("projects", {
 	isRegistrationEnabled: boolean("is_registration_enabled").default(false),
 	isArchived: boolean("is_archived").default(false),
 
+	profilesEnabled: boolean("profiles_enabled").default(false),
+
 	logoUrl: text("logo_url"),
+	logoDarkUrl: text("logo_dark_url"),
 	largeLogoUrl: text("large_logo_url"),
+	largeLogoDarkUrl: text("large_logo_dark_url"),
 	coverUrl: text("cover_url"),
 	thumbnailUrl: text("thumbnail_url"),
 
 	primaryColor: text("primary_color"), // quando nulo, usar a cor padrão do sistema
 	secondaryColor: text("secondary_color"), // quando nulo, usar a cor padrão do sistema
+
+	theme: jsonb("theme").$type<EventTheme>(),
+
+	profileLayout: jsonb("profile_layout").$type<ProfileLayout>(),
 
 	startDate: timestamp("start_date").notNull(),
 	endDate: timestamp("end_date").notNull(),

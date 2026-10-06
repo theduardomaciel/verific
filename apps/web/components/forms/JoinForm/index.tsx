@@ -23,15 +23,20 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import JoinForm0 from "./Section0";
+import { isFilled } from "@/lib/forms/layout";
+import { Eye } from "lucide-react";
+import { isFieldLinked } from "@verific/drizzle/profile-layout";
+import { scrollToNextSection } from "@/lib/validations";
 
 // Validation
 import { buildAnswersSchema, filterVisibleFields } from "@verific/api/schemas";
-import { groupFieldsBySection } from "@/lib/forms/layout";
+import { groupFieldsBySection, planFormSections } from "@/lib/forms/layout";
 import { getVisibleSectionIds } from "@verific/api/schemas";
 import type { GenericForm } from "..";
 
 // Types
 import type { User } from "@verific/auth";
+import type { RouterOutput } from "@verific/api";
 
 // API
 import { trpc } from "@/lib/trpc/react";
@@ -47,19 +52,27 @@ interface JoinFormProps {
 		logo?: string;
 		colors?: string[];
 	};
+	/** Dados do formulário já carregados pelo SubscribeGate (evita cascata). */
+	formData: RouterOutput["getPublishedForm"];
+	/** Layout do perfil já carregado pelo SubscribeGate (pode ser nulo). */
+	profileLayout: RouterOutput["getProfileLayout"] | null;
 }
 
-export default function JoinForm({ user, project }: JoinFormProps) {
+export default function JoinForm({
+	user,
+	project,
+	formData,
+	profileLayout,
+}: JoinFormProps) {
 	const router = useRouter();
 	const [currentState, setCurrentState] = useState<
 		false | "submitting" | "error" | "submitted"
 	>(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+	const [createdShortId, setCreatedShortId] = useState<string | null>(null);
 
-	const { data: formData, isPending: isFormPending } = trpc.getPublishedForm.useQuery({
-		projectId: project.id,
-	});
 	const submitMutation = trpc.submitAnswers.useMutation();
+	const layout = profileLayout;
 
 	const fields = useMemo(() => formData?.fields ?? [], [formData]);
 	const sections = useMemo(() => formData?.sections ?? [], [formData]);
@@ -135,12 +148,16 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 		};
 	}, [fieldsForValidation, sectionsForVisibility, nameSchema]);
 
-	const form = useForm<{ name: string; answers: Record<string, unknown> }>({
+	const form = useForm<{
+		name: string;
+		answers: Record<string, unknown>;
+	}>({
 		resolver: resolver as never,
 		defaultValues: { name: user?.name || "", answers: {} },
 	});
 
 	const watchedAnswers = form.watch("answers") ?? {};
+	const watchedName = form.watch("name") ?? "";
 
 	const { visibleFields, groupedSections } = useMemo(() => {
 		if (!hasConditional) {
@@ -162,6 +179,29 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 		return { visibleFields: visible, groupedSections: grouped };
 	}, [hasConditional, baseVisibleFields, sections, sectionsForVisibility, fieldsForValidation, watchedAnswers]);
 
+	const planned = useMemo(
+		() => planFormSections(groupedSections, false),
+		[groupedSections],
+	);
+
+	const nameField = (
+		<FormField
+			control={form.control}
+			name="name"
+			render={({ field }) => (
+				<FormItem className="w-full">
+					<FormLabel>
+						Nome completo <span className="text-destructive ml-1">*</span>
+					</FormLabel>
+					<FormControl>
+						<Input placeholder="Fulano da Silva" {...field} value={field.value ?? ""} />
+					</FormControl>
+					<FormMessage />
+				</FormItem>
+			)}
+		/>
+	);
+
 	useEffect(() => {
 		if (user?.name) form.setValue("name", user.name);
 	}, [user?.name, form]);
@@ -179,7 +219,32 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 		if (!user) form.setValue("name", "");
 	}, [user, form]);
 
-	async function onSubmit(values: { name: string; answers: Record<string, unknown> }) {
+	// Wizard: começa na identificação; "Continuar" valida a seção atual
+	// e avança (só a última seção conclui/submete).
+	useEffect(() => {
+		if (form.getValues("formType" as never) === undefined) {
+			form.setValue("formType" as never, "section0" as never);
+		}
+	}, [form]);
+
+	function advanceTo(sectionNumber: number) {
+		form.setValue("formType" as never, `section${sectionNumber}` as never);
+		scrollToNextSection(sectionNumber);
+	}
+
+	async function handleContinueSection(p: (typeof planned)[number]) {
+		const names: string[] = [];
+		if (p.isFirstContent) names.push("name");
+		for (const f of p.group.fields) names.push(`answers.${f.key}`);
+		const ok = await form.trigger(names as never);
+		if (!ok) return;
+		advanceTo(p.displayNumber + 1);
+	}
+
+	async function onSubmit(values: {
+		name: string;
+		answers: Record<string, unknown>;
+	}) {
 		setCurrentState("submitting");
 		if (!user) {
 			setErrorMessage("Você precisa estar logado para se inscrever.");
@@ -196,11 +261,12 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 			if (allowed.has(k)) stripped[k] = v;
 		}
 		try {
-			await submitMutation.mutateAsync({
+			const result = await submitMutation.mutateAsync({
 				projectId: project.id,
 				name: values.name,
 				answers: stripped as Record<string, string | number | boolean | string[] | null | undefined>,
 			});
+			setCreatedShortId(result.shortId);
 		} catch (error) {
 			setErrorMessage(error instanceof Error ? error.message : "Erro desconhecido");
 			setCurrentState("error");
@@ -218,72 +284,38 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 						projectUrl={project.url}
 						form={form as unknown as GenericForm}
 						email={user?.email}
+						onContinue={() => advanceTo(1)}
 					/>
-					{isFormPending ? (
+					{planned.length === 0 ? (
 						<FormSection
 							title="Dados da inscrição"
 							section={1}
 							form={form as unknown as GenericForm}
-							fields={[]}
+							fields={[
+								{ name: "Nome completo", value: isFilled(watchedName) },
+							]}
 						>
-							<p className="text-muted-foreground text-sm">Carregando formulário do evento...</p>
-							<SectionFooter isFinalSection />
-						</FormSection>
-					) : groupedSections.length === 0 ? (
-						<FormSection
-							title="Dados da inscrição"
-							section={1}
-							form={form as unknown as GenericForm}
-							fields={[]}
-						>
-							<FormField
-								control={form.control}
-								name="name"
-								render={({ field }) => (
-									<FormItem className="w-full">
-										<FormLabel>
-											Nome completo <span className="text-destructive ml-1">*</span>
-										</FormLabel>
-										<FormControl>
-											<Input placeholder="Fulano da Silva" {...field} value={field.value ?? ""} />
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
+							{nameField}
 							<p className="text-muted-foreground text-sm">
 								Este evento não exige informações adicionais.
 							</p>
 							<SectionFooter isFinalSection />
 						</FormSection>
 					) : (
-						groupedSections.map((group, gi) => (
+						planned.map((p) => (
 							<FormSection
-								key={group.section.id}
-								title={group.section.title}
-								section={gi + 1}
+								key={p.group.section.id}
+								title={p.group.section.title}
+								section={p.displayNumber}
 								form={form as unknown as GenericForm}
-								fields={group.fields.map((f) => ({ name: f.label, value: false }))}
+								fields={p.group.fields.map((f) => ({
+									name: f.label,
+									value: isFilled(watchedAnswers[f.key]),
+								}))}
 							>
-								{gi === 0 && (
-									<FormField
-										control={form.control}
-										name="name"
-										render={({ field }) => (
-											<FormItem className="w-full">
-												<FormLabel>
-													Nome completo <span className="text-destructive ml-1">*</span>
-												</FormLabel>
-												<FormControl>
-													<Input placeholder="Fulano da Silva" {...field} value={field.value ?? ""} />
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-								)}
+								{p.isFirstContent && nameField}
 								<div className="flex w-full flex-col gap-6">
-									{group.rows.map((row, ri) => (
+									{p.group.rows.map((row, ri) => (
 										<div
 											key={row.fields.map((f) => f.id).join("-") || `row-${ri}`}
 											className={
@@ -293,17 +325,37 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 											}
 										>
 											{row.fields.map((f) => (
-												<DynamicField
+												<div
 													key={f.id}
-													field={f}
-													control={form.control as never}
-													name={`answers.${f.key}`}
-												/>
+													className="flex w-full flex-col gap-1"
+												>
+													<DynamicField
+														field={f}
+														control={form.control as never}
+														name={`answers.${f.key}`}
+													/>
+													{isFieldLinked(layout, f.id) && (
+														<p className="text-muted-foreground flex items-center gap-1 text-xs">
+															<Eye className="h-3 w-3" />
+															Visível no seu perfil
+														</p>
+													)}
+												</div>
 											))}
 										</div>
 									))}
 								</div>
-								<SectionFooter isFinalSection={gi === groupedSections.length - 1} />
+								<SectionFooter
+									isFinalSection={
+										p.displayNumber === planned[planned.length - 1]?.displayNumber
+									}
+									onContinue={
+										p.displayNumber ===
+										planned[planned.length - 1]?.displayNumber
+											? undefined
+											: () => void handleContinueSection(p)
+									}
+								/>
 							</FormSection>
 						))
 					)}
@@ -314,7 +366,13 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 				isOpen={currentState === "submitted"}
 				onClose={() => {
 					setCurrentState(false);
-					router.push(`/${project.url}/my`);
+					// Ponto de integração do e-mail de confirmação (sem provider
+					// ainda): link do perfil `/${project.url}/profile/${shortId}`.
+					router.push(
+						createdShortId
+							? `/${project.url}/profile/${createdShortId}?me=1`
+							: `/${project.url}/subscribe`,
+					);
 				}}
 				confettiColors={project.colors}
 				className="py-8 sm:!max-w-[40vw]"

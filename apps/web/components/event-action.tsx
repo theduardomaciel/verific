@@ -1,54 +1,29 @@
-"use client";
-
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import { isAfterEnd } from "@/lib/date";
-import { authClient } from "@/lib/auth-client";
-import { trpc } from "@/lib/trpc/react";
+import { getEventRegistration } from "@/lib/data";
 
 interface EventActionProps {
 	eventUrl: string;
-	endDate: Date | string;
-	isArchived: boolean;
-	isRegistrationEnabled: boolean;
 }
 
-export function EventAction({
-	eventUrl,
-	endDate,
-	isArchived,
-	isRegistrationEnabled,
-}: EventActionProps) {
-	const session = authClient.useSession();
-	const userId = session.data?.user.id;
-	const enrollment = trpc.checkParticipant.useQuery(
-		{ projectUrl: eventUrl },
-		{ enabled: Boolean(userId) },
-	);
-	const isParticipant = enrollment.data === true;
-	const afterEnd = isAfterEnd(new Date(endDate));
-	const isRegistrationOpen =
-		isRegistrationEnabled && !isArchived && !afterEnd;
+/**
+ * CTA principal da página do evento: estático e igual para todo visitante.
+ * Participantes inscritos passam pela página de inscrição, que mostra
+ * o aviso com o link da conta/perfil em vez do formulário.
+ */
+export async function EventAction({ eventUrl }: EventActionProps) {
+	const registration = await getEventRegistration(eventUrl);
 
 	let buttonText = "Inscrever-se";
-	let href = `/${eventUrl}/subscribe`;
-	let disabled = !isRegistrationOpen;
+	const disabled = !registration?.isOpen;
 
-	if (isParticipant) {
-		buttonText = "Ver programação";
-		href = `/${eventUrl}/schedule`;
-		disabled = isArchived || afterEnd;
-	} else if (isArchived) {
+	if (registration?.isArchived) {
 		buttonText = "Evento arquivado";
-	} else if (afterEnd) {
-		buttonText = "Evento encerrado";
-	} else if (!isRegistrationEnabled) {
+	} else if (!registration?.isRegistrationEnabled) {
 		buttonText = "Inscrições fechadas";
-	}
-
-	if (session.isPending || (userId && enrollment.isPending)) {
-		return <Button disabled>Carregando...</Button>;
+	} else if (registration && !registration.isOpen) {
+		buttonText = "Evento encerrado";
 	}
 
 	if (disabled) {
@@ -56,8 +31,8 @@ export function EventAction({
 	}
 
 	return (
-		<Button className="font-semibold uppercase" size={"xl"} asChild>
-			<Link href={href}>{buttonText}</Link>
+		<Button className="ev-button font-semibold uppercase" size={"xl"} asChild>
+			<Link href={`/${eventUrl}/subscribe`}>{buttonText}</Link>
 		</Button>
 	);
 }
