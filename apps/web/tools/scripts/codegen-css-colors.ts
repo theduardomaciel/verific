@@ -6,7 +6,7 @@ import path from "node:path";
 import themeColors from "../../theme/colors";
 
 // Create output directory if it doesn't exist
-const outputDir = path.resolve(process.cwd(), "theme/.generated");
+const outputDir = path.resolve(process.cwd(), "theme/generated");
 if (!fs.existsSync(outputDir)) {
 	fs.mkdirSync(outputDir, { recursive: true });
 }
