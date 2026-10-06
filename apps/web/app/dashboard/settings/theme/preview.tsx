@@ -12,7 +12,11 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import * as EventContainer from "@/components/landing/event-container";
 import { EventBackgroundEffects } from "@/components/landing/event-container";
-import { MOBILE_CTA_CLASS, MOBILE_NAV_CLASS } from "@/components/landing/event-nav";
+import {
+	EVENT_BADGE_COLORS,
+	MOBILE_CTA_CLASS,
+	MOBILE_NAV_CLASS,
+} from "@/components/landing/event-nav";
 import { ProfileBanner } from "@/components/profile/profile-banner";
 import { ProfileStats } from "@/components/profile/profile-stats";
 import { FormSection, type GenericForm } from "@/components/forms";
@@ -83,17 +87,28 @@ function FakeSubscribeForm() {
 	);
 }
 
-function HomeContent({ projectName }: { projectName: string }) {
+function HomeContent({
+	draft,
+	projectName,
+}: {
+	draft: EventTheme;
+	projectName: string;
+}) {
 	return (
 		<>
 			{/* Capa real: mesmo componente, mesmas camadas e tokens da página
 			    pública (incluindo o véu base fixo). */}
-			<EventContainer.Hero coverUrl={null}>
+			<EventContainer.Hero coverUrl={null} showImage={draft.hero.image}>
 				<div
 					className={`z-10 flex flex-1 flex-col items-start justify-center ${PAGE_X}`}
 				>
 					<EventContainer.Hero.Title>{projectName}</EventContainer.Hero.Title>
-					<Badge className="mb-4 rounded-xl bg-white px-4 py-1.5 text-neutral-900">
+					<Badge
+						className={cn(
+							"mb-4 rounded-xl px-4 py-1.5",
+							EVENT_BADGE_COLORS,
+						)}
+					>
 						Aberto para o público externo
 					</Badge>
 					<Button className="ev-button font-semibold uppercase">
@@ -129,10 +144,16 @@ function HomeContent({ projectName }: { projectName: string }) {
 	);
 }
 
-function SubscribeContent({ projectName }: { projectName: string }) {
+function SubscribeContent({
+	draft,
+	projectName,
+}: {
+	draft: EventTheme;
+	projectName: string;
+}) {
 	return (
 		<>
-			<EventContainer.Hero coverUrl={null}>
+			<EventContainer.Hero coverUrl={null} showImage={draft.hero.image}>
 				<div className="z-10 flex flex-1 flex-col items-center justify-center">
 					<EventContainer.Hero.Title className="text-center">
 						Inscreva-se em <br />
@@ -184,12 +205,13 @@ function PreviewHeader({
 }) {
 	return (
 		<header
-			className="relative z-10 flex w-full shrink-0 items-center justify-between px-4 py-4 md:px-8"
+			// Mesma altura fixa do cabeçalho real (`h-21`): o gradiente com
+			// altura "capa" estende esse exato valor para trás do cabeçalho.
+			className="relative z-10 flex h-21 w-full shrink-0 items-center justify-between px-4 md:px-8"
 			style={{ background: "var(--ev-header-bg)" }}
 		>
 			<span
-				className="h-6 w-28 rounded"
-				style={{ background: "var(--ev-content-accent)" }}
+				className="h-6 w-28 rounded bg-(--ev-content-accent) dark:bg-(--ev-content-accent-dark)"
 				aria-label="Logo do evento (prévia)"
 			/>
 			<nav className="flex items-center gap-2 text-xs font-medium md:gap-4">
@@ -307,10 +329,10 @@ export function ThemePreview({ draft, projectName }: ThemePreviewProps) {
 
 				<main className="relative z-10 flex-1">
 					{tab === "inicio" && (
-						<HomeContent projectName={projectName} />
+						<HomeContent draft={draft} projectName={projectName} />
 					)}
 					{tab === "inscricao" && (
-						<SubscribeContent projectName={projectName} />
+						<SubscribeContent draft={draft} projectName={projectName} />
 					)}
 					{tab === "perfil" && <ProfileContent />}
 				</main>

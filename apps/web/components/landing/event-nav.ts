@@ -30,3 +30,11 @@ export const EVENT_MENU_BUTTON_CLASS =
 
 /** Formatação (não cor) do CTA no cabeçalho do evento. */
 export const EVENT_CTA_CLASS = "border font-semibold text-xs uppercase";
+
+/**
+ * Cor dos selos da capa do evento: superfície de conteúdo
+ * (`content.accent`, com `accentDark` no escuro). O ícone herda a cor do
+ * texto (`currentColor`). Tamanho/arredondamento ficam em cada uso.
+ */
+export const EVENT_BADGE_COLORS =
+	"bg-(--ev-badge-bg) text-(--ev-badge-fg) dark:bg-(--ev-badge-bg-dark) dark:text-(--ev-badge-fg-dark)";

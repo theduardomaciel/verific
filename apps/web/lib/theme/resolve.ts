@@ -1,7 +1,10 @@
 import {
 	parseEventTheme,
+	type EffectColor,
 	type EventTheme,
+	type GradientStop,
 	type HeroOverlayColor,
+	type PageGradient,
 } from "@verific/drizzle/theme";
 
 import { FONT_FAMILIES } from "./presets";
@@ -125,7 +128,71 @@ function roleColor(theme: EventTheme, role: string): string {
 	if (role === "secondary") return theme.secondary;
 	if (role === "transparent") return "transparent";
 	if (role === "foreground") return "var(--foreground)";
+	if (role === "background") return "var(--background)";
 	return theme.primary;
+}
+
+/**
+ * Aproximações hex de `var(--foreground)` por modo (só para o teste de
+ * contraste server-side: o valor real continua sendo a variável CSS, que
+ * resolve por modo sozinha). `oklch(0.3211 0 0)` ≈ `#333333`;
+ * `oklch(0.9219 0 0)` ≈ `#E5E5E5`. As margens de AA aqui são folgadas
+ * (reprova longe no claro, passa longe no escuro), então o arredondamento
+ * não muda nenhuma decisão.
+ */
+const NEUTRAL_BG_LIGHT = "#333333";
+const NEUTRAL_BG_DARK = "#E5E5E5";
+
+/** Superfície de "conteúdo" (navegação ativa) para um papel e modo. */
+function accentSurface(
+	theme: EventTheme,
+	role: EffectColor,
+	onPrimary: string,
+	onSecondary: string,
+): { bg: string; fg: string } {
+	// Neutro: fundo é o próprio token (resolve por modo) e o texto é o
+	// inverso dele — o mesmo par do texto corrido, sempre AA.
+	if (role === "foreground") return { bg: "var(--foreground)", fg: "var(--background)" };
+	const hex = role === "secondary" ? theme.secondary : theme.primary;
+	return { bg: hex, fg: role === "secondary" ? onSecondary : onPrimary };
+}
+
+/**
+ * Texto dos selos da capa sobre fundo neutro: a cor primária quando ela
+ * passa AA no neutro do modo (é o roxo sobre branco dos designs), senão a
+ * cor de maior contraste derivada. Ícone herda a cor do texto.
+ */
+function neutralBadgeFg(theme: EventTheme, neutralBg: string): string {
+	return contrastRatio(theme.primary, neutralBg) >= 4.5
+		? theme.primary
+		: bestOnColor(neutralBg);
+}
+
+/** Selos da capa: fundo do `content.accent` (+`accentDark` no escuro). */
+function badgeSurface(
+	theme: EventTheme,
+	role: EffectColor,
+	mode: "light" | "dark",
+	onPrimary: string,
+	onSecondary: string,
+): { bg: string; fg: string } {
+	if (role !== "foreground") return accentSurface(theme, role, onPrimary, onSecondary);
+	const neutralBg = mode === "dark" ? NEUTRAL_BG_DARK : NEUTRAL_BG_LIGHT;
+	return { bg: "var(--foreground)", fg: neutralBadgeFg(theme, neutralBg) };
+}
+
+/**
+ * Parada de gradiente em CSS: a cor do papel com a própria opacidade,
+ * interpolada contra transparente (`color-mix`) para o fade não puxar
+ * franja cinza.
+ */
+function stopCss(theme: EventTheme, stop: GradientStop): string {
+	return `color-mix(in srgb, ${roleColor(theme, stop.color)} ${Math.round(stop.opacity * 100)}%, transparent)`;
+}
+
+/** Gradiente linear entre as duas paradas (alfa já embutido em cada cor). */
+function pageGradient(g: PageGradient, dir: string, theme: EventTheme): string {
+	return `linear-gradient(${dir}, ${stopCss(theme, g.from)}, ${stopCss(theme, g.to)})`;
 }
 
 /**
@@ -147,6 +214,9 @@ export interface NavTokens {
 	hoverFg: string;
 	activeBg: string;
 	activeFg: string;
+	/** Ativo no modo escuro (`accentDark ?? accent`). */
+	activeBgDark: string;
+	activeFgDark: string;
 	ctaBorder: string;
 	ctaFg: string;
 	ctaHoverBg: string;
@@ -156,50 +226,50 @@ export interface NavTokens {
 /**
  * Tokens da navegação do cabeçalho.
  *
- * Cabeçalho sólido: o realce é a cor **oposta** (primário → secundária e
- * vice-versa) — hoje o item ativo usava a própria cor do cabeçalho e
- * virava invisível. O véu do hover é essa mesma cor a 40% de alfa sobre o
- * cabeçalho, então o texto sobre ele continua passando AA.
+ * O item ativo e os selos são "conteúdo": usam o `content.accent` do tema
+ * (primária no claro dos designs, neutra no escuro via `accentDark`), com
+ * texto sempre derivado por contraste. O CTA ("Inscrição") é contorno na
+ * cor dos botões (`buttons.bg`) com texto na cor do cabeçalho.
  *
- * Gradiente/transparente: realce por cor oposta não funciona (uma das
- * paradas do gradiente é justamente essa cor), então hover/ativo são
- * véus translúcidos da própria cor de texto (16% / 26%) e o CTA ganha
- * borda na cor de texto a 60%.
+ * O hover é um véu da própria cor de texto (16%) em qualquer estilo de
+ * cabeçalho: realce por cor oposta não funciona no gradiente (uma das
+ * paradas é justamente essa cor) e o véu do texto nunca quebra AA.
  */
 function navTokens(opts: {
 	fg: string;
-	/** Cor sólida oposta ao cabeçalho, quando existe (estilo sólido). */
-	highlight?: string;
-	/** Fundo opaco do cabeçalho (para prever a cor do véu do hover). */
-	bg?: string;
+	activeBg: string;
+	activeFg: string;
+	activeBgDark: string;
+	activeFgDark: string;
+	ctaBorder: string;
+	ctaFg: string;
+	ctaHoverBg: string;
+	ctaHoverFg: string;
 }): NavTokens {
-	const { fg, highlight, bg } = opts;
-
-	if (highlight) {
-		const hoverSolid = bg ? mixHex(bg, highlight, 0.4) : highlight;
-		return {
-			fg,
-			hoverBg: translucent(highlight, 0.4),
-			hoverFg: bestOnColor(hoverSolid),
-			activeBg: highlight,
-			activeFg: bestOnColor(highlight),
-			ctaBorder: translucent(highlight, 0.6),
-			ctaFg: fg,
-			ctaHoverBg: highlight,
-			ctaHoverFg: bestOnColor(highlight),
-		};
-	}
+	const {
+		fg,
+		activeBg,
+		activeFg,
+		activeBgDark,
+		activeFgDark,
+		ctaBorder,
+		ctaFg,
+		ctaHoverBg,
+		ctaHoverFg,
+	} = opts;
 
 	return {
 		fg,
 		hoverBg: translucent(fg, 0.16),
 		hoverFg: fg,
-		activeBg: translucent(fg, 0.26),
-		activeFg: fg,
-		ctaBorder: translucent(fg, 0.6),
-		ctaFg: fg,
-		ctaHoverBg: translucent(fg, 0.16),
-		ctaHoverFg: fg,
+		activeBg,
+		activeFg,
+		activeBgDark,
+		activeFgDark,
+		ctaBorder,
+		ctaFg,
+		ctaHoverBg,
+		ctaHoverFg,
 	};
 }
 
@@ -222,10 +292,15 @@ export function resolveEventTheme(input: {
 		theme.buttons.bg === "primary" ? onPrimary : onSecondary;
 
 	// `--accent`: superfícies/hover `ghost`/`outline` (`Button`, `Select`,
-	// `DropdownMenu`…) seguem o `content.accent` do tema do evento.
+	// `DropdownMenu`…) seguem o `content.accent` do tema do evento. Neutro
+	// usa o par invertido do texto corrido (sempre AA, nos dois modos).
 	const accentBg = roleColor(theme, theme.content.accent);
 	const accentFg =
-		theme.content.accent === "primary" ? onPrimary : onSecondary;
+		theme.content.accent === "foreground"
+			? "var(--background)"
+			: theme.content.accent === "primary"
+				? onPrimary
+				: onSecondary;
 
 	// Esqueletos de carregamento: `muted` usa a cor de borda global
 	// (cinza visível sobre o fundo nos dois modos: `gray-200` no claro,
@@ -273,17 +348,35 @@ export function resolveEventTheme(input: {
 		onHeader = "var(--foreground)";
 	}
 
-	const headerSolidBg =
-		theme.header.style === "solid" ? roleColor(theme, theme.header.bg) : undefined;
-	// Realce = papel oposto ao do cabeçalho sólido. Só existe quando as duas
-	// cores são de fato distintas (primária == secundária não tem "oposto").
-	const opposite =
-		headerSolidBg === theme.primary && theme.primary !== theme.secondary
-			? theme.secondary
-			: headerSolidBg === theme.secondary && theme.primary !== theme.secondary
-				? theme.primary
-				: undefined;
-	const nav = navTokens({ fg: onHeader, highlight: opposite, bg: headerSolidBg });
+	// Ativo = superfície de conteúdo (`content.accent`, com `accentDark` no
+	// modo escuro); CTA = contorno na cor dos botões com texto na cor do
+	// cabeçalho (no transparente, o token da página).
+	const accentLight = accentSurface(theme, theme.content.accent, onPrimary, onSecondary);
+	const accentDark = accentSurface(
+		theme,
+		theme.content.accentDark ?? theme.content.accent,
+		onPrimary,
+		onSecondary,
+	);
+	const badgeLight = badgeSurface(theme, theme.content.accent, "light", onPrimary, onSecondary);
+	const badgeDark = badgeSurface(
+		theme,
+		theme.content.accentDark ?? theme.content.accent,
+		"dark",
+		onPrimary,
+		onSecondary,
+	);
+	const nav = navTokens({
+		fg: onHeader,
+		activeBg: accentLight.bg,
+		activeFg: accentLight.fg,
+		activeBgDark: accentDark.bg,
+		activeFgDark: accentDark.fg,
+		ctaBorder: buttonBg,
+		ctaFg: onHeader,
+		ctaHoverBg: buttonBg,
+		ctaHoverFg: buttonFg,
+	});
 
 	// Menu mobile: fundo opaco (o gradiente do cabeçalho esticado por
 	// `h-screen` fica estranho) e texto com contraste sobre ele. No
@@ -319,18 +412,12 @@ export function resolveEventTheme(input: {
 		bgImage = `linear-gradient(${effectLine}, ${effectLine})`;
 	}
 
-	const gradient = (
-		g: {
-			height: number;
-			from: string;
-			to: string;
-			opacity: number;
-		} | null,
-		dir: string,
-	) =>
-		g
-			? `linear-gradient(${dir}, ${roleColor(theme, g.from)}, ${roleColor(theme, g.to)})`
-			: "none";
+	const gradient = (g: PageGradient | null, dir: string) =>
+		g ? pageGradient(g, dir, theme) : "none";
+
+	// Gradiente superior com `height: "hero"`: a capa o renderiza (cobre
+	// cabeçalho + capa e termina no filete); aqui na página ele some.
+	const topIsHero = theme.page.topGradient?.height === "hero";
 
 	const cssVars: Record<string, string> = {
 		"--primary": theme.primary,
@@ -349,6 +436,8 @@ export function resolveEventTheme(input: {
 		"--ev-nav-hover-fg": nav.hoverFg,
 		"--ev-nav-active-bg": nav.activeBg,
 		"--ev-nav-active-fg": nav.activeFg,
+		"--ev-nav-active-bg-dark": nav.activeBgDark,
+		"--ev-nav-active-fg-dark": nav.activeFgDark,
 		"--ev-cta-border": nav.ctaBorder,
 		"--ev-cta-fg": nav.ctaFg,
 		"--ev-cta-hover-bg": nav.ctaHoverBg,
@@ -361,6 +450,28 @@ export function resolveEventTheme(input: {
 		"--ev-button-bg": buttonBg,
 		"--ev-button-fg": buttonFg,
 		"--ev-content-accent": roleColor(theme, theme.content.accent),
+		"--ev-content-accent-dark": roleColor(
+			theme,
+			theme.content.accentDark ?? theme.content.accent,
+		),
+		"--ev-badge-bg": badgeLight.bg,
+		"--ev-badge-fg": badgeLight.fg,
+		"--ev-badge-bg-dark": badgeDark.bg,
+		"--ev-badge-fg-dark": badgeDark.fg,
+		"--ev-hero-fg": theme.hero.image ? "#FFFFFF" : "var(--foreground)",
+		"--ev-hero-fg-soft": theme.hero.image
+			? "rgb(255 255 255 / 0.9)"
+			: "var(--foreground)",
+		"--ev-hero-border": theme.hero.border
+			? roleColor(theme, theme.hero.border.color)
+			: "transparent",
+		"--ev-hero-border-width": theme.hero.border
+			? `${theme.hero.border.width}px`
+			: "0px",
+		"--ev-hero-bg":
+			theme.page.topGradient && topIsHero
+				? pageGradient(theme.page.topGradient, "180deg", theme)
+				: "none",
 		"--ev-skeleton-bg": skeletonBg,
 		"--ev-hero-tint": heroTint(theme, theme.hero.overlayColor),
 		"--ev-hero-overlay-opacity": String(theme.hero.overlayOpacity),
@@ -370,12 +481,25 @@ export function resolveEventTheme(input: {
 		"--ev-bg-image": bgImage,
 		"--ev-bg-size": `${theme.page.effectSize}px ${theme.page.effectSize}px`,
 		"--ev-bg-opacity": String(theme.page.effectOpacity),
-		"--ev-top-gradient": gradient(theme.page.topGradient, "180deg"),
-		"--ev-top-height": `${theme.page.topGradient?.height ?? 0}px`,
-		"--ev-top-opacity": String(theme.page.topGradient?.opacity ?? 0),
-		"--ev-bottom-gradient": gradient(theme.page.bottomGradient, "0deg"),
-		"--ev-bottom-height": `${theme.page.bottomGradient?.height ?? 0}px`,
-		"--ev-bottom-opacity": String(theme.page.bottomGradient?.opacity ?? 0),
+		"--ev-top-gradient":
+			theme.page.topGradient && !topIsHero
+				? gradient(theme.page.topGradient, "180deg")
+				: "none",
+		"--ev-top-height":
+			theme.page.topGradient &&
+			typeof theme.page.topGradient.height === "number"
+				? `${theme.page.topGradient.height}px`
+				: "0px",
+		"--ev-bottom-gradient":
+			theme.page.bottomGradient &&
+			typeof theme.page.bottomGradient.height === "number"
+				? gradient(theme.page.bottomGradient, "0deg")
+				: "none",
+		"--ev-bottom-height":
+			theme.page.bottomGradient &&
+			typeof theme.page.bottomGradient.height === "number"
+				? `${theme.page.bottomGradient.height}px`
+				: "0px",
 	};
 
 	return { theme, onPrimary, onSecondary, cssVars };

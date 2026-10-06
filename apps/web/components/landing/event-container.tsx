@@ -27,49 +27,98 @@ export const HERO_FALLBACK_COVER = "/images/hero-bg.png";
 interface HeroProps {
 	children: React.ReactNode;
 	coverUrl?: string | null;
+	/** `false`: sem imagem — a capa não renderiza fundo nem véu e o texto
+	 * herda a cor da página (o tom vem do gradiente `hero`). */
+	showImage?: boolean;
 }
+
+/**
+ * Altura fixa do cabeçalho do evento (`h-21` no layout): a camada do
+ * gradiente `hero` estende a capa para cima nesse exato valor, cobrindo
+ * cabeçalho + capa e terminando no filete. Se a altura do cabeçalho mudar,
+ * este valor acompanha.
+ */
+const HEADER_H = "5.25rem";
 
 /**
  * Capa do evento.
  *
- * O texto é **sempre branco** e vive nas subcomponentes abaixo — a capa é
- * uma imagem, não uma cor de tema, então não há escolha de cor de texto.
- * O que o organizador controla é o véu: a cor (`--ev-hero-tint`, já
- * escurecida até atingir AA contra o branco em `resolve.ts`) e a opacidade
- * (`--ev-hero-overlay-opacity`).
+ * Com imagem: o texto é **sempre branco** e vive nas subcomponentes abaixo
+ * — a capa é uma imagem, não uma cor de tema, então não há escolha de cor
+ * de texto. O que o organizador controla é o véu: a cor
+ * (`--ev-hero-tint`, já escurecida até atingir AA contra o branco em
+ * `resolve.ts`) e a opacidade (`--ev-hero-overlay-opacity`).
+ *
+ * Sem imagem (`showImage: false`): nenhuma camada de fundo ou véu é
+ * renderizada e o texto usa `--ev-hero-fg` (a cor da página).
+ *
+ * O gradiente superior com `height: "hero"` vive aqui (não nos efeitos da
+ * página): atrás de tudo, do topo da página até a borda inferior da capa,
+ * onde o filete (`--ev-hero-border`) o encobre e ele "termina" com precisão.
  */
-function HeroRoot({ children, coverUrl }: HeroProps) {
+function HeroRoot({ children, coverUrl, showImage = true }: HeroProps) {
 	return (
-		<section className="relative flex w-full overflow-hidden py-24 text-white [text-shadow:0_1px_12px_rgb(0_0_0/0.35)]">
+		<section
+			className={cn(
+				"relative flex w-full py-24",
+				showImage &&
+					"overflow-hidden text-white [text-shadow:0_1px_12px_rgb(0_0_0/0.35)]",
+			)}
+		>
+			{/* Gradiente "hero": inerte (`none`) salvo com `height: "hero"`. */}
+			<div
+				aria-hidden
+				className="pointer-events-none absolute inset-x-0 bottom-0 -z-10"
+				style={{
+					top: `calc(-1 * ${HEADER_H})`,
+					backgroundImage: "var(--ev-hero-bg, none)",
+				}}
+			/>
 			<div className="container-p z-10 mx-auto flex w-full flex-col gap-8 md:flex-row">
 				{children}
 			</div>
 
-			<Image
-				src={coverUrl || HERO_FALLBACK_COVER}
-				className="z-0 object-cover"
-				alt=""
-				aria-hidden
-				fill
-				loading="eager"
-				sizes="100vw"
-			/>
-			{/* Camada 1: véu base fixo (piso de contraste). */}
-			<div aria-hidden className={cn("absolute inset-0 z-[1]", HERO_BASE_SCRIM)} />
-			{/* Camada 2: cor escolhida no tema, na opacidade escolhida. */}
+			{showImage && (
+				<>
+					<Image
+						src={coverUrl || HERO_FALLBACK_COVER}
+						className="z-0 object-cover"
+						alt=""
+						aria-hidden
+						fill
+						loading="eager"
+						sizes="100vw"
+					/>
+					{/* Camada 1: véu base fixo (piso de contraste). */}
+					<div
+						aria-hidden
+						className={cn("absolute inset-0 z-[1]", HERO_BASE_SCRIM)}
+					/>
+					{/* Camada 2: cor escolhida no tema, na opacidade escolhida. */}
+					<div
+						aria-hidden
+						className="absolute inset-0 z-[1]"
+						style={{
+							background: "var(--ev-hero-tint, var(--primary))",
+							opacity: "var(--ev-hero-overlay-opacity, 0.45)",
+						}}
+					/>
+				</>
+			)}
+			{/* Filete na borda inferior da capa (altura 0 = sem filete). */}
 			<div
 				aria-hidden
-				className="absolute inset-0 z-[1]"
+				className="pointer-events-none absolute inset-x-0 bottom-0"
 				style={{
-					background: "var(--ev-hero-tint, var(--primary))",
-					opacity: "var(--ev-hero-overlay-opacity, 0.45)",
+					height: "var(--ev-hero-border-width, 0px)",
+					background: "var(--ev-hero-border, transparent)",
 				}}
 			/>
 		</section>
 	);
 }
 
-/** Título principal da capa (`h1`). */
+/** Título principal da capa (`h1`): branco sobre imagem, página sem imagem. */
 function HeroTitle({
 	children,
 	className,
@@ -78,13 +127,18 @@ function HeroTitle({
 	className?: string;
 }) {
 	return (
-		<h1 className={cn("font-heading mb-4 text-5xl font-bold", className)}>
+		<h1
+			className={cn(
+				"font-heading text-(--ev-hero-fg) mb-4 text-5xl font-bold",
+				className,
+			)}
+		>
 			{children}
 		</h1>
 	);
 }
 
-/** Linha de metadados da capa (datas, badges): branco a 90%. */
+/** Linha de metadados da capa (datas, badges): versão suave do título. */
 function HeroMeta({
 	children,
 	className,
@@ -93,13 +147,18 @@ function HeroMeta({
 	className?: string;
 }) {
 	return (
-		<div className={cn("text-white/90 mb-4 flex items-center text-lg", className)}>
+		<div
+			className={cn(
+				"text-(--ev-hero-fg-soft) mb-4 flex items-center text-lg",
+				className,
+			)}
+		>
 			{children}
 		</div>
 	);
 }
 
-/** Parágrafo de apoio da capa: branco a 90%, meia largura no desktop. */
+/** Parágrafo de apoio da capa: suave, meia largura no desktop. */
 function HeroDescription({
 	children,
 	className,
@@ -110,7 +169,7 @@ function HeroDescription({
 	return (
 		<p
 			className={cn(
-				"text-white/90 text-base font-semibold md:max-w-md",
+				"text-(--ev-hero-fg-soft) text-base font-semibold md:max-w-md",
 				className,
 			)}
 		>
@@ -163,6 +222,12 @@ export function Content({ children, className }: HolderProps) {
  * Efeitos de fundo da página do evento (grade/pontos/sólido + gradientes
  * superior/inferior), 100% dirigidos pelas variáveis do tema.
  * `pointer-events-none`: nunca intercepta cliques.
+ *
+ * A opacidade dos gradientes já vem embutida em cada parada (`color-mix`
+ * em `resolve.ts`), então aqui não há véu de opacidade — ele escureceria
+ * duas vezes. O gradiente superior com `height: "hero"` não renderiza aqui
+ * (altura zero): a própria capa o desenha, de trás do cabeçalho até o
+ * filete.
  */
 export function EventBackgroundEffects() {
 	return (
@@ -180,7 +245,6 @@ export function EventBackgroundEffects() {
 				style={{
 					height: "var(--ev-top-height, 0px)",
 					backgroundImage: "var(--ev-top-gradient, none)",
-					opacity: "var(--ev-top-opacity, 0)",
 				}}
 			/>
 			<div
@@ -188,7 +252,6 @@ export function EventBackgroundEffects() {
 				style={{
 					height: "var(--ev-bottom-height, 0px)",
 					backgroundImage: "var(--ev-bottom-gradient, none)",
-					opacity: "var(--ev-bottom-opacity, 0)",
 				}}
 			/>
 		</div>
