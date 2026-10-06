@@ -17,6 +17,7 @@
 		"better-auth": "1.7.7"
 	},
 	"devDependencies": {
+		"@types/node": "^24.9.1",
 		"@verific/typescript-config": "workspace:*"
 	}
 }

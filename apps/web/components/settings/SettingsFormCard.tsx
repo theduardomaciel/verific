@@ -52,7 +52,7 @@ export function SettingsFormCard<
 	footer,
 }: SettingsFormCardProps<T>) {
 	const form = useForm<z.output<T>, any, z.output<T>>({
-		resolver: zodResolver(schema) as Resolver<z.output<T>, any>,
+		resolver: zodResolver(schema) as unknown as Resolver<z.output<T>, any>,
 		defaultValues: initialState as any,
 	});
 

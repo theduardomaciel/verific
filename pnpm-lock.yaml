@@ -470,6 +470,9 @@ importers:
         specifier: ^2.2.2
         version: 2.2.6
     devDependencies:
+      '@types/node':
+        specifier: ^24.9.1
+        version: 24.19.1
       '@verific/typescript-config':
         specifier: workspace:*
         version: link:../../config/typescript
@@ -495,6 +498,9 @@ importers:
         specifier: 1.7.7
         version: 1.7.7(drizzle-kit@0.31.11)(drizzle-orm@0.45.3(@neondatabase/serverless@1.2.0)(kysely@0.29.6))(next@16.3.6(@babel/core@7.29.7)(@types/node@24.19.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vitest@5.0.3)
     devDependencies:
+      '@types/node':
+        specifier: ^24.9.1
+        version: 24.19.1
       '@verific/typescript-config':
         specifier: workspace:*
         version: link:../../config/typescript
