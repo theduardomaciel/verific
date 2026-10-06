@@ -32,10 +32,8 @@ import {
 	type ThemeColorSource,
 	type ThemeRole,
 } from "@verific/drizzle/theme";
-import {
-	darkenUntilContrast,
-	HERO_NEUTRAL_TINT,
-} from "@/lib/theme/resolve";
+import { darkenUntilContrast, HERO_NEUTRAL_TINT } from "@/lib/theme/resolve";
+import { useEffect, useRef } from "react";
 
 interface ContrastInfo {
 	primary: { fg: string; ratio: number };
@@ -161,13 +159,26 @@ function RoleRow<T extends string>({
 	options: Array<{ value: T; label: string }>;
 	swatches?: Partial<Record<T, string | null>>;
 }) {
+	const groupRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		groupRef.current
+			?.querySelector<HTMLElement>('[aria-pressed="true"]')
+			?.scrollIntoView({
+				behavior: "smooth",
+				inline: "center",
+				block: "nearest",
+			});
+	}, [value]);
+
 	return (
-		<div className="flex flex-wrap items-center justify-between gap-2">
+		<div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
 			<Label>{label}</Label>
 			<div
+				ref={groupRef}
 				role="group"
 				aria-label={label}
-				className="flex gap-1 rounded-lg border p-1"
+				className="flex max-w-full gap-1 overflow-x-auto rounded-lg border p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 			>
 				{options.map((opt) => {
 					const active = opt.value === value;
@@ -183,7 +194,7 @@ function RoleRow<T extends string>({
 							title={opt.label}
 							onClick={() => onChange(opt.value)}
 							className={cn(
-								"flex min-h-8 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+								"flex min-h-8 shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
 								active
 									? "bg-primary text-primary-foreground"
 									: "text-muted-foreground hover:bg-muted",
@@ -274,7 +285,7 @@ function ColorSourceRow<T extends string>({
 	onOpacityChange?: (v: number) => void;
 }) {
 	return (
-		<div className="flex flex-col gap-1">
+		<div className="flex min-w-0 flex-col gap-1">
 			<RoleRow
 				label={label}
 				value={value}
@@ -683,8 +694,8 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 							Cabeçalho transparente: ele fica no fluxo, sobre o
 							fundo da página (não sobre a capa), então o texto
 							segue a preferência de cor do visitante — claro no
-							modo claro. O menu mobile usa o fundo da página
-							para continuar legível. Confira na prévia.
+							modo claro. O menu mobile usa o fundo da página para
+							continuar legível. Confira na prévia.
 						</p>
 					)}
 					<SectionReset
@@ -733,7 +744,9 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 								patch({
 									content: {
 										...draft.content,
-										accentDark: checked ? "foreground" : null,
+										accentDark: checked
+											? "foreground"
+											: null,
 									},
 								})
 							}
@@ -746,13 +759,15 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 							options={ACCENT_OPTIONS}
 							swatches={effectSwatches}
 							onChange={(accentDark) =>
-								patch({ content: { ...draft.content, accentDark } })
+								patch({
+									content: { ...draft.content, accentDark },
+								})
 							}
 						/>
 					)}
 					<p className="text-muted-foreground text-xs">
-						Navegação ativa e selos da capa. O texto sobre o destaque
-						é derivado por contraste.
+						Navegação ativa e selos da capa. O texto sobre o
+						destaque é derivado por contraste.
 					</p>
 					<RoleRow
 						label="Cor dos carregamentos"
@@ -798,9 +813,9 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 					</div>
 					{!draft.hero.image && (
 						<p className="text-muted-foreground text-xs">
-							Sem imagem, a capa não tem fundo nem véu: o tom vem do
-							gradiente superior (altura “capa”) e o texto segue a
-							página.
+							Sem imagem, a capa não tem fundo nem véu: o tom vem
+							do gradiente superior (altura “capa”) e o texto
+							segue a página.
 						</p>
 					)}
 					{draft.hero.image && (
@@ -827,13 +842,16 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 								max={0.85}
 								step={0.05}
 								onChange={(overlayOpacity) =>
-									patch({ hero: { ...draft.hero, overlayOpacity } })
+									patch({
+										hero: { ...draft.hero, overlayOpacity },
+									})
 								}
 								format={(v) => `${Math.round(v * 100)}%`}
 							/>
 							<p className="text-muted-foreground text-xs">
-								O texto da capa é sempre branco; a cor é escurecida
-								automaticamente para manter a leitura.
+								O texto da capa é sempre branco; a cor é
+								escurecida automaticamente para manter a
+								leitura.
 							</p>
 						</>
 					)}
@@ -847,7 +865,10 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 										hero: {
 											...draft.hero,
 											border: checked
-												? { width: 4, color: "secondary" as const }
+												? {
+														width: 4,
+														color: "secondary" as const,
+													}
 												: null,
 										},
 									})
@@ -866,7 +887,10 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 										patch({
 											hero: {
 												...draft.hero,
-												border: { ...draft.hero.border!, width },
+												border: {
+													...draft.hero.border!,
+													width,
+												},
 											},
 										})
 									}
@@ -881,7 +905,10 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 										patch({
 											hero: {
 												...draft.hero,
-												border: { ...draft.hero.border!, color },
+												border: {
+													...draft.hero.border!,
+													color,
+												},
 											},
 										})
 									}
@@ -1073,7 +1100,10 @@ function GradientRow({
 							<Switch
 								checked={heroHeight}
 								onCheckedChange={(checked) =>
-									onChange({ ...g, height: checked ? "hero" : 240 })
+									onChange({
+										...g,
+										height: checked ? "hero" : 240,
+									})
 								}
 							/>
 						</div>
@@ -1081,7 +1111,9 @@ function GradientRow({
 					{!heroHeight && (
 						<RangeRow
 							label="Altura"
-							value={typeof g.height === "number" ? g.height : 240}
+							value={
+								typeof g.height === "number" ? g.height : 240
+							}
 							min={0}
 							max={1200}
 							step={20}
