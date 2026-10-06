@@ -1,12 +1,12 @@
 {
 	"$schema": "https://turbo.build/schema.json",
-	"globalDependencies": [".env"],
 	"tasks": {
 		"dev": {
 			"cache": false,
 			"persistent": true
 		},
 		"build": {
+			"inputs": ["$TURBO_DEFAULT$", ".env*"],
 			"env": [
 				"VERCEL_URL",
 				"BETTER_AUTH_SECRET",
@@ -23,6 +23,9 @@
 		},
 		"test": {},
 		"test:coverage": {},
+		"typecheck": {
+			"dependsOn": ["^typecheck"]
+		},
 		"db:generate": {},
 		"db:drop": {},
 		"db:push": {},
