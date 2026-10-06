@@ -70,13 +70,9 @@ function AccountSettingsContent({ user }: Props) {
 	const onSubmitName = async (form: any) => {
 		const data = form.getValues();
 		try {
-			/* await updateMutation.mutateAsync({
+			await updateMutation.mutateAsync({
 				name: data.name,
-				course: data.course,
-				projectId: data.projectId,
-				registrationId: data.registrationId,
-				period: data.period,
-			}); */
+			});
 			toast.success("Nome atualizado com sucesso!");
 			form.reset(data);
 		} catch (error) {

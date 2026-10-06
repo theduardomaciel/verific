@@ -30,7 +30,11 @@ import { AddMonitorDialog } from "@/components/dialogs/add-monitor-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Data
-import { getDateString, getTimeString } from "@/lib/date";
+import {
+	getSessionsDateString,
+	getSessionTimeString,
+	getSessionsSorted,
+} from "@/lib/date";
 import { listToString } from "@/lib/i18n";
 import { ExportParticipantsButton } from "@/components/participant/export-button";
 
@@ -92,9 +96,8 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 		(t) => t.role === "participant",
 	);
 
-	const dateString = getDateString(activity.dateFrom, activity.dateTo);
-	const timeFrom = getTimeString(activity.dateFrom);
-	const timeTo = getTimeString(activity.dateTo);
+	const sessions = getSessionsSorted(activity.sessions);
+	const dateString = getSessionsDateString(sessions);
 
 	return (
 		<main className="py-container-v container-p flex min-h-screen flex-col items-center justify-start gap-9">
@@ -111,11 +114,25 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 					<Badge variant={"secondary"}>
 						<Calendar className="h-4 w-4" />
 						{dateString}
+						{sessions.length > 1
+							? ` (${sessions.length} sessões)`
+							: ""}
 					</Badge>
-					<Badge variant={"secondary"}>
-						<Clock className="h-4 w-4" />
-						{timeFrom} - {timeTo}
-					</Badge>
+					{(activity.tags ?? []).map((tag) => (
+						<Badge key={tag.id} variant={"secondary"}>
+							<span
+								className="h-2 w-2 rounded-full"
+								style={{ backgroundColor: tag.color }}
+							/>
+							{tag.name}
+						</Badge>
+					))}
+					{sessions.map((session, i) => (
+						<Badge key={i} variant={"secondary"}>
+							<Clock className="h-4 w-4" />
+							{getSessionTimeString(session)}
+						</Badge>
+					))}
 					{activity.tolerance && activity.tolerance > 0 ? (
 						<Badge variant={"secondary"}>
 							<Megaphone className="h-4 w-4" />
@@ -248,13 +265,14 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 								participants={participants.map((p) => ({
 									name: p.user.name,
 									email: p.user.email,
-									createdAt: p.joinedAt,
+									createdAt: p.subscribedAt,
 								}))}
 							/>
 						</div>
 						<ParticipantsList.List
 							hasActivity
 							participants={participants}
+							sessions={activity.sessions}
 							activityId={activity.id}
 						/>
 					</ParticipantsList.Holder>
@@ -270,6 +288,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 					<ParticipantsList.Title>Monitores</ParticipantsList.Title>
 					<ParticipantsList.List
 						participants={monitors}
+						sessions={activity.sessions}
 						activityId={activity.id}
 						emptyMessage={{
 							title: "Nenhum monitor encontrado",

@@ -4,8 +4,6 @@ import { cn } from "@/lib/utils";
 
 // Icons
 import { Check, User, Clock, Frown } from "lucide-react";
-import AndroidIcon from "@/public/icons/android.svg";
-import AppleIcon from "@/public/icons/apple.svg";
 
 // Components
 import { BadgeScanner } from "@/components/badge-scanner";
@@ -14,8 +12,13 @@ import { ActivitySpeakers } from "./activity-card/speakers";
 import { ExpandableDescription } from "@/components/shared/expandable-description";
 
 // Utils
-import { formatFriendlyDate } from "@/lib/date";
-import { getTimeString } from "@/lib/date";
+import {
+	formatFriendlyDate,
+	getDateString,
+	getLastSessionEnd,
+	getSessionsSorted,
+	getSessionTimeString,
+} from "@/lib/date";
 
 // API
 import { RouterOutput } from "@verific/api";
@@ -26,7 +29,7 @@ export interface WorkshopTicketProps {
 	participantId: string;
 }
 
-const TOLERANCE = 15; // minutes
+const DEFAULT_TOLERANCE = 15; // minutes
 
 export function ActivityTicket({
 	activity,
@@ -35,17 +38,17 @@ export function ActivityTicket({
 }: WorkshopTicketProps) {
 	const isMonitor = activity.role === "monitor";
 
-	const startTime = getTimeString(activity.dateFrom);
-	const endTime = getTimeString(activity.dateTo);
+	const sessions = getSessionsSorted(activity.sessions);
+	const attendedCount = sessions.filter((s) => s.joinedAt).length;
 
-	const startDate = new Date(activity.dateFrom);
-	const endDate = new Date(activity.dateTo);
-	const hours = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
-	const numberOfDots = Math.min(10, Math.max(2, Math.floor(hours) + 1));
-
-	const endDatePlusTolerance = new Date(
-		endDate.getTime() + TOLERANCE * 60 * 1000,
-	);
+	const lastEnd = getLastSessionEnd(sessions);
+	const tolerance = activity.tolerance ?? DEFAULT_TOLERANCE;
+	const endDatePlusTolerance = lastEnd
+		? new Date(lastEnd.getTime() + tolerance * 60 * 1000)
+		: null;
+	const isExpired = endDatePlusTolerance
+		? new Date() > endDatePlusTolerance
+		: false;
 
 	return (
 		<div
@@ -65,7 +68,7 @@ export function ActivityTicket({
 						</h2>
 						<ActivityStatus
 							className="mt-1"
-							date={activity.dateFrom}
+							sessions={sessions}
 							dateFormat={{
 								includeDay: true,
 								includeHour: false,
@@ -78,41 +81,43 @@ export function ActivityTicket({
 						<ExpandableDescription activity={activity} />
 					)}
 
-					{/* Time Display */}
-					<div className="flex w-full items-center justify-between">
-						<span className="text-xl">{startTime}</span>
-						<div className="mx-4 flex flex-1 items-center justify-center md:mx-8">
-							<div className="relative flex h-4 w-full items-center">
-								<div className="bg-foreground absolute top-1/2 left-0 h-0.5 w-full -translate-y-1/2" />
-								<span className="block md:hidden">
-									{Array(numberOfDots)
-										.fill(0)
-										.map((_, i) => (
-											<div
-												key={`dot-${i}`}
-												className="bg-foreground absolute top-1/2 h-2 w-2 -translate-y-1/2 rounded-full"
-												style={{
-													left: `${(i / (numberOfDots - 1)) * 100}%`,
-												}}
-											/>
-										))}
-								</span>
-								<span className="hidden md:block">
-									{Array(numberOfDots)
-										.fill(0)
-										.map((_, i) => (
-											<div
-												key={`dot-${i}`}
-												className="bg-foreground absolute top-1/2 h-2 w-2 -translate-y-1/2 rounded-full"
-												style={{
-													left: `${(i / (numberOfDots - 1)) * 100}%`,
-												}}
-											/>
-										))}
-								</span>
+					{/* Sessions */}
+					<div className="flex w-full flex-col gap-2">
+						{sessions.map((session, i) => (
+							<div
+								key={session.id}
+								className="flex w-full items-center justify-between gap-3 rounded-md border px-3 py-2"
+							>
+								<div className="flex min-w-0 flex-col">
+									<span className="text-sm font-semibold">
+										{sessions.length > 1
+											? `Sessão ${i + 1} · `
+											: null}
+										{getDateString(
+											session.startsAt,
+											session.startsAt,
+										)}
+									</span>
+									<span className="text-muted-foreground text-sm">
+										{getSessionTimeString(session)}
+									</span>
+								</div>
+								{session.joinedAt ? (
+									<span className="flex shrink-0 items-center gap-1 text-sm font-medium text-green-600 dark:text-green-500">
+										<Check className="size-4" />
+										Presente
+									</span>
+								) : (
+									<span className="text-muted-foreground flex shrink-0 items-center gap-1 text-sm">
+										<Clock className="size-4" />
+										{formatFriendlyDate(
+											new Date(session.startsAt),
+											{ includeHour: true },
+										)}
+									</span>
+								)}
 							</div>
-						</div>
-						<span className="text-xl">{endTime}</span>
+						))}
 					</div>
 
 					{/* Limits and Tolerance */}
@@ -161,7 +166,7 @@ export function ActivityTicket({
 
 				{/* Action/QR Section */}
 				<div className="bg-card flex flex-col items-center justify-center px-6 md:w-80 md:pl-0">
-					{new Date() > endDatePlusTolerance ? (
+					{isExpired ? (
 						isMonitor ? (
 							<div className="flex flex-col items-center justify-center gap-4 pt-6 pb-8">
 								<Frown className="text-muted-foreground h-6 w-6" />
@@ -180,33 +185,45 @@ export function ActivityTicket({
 							</div>
 						)
 					) : isMonitor ? (
-						<>
-							{/* Desktop: App Download Info */}
-							<div className="hidden w-full flex-col items-center justify-center py-6 md:flex">
-								<p className="mb-6 text-center">
-									Credencie os participantes do evento pelo
-									seu telefone!
-								</p>
-								<div className="flex space-x-4">
-									<AppleIcon className="flex h-6 w-5 items-center justify-center text-black dark:text-white" />
-									<AndroidIcon className="flex w-8 items-center justify-center" />
+						<div className="flex w-full flex-col items-center justify-center gap-4 py-6">
+							{sessions.map((session, i) => (
+								<div
+									key={session.id}
+									className="flex w-full flex-col gap-2 rounded-md border px-3 py-2"
+								>
+									<div className="flex w-full items-center justify-between gap-2 text-sm">
+										<span className="font-semibold">
+											{sessions.length > 1
+												? `Sessão ${i + 1} · `
+												: null}
+											{getSessionTimeString(session)}
+										</span>
+										<span className="text-muted-foreground flex shrink-0 items-center gap-1">
+											<User size={14} />
+											{session.attendedCount}
+										</span>
+									</div>
+									<BadgeScanner
+										sessionId={session.id}
+										buttonLabel={
+											sessions.length > 1
+												? `Credenciar sessão ${i + 1}`
+												: "Escanear crachás"
+										}
+									/>
+								</div>
+							))}
+							<div className="flex w-full items-center justify-between">
+								<div className="text-muted-foreground flex items-center">
+									<User size={18} className="mr-2" />
+									<span>Participantes credenciados</span>
+								</div>
+								<div className="text-2xl font-bold">
+									{activity.participantsJoined}
 								</div>
 							</div>
-							{/* Mobile: Badge Scanner and Count */}
-							<div className="flex w-full flex-col items-center justify-center gap-6 py-6 md:hidden">
-								<BadgeScanner activityId={activity.id} />
-								<div className="flex w-full items-center justify-between">
-									<div className="text-muted-foreground flex items-center">
-										<User size={18} className="mr-2" />
-										<span>Participantes credenciados</span>
-									</div>
-									<div className="text-2xl font-bold">
-										{activity.participantsJoined}
-									</div>
-								</div>
-							</div>
-						</>
-					) : activity.joinedAt ? (
+						</div>
+					) : attendedCount > 0 ? (
 						<div className="flex w-full items-center justify-between py-8 md:flex-col md:items-center md:justify-center md:border-0 md:pt-0">
 							<div className="text-muted-foreground md:text-card-foreground flex items-center md:flex-col md:gap-3 md:text-center">
 								<Check className="mr-2 size-6 md:mr-0 md:size-12" />
@@ -215,7 +232,8 @@ export function ActivityTicket({
 								</span>
 							</div>
 							<div className="text-2xl font-bold md:text-4xl">
-								{formatFriendlyDate(activity.joinedAt)}
+								{attendedCount} de {sessions.length}{" "}
+								{sessions.length === 1 ? "sessão" : "sessões"}
 							</div>
 						</div>
 					) : (

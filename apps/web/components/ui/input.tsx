@@ -1,7 +1,7 @@
 import type * as React from "react";
 
 import { cn } from "@/lib/utils";
-import { formatPhone } from "@/lib/validations/masks/phone";
+import { formatPhone, toE164BR, toNationalBR } from "@/lib/validations/masks/phone";
 
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
 	return (
@@ -41,33 +41,23 @@ function InputWithSuffix({
 	);
 }
 
-function PhoneInput({
-	onChange,
-	value,
-	...props
-}: React.ComponentProps<"input">) {
-	// Handler para aplicar a máscara manualmente
+interface PhoneInputProps
+	extends Omit<React.ComponentProps<"input">, "value" | "onChange"> {
+	/** Canonical stored form: E.164 (`+55...`); display is masked BR national. */
+	value?: string;
+	onChange?: (value: string) => void;
+}
+
+function PhoneInput({ onChange, value, ...props }: PhoneInputProps) {
+	// Visual-only mask: typed text is normalized to E.164 on emit.
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const formatted = formatPhone(e.target.value);
-		if (onChange) {
-			// Cria um novo evento com o valor formatado
-			const event = {
-				...e,
-				target: {
-					...e.target,
-					value: formatted,
-				},
-			};
-			onChange(event as React.ChangeEvent<HTMLInputElement>);
-		}
+		onChange?.(toE164BR(e.target.value));
 	};
 
 	return (
 		<Input
 			{...props}
-			value={
-				typeof value === "string" ? formatPhone(value) : (value ?? "")
-			}
+			value={formatPhone(toNationalBR(typeof value === "string" ? value : ""))}
 			onChange={handleChange}
 			maxLength={15} // (99) 99999-9999
 			inputMode="tel"

@@ -1,20 +1,16 @@
 import { relations } from "drizzle-orm";
 import {
 	pgTable,
-	text,
 	timestamp,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
 
 import { participantOnActivity } from "./participant-on-activity";
+import { sessionAttendance } from "./session-attendance";
 import { project } from "./project";
 import { user } from "./user";
-
-// Enums
-import { courseEnum } from "../enum/course";
-import { periodEnum } from "../enum/period";
-import { degreeLevelEnum } from "../enum/degree";
+import { formAnswer } from "./form-answer";
 
 export const participant = pgTable(
 	"participants",
@@ -33,13 +29,9 @@ export const participant = pgTable(
 				onUpdate: "cascade",
 			}),
 
-		course: courseEnum("course"),
-		registrationId: text("registration_id"),
-		period: periodEnum("period"),
-		degreeLevel: degreeLevelEnum("degree_level"),
 		joinedAt: timestamp("joined_at").notNull().defaultNow(),
 	},
-	(table) => [uniqueIndex().on(table.userId, table.projectId), uniqueIndex().on(table.registrationId, table.projectId)],
+	(table) => [uniqueIndex().on(table.userId, table.projectId)],
 );
 
 export const participantRelations = relations(participant, ({ one, many }) => ({
@@ -52,4 +44,6 @@ export const participantRelations = relations(participant, ({ one, many }) => ({
 		references: [project.id],
 	}),
 	participantOnActivity: many(participantOnActivity),
+	sessionAttendances: many(sessionAttendance),
+	answers: many(formAnswer),
 }));

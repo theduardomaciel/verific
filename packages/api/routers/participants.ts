@@ -3,10 +3,12 @@ import { z } from "@verific/zod";
 import { db } from "@verific/drizzle";
 import {
 	activity,
+	activitySession,
 	participant,
 	participantOnActivity,
 	project,
 	projectModerator,
+	sessionAttendance,
 	user,
 } from "@verific/drizzle/schema";
 import {
@@ -16,7 +18,6 @@ import {
 	desc,
 	eq,
 	exists,
-	getTableColumns,
 	ilike,
 	inArray,
 	or,
@@ -134,9 +135,7 @@ export const participantsRouter = createTRPCRouter({
 				sort,
 				query: search,
 				page: pageIndex,
-				period: periodsFilter,
 				pageSize,
-				course,
 			} = input;
 
 			let roleFilter: SQL | undefined;
@@ -158,13 +157,7 @@ export const participantsRouter = createTRPCRouter({
 						ilike(user.email, `%${search}%`),
 					)
 					: undefined,
-				periodsFilter && periodsFilter.length > 0
-					? inArray(participant.period, periodsFilter)
-					: undefined,
 				roleFilter,
-				course && course.length > 0
-					? inArray(participant.course, course)
-					: undefined,
 			];
 
 			let orderByClause;
@@ -187,15 +180,13 @@ export const participantsRouter = createTRPCRouter({
 					orderByClause = desc(participant.joinedAt);
 			}
 
-			const [participants, countResult, emailDomains, participantsCourses] = await Promise.all([
+			const [participants, countResult, emailDomains] = await Promise.all([
 				db
 					.select({
 						id: participant.id,
 						userId: participant.userId,
 						projectId: participant.projectId,
 						joinedAt: participant.joinedAt,
-						course: participant.course,
-						period: participant.period,
 						user: {
 							name: user.name,
 							email: user.email,
@@ -220,12 +211,6 @@ export const participantsRouter = createTRPCRouter({
 					.leftJoin(user, eq(participant.userId, user.id))
 					.where(eq(participant.projectId, projectId))
 					.groupBy(sql`SPLIT_PART(${user.email}, '@', 2)`),
-				// Extrai os cursos únicos dos participantes
-				db
-					.select({ course: participant.course })
-					.from(participant)
-					.where(eq(participant.projectId, projectId))
-					.groupBy(participant.course),
 			]);
 
 			const amount = countResult?.[0]?.amount ?? 0;
@@ -235,7 +220,6 @@ export const participantsRouter = createTRPCRouter({
 				participants,
 				pageCount,
 				emailDomains: emailDomains.map((ed) => ed.emailDomain) as string[],
-				courses: participantsCourses.map((pc) => pc.course) as string[],
 			};
 		}),
 
@@ -292,16 +276,15 @@ export const participantsRouter = createTRPCRouter({
 			return { participantId: result?.[0]?.id ?? null, userId };
 		}),
 
-	updateParticipantPresence: protectedProcedure
+	updateSessionPresence: protectedProcedure
 		.input(
 			z.object({
-				activityId: z.string().uuid(),
+				sessionId: z.string().uuid(),
 				participantId: z.string().uuid(),
-				presence: z.boolean().optional(),
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			const { activityId, participantId } = input;
+			const { sessionId, participantId } = input;
 
 			const error = await isMemberAuthenticated({
 				userId: ctx.session.user.id,
@@ -311,35 +294,52 @@ export const participantsRouter = createTRPCRouter({
 				throw new TRPCError(error);
 			}
 
-			// Checamos se o usuário estão inscritos na atividade
-			const isPresent = await db
+			const session = await db.query.activitySession.findFirst({
+				where: eq(activitySession.id, sessionId),
+			});
+
+			if (!session) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Sessão não encontrada",
+				});
+			}
+
+			// Só permite credenciar quem está inscrito na atividade
+			const subscription = await db
 				.select({ amount: count() })
 				.from(participantOnActivity)
-				.where(and(
-					eq(participantOnActivity.activityId, activityId),
-					eq(participantOnActivity.participantId, participantId),
-				));
+				.where(
+					and(
+						eq(
+							participantOnActivity.activityId,
+							session.activityId,
+						),
+						eq(
+							participantOnActivity.participantId,
+							participantId,
+						),
+					),
+				);
 
-			// Caso não, retornamos um erro
-			if ((isPresent?.[0]?.amount ?? 0) === 0) {
+			if ((subscription?.[0]?.amount ?? 0) === 0) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
 					message: "Participante não está inscrito na atividade",
 				});
 			}
 
-			// Upsert: se já existe, atualiza joinedAt e presence; senão, insere
 			await db
-				.insert(participantOnActivity)
+				.insert(sessionAttendance)
 				.values({
-					activityId,
+					sessionId,
 					participantId,
 					joinedAt: new Date(),
 				})
 				.onConflictDoUpdate({
 					target: [
-						participantOnActivity.activityId,
-						participantOnActivity.participantId,
+						sessionAttendance.sessionId,
+						sessionAttendance.participantId,
 					],
 					set: {
 						joinedAt: new Date(),

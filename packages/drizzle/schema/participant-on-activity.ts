@@ -24,8 +24,6 @@ export const participantOnActivity = pgTable(
 			}),
 		role: roleEnum("role").notNull().default("participant"),
 		subscribedAt: timestamp("subscribedAt").notNull().defaultNow(),
-		joinedAt: timestamp("joined_at"),
-		leftAt: timestamp("left_at"),
 	},
 	(table) => [uniqueIndex().on(table.participantId, table.activityId)],
 );

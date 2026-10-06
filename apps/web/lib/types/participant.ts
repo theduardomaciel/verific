@@ -6,9 +6,6 @@ export type Participant = {
 	id: string;
 	userId: string;
 	projectId: string;
-	course: string;
-	registrationId: string;
-	period: string;
 	joinedAt: Date;
 	user: User;
 	role: "participant" | "monitor";

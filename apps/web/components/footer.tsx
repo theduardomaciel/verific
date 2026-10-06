@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import Logo from "@/public/logo.svg";
 
 const footerVariants = cva(
-	"flex items-center container-d justify-center w-full py-6 ",
+	"flex items-center justify-center w-full py-6 px-12",
 	{
 		variants: {
 			variant: {
@@ -20,6 +20,11 @@ const footerVariants = cva(
 		},
 	},
 );
+
+async function getRenderedYear() {
+	"use cache";
+	return new Date().getFullYear();
+}
 
 function Footer({
 	className,
@@ -77,7 +82,8 @@ function Footer({
 					</nav>
 				</div>
 				<p className="text-xs text-[currentColor] opacity-50">
-					Copyright 2025 verifIC. Todos os direitos reservados
+					Copyright {getRenderedYear()} verifIC. Todos os direitos
+					reservados
 				</p>
 			</div>
 		</footer>

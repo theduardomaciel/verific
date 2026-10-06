@@ -13,3 +13,22 @@ export function formatPhone(value: string) {
 	}
 	return value;
 }
+
+/**
+ * Brasil-only helpers: the stored canonical form is E.164 (`+55...`),
+ * the visual mask (`formatPhone`) operates on the national digits.
+ * See DOCS/i18n.md.
+ */
+
+/** Strips the `+55` country code of an E.164 value, returning national digits. */
+export function toNationalBR(value: string): string {
+	return value.replace(/\D/g, "").replace(/^55/, "");
+}
+
+/** Normalizes typed/pasted text (national or E.164) to E.164, or `""` when empty. */
+export function toE164BR(text: string): string {
+	const digits = text.replace(/\D/g, "");
+	if (!digits) return "";
+	if (digits.length > 11 && digits.startsWith("55")) return `+${digits}`;
+	return `+55${digits}`;
+}

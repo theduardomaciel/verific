@@ -11,6 +11,9 @@ node_modules
 # Testing
 coverage
 
+# TypeScript build artifacts (packages are consumed as source)
+*.tsbuildinfo
+
 # Turbo
 .turbo
 

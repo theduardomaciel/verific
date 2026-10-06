@@ -26,6 +26,7 @@ interface Props extends Omit<React.ComponentProps<"button">, "onChange"> {
 	items: {
 		label: string;
 		value?: string;
+		keywords?: string[];
 	}[];
 	value: string;
 	onChange: (value?: string) => void;
@@ -77,6 +78,7 @@ export function Combobox({
 								<CommandItem
 									key={item.value || item.label}
 									value={item.value}
+									keywords={item.keywords}
 									onSelect={() => {
 										onChange(item.value);
 										setOpen(false);

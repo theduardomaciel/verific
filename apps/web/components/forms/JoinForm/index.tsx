@@ -1,33 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "@verific/zod";
 
 // Components
+import { FormSection, SectionFooter } from "@/components/forms";
 import { Form, FormWrapper } from "@/components/ui/form";
+import { DynamicField } from "@/components/forms/dynamic/DynamicField";
 import {
 	ErrorDialog,
 	LoadingDialog,
 	SuccessDialog,
 } from "@/components/forms/dialogs";
-
-// Sections
+import {
+	FormControl,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import JoinForm0 from "./Section0";
-import JoinForm1 from "./Section1";
-import JoinForm2 from "./Section2";
 
 // Validation
-import {
-	type JoinFormSchema,
-	JoinFormTypeEnum,
-	joinFormSchema,
-} from "@/lib/validations/forms/join-form";
-import { scrollToNextSection } from "@/lib/validations";
+import { buildAnswersSchema, filterVisibleFields } from "@verific/api/schemas";
+import { groupFieldsBySection } from "@/lib/forms/layout";
+import { getVisibleSectionIds } from "@verific/api/schemas";
+import type { GenericForm } from "..";
 
 // Types
 import type { User } from "@verific/auth";
-import type { GenericForm } from "..";
 
 // API
 import { trpc } from "@/lib/trpc/react";
@@ -39,6 +43,7 @@ interface JoinFormProps {
 	project: {
 		id: string;
 		url: string;
+		name?: string;
 		logo?: string;
 		colors?: string[];
 	};
@@ -46,186 +51,282 @@ interface JoinFormProps {
 
 export default function JoinForm({ user, project }: JoinFormProps) {
 	const router = useRouter();
-
 	const [currentState, setCurrentState] = useState<
 		false | "submitting" | "error" | "submitted"
 	>(false);
-
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-	const mutation = trpc.updateUser.useMutation();
+	const { data: formData, isPending: isFormPending } = trpc.getPublishedForm.useQuery({
+		projectId: project.id,
+	});
+	const submitMutation = trpc.submitAnswers.useMutation();
 
-	// 1. Define your form.
-	const form = useForm<JoinFormSchema>({
-		resolver: zodResolver(joinFormSchema as any), // TODO: Fix this type
-		defaultValues: {
-			formType: JoinFormTypeEnum.Section0,
-			section0: {
-				email: user?.email || "",
-			},
-			section1: {
-				name: user?.name || "",
-				course: undefined,
-				degreeLevel: undefined,
-				registrationId: undefined,
-				period: undefined,
-			},
-			section2: {
-				reason: undefined,
-				discovery: undefined,
-				discoveryOther: "",
-				accessibility: undefined,
-			},
-		},
+	const fields = useMemo(() => formData?.fields ?? [], [formData]);
+	const sections = useMemo(() => formData?.sections ?? [], [formData]);
+
+	const baseVisibleFields = useMemo(() => fields.filter((f) => f.isVisible), [fields]);
+
+	const fieldsForValidation = useMemo(
+		() =>
+			fields.map((f) => ({
+				id: f.id,
+				sectionId: f.sectionId,
+				key: f.key,
+				label: f.label,
+				type: f.type,
+				required: f.required,
+				options: f.options,
+				allowOther: f.allowOther,
+				validation: f.validation,
+				isVisible: f.isVisible,
+				isActive: f.isActive,
+			})),
+		[fields],
+	);
+
+	const sectionsForVisibility = useMemo(
+		() =>
+			sections.map((s) => ({
+				id: s.id,
+				visibilityRule: (s as { visibilityRule?: { sourceFieldId: string; operator: "is_checked" | "is_not_checked" | "equals" | "includes_any" | "includes_all"; values?: string[] } | null }).visibilityRule ?? null,
+			})),
+		[sections],
+	);
+
+	const hasConditional = useMemo(
+		() => sectionsForVisibility.some((s) => s.visibilityRule),
+		[sectionsForVisibility],
+	);
+
+	const nameSchema = useMemo(
+		() =>
+			z
+				.string({ error: "Obrigatório" })
+				.min(2, { message: "Informe seu nome completo." })
+				.refine((v) => v.trim().split(/\s+/).length >= 2, {
+					message: "Informe nome e sobrenome.",
+				}),
+		[],
+	);
+
+	// Visibility-aware resolver: rebuilds the answers schema from the
+	// submitted values on every validation, so required fields in hidden
+	// sections never block submit.
+	const resolver = useMemo(() => {
+		return async (
+			values: unknown,
+			context: unknown,
+			options: unknown,
+		) => {
+			const v = (values ?? {}) as { name?: unknown; answers?: Record<string, unknown> };
+			const answers = (v.answers ?? {}) as Record<string, unknown>;
+			const answersSchema = buildAnswersSchema(
+				fieldsForValidation,
+				sectionsForVisibility,
+				answers,
+			);
+			const schema = z.object({ name: nameSchema, answers: answersSchema });
+			const zod = zodResolver(schema as never);
+			return (zod as (a: unknown, b: unknown, c: unknown) => Promise<unknown>)(
+				values,
+				context,
+				options,
+			) as never;
+		};
+	}, [fieldsForValidation, sectionsForVisibility, nameSchema]);
+
+	const form = useForm<{ name: string; answers: Record<string, unknown> }>({
+		resolver: resolver as never,
+		defaultValues: { name: user?.name || "", answers: {} },
 	});
 
-	const formType = form.watch("formType");
+	const watchedAnswers = form.watch("answers") ?? {};
 
-	function setFormType(formType: JoinFormTypeEnum) {
-		form.setValue("formType", formType);
-	}
+	const { visibleFields, groupedSections } = useMemo(() => {
+		if (!hasConditional) {
+			return {
+				visibleFields: baseVisibleFields,
+				groupedSections: groupFieldsBySection(baseVisibleFields, sections),
+			};
+		}
+		const visible = filterVisibleFields(
+			baseVisibleFields.map((f) => ({ ...f })),
+			sectionsForVisibility,
+			watchedAnswers as Record<string, unknown>,
+		);
+		// Keep trigger answers even when their section is hidden is handled
+		// by filterVisibleFields; just regroup.
+		const grouped = groupFieldsBySection(visible, sections).filter((g) =>
+			getVisibleSectionIds(sectionsForVisibility, fieldsForValidation, watchedAnswers as Record<string, unknown>).has(g.section.id),
+		);
+		return { visibleFields: visible, groupedSections: grouped };
+	}, [hasConditional, baseVisibleFields, sections, sectionsForVisibility, fieldsForValidation, watchedAnswers]);
 
-	async function submitData() {
+	useEffect(() => {
+		if (user?.name) form.setValue("name", user.name);
+	}, [user?.name, form]);
+
+	useEffect(() => {
+		if (!hasConditional) return;
+		const allowed = new Set(visibleFields.map((f) => f.key));
+		const hidden = fieldsForValidation.map((f) => f.key).filter((k) => !allowed.has(k));
+		if (hidden.length > 0) {
+			form.clearErrors(hidden.map((k) => `answers.${k}` as never));
+		}
+	}, [visibleFields, fieldsForValidation, hasConditional, form]);
+
+	useEffect(() => {
+		if (!user) form.setValue("name", "");
+	}, [user, form]);
+
+	async function onSubmit(values: { name: string; answers: Record<string, unknown> }) {
 		setCurrentState("submitting");
-
 		if (!user) {
-			console.error("User not found.");
+			setErrorMessage("Você precisa estar logado para se inscrever.");
 			setCurrentState("error");
 			return;
 		}
-
-		// ✅ This will be type-safe and validated.
-		const values = form.getValues();
-		console.log("values", values);
-
-		// Send the data to the server.
+		// Preserve in-memory, discard on submit: strip hidden-section answers.
+		const visible = hasConditional
+			? filterVisibleFields(fieldsForValidation, sectionsForVisibility, values.answers)
+			: fieldsForValidation;
+		const allowed = new Set(visible.map((f) => f.key));
+		const stripped: Record<string, unknown> = {};
+		for (const [k, v] of Object.entries(values.answers ?? {})) {
+			if (allowed.has(k)) stripped[k] = v;
+		}
 		try {
-			await mutation.mutateAsync({
-				name: values.section1.name,
-				course: values.section1.course,
-				registrationId: values.section1.registrationId,
-				period: values.section1.period,
+			await submitMutation.mutateAsync({
 				projectId: project.id,
-				reason: values.section2.reason,
-				accessibility: values.section2.accessibility,
-				discovery: values.section2.discovery,
-				discoveryOther: values.section2.discoveryOther,
+				name: values.name,
+				answers: stripped as Record<string, string | number | boolean | string[] | null | undefined>,
 			});
 		} catch (error) {
-			console.error(error);
-			setErrorMessage(
-				error instanceof Error ? error.message : "Erro desconhecido",
-			);
+			setErrorMessage(error instanceof Error ? error.message : "Erro desconhecido");
 			setCurrentState("error");
 			return;
 		}
-
-		await revalidateParticipantEnrollment(user.id!);
-
+		if (user.id) await revalidateParticipantEnrollment(user.id);
 		setCurrentState("submitted");
 	}
-
-	// 2. Define a submit handler.
-	async function handleNextFormType() {
-		console.log("handleNextFormType", formType);
-
-		// Switch between form sections.
-		switch (formType) {
-			case "section0":
-				setFormType(JoinFormTypeEnum.Section1);
-				scrollToNextSection(1);
-				break;
-			case "section1":
-				setFormType(JoinFormTypeEnum.Section2);
-				scrollToNextSection(2);
-				break;
-			case "section2":
-				submitData();
-				break;
-		}
-	}
-
-	// GAMBIARRA: Caso o usuário logue e deslogue em seguida, os campos continuam com os valores preenchidos.
-	// Isso permitia que o usuário deslogado prosseguisse com o formulário.
-	useEffect(() => {
-		if (!user) {
-			form.setValue("section0.email", "");
-			form.setValue("section1.name", "");
-		}
-	}, [user]);
 
 	return (
 		<Form {...form}>
 			<FormWrapper>
-				<form
-					onSubmit={form.handleSubmit(handleNextFormType, () => {
-						console.log("Form error");
-					})}
-				>
+				<form onSubmit={form.handleSubmit(onSubmit)}>
 					<JoinForm0
 						projectUrl={project.url}
 						form={form as unknown as GenericForm}
 						email={user?.email}
 					/>
-					<JoinForm1 form={form as unknown as GenericForm} />
-					<JoinForm2 form={form as unknown as GenericForm} />
+					{isFormPending ? (
+						<FormSection
+							title="Dados da inscrição"
+							section={1}
+							form={form as unknown as GenericForm}
+							fields={[]}
+						>
+							<p className="text-muted-foreground text-sm">Carregando formulário do evento...</p>
+							<SectionFooter isFinalSection />
+						</FormSection>
+					) : groupedSections.length === 0 ? (
+						<FormSection
+							title="Dados da inscrição"
+							section={1}
+							form={form as unknown as GenericForm}
+							fields={[]}
+						>
+							<FormField
+								control={form.control}
+								name="name"
+								render={({ field }) => (
+									<FormItem className="w-full">
+										<FormLabel>
+											Nome completo <span className="text-destructive ml-1">*</span>
+										</FormLabel>
+										<FormControl>
+											<Input placeholder="Fulano da Silva" {...field} value={field.value ?? ""} />
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+							<p className="text-muted-foreground text-sm">
+								Este evento não exige informações adicionais.
+							</p>
+							<SectionFooter isFinalSection />
+						</FormSection>
+					) : (
+						groupedSections.map((group, gi) => (
+							<FormSection
+								key={group.section.id}
+								title={group.section.title}
+								section={gi + 1}
+								form={form as unknown as GenericForm}
+								fields={group.fields.map((f) => ({ name: f.label, value: false }))}
+							>
+								{gi === 0 && (
+									<FormField
+										control={form.control}
+										name="name"
+										render={({ field }) => (
+											<FormItem className="w-full">
+												<FormLabel>
+													Nome completo <span className="text-destructive ml-1">*</span>
+												</FormLabel>
+												<FormControl>
+													<Input placeholder="Fulano da Silva" {...field} value={field.value ?? ""} />
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+								)}
+								<div className="flex w-full flex-col gap-6">
+									{group.rows.map((row, ri) => (
+										<div
+											key={row.fields.map((f) => f.id).join("-") || `row-${ri}`}
+											className={
+												row.fields.length === 2
+													? "grid w-full grid-cols-1 gap-6 md:grid-cols-2"
+													: "w-full"
+											}
+										>
+											{row.fields.map((f) => (
+												<DynamicField
+													key={f.id}
+													field={f}
+													control={form.control as never}
+													name={`answers.${f.key}`}
+												/>
+											))}
+										</div>
+									))}
+								</div>
+								<SectionFooter isFinalSection={gi === groupedSections.length - 1} />
+							</FormSection>
+						))
+					)}
 				</form>
 			</FormWrapper>
-			<LoadingDialog
-				isOpen={currentState === "submitting"}
-				title="Estamos realizando seu cadastro..."
-			/>
+			<LoadingDialog isOpen={currentState === "submitting"} title="Estamos realizando seu cadastro..." />
 			<SuccessDialog
 				isOpen={currentState === "submitted"}
 				onClose={() => {
 					setCurrentState(false);
-					router.push(`${`/${project.url}/my`}`);
+					router.push(`/${project.url}/my`);
 				}}
 				confettiColors={project.colors}
 				className="py-8 sm:!max-w-[40vw]"
 				title={
 					<div className="flex flex-col items-center justify-center gap-4">
-						{/* {projectLogo && (
-							<Image
-								src={projectLogo}
-								alt="Logo do evento"
-								width={200}
-								height={50}
-							/>
-						)} */}
 						<span className="flex w-full sm:px-12">
-							🎉 Parabéns! <br /> Sua inscrição na Secomp 2025 foi
-							confirmada com sucesso!
+							🎉 Parabéns! <br /> Sua inscrição
+							{project.name ? ` em ${project.name}` : ""} foi confirmada com sucesso!
 						</span>
 					</div>
 				}
-				description={
-					<>
-						Bem-vindo à Semana da Computação da UFAL! Prepare-se
-						para mergulhar em 5 dias incríveis de aprendizado,
-						diversão e conexões.
-						<br />
-						<br />
-						<strong>O que te espera:</strong>
-						<br />• 📚 <strong>Minicursos e Palestras:</strong>{" "}
-						Aprenda sobre os mais diversos assuntos com instrutores
-						e palestrantes especializados.
-						<br />• 🏆 <strong>Competições:</strong> Conquiste
-						prêmios, conheça pessoas incríveis e fortaleça suas
-						habilidades em nossos campeonatos emocionantes.
-						<br />• 🎮 <strong>Sala de Jogos:</strong> Divirta-se e
-						conecte-se com outros estudantes em momentos de
-						interação na nossa sala de jogos.
-						<br />
-						<br />
-						📅 <strong>Data:</strong> 20 a 24 de outubro
-						<br />
-						📍 <strong>Local:</strong> Instituto de Computação, UFAL
-						<br />
-						<br />O evento é gratuito e aberto a todos. Estamos
-						ansiosos para te ver lá! 🚀
-					</>
-				}
+				description="Você já pode acessar sua conta e se inscrever nas atividades do evento."
 			/>
 			<ErrorDialog
 				isOpen={currentState === "error"}
@@ -234,10 +335,7 @@ export default function JoinForm({ user, project }: JoinFormProps) {
 					setCurrentState(false);
 					setErrorMessage(null);
 				}}
-				description={
-					errorMessage ||
-					"Por favor, tente novamente mais tarde. Se o erro persistir, entre em contato com o suporte."
-				}
+				description={errorMessage || "Por favor, tente novamente mais tarde."}
 			/>
 		</Form>
 	);

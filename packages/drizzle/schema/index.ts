@@ -1,5 +1,9 @@
 export * from "./account";
 export * from "./activity";
+export * from "./activity-session";
+export * from "./session-attendance";
+export * from "./tag";
+export * from "./tag-on-activity";
 export * from "./certificate";
 export * from "./participant-on-activity";
 export * from "./participant";
@@ -11,11 +15,13 @@ export * from "./project-moderator";
 export * from "./template";
 export * from "./user";
 export * from "./verification";
+export * from "./form-version";
+export * from "./form-section";
+export * from "./form-field";
+export * from "./form-answer";
 
 // Enums
 export * from "../enum/audience";
 export * from "../enum/category";
-export * from "../enum/course";
-export * from "../enum/degree";
-export * from "../enum/period";
+export * from "../enum/form-field-type";
 export * from "../enum/role";

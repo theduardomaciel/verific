@@ -1,0 +1,319 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import { useDashboard } from "@/components/dashboard/dashboard-context";
+import { trpc } from "@/lib/trpc/react";
+import { findOrphanHalfIds, groupFieldsBySection } from "@/lib/forms/layout";
+import { animateFlip, animateSectionFlip } from "../lib/animate-flip";
+import type { Field, FormsTab, Section, Version } from "../types";
+import type {
+	RouterInputs,
+	RouterOutput,
+} from "@verific/api";
+import type { UpsertFormSectionInput } from "@verific/api/schemas";
+
+/**
+ * Structural, nameable wrappers around tRPC results.
+ *
+ * Returning the raw `useQuery`/`useMutation` results makes the hook's
+ * inferred return type reference tRPC internals that TypeScript cannot
+ * name without a deep import (TS2742/TS2883). Annotating each result
+ * with these interfaces keeps the public type portable.
+ */
+export interface QueryResult<T> {
+	data: T | undefined;
+	isPending: boolean;
+}
+
+export interface MutationResult<Input> {
+	mutate: (
+		input: Input,
+		options?: {
+			onSuccess?: () => void;
+			onError?: (error: { message: string }) => void;
+		},
+	) => unknown;
+	isPending: boolean;
+}
+
+export function useFormsBuilder() {
+	const { projectId } = useDashboard();
+	const utils = trpc.useUtils();
+	const [selectedId, setSelectedId] = useState<string | null>(null);
+	const [tab, setTab] = useState<FormsTab>("builder");
+	const [displayFields, setDisplayFields] = useState<Field[]>([]);
+	const [displaySections, setDisplaySections] = useState<Section[]>([]);
+	const [fieldToDelete, setFieldToDelete] = useState<Field | null>(null);
+	const [sectionToDelete, setSectionToDelete] = useState<Section | null>(null);
+	const isDraggingRef = useRef(false);
+	const listRef = useRef<HTMLDivElement>(null);
+
+	const versionsQuery: QueryResult<RouterOutput["listVersions"]> =
+		trpc.listVersions.useQuery({ projectId });
+	const versions: Version[] = useMemo(
+		() => versionsQuery.data ?? [],
+		[versionsQuery.data],
+	);
+
+	useEffect(() => {
+		if (!selectedId && versions.length > 0) {
+			const published =
+				versions.find((v) => v.isPublished) ?? versions[0];
+			if (published) setSelectedId(published.id);
+		}
+	}, [versions, selectedId]);
+
+	const versionQuery: QueryResult<RouterOutput["getVersion"]> =
+		trpc.getVersion.useQuery(
+			{ versionId: selectedId ?? "" },
+			{ enabled: !!selectedId },
+		);
+
+	const createVersion: MutationResult<RouterInputs["createVersion"]> =
+		trpc.createVersion.useMutation({
+			onSuccess: async (v) => {
+				await utils.listVersions.invalidate();
+				setSelectedId(v.id);
+				toast.success(`Versão ${v.version} criada!`);
+			},
+			onError: (e) => toast.error(e.message),
+		});
+	const publishVersion: MutationResult<RouterInputs["publishVersion"]> =
+		trpc.publishVersion.useMutation({
+			onSuccess: async () => {
+				await utils.listVersions.invalidate();
+				await utils.getVersion.invalidate();
+				await utils.getPublishedForm.invalidate();
+				toast.success("Versão publicada!");
+			},
+			onError: (e) => toast.error(e.message),
+		});
+	const deleteVersion: MutationResult<RouterInputs["deleteVersion"]> =
+		trpc.deleteVersion.useMutation({
+			onSuccess: async (_data, variables) => {
+				await utils.listVersions.invalidate();
+				await utils.getVersion.invalidate();
+				setSelectedId((prev) =>
+					prev === variables.versionId ? null : prev,
+				);
+				toast.success("Versão excluída!");
+			},
+			onError: (e) => toast.error(e.message),
+		});
+	const deleteField: MutationResult<RouterInputs["deleteField"]> =
+		trpc.deleteField.useMutation({
+			onSuccess: async () => {
+				await utils.getVersion.invalidate();
+				await utils.listVersions.invalidate();
+				setFieldToDelete(null);
+				toast.success("Campo removido!");
+			},
+			onError: (e) => toast.error(e.message),
+		});
+	const upsertSection: MutationResult<UpsertFormSectionInput> =
+		trpc.upsertSection.useMutation({
+			onSuccess: async () => {
+				await utils.getVersion.invalidate();
+				toast.success("Seção salva!");
+			},
+			onError: (e) => toast.error(e.message),
+		});
+	const deleteSection: MutationResult<RouterInputs["deleteSection"]> =
+		trpc.deleteSection.useMutation({
+			onSuccess: async () => {
+				await utils.getVersion.invalidate();
+				setSectionToDelete(null);
+				toast.success("Seção removida!");
+			},
+			onError: (e) => toast.error(e.message),
+		});
+	const serverSections: Section[] = useMemo(
+		() =>
+			(versionQuery.data?.sections ?? [])
+				.slice()
+				.sort((a, b) => a.order - b.order),
+		[versionQuery.data],
+	);
+
+	const reorderSections: MutationResult<RouterInputs["reorderSections"]> =
+		trpc.reorderSections.useMutation({
+			onSuccess: async () => {
+				await utils.getVersion.invalidate();
+			},
+			onError: (e) => {
+				// Roll back the optimistic section order, mirroring the
+				// fields rollback below.
+				setDisplaySections(serverSections);
+				toast.error(e.message);
+			},
+		});
+
+	const serverFields: Field[] = useMemo(
+		() =>
+			(versionQuery.data?.fields ?? [])
+				.slice()
+				.sort((a, b) => a.order - b.order),
+		[versionQuery.data],
+	);
+
+	// Declared after `serverFields` so the rollback can reference it.
+	const reorderFields: MutationResult<RouterInputs["reorderFields"]> =
+		trpc.reorderFields.useMutation({
+			onSuccess: async () => {
+				await utils.getVersion.invalidate();
+			},
+			onError: (e) => {
+				// Roll back the optimistic order. Setting state directly is needed
+				// because a refetch returning identical data keeps the same
+				// reference and would not re-trigger the sync effect below.
+				setDisplayFields(serverFields);
+				toast.error(e.message);
+			},
+		});
+
+	useEffect(() => {
+		if (isDraggingRef.current) return;
+		// Only sync when the fetched data belongs to the current selection.
+		// This avoids overwriting with stale data and removes the need for
+		// a separate `setDisplayFields([])` on `selectedId` change, which
+		// raced with this effect on cached versions and left the list
+		// permanently empty.
+		if (versionQuery.data && versionQuery.data.version.id !== selectedId)
+			return;
+		setDisplayFields(serverFields);
+	}, [serverFields, selectedId, versionQuery.data]);
+
+	useEffect(() => {
+		if (isDraggingRef.current) return;
+		if (versionQuery.data && versionQuery.data.version.id !== selectedId)
+			return;
+		setDisplaySections(serverSections);
+	}, [serverSections, selectedId, versionQuery.data]);
+
+	const fields = displayFields;
+	const sections = displaySections;
+	const selected = versions.find((v) => v.id === selectedId) ?? null;
+	const isPublished = !!selected?.isPublished;
+	const orphanHalfIds = useMemo(() => findOrphanHalfIds(fields), [fields]);
+	const groupedSections = useMemo(
+		() => groupFieldsBySection(fields, sections),
+		[fields, sections],
+	);
+
+	// True while the fields for the current `selectedId` are not yet available.
+	// Covers initial fetch (`isPending`) and version switches where the cached
+	// `getVersion` data still belongs to the previous version (id mismatch),
+	// so callers show a skeleton instead of flashing the empty state.
+	const isLoadingFields =
+		!!selectedId &&
+		(versionQuery.isPending ||
+			versionQuery.data?.version.id !== selectedId);
+
+	function persistOrder(
+		next: Field[],
+		sectionIdByField?: Record<string, string | null>,
+	) {
+		if (!selectedId) return;
+		// Consumers (e.g. BuilderCard's baseGroups) sort by `order`, so the
+		// optimistic state must carry the new `order` values. Otherwise the
+		// moved item renders at its old position until the refetch lands.
+		const renumbered = next.map((f, i) => ({ ...f, order: i }));
+		// Stop an in-flight refetch from overwriting the optimistic state
+		// with the pre-reorder order.
+		void utils.getVersion.cancel();
+		setDisplayFields(renumbered);
+		reorderFields.mutate({
+			versionId: selectedId,
+			orderedIds: renumbered.map((f) => f.id),
+			...(sectionIdByField ? { sectionIdByField } : {}),
+		});
+	}
+
+	function revertOrder() {
+		setDisplayFields(serverFields);
+		setDisplaySections(serverSections);
+	}
+
+	function move(index: number, dir: -1 | 1) {
+		const next = [...fields];
+		const j = index + dir;
+		if (j < 0 || j >= next.length) return;
+		const [item] = next.splice(index, 1);
+		if (!item) return;
+		next.splice(j, 0, item);
+		animateFlip(listRef.current);
+		persistOrder(next);
+	}
+
+	function moveSection(index: number, dir: -1 | 1) {
+		if (!selectedId) return;
+		const next = [...sections];
+		const j = index + dir;
+		if (j < 0 || j >= next.length) return;
+		const [item] = next.splice(index, 1);
+		if (!item) return;
+		next.splice(j, 0, item);
+		animateSectionFlip(listRef.current);
+		const renumbered = next.map((s, i) => ({ ...s, order: i }));
+		void utils.getVersion.cancel();
+		setDisplaySections(renumbered);
+		reorderSections.mutate({
+			versionId: selectedId,
+			orderedIds: renumbered.map((s) => s.id),
+		});
+	}
+
+	function persistSectionOrder(next: Section[]) {
+		if (!selectedId) return;
+		const renumbered = next.map((s, i) => ({ ...s, order: i }));
+		void utils.getVersion.cancel();
+		setDisplaySections(renumbered);
+		reorderSections.mutate({
+			versionId: selectedId,
+			orderedIds: renumbered.map((s) => s.id),
+		});
+	}
+
+	return {
+		projectId,
+		tab,
+		setTab,
+		versions,
+		versionsQuery,
+		selectedId,
+		setSelectedId,
+		selected,
+		isPublished,
+		versionQuery,
+		fields,
+		sections,
+		groupedSections,
+		isLoadingFields,
+		orphanHalfIds,
+		fieldToDelete,
+		setFieldToDelete,
+		sectionToDelete,
+		setSectionToDelete,
+		listRef,
+		isDraggingRef,
+		createVersion,
+		publishVersion,
+		deleteVersion,
+		deleteField,
+		upsertSection,
+		deleteSection,
+		reorderSections,
+		persistOrder,
+		revertOrder,
+		move,
+		moveSection,
+		persistSectionOrder,
+	};
+}
+
+/**
+ * Structural type for the section upsert mutation, kept as a named alias
+ * for callers (builder-card, section-dialog).
+ */
+export type SectionMutation = MutationResult<UpsertFormSectionInput>;
