@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import prettier from "prettier";
 
 // Import the colors definition
 // Note: You'll need to update this path based on your project structure
@@ -115,13 +114,11 @@ ${LIGHT_SCOPE_SELECTOR} {
 }
 `;
 
-// Write the formatted CSS to the output file
-(async () => {
-	try {
-		const formattedCss = await prettier.format(css, { parser: "css" });
-		fs.writeFileSync(path.resolve(outputDir, "colors.css"), formattedCss);
-		console.log("✅ Generated CSS colors file successfully");
-	} catch (error) {
-		console.error("Error generating CSS colors file:", error);
-	}
-})();
+// Write the CSS to the output file as-is (no formatter dependency;
+// the file is covered by `oxfmt` like any other source file).
+try {
+	fs.writeFileSync(path.resolve(outputDir, "colors.css"), css);
+	console.log("✅ Generated CSS colors file successfully");
+} catch (error) {
+	console.error("Error generating CSS colors file:", error);
+}

@@ -5,7 +5,7 @@ import { ParticipantListItem } from "./participant-item";
 import { Empty } from "@/components/empty";
 
 // Types
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 
 interface Props {
 	className?: string;

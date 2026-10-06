@@ -1,6 +1,5 @@
 "use client";
 import * as React from "react";
-import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 // Icons
@@ -51,7 +50,7 @@ import { trpc } from "@/lib/trpc/react";
 import { tagColors } from "@verific/api/schemas";
 
 // Types
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 import {
 	activityCategories,
 	activityCategoryLabels,
@@ -834,16 +833,13 @@ export function MutateActivityFormContent({
 												id.toString(),
 											) || []
 										}
-										onSelect={useCallback(
-											(items: string[]) => {
-												field.onChange(
-													items.map((id) =>
-														parseInt(id),
-													),
-												);
-											},
-											[field.onChange],
-										)}
+										onSelect={(items: string[]) => {
+											field.onChange(
+												items.map((id) =>
+													parseInt(id),
+												),
+											);
+										}}
 										placeholder={
 											isLoading
 												? "Carregando palestrantes..."

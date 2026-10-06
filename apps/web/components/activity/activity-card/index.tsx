@@ -16,7 +16,7 @@ import { TagBadges } from "../tag-badge";
 import { ExpandableDescription } from "@/components/shared/expandable-description";
 
 // Types
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 
 // Lib
 import { activityCategoryLabels } from "@verific/drizzle/schema";

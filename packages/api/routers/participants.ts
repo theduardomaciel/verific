@@ -7,10 +7,11 @@ import {
 	participant,
 	participantOnActivity,
 	project,
-	projectModerator,
 	sessionAttendance,
 	user,
 } from "@verific/drizzle/schema";
+import type {
+	SQL} from "@verific/drizzle/orm";
 import {
 	and,
 	asc,
@@ -21,8 +22,7 @@ import {
 	ilike,
 	inArray,
 	or,
-	sql,
-	SQL,
+	sql
 } from "@verific/drizzle/orm";
 
 // Utils

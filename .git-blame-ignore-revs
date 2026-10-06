@@ -1,0 +1,3 @@
+# One-time mass reformat: ESLint/Prettier -> Oxlint + Oxfmt (CRLF -> LF)
+# Replace <REFORMAT_SHA> with the reformat commit hash after committing.
+<REFORMAT_SHA>  # oxfmt one-time reformat

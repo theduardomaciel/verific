@@ -11,7 +11,8 @@ import Logo from "@/public/logo.svg";
 // Components
 import { Button } from "@/components/ui/button";
 import { MobileMenu } from "../landing/mobile-menu";
-import MainNav, { MainNavProps } from "@/components/header/main-nav";
+import type { MainNavProps } from "@/components/header/main-nav";
+import MainNav from "@/components/header/main-nav";
 
 interface Props {
 	prefix?: string;

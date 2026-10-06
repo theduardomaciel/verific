@@ -21,6 +21,19 @@
 			"dependsOn": ["^build"],
 			"outputs": ["dist/**", ".next/**", "!.next/cache/**"]
 		},
+		"lint": {
+			"inputs": ["$TURBO_DEFAULT$", "../../.oxlintrc.json"],
+			"outputs": []
+		},
+		"fmt:check": {
+			"inputs": ["$TURBO_DEFAULT$", "../../.oxfmtrc.json"],
+			"outputs": []
+		},
+		"typecheck": {
+			"dependsOn": ["^typecheck"],
+			"inputs": ["$TURBO_DEFAULT$", "../../config/typescript/*.json"],
+			"outputs": []
+		},
 		"test": {},
 		"test:coverage": {},
 		"db:generate": {},

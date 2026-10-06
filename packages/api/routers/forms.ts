@@ -9,7 +9,6 @@ import {
 	formVersion,
 	participant,
 	project,
-	projectModerator,
 	user,
 } from "@verific/drizzle/schema";
 import { generateShortId } from "./profiles";

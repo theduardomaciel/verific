@@ -4,6 +4,12 @@
 	"types": "./index.ts",
 	"version": "0.0.0",
 	"private": true,
+	"scripts": {
+		"lint": "oxlint --type-aware",
+		"fmt": "oxfmt",
+		"fmt:check": "oxfmt --check",
+		"typecheck": "tsc --noEmit"
+	},
 	"dependencies": {
 		"@better-auth/drizzle-adapter": "1.7.6",
 		"@verific/drizzle": "workspace:*",
@@ -11,8 +17,6 @@
 		"better-auth": "1.7.6"
 	},
 	"devDependencies": {
-		"@verific/prettier-config": "workspace:*",
 		"@verific/typescript-config": "workspace:*"
-	},
-	"prettier": "@verific/prettier-config"
+	}
 }

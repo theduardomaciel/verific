@@ -32,7 +32,7 @@ import {
 import { sortOptions, sortOptionsLabels } from "@verific/api/utils";
 
 // Types
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 
 // Hooks
 import { useSubscribedActivities } from "@/hooks/use-subscribed-activities";

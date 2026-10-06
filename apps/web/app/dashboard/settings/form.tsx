@@ -1,5 +1,5 @@
 "use client";
-import { UseFormReturn } from "react-hook-form";
+import type { UseFormReturn } from "react-hook-form";
 
 // Components
 import { toast } from "sonner";
@@ -25,7 +25,7 @@ import {
 } from "@/lib/validations/forms/settings-form/project/general-form";
 
 // Infer types from schemas
-import { z } from "@verific/zod";
+import type { z } from "@verific/zod";
 type NameFormValues = z.infer<typeof nameSchema>;
 type UrlFormValues = z.infer<typeof urlSchema>;
 type DateFormValues = z.infer<typeof dateSchema>;
@@ -33,7 +33,7 @@ type AddressFormValues = z.infer<typeof addressSchema>;
 
 // tRPC
 import { trpc } from "@/lib/trpc/react";
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 
 interface Props {
 	project: RouterOutput["getProject"]["project"];

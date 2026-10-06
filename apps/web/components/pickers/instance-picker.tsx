@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Image from "next/image";
 
 import { cn } from "@/lib/utils";
 import { Check, ChevronsUpDown, Loader2, Plus, User } from "lucide-react";

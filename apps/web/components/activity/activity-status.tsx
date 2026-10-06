@@ -6,10 +6,10 @@ import { Badge } from "@/components/ui/badge";
 // Data
 import {
 	formatFriendlyDate,
-	FriendlyDateOptions,
 	getLiveSession,
 	getNextSession,
 	type ActivitySessionLike,
+	type FriendlyDateOptions,
 } from "@/lib/date";
 
 import { cn } from "@/lib/utils";

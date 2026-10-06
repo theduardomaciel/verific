@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { cleanup } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import JoinForm from "@/components/forms/JoinForm/index";
@@ -18,11 +17,12 @@ vi.mock("@/app/actions", () => ({
 	signOutAction: vi.fn(),
 }));
 vi.mock("@/lib/validations", async (importOriginal) => {
-	const actual = await importOriginal<typeof import("@/lib/validations")>();
+	const actual = await importOriginal<typeof ValidationsModule>();
 	return { ...actual, scrollToNextSection: vi.fn() };
 });
 
 import { scrollToNextSection } from "@/lib/validations";
+import type * as ValidationsModule from "@/lib/validations";
 
 const mockMutateAsync = vi.fn();
 

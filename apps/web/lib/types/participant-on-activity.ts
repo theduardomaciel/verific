@@ -1,5 +1,5 @@
-import { Activity } from "./activity";
-import { Participant } from "./participant";
+import type { Activity } from "./activity";
+import type { Participant } from "./participant";
 
 export type ParticipantOnActivity = {
 	joinedAt: Date;

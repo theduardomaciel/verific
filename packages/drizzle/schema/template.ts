@@ -1,5 +1,5 @@
-import { jsonb, smallint, uuid } from "drizzle-orm/pg-core";
-import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { jsonb, smallint, uuid,pgTable,text,timestamp } from "drizzle-orm/pg-core";
+
 
 export const template = pgTable("templates", {
 	id: uuid("id").defaultRandom().notNull().primaryKey(),

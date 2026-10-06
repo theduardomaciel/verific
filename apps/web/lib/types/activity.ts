@@ -1,6 +1,6 @@
-import { ParticipantOnActivity } from "./participant-on-activity";
-import { Project } from "./project";
-import { Speaker } from "./speaker";
+import type { ParticipantOnActivity } from "./participant-on-activity";
+import type { Project } from "./project";
+import type { Speaker } from "./speaker";
 
 export type ActivitySession = {
 	id?: string;

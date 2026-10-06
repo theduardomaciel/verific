@@ -7,31 +7,32 @@ import { z } from "@verific/zod";
 
 // Components
 import { FormSection, SectionFooter } from "@/components/forms";
-import { Form, FormWrapper } from "@/components/ui/form";
+import { Form, FormWrapper,
+	FormControl,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage } from "@/components/ui/form";
 import { DynamicField } from "@/components/forms/dynamic/DynamicField";
 import {
 	ErrorDialog,
 	LoadingDialog,
 	SuccessDialog,
 } from "@/components/forms/dialogs";
-import {
-	FormControl,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from "@/components/ui/form";
+
 import { Input } from "@/components/ui/input";
 import JoinForm0 from "./Section0";
-import { isFilled } from "@/lib/forms/layout";
+import { isFilled,groupFieldsBySection,planFormSections } from "@/lib/forms/layout";
 import { Eye } from "lucide-react";
 import { isFieldLinked } from "@verific/drizzle/profile-layout";
 import { scrollToNextSection } from "@/lib/validations";
 
 // Validation
-import { buildAnswersSchema, filterVisibleFields } from "@verific/api/schemas";
-import { groupFieldsBySection, planFormSections } from "@/lib/forms/layout";
-import { getVisibleSectionIds } from "@verific/api/schemas";
+import {
+	buildAnswersSchema,
+	filterVisibleFields,
+	getVisibleSectionIds,
+} from "@verific/api/schemas";
 import type { GenericForm } from "..";
 
 // Types

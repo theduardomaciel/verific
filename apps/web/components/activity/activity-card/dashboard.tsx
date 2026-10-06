@@ -17,7 +17,7 @@ import { TagBadges } from "../tag-badge";
 import { listToString } from "@/lib/i18n";
 
 // Types
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 
 interface ActivityCardProps {
 	className?: string;

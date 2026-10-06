@@ -1,10 +1,9 @@
-import { uuid } from "drizzle-orm/pg-core";
-import {
+import { uuid,
 	pgTable,
 	primaryKey,
 	timestamp,
-	uniqueIndex,
-} from "drizzle-orm/pg-core";
+	uniqueIndex } from "drizzle-orm/pg-core";
+
 
 import { activity } from "./activity";
 import { participant } from "./participant";

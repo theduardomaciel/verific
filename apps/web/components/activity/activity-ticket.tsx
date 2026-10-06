@@ -23,7 +23,7 @@ import {
 } from "@/lib/date";
 
 // API
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 
 export interface WorkshopTicketProps {
 	className?: string;
