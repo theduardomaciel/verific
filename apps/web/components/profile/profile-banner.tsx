@@ -62,6 +62,7 @@ export function ProfileBanner({
 						width={110}
 						height={110}
 						className="h-24 w-24 rounded-full object-cover md:h-28 md:w-28"
+						referrerPolicy="no-referrer"
 					/>
 				) : (
 					<span
@@ -72,11 +73,11 @@ export function ProfileBanner({
 					</span>
 				)}
 				<div className="flex flex-col items-start justify-start gap-2">
-					<h1 className="font-heading text-3xl font-bold text-foreground">
+					<h1 className="font-heading text-foreground text-3xl font-bold">
 						{name}
 					</h1>
 					{subtitle && (
-						<h2 className="text-lg font-normal text-muted-foreground">
+						<h2 className="text-muted-foreground text-lg font-normal">
 							{subtitle}
 						</h2>
 					)}

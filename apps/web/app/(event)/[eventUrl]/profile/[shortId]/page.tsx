@@ -10,6 +10,7 @@ import { ProfileOwnerHidden } from "@/components/profile/profile-owner-hidden";
 import { ProfileOwnerSection } from "@/components/profile/profile-owner-section";
 import { ProfileOwnerTickets } from "@/components/profile/profile-owner-tickets";
 import { ProfileAccountIsland } from "@/components/profile/profile-account-island";
+import { ProfileVisitRecorder } from "@/components/profile/profile-visit-recorder";
 import { ProfilePageSkeleton } from "./skeleton";
 import { getProject, getProfilePageData } from "@/lib/data";
 
@@ -76,6 +77,12 @@ function ProfileBody({
 		<EventContainer.Holder>
 			<EventContainer.Content>
 				<div className="container-p mb-8 flex w-full flex-col gap-4 md:gap-12">
+					<Suspense fallback={null}>
+						<ProfileVisitRecorder
+							eventUrl={eventUrl}
+							shortId={shortId}
+						/>
+					</Suspense>
 					<ProfileBanner
 						name={pageData.name}
 						avatarUrl={pageData.avatarUrl}
@@ -111,6 +118,7 @@ function ProfileBody({
 										showConnections:
 											modules.connectionsEnabled,
 										showBadges: modules.badgesEnabled,
+										connections: pageData.connections,
 									}}
 								/>
 								<Suspense fallback={null}>
