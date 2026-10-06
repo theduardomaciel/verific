@@ -120,7 +120,7 @@ function FormProgress({
 
 export interface PanelProps extends React.HTMLAttributes<HTMLParagraphElement> {
 	className?: string;
-	type?: "error" | "warning" | "info" | "success" | "success";
+	type?: "error" | "warning" | "info" | "success"  ;
 	showIcon?: boolean;
 	children: React.ReactNode;
 }

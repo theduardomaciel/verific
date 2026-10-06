@@ -2,8 +2,9 @@ import { cn } from "@/lib/utils";
 import { Clock } from "lucide-react";
 
 // Types
+import type {
+	activityCategories} from "@verific/drizzle/enum/category";
 import {
-	activityCategories,
 	activityCategoryLabels,
 } from "@verific/drizzle/enum/category";
 

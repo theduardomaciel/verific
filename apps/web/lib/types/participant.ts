@@ -1,6 +1,6 @@
-import { ParticipantOnActivity } from "./participant-on-activity";
-import { Project } from "./project";
-import { User } from "./user";
+import type { ParticipantOnActivity } from "./participant-on-activity";
+import type { Project } from "./project";
+import type { User } from "./user";
 
 export type Participant = {
 	id: string;

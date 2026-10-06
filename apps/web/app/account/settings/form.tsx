@@ -14,13 +14,13 @@ import {
 } from "@/components/ui/form";
 
 // API
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 import { trpc } from "@/lib/trpc/react";
 import { toast } from "sonner";
 
 // Validations
 import { nameSchema } from "@/lib/validations/forms/settings-form/project/general-form";
-import { z } from "@verific/zod";
+import type { z } from "@verific/zod";
 type NameFormValues = z.infer<typeof nameSchema>;
 
 interface Props {

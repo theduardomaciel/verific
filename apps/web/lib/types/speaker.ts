@@ -1,5 +1,5 @@
-import { Activity } from "./activity";
-import { Project } from "./project";
+import type { Activity } from "./activity";
+import type { Project } from "./project";
 
 export type Speaker = {
 	id: number;

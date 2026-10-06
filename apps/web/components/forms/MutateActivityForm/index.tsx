@@ -3,7 +3,8 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { useForm, Resolver } from "react-hook-form";
+import type { Resolver } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 // Components
@@ -30,7 +31,7 @@ import { trpc } from "@/lib/trpc/react";
 import { revalidateActivities } from "@/app/actions";
 
 // Types
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 import { dateToTimeString } from "@/components/pickers/time-picker";
 
 interface Props {

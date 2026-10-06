@@ -10,6 +10,10 @@
 	"scripts": {
 		"dev": "turbo run dev",
 		"build": "turbo run build",
+		"lint": "turbo run lint",
+		"fmt": "oxfmt",
+		"fmt:check": "turbo run fmt:check",
+		"typecheck": "turbo run typecheck",
 		"test": "turbo run test",
 		"test:coverage": "turbo run test:coverage",
 		"db:push": "turbo run db:push",
@@ -17,12 +21,25 @@
 		"db:migrate": "turbo run db:migrate",
 		"db:studio": "turbo run db:studio",
 		"db:drop": "turbo run db:drop",
-		"db:seed": "turbo run db:seed"
+		"db:seed": "turbo run db:seed",
+		"prepare": "husky"
 	},
 	"devDependencies": {
-		"@verific/prettier-config": "workspace:*",
+		"husky": "^9.1.7",
+		"lint-staged": "^17.6.0",
+		"oxfmt": "^0.72.0",
+		"oxlint": "^1.87.0",
+		"oxlint-tsgolint": "^7.0.2003",
 		"turbo": "2.11.4",
 		"typescript": "^7.0.2"
 	},
-	"prettier": "@verific/prettier-config"
+	"lint-staged": {
+		"*.{js,mjs,cjs,jsx,ts,mts,cts,tsx}": [
+			"oxfmt --write",
+			"oxlint --type-aware"
+		],
+		"*.{json,jsonc,css,md,mdx,yaml,yml}": [
+			"oxfmt --write"
+		]
+	}
 }

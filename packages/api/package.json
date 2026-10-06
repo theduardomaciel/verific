@@ -7,7 +7,11 @@
 	"scripts": {
 		"test": "vitest run",
 		"test:watch": "vitest",
-		"test:coverage": "vitest run --coverage"
+		"test:coverage": "vitest run --coverage",
+		"lint": "oxlint --type-aware",
+		"fmt": "oxfmt",
+		"fmt:check": "oxfmt --check",
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@aws-sdk/client-s3": "^3.1146.0",
@@ -21,10 +25,8 @@
 		"superjson": "^2.2.2"
 	},
 	"devDependencies": {
-		"@verific/prettier-config": "workspace:*",
 		"@verific/typescript-config": "workspace:*",
 		"@vitest/coverage-v8": "^5.0.3",
 		"vitest": "^5.0.3"
-	},
-	"prettier": "@verific/prettier-config"
+	}
 }

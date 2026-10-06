@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { updateProjectCookies } from "@/app/actions";
 
 // Types
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 

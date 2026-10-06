@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { XIcon } from "lucide-react";
-import { ReactNode, useEffect, useState } from "react";
+import type { ReactNode} from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 interface FullScreenDrawerProps {

@@ -24,13 +24,13 @@ import { Form } from "@/components/ui/form";
 import { DynamicField } from "@/components/forms/dynamic/DynamicField";
 
 // API
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 import { trpc } from "@/lib/trpc/react";
 import {
 	buildAnswersSchema,
 } from "@verific/api/schemas";
 import { groupFieldsBySection } from "@/lib/forms/layout";
-import { FormState } from "@/lib/types/forms";
+import type { FormState } from "@/lib/types/forms";
 import { ErrorDialog, LoadingDialog, SuccessDialog } from "../forms/dialogs";
 import Link from "next/link";
 import { activityCategoryLabels } from "@verific/drizzle/schema";

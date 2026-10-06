@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SimpleActivityCard } from "@/components/activity/activity-card/dashboard";
 
 // Types
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 
 interface Props {
 	className?: string;

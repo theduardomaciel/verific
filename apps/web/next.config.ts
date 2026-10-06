@@ -22,6 +22,7 @@ const storagePattern = storageRemotePattern();
 
 const nextConfig: NextConfig = {
 	cacheComponents: true,
+	reactCompiler: true,
 	webpack(config, { isServer }) {
 		config.module.rules.push({
 			test: /\.svg$/,

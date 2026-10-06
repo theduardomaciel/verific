@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
@@ -19,7 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Button } from "../ui/button";
 
 // API
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 
 // Utils
 import { getTimeString } from "@/lib/date";

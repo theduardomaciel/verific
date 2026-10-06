@@ -1,4 +1,6 @@
 import { db } from "@verific/drizzle";
+import type {
+	speaker} from "@verific/drizzle/schema";
 import {
 	activity,
 	activitySession,
@@ -6,7 +8,6 @@ import {
 	formField,
 	formVersion,
 	sessionAttendance,
-	speaker,
 	speakerOnActivity,
 	participant,
 	participantOnActivity,
@@ -27,7 +28,6 @@ import {
 	count,
 	sum,
 	gte,
-	not,
 	isNotNull,
 	sql,
 	exists,

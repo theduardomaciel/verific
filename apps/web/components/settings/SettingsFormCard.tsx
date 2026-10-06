@@ -7,15 +7,14 @@ import { LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	SettingsCard,
-	SettingsCardFooterProps,
+	type SettingsCardFooterProps,
 } from "@/components/settings/settings-card";
 
 // Forms
-import { useForm, UseFormReturn, Resolver } from "react-hook-form";
-import { FormProvider } from "react-hook-form";
+import { FormProvider, useForm, type Resolver, type UseFormReturn } from "react-hook-form";
 
 // Validations
-import z from "@verific/zod";
+import type z from "@verific/zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 interface SettingsFormCardProps<

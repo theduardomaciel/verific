@@ -17,7 +17,6 @@ import {
 	Drawer,
 	DrawerClose,
 	DrawerContent,
-	DrawerDescription,
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle,
@@ -26,7 +25,6 @@ import {
 import {
 	Form,
 	FormControl,
-	FormDescription,
 	FormField,
 	FormItem,
 	FormLabel,
@@ -49,7 +47,7 @@ import { z } from "@verific/zod";
 import { trpc } from "@/lib/trpc/react";
 
 // Types
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 import type { FormState } from "@/lib/types/forms";
 
 const formSchema = z.object({

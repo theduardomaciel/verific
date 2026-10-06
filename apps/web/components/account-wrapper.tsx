@@ -5,7 +5,6 @@ import { useMemo, useState, useEffect } from "react";
 
 // Components
 import { ExternalLinkIcon } from "lucide-react";
-import * as EventContainer from "@/components/landing/event-container";
 import { ActivityTicket } from "@/components/activity/activity-ticket";
 import { Button } from "@/components/ui/button";
 import { Empty } from "@/components/empty";

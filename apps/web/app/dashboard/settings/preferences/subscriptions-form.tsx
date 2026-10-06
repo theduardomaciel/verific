@@ -17,7 +17,7 @@ import { subscriptionManagementSchema } from "@/lib/validations/forms/settings-f
 
 // tRPC
 import { trpc } from "@/lib/trpc/react";
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 
 // Types
 import type { UseFormReturn } from "react-hook-form";

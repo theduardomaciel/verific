@@ -31,7 +31,6 @@ import {
 	dropVisibilityForFields,
 	isCompatible,
 	readProjectLayout,
-	removeProfileLinksForFields,
 	slotForField,
 	writeProjectLayout,
 } from "../lib/profile-links";

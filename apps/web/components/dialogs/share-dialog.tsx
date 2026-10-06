@@ -1,7 +1,7 @@
 "use client";
 
 // Icons
-import { ArrowRightIcon, CheckIcon, Share2Icon } from "lucide-react";
+import { ArrowRightIcon } from "lucide-react";
 
 // Components
 import { toast } from "sonner";
@@ -18,7 +18,7 @@ import {
 
 // QR Code
 import { QRCodeSVG } from "qrcode.react";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { ShareField } from "../share-field";
 
