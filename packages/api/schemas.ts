@@ -8,6 +8,11 @@ import { activityAudiences } from "@verific/drizzle/enum/audience";
 import { activityCategories } from "@verific/drizzle/enum/category";
 import { formFieldTypes } from "@verific/drizzle/enum/form-field-type";
 import { participantRoles } from "@verific/drizzle/enum/role";
+import {
+	normalizeSocialLink,
+	socialEntrySchema,
+	socialServiceById,
+} from "@verific/drizzle/profile-layout";
 
 import { createEnumArraySchema, sortOptions } from "./utils";
 
@@ -269,7 +274,9 @@ export const answerValueSchema = z.union([
 	z.string(),
 	z.number(),
 	z.boolean(),
+	z.date(),
 	z.array(z.string()),
+	z.array(socialEntrySchema),
 	z.null(),
 	z.undefined(),
 ]);
@@ -465,7 +472,7 @@ function fieldValueSchema(field: FormFieldForValidation) {
 
 	switch (field.type) {
 		case "text": {
-			base = z.string();
+			base = z.string({ error: "Obrigatório" });
 			const v = field.validation;
 			if (typeof v?.minLength === "number")
 				base = (base as z.ZodString).min(v.minLength);
@@ -474,7 +481,7 @@ function fieldValueSchema(field: FormFieldForValidation) {
 			break;
 		}
 		case "textarea": {
-			base = z.string();
+			base = z.string({ error: "Obrigatório" });
 			const v = field.validation;
 			if (typeof v?.minLength === "number")
 				base = (base as z.ZodString).min(v.minLength);
@@ -502,12 +509,12 @@ function fieldValueSchema(field: FormFieldForValidation) {
 					? field.options
 					: null;
 			if (!opts) {
-				base = z.string().min(1);
+				base = z.string({ error: "Obrigatório" }).min(1);
 				break;
 			}
 			const allowOther = field.allowOther === true;
 			base = z
-				.string()
+				.string({ error: "Obrigatório" })
 				.min(1, { message: "Obrigatório" })
 				.superRefine((v, ctx) => {
 					if (opts.includes(v)) return;
@@ -539,7 +546,7 @@ function fieldValueSchema(field: FormFieldForValidation) {
 					? field.options
 					: null;
 			if (!opts) {
-				base = z.array(z.string().min(1));
+				base = z.array(z.string().min(1), { error: "Obrigatório" });
 				break;
 			}
 			const allowOther = field.allowOther === true;
@@ -570,7 +577,7 @@ function fieldValueSchema(field: FormFieldForValidation) {
 				});
 			// "Outro" counts as one selection: the custom text is stored
 			// as-is as a single array element, so no extra handling needed.
-			base = z.array(element);
+			base = z.array(element, { error: "Obrigatório" });
 			break;
 		}
 		case "checkbox": {
@@ -578,7 +585,7 @@ function fieldValueSchema(field: FormFieldForValidation) {
 			break;
 		}
 		case "email": {
-			let emailBase = z.string();
+			let emailBase = z.string({ error: "Obrigatório" });
 			const v = field.validation;
 			if (typeof v?.minLength === "number")
 				emailBase = emailBase.min(v.minLength, {
@@ -600,10 +607,40 @@ function fieldValueSchema(field: FormFieldForValidation) {
 			// Stored form is always E.164 (e.g. "+5582999991234"), so no
 			// default region is needed. See DOCS/i18n.md.
 			base = z
-				.string()
+				.string({ error: "Obrigatório" })
 				.refine((val) => val === "" || isValidPhoneNumber(val), {
 					message: "Telefone inválido.",
 				});
+			break;
+		}
+		case "social_links": {
+			const allowed =
+				field.options && field.options.length > 0 ? field.options : null;
+			const entry = z
+				.object({
+					service: z.string().min(1),
+					value: z.string().min(1).max(300),
+				})
+				.superRefine((e, ctx) => {
+					const service = socialServiceById(e.service);
+					if (!service) {
+						ctx.addIssue({ code: "custom", message: "Serviço inválido." });
+						return;
+					}
+					if (allowed && !allowed.includes(service.id)) {
+						ctx.addIssue({ code: "custom", message: "Serviço inválido." });
+						return;
+					}
+					const url = normalizeSocialLink(service.id, e.value);
+					if (!url || !/^https?:\/\//i.test(url)) {
+						ctx.addIssue({ code: "custom", message: "Link inválido." });
+					}
+				})
+				.transform((e) => ({
+					service: e.service,
+					value: normalizeSocialLink(e.service, e.value) ?? e.value,
+				}));
+			base = z.array(entry, { error: "Obrigatório" }).max(8);
 			break;
 		}
 		default:
@@ -622,6 +659,7 @@ function fieldValueSchema(field: FormFieldForValidation) {
 	}
 
 	if (field.type === "text" || field.type === "textarea") {
+		// `error` cobre ausência (invalid_type) e vazio (min): sempre "Obrigatório".
 		return (base as z.ZodString).min(1, { message: "Obrigatório" });
 	}
 	if (field.type === "email" || field.type === "phone") {
@@ -635,6 +673,9 @@ function fieldValueSchema(field: FormFieldForValidation) {
 		);
 	}
 	if (field.type === "select_multiple") {
+		return (base as z.ZodArray<any>).min(1, { message: "Obrigatório" });
+	}
+	if (field.type === "social_links") {
 		return (base as z.ZodArray<any>).min(1, { message: "Obrigatório" });
 	}
 	if (field.type === "checkbox") {
@@ -709,6 +750,16 @@ export function formatAnswerValue(
 	value: unknown,
 ): string {
 	if (value === null || value === undefined || value === "") return "";
+	if (type === "social_links" && Array.isArray(value)) {
+		return value
+			.map((e) => {
+				if (typeof e === "object" && e !== null && "value" in e) {
+					return String((e as { value: unknown }).value);
+				}
+				return String(e);
+			})
+			.join("; ");
+	}
 	if (Array.isArray(value)) return value.join("; ");
 	if (value instanceof Date) return value.toISOString().slice(0, 10);
 	if (typeof value === "boolean") return value ? "Sim" : "Não";

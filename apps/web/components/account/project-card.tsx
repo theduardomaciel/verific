@@ -23,17 +23,23 @@ export function AccountEventCard({ project }: EventCardProps) {
 		<button
 			type="button"
 			onClick={() => updateProjectCookies(project.id)}
-			className="bg-card hover:bg-foreground/5 relative flex w-full cursor-pointer items-center justify-between rounded-lg p-4 transition-colors"
+			className="bg-card border-border hover:bg-foreground/5 relative flex w-full cursor-pointer items-center justify-between overflow-hidden rounded-lg border p-4 transition-colors"
 		>
-			{project.thumbnailUrl && (
-				<Image src={project.thumbnailUrl} alt="" fill />
-			)}
+			{project.coverUrl ||
+				(project.thumbnailUrl && (
+					<Image
+						src={project.coverUrl || project.thumbnailUrl}
+						alt=""
+						className="object-cover opacity-5"
+						fill
+					/>
+				))}
 			<div className="flex items-center gap-6">
 				<Avatar
 					className={cn(
-						"bg-border flex h-11 w-11 items-center justify-center rounded-md",
+						"bg-border flex h-11 w-11 items-center justify-center rounded-md px-2",
 						{
-							"w-24": project.largeLogoUrl,
+							"w-32": project.largeLogoUrl,
 						},
 					)}
 				>

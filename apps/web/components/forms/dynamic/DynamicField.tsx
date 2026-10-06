@@ -1,6 +1,6 @@
 "use client";
 
-import { Controller, type Control, type FieldValues } from "react-hook-form";
+import { type Control, type FieldValues } from "react-hook-form";
 import { useEffect, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input, PhoneInput } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import {
 	FormItem,
 	FormLabel,
 	FormMessage,
+	FormField as RHFFormField,
 } from "@/components/ui/form";
 import {
 	Select,
@@ -20,6 +21,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Combobox } from "@/components/ui/combobox";
 import type { RouterOutput } from "@verific/api";
 import {
 	OTHER_LABEL,
@@ -27,6 +29,11 @@ import {
 	OTHER_SENTINEL,
 	OTHER_TEXT_MAX_LENGTH,
 } from "@verific/api/schemas";
+import { SOCIAL_SERVICES } from "@verific/drizzle/profile-layout";
+import {
+	SocialLinksEditor,
+	type SocialEntry,
+} from "./SocialLinksEditor";
 
 export type DynamicFormField = NonNullable<
 	RouterOutput["getPublishedForm"]
@@ -71,7 +78,6 @@ function SelectMultipleWithOther({
 	const othersKey = others.join("");
 	useEffect(() => {
 		if (others.length > 0) setOtherOpen(true);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [othersKey]);
 	const otherText = others[0] ?? "";
 
@@ -132,6 +138,12 @@ function SelectMultipleWithOther({
 
 const EMPTY_SELECT_VALUE = "__verific_empty__";
 
+/**
+ * Above this number of options, `select_single` renders a searchable
+ * combobox instead of a plain select so long lists remain usable.
+ */
+const COMBOBOX_THRESHOLD = 10;
+
 export function DynamicField({
 	field,
 	control,
@@ -146,7 +158,7 @@ export function DynamicField({
 	);
 
 	return (
-		<Controller
+		<RHFFormField
 			control={control}
 			name={name}
 			render={({ field: rhf }) => {
@@ -274,6 +286,48 @@ export function DynamicField({
 							!singleOptions.includes(singleRaw)
 								? singleRaw
 								: "";
+						const handleSingleChange = (v?: string) => {
+							if (v === OTHER_SENTINEL) {
+								// Keep already-typed custom text when re-picking.
+								rhf.onChange(
+									typeof singleRaw === "string" &&
+									singleRaw !== "" &&
+									!singleOptions.includes(singleRaw)
+									? singleRaw
+									: "",
+								);
+							} else {
+								rhf.onChange(
+									!field.required &&
+									(v === EMPTY_SELECT_VALUE ||
+										v === undefined ||
+										v === "")
+										? undefined
+										: v,
+								);
+							}
+						};
+						// Long lists get a searchable combobox instead of a
+						// plain select.
+						const useCombobox =
+							singleOptions.length > COMBOBOX_THRESHOLD;
+						const singleComboItems = [
+							...(!field.required
+								? [
+										{
+											label: "Limpar seleção",
+											value: EMPTY_SELECT_VALUE,
+										},
+									]
+								: []),
+							...singleOptions.map((opt) => ({
+								label: opt,
+								value: opt,
+							})),
+							...(singleAllowOther
+								? [{ label: OTHER_LABEL, value: OTHER_SENTINEL }]
+								: []),
+						];
 						return (
 							<FormItem className="w-full">
 								{label}
@@ -282,25 +336,24 @@ export function DynamicField({
 										{field.helpText}
 									</FormDescription>
 								)}
+								{useCombobox ? (
+									<FormControl>
+										<Combobox
+											value={singleSelectValue}
+											onChange={handleSingleChange}
+											onBlur={rhf.onBlur}
+											disabled={disabled}
+											placeholder="Selecione uma opção"
+											searchMessage="Pesquisar..."
+											emptyMessage="Nenhuma opção encontrada."
+											items={singleComboItems}
+										/>
+									</FormControl>
+								) : (
 								<Select
 									disabled={disabled}
 									value={singleSelectValue}
-									onValueChange={(v) => {
-										if (v === OTHER_SENTINEL) {
-											// Keep already-typed custom text when re-picking.
-											rhf.onChange(
-												typeof singleRaw === "string" &&
-												singleRaw !== "" &&
-												!singleOptions.includes(singleRaw)
-												? singleRaw
-												: "",
-											);
-										} else {
-											rhf.onChange(
-												!field.required && v === EMPTY_SELECT_VALUE ? undefined : v,
-											);
-										}
-									}}
+									onValueChange={handleSingleChange}
 								>
 									<FormControl>
 										<SelectTrigger className="w-full">
@@ -328,6 +381,7 @@ export function DynamicField({
 										)}
 									</SelectContent>
 								</Select>
+								)}
 								{singleOtherSelected && (
 									<FormControl>
 										<Input
@@ -549,8 +603,19 @@ export function DynamicField({
 								<FormMessage />
 							</FormItem>
 						);
-					case "text":
-					default:
+					case "social_links": {
+						const configured = field.options ?? [];
+						const allowed =
+							configured.length > 0
+								? SOCIAL_SERVICES.filter((s) =>
+										configured.includes(s.id),
+									)
+								: [...SOCIAL_SERVICES];
+						const services =
+							allowed.length > 0 ? allowed : [...SOCIAL_SERVICES];
+						const entries = (
+							Array.isArray(value) ? value : []
+						) as SocialEntry[];
 						return (
 							<FormItem className="w-full">
 								{label}
@@ -559,6 +624,24 @@ export function DynamicField({
 										{field.helpText}
 									</FormDescription>
 								)}
+								<FormControl>
+									<SocialLinksEditor
+										services={services}
+										value={entries}
+										disabled={disabled}
+										onChange={(next) => rhf.onChange(next)}
+									/>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						);
+					}
+					case "text":
+					default:
+						return (
+							<FormItem className="w-full">
+								{label}
+
 								<FormControl>
 									<Input
 										type="text"
@@ -580,6 +663,11 @@ export function DynamicField({
 										name={rhf.name}
 									/>
 								</FormControl>
+								{field.helpText && (
+									<FormDescription>
+										{field.helpText}
+									</FormDescription>
+								)}
 								<FormMessage />
 							</FormItem>
 						);

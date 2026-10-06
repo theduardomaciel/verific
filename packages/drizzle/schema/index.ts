@@ -7,6 +7,8 @@ export * from "./tag-on-activity";
 export * from "./certificate";
 export * from "./participant-on-activity";
 export * from "./participant";
+export * from "./profile-visibility";
+export * from "./profile-connection";
 export * from "./project";
 export * from "./session";
 export * from "./speaker";

@@ -7,7 +7,7 @@ import { z } from "@verific/zod";
 import { toast } from "sonner";
 
 import { buildAnswersSchema, filterVisibleFields, getVisibleSectionIds } from "@verific/api/schemas";
-import { groupFieldsBySection } from "@/lib/forms/layout";
+import { groupFieldsBySection, planFormSections } from "@/lib/forms/layout";
 import { DynamicField } from "@/components/forms/dynamic/DynamicField";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -104,9 +104,13 @@ export function FormPreview({
 		};
 	}, [fieldsForValidation, sectionsForVisibility, nameSchema]);
 
-	const form = useForm<{ name: string; answers: Record<string, unknown> }>({
+	const form = useForm<{
+		name: string;
+		answers: Record<string, unknown>;
+		profile: Record<string, unknown>;
+	}>({
 		resolver: resolver as never,
-		defaultValues: { name: "", answers: {} },
+		defaultValues: { name: "", answers: {}, profile: {} },
 	});
 
 	const watchedAnswers = (form.watch("answers") ?? {}) as Record<string, unknown>;
@@ -119,6 +123,11 @@ export function FormPreview({
 		const ids = getVisibleSectionIds(sectionsForVisibility, fieldsForValidation, watchedAnswers);
 		return groupFieldsBySection(visible, sections).filter((g) => ids.has(g.section.id));
 	}, [baseVisible, sections, sectionsForVisibility, fieldsForValidation, watchedAnswers]);
+
+	const planned = useMemo(
+		() => planFormSections(grouped, false),
+		[grouped],
+	);
 
 	function onSubmit() {
 		toast.success("Pré-visualização válida! Nenhum dado foi enviado.");
@@ -182,12 +191,15 @@ export function FormPreview({
 						onSubmit={form.handleSubmit(onSubmit, onInvalid)}
 						className="flex w-full flex-col gap-6"
 					>
-						{grouped.map((group, gi) => (
-							<div key={group.section.id} className="flex w-full flex-col gap-3">
+						{planned.map((p) => (
+							<div
+								key={p.group.section.id}
+								className="flex w-full flex-col gap-3"
+							>
 								<h4 className="text-sm font-bold">
-									{gi + 1}. {group.section.title}
+									{p.displayNumber}. {p.group.section.title}
 								</h4>
-								{gi === 0 && (
+								{p.isFirstContent && (
 									<FormField
 										control={form.control}
 										name="name"
@@ -209,9 +221,9 @@ export function FormPreview({
 										)}
 									/>
 								)}
-								{group.rows.length > 0 && (
+								{p.group.rows.length > 0 && (
 									<div className="flex w-full flex-col gap-6">
-										{group.rows.map((row, ri) => (
+										{p.group.rows.map((row, ri) => (
 											<div
 												key={
 													row.fields.map((f) => f.id).join("-") || `row-${ri}`
@@ -236,7 +248,7 @@ export function FormPreview({
 								)}
 							</div>
 						))}
-						{grouped.length === 0 && (
+						{planned.length === 0 && (
 							<FormField
 								control={form.control}
 								name="name"

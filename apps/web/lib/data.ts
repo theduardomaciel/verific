@@ -1,6 +1,7 @@
 import { cacheLife, cacheTag } from "next/cache";
 
 import { createClientForUser, publicClient } from "@/lib/trpc/server";
+import { isAfterEnd } from "@/lib/date";
 
 export async function getProject(projectUrl: string) {
 	"use cache";
@@ -29,6 +30,33 @@ export async function getEventStaticParams() {
 	}
 
 	return [{ eventUrl: "__no-events__" }];
+}
+
+/**
+ * Decisão "inscrições abertas?" a partir dos dados do evento.
+ * A leitura do relógio (`isAfterEnd`) vive dentro de "use cache":
+ * o valor é congelado pelo tempo do cache (revalidado em minutos)
+ * em vez de quebrar o prerender estático.
+ */
+export async function getEventRegistration(projectUrl: string) {
+	"use cache";
+	cacheLife("minutes");
+	cacheTag("projects", `project:${projectUrl}`);
+
+	const result = await getProject(projectUrl);
+	const project = result?.project;
+	if (!project) return null;
+
+	const isOpen =
+		Boolean(project.isRegistrationEnabled) &&
+		!project.isArchived &&
+		!isAfterEnd(new Date(project.endDate));
+
+	return {
+		isOpen,
+		isRegistrationEnabled: Boolean(project.isRegistrationEnabled),
+		isArchived: Boolean(project.isArchived),
+	};
 }
 
 export async function getCachedActivities(
@@ -112,4 +140,11 @@ export async function getCachedUser(userId: string) {
 	cacheLife("minutes");
 	cacheTag("users", `user:${userId}`);
 	return createClientForUser(userId).getUser();
+}
+
+export async function getProfilePageData(projectUrl: string, shortId: string) {
+	"use cache";
+	cacheLife("minutes");
+	cacheTag(`profiles-${projectUrl}`, `profile-${projectUrl}-${shortId}`);
+	return publicClient.getProfilePageData({ projectUrl, shortId });
 }

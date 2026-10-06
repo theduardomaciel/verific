@@ -3,8 +3,10 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { FormPreview } from "./preview";
 import { useFormsBuilder } from "./hooks/use-forms-builder";
+import { trpc } from "@/lib/trpc/react";
 import { AnswersPanel } from "./components/answers-panel";
 import { BuilderCard } from "./components/builder-card";
+import { ProfileSectionCard } from "./components/profile-section-card";
 import { DeleteFieldDialog } from "./components/dialog/delete-field-dialog";
 import { DeleteSectionDialog } from "./components/dialog/delete-section-dialog";
 import { FormsHeader } from "./components/forms-header";
@@ -46,6 +48,9 @@ export function FormsContent() {
 		persistSectionOrder,
 	} = builder;
 
+	// Única query do projeto aqui: flags repassadas ao totem de perfil.
+	const projectQuery = trpc.getProject.useQuery({ id: projectId });
+
 	if (versionsQuery.isPending) {
 		return (
 			<div className="container-d py-container-v min-h-screen">
@@ -68,7 +73,7 @@ export function FormsContent() {
 				<FormPreview
 					fields={fields}
 					sections={sections}
-					isLoading={isLoadingFields}
+					isLoading={isLoadingFields || projectQuery.isPending}
 				/>
 			) : (
 				<>
@@ -100,7 +105,15 @@ export function FormsContent() {
 					/>
 
 					{selected && (
-						<BuilderCard
+						<>
+							<ProfileSectionCard
+								projectId={projectId}
+								profilesEnabled={Boolean(
+									projectQuery.data?.project.profilesEnabled,
+								)}
+								isLoadingProject={projectQuery.isPending}
+							/>
+							<BuilderCard
 							selected={selected}
 							isPublished={isPublished}
 							fields={fields}
@@ -124,6 +137,7 @@ export function FormsContent() {
 							onDelete={setFieldToDelete}
 							onDeleteSection={setSectionToDelete}
 						/>
+						</>
 					)}
 				</>
 			)}

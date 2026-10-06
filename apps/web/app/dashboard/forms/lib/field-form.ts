@@ -1,7 +1,10 @@
 import { z } from "@verific/zod";
 import { formFieldTypes, hasOutroOption, OTHER_LABEL } from "@verific/api/schemas";
+import { SOCIAL_SERVICES } from "@verific/drizzle/profile-layout";
 import { groupFieldsIntoRows } from "@/lib/forms/layout";
 import type { Field } from "../types";
+
+const validServiceIds: Set<string> = new Set(SOCIAL_SERVICES.map((s) => s.id));
 
 export const fieldFormSchema = z
 	.object({
@@ -20,6 +23,8 @@ export const fieldFormSchema = z
 		editableAfterSignup: z.boolean().default(true),
 		halfWidth: z.boolean().default(false),
 		sectionId: z.string().min(1, "Obrigatório").nullable().optional(),
+		/** p/ social_links: ids de serviços permitidos (vazio = todos). */
+		allowedServices: z.array(z.string()).default([]),
 	})
 	.superRefine((values, ctx) => {
 		if (!values.allowOther) return;
@@ -54,6 +59,12 @@ export function defaultFieldValues(initial?: Field, sectionId?: string | null): 
 		isVisible: initial?.isVisible ?? true,
 		editableAfterSignup: initial?.editableAfterSignup ?? true,
 		halfWidth: initial?.halfWidth ?? false,
+		allowedServices:
+			initial?.type === "social_links"
+				? (initial?.options ?? []).filter((o) =>
+						validServiceIds.has(o),
+					)
+				: [],
 		sectionId: sectionId !== undefined ? sectionId : (initial?.sectionId ?? null),
 	} as FieldFormValues;
 }
@@ -84,13 +95,22 @@ export function toUpsertFieldInput(
 ): UpsertFieldInput {
 	const num = (v?: string) => (v && v.trim() !== "" ? Number(v) : undefined);
 	const needsOptions = needsOptionsFor(values.type);
+	const validServices: Set<string> = new Set(SOCIAL_SERVICES.map((s) => s.id));
+	const socialServices =
+		values.type === "social_links"
+			? (values.allowedServices ?? []).filter((s) => validServices.has(s))
+			: [];
 	const options =
-		needsOptions && values.optionsText
-			? values.optionsText
-					.split("\n")
-					.map((s) => s.trim())
-					.filter(Boolean)
-			: undefined;
+		values.type === "social_links"
+			? socialServices.length > 0
+				? socialServices
+				: undefined
+			: needsOptions && values.optionsText
+				? values.optionsText
+						.split("\n")
+						.map((s) => s.trim())
+						.filter(Boolean)
+				: undefined;
 	const validation =
 		values.type === "number"
 			? { min: num(values.min), max: num(values.max) }

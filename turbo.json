@@ -21,7 +21,6 @@
 			"dependsOn": ["^build"],
 			"outputs": ["dist/**", ".next/**", "!.next/cache/**"]
 		},
-		"lint": {},
 		"test": {},
 		"test:coverage": {},
 		"db:generate": {},

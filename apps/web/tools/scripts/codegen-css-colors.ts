@@ -59,6 +59,19 @@ const themeVariables = {
 	dark: darkColors.map(([name, value]) => `--${name}: ${value};`),
 };
 
+/**
+ * A paleta clara vai para \`:root\` **e** para a classe \`.ev-theme-light\`.
+ *
+ * Razão: tokens customizados são herdados, então um elemento interno não
+ * consegue "des-herdar" o modo do \`<html>\` — basta ele declarar a paleta
+ * clara para que ela vença a herança. Isso permite à prévia do editor de
+ * tema simular os dois modos dentro de uma página que segue o
+ * \`next-themes\`, sem duplicar valores à mão. Ver \`@custom-variant dark\`
+ * em \`globals.css\`, que usa a mesma classe para desligar as variantes
+ * \`dark:\` dentro desse escopo.
+ */
+const LIGHT_SCOPE_SELECTOR = ":root, .ev-theme-light";
+
 // Development-only fallback to dark colors for VSCode inline previews
 const editorPreviewFallbacks = darkColors.map(
 	([name, value]) => `--${name}: var(--${name}, ${value});`,
@@ -80,7 +93,7 @@ const css = `
   ${baseColors.join("\n")}
 }
 
-:root {
+${LIGHT_SCOPE_SELECTOR} {
   ${themeVariables.light.join("\n  ")}
 }
 

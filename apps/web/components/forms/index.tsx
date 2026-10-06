@@ -168,12 +168,16 @@ interface SectionFooterProps {
 	className?: string;
 	isFinalSection?: boolean;
 	children?: React.ReactNode;
+	/** Quando presente (seção não-final), o botão vira "Continuar" e
+	 * valida/avança em vez de submeter. */
+	onContinue?: () => void;
 }
 
 function SectionFooter({
 	className,
 	isFinalSection = false,
 	children,
+	onContinue,
 }: SectionFooterProps) {
 	return (
 		<div
@@ -186,19 +190,30 @@ function SectionFooter({
 			)}
 		>
 			{children}
-			<Button
-				className="h-12 w-full !px-8 font-bold md:w-fit"
-				type="submit"
-			>
-				{isFinalSection ? (
-					"Concluir"
-				) : (
-					<>
-						Continuar
-						<ArrowRightIcon />
-					</>
-				)}
-			</Button>
+			{!isFinalSection && onContinue ? (
+				<Button
+					className="h-12 w-full !px-8 font-bold md:w-fit"
+					type="button"
+					onClick={onContinue}
+				>
+					Continuar
+					<ArrowRightIcon />
+				</Button>
+			) : (
+				<Button
+					className="h-12 w-full !px-8 font-bold md:w-fit"
+					type="submit"
+				>
+					{isFinalSection ? (
+						"Concluir"
+					) : (
+						<>
+							Continuar
+							<ArrowRightIcon />
+						</>
+					)}
+				</Button>
+			)}
 		</div>
 	);
 }

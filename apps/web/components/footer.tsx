@@ -21,12 +21,30 @@ const footerVariants = cva(
 	},
 );
 
+/**
+ * Ano corrente com `"use cache"`: o valor é congelado pela entrada do
+ * cache em vez de mudar a cada requisição (o que invalidaria o cache de
+ * toda a página). Server component por isso — precisa ser aguardado, não
+ * renderizado como filho.
+ */
 async function getRenderedYear() {
 	"use cache";
 	return new Date().getFullYear();
 }
 
-function Footer({
+/**
+ * Rodapé. Server component (async) porque o ano vem de uma função cacheada:
+ * num componente síncrono, `getRenderedYear()` era Interpolada no JSX como
+ * uma promise não resolvida, e o React a rejeitava como objeto inválido.
+ *
+ * Cores: o `text-foreground` base e o `text-(--ev-footer-fg)` passado
+ * pela página do evento são resolvidos corretamente pelo `tailwind-merge`
+ * (o utilitário arbitrário posterior vence o `text-foreground`), então a
+ * cor do evento chega ao rodapé sem precisar de variante ou atributo extra.
+ * O copyright usa `--ev-footer-fg-soft`, derivado para passar AA sobre o
+ * fundo do rodapé — o antigo `opacity-50` sobre `text-xs` reprovava.
+ */
+async function Footer({
 	className,
 	variant,
 	showWatermark = false,
@@ -35,6 +53,8 @@ function Footer({
 	VariantProps<typeof footerVariants> & {
 		showWatermark?: boolean;
 	}) {
+	const year = await getRenderedYear();
+
 	return (
 		<footer
 			className={cn(
@@ -63,27 +83,26 @@ function Footer({
 					<nav className="flex flex-row flex-wrap gap-2 space-x-2 md:space-x-4">
 						<Link
 							href="/help"
-							className="text-xs transition-colors hover:opacity-80"
+							className="text-xs transition-opacity hover:opacity-80"
 						>
 							Ajuda
 						</Link>
 						<Link
 							href="/privacy"
-							className="text-xs transition-colors hover:opacity-80"
+							className="text-xs transition-opacity hover:opacity-80"
 						>
 							Política de Privacidade
 						</Link>
 						<Link
 							href="/terms"
-							className="text-xs transition-colors hover:opacity-80"
+							className="text-xs transition-opacity hover:opacity-80"
 						>
 							Termos de Uso
 						</Link>
 					</nav>
 				</div>
-				<p className="text-xs text-[currentColor] opacity-50">
-					Copyright {getRenderedYear()} verifIC. Todos os direitos
-					reservados
+				<p className="text-(--ev-footer-fg-soft,var(--muted-foreground)) text-xs">
+					Copyright {year} verifIC. Todos os direitos reservados
 				</p>
 			</div>
 		</footer>

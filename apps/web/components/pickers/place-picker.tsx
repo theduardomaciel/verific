@@ -380,7 +380,7 @@ export function PlacePicker({
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent
-				className="w-[var(--radix-popover-trigger-width)] p-0"
+				className="w-(--radix-popover-trigger-width) p-0"
 				align="start"
 			>
 				<div className="space-y-4 p-4">
