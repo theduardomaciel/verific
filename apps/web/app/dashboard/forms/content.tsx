@@ -114,29 +114,29 @@ export function FormsContent() {
 								isLoadingProject={projectQuery.isPending}
 							/>
 							<BuilderCard
-							selected={selected}
-							isPublished={isPublished}
-							fields={fields}
-							sections={sections}
-							isLoadingFields={isLoadingFields}
-							orphanHalfIds={orphanHalfIds}
-							listRef={listRef}
-							isDraggingRef={isDraggingRef}
-							isPublishing={publishVersion.isPending}
-							upsertSection={upsertSection}
-							onPublish={() =>
-								publishVersion.mutate({
-									versionId: selected.id,
-								})
-							}
-							onPersistOrder={persistOrder}
-							onPersistSectionOrder={persistSectionOrder}
-							onRevertOrder={revertOrder}
-							onMove={move}
-							onMoveSection={moveSection}
-							onDelete={setFieldToDelete}
-							onDeleteSection={setSectionToDelete}
-						/>
+								selected={selected}
+								isPublished={isPublished}
+								fields={fields}
+								sections={sections}
+								isLoadingFields={isLoadingFields}
+								orphanHalfIds={orphanHalfIds}
+								listRef={listRef}
+								isDraggingRef={isDraggingRef}
+								isPublishing={publishVersion.isPending}
+								upsertSection={upsertSection}
+								onPublish={() =>
+									publishVersion.mutate({
+										versionId: selected.id,
+									})
+								}
+								onPersistOrder={persistOrder}
+								onPersistSectionOrder={persistSectionOrder}
+								onRevertOrder={revertOrder}
+								onMove={move}
+								onMoveSection={moveSection}
+								onDelete={setFieldToDelete}
+								onDeleteSection={setSectionToDelete}
+							/>
 						</>
 					)}
 				</>

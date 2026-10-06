@@ -22,8 +22,10 @@ interface PlaceData {
 	longitude: number;
 }
 
-interface PlacePickerProps
-	extends Omit<React.ComponentProps<"button">, "defaultValue" | "value"> {
+interface PlacePickerProps extends Omit<
+	React.ComponentProps<"button">,
+	"defaultValue" | "value"
+> {
 	defaultValue?: PlaceData;
 	value?: PlaceData;
 	onPlaceChange?: (place: PlaceData) => void;

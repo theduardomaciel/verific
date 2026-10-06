@@ -11,7 +11,12 @@ import {
 } from "@/components/settings/settings-card";
 
 // Forms
-import { FormProvider, useForm, type Resolver, type UseFormReturn } from "react-hook-form";
+import {
+	FormProvider,
+	useForm,
+	type Resolver,
+	type UseFormReturn,
+} from "react-hook-form";
 
 // Validations
 import type z from "@verific/zod";

@@ -15,6 +15,7 @@ Você pode criar uma branch com o comando:
 ```bash
 git checkout -b nome-da-sua-branch
 ```
+
 ou, se preferir, pode usar o comando abaixo para criar e mudar para a nova branch ao mesmo tempo:
 
 ```bash
@@ -27,10 +28,11 @@ git switch -b nome-da-sua-branch
 
 **Padrão sugerido para nomes de branches:**
 
-- `front/` para coisas do frontend  
+- `front/` para coisas do frontend
 - `back/` para coisas do backend
 
 **Exemplos:**
+
 ```
 front/login-page
 back/authentication
@@ -46,13 +48,14 @@ Ao salvar mudanças com `git commit`, escreva uma mensagem que ajude a entender 
 
 ### Padrões sugeridos:
 
-- `feat:` para novas funcionalidades  
-- `fix:` para correções de bugs  
-- `refactor:` para mudanças no código que não alteram a funcionalidade  
-- `docs:` para alterações na documentação  
-- `style:` para mudanças visuais ou de formatação  
+- `feat:` para novas funcionalidades
+- `fix:` para correções de bugs
+- `refactor:` para mudanças no código que não alteram a funcionalidade
+- `docs:` para alterações na documentação
+- `style:` para mudanças visuais ou de formatação
 
 **Exemplo:**
+
 ```
 feat: added login validation
 fix: corrected API endpoint path

@@ -14,7 +14,7 @@ export function useQueryString() {
 			for (const [key, value] of Object.entries(parameters)) {
 				params.delete(key); // Remove existing
 				if (Array.isArray(value)) {
-					value.forEach(v => params.append(key, v));
+					value.forEach((v) => params.append(key, v));
 				} else if (value) {
 					params.set(key, value);
 				}

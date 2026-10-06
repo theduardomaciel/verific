@@ -44,17 +44,18 @@ export function ParticipantsContent() {
 		getParticipantsParams.parse(raw),
 	);
 
-	const { data, isPending, isError, isFetching } = trpc.getParticipants.useQuery(
-		{
-			projectId,
-			...parsedParams,
-		},
-		{
-			placeholderData: keepPreviousData,
-			staleTime: 30 * 1000,
-			refetchOnWindowFocus: false,
-		},
-	);
+	const { data, isPending, isError, isFetching } =
+		trpc.getParticipants.useQuery(
+			{
+				projectId,
+				...parsedParams,
+			},
+			{
+				placeholderData: keepPreviousData,
+				staleTime: 30 * 1000,
+				refetchOnWindowFocus: false,
+			},
+		);
 
 	if (isPending) {
 		return <ParticipantsSkeleton />;

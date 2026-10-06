@@ -2,7 +2,11 @@ import { db } from "@verific/drizzle";
 
 import { z } from "@verific/zod";
 
-import { participant, project, projectModerator } from "@verific/drizzle/schema";
+import {
+	participant,
+	project,
+	projectModerator,
+} from "@verific/drizzle/schema";
 import { eventThemeSchema } from "@verific/drizzle/theme";
 import { eq } from "@verific/drizzle/orm";
 import { generateShortId } from "./profiles";
@@ -42,7 +46,10 @@ async function requireProjectAccess(projectId: string, userId: string) {
 		with: { moderators: { columns: { userId: true } } },
 	});
 	if (!data) {
-		throw new TRPCError({ code: "NOT_FOUND", message: "Evento não encontrado." });
+		throw new TRPCError({
+			code: "NOT_FOUND",
+			message: "Evento não encontrado.",
+		});
 	}
 	const allowed =
 		data.ownerId === userId ||
@@ -113,8 +120,8 @@ export const projectsRouter = createTRPCRouter({
 					logoUrl,
 					largeLogoUrl,
 					coverUrl,
-				logoDarkUrl,
-				largeLogoDarkUrl,
+					logoDarkUrl,
+					largeLogoDarkUrl,
 					thumbnailUrl,
 					startDate,
 					endDate,

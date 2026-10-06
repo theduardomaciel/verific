@@ -20,7 +20,11 @@ describe("planFormSections", () => {
 			[grp("a", 0), grp("sys", 1, "profile"), grp("b", 2)],
 			true,
 		);
-		expect(planned.map((p) => p.group.section.id)).toEqual(["a", "sys", "b"]);
+		expect(planned.map((p) => p.group.section.id)).toEqual([
+			"a",
+			"sys",
+			"b",
+		]);
 		expect(planned.map((p) => p.displayNumber)).toEqual([1, 2, 3]);
 		expect(planned[1]?.isProfile).toBe(true);
 		expect(planned[0]?.isFirstContent).toBe(true);

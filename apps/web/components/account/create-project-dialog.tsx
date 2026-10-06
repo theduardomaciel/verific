@@ -189,7 +189,7 @@ export function CreateProjectDialog() {
 							<DrawerTitle>Criar projeto</DrawerTitle>
 						</DrawerHeader>
 
-						<div className="px-4 space-y-4">
+						<div className="space-y-4 px-4">
 							<CreateProjectForm form={form} />
 						</div>
 

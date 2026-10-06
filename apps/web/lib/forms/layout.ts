@@ -26,7 +26,9 @@ export interface FieldRow<T extends RowGroupable> {
  *   odd run like H,H,H) forms an orphan row — render it full-width so a
  *   half is never left alone in a broken half-empty row.
  */
-export function groupFieldsIntoRows<T extends RowGroupable>(fields: T[]): FieldRow<T>[] {
+export function groupFieldsIntoRows<T extends RowGroupable>(
+	fields: T[],
+): FieldRow<T>[] {
 	const rows: FieldRow<T>[] = [];
 	let i = 0;
 	while (i < fields.length) {
@@ -49,7 +51,9 @@ export function groupFieldsIntoRows<T extends RowGroupable>(fields: T[]): FieldR
 }
 
 /** Ids of half-width fields that ended up alone in their row. */
-export function findOrphanHalfIds<T extends RowGroupable>(fields: T[]): Set<string> {
+export function findOrphanHalfIds<T extends RowGroupable>(
+	fields: T[],
+): Set<string> {
 	const orphans = new Set<string>();
 	for (const row of groupFieldsIntoRows(fields)) {
 		if (row.orphan) {
@@ -70,7 +74,10 @@ export interface FieldWithSection extends RowGroupable {
 	sectionId?: string | null;
 }
 
-export interface SectionGroup<S extends SectionGroupable, F extends FieldWithSection> {
+export interface SectionGroup<
+	S extends SectionGroupable,
+	F extends FieldWithSection,
+> {
 	section: S;
 	fields: F[];
 	rows: FieldRow<F>[];
@@ -116,10 +123,10 @@ export function planFormSections<
  * Fields with a missing/null sectionId fall back to the first section so
  * legacy data never disappears from the UI.
  */
-export function groupFieldsBySection<S extends SectionGroupable, F extends FieldWithSection>(
-	fields: F[],
-	sections: S[],
-): SectionGroup<S, F>[] {
+export function groupFieldsBySection<
+	S extends SectionGroupable,
+	F extends FieldWithSection,
+>(fields: F[], sections: S[]): SectionGroup<S, F>[] {
 	const sortedSections = [...sections].sort((a, b) => a.order - b.order);
 	const sortedFields = [...fields].sort((a, b) => a.order - b.order);
 	const bySection = new Map<string, F[]>();
@@ -130,6 +137,10 @@ export function groupFieldsBySection<S extends SectionGroupable, F extends Field
 	}
 	return sortedSections.map((section) => {
 		const sectionFields = bySection.get(section.id) ?? [];
-		return { section, fields: sectionFields, rows: groupFieldsIntoRows(sectionFields) };
+		return {
+			section,
+			fields: sectionFields,
+			rows: groupFieldsIntoRows(sectionFields),
+		};
 	});
 }

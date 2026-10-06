@@ -34,12 +34,20 @@ export function useVisibleSections<
 >(fields: F[], sections: S[], answers: Record<string, unknown>) {
 	return useMemo(() => {
 		if (!sections.some((s) => s.visibilityRule)) {
-			return { visibleSections: sections, visibleFields: fields, visibleIds: new Set(sections.map((s) => s.id)) };
+			return {
+				visibleSections: sections,
+				visibleFields: fields,
+				visibleIds: new Set(sections.map((s) => s.id)),
+			};
 		}
 		const visibleIds = getVisibleSectionIds(sections, fields, answers);
 		return {
 			visibleSections: sections.filter((s) => visibleIds.has(s.id)),
-			visibleFields: filterVisibleFields(fields, sections, answers) as F[],
+			visibleFields: filterVisibleFields(
+				fields,
+				sections,
+				answers,
+			) as F[],
 			visibleIds,
 		};
 	}, [fields, sections, answers]);
@@ -49,7 +57,11 @@ export function useGroupedVisibleSections<
 	F extends VisibleField,
 	S extends VisibleSection,
 >(fields: F[], sections: S[], answers: Record<string, unknown>) {
-	const { visibleSections, visibleFields } = useVisibleSections(fields, sections, answers);
+	const { visibleSections, visibleFields } = useVisibleSections(
+		fields,
+		sections,
+		answers,
+	);
 	return useMemo(
 		() => groupFieldsBySection(visibleFields, visibleSections),
 		[visibleFields, visibleSections],

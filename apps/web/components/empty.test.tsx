@@ -8,9 +8,7 @@ describe("Empty", () => {
 	it("renders the default title and description", () => {
 		render(<Empty />);
 
-		expect(
-			screen.getByText(/não encontramos nada/i),
-		).toBeInTheDocument();
+		expect(screen.getByText(/não encontramos nada/i)).toBeInTheDocument();
 		expect(screen.getByText(/outras palavras/i)).toBeInTheDocument();
 	});
 
@@ -23,7 +21,9 @@ describe("Empty", () => {
 
 		expect(screen.getByText("Sem resultados")).toBeInTheDocument();
 		expect(screen.getByText("Nada por aqui")).toBeInTheDocument();
-		expect(screen.getByRole("button", { name: "retry" })).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "retry" }),
+		).toBeInTheDocument();
 	});
 
 	it("renders a clear-filters link when href is provided", () => {

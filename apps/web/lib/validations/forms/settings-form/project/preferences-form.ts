@@ -1,19 +1,13 @@
-import { z } from "@verific/zod"
+import { z } from "@verific/zod";
 
 // Schema para branding (simplificado, pode precisar de validação de URL/File)
 const brandingSchema = z.object({
-	logoUrl: z
-		.url("URL do logo inválida")
-		.optional()
-		.or(z.literal("")),
+	logoUrl: z.url("URL do logo inválida").optional().or(z.literal("")),
 	largeLogoUrl: z
 		.url("URL do logo horizontal inválida")
 		.optional()
 		.or(z.literal("")),
-	bannerUrl: z
-		.url("URL do banner inválida")
-		.optional()
-		.or(z.literal("")),
+	bannerUrl: z.url("URL do banner inválida").optional().or(z.literal("")),
 	logoDarkUrl: z
 		.url("URL do logo (modo escuro) inválida")
 		.optional()

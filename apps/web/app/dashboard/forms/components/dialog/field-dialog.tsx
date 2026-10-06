@@ -289,10 +289,8 @@ export function FieldDialog({
 																next as FieldType
 															],
 															{
-																shouldValidate:
-																	true,
-																shouldDirty:
-																	true,
+																shouldValidate: true,
+																shouldDirty: true,
 															},
 														);
 													}
@@ -403,27 +401,47 @@ export function FieldDialog({
 										return (
 											<FormItem>
 												<div className="flex flex-col gap-2">
-													{SOCIAL_SERVICES.map((s) => (
-														<label
-															key={s.id}
-															className="flex cursor-pointer items-center gap-2 text-sm"
-														>
-															<Checkbox
-																checked={selected.has(s.id)}
-																onCheckedChange={(c) => {
-																	const next = new Set(selected);
-																	if (c) next.add(s.id);
-																	else next.delete(s.id);
-																	field.onChange([...next]);
-																}}
-															/>
-															{s.label}
-														</label>
-													))}
+													{SOCIAL_SERVICES.map(
+														(s) => (
+															<label
+																key={s.id}
+																className="flex cursor-pointer items-center gap-2 text-sm"
+															>
+																<Checkbox
+																	checked={selected.has(
+																		s.id,
+																	)}
+																	onCheckedChange={(
+																		c,
+																	) => {
+																		const next =
+																			new Set(
+																				selected,
+																			);
+																		if (c)
+																			next.add(
+																				s.id,
+																			);
+																		else
+																			next.delete(
+																				s.id,
+																			);
+																		field.onChange(
+																			[
+																				...next,
+																			],
+																		);
+																	}}
+																/>
+																{s.label}
+															</label>
+														),
+													)}
 												</div>
 												<FormDescription className="text-xs">
-													Nenhum marcado = todos liberados.
-													Obrigatório passa a exigir ao menos uma
+													Nenhum marcado = todos
+													liberados. Obrigatório passa
+													a exigir ao menos uma
 													entrada.
 												</FormDescription>
 												<FormMessage />

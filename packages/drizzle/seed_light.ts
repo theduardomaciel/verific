@@ -137,11 +137,7 @@ async function seedTags(projects: any[]) {
 	return inserted;
 }
 
-async function seedActivities(
-	projects: any[],
-	speakers: any[],
-	tags: any[],
-) {
+async function seedActivities(projects: any[], speakers: any[], tags: any[]) {
 	const activities: (typeof schema.activity.$inferInsert)[] = [];
 	for (let i = 0; i < 40; i++) {
 		activities.push({
@@ -167,7 +163,8 @@ async function seedActivities(
 	inserted.forEach((activity, i) => {
 		const start = faker.date.soon();
 		const end = new Date(
-			start.getTime() + faker.number.int({ min: 1, max: 4 }) * 60 * 60 * 1000,
+			start.getTime() +
+				faker.number.int({ min: 1, max: 4 }) * 60 * 60 * 1000,
 		);
 		sessions.push({
 			activityId: activity.id,
@@ -203,10 +200,7 @@ async function seedActivities(
 	for (const activity of inserted) {
 		const projectTags = tagsByProject.get(activity.projectId) ?? [];
 		const shuffled = [...projectTags].sort(() => Math.random() - 0.5);
-		for (const tag of shuffled.slice(
-			0,
-			Math.floor(Math.random() * 3),
-		)) {
+		for (const tag of shuffled.slice(0, Math.floor(Math.random() * 3))) {
 			tagLinks.push({ activityId: activity.id, tagId: tag.id });
 		}
 	}

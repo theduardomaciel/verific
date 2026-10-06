@@ -615,7 +615,9 @@ function fieldValueSchema(field: FormFieldForValidation) {
 		}
 		case "social_links": {
 			const allowed =
-				field.options && field.options.length > 0 ? field.options : null;
+				field.options && field.options.length > 0
+					? field.options
+					: null;
 			const entry = z
 				.object({
 					service: z.string().min(1),
@@ -624,16 +626,25 @@ function fieldValueSchema(field: FormFieldForValidation) {
 				.superRefine((e, ctx) => {
 					const service = socialServiceById(e.service);
 					if (!service) {
-						ctx.addIssue({ code: "custom", message: "Serviço inválido." });
+						ctx.addIssue({
+							code: "custom",
+							message: "Serviço inválido.",
+						});
 						return;
 					}
 					if (allowed && !allowed.includes(service.id)) {
-						ctx.addIssue({ code: "custom", message: "Serviço inválido." });
+						ctx.addIssue({
+							code: "custom",
+							message: "Serviço inválido.",
+						});
 						return;
 					}
 					const url = normalizeSocialLink(service.id, e.value);
 					if (!url || !/^https?:\/\//i.test(url)) {
-						ctx.addIssue({ code: "custom", message: "Link inválido." });
+						ctx.addIssue({
+							code: "custom",
+							message: "Link inválido.",
+						});
 					}
 				})
 				.transform((e) => ({

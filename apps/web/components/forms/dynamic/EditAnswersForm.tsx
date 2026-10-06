@@ -6,7 +6,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 
 import { trpc } from "@/lib/trpc/react";
-import { buildAnswersSchema, filterVisibleFields, getVisibleSectionIds } from "@verific/api/schemas";
+import {
+	buildAnswersSchema,
+	filterVisibleFields,
+	getVisibleSectionIds,
+} from "@verific/api/schemas";
 import { groupFieldsBySection } from "@/lib/forms/layout";
 import { DynamicField } from "@/components/forms/dynamic/DynamicField";
 import { Button } from "@/components/ui/button";
@@ -42,13 +46,22 @@ export function EditMyAnswersForm({
 		},
 	});
 	const layout = layoutQuery.data ?? null;
-	const visibility = (myProfile.data?.visibility ?? {}) as Record<string, boolean>;
+	const visibility = (myProfile.data?.visibility ?? {}) as Record<
+		string,
+		boolean
+	>;
 
 	const fields = useMemo(
-		() => (published.data?.fields ?? []).filter((f) => f.isVisible && f.editableAfterSignup),
+		() =>
+			(published.data?.fields ?? []).filter(
+				(f) => f.isVisible && f.editableAfterSignup,
+			),
 		[published.data],
 	);
-	const sections = useMemo(() => published.data?.sections ?? [], [published.data]);
+	const sections = useMemo(
+		() => published.data?.sections ?? [],
+		[published.data],
+	);
 
 	const fieldsForValidation = useMemo(
 		() =>
@@ -72,13 +85,31 @@ export function EditMyAnswersForm({
 		() =>
 			sections.map((s) => ({
 				id: s.id,
-				visibilityRule: (s as { visibilityRule?: { sourceFieldId: string; operator: "is_checked" | "is_not_checked" | "equals" | "includes_any" | "includes_all"; values?: string[] } | null }).visibilityRule ?? null,
+				visibilityRule:
+					(
+						s as {
+							visibilityRule?: {
+								sourceFieldId: string;
+								operator:
+									| "is_checked"
+									| "is_not_checked"
+									| "equals"
+									| "includes_any"
+									| "includes_all";
+								values?: string[];
+							} | null;
+						}
+					).visibilityRule ?? null,
 			})),
 		[sections],
 	);
 
 	const defaultValues = useMemo(() => {
-		const answers = (myAnswers.data?.answers ?? []) as Array<{ fieldId: string; value: unknown; field?: { key?: string } | null }>;
+		const answers = (myAnswers.data?.answers ?? []) as Array<{
+			fieldId: string;
+			value: unknown;
+			field?: { key?: string } | null;
+		}>;
 		const byKey: Record<string, unknown> = {};
 		for (const a of answers) {
 			const key = a.field?.key;
@@ -86,7 +117,8 @@ export function EditMyAnswersForm({
 		}
 		for (const f of fields) {
 			const v = byKey[f.key];
-			if (v instanceof Date) byKey[f.key] = (v as Date).toISOString().slice(0, 10);
+			if (v instanceof Date)
+				byKey[f.key] = (v as Date).toISOString().slice(0, 10);
 		}
 		return byKey;
 	}, [myAnswers.data, fields]);
@@ -99,11 +131,9 @@ export function EditMyAnswersForm({
 				(values ?? {}) as Record<string, unknown>,
 			);
 			const zod = zodResolver(schema as never);
-			return (zod as (a: unknown, b: unknown, c: unknown) => Promise<unknown>)(
-				values,
-				context,
-				options,
-			) as never;
+			return (
+				zod as (a: unknown, b: unknown, c: unknown) => Promise<unknown>
+			)(values, context, options) as never;
 		};
 	}, [fieldsForValidation, sectionsForVisibility]);
 
@@ -118,16 +148,32 @@ export function EditMyAnswersForm({
 		if (!sectionsForVisibility.some((s) => s.visibilityRule)) {
 			return groupFieldsBySection(fields, sections);
 		}
-		const visible = filterVisibleFields(fields, sectionsForVisibility, watched);
-		const ids = getVisibleSectionIds(sectionsForVisibility, fieldsForValidation, watched);
-		return groupFieldsBySection(visible, sections).filter((g) => ids.has(g.section.id));
+		const visible = filterVisibleFields(
+			fields,
+			sectionsForVisibility,
+			watched,
+		);
+		const ids = getVisibleSectionIds(
+			sectionsForVisibility,
+			fieldsForValidation,
+			watched,
+		);
+		return groupFieldsBySection(visible, sections).filter((g) =>
+			ids.has(g.section.id),
+		);
 	}, [fields, sections, sectionsForVisibility, fieldsForValidation, watched]);
 
 	useEffect(() => {
 		const allowed = new Set(
-			filterVisibleFields(fieldsForValidation, sectionsForVisibility, watched).map((f) => f.key),
+			filterVisibleFields(
+				fieldsForValidation,
+				sectionsForVisibility,
+				watched,
+			).map((f) => f.key),
 		);
-		const hidden = fieldsForValidation.map((f) => f.key).filter((k) => !allowed.has(k));
+		const hidden = fieldsForValidation
+			.map((f) => f.key)
+			.filter((k) => !allowed.has(k));
 		if (hidden.length > 0) form.clearErrors(hidden as never);
 	}, [grouped]);
 
@@ -139,7 +185,8 @@ export function EditMyAnswersForm({
 		onError: (e) => toast.error(e.message),
 	});
 
-	if (published.isPending || myAnswers.isPending) return <Skeleton className="h-40 w-full" />;
+	if (published.isPending || myAnswers.isPending)
+		return <Skeleton className="h-40 w-full" />;
 	if (!myAnswers.data?.participant) return null;
 	if (fields.length === 0) return null;
 
@@ -159,72 +206,119 @@ export function EditMyAnswersForm({
 							);
 							const allowed = new Set(visible.map((f) => f.key));
 							const stripped: Record<string, unknown> = {};
-							for (const [k, v] of Object.entries((values ?? {}) as Record<string, unknown>)) {
+							for (const [k, v] of Object.entries(
+								(values ?? {}) as Record<string, unknown>,
+							)) {
 								if (allowed.has(k)) stripped[k] = v;
 							}
-							mutation.mutate({ projectId, answers: stripped as Record<string, string | number | boolean | string[] | null> });
+							mutation.mutate({
+								projectId,
+								answers: stripped as Record<
+									string,
+									string | number | boolean | string[] | null
+								>,
+							});
 						})}
 						className="flex flex-col gap-4"
 					>
 						{grouped.map((group) => (
-						<div key={group.section.id} className="flex flex-col gap-4">
-							<h4 className="text-sm font-bold">{group.section.title}</h4>
-							{group.rows.map((row, ri) => (
-								<div
-									key={row.fields.map((f) => f.id).join("-") || `row-${ri}`}
-									className={
-										row.fields.length === 2
-											? "grid w-full grid-cols-1 gap-4 md:grid-cols-2"
-											: "w-full"
-									}
-								>
-									{row.fields.map((f) => {
-										const slot = layout
-											? slotForField(layout, f.id)
-											: null;
-										const showToggle = Boolean(
-											slot && f.required && myProfile.data,
-										);
-										const showHint = Boolean(slot && !showToggle);
-										return (
-											<div key={f.id} className="flex flex-col gap-1">
-												<DynamicField key={f.id} field={f} control={form.control as never} name={f.key} />
-												{showToggle && (
-													<div className="flex items-center justify-between gap-2 rounded-md border px-2 py-1.5">
-														<Label
-															htmlFor={`profile-visible-${f.id}`}
-															className="text-xs font-normal"
-														>
-															Visível no perfil
-														</Label>
-														<Switch
-															id={`profile-visible-${f.id}`}
-															checked={visibility[f.id] ?? true}
-															onCheckedChange={(checked) =>
-																setVisibility.mutate({
-																	projectUrl: projectUrl ?? "",
-																	fieldId: f.id,
-																	visible: checked,
-																})
-															}
-														/>
-													</div>
-												)}
-												{showHint && (
-													<p className="text-muted-foreground flex items-center gap-1 text-xs">
-														<Eye className="h-3 w-3" />
-														Visível no seu perfil
-													</p>
-												)}
-											</div>
-										);
-									})}
-								</div>
-							))}
-						</div>
-					))}
+							<div
+								key={group.section.id}
+								className="flex flex-col gap-4"
+							>
+								<h4 className="text-sm font-bold">
+									{group.section.title}
+								</h4>
+								{group.rows.map((row, ri) => (
+									<div
+										key={
+											row.fields
+												.map((f) => f.id)
+												.join("-") || `row-${ri}`
+										}
+										className={
+											row.fields.length === 2
+												? "grid w-full grid-cols-1 gap-4 md:grid-cols-2"
+												: "w-full"
+										}
+									>
+										{row.fields.map((f) => {
+											const slot = layout
+												? slotForField(layout, f.id)
+												: null;
+											const showToggle = Boolean(
+												slot &&
+												f.required &&
+												myProfile.data,
+											);
+											const showHint = Boolean(
+												slot && !showToggle,
+											);
+											return (
+												<div
+													key={f.id}
+													className="flex flex-col gap-1"
+												>
+													<DynamicField
+														key={f.id}
+														field={f}
+														control={
+															form.control as never
+														}
+														name={f.key}
+													/>
+													{showToggle && (
+														<div className="flex items-center justify-between gap-2 rounded-md border px-2 py-1.5">
+															<Label
+																htmlFor={`profile-visible-${f.id}`}
+																className="text-xs font-normal"
+															>
+																Visível no
+																perfil
+															</Label>
+															<Switch
+																id={`profile-visible-${f.id}`}
+																checked={
+																	visibility[
+																		f.id
+																	] ?? true
+																}
+																onCheckedChange={(
+																	checked,
+																) =>
+																	setVisibility.mutate(
+																		{
+																			projectUrl:
+																				projectUrl ??
+																				"",
+																			fieldId:
+																				f.id,
+																			visible:
+																				checked,
+																		},
+																	)
+																}
+															/>
+														</div>
+													)}
+													{showHint && (
+														<p className="text-muted-foreground flex items-center gap-1 text-xs">
+															<Eye className="h-3 w-3" />
+															Visível no seu
+															perfil
+														</p>
+													)}
+												</div>
+											);
+										})}
+									</div>
+								))}
+							</div>
+						))}
 						<Button type="submit" disabled={mutation.isPending}>
-							{mutation.isPending ? "Salvando..." : "Salvar respostas"}
+							{mutation.isPending
+								? "Salvando..."
+								: "Salvar respostas"}
 						</Button>
 					</form>
 				</Form>

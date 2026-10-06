@@ -22,10 +22,11 @@ export const isDateDifferent = (date1: Date, date2: Date) => {
 };
 
 export const getDateString = (dateFrom: Date, dateTo: Date) => {
-	const dateString = `${saoPauloDateFormatter.format(new Date(dateFrom))}${isDateDifferent(new Date(dateFrom), new Date(dateTo))
-		? ` - ${saoPauloDateFormatter.format(new Date(dateTo))}`
-		: ""
-		}`;
+	const dateString = `${saoPauloDateFormatter.format(new Date(dateFrom))}${
+		isDateDifferent(new Date(dateFrom), new Date(dateTo))
+			? ` - ${saoPauloDateFormatter.format(new Date(dateTo))}`
+			: ""
+	}`;
 
 	return dateString;
 };
@@ -34,18 +35,20 @@ export const getTimeString = (date: Date, asHourFormat = false) => {
 	if (asHourFormat) {
 		const hours = new Date(date).getHours();
 		const minutes = new Date(date).getMinutes();
-		return minutes === 0 ? `${hours}h` : `${hours}h${minutes.toString().padStart(2, "0")}`;
+		return minutes === 0
+			? `${hours}h`
+			: `${hours}h${minutes.toString().padStart(2, "0")}`;
 	}
-	return saoPauloFormatter.format(new Date(date)).split(' ')[1];
+	return saoPauloFormatter.format(new Date(date)).split(" ")[1];
 };
 
 export const isBeforeStart = (startDate: Date) => {
 	return new Date() < new Date(startDate);
-}
+};
 
 export const isAfterEnd = (endDate: Date) => {
 	return new Date() > new Date(endDate);
-}
+};
 
 export const calculateWorkloadFromTimes = (
 	timeFrom: string | undefined,
@@ -61,7 +64,8 @@ export const calculateWorkloadFromTimes = (
 		const toHours: number = Number(toHoursStr ?? "0");
 		const toMinutes: number = Number(toMinutesStr ?? "0");
 
-		let workload: number = toHours - fromHours + (toMinutes - fromMinutes) / 60;
+		let workload: number =
+			toHours - fromHours + (toMinutes - fromMinutes) / 60;
 
 		if (workload < 0) {
 			workload = 0;
@@ -91,8 +95,8 @@ export const getFirstSessionStart = (
 	sessions: ActivitySessionLike[] | undefined | null,
 ): Date | null => {
 	if (!sessions || sessions.length === 0) return null;
-	return sessions.reduce((min, s) =>
-		toDate(s.startsAt) < min ? toDate(s.startsAt) : min,
+	return sessions.reduce(
+		(min, s) => (toDate(s.startsAt) < min ? toDate(s.startsAt) : min),
 		toDate(sessions[0]!.startsAt),
 	);
 };
@@ -102,8 +106,8 @@ export const getLastSessionEnd = (
 	sessions: ActivitySessionLike[] | undefined | null,
 ): Date | null => {
 	if (!sessions || sessions.length === 0) return null;
-	return sessions.reduce((max, s) =>
-		toDate(s.endsAt) > max ? toDate(s.endsAt) : max,
+	return sessions.reduce(
+		(max, s) => (toDate(s.endsAt) > max ? toDate(s.endsAt) : max),
 		toDate(sessions[0]!.endsAt),
 	);
 };
@@ -122,7 +126,10 @@ export const getSessionsDateString = (
 ): string => {
 	const sorted = getSessionsSorted(sessions);
 	if (sorted.length === 0) return "";
-	return getDateString(sorted[0]!.startsAt, sorted[sorted.length - 1]!.endsAt);
+	return getDateString(
+		sorted[0]!.startsAt,
+		sorted[sorted.length - 1]!.endsAt,
+	);
 };
 
 /** "14h - 16h" for a single session. */
@@ -145,7 +152,9 @@ export const getLiveSession = <T extends ActivitySessionLike>(
 	sessions: T[] | undefined | null,
 	now: Date = new Date(),
 ): T | null => {
-	return getSessionsSorted(sessions).find((s) => isSessionLive(s, now)) ?? null;
+	return (
+		getSessionsSorted(sessions).find((s) => isSessionLive(s, now)) ?? null
+	);
 };
 
 export const getNextSession = <T extends ActivitySessionLike>(
@@ -153,7 +162,8 @@ export const getNextSession = <T extends ActivitySessionLike>(
 	now: Date = new Date(),
 ): T | null => {
 	return (
-		getSessionsSorted(sessions).find((s) => toDate(s.startsAt) > now) ?? null
+		getSessionsSorted(sessions).find((s) => toDate(s.startsAt) > now) ??
+		null
 	);
 };
 
@@ -172,7 +182,9 @@ export const sumSessionsHours = (
 ): number => {
 	const total = sessions.reduce(
 		(acc, s) =>
-			acc + (toDate(s.endsAt).getTime() - toDate(s.startsAt).getTime()) / 3_600_000,
+			acc +
+			(toDate(s.endsAt).getTime() - toDate(s.startsAt).getTime()) /
+				3_600_000,
 		0,
 	);
 	return Math.round(total * 100) / 100;
@@ -182,17 +194,26 @@ export const sumSessionsHours = (
  * Expands activities into one occurrence per session, for day-grouped views.
  * Occurrences are sorted by session start.
  */
-export function expandSessionOccurrences<T extends { sessions?: ActivitySessionLike[] | null }>(
+export function expandSessionOccurrences<
+	T extends { sessions?: ActivitySessionLike[] | null },
+>(
 	activities: T[],
-): Array<{ activity: T; session: ActivitySessionLike; sessionIndex: number; sessionCount: number }> {
+): Array<{
+	activity: T;
+	session: ActivitySessionLike;
+	sessionIndex: number;
+	sessionCount: number;
+}> {
 	return activities
 		.flatMap((activity) =>
-			getSessionsSorted(activity.sessions).map((session, sessionIndex) => ({
-				activity,
-				session,
-				sessionIndex,
-				sessionCount: activity.sessions?.length ?? 0,
-			})),
+			getSessionsSorted(activity.sessions).map(
+				(session, sessionIndex) => ({
+					activity,
+					session,
+					sessionIndex,
+					sessionCount: activity.sessions?.length ?? 0,
+				}),
+			),
 		)
 		.sort(
 			(a, b) =>
@@ -215,7 +236,7 @@ export const isTomorrow = (date: Date): boolean => {
 
 export function categorizeByDate<T>(
 	items: T[],
-	getDate: (item: T) => Date
+	getDate: (item: T) => Date,
 ): { grouped: Map<string, T[]>; categories: string[] } {
 	const today = new Date();
 	today.setHours(0, 0, 0, 0);
@@ -282,7 +303,10 @@ export interface FriendlyDateOptions {
  * @param options.locale - Locale identifier passed to Intl.DateTimeFormat (affects language and numeric formatting). Default: "pt-BR".
  * @returns A localized, human-friendly string representing the given date (examples: "Hoje", "Amanhã, 14:30", "12/04, às 14:30", "12 de abril, às 14:30").
  */
-export function formatFriendlyDate(date: Date, options?: FriendlyDateOptions): string {
+export function formatFriendlyDate(
+	date: Date,
+	options?: FriendlyDateOptions,
+): string {
 	const {
 		includeDay = true,
 		includeHour = false,
@@ -296,20 +320,20 @@ export function formatFriendlyDate(date: Date, options?: FriendlyDateOptions): s
 	if (today) {
 		return includeHour
 			? `Hoje, ${new Intl.DateTimeFormat("pt-BR", {
-				timeZone: "America/Sao_Paulo",
-				hour: "2-digit",
-				minute: "2-digit",
-			}).format(new Date(date))}`
+					timeZone: "America/Sao_Paulo",
+					hour: "2-digit",
+					minute: "2-digit",
+				}).format(new Date(date))}`
 			: "Hoje";
 	}
 
 	if (tomorrow) {
 		return includeHour
 			? `Amanhã, ${new Intl.DateTimeFormat("pt-BR", {
-				timeZone: "America/Sao_Paulo",
-				hour: "2-digit",
-				minute: "2-digit",
-			}).format(new Date(date))}`
+					timeZone: "America/Sao_Paulo",
+					hour: "2-digit",
+					minute: "2-digit",
+				}).format(new Date(date))}`
 			: "Amanhã";
 	}
 
@@ -325,5 +349,7 @@ export function formatFriendlyDate(date: Date, options?: FriendlyDateOptions): s
 		formatOptions.minute = "2-digit";
 	}
 
-	return new Intl.DateTimeFormat(locale, formatOptions).format(new Date(date)).replace(", ", ", às ");
+	return new Intl.DateTimeFormat(locale, formatOptions)
+		.format(new Date(date))
+		.replace(", ", ", às ");
 }

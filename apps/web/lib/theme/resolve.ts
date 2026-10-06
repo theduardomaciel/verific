@@ -36,7 +36,8 @@ const DARK_TEXT = "#141118";
  * camada translúcida sobre um fundo opaco.
  */
 export function mixHex(a: string, b: string, t: number): string {
-	const ch = (hex: string, i: number) => parseInt(hex.replace("#", "").slice(i, i + 2), 16);
+	const ch = (hex: string, i: number) =>
+		parseInt(hex.replace("#", "").slice(i, i + 2), 16);
 	const to = (v: number) =>
 		Math.round(Math.min(255, Math.max(0, v)))
 			.toString(16)
@@ -152,7 +153,8 @@ function accentSurface(
 ): { bg: string; fg: string } {
 	// Neutro: fundo é o próprio token (resolve por modo) e o texto é o
 	// inverso dele — o mesmo par do texto corrido, sempre AA.
-	if (role === "foreground") return { bg: "var(--foreground)", fg: "var(--background)" };
+	if (role === "foreground")
+		return { bg: "var(--foreground)", fg: "var(--background)" };
 	const hex = role === "secondary" ? theme.secondary : theme.primary;
 	return { bg: hex, fg: role === "secondary" ? onSecondary : onPrimary };
 }
@@ -176,7 +178,8 @@ function badgeSurface(
 	onPrimary: string,
 	onSecondary: string,
 ): { bg: string; fg: string } {
-	if (role !== "foreground") return accentSurface(theme, role, onPrimary, onSecondary);
+	if (role !== "foreground")
+		return accentSurface(theme, role, onPrimary, onSecondary);
 	const neutralBg = mode === "dark" ? NEUTRAL_BG_DARK : NEUTRAL_BG_LIGHT;
 	return { bg: "var(--foreground)", fg: neutralBadgeFg(theme, neutralBg) };
 }
@@ -204,7 +207,9 @@ export const HERO_NEUTRAL_TINT = "#141118";
 /** Véu da capa em cima da cor escolhida, já escurecido para o texto branco. */
 function heroTint(theme: EventTheme, color: HeroOverlayColor): string {
 	if (color === "dark") return darkenUntilContrast(HERO_NEUTRAL_TINT);
-	return darkenUntilContrast(color === "secondary" ? theme.secondary : theme.primary);
+	return darkenUntilContrast(
+		color === "secondary" ? theme.secondary : theme.primary,
+	);
 }
 
 export interface NavTokens {
@@ -288,8 +293,7 @@ export function resolveEventTheme(input: {
 	const onSecondary = bestOnColor(theme.secondary);
 
 	const buttonBg = roleColor(theme, theme.buttons.bg);
-	const buttonFg =
-		theme.buttons.bg === "primary" ? onPrimary : onSecondary;
+	const buttonFg = theme.buttons.bg === "primary" ? onPrimary : onSecondary;
 
 	// `--accent`: superfícies/hover `ghost`/`outline` (`Button`, `Select`,
 	// `DropdownMenu`…) seguem o `content.accent` do tema do evento. Neutro
@@ -320,7 +324,8 @@ export function resolveEventTheme(input: {
 	} else if (theme.header.style === "transparent") {
 		loader = theme.primary;
 	} else {
-		loader = theme.header.bg === "secondary" ? theme.primary : theme.secondary;
+		loader =
+			theme.header.bg === "secondary" ? theme.primary : theme.secondary;
 	}
 
 	let headerBg = "transparent";
@@ -351,14 +356,25 @@ export function resolveEventTheme(input: {
 	// Ativo = superfície de conteúdo (`content.accent`, com `accentDark` no
 	// modo escuro); CTA = contorno na cor dos botões com texto na cor do
 	// cabeçalho (no transparente, o token da página).
-	const accentLight = accentSurface(theme, theme.content.accent, onPrimary, onSecondary);
+	const accentLight = accentSurface(
+		theme,
+		theme.content.accent,
+		onPrimary,
+		onSecondary,
+	);
 	const accentDark = accentSurface(
 		theme,
 		theme.content.accentDark ?? theme.content.accent,
 		onPrimary,
 		onSecondary,
 	);
-	const badgeLight = badgeSurface(theme, theme.content.accent, "light", onPrimary, onSecondary);
+	const badgeLight = badgeSurface(
+		theme,
+		theme.content.accent,
+		"light",
+		onPrimary,
+		onSecondary,
+	);
 	const badgeDark = badgeSurface(
 		theme,
 		theme.content.accentDark ?? theme.content.accent,
@@ -387,7 +403,8 @@ export function resolveEventTheme(input: {
 	if (theme.header.style === "gradient") {
 		const { secondary, primary } = theme;
 		mobileMenuBg =
-			contrastRatio(onHeader, secondary) >= contrastRatio(onHeader, primary)
+			contrastRatio(onHeader, secondary) >=
+			contrastRatio(onHeader, primary)
 				? secondary
 				: primary;
 	} else if (theme.header.style === "transparent") {

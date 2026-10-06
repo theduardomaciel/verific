@@ -10,8 +10,7 @@ import {
 	sessionAttendance,
 	user,
 } from "@verific/drizzle/schema";
-import type {
-	SQL} from "@verific/drizzle/orm";
+import type { SQL } from "@verific/drizzle/orm";
 import {
 	and,
 	asc,
@@ -22,7 +21,7 @@ import {
 	ilike,
 	inArray,
 	or,
-	sql
+	sql,
 } from "@verific/drizzle/orm";
 
 // Utils
@@ -51,7 +50,8 @@ export const participantsRouter = createTRPCRouter({
 			if (!requestUserId) {
 				throw new TRPCError({
 					code: "UNAUTHORIZED",
-					message: "User must be logged in to access participant data",
+					message:
+						"User must be logged in to access participant data",
 				});
 			}
 
@@ -79,9 +79,9 @@ export const participantsRouter = createTRPCRouter({
 							moderators: {
 								columns: {
 									userId: true,
-								}
-							}
-						}
+								},
+							},
+						},
 					},
 				},
 			});
@@ -93,25 +93,34 @@ export const participantsRouter = createTRPCRouter({
 				});
 			}
 
-			const isModerator = participantData.project.moderators.some((mod => mod.userId === requestUserId))
-				|| participantData.project.ownerId === requestUserId;
+			const isModerator =
+				participantData.project.moderators.some(
+					(mod) => mod.userId === requestUserId,
+				) || participantData.project.ownerId === requestUserId;
 
 			if (!isModerator && participantData.userId !== requestUserId) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
-					message: "You do not have permission to view this participant's data",
+					message:
+						"You do not have permission to view this participant's data",
 				});
 			}
 
 			// Verificamos se o participante requerido é um moderador
-			const isModeratorParticipant = participantData.project.moderators.some((mod) => mod.userId === participantData.userId)
-				|| participantData.project.ownerId === participantData.userId;
+			const isModeratorParticipant =
+				participantData.project.moderators.some(
+					(mod) => mod.userId === participantData.userId,
+				) || participantData.project.ownerId === participantData.userId;
 
 			// Calcula o total de atividades e horas
-			const activitiesAttended = participantData.participantOnActivity.length;
-			const hours = participantData.participantOnActivity.reduce((acc, pa) => {
-				return acc + (pa.activity.workload || 0);
-			}, 0);
+			const activitiesAttended =
+				participantData.participantOnActivity.length;
+			const hours = participantData.participantOnActivity.reduce(
+				(acc, pa) => {
+					return acc + (pa.activity.workload || 0);
+				},
+				0,
+			);
 
 			return {
 				participant: participantData,
@@ -141,11 +150,23 @@ export const participantsRouter = createTRPCRouter({
 			let roleFilter: SQL | undefined;
 			if (role && role.length > 0) {
 				roleFilter = exists(
-					db.select().from(participantOnActivity).innerJoin(activity, eq(participantOnActivity.activityId, activity.id)).where(and(
-						eq(participantOnActivity.participantId, participant.id),
-						eq(activity.projectId, projectId),
-						inArray(participantOnActivity.role, role),
-					))
+					db
+						.select()
+						.from(participantOnActivity)
+						.innerJoin(
+							activity,
+							eq(participantOnActivity.activityId, activity.id),
+						)
+						.where(
+							and(
+								eq(
+									participantOnActivity.participantId,
+									participant.id,
+								),
+								eq(activity.projectId, projectId),
+								inArray(participantOnActivity.role, role),
+							),
+						),
 				);
 			}
 
@@ -153,9 +174,9 @@ export const participantsRouter = createTRPCRouter({
 				eq(participant.projectId, projectId),
 				search
 					? or(
-						ilike(user.name, `%${search}%`),
-						ilike(user.email, `%${search}%`),
-					)
+							ilike(user.name, `%${search}%`),
+							ilike(user.email, `%${search}%`),
+						)
 					: undefined,
 				roleFilter,
 			];
@@ -180,38 +201,42 @@ export const participantsRouter = createTRPCRouter({
 					orderByClause = desc(participant.joinedAt);
 			}
 
-			const [participants, countResult, emailDomains] = await Promise.all([
-				db
-					.select({
-						id: participant.id,
-						userId: participant.userId,
-						projectId: participant.projectId,
-						joinedAt: participant.joinedAt,
-						user: {
-							name: user.name,
-							email: user.email,
-							image_url: user.image_url,
-						},
-					})
-					.from(participant)
-					.leftJoin(user, eq(participant.userId, user.id))
-					.where(and(...whereClauses.filter(Boolean)))
-					.orderBy(orderByClause)
-					.limit(pageSize)
-					.offset(pageIndex ? (pageIndex - 1) * pageSize : 0),
-				db
-					.select({ amount: count() })
-					.from(participant)
-					.leftJoin(user, eq(participant.userId, user.id))
-					.where(and(...whereClauses.filter(Boolean))),
-				// Extrai os domínios de e-mail únicos dos participantes
-				db
-					.select({ emailDomain: sql`SPLIT_PART(${user.email}, '@', 2)` })
-					.from(participant)
-					.leftJoin(user, eq(participant.userId, user.id))
-					.where(eq(participant.projectId, projectId))
-					.groupBy(sql`SPLIT_PART(${user.email}, '@', 2)`),
-			]);
+			const [participants, countResult, emailDomains] = await Promise.all(
+				[
+					db
+						.select({
+							id: participant.id,
+							userId: participant.userId,
+							projectId: participant.projectId,
+							joinedAt: participant.joinedAt,
+							user: {
+								name: user.name,
+								email: user.email,
+								image_url: user.image_url,
+							},
+						})
+						.from(participant)
+						.leftJoin(user, eq(participant.userId, user.id))
+						.where(and(...whereClauses.filter(Boolean)))
+						.orderBy(orderByClause)
+						.limit(pageSize)
+						.offset(pageIndex ? (pageIndex - 1) * pageSize : 0),
+					db
+						.select({ amount: count() })
+						.from(participant)
+						.leftJoin(user, eq(participant.userId, user.id))
+						.where(and(...whereClauses.filter(Boolean))),
+					// Extrai os domínios de e-mail únicos dos participantes
+					db
+						.select({
+							emailDomain: sql`SPLIT_PART(${user.email}, '@', 2)`,
+						})
+						.from(participant)
+						.leftJoin(user, eq(participant.userId, user.id))
+						.where(eq(participant.projectId, projectId))
+						.groupBy(sql`SPLIT_PART(${user.email}, '@', 2)`),
+				],
+			);
 
 			const amount = countResult?.[0]?.amount ?? 0;
 			const pageCount = Math.ceil(amount / pageSize);
@@ -219,7 +244,9 @@ export const participantsRouter = createTRPCRouter({
 			return {
 				participants,
 				pageCount,
-				emailDomains: emailDomains.map((ed) => ed.emailDomain) as string[],
+				emailDomains: emailDomains.map(
+					(ed) => ed.emailDomain,
+				) as string[],
 			};
 		}),
 
@@ -245,7 +272,7 @@ export const participantsRouter = createTRPCRouter({
 					),
 				);
 
-			return (result?.[0]?.exists ?? 0) > 0
+			return (result?.[0]?.exists ?? 0) > 0;
 		}),
 
 	getParticipantIdByProjectUrl: publicProcedure
@@ -315,10 +342,7 @@ export const participantsRouter = createTRPCRouter({
 							participantOnActivity.activityId,
 							session.activityId,
 						),
-						eq(
-							participantOnActivity.participantId,
-							participantId,
-						),
+						eq(participantOnActivity.participantId, participantId),
 					),
 				);
 
@@ -388,17 +412,21 @@ export const participantsRouter = createTRPCRouter({
 			}
 
 			const isModerator =
-				participantData.project.moderators.some((mod) => mod.userId === requestUserId) ||
-				participantData.project.ownerId === requestUserId;
+				participantData.project.moderators.some(
+					(mod) => mod.userId === requestUserId,
+				) || participantData.project.ownerId === requestUserId;
 
 			if (!isModerator) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
-					message: "You do not have permission to remove this participant",
+					message:
+						"You do not have permission to remove this participant",
 				});
 			}
 
-			await db.delete(participant).where(eq(participant.id, participantId));
+			await db
+				.delete(participant)
+				.where(eq(participant.id, participantId));
 
 			return { success: true };
 		}),

@@ -28,7 +28,10 @@ async function requireProjectAccess(projectId: string, userId: string) {
 		with: { moderators: { columns: { userId: true } } },
 	});
 	if (!data) {
-		throw new TRPCError({ code: "NOT_FOUND", message: "Evento não encontrado." });
+		throw new TRPCError({
+			code: "NOT_FOUND",
+			message: "Evento não encontrado.",
+		});
 	}
 	const allowed =
 		data.ownerId === userId ||

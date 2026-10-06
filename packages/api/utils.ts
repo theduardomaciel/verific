@@ -46,4 +46,4 @@ export const sortOptionsLabels = {
 	desc: "Mais recentes",
 	name_asc: "Nome A-Z",
 	name_desc: "Nome Z-A",
-}
+};

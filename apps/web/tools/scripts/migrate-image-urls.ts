@@ -43,12 +43,14 @@ async function main() {
 	}
 
 	const { db } = await import("@verific/drizzle");
-	const { project, speaker, activity } = await import(
-		"@verific/drizzle/schema"
-	);
+	const { project, speaker, activity } =
+		await import("@verific/drizzle/schema");
 	const { isNotNull } = await import("@verific/drizzle/orm");
 
-	const publicBase = (process.env.S3_PUBLIC_BASE_URL ?? "").replace(/\/$/, "");
+	const publicBase = (process.env.S3_PUBLIC_BASE_URL ?? "").replace(
+		/\/$/,
+		"",
+	);
 	const isExternal = (url: string | null | undefined) =>
 		!!url &&
 		/^https?:\/\//.test(url) &&
@@ -88,21 +90,39 @@ async function main() {
 			thumbnailUrl: p.thumbnailUrl,
 		} as const;
 		for (const [column, url] of Object.entries(cols)) {
-			if (isExternal(url)) targets.push({ table: "projects", id: p.id, column, url: url! });
+			if (isExternal(url))
+				targets.push({
+					table: "projects",
+					id: p.id,
+					column,
+					url: url!,
+				});
 		}
 	}
 	for (const s of speakers) {
 		if (isExternal(s.imageUrl)) {
-			targets.push({ table: "speakers", id: s.id, column: "imageUrl", url: s.imageUrl! });
+			targets.push({
+				table: "speakers",
+				id: s.id,
+				column: "imageUrl",
+				url: s.imageUrl!,
+			});
 		}
 	}
 	for (const a of activities) {
 		if (isExternal(a.bannerUrl)) {
-			targets.push({ table: "activities", id: a.id, column: "bannerUrl", url: a.bannerUrl! });
+			targets.push({
+				table: "activities",
+				id: a.id,
+				column: "bannerUrl",
+				url: a.bannerUrl!,
+			});
 		}
 	}
 
-	console.log(`[migrate-image-urls] ${targets.length} imagem(ns) externa(s) encontrada(s)`);
+	console.log(
+		`[migrate-image-urls] ${targets.length} imagem(ns) externa(s) encontrada(s)`,
+	);
 	for (const t of targets.slice(0, 50)) {
 		console.log(` - ${t.table}.${t.column} [${t.id}] ${t.url}`);
 	}
@@ -141,20 +161,33 @@ async function main() {
 			const publicUrl = `${publicBase}/${key}`;
 			const { eq } = await import("@verific/drizzle/orm");
 			if (t.table === "projects") {
-				await db.update(project).set({ [t.column]: publicUrl }).where(eq(project.id, t.id as string));
+				await db
+					.update(project)
+					.set({ [t.column]: publicUrl })
+					.where(eq(project.id, t.id as string));
 			} else if (t.table === "speakers") {
-				await db.update(speaker).set({ imageUrl: publicUrl }).where(eq(speaker.id, t.id as number));
+				await db
+					.update(speaker)
+					.set({ imageUrl: publicUrl })
+					.where(eq(speaker.id, t.id as number));
 			} else {
-				await db.update(activity).set({ bannerUrl: publicUrl }).where(eq(activity.id, t.id as string));
+				await db
+					.update(activity)
+					.set({ bannerUrl: publicUrl })
+					.where(eq(activity.id, t.id as string));
 			}
 			ok++;
 			console.log(`[ok] ${t.table}.${t.column} [${t.id}]`);
 		} catch (e) {
 			failed.push(t);
-			console.warn(`[falha] ${t.table}.${t.column} [${t.id}]: ${e instanceof Error ? e.message : e}`);
+			console.warn(
+				`[falha] ${t.table}.${t.column} [${t.id}]: ${e instanceof Error ? e.message : e}`,
+			);
 		}
 	}
-	console.log(`[migrate-image-urls] concluído: ${ok} ok, ${failed.length} falhas (URLs originais mantidas)`);
+	console.log(
+		`[migrate-image-urls] concluído: ${ok} ok, ${failed.length} falhas (URLs originais mantidas)`,
+	);
 	process.exit(0);
 }
 

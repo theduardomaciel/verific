@@ -1,5 +1,9 @@
 import { z } from "@verific/zod";
-import { formFieldTypes, hasOutroOption, OTHER_LABEL } from "@verific/api/schemas";
+import {
+	formFieldTypes,
+	hasOutroOption,
+	OTHER_LABEL,
+} from "@verific/api/schemas";
 import { SOCIAL_SERVICES } from "@verific/drizzle/profile-layout";
 import { groupFieldsIntoRows } from "@/lib/forms/layout";
 import type { Field } from "../types";
@@ -28,10 +32,13 @@ export const fieldFormSchema = z
 	})
 	.superRefine((values, ctx) => {
 		if (!values.allowOther) return;
-		if (values.type !== "select_single" && values.type !== "select_multiple" && values.type !== "radio_group") return;
-		const hasOutro = hasOutroOption(
-			(values.optionsText ?? "").split("\n"),
-		);
+		if (
+			values.type !== "select_single" &&
+			values.type !== "select_multiple" &&
+			values.type !== "radio_group"
+		)
+			return;
+		const hasOutro = hasOutroOption((values.optionsText ?? "").split("\n"));
 		if (hasOutro) {
 			ctx.addIssue({
 				code: "custom",
@@ -43,7 +50,10 @@ export const fieldFormSchema = z
 
 export type FieldFormValues = z.infer<typeof fieldFormSchema>;
 
-export function defaultFieldValues(initial?: Field, sectionId?: string | null): FieldFormValues {
+export function defaultFieldValues(
+	initial?: Field,
+	sectionId?: string | null,
+): FieldFormValues {
 	return {
 		fieldId: initial?.id,
 		label: initial?.label ?? "",
@@ -51,7 +61,9 @@ export function defaultFieldValues(initial?: Field, sectionId?: string | null): 
 		helpText: initial?.helpText ?? "",
 		required: initial?.required ?? true,
 		optionsText: (initial?.options ?? []).join("\n"),
-		allowOther: (initial as { allowOther?: boolean } | undefined)?.allowOther ?? false,
+		allowOther:
+			(initial as { allowOther?: boolean } | undefined)?.allowOther ??
+			false,
 		min: initial?.validation?.min?.toString() ?? "",
 		max: initial?.validation?.max?.toString() ?? "",
 		minLength: initial?.validation?.minLength?.toString() ?? "",
@@ -61,16 +73,19 @@ export function defaultFieldValues(initial?: Field, sectionId?: string | null): 
 		halfWidth: initial?.halfWidth ?? false,
 		allowedServices:
 			initial?.type === "social_links"
-				? (initial?.options ?? []).filter((o) =>
-						validServiceIds.has(o),
-					)
+				? (initial?.options ?? []).filter((o) => validServiceIds.has(o))
 				: [],
-		sectionId: sectionId !== undefined ? sectionId : (initial?.sectionId ?? null),
+		sectionId:
+			sectionId !== undefined ? sectionId : (initial?.sectionId ?? null),
 	} as FieldFormValues;
 }
 
 export function needsOptionsFor(type: FieldFormValues["type"]): boolean {
-	return type === "select_single" || type === "select_multiple" || type === "radio_group";
+	return (
+		type === "select_single" ||
+		type === "select_multiple" ||
+		type === "radio_group"
+	);
 }
 
 interface UpsertFieldInput {
@@ -95,7 +110,9 @@ export function toUpsertFieldInput(
 ): UpsertFieldInput {
 	const num = (v?: string) => (v && v.trim() !== "" ? Number(v) : undefined);
 	const needsOptions = needsOptionsFor(values.type);
-	const validServices: Set<string> = new Set(SOCIAL_SERVICES.map((s) => s.id));
+	const validServices: Set<string> = new Set(
+		SOCIAL_SERVICES.map((s) => s.id),
+	);
 	const socialServices =
 		values.type === "social_links"
 			? (values.allowedServices ?? []).filter((s) => validServices.has(s))

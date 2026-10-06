@@ -37,7 +37,8 @@ const switchThumbVariants = cva(
 );
 
 interface SwitchProps
-	extends React.ComponentProps<typeof SwitchPrimitive.Root>,
+	extends
+		React.ComponentProps<typeof SwitchPrimitive.Root>,
 		VariantProps<typeof switchVariants> {}
 
 function Switch({ className, size, ...props }: SwitchProps) {

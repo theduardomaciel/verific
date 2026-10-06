@@ -7,10 +7,7 @@ import { trpc } from "@/lib/trpc/react";
 import { findOrphanHalfIds, groupFieldsBySection } from "@/lib/forms/layout";
 import { animateFlip, animateSectionFlip } from "../lib/animate-flip";
 import type { Field, FormsTab, Section, Version } from "../types";
-import type {
-	RouterInputs,
-	RouterOutput,
-} from "@verific/api";
+import type { RouterInputs, RouterOutput } from "@verific/api";
 import type { UpsertFormSectionInput } from "@verific/api/schemas";
 
 /**
@@ -45,7 +42,9 @@ export function useFormsBuilder() {
 	const [displayFields, setDisplayFields] = useState<Field[]>([]);
 	const [displaySections, setDisplaySections] = useState<Section[]>([]);
 	const [fieldToDelete, setFieldToDelete] = useState<Field | null>(null);
-	const [sectionToDelete, setSectionToDelete] = useState<Section | null>(null);
+	const [sectionToDelete, setSectionToDelete] = useState<Section | null>(
+		null,
+	);
 	const isDraggingRef = useRef(false);
 	const listRef = useRef<HTMLDivElement>(null);
 

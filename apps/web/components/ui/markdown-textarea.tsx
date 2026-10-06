@@ -23,8 +23,10 @@ import {
 	Edit,
 } from "lucide-react";
 
-interface MarkdownTextareaProps
-	extends Omit<React.ComponentProps<"textarea">, "onChange"> {
+interface MarkdownTextareaProps extends Omit<
+	React.ComponentProps<"textarea">,
+	"onChange"
+> {
 	value?: string;
 	onChange?: (value: string) => void;
 }

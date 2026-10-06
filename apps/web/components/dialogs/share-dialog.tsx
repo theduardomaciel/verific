@@ -80,7 +80,10 @@ export function ShareDialog({
 
 					<DialogFooter className="w-full sm:justify-start">
 						<DialogClose
-							className={cn(buttonVariants({ size: "lg" }), "w-full")}
+							className={cn(
+								buttonVariants({ size: "lg" }),
+								"w-full",
+							)}
 							type="button"
 						>
 							<ArrowRightIcon className="-scale-100" />

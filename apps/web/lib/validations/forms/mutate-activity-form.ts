@@ -28,11 +28,9 @@ export const activitySessionFormSchema = z.object({
 
 export const mutateActivityFormSchema = z
 	.object({
-		name: z
-			.string({ error: "O nome da atividade é obrigatório" })
-			.min(3, {
-				message: "O nome da atividade deve ter pelo menos 3 caracteres",
-			}),
+		name: z.string({ error: "O nome da atividade é obrigatório" }).min(3, {
+			message: "O nome da atividade deve ter pelo menos 3 caracteres",
+		}),
 		description: z.string().optional(),
 		isRegistrationOpen: z.boolean().optional(),
 		participantsLimit: z.coerce
