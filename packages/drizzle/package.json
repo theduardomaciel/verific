@@ -10,19 +10,21 @@
 		"db:migrate": "pnpm tsx ./migrate.ts",
 		"db:drop": "drizzle-kit drop",
 		"db:studio": "drizzle-kit studio",
-		"db:seed": "pnpm tsx ./seed.ts"
+		"db:seed": "pnpm tsx ./seed.ts",
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@verific/env": "workspace:*",
 		"@verific/zod": "workspace:*",
 		"@faker-js/faker": "^10.1.0",
-		"@neondatabase/serverless": "^1.0.2",
+		"@neondatabase/serverless": "^1.2.0",
 		"dotenv": "^17.2.3",
 		"drizzle-orm": "^0.45.3",
 		"tsx": "^4.20.6",
 		"ws": "^8.18.3"
 	},
 	"devDependencies": {
+		"@types/node": "^24.9.1",
 		"@types/ws": "^8.18.1",
 		"@verific/prettier-config": "workspace:*",
 		"@verific/typescript-config": "workspace:*",

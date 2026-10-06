@@ -17,7 +17,8 @@
 		"db:migrate": "turbo run db:migrate",
 		"db:studio": "turbo run db:studio",
 		"db:drop": "turbo run db:drop",
-		"db:seed": "turbo run db:seed"
+		"db:seed": "turbo run db:seed",
+		"typecheck": "turbo run typecheck"
 	},
 	"devDependencies": {
 		"@verific/prettier-config": "workspace:*",

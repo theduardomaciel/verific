@@ -68,16 +68,10 @@ Um sistema de credenciamento para eventos acadêmicos
 
 ## ⚙️ Como iniciar o projeto
 
-Antes mesmo de clonar o código do projeto, é necessário instalar algumas dependências globalmente. Recomendamos o uso do `pnpm` por sua disponibilidade em todas as principais plataformas (Windows, Linux e Mac) e sua velocidade quando comparado ao `npm` tradicional.  
+Recomendamos o uso do `pnpm` por sua disponibilidade em todas as principais plataformas (Windows, Linux e Mac) e sua velocidade quando comparado ao `npm` tradicional.  
 Caso o `pnpm` não esteja instalado, é possível [baixá-lo aqui](https://pnpm.io/installation).
 
-1. Para o correto funcionamento da aplicação, instale as seguintes dependências globais:
-
-```
-pnpm install --global turbo dotenv-cli
-```
-
-2. Após instalar as dependências globais, clone o repositório com:
+1. Clone o repositório com:
 
 ```
 git clone https://github.com/theduardomaciel/verific.git
@@ -86,14 +80,14 @@ git clone https://github.com/theduardomaciel/verific.git
 > [!NOTE]
 > Para clonar o repositório você precisará ter o `git` instalado na sua máquina. Caso não tenha, você pode [baixá-lo aqui](https://git-scm.com/downloads).
 
-3. Após clonar o repositório, basta entrar na pasta do repositório clonado e acessar o projeto por meio de um editor de texto ou IDE de preferência, como o VSCode:
+2. Após clonar o repositório, basta entrar na pasta do repositório clonado e acessar o projeto por meio de um editor de texto ou IDE de preferência, como o VSCode:
 
 ```
 cd verific
 code .
 ```
 
-4. Com o terminal aberto no repositório, use `pnpm install` para instalar as dependências do projeto
+3. Com o terminal aberto no repositório, use `pnpm install` para instalar as dependências do projeto
    . Esse comando irá instalar todas as dependências de todos os pacotes e aplicações do monorepo.
 
 ```bash
@@ -103,10 +97,10 @@ pnpm install
 > [!WARNING]
 > Após a instalação das dependências, certifique-se de reiniciar tudo que possa estar carregando o projeto no momento, como o VSCode ou terminais.
 
-5. Em seguida, crie um arquivo `.env` com as variáveis de ambiente adequadas para todos os pacotes (`/packages`) e aplicações (`/apps`), com base nos arquivos de exemplo `.env.example`.  
+4. Em seguida, crie um arquivo `.env` com as variáveis de ambiente adequadas para todos os pacotes (`/packages`) e aplicações (`/apps`), com base nos arquivos de exemplo `.env.example`.  
    Esse passo é essencial para o correto funcionamento dos pacotes e aplicações do monorepo.
 
-6. Para dar início ao servidor local de desenvolvimento, utilize
+5. Para dar início ao servidor local de desenvolvimento, utilize
 
 ```bash
 pnpm dev
@@ -128,8 +122,8 @@ Para a migração de uma nova versão do esquema para o banco de dados, utilize 
 
 Para a visualização do banco de dados, utilize `pnpm db:studio`
 
-> [!WARNING]
-> Execute esse comando sempre na raiz do projeto para evitar erros com variáveis de ambiente.
+> [!NOTE]
+> Os comandos `db:*` leem o `DATABASE_URL` do arquivo `packages/drizzle/.env`.
 
 <br />
 
