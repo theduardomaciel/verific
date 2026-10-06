@@ -23,7 +23,7 @@ interface Props {
 	style?: React.CSSProperties;
 	/**
 	 * Classes do botão de menu mobile. Na página do evento recebe
-	 * `text-[var(--ev-nav-fg)] hover:bg-[var(--ev-nav-hover-bg)]`, que lê
+	 * `text-(--ev-nav-fg) hover:bg-(--ev-nav-hover-bg)`, que lê
 	 * sobre qualquer estilo/cor de cabeçalho.
 	 */
 	buttonClassName?: string;

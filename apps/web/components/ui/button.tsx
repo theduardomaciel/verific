@@ -28,9 +28,9 @@ const buttonVariants = cva(
 				 * `MainNav` marca — nada de classe condicional duplicada.
 				 */
 				"event-nav":
-					"text-[var(--ev-nav-fg)] hover:bg-[var(--ev-nav-hover-bg)] hover:text-[var(--ev-nav-hover-fg)] aria-[current=page]:bg-[var(--ev-nav-active-bg)] aria-[current=page]:text-[var(--ev-nav-active-fg)]",
+					"text-(--ev-nav-fg) hover:bg-(--ev-nav-hover-bg) hover:text-(--ev-nav-hover-fg) aria-[current=page]:bg-(--ev-nav-active-bg) aria-[current=page]:text-(--ev-nav-active-fg)",
 				"event-cta":
-					"border border-[var(--ev-cta-border)] text-[var(--ev-cta-fg)] hover:bg-[var(--ev-cta-hover-bg)] hover:text-[var(--ev-cta-hover-fg)] aria-[current=page]:bg-[var(--ev-cta-hover-bg)] aria-[current=page]:text-[var(--ev-cta-hover-fg)]",
+					"border border-(--ev-cta-border) text-(--ev-cta-fg) hover:bg-(--ev-cta-hover-bg) hover:text-(--ev-cta-hover-fg) aria-[current=page]:bg-(--ev-cta-hover-bg) aria-[current=page]:text-(--ev-cta-hover-fg)",
 			},
 			size: {
 				default: "h-9 px-4 py-2 has-[>svg]:px-3",

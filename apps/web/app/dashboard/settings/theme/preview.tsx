@@ -227,7 +227,7 @@ function PreviewHeader({
 			    em posição absoluta dentro do container do preview. */}
 			<div
 				className={cn(
-					"bg-[var(--ev-mobile-menu-bg)] text-[var(--ev-mobile-menu-fg)] absolute inset-x-0 top-full z-20 flex h-96 flex-col items-start justify-center gap-8 px-8 transition-opacity",
+					"bg-(--ev-mobile-menu-bg) text-(--ev-mobile-menu-fg) absolute inset-x-0 top-full z-20 flex h-96 flex-col items-start justify-center gap-8 px-8 transition-opacity",
 					menuOpen ? "opacity-100" : "pointer-events-none opacity-0",
 				)}
 			>
@@ -251,6 +251,12 @@ export function ThemePreview({ draft, projectName }: ThemePreviewProps) {
 	// A página real segue a preferência do visitante (`next-themes`); a
 	// prévia começa no escuro, que é como a maioria vê eventos, e o botão
 	// alterna para conferir o modo claro.
+	//
+	// O modo claro precisa da classe `ev-theme-light` (não basta remover
+	// `dark`): os tokens do tema são herdados do `<html>`, que continua com
+	// `dark` para quem usa o sistema escuro — só uma declaração no próprio
+	// elemento vence a herança. A mesma classe desliga as variantes `dark:`
+	// dentro da prévia (ver `@custom-variant dark` em `globals.css`).
 	const [dark, setDark] = useState(true);
 	const [menuOpen, setMenuOpen] = useState(false);
 	const { cssVars } = useMemo(
@@ -288,7 +294,7 @@ export function ThemePreview({ draft, projectName }: ThemePreviewProps) {
 			<div
 				className={cn(
 					"bg-background text-foreground relative isolate flex h-[70dvh] min-h-[480px] transform-[translateZ(0)] flex-col overflow-x-hidden overflow-y-auto rounded-2xl border lg:h-[calc(100dvh-11rem)]",
-					dark && "dark",
+					dark ? "dark" : "ev-theme-light",
 				)}
 				style={cssVars as React.CSSProperties}
 			>
@@ -319,7 +325,7 @@ export function ThemePreview({ draft, projectName }: ThemePreviewProps) {
 					>
 						<div className="flex flex-wrap items-center justify-between gap-2 text-xs">
 							<span>Feito com tecnologia verifIC (prévia)</span>
-							<span className="text-[var(--ev-footer-fg-soft)]">
+							<span className="text-(--ev-footer-fg-soft)">
 								Copyright 2026 verifIC. Todos os direitos
 								reservados
 							</span>

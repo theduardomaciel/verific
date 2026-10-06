@@ -131,7 +131,7 @@ function EventPageBody({ project }: { project: EventPageProject }) {
 						</div>
 					</div>
 					<div className="sticky top-16 right-0 lg:w-1/3">
-						<div className="mb-6 rounded-[var(--ev-card-radius,1.5rem)] border p-6">
+						<div className="mb-6 rounded-(--ev-card-radius,1.5rem) border p-6">
 							<h3 className="font-heading mb-4 text-xl font-medium">
 								Local
 							</h3>
@@ -169,7 +169,7 @@ function EventPageBody({ project }: { project: EventPageProject }) {
 								</a>
 							</Button>
 						</div>
-						<div className="flex flex-col rounded-[var(--ev-card-radius,1.5rem)] border p-6">
+						<div className="flex flex-col rounded-(--ev-card-radius,1.5rem) border p-6">
 							<h3 className="font-heading mb-4 text-xl font-medium">
 								Sobre o produtor
 							</h3>
