@@ -1,4 +1,7 @@
 {
 	"extends": "@verific/typescript-config/base.json",
+	"compilerOptions": {
+		"types": ["node"]
+	},
 	"include": ["."]
 }
