@@ -37,9 +37,6 @@
 		},
 		"test": {},
 		"test:coverage": {},
-		"typecheck": {
-			"dependsOn": ["^typecheck"]
-		},
 		"db:generate": {},
 		"db:drop": {},
 		"db:push": {},
