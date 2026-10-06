@@ -101,7 +101,7 @@ function EventLogo({ light, dark, href }: EventLogoProps) {
 	if (!light) {
 		return (
 			<Link href={href} className="text-(--ev-header-fg)">
-				<Logo className="h-8" />
+				<Logo className="h-9" />
 			</Link>
 		);
 	}
@@ -113,7 +113,7 @@ function EventLogo({ light, dark, href }: EventLogoProps) {
 				width={150}
 				height={28}
 				alt="Event logo"
-				className={dark ? "dark:hidden" : undefined}
+				className={dark ? "h-8 w-auto dark:hidden" : "h-8 w-auto"}
 			/>
 			{dark && (
 				<Image
@@ -121,7 +121,7 @@ function EventLogo({ light, dark, href }: EventLogoProps) {
 					width={150}
 					height={28}
 					alt="Event logo"
-					className="hidden dark:block"
+					className="hidden h-8 w-auto dark:block"
 				/>
 			)}
 		</Link>
@@ -194,7 +194,9 @@ export default async function EventLayout({
 						<EventLogo
 							href={`/${eventUrl}`}
 							light={project.largeLogoUrl || project.logoUrl}
-							dark={project.largeLogoDarkUrl || project.logoDarkUrl}
+							dark={
+								project.largeLogoDarkUrl || project.logoDarkUrl
+							}
 						/>
 					}
 				/>

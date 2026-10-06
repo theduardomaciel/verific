@@ -43,6 +43,13 @@
       "when": 1791179906900,
       "tag": "0005_unknown_fallen_one",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791260812178,
+      "tag": "0006_high_odin",
+      "breakpoints": true
     }
   ]
 }

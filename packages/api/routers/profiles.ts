@@ -9,6 +9,7 @@ import {
 	formField,
 	formVersion,
 	participant,
+	profileConnection,
 	profileFieldVisibility,
 	project,
 } from "@verific/drizzle/schema";
@@ -23,7 +24,7 @@ import {
 	type ProfileSlotKey,
 	type StatIconKey,
 } from "@verific/drizzle/profile-layout";
-import { and, asc, desc, eq, inArray, isNull } from "@verific/drizzle/orm";
+import { and, asc, count, desc, eq, inArray, isNull } from "@verific/drizzle/orm";
 
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import {
@@ -276,6 +277,44 @@ async function loadVisibility(participantId: string) {
 	return new Map(rows.map((r) => [r.fieldId, r.visible]));
 }
 
+const PROFILE_CONNECTIONS_SAMPLE = 6;
+
+/**
+ * Conexões incoming do perfil: total + amostra recente de nomes.
+ * Chamado só quando `connectionsEnabled`; fora disso retorna zero.
+ */
+async function loadProfileConnections(
+	projectId: string,
+	viewedParticipantId: string,
+) {
+	const [totalRows, sample] = await Promise.all([
+		db
+			.select({ n: count() })
+			.from(profileConnection)
+			.where(
+				and(
+					eq(profileConnection.projectId, projectId),
+					eq(profileConnection.viewedParticipantId, viewedParticipantId),
+				),
+			),
+		db.query.profileConnection.findMany({
+			where: and(
+				eq(profileConnection.projectId, projectId),
+				eq(profileConnection.viewedParticipantId, viewedParticipantId),
+			),
+			orderBy: desc(profileConnection.createdAt),
+			limit: PROFILE_CONNECTIONS_SAMPLE + 1,
+			with: {
+				viewer: { with: { user: { columns: { name: true } } } },
+			},
+		}),
+	]);
+	const names = sample
+		.map((r) => r.viewer?.user?.name?.trim())
+		.filter((n): n is string => Boolean(n));
+	return { total: totalRows[0]?.n ?? 0, visitors: names };
+}
+
 export const profilesRouter = createTRPCRouter({
 	/** Participante atual no evento (com shortId; preenche se ausente). */
 	getMyParticipant: protectedProcedure
@@ -465,11 +504,15 @@ export const profilesRouter = createTRPCRouter({
 				visibility,
 				owner: false,
 			});
+			const connections = layout.connectionsEnabled
+				? await loadProfileConnections(projectRow.id, row.id)
+				: { total: 0, visitors: [] as string[] };
 			return {
 				shortId: row.shortId,
 				name: row.user.name,
 				avatarUrl: row.user.image_url,
 				slots,
+				connections,
 				modules: {
 					connectionsEnabled: layout.connectionsEnabled,
 					badgesEnabled: layout.badgesEnabled,
@@ -609,5 +652,53 @@ export const profilesRouter = createTRPCRouter({
 					set: { visible: input.visible },
 				});
 			return { visible: input.visible };
+		}),
+
+	/**
+	 * Registra visita = conexão direcional (viewer -> viewed).
+	 * Só participantes do mesmo evento; self-visit e anônimos ignorados.
+	 * Idempotente via PK (viewer, viewed): repetição não infla.
+	 */
+	recordProfileVisit: protectedProcedure
+		.input(z.object({ projectUrl: z.string(), shortId: z.string() }))
+		.mutation(async ({ input, ctx }) => {
+			const projectRow = await db.query.project.findFirst({
+				where: eq(project.url, input.projectUrl),
+				columns: { id: true, profilesEnabled: true, profileLayout: true },
+			});
+			if (!projectRow?.profilesEnabled) {
+				return { recorded: false };
+			}
+			if (!parseProfileLayout(projectRow.profileLayout).connectionsEnabled) {
+				return { recorded: false };
+			}
+			const [viewed, viewer] = await Promise.all([
+				db.query.participant.findFirst({
+					where: and(
+						eq(participant.projectId, projectRow.id),
+						eq(participant.shortId, input.shortId),
+					),
+					columns: { id: true },
+				}),
+				db.query.participant.findFirst({
+					where: and(
+						eq(participant.projectId, projectRow.id),
+						eq(participant.userId, ctx.session.user.id),
+					),
+					columns: { id: true },
+				}),
+			]);
+			if (!viewed || !viewer || viewer.id === viewed.id) {
+				return { recorded: false };
+			}
+			await db
+				.insert(profileConnection)
+				.values({
+					viewerParticipantId: viewer.id,
+					viewedParticipantId: viewed.id,
+					projectId: projectRow.id,
+				})
+				.onConflictDoNothing();
+			return { recorded: true };
 		}),
 });
