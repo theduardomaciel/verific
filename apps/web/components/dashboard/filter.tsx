@@ -96,7 +96,7 @@ export function Filter({
 	return (
 		<div
 			className={cn(
-				"flex flex-col items-start justify-center gap-4",
+				"flex flex-col items-start justify-center gap-1",
 				className,
 			)}
 		>
@@ -227,50 +227,65 @@ function CheckboxFilter({
 
 	return (
 		<>
-			<ul className="flex w-full flex-col items-start justify-start gap-4">
+			<ul className="flex w-full flex-col items-start justify-start">
 				{items.length > 0 ? (
 					items.map((item, index) => {
 						// Colapsado: mostra os primeiros itens + os já selecionados,
 						// para que um filtro ativo nunca fique escondido.
-						const isHidden =
-							!isExpanded &&
+						const isCollapsible =
 							index >= MAX_VISIBLE_FILTERS &&
 							!currentFilters.includes(item.value);
+						const isCollapsed = !isExpanded && isCollapsible;
 
 						return (
 							<li
 								key={item.value}
+								aria-hidden={isCollapsed}
+								inert={isCollapsed}
 								className={cn(
-									"relative flex w-full items-center justify-start gap-2",
+									"grid w-full transition-all duration-300 ease-in-out motion-reduce:transition-none",
+									isCollapsed
+										? "grid-rows-[0fr] opacity-0"
+										: "grid-rows-[1fr] opacity-100",
 									{
-										hidden: isHidden,
 										"pointer-events-none animate-pulse select-none":
 											isPendingFilterTransition,
 									},
 								)}
+								style={
+									isCollapsible && isExpanded
+										? {
+												transitionDelay: `${(index - MAX_VISIBLE_FILTERS) * 30}ms`,
+											}
+										: undefined
+								}
 							>
-								<Checkbox
-									id={item.value}
-									name={item.name}
-									value={item.value}
-									checked={currentFilters.includes(
-										item.value,
-									)}
-									onCheckedChange={(checked) => {
-										handleFilterChange(
-											item.value,
-											checked === "indeterminate"
-												? false
-												: checked,
-										);
-									}}
-								/>
-								<Label
-									className="line-clamp-2 overflow-hidden leading-tight text-ellipsis lg:text-sm"
-									htmlFor={item.value}
-								>
-									{item.name}
-								</Label>
+								<div className="min-h-0 overflow-hidden">
+									<div className="relative flex w-full items-center justify-start gap-2 py-2">
+										<Checkbox
+											id={item.value}
+											name={item.name}
+											value={item.value}
+											checked={currentFilters.includes(
+												item.value,
+											)}
+											onCheckedChange={(checked) => {
+												handleFilterChange(
+													item.value,
+													checked === "indeterminate"
+														? false
+														: checked,
+												);
+											}}
+										/>
+										<Label
+											className="line-clamp-2 overflow-hidden leading-tight text-ellipsis lg:text-sm"
+											htmlFor={item.value}
+										>
+											{item.name}
+										</Label>
+									</div>
+								</div>
 							</li>
 						);
 					})
