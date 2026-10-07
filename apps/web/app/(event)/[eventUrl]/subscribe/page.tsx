@@ -11,6 +11,13 @@ import { parseEventTheme } from "@verific/drizzle/theme";
 import { getEventRegistration, getProject } from "@/lib/data";
 
 /**
+ * Exige saída estática completa (nível `navigation`): o build falha se
+ * alguém introduzir `cookies()`, `headers()` ou dado não cacheado nesta
+ * rota — mantém a página de inscrição servida pela CDN sob carga pública.
+ */
+export const ensureStatic = "navigation";
+
+/**
  * Checks (`getProject`/`getEventRegistration` + `notFound`/`redirect`)
  * run here, before any `<Suspense>` boundary renders — real 404/redirect
  * statuses instead of streamed soft-404s. Both reads are cached

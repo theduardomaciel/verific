@@ -4,7 +4,16 @@ import { notFound } from "next/navigation";
 import { ActivityJoinPageContent } from "@/components/activity-join";
 
 // API
-import { getCachedActivity } from "@/lib/data";
+import { getActivityStaticParams, getCachedActivity } from "@/lib/data";
+
+/**
+ * Pré-renderiza cada atividade de evento conhecido: a rota vira estática
+ * (servida pela CDN) em vez de render por request. URLs de atividade
+ * desconhecida continuam caindo em `notFound()`.
+ */
+export async function generateStaticParams() {
+	return getActivityStaticParams();
+}
 
 export default async function Page({
 	params,

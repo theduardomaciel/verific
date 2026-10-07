@@ -47,6 +47,13 @@ const markdownComponents: Components = {
 	),
 };
 
+/**
+ * Exige saída estática completa (nível `navigation`): o build falha se
+ * alguém introduzir `cookies()`, `headers()` ou dado não cacheado nesta
+ * rota — mantém a landing servida pela CDN sob carga pública.
+ */
+export const ensureStatic = "navigation";
+
 export async function generateStaticParams() {
 	return getEventStaticParams();
 }
