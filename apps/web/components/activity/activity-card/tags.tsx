@@ -40,7 +40,7 @@ export function ActivityCardTags({
 			: getSessionsDateString(sessions);
 
 	const displayTime =
-		highlightSession ?? sessions.length === 1
+		(highlightSession ?? sessions.length === 1)
 			? getSessionTimeString((highlightSession ?? sessions[0])!)
 			: (() => {
 					const next = getNextSession(sessions);

@@ -1,7 +1,11 @@
 import type * as React from "react";
 
 import { cn } from "@/lib/utils";
-import { formatPhone, toE164BR, toNationalBR } from "@/lib/validations/masks/phone";
+import {
+	formatPhone,
+	toE164BR,
+	toNationalBR,
+} from "@/lib/validations/masks/phone";
 
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
 	return (
@@ -19,8 +23,7 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
 	);
 }
 
-interface InputWithSuffixProps
-	extends React.InputHTMLAttributes<HTMLInputElement> {
+interface InputWithSuffixProps extends React.InputHTMLAttributes<HTMLInputElement> {
 	suffix: string;
 	containerClassName?: string;
 }
@@ -41,8 +44,10 @@ function InputWithSuffix({
 	);
 }
 
-interface PhoneInputProps
-	extends Omit<React.ComponentProps<"input">, "value" | "onChange"> {
+interface PhoneInputProps extends Omit<
+	React.ComponentProps<"input">,
+	"value" | "onChange"
+> {
 	/** Canonical stored form: E.164 (`+55...`); display is masked BR national. */
 	value?: string;
 	onChange?: (value: string) => void;
@@ -57,7 +62,9 @@ function PhoneInput({ onChange, value, ...props }: PhoneInputProps) {
 	return (
 		<Input
 			{...props}
-			value={formatPhone(toNationalBR(typeof value === "string" ? value : ""))}
+			value={formatPhone(
+				toNationalBR(typeof value === "string" ? value : ""),
+			)}
 			onChange={handleChange}
 			maxLength={15} // (99) 99999-9999
 			inputMode="tel"

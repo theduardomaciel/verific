@@ -1,6 +1,7 @@
 "use client";
 
 import type { Metadata } from "next";
+import { useState } from "react";
 
 // Icons
 import Logo from "@/public/logo.svg";
@@ -24,48 +25,49 @@ export default function ErrorPage({
 }) {
 	console.log(error, error.digest);
 
+	const bgWords = useState(() => {
+		const pick = () =>
+			randomPhrases[Math.floor(Math.random() * randomPhrases.length)]!;
+		return {
+			desktop: Array.from({ length: 250 }, (_, i) => ({
+				word: pick(),
+				key: i,
+			})),
+			mobile: Array.from({ length: 24 }, (_, i) => ({
+				word: pick(),
+				key: i,
+			})),
+		};
+	})[0];
+
 	return (
-		<html>
+		<html lang="pt-BR">
 			<body className="flex min-h-screen flex-col md:flex-row">
-				<div className="bg-primary relative flex flex-col items-center justify-center gap-4 overflow-hidden rounded-b bg-[linear-gradient(180deg,_#2563EB_0%,_#3B82F6_100%)] px-6 py-12 text-white md:m-8 md:w-1/2 md:rounded md:p-12">
+				<div className="bg-primary relative flex flex-col items-center justify-center gap-4 overflow-hidden rounded-b-lg bg-[linear-gradient(180deg,#2563EB_0%,#3B82F6_100%)] px-6 py-12 text-white md:m-8 md:w-1/2 md:rounded md:p-12">
 					<Logo className="h-10 md:h-12" />
 					<span className="pointer-events-none absolute top-1/2 left-1/2 z-10 hidden h-full w-[125%] -translate-x-1/2 -translate-y-1/2 flex-wrap items-center justify-center gap-6 text-[3vw] font-bold wrap-anywhere select-none md:flex">
-						{Array.from({ length: 250 }, (_, i) => (
+						{bgWords.desktop.map(({ word, key }) => (
 							<span
-								key={i}
+								key={key}
 								className="block opacity-5"
 								style={{
 									letterSpacing: "0.05em",
 								}}
 							>
-								{
-									randomPhrases[
-										Math.floor(
-											Math.random() *
-												randomPhrases.length,
-										)
-									]
-								}
+								{word}
 							</span>
 						))}
 					</span>
 					<span className="absolute top-0 right-0 bottom-0 left-0 z-10 flex h-full w-full flex-wrap items-center justify-center gap-4 text-[6vw] font-bold select-none md:hidden">
-						{Array.from({ length: 24 }, (_, i) => (
+						{bgWords.mobile.map(({ word, key }) => (
 							<span
-								key={i}
+								key={key}
 								className="block opacity-10"
 								style={{
 									letterSpacing: "0.03em",
 								}}
 							>
-								{
-									randomPhrases[
-										Math.floor(
-											Math.random() *
-												randomPhrases.length,
-										)
-									]
-								}
+								{word}
 							</span>
 						))}
 					</span>
@@ -83,7 +85,7 @@ export default function ErrorPage({
 								página ou tente novamente em alguns instantes.
 							</p>
 							<span className="bg-muted w-full rounded-md border p-4 font-mono text-sm">
-								{error.message && error.message}
+								{error.message}
 							</span>
 							<Button size={"lg"} onClick={() => reset()}>
 								<RefreshCcw />

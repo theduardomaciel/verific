@@ -1,9 +1,13 @@
 {
-  "name": "@verific/typescript-config",
-  "version": "0.0.0",
-  "private": true,
-  "license": "MIT",
-  "publishConfig": {
-    "access": "public"
-  }
+	"name": "@verific/typescript-config",
+	"version": "0.0.0",
+	"private": true,
+	"license": "MIT",
+	"scripts": {
+		"fmt": "oxfmt",
+		"fmt:check": "oxfmt --check"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
 }

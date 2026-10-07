@@ -28,9 +28,9 @@ describe("shared social normalize", () => {
 
 	it("extrai handle p/ exibição", () => {
 		expect(socialDisplayHandle("https://github.com/fulana")).toBe("fulana");
-		expect(socialDisplayHandle("http://lattes.cnpq.br/0993964740433171")).toBe(
-			"0993964740433171",
-		);
+		expect(
+			socialDisplayHandle("http://lattes.cnpq.br/0993964740433171"),
+		).toBe("0993964740433171");
 	});
 });
 
@@ -74,9 +74,9 @@ describe("profile layout", () => {
 		expect(formatProfileValue("  x  ", "text")).toBe("x");
 		expect(formatProfileValue("", "text")).toBeNull();
 		expect(formatProfileValue(1500, "number")).toBe("1.500");
-		expect(formatProfileValue(new Date("2004-03-16T12:00:00"), "date")).toContain(
-			"2004",
-		);
+		expect(
+			formatProfileValue(new Date("2004-03-16T12:00:00"), "date"),
+		).toContain("2004");
 		expect(formatProfileValue(true, "checkbox")).toBe("Sim");
 		expect(formatProfileValue(["a", "b"], "select_multiple")).toBe("a; b");
 		expect(formatProfileValue(null, "text")).toBeNull();

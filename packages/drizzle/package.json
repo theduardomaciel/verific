@@ -5,6 +5,10 @@
 	"version": "0.0.0",
 	"private": true,
 	"scripts": {
+		"lint": "oxlint --type-aware",
+		"fmt": "oxfmt",
+		"fmt:check": "oxfmt --check",
+		"typecheck": "tsc --noEmit",
 		"db:generate": "drizzle-kit generate",
 		"db:push": "drizzle-kit push",
 		"db:migrate": "pnpm tsx ./migrate.ts",
@@ -26,9 +30,7 @@
 	"devDependencies": {
 		"@types/node": "^24.9.1",
 		"@types/ws": "^8.18.1",
-		"@verific/prettier-config": "workspace:*",
 		"@verific/typescript-config": "workspace:*",
 		"drizzle-kit": "^0.31.11"
-	},
-	"prettier": "@verific/prettier-config"
+	}
 }

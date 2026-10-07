@@ -10,7 +10,6 @@ import { Loader2, MapPin, Search } from "lucide-react";
 // Components
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
 	Popover,
 	PopoverContent,
@@ -23,8 +22,10 @@ interface PlaceData {
 	longitude: number;
 }
 
-interface PlacePickerProps
-	extends Omit<React.ComponentProps<"button">, "defaultValue" | "value"> {
+interface PlacePickerProps extends Omit<
+	React.ComponentProps<"button">,
+	"defaultValue" | "value"
+> {
 	defaultValue?: PlaceData;
 	value?: PlaceData;
 	onPlaceChange?: (place: PlaceData) => void;
@@ -36,7 +37,8 @@ export function PlacePicker({
 	value,
 	onPlaceChange,
 	onBlur,
-	className,
+	// Recebido mas intencionalmente não aplicado (o trigger tem estilo fixo).
+	className: _className,
 	...rest
 }: PlacePickerProps) {
 	const [open, setOpen] = useState(false);
@@ -62,125 +64,6 @@ export function PlacePicker({
 	const mapRef = useRef<any>(null);
 	const markerRef = useRef<any>(null);
 	const prevPlaceRef = useRef<PlaceData | null>(null);
-
-	// Inicializa o mapa quando o componente é montado
-	useEffect(() => {
-		if (!open) return;
-
-		// Precisamos importar o Leaflet dinamicamente porque é uma biblioteca client-side
-		const initializeMap = async () => {
-			if (typeof window !== "undefined") {
-				// Importa o Leaflet dinamicamente
-				const L = (await import("leaflet")).default;
-
-				// Importa o CSS
-				await import("leaflet/dist/leaflet.css");
-
-				// If map already exists, remove it first
-				if (mapRef.current) {
-					mapRef.current.remove();
-					mapRef.current = null;
-					markerRef.current = null;
-				}
-
-				// Fix Leaflet's default icon issue
-				// This is needed because Leaflet's assets are not properly resolved when dynamically imported
-				L.Icon.Default.mergeOptions({
-					iconRetinaUrl:
-						"https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png",
-					iconUrl:
-						"https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
-					shadowUrl:
-						"https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
-				});
-
-				// Inicializa o mapa
-				console.log("Initializing map with position:", position);
-				const map = L.map("map").setView(position, 13);
-
-				L.tileLayer(
-					"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-					{
-						attribution:
-							'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-					},
-				).addTo(map);
-
-				// Adiciona um marcador
-				const marker = L.marker(position, {
-					draggable: true,
-				}).addTo(map);
-
-				// Atualiza a posição quando o marcador é arrastado
-				marker.on("dragend", () => {
-					const newPos = marker.getLatLng();
-					setPosition([newPos.lat, newPos.lng]);
-					reverseGeocodeWithOverpass(newPos.lat, newPos.lng);
-				});
-
-				// Atualiza o marcador quando o mapa é clicado
-				map.on("click", (e: any) => {
-					marker.setLatLng(e.latlng);
-					setPosition([e.latlng.lat, e.latlng.lng]);
-					reverseGeocodeWithOverpass(e.latlng.lat, e.latlng.lng);
-				});
-
-				mapRef.current = map;
-				markerRef.current = marker;
-			}
-		};
-
-		initializeMap();
-
-		return () => {
-			if (mapRef.current) {
-				mapRef.current.remove();
-				mapRef.current = null;
-			}
-		};
-	}, [open, position]);
-
-	// Atualiza o mapa quando a posição muda
-	useEffect(() => {
-		if (mapRef.current && markerRef.current) {
-			mapRef.current.setView(position);
-			markerRef.current.setLatLng(position);
-		}
-	}, [position]);
-
-	// Notifica o componente pai quando o local muda
-	useEffect(() => {
-		if (
-			onPlaceChange &&
-			address &&
-			position[0] !== 0 &&
-			position[1] !== 0
-		) {
-			// Usa um ref para rastrear os valores anteriores e evitar atualizações desnecessárias
-			const placeData = {
-				address,
-				latitude: position[0],
-				longitude: position[1],
-			};
-
-			// Só chama onPlaceChange se os valores realmente mudaram
-			if (
-				JSON.stringify(placeData) !==
-				JSON.stringify(prevPlaceRef.current)
-			) {
-				prevPlaceRef.current = placeData;
-				onPlaceChange(placeData);
-			}
-		}
-	}, [address, position, onPlaceChange]);
-
-	// Sincroniza o estado interno com a prop value
-	useEffect(() => {
-		if (value) {
-			setAddress(value.address);
-			setPosition([value.latitude, value.longitude]);
-		}
-	}, [value]);
 
 	// Geocodifica um endereço para obter as coordenadas
 	const geocodeAddress = async () => {
@@ -322,9 +205,9 @@ export function PlacePicker({
 
 				const fullAddress = [
 					name || `${type} at ${lat.toFixed(6)}, ${lon.toFixed(6)}`,
-					district && district,
-					city && city,
-					state && state,
+					district,
+					city,
+					state,
 				]
 					.filter(Boolean)
 					.join(", ");
@@ -344,6 +227,136 @@ export function PlacePicker({
 		}
 	};
 
+	// Inicializa o mapa quando o componente é montado
+	useEffect(() => {
+		if (!open) return;
+
+		// Precisamos importar o Leaflet dinamicamente porque é uma biblioteca client-side
+		const initializeMap = async () => {
+			if (typeof window !== "undefined") {
+				// Importa o Leaflet dinamicamente
+				const L = (await import("leaflet")).default;
+
+				// Importa o CSS
+				await import("leaflet/dist/leaflet.css");
+
+				// If map already exists, remove it first
+				if (mapRef.current) {
+					mapRef.current.remove();
+					mapRef.current = null;
+					markerRef.current = null;
+				}
+
+				// Fix Leaflet's default icon issue
+				// This is needed because Leaflet's assets are not properly resolved when dynamically imported
+				L.Icon.Default.mergeOptions({
+					iconRetinaUrl:
+						"https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png",
+					iconUrl:
+						"https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
+					shadowUrl:
+						"https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
+				});
+
+				// Inicializa o mapa
+				console.log("Initializing map with position:", position);
+				const map = L.map("map").setView(position, 13);
+
+				L.tileLayer(
+					"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+					{
+						attribution:
+							'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+					},
+				).addTo(map);
+
+				// Adiciona um marcador
+				const marker = L.marker(position, {
+					draggable: true,
+				}).addTo(map);
+
+				// Atualiza a posição quando o marcador é arrastado
+				marker.on("dragend", () => {
+					const newPos = marker.getLatLng();
+					setPosition([newPos.lat, newPos.lng]);
+					void reverseGeocodeWithOverpass(newPos.lat, newPos.lng);
+				});
+
+				// Atualiza o marcador quando o mapa é clicado
+				map.on("click", (e: any) => {
+					marker.setLatLng(e.latlng);
+					setPosition([e.latlng.lat, e.latlng.lng]);
+					void reverseGeocodeWithOverpass(e.latlng.lat, e.latlng.lng);
+				});
+
+				mapRef.current = map;
+				markerRef.current = marker;
+			}
+		};
+
+		initializeMap().catch((error) => {
+			console.error("Map initialization error:", error);
+			setStatus({
+				message: "Erro ao carregar o mapa.",
+				type: "error",
+			});
+		});
+
+		return () => {
+			if (mapRef.current) {
+				mapRef.current.remove();
+				mapRef.current = null;
+			}
+		};
+	}, [open, position]);
+
+	// Atualiza o mapa quando a posição muda
+	// oxlint-disable-line react-hooks/exhaustive-deps -- reverseGeocodeWithOverpass is stable (hoisted function); adding it would be noise.
+	useEffect(() => {
+		if (mapRef.current && markerRef.current) {
+			mapRef.current.setView(position);
+			markerRef.current.setLatLng(position);
+		}
+		// oxlint-disable-line react-hooks/exhaustive-deps -- reverseGeocodeWithOverpass is stable (hoisted function); adding it would be noise.
+	}, [position]);
+
+	// Notifica o componente pai quando o local muda
+	useEffect(() => {
+		if (
+			onPlaceChange &&
+			address &&
+			position[0] !== 0 &&
+			position[1] !== 0
+		) {
+			// Usa um ref para rastrear os valores anteriores e evitar atualizações desnecessárias
+			const placeData = {
+				address,
+				latitude: position[0],
+				longitude: position[1],
+			};
+
+			// Só chama onPlaceChange se os valores realmente mudaram
+			if (
+				JSON.stringify(placeData) !==
+				JSON.stringify(prevPlaceRef.current)
+			) {
+				prevPlaceRef.current = placeData;
+				onPlaceChange(placeData);
+			}
+		}
+	}, [address, position, onPlaceChange]);
+
+	// Sincroniza o estado interno com a prop value. Ajuste durante a
+	// renderização em vez de efeito: sem render em cascata.
+	const [prevValue, setPrevValue] = useState(value);
+	if (value !== prevValue) {
+		setPrevValue(value);
+		if (value) {
+			setAddress(value.address);
+			setPosition([value.latitude, value.longitude]);
+		}
+	}
+
 	return (
 		<Popover
 			open={open}
@@ -357,7 +370,6 @@ export function PlacePicker({
 			<PopoverTrigger asChild>
 				<Button
 					variant="outline"
-					role="combobox"
 					disabled={status.type === "loading"}
 					aria-expanded={open}
 					className="w-full max-w-full justify-between"
@@ -397,13 +409,13 @@ export function PlacePicker({
 							onKeyDown={(e) => {
 								if (e.key === "Enter") {
 									e.preventDefault();
-									geocodeAddress();
+									void geocodeAddress();
 								}
 							}}
 						/>
 						<Button
 							size="icon"
-							onClick={geocodeAddress}
+							onClick={() => void geocodeAddress()}
 							// TODO: Não podemos colocar a verificação de status == loading,
 							// visto que causa algum tipo de efeito colateral que fecha o popover
 							disabled={!searchInput}

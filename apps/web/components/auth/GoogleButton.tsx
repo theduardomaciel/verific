@@ -27,9 +27,9 @@ export default function GoogleButton({
 }: ButtonProps) {
 	const [loading, setLoading] = useState(false);
 
-	async function handleSignIn() {
+	function handleSignIn() {
 		setLoading(true);
-		loginAction(callbackUrl);
+		void loginAction(callbackUrl);
 	}
 
 	return (

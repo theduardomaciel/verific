@@ -77,7 +77,6 @@ export function FilterBy({
 			<PopoverTrigger asChild>
 				<Button
 					variant="outline"
-					role="combobox"
 					disabled={isPending}
 					className="flex min-w-40 flex-1 justify-between overflow-hidden font-normal text-ellipsis"
 				>

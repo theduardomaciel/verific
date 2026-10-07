@@ -31,7 +31,11 @@ export async function EventAction({ eventUrl }: EventActionProps) {
 	}
 
 	return (
-		<Button className="ev-button font-semibold uppercase" size={"xl"} asChild>
+		<Button
+			className="ev-button font-semibold uppercase"
+			size={"xl"}
+			asChild
+		>
 			<Link href={`/${eventUrl}/subscribe`}>{buttonText}</Link>
 		</Button>
 	);

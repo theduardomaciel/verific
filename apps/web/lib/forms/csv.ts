@@ -1,6 +1,11 @@
 export function toCsv(columns: string[], rows: string[][]): string {
 	const escape = (v: string) => {
-		if (v.includes('"') || v.includes(",") || v.includes("\n") || v.includes(";")) {
+		if (
+			v.includes('"') ||
+			v.includes(",") ||
+			v.includes("\n") ||
+			v.includes(";")
+		) {
 			return `"${v.replace(/"/g, '""')}"`;
 		}
 		return v;
@@ -9,7 +14,9 @@ export function toCsv(columns: string[], rows: string[][]): string {
 }
 
 export function downloadCsv(filename: string, csv: string) {
-	const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+	const blob = new Blob(["\uFEFF" + csv], {
+		type: "text/csv;charset=utf-8;",
+	});
 	const url = URL.createObjectURL(blob);
 	const link = document.createElement("a");
 	link.href = url;

@@ -53,7 +53,10 @@ export function EditProfileDialog({
 				<DialogHeader>
 					<DialogTitle>Editar perfil</DialogTitle>
 				</DialogHeader>
-				<EditMyAnswersForm projectId={projectId} projectUrl={eventUrl} />
+				<EditMyAnswersForm
+					projectId={projectId}
+					projectUrl={eventUrl}
+				/>
 			</DialogContent>
 		</Dialog>
 	);

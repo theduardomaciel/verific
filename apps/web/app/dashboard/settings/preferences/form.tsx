@@ -19,7 +19,7 @@ interface Props {
 }
 
 export function ProjectSettingsPreferencesForm({ project }: Props) {
-	const onArchiveProject = async () => {
+	const onArchiveProject = () => {
 		try {
 			toast.success("Projeto arquivado com sucesso!");
 		} catch (error) {

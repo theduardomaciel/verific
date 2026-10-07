@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 
 // Components
 import { ExternalLinkIcon } from "lucide-react";
-import * as EventContainer from "@/components/landing/event-container";
 import { ActivityTicket } from "@/components/activity/activity-ticket";
 import { Button } from "@/components/ui/button";
 import { Empty } from "@/components/empty";
@@ -30,23 +29,28 @@ export function AccountWrapper({
 	activities,
 	participantId,
 }: AccountWrapperProps) {
+	const fallbackDate = useState(() => new Date())[0];
 	const { grouped, categories, initialExpanded } = useMemo(() => {
 		const { grouped, categories } = categorizeByDate(
 			activities,
-			(item) => getFirstSessionStart(item.sessions) ?? new Date(),
+			(item) => getFirstSessionStart(item.sessions) ?? fallbackDate,
 		);
 		const hasToday = categories.includes("Hoje");
 		const initialExpanded = hasToday ? ["Hoje"] : categories;
 		return { grouped, categories, initialExpanded };
-	}, [activities]);
+	}, [activities, fallbackDate]);
 
 	const [expandedCategories, setExpandedCategories] =
 		useState<string[]>(initialExpanded);
 
 	// Reage a mudanças de dados (estado inicial já correto, sem flash).
-	useEffect(() => {
+	// Ajuste durante a renderização em vez de efeito: sem render cascata.
+	const [prevInitialExpanded, setPrevInitialExpanded] =
+		useState(initialExpanded);
+	if (prevInitialExpanded !== initialExpanded) {
+		setPrevInitialExpanded(initialExpanded);
 		setExpandedCategories(initialExpanded);
-	}, [initialExpanded]);
+	}
 
 	return (
 		<div className="flex w-full flex-col gap-4 md:gap-12">

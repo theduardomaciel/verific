@@ -21,9 +21,6 @@ export default async function Page({
 
 	// O conteúdo abaixo é a "visualização de página inteira" do modal
 	return (
-		<ActivityJoinPageContent
-			activity={data.activity}
-			eventUrl={eventUrl}
-		/>
+		<ActivityJoinPageContent activity={data.activity} eventUrl={eventUrl} />
 	);
 }

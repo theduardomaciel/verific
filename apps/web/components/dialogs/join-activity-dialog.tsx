@@ -24,13 +24,11 @@ import { Form } from "@/components/ui/form";
 import { DynamicField } from "@/components/forms/dynamic/DynamicField";
 
 // API
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 import { trpc } from "@/lib/trpc/react";
-import {
-	buildAnswersSchema,
-} from "@verific/api/schemas";
+import { buildAnswersSchema } from "@verific/api/schemas";
 import { groupFieldsBySection } from "@/lib/forms/layout";
-import { FormState } from "@/lib/types/forms";
+import type { FormState } from "@/lib/types/forms";
 import { ErrorDialog, LoadingDialog, SuccessDialog } from "../forms/dialogs";
 import Link from "next/link";
 import { activityCategoryLabels } from "@verific/drizzle/schema";
@@ -109,30 +107,27 @@ export function JoinActivityDialog({ userId, participantId, activity }: Props) {
 		() =>
 			formSections.map((s) => ({
 				id: s.id,
-				visibilityRule: (
-					s as {
-						visibilityRule?: {
-							sourceFieldId: string;
-							operator:
-								| "is_checked"
-								| "is_not_checked"
-								| "equals"
-								| "includes_any"
-								| "includes_all";
-							values?: string[];
-						} | null;
-					}
-				).visibilityRule ?? null,
+				visibilityRule:
+					(
+						s as {
+							visibilityRule?: {
+								sourceFieldId: string;
+								operator:
+									| "is_checked"
+									| "is_not_checked"
+									| "equals"
+									| "includes_any"
+									| "includes_all";
+								values?: string[];
+							} | null;
+						}
+					).visibilityRule ?? null,
 			})),
 		[formSections],
 	);
 
 	const answersResolver = useMemo(() => {
-		return async (
-			values: unknown,
-			context: unknown,
-			options: unknown,
-		) => {
+		return async (values: unknown, context: unknown, options: unknown) => {
 			const v = (values ?? {}) as { answers?: ActivityAnswers };
 			const answersSchema = buildAnswersSchema(
 				fieldsForValidation,
@@ -143,11 +138,7 @@ export function JoinActivityDialog({ userId, participantId, activity }: Props) {
 				z.object({ answers: answersSchema }) as never,
 			);
 			return (
-				zod as (
-					a: unknown,
-					b: unknown,
-					c: unknown,
-				) => Promise<unknown>
+				zod as (a: unknown, b: unknown, c: unknown) => Promise<unknown>
 			)(values, context, options) as never;
 		};
 	}, [fieldsForValidation, sectionsForVisibility]);

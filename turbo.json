@@ -1,5 +1,6 @@
 {
-	"$schema": "https://turbo.build/schema.json",
+	"$schema": "https://v2-11-7.turborepo.dev/schema.json",
+	"globalDependencies": [".env"],
 	"tasks": {
 		"dev": {
 			"cache": false,
@@ -21,11 +22,21 @@
 			"dependsOn": ["^build"],
 			"outputs": ["dist/**", ".next/**", "!.next/cache/**"]
 		},
+		"lint": {
+			"inputs": ["$TURBO_DEFAULT$", "../../.oxlintrc.json"],
+			"outputs": []
+		},
+		"fmt:check": {
+			"inputs": ["$TURBO_DEFAULT$", "../../.oxfmtrc.json"],
+			"outputs": []
+		},
+		"typecheck": {
+			"dependsOn": ["^typecheck"],
+			"inputs": ["$TURBO_DEFAULT$", "../../config/typescript/*.json"],
+			"outputs": []
+		},
 		"test": {},
 		"test:coverage": {},
-		"typecheck": {
-			"dependsOn": ["^typecheck"]
-		},
 		"db:generate": {},
 		"db:drop": {},
 		"db:push": {},

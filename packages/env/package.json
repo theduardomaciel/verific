@@ -5,6 +5,9 @@
 	"version": "0.0.0",
 	"private": true,
 	"scripts": {
+		"lint": "oxlint --type-aware",
+		"fmt": "oxfmt",
+		"fmt:check": "oxfmt --check",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
@@ -13,8 +16,6 @@
 	},
 	"devDependencies": {
 		"@types/node": "^24.9.1",
-		"@verific/prettier-config": "workspace:*",
 		"@verific/typescript-config": "workspace:*"
-	},
-	"prettier": "@verific/prettier-config"
+	}
 }

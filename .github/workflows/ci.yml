@@ -1,0 +1,53 @@
+name: CI
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    checks:
+        name: lint / format / typecheck / build
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        env:
+            NODE_ENV: production
+            VERCEL_URL: ci.example.com
+            DATABASE_URL: postgresql://user:password@localhost:5432/verific_ci?sslmode=require
+            BETTER_AUTH_SECRET: ci-placeholder-secret-that-is-long-enough
+            BETTER_AUTH_URL: http://localhost:3000
+            GOOGLE_CLIENT_ID: ci-placeholder-client-id
+            GOOGLE_CLIENT_SECRET: ci-placeholder-client-secret
+            NEXT_PUBLIC_VERCEL_URL: http://localhost:3000
+            TURBO_TELEMETRY_DISABLED: 1
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v5
+
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v5
+              with:
+                  node-version: 22
+                  cache: pnpm
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Lint (oxlint --type-aware via Turborepo)
+              run: pnpm lint
+
+            - name: Check formatting (oxfmt via Turborepo)
+              run: pnpm fmt:check
+
+            - name: Typecheck (tsc --noEmit via Turborepo)
+              run: pnpm typecheck
+
+            - name: Build
+              run: pnpm build

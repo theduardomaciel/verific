@@ -54,8 +54,7 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 		projectId,
 		activityId,
 	});
-	const selected =
-		activityVersions?.find((v) => v.id === versionId) ?? null;
+	const selected = activityVersions?.find((v) => v.id === versionId) ?? null;
 	const isPublished = !!selected?.isPublished;
 
 	const runEnsure = () => {
@@ -78,9 +77,11 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 		);
 	};
 
+	// oxlint-disable-line react-hooks/exhaustive-deps -- runEnsure is stable (ref-captured); adding it would cause the effect to re-run on every render, defeating the once-per-mount guarantee.
 	useEffect(() => {
 		if (ensureRef.current) return;
 		ensureRef.current = true;
+		// oxlint-disable-line react-hooks/exhaustive-deps -- runEnsure is stable (ref-captured); adding it would cause the effect to re-run on every render, defeating the once-per-mount guarantee.
 		runEnsure();
 	}, [activityId]);
 
@@ -141,8 +142,8 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 					{selected && isPublished ? (
 						<div className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
 							<p className="text-sm">
-								Este formulário está publicado. Editar cria
-								uma nova versão; as respostas anteriores são
+								Este formulário está publicado. Editar cria uma
+								nova versão; as respostas anteriores são
 								mantidas.
 							</p>
 							<Button

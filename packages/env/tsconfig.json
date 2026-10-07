@@ -3,5 +3,6 @@
 	"compilerOptions": {
 		"types": ["node"]
 	},
-	"include": ["."]
+	"include": ["."],
+	"exclude": ["dist", "build", "node_modules"]
 }

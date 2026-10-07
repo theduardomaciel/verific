@@ -1,7 +1,10 @@
 {
 	"extends": "@verific/typescript-config/base.json",
 	"compilerOptions": {
+		"declaration": false,
+		"declarationMap": false,
 		"types": ["node"]
 	},
-	"include": ["."]
+	"include": ["."],
+	"exclude": ["dist", "build", "node_modules"]
 }

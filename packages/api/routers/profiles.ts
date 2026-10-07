@@ -24,14 +24,21 @@ import {
 	type ProfileSlotKey,
 	type StatIconKey,
 } from "@verific/drizzle/profile-layout";
-import { and, asc, count, desc, eq, inArray, isNull } from "@verific/drizzle/orm";
+import {
+	and,
+	asc,
+	count,
+	desc,
+	eq,
+	inArray,
+	isNull,
+} from "@verific/drizzle/orm";
 
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import {
 	dropVisibilityForFields,
 	isCompatible,
 	readProjectLayout,
-	removeProfileLinksForFields,
 	slotForField,
 	writeProjectLayout,
 } from "../lib/profile-links";
@@ -44,7 +51,10 @@ async function requireProjectAccess(projectId: string, userId: string) {
 		},
 	});
 	if (!data) {
-		throw new TRPCError({ code: "NOT_FOUND", message: "Evento não encontrado." });
+		throw new TRPCError({
+			code: "NOT_FOUND",
+			message: "Evento não encontrado.",
+		});
 	}
 	const isOwner = data.ownerId === userId;
 	const isModerator = data.moderators.some((m) => m.userId === userId);
@@ -98,7 +108,10 @@ async function resolveProjectId(projectUrl: string) {
 		columns: { id: true },
 	});
 	if (!found) {
-		throw new TRPCError({ code: "NOT_FOUND", message: "Evento não encontrado." });
+		throw new TRPCError({
+			code: "NOT_FOUND",
+			message: "Evento não encontrado.",
+		});
 	}
 	return found.id;
 }
@@ -203,11 +216,7 @@ export function resolveProfileSlots(input: {
 
 	if (layout.socialsFieldId) {
 		const field = fieldsById.get(layout.socialsFieldId);
-		if (
-			field &&
-			field.isActive &&
-			isCompatible("socials", field.type)
-		) {
+		if (field && field.isActive && isCompatible("socials", field.type)) {
 			const raw = answersByKey.get(field.key);
 			if (Array.isArray(raw)) {
 				const hidden =
@@ -294,7 +303,10 @@ async function loadProfileConnections(
 			.where(
 				and(
 					eq(profileConnection.projectId, projectId),
-					eq(profileConnection.viewedParticipantId, viewedParticipantId),
+					eq(
+						profileConnection.viewedParticipantId,
+						viewedParticipantId,
+					),
 				),
 			),
 		db.query.profileConnection.findMany({
@@ -382,7 +394,10 @@ export const profilesRouter = createTRPCRouter({
 	/** Salva o layout do perfil (valida compatibilidade tipo/slot). */
 	updateProfileLayout: protectedProcedure
 		.input(
-			z.object({ projectId: z.string().uuid(), layout: profileLayoutSchema }),
+			z.object({
+				projectId: z.string().uuid(),
+				layout: profileLayoutSchema,
+			}),
 		)
 		.mutation(async ({ input, ctx }) => {
 			await requireProjectAccess(input.projectId, ctx.session.user.id);
@@ -403,7 +418,7 @@ export const profilesRouter = createTRPCRouter({
 					columns: { id: true, type: true },
 				});
 				const byId = new Map(rows.map((r) => [r.id, r.type]));
-			 const check = (
+				const check = (
 					slot: "subtitle" | "bio" | "socials" | "email",
 					id: string | null | undefined,
 				) => {
@@ -412,7 +427,8 @@ export const profilesRouter = createTRPCRouter({
 					if (!type || !isCompatible(slot, type)) {
 						throw new TRPCError({
 							code: "BAD_REQUEST",
-							message: "Campo ligado incompatível ou inexistente.",
+							message:
+								"Campo ligado incompatível ou inexistente.",
 						});
 					}
 				};
@@ -453,10 +469,17 @@ export const profilesRouter = createTRPCRouter({
 		.query(async ({ input }) => {
 			const projectRow = await db.query.project.findFirst({
 				where: eq(project.url, input.projectUrl),
-				columns: { id: true, profilesEnabled: true, profileLayout: true },
+				columns: {
+					id: true,
+					profilesEnabled: true,
+					profileLayout: true,
+				},
 			});
 			if (!projectRow?.profilesEnabled) {
-				throw new TRPCError({ code: "NOT_FOUND", message: "Perfil não encontrado." });
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Perfil não encontrado.",
+				});
 			}
 			const layout = parseProfileLayout(projectRow.profileLayout);
 			const row = await db.query.participant.findFirst({
@@ -467,7 +490,10 @@ export const profilesRouter = createTRPCRouter({
 				with: { user: { columns: { name: true, image_url: true } } },
 			});
 			if (!row) {
-				throw new TRPCError({ code: "NOT_FOUND", message: "Perfil não encontrado." });
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Perfil não encontrado.",
+				});
 			}
 			const ids = [
 				layout.subtitleFieldId,
@@ -533,7 +559,10 @@ export const profilesRouter = createTRPCRouter({
 				},
 			});
 			if (!projectRow) {
-				throw new TRPCError({ code: "NOT_FOUND", message: "Evento não encontrado." });
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Evento não encontrado.",
+				});
 			}
 			const layout = parseProfileLayout(projectRow.profileLayout);
 			const row = await db.query.participant.findFirst({
@@ -617,7 +646,10 @@ export const profilesRouter = createTRPCRouter({
 				),
 			});
 			if (!row) {
-				throw new TRPCError({ code: "NOT_FOUND", message: "Inscrição não encontrada." });
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Inscrição não encontrada.",
+				});
 			}
 			const field = await db.query.formField.findFirst({
 				where: and(
@@ -627,14 +659,18 @@ export const profilesRouter = createTRPCRouter({
 				columns: { id: true, required: true },
 			});
 			if (!field) {
-				throw new TRPCError({ code: "NOT_FOUND", message: "Campo não encontrado." });
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Campo não encontrado.",
+				});
 			}
 			const layout = await readProjectLayout(projectId);
 			const slot = slotForField(layout, input.fieldId);
 			if (!slot || !field.required) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
-					message: "Visibilidade só existe p/ campos obrigatórios ligados ao perfil.",
+					message:
+						"Visibilidade só existe p/ campos obrigatórios ligados ao perfil.",
 				});
 			}
 			await db
@@ -664,12 +700,18 @@ export const profilesRouter = createTRPCRouter({
 		.mutation(async ({ input, ctx }) => {
 			const projectRow = await db.query.project.findFirst({
 				where: eq(project.url, input.projectUrl),
-				columns: { id: true, profilesEnabled: true, profileLayout: true },
+				columns: {
+					id: true,
+					profilesEnabled: true,
+					profileLayout: true,
+				},
 			});
 			if (!projectRow?.profilesEnabled) {
 				return { recorded: false };
 			}
-			if (!parseProfileLayout(projectRow.profileLayout).connectionsEnabled) {
+			if (
+				!parseProfileLayout(projectRow.profileLayout).connectionsEnabled
+			) {
 				return { recorded: false };
 			}
 			const [viewed, viewer] = await Promise.all([

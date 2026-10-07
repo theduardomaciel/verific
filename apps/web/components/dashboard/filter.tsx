@@ -1,7 +1,12 @@
 "use client";
 
-import { useRef } from "react";
-import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
+import {
+	useRef,
+	type Dispatch,
+	type SetStateAction,
+	useEffect,
+	useState,
+} from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -192,7 +197,6 @@ const MAX_VISIBLE_FILTERS = 2;
 
 function CheckboxFilter({
 	items,
-	config,
 	filters,
 	setFilters,
 	isPendingFilterTransition,
@@ -265,7 +269,7 @@ function CheckboxFilter({
 				}}
 			>
 				{items.length > 0 ? (
-					items.map((item, index) => (
+					items.map((item) => (
 						<li
 							key={item.value}
 							className={cn(

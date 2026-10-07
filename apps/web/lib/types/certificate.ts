@@ -1,7 +1,7 @@
-import { Activity } from "./activity";
-import { Participant } from "./participant";
-import { Project } from "./project";
-import { Template } from "./template";
+import type { Activity } from "./activity";
+import type { Participant } from "./participant";
+import type { Project } from "./project";
+import type { Template } from "./template";
 
 export type Certificate = {
 	token: string;

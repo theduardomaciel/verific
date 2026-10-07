@@ -10,7 +10,7 @@ export default function ScheduleLayout({
 	return (
 		<>
 			{children}
-			{modal && modal}
+			{modal}
 		</>
 	);
 }

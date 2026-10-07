@@ -49,7 +49,7 @@ export function ReportEventDialog({ className }: ReportEventDialogProps) {
 			// TODO: Integrate with backend
 			await new Promise((resolve) => setTimeout(resolve, 1000));
 			setCurrentState("submitted");
-		} catch (error) {
+		} catch {
 			setCurrentState("error");
 		}
 	}
@@ -139,12 +139,14 @@ export function ReportEventDialog({ className }: ReportEventDialogProps) {
 					</div>
 					<DialogFooter>
 						<DialogClose
-							className={cn(buttonVariants({ variant: "outline" }))}
+							className={cn(
+								buttonVariants({ variant: "outline" }),
+							)}
 						>
 							Cancelar
 						</DialogClose>
 						<Button
-							onClick={handleReport}
+							onClick={() => void handleReport()}
 							disabled={
 								!selectedReason || currentState === "submitting"
 							}

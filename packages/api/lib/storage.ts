@@ -122,10 +122,19 @@ function createS3Client() {
 
 export const storage: StorageAdapter = {
 	isConfigured() {
-		const { endpoint, bucket, accessKeyId, secretAccessKey, publicBaseUrl } =
-			getConfig();
+		const {
+			endpoint,
+			bucket,
+			accessKeyId,
+			secretAccessKey,
+			publicBaseUrl,
+		} = getConfig();
 		return Boolean(
-			endpoint && bucket && accessKeyId && secretAccessKey && publicBaseUrl,
+			endpoint &&
+			bucket &&
+			accessKeyId &&
+			secretAccessKey &&
+			publicBaseUrl,
 		);
 	},
 
@@ -145,7 +154,9 @@ export const storage: StorageAdapter = {
 		if (!publicUrlOrKey) return null;
 		const { publicBaseUrl, bucket } = getConfig();
 		if (publicBaseUrl && publicUrlOrKey.startsWith(publicBaseUrl)) {
-			return publicUrlOrKey.slice(publicBaseUrl.length).replace(/^\/+/, "");
+			return publicUrlOrKey
+				.slice(publicBaseUrl.length)
+				.replace(/^\/+/, "");
 		}
 		if (bucket && publicUrlOrKey.includes(`/${bucket}/`)) {
 			return publicUrlOrKey.split(`/${bucket}/`).pop() ?? null;
@@ -163,7 +174,9 @@ export const storage: StorageAdapter = {
 		}
 		const config = IMAGE_PURPOSES[key.split("/")[0] as ImagePurpose];
 		if (contentType !== config?.outputMime) {
-			throw new Error(`Tipo de arquivo inválido. Envie ${config?.outputMime}.`);
+			throw new Error(
+				`Tipo de arquivo inválido. Envie ${config?.outputMime}.`,
+			);
 		}
 		if (contentLength > (config?.maxBytes ?? 0)) {
 			throw new Error("Arquivo excede o tamanho máximo permitido.");

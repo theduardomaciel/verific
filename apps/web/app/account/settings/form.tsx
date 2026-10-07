@@ -14,14 +14,12 @@ import {
 } from "@/components/ui/form";
 
 // API
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 import { trpc } from "@/lib/trpc/react";
 import { toast } from "sonner";
 
 // Validations
 import { nameSchema } from "@/lib/validations/forms/settings-form/project/general-form";
-import { z } from "@verific/zod";
-type NameFormValues = z.infer<typeof nameSchema>;
 
 interface Props {
 	user: NonNullable<RouterOutput["getUser"]>;
@@ -55,8 +53,7 @@ export function AccountSettingsGeneral() {
 	if (isError || !user) {
 		return (
 			<p className="text-muted-foreground text-sm">
-				Não foi possível carregar seus dados. Tente recarregar a
-				página.
+				Não foi possível carregar seus dados. Tente recarregar a página.
 			</p>
 		);
 	}
@@ -118,6 +115,7 @@ function AccountSettingsContent({ user }: Props) {
 				headerRight={
 					<div className="flex h-28 w-28 items-center justify-center rounded-full border">
 						{user.image_url ? (
+							// oxlint-disable-next-line next/no-img-element -- URL remota fornecida pelo usuário (OAuth/S3); next/image lançaria erro em hosts fora de remotePatterns.
 							<img
 								src={user.image_url}
 								alt="Avatar"

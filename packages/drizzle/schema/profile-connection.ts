@@ -1,10 +1,5 @@
 import { relations } from "drizzle-orm";
-import {
-	pgTable,
-	primaryKey,
-	timestamp,
-	uuid,
-} from "drizzle-orm/pg-core";
+import { pgTable, primaryKey, timestamp, uuid } from "drizzle-orm/pg-core";
 
 import { participant } from "./participant";
 import { project } from "./project";

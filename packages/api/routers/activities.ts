@@ -1,4 +1,5 @@
 import { db } from "@verific/drizzle";
+import type { speaker } from "@verific/drizzle/schema";
 import {
 	activity,
 	activitySession,
@@ -6,7 +7,6 @@ import {
 	formField,
 	formVersion,
 	sessionAttendance,
-	speaker,
 	speakerOnActivity,
 	participant,
 	participantOnActivity,
@@ -27,7 +27,6 @@ import {
 	count,
 	sum,
 	gte,
-	not,
 	isNotNull,
 	sql,
 	exists,
@@ -79,8 +78,7 @@ const sessionsSchema = z
 			if (session.endsAt <= session.startsAt) {
 				ctx.addIssue({
 					code: "custom",
-					message:
-						"O término da sessão deve ser após o início.",
+					message: "O término da sessão deve ser após o início.",
 					path: [i, "endsAt"],
 				});
 			}
@@ -117,12 +115,7 @@ type ActivityTable = typeof activity;
 type ActivityRef = Pick<ActivityTable, "id">;
 type ActivityFilterColumns = Pick<
 	ActivityTable,
-	| "id"
-	| "projectId"
-	| "category"
-	| "audience"
-	| "name"
-	| "description"
+	"id" | "projectId" | "category" | "audience" | "name" | "description"
 >;
 
 /**
@@ -240,10 +233,7 @@ async function setActivityTags(
 		.select({ id: tag.id })
 		.from(tag)
 		.where(
-			and(
-				eq(tag.projectId, projectId),
-				inArray(tag.id, uniqueTagIds),
-			),
+			and(eq(tag.projectId, projectId), inArray(tag.id, uniqueTagIds)),
 		);
 
 	if (rows.length !== uniqueTagIds.length) {
@@ -400,7 +390,7 @@ export const activitiesRouter = createTRPCRouter({
 			].map((row) => {
 				// Removemos a data em que o usuário se inscreveu no evento para que o
 				// "joinedAt" de "participant" não seja exposto aqui
-				const { joinedAt, ...rest } = row.participant;
+				const { joinedAt: _joinedAt, ...rest } = row.participant;
 
 				return {
 					...row.participantOnActivity,
@@ -446,21 +436,19 @@ export const activitiesRouter = createTRPCRouter({
 				);
 			}
 
-			const participantsWithAttendance = allParticipants.map(
-				(p) => ({
-					...p,
-					sessionAttendances:
-						attendanceByParticipant.get(p.participantId) ?? [],
+			const participantsWithAttendance = allParticipants.map((p) => ({
+				...p,
+				sessionAttendances:
+					attendanceByParticipant.get(p.participantId) ?? [],
+			}));
+
+			const sessionsWithCounts = (selectedActivity.sessions ?? []).map(
+				(session) => ({
+					...session,
+					attendedCount:
+						attendanceCountBySession.get(session.id) ?? 0,
 				}),
 			);
-
-			const sessionsWithCounts = (
-				selectedActivity.sessions ?? []
-			).map((session) => ({
-				...session,
-				attendedCount:
-					attendanceCountBySession.get(session.id) ?? 0,
-			}));
 
 			const formattedActivity = {
 				...selectedActivity,
@@ -688,9 +676,7 @@ export const activitiesRouter = createTRPCRouter({
 									),
 								),
 							)
-							.where(
-								buildActivitiesWhere(activity, filterOpts),
-							)
+							.where(buildActivitiesWhere(activity, filterOpts))
 							.groupBy(participantOnActivity.activityId),
 			]);
 
@@ -1160,9 +1146,7 @@ export const activitiesRouter = createTRPCRouter({
 						});
 					const subscribesSelf =
 						!!requesterParticipant &&
-						participantsIdsToAdd.includes(
-							requesterParticipant.id,
-						);
+						participantsIdsToAdd.includes(requesterParticipant.id);
 					if (subscribesSelf) {
 						const probe = validateAnswers(
 							toValidationFields(activityFormFields),
@@ -1206,8 +1190,7 @@ export const activitiesRouter = createTRPCRouter({
 								valueNumber: sql`excluded."value_number"`,
 								valueDate: sql`excluded."value_date"`,
 								valueJson: sql`excluded."value_json"`,
-								fieldSnapshot:
-									sql`excluded."field_snapshot"`,
+								fieldSnapshot: sql`excluded."field_snapshot"`,
 								updatedAt: new Date(),
 							},
 						});

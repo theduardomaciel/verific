@@ -22,6 +22,7 @@ const storagePattern = storageRemotePattern();
 
 const nextConfig: NextConfig = {
 	cacheComponents: true,
+	reactCompiler: true,
 	turbopack: {
 		rules: {
 			"*.svg": {

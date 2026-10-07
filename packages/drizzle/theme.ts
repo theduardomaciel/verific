@@ -98,7 +98,9 @@ export const eventThemeSchema = z.object({
 	header: z
 		.object({
 			bg: themeRoleSchema.default("primary"),
-			style: z.enum(["solid", "gradient", "transparent"]).default("solid"),
+			style: z
+				.enum(["solid", "gradient", "transparent"])
+				.default("solid"),
 		})
 		.default({ bg: "primary", style: "solid" }),
 	footer: z
@@ -163,7 +165,9 @@ export const eventThemeSchema = z.object({
 		}),
 	card: z
 		.object({
-			radius: z.union([z.literal(16), z.literal(20), z.literal(24)]).default(24),
+			radius: z
+				.union([z.literal(16), z.literal(20), z.literal(24)])
+				.default(24),
 		})
 		.default({ radius: 24 }),
 });

@@ -29,7 +29,10 @@ export const usersRouter = createTRPCRouter({
 				});
 			}
 
-			await db.update(user).set({ name: input.name }).where(eq(user.id, userId));
+			await db
+				.update(user)
+				.set({ name: input.name })
+				.where(eq(user.id, userId));
 
 			return { success: true };
 		}),

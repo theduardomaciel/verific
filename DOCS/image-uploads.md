@@ -33,14 +33,14 @@ NEXT_PUBLIC_STORAGE_BASE_URL=<mesmo que S3_PUBLIC_BASE_URL>
 
 ## Finalidades e máximos
 
-| purpose | máx | teto |
-|---|---|---|
-| event-logo | 512×512 | 512KB |
-| event-logo-wide | 1024×512 | 512KB |
-| event-cover | 1920×1080 | 1MB |
-| event-thumbnail | 1200×630 | 512KB |
-| speaker | 800×800 | 512KB |
-| activity-banner | 1600×900 | 1MB |
+| purpose         | máx       | teto  |
+| --------------- | --------- | ----- |
+| event-logo      | 512×512   | 512KB |
+| event-logo-wide | 1024×512  | 512KB |
+| event-cover     | 1920×1080 | 1MB   |
+| event-thumbnail | 1200×630  | 512KB |
+| speaker         | 800×800   | 512KB |
+| activity-banner | 1600×900  | 1MB   |
 
 Saída sempre `image/webp`, `Cache-Control: public, max-age=31536000, immutable`.
 SVG de entrada é rasterizado (decisão Fase 0: sem SVG hospedado, sem XSS).

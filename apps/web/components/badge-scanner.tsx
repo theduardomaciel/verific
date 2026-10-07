@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { IDetectedBarcode, Scanner } from "@yudiel/react-qr-scanner";
+import type { IDetectedBarcode } from "@yudiel/react-qr-scanner";
+import { Scanner } from "@yudiel/react-qr-scanner";
 import { toast } from "sonner";
 
 // Icons
@@ -88,7 +89,7 @@ export function BadgeScanner({ sessionId, buttonLabel }: Props) {
 					</p>
 				</div>
 				<Scanner
-					onScan={handleScan}
+					onScan={(result) => void handleScan(result)}
 					paused={!open}
 					constraints={{
 						facingMode: "environment",

@@ -25,7 +25,10 @@ describe("createEnumArraySchema", () => {
 	const schema = createEnumArraySchema(["internal", "external"] as const);
 
 	it("parses a comma-separated string into an enum array", () => {
-		expect(schema.parse("internal,external")).toEqual(["internal", "external"]);
+		expect(schema.parse("internal,external")).toEqual([
+			"internal",
+			"external",
+		]);
 	});
 
 	it("passes arrays through", () => {

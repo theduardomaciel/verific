@@ -7,10 +7,7 @@ import { trpc } from "@/lib/trpc/react";
 import { findOrphanHalfIds, groupFieldsBySection } from "@/lib/forms/layout";
 import { animateFlip, animateSectionFlip } from "../lib/animate-flip";
 import type { Field, FormsTab, Section, Version } from "../types";
-import type {
-	RouterInputs,
-	RouterOutput,
-} from "@verific/api";
+import type { RouterInputs, RouterOutput } from "@verific/api";
 import type { UpsertFormSectionInput } from "@verific/api/schemas";
 
 /**
@@ -45,7 +42,9 @@ export function useFormsBuilder() {
 	const [displayFields, setDisplayFields] = useState<Field[]>([]);
 	const [displaySections, setDisplaySections] = useState<Section[]>([]);
 	const [fieldToDelete, setFieldToDelete] = useState<Field | null>(null);
-	const [sectionToDelete, setSectionToDelete] = useState<Section | null>(null);
+	const [sectionToDelete, setSectionToDelete] = useState<Section | null>(
+		null,
+	);
 	const isDraggingRef = useRef(false);
 	const listRef = useRef<HTMLDivElement>(null);
 
@@ -56,13 +55,24 @@ export function useFormsBuilder() {
 		[versionsQuery.data],
 	);
 
-	useEffect(() => {
-		if (!selectedId && versions.length > 0) {
-			const published =
-				versions.find((v) => v.isPublished) ?? versions[0];
-			if (published) setSelectedId(published.id);
-		}
-	}, [versions, selectedId]);
+	// Seleciona a versão publicada (ou a primeira) assim que a lista chega.
+	// Ajuste durante a renderização em vez de efeito: converge sem render
+	// em cascata e sem flash de estado vazio. Espelha as dependências do
+	// efeito original ([versions, selectedId]).
+	const [prevSelection, setPrevSelection] = useState({
+		versions,
+		selectedId,
+	});
+	if (
+		!selectedId &&
+		versions.length > 0 &&
+		(prevSelection.versions !== versions ||
+			prevSelection.selectedId !== selectedId)
+	) {
+		setPrevSelection({ versions, selectedId });
+		const published = versions.find((v) => v.isPublished) ?? versions[0];
+		if (published) setSelectedId(published.id);
+	}
 
 	const versionQuery: QueryResult<RouterOutput["getVersion"]> =
 		trpc.getVersion.useQuery(
@@ -181,6 +191,7 @@ export function useFormsBuilder() {
 		// permanently empty.
 		if (versionQuery.data && versionQuery.data.version.id !== selectedId)
 			return;
+		// oxlint-disable-next-line react/set-state-in-effect -- reads isDraggingRef post-commit (a render-phase read would tear); converges: syncs once per fetch, no loop.
 		setDisplayFields(serverFields);
 	}, [serverFields, selectedId, versionQuery.data]);
 
@@ -188,6 +199,7 @@ export function useFormsBuilder() {
 		if (isDraggingRef.current) return;
 		if (versionQuery.data && versionQuery.data.version.id !== selectedId)
 			return;
+		// oxlint-disable-next-line react/set-state-in-effect -- reads isDraggingRef post-commit (a render-phase read would tear); converges: syncs once per fetch, no loop.
 		setDisplaySections(serverSections);
 	}, [serverSections, selectedId, versionQuery.data]);
 

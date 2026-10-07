@@ -176,9 +176,10 @@ function RoleRow<T extends string>({
 			<Label>{label}</Label>
 			<div
 				ref={groupRef}
+				// oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- grupo rotulado de botões toggle (nenhuma tag nativa adequada; radiogroup seria incorreto).
 				role="group"
 				aria-label={label}
-				className="flex max-w-full gap-1 overflow-x-auto rounded-lg border p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+				className="flex max-w-full [scrollbar-width:none] gap-1 overflow-x-auto rounded-lg border p-1 [&::-webkit-scrollbar]:hidden"
 			>
 				{options.map((opt) => {
 					const active = opt.value === value;

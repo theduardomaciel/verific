@@ -17,8 +17,16 @@ export default defineConfig({
 		coverage: {
 			provider: "v8",
 			reporter: ["text", "lcov", "html"],
-			include: ["lib/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "hooks/**/*.{ts,tsx}"],
-			exclude: ["**/*.test.{ts,tsx}", "**/node_modules/**", "**/.next/**"],
+			include: [
+				"lib/**/*.{ts,tsx}",
+				"components/**/*.{ts,tsx}",
+				"hooks/**/*.{ts,tsx}",
+			],
+			exclude: [
+				"**/*.test.{ts,tsx}",
+				"**/node_modules/**",
+				"**/.next/**",
+			],
 		},
 	},
 });

@@ -11,7 +11,7 @@ import Logo from "@/public/logo.svg";
 import { getSession } from "@/lib/session";
 
 // Types
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 
 interface Props {
 	selectedProjectId?: string;

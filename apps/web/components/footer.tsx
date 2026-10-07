@@ -101,7 +101,7 @@ async function Footer({
 						</Link>
 					</nav>
 				</div>
-				<p className="text-(--ev-footer-fg-soft,var(--muted-foreground)) text-xs">
+				<p className="text-xs text-(--ev-footer-fg-soft,var(--muted-foreground))">
 					Copyright {year} verifIC. Todos os direitos reservados
 				</p>
 			</div>

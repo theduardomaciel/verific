@@ -1,7 +1,5 @@
 "use client";
 
-import { toast } from "sonner";
-
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentProject } from "@/hooks/use-current-project";
 import { parseEventTheme } from "@verific/drizzle/theme";
