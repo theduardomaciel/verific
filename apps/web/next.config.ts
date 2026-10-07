@@ -26,6 +26,9 @@ const nextConfig: NextConfig = {
 	reactCompiler: true,
 	experimental: {
 		agentUpgrade: "latest",
+		turbopackRustReactCompiler: true,
+		turbopackGc: true,
+		turbopackLazyDynamicImports: true,
 	},
 	turbopack: {
 		rules: {
