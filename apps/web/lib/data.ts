@@ -33,6 +33,36 @@ export async function getEventStaticParams() {
 }
 
 /**
+ * Params completos (`eventUrl` + `activityId`) para pré-renderizar as
+ * páginas de atividade (rota cheia e modal interceptado) como estáticas.
+ * Sem eventos cadastrados (sentinela `__no-events__`) retorna `[]` e as
+ * rotas seguem on-demand, como hoje.
+ */
+export async function getActivityStaticParams() {
+	const events = await getEventStaticParams();
+
+	if (events.length === 1 && events[0]?.eventUrl === "__no-events__") {
+		return [];
+	}
+
+	const perEvent = await Promise.all(
+		events.map(async ({ eventUrl }) => {
+			const { activities } = await getCachedActivities({
+				projectUrl: eventUrl,
+				pageSize: 1000,
+			});
+
+			return activities.map((activity) => ({
+				eventUrl,
+				activityId: activity.id,
+			}));
+		}),
+	);
+
+	return perEvent.flat();
+}
+
+/**
  * Decisão "inscrições abertas?" a partir dos dados do evento.
  * A leitura do relógio (`isAfterEnd`) vive dentro de "use cache":
  * o valor é congelado pelo tempo do cache (revalidado em minutos)
