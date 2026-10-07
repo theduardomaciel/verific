@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import type { Resolver } from "react-hook-form";
@@ -56,6 +56,7 @@ export default function MutateActivityForm({
 	>(false);
 	const [submittedActivityId, setSubmittedActivityId] = useState<string>();
 	const configureAfterSave = useRef(false);
+	const shouldResetAfterHide = useRef(false);
 	const router = useRouter();
 
 	// 1. Define your form.
@@ -108,6 +109,21 @@ export default function MutateActivityForm({
 	const createMutation = trpc.createActivity.useMutation();
 	const utils = trpc.useUtils();
 
+	// Com Cache Components, o Next.js preserva o estado via Activity ao
+	// navegar. Sem isso, voltar para esta página mostraria o SuccessDialog
+	// obsoleto (currentState ainda "submitted"). Reseta o status ao ocultar.
+	// Ver docs/app/02-guides/preserving-ui-state.md ("Resetting stale status messages").
+	useLayoutEffect(() => {
+		return () => {
+			if (shouldResetAfterHide.current) {
+				shouldResetAfterHide.current = false;
+				setCurrentState(false);
+				setSubmittedActivityId(undefined);
+				form.reset();
+			}
+		};
+	}, [form]);
+
 	// 2. Define a submit handler.
 	async function onSubmit(data: MutateActivityFormSchema) {
 		setCurrentState("submitting");
@@ -136,6 +152,7 @@ export default function MutateActivityForm({
 
 				setSubmittedActivityId(activity.id);
 				setCurrentState("submitted");
+				shouldResetAfterHide.current = true;
 			} else {
 				const { activityId } = await createMutation.mutateAsync({
 					projectId,
@@ -155,6 +172,7 @@ export default function MutateActivityForm({
 				}
 
 				setCurrentState("submitted");
+				shouldResetAfterHide.current = true;
 			}
 
 			await revalidateActivities();
@@ -201,7 +219,14 @@ export default function MutateActivityForm({
 			/>
 			<SuccessDialog
 				isOpen={currentState === "submitted"}
-				href={`/dashboard/activities/${submittedActivityId}`}
+				onClose={() => {
+					const destination = `/dashboard/activities/${submittedActivityId}`;
+					shouldResetAfterHide.current = false;
+					setCurrentState(false);
+					setSubmittedActivityId(undefined);
+					form.reset();
+					router.replace(destination);
+				}}
 				description={
 					<>
 						A atividade foi {activity ? "atualizada" : "criada"} por
