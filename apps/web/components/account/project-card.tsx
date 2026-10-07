@@ -32,6 +32,7 @@ export function AccountEventCard({ project }: EventCardProps) {
 						alt=""
 						className="object-cover opacity-5"
 						fill
+						sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
 					/>
 				))}
 			<div className="flex items-center gap-6">
@@ -50,7 +51,7 @@ export function AccountEventCard({ project }: EventCardProps) {
 						}
 						alt={project.name}
 					/>
-					<AvatarFallback>
+					<AvatarFallback className="bg-transparent">
 						<Ticket className="text-foreground h-5 w-5" />
 					</AvatarFallback>
 				</Avatar>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import { Check, ChevronsUpDown, Loader2, Plus, User } from "lucide-react";
@@ -95,6 +95,16 @@ export function InstancePicker<T extends Item = Item>({
 	);
 	const debouncedValue = useDebounce(ids, 750);
 
+	// Keep the latest callback in a ref so the notify effect below only
+	// depends on the debounced value. Depending on `onSelect` directly
+	// re-fires the effect on every parent render (inline arrow props get a
+	// new identity), which calls `field.onChange` -> re-render -> effect
+	// again: "Maximum update depth exceeded".
+	const onSelectRef = useRef(onSelect);
+	useEffect(() => {
+		onSelectRef.current = onSelect;
+	});
+
 	const isActive = (id: T["id"]) => ids.includes(id);
 	const filteredItems = props.items?.filter((item) => ids.includes(item.id));
 
@@ -114,9 +124,18 @@ export function InstancePicker<T extends Item = Item>({
 		}
 	};
 
+	const isFirstDebouncedRun = useRef(true);
+
 	useEffect(() => {
-		onSelect?.(debouncedValue);
-	}, [debouncedValue, onSelect]);
+		// Skip the initial mount: notifying here would write the initial
+		// ids back into the parent form (new array identity) and dirty it
+		// for no reason.
+		if (isFirstDebouncedRun.current) {
+			isFirstDebouncedRun.current = false;
+			return;
+		}
+		onSelectRef.current?.(debouncedValue);
+	}, [debouncedValue]);
 
 	const visualContent = (children: React.ReactNode) => {
 		if (isLoading) {

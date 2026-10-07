@@ -16,6 +16,13 @@ import { parseEventTheme } from "@verific/drizzle/theme";
  */
 export const ensureStatic = "navigation";
 
+// Página 100% específica da URL (`eventUrl`) com gate `notFound` real
+// antes de qualquer `<Suspense>`: opta por navegação com bloqueio em
+// vez de "instant". Todo o conteúdo depende do evento, então mover para
+// `<Suspense>` só trocaria a página completa por um esqueleto a cada
+// navegação — o bloqueio serve a saída estática da CDN de uma vez.
+export const instant = false;
+
 interface Props {
 	params: Promise<{ eventUrl: string }>;
 }

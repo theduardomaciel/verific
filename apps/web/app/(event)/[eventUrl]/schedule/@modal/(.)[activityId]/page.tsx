@@ -13,6 +13,11 @@ export async function generateStaticParams() {
 	return getActivityStaticParams();
 }
 
+// Gate `notFound` real sobre dados 100% específicos da URL antes de
+// qualquer `<Suspense>`: opta por navegação com bloqueio (mesmo padrão
+// das páginas irmãs do evento + `profile/[shortId]`).
+export const instant = false;
+
 export default async function Page({
 	params,
 }: {

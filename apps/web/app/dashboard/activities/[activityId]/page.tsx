@@ -3,11 +3,11 @@ import { Suspense } from "react";
 import { ActivityContent } from "./content";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export default async function ActivityPage(props: {
+export default function ActivityPage({
+	params,
+}: {
 	params: Promise<{ activityId: string }>;
 }) {
-	const { activityId } = await props.params;
-
 	return (
 		<Suspense
 			fallback={
@@ -16,7 +16,17 @@ export default async function ActivityPage(props: {
 				</main>
 			}
 		>
-			<ActivityContent activityId={activityId} />
+			<ActivityContentLoader params={params} />
 		</Suspense>
 	);
+}
+
+async function ActivityContentLoader({
+	params,
+}: {
+	params: Promise<{ activityId: string }>;
+}) {
+	const { activityId } = await params;
+
+	return <ActivityContent activityId={activityId} />;
 }

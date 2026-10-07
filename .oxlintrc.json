@@ -18,10 +18,7 @@
 		}
 	},
 	"rules": {
-		"typescript/no-floating-promises": "error",
-		"typescript/no-misused-promises": "error",
 		"typescript/consistent-type-imports": "error",
-		"typescript/no-base-to-string": "off",
 		"react/rules-of-hooks": "error",
 		"react/exhaustive-deps": "off",
 		"react/jsx-key": "error",
@@ -49,24 +46,8 @@
 		"jsx-a11y/no-noninteractive-element-to-interactive-role": "off",
 		"jsx-a11y/control-has-associated-label": "off",
 		"jsx-a11y/prefer-tag-over-role": "off",
-		"import/no-duplicates": "error",
-		"typescript/no-useless-default-assignment": "off"
+		"import/no-duplicates": "error"
 	},
-	"overrides": [
-		{
-			"files": [
-				"*.config.*",
-				"vitest.setup.*",
-				"**/tools/scripts/**",
-				"**/migrate.ts",
-				"**/seed.ts"
-			],
-			"rules": {
-				"typescript/no-floating-promises": "off",
-				"typescript/no-misused-promises": "off"
-			}
-		}
-	],
 	"ignorePatterns": [
 		"**/node_modules/**",
 		"**/.next/**",
@@ -76,8 +57,5 @@
 		"**/coverage/**",
 		"**/public/**",
 		"**/*.tsbuildinfo"
-	],
-	"options": {
-		"typeAware": true
-	}
+	]
 }

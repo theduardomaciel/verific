@@ -296,7 +296,7 @@ function SessionsEditor({
 									</FormItem>
 								)}
 							/>
-							<div className="mt-5 h-0.5 w-[15px] shrink-0 rounded-full bg-gray-400" />
+							<div className="mt-5 h-0.5 w-3.75 shrink-0 rounded-full bg-gray-400" />
 							<FormField
 								control={form.control}
 								name={`sessions.${index}.timeTo` as const}
@@ -430,7 +430,7 @@ function TagsPicker({
 												: [...current, tag.id],
 										);
 									}}
-									className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+									className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
 										selected
 											? "border-primary bg-primary/10"
 											: "hover:bg-muted"
@@ -448,11 +448,12 @@ function TagsPicker({
 						})}
 					</div>
 					<div className="flex flex-col gap-2">
-						<div className="flex gap-2">
+						<div className="flex w-full gap-2">
 							<Input
 								placeholder="Nova trilha (ex.: Hardware)"
 								value={newTagName}
 								maxLength={30}
+								className="flex-1"
 								onChange={(e) => setNewTagName(e.target.value)}
 							/>
 							<Button
@@ -473,7 +474,6 @@ function TagsPicker({
 									<button
 										key={color}
 										type="button"
-										// oxlint-disable-next-line jsx-a11y/control-has-associated-label -- `title={color}` IS an accessible label (ATs announce it on focus); linter only checks for <label> or aria-label.
 										title={color}
 										onClick={() => setNewTagColor(color)}
 										className={`h-6 w-6 rounded-full border-2 transition-transform ${
@@ -488,8 +488,8 @@ function TagsPicker({
 						) : null}
 					</div>
 					<FormDescription>
-						Agrupe atividades em trilhas como Hardware e Software.
-						Máximo de 5 por atividade.
+						Agrupe atividades em diferentes trilhas. Máximo de 5 por
+						atividade.
 					</FormDescription>
 					<FormMessage />
 				</FormItem>
@@ -564,7 +564,7 @@ export function MutateActivityFormContent({
 							<span className="sm:hidden">+ Formulário</span>
 						</Button>
 					) : null}
-					<Button type="submit" size="lg" className="shrink-0 !px-5">
+					<Button type="submit" size="lg" className="shrink-0 px-5!">
 						{isEditing ? (
 							<>
 								<Edit className="h-5 w-5" />
@@ -711,7 +711,7 @@ export function MutateActivityFormContent({
 															/>
 														</Button>
 													</TooltipTrigger>
-													<TooltipContent className="sm:max-w-[8rem]">
+													<TooltipContent className="sm:max-w-32">
 														<p>
 															Calcula a carga
 															horária com base no

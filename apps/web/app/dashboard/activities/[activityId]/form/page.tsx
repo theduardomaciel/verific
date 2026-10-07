@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function ActivityFormPage({
 	params,
 }: {
-	params: { activityId: string };
+	params: Promise<{ activityId: string }>;
 }) {
 	return (
 		<Suspense
@@ -20,7 +20,17 @@ export default function ActivityFormPage({
 				</div>
 			}
 		>
-			<ActivityFormContent activityId={params.activityId} />
+			<ActivityFormLoader params={params} />
 		</Suspense>
 	);
+}
+
+async function ActivityFormLoader({
+	params,
+}: {
+	params: Promise<{ activityId: string }>;
+}) {
+	const { activityId } = await params;
+
+	return <ActivityFormContent activityId={activityId} />;
 }

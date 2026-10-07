@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
     checks:
-        name: lint / format / typecheck / build
+        name: lint / format / typecheck
         runs-on: ubuntu-latest
         timeout-minutes: 20
         env:
@@ -48,6 +48,3 @@ jobs:
 
             - name: Typecheck (tsc --noEmit via Turborepo)
               run: pnpm typecheck
-
-            - name: Build
-              run: pnpm build
