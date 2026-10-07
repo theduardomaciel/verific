@@ -82,6 +82,14 @@ export async function generateStaticParams() {
 }
 
 /**
+ * Este layout lê `eventUrl` (dado de URL) para buscar o projeto, montar o
+ * tema e barrar evento desconhecido com 404 real — tudo antes de qualquer
+ * `<Suspense>`. Permite o bloqueio deste segmento; páginas abaixo seguem
+ * validadas de forma independente.
+ */
+export const instant = false;
+
+/**
  * Fallback visível do layout: o HTML estático pinta este esqueleto
  * (header + conteúdo) antes do JS — em vez da tela em branco anterior —
  * e some quando a árvore do header (que lê `usePathname()`) completa a

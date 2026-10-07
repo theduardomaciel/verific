@@ -16,13 +16,6 @@ import { parseEventTheme } from "@verific/drizzle/theme";
  */
 export const ensureStatic = "navigation";
 
-// Página 100% específica da URL (`eventUrl`) com gate `notFound` real
-// antes de qualquer `<Suspense>`: opta por navegação com bloqueio em
-// vez de "instant". Todo o conteúdo depende do evento, então mover para
-// `<Suspense>` só trocaria a página completa por um esqueleto a cada
-// navegação — o bloqueio serve a saída estática da CDN de uma vez.
-export const instant = false;
-
 interface Props {
 	params: Promise<{ eventUrl: string }>;
 }
@@ -78,11 +71,21 @@ function SchedulePageBody({ project }: { project: SchedulePageProject }) {
 }
 
 /**
- * Gate antes de qualquer `<Suspense>`: evento desconhecido responde
- * 404 real. (O gate do layout já cobre isso; este `notFound` fica como
- * rede de segurança + narrowing de tipos.)
+ * `params` é dado de URL: lido fora de `<Suspense>`, prende o App Shell a
+ * um único link e quebra o prefetch compartilhado (`instant-shell-url-data`).
+ * Por isso a leitura + `getProject` vivem no loader abaixo, dentro da
+ * fronteira. O `notFound` continua valendo — e o layout acima já barra
+ * `eventUrl` desconhecido com 404 real antes disso.
  */
-export default async function EventSchedulePage({ params }: Props) {
+export default function EventSchedulePage({ params }: Props) {
+	return (
+		<Suspense fallback={<SchedulePageSkeleton />}>
+			<SchedulePageLoader params={params} />
+		</Suspense>
+	);
+}
+
+async function SchedulePageLoader({ params }: Props) {
 	const { eventUrl } = await params;
 	const result = await getProject(eventUrl);
 
@@ -90,9 +93,5 @@ export default async function EventSchedulePage({ params }: Props) {
 		notFound();
 	}
 
-	return (
-		<Suspense fallback={<SchedulePageSkeleton />}>
-			<SchedulePageBody project={result.project} />
-		</Suspense>
-	);
+	return <SchedulePageBody project={result.project} />;
 }
