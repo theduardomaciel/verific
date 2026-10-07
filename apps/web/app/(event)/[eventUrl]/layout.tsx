@@ -10,6 +10,7 @@ import { EventHeader } from "@/components/event-header";
 import { EventThemeSync } from "@/components/event-theme-sync";
 import { Footer } from "@/components/footer";
 import { EventBackgroundEffects } from "@/components/landing/event-container";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getEventStaticParams, getProject } from "@/lib/data";
 import { FONT_PRESETS } from "@/lib/theme/fonts";
 import { resolveEventTheme } from "@/lib/theme/resolve";
@@ -80,8 +81,46 @@ export async function generateStaticParams() {
 	return getEventStaticParams();
 }
 
+/**
+ * Fallback visível do layout: o HTML estático pinta este esqueleto
+ * (header + conteúdo) antes do JS — em vez da tela em branco anterior —
+ * e some quando a árvore do header (que lê `usePathname()`) completa a
+ * fronteira. Vale para a carga inicial e para navegações do cliente.
+ */
 function EventLayoutFallback() {
-	return <div className="min-h-screen" />;
+	return (
+		<div className="bg-background min-h-screen">
+			<header className="container-p flex items-center justify-between py-4">
+				<Skeleton className="h-9 w-36" />
+				<div className="flex items-center gap-3">
+					<Skeleton className="h-9 w-24 rounded-full" />
+					<Skeleton className="h-9 w-24 rounded-full" />
+					<Skeleton className="h-9 w-9 rounded-full" />
+				</div>
+			</header>
+			<main className="container-p flex flex-col gap-8 py-10">
+				<Skeleton className="h-56 w-full rounded-xl" />
+				<div className="flex flex-col gap-4">
+					<Skeleton className="h-8 w-72" />
+					<Skeleton className="h-5 w-full max-w-2xl" />
+					<Skeleton className="h-5 w-2/3 max-w-xl" />
+				</div>
+				<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+					{Array.from({ length: 3 }).map((_, index) => (
+						<div
+							key={index}
+							className="border-border flex flex-col gap-3 rounded-md border p-6"
+						>
+							<Skeleton className="h-6 w-3/4" />
+							<Skeleton className="h-4 w-1/2" />
+							<Skeleton className="h-4 w-full" />
+							<Skeleton className="h-4 w-5/6" />
+						</div>
+					))}
+				</div>
+			</main>
+		</div>
+	);
 }
 
 interface EventLogoProps {
@@ -176,45 +215,49 @@ export default async function EventLayout({
 		.join(";");
 
 	return (
-		<Suspense fallback={<EventLayoutFallback />}>
+		<>
+			{/* Fora da fronteira: o tema do evento já vale para o esqueleto. */}
 			<style>{`:root{${rootCssText}}`}</style>
-			<EventThemeSync cssVars={cssVars} />
-			<div
-				className={`event-public ${fontVariables} relative flex w-full flex-1 flex-col`}
-				style={
-					{
-						...cssVars,
-						"--font-sans": "var(--ev-font-body)",
-					} as React.CSSProperties
-				}
-			>
-				<EventBackgroundEffects />
-				<EventHeader
-					eventUrl={eventUrl}
-					className="relative h-21 border-none py-0"
-					logo={
-						<EventLogo
-							href={`/${eventUrl}`}
-							light={project.largeLogoUrl || project.logoUrl}
-							dark={
-								project.largeLogoDarkUrl || project.logoDarkUrl
-							}
-						/>
+			<Suspense fallback={<EventLayoutFallback />}>
+				<EventThemeSync cssVars={cssVars} />
+				<div
+					className={`event-public ${fontVariables} relative flex w-full flex-1 flex-col`}
+					style={
+						{
+							...cssVars,
+							"--font-sans": "var(--ev-font-body)",
+						} as React.CSSProperties
 					}
-				/>
-				{children}
-				<div className="container-p relative z-10 flex w-full items-center justify-center py-6">
-					<div
-						className="w-full rounded-xl md:rounded-full"
-						style={{ background: "var(--ev-footer-bg)" }}
-					>
-						<Footer
-							className="border-none px-4 py-4 text-(--ev-footer-fg) md:px-12"
-							showWatermark
-						/>
+				>
+					<EventBackgroundEffects />
+					<EventHeader
+						eventUrl={eventUrl}
+						className="relative h-21 border-none py-0"
+						logo={
+							<EventLogo
+								href={`/${eventUrl}`}
+								light={project.largeLogoUrl || project.logoUrl}
+								dark={
+									project.largeLogoDarkUrl ||
+									project.logoDarkUrl
+								}
+							/>
+						}
+					/>
+					{children}
+					<div className="container-p relative z-10 flex w-full items-center justify-center py-6">
+						<div
+							className="w-full rounded-xl md:rounded-full"
+							style={{ background: "var(--ev-footer-bg)" }}
+						>
+							<Footer
+								className="border-none px-4 py-4 text-(--ev-footer-fg) md:px-12"
+								showWatermark
+							/>
+						</div>
 					</div>
 				</div>
-			</div>
-		</Suspense>
+			</Suspense>
+		</>
 	);
 }
