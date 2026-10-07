@@ -17,6 +17,11 @@ import { getEventRegistration, getProject } from "@/lib/data";
  */
 export const ensureStatic = "navigation";
 
+// Mesmo padrão das páginas irmãs (`[eventUrl]`, `schedule`): gate
+// `notFound`/`redirect` real antes de qualquer `<Suspense>` sobre dados
+// 100% específicos da URL — opta por navegação com bloqueio.
+export const instant = false;
+
 /**
  * Checks (`getProject`/`getEventRegistration` + `notFound`/`redirect`)
  * run here, before any `<Suspense>` boundary renders — real 404/redirect

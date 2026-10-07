@@ -90,12 +90,12 @@ export function ManageTagsDialog({ projectId }: ManageTagsDialogProps) {
 					Gerenciar trilhas
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="flex max-h-[85vh] flex-col gap-4 sm:max-w-[480px]">
+			<DialogContent className="flex max-h-[85vh] flex-col gap-4 sm:max-w-120">
 				<DialogHeader>
 					<DialogTitle>Trilhas do evento</DialogTitle>
 					<DialogDescription>
 						Organize as atividades em trilhas como Hardware e
-						Software. Excluir uma trilha apenas a remove das
+						Software. Excluir uma trilha apenas remove o rótulo das
 						atividades.
 					</DialogDescription>
 				</DialogHeader>
@@ -114,11 +114,12 @@ export function ManageTagsDialog({ projectId }: ManageTagsDialogProps) {
 							editingId === tag.id ? (
 								<div
 									key={tag.id}
-									className="flex items-center gap-2"
+									className="flex w-full items-center gap-2"
 								>
 									<Input
 										value={editingName}
 										maxLength={30}
+										className="flex-1"
 										onChange={(e) =>
 											setEditingName(e.target.value)
 										}
@@ -193,13 +194,14 @@ export function ManageTagsDialog({ projectId }: ManageTagsDialogProps) {
 					)}
 				</div>
 
-				<div className="flex flex-col gap-2 border-t pt-4">
-					<div className="flex gap-2">
+				<div className="flex flex-col gap-4 border-t pt-4">
+					<div className="flex w-full gap-2">
 						<Input
 							placeholder="Nova trilha (ex.: Hardware)"
 							value={newName}
 							maxLength={30}
 							onChange={(e) => setNewName(e.target.value)}
+							className="flex-1"
 							onKeyDown={(e) => {
 								if (e.key === "Enter") void handleCreate();
 							}}
@@ -218,7 +220,6 @@ export function ManageTagsDialog({ projectId }: ManageTagsDialogProps) {
 							<button
 								key={color}
 								type="button"
-								// oxlint-disable-next-line jsx-a11y/control-has-associated-label -- `title={color}` IS an accessible label (ATs announce it on focus); linter only checks for <label> or aria-label.
 								title={color}
 								onClick={() => setNewColor(color)}
 								className={`h-6 w-6 rounded-full border-2 transition-transform ${

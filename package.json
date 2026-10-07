@@ -11,6 +11,7 @@
 		"dev": "turbo run dev",
 		"build": "turbo run build",
 		"lint": "turbo run lint",
+		"lint:type-aware": "oxlint -c .oxlintrc.typeaware.json --type-aware",
 		"fmt": "oxfmt",
 		"fmt:check": "turbo run fmt:check",
 		"typecheck": "turbo run typecheck",
@@ -36,7 +37,7 @@
 	"lint-staged": {
 		"*.{js,mjs,cjs,jsx,ts,mts,cts,tsx}": [
 			"oxfmt --write --no-error-on-unmatched-pattern",
-			"oxlint --type-aware"
+			"oxlint"
 		],
 		"*.{json,jsonc,css,md,mdx,yaml,yml}": [
 			"oxfmt --write --no-error-on-unmatched-pattern"

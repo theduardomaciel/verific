@@ -1,0 +1,36 @@
+{
+	"$schema": "./node_modules/oxlint/configuration_schema.json",
+	"plugins": ["typescript"],
+	"categories": {
+		"correctness": "off"
+	},
+	"rules": {
+		"typescript/no-floating-promises": "error",
+		"typescript/no-misused-promises": "error"
+	},
+	"overrides": [
+		{
+			"files": [
+				"*.config.*",
+				"vitest.setup.*",
+				"**/tools/scripts/**",
+				"**/migrate.ts",
+				"**/seed.ts"
+			],
+			"rules": {
+				"typescript/no-floating-promises": "off",
+				"typescript/no-misused-promises": "off"
+			}
+		}
+	],
+	"ignorePatterns": [
+		"**/node_modules/**",
+		"**/.next/**",
+		"**/.turbo/**",
+		"**/dist/**",
+		"**/build/**",
+		"**/coverage/**",
+		"**/public/**",
+		"**/*.tsbuildinfo"
+	]
+}
