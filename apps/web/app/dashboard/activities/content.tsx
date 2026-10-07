@@ -56,9 +56,14 @@ function ActivitiesSkeleton() {
 
 export function ActivitiesContent() {
 	const { projectId } = useDashboard();
-	const parsedParams = useParsedSearchParams((raw) =>
-		getActivitiesParams.parse(raw),
-	);
+	type ActivitiesParams = ReturnType<typeof getActivitiesParams.parse>;
+	const parsedParams = useParsedSearchParams((raw): ActivitiesParams => {
+		const result = getActivitiesParams.safeParse(raw);
+		if (result.success) return result.data;
+		// URL inválida (ex.: bookmark antigo): usa defaults em vez de
+		// lançar no meio do render, o que quebra a ordem dos hooks.
+		return { page: 0, pageSize: 10 };
+	});
 
 	const { data, isPending, isError, isFetching } =
 		trpc.getActivities.useQuery(
@@ -95,7 +100,9 @@ export function ActivitiesContent() {
 	}
 
 	const { activities, pageCount } = data;
-	const hasActiveFilters = Boolean(parsedParams.query);
+	const hasActiveFilters = Boolean(
+		parsedParams.query ?? parsedParams.category ?? parsedParams.tagIds,
+	);
 
 	return (
 		<div className="container-d py-container-v min-h-screen">
@@ -160,6 +167,7 @@ export function ActivitiesContent() {
 
 					<FiltersPanel>
 						<Filter
+							key="category"
 							type="checkbox"
 							prefix="category"
 							title="Filtrar por Categoria"
@@ -172,6 +180,7 @@ export function ActivitiesContent() {
 						/>
 						{(projectTags ?? []).length > 0 ? (
 							<Filter
+								key="tagIds"
 								type="checkbox"
 								prefix="tagIds"
 								title="Filtrar por Trilha"
