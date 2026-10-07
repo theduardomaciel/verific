@@ -86,7 +86,7 @@ export function ThemeEditor({
 		try {
 			await saveMutation.mutateAsync({ id: projectId, theme: draft });
 			await revalidateProjectTheme(projectUrl);
-			utils.getProject.invalidate();
+			void utils.getProject.invalidate();
 			toast.success("Tema aplicado! As páginas já foram atualizadas.");
 		} catch {
 			toast.error("Erro ao salvar tema.");

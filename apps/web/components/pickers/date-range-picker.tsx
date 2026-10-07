@@ -54,7 +54,8 @@ export function DateRangePicker({ className, value, onChange }: Props) {
 									formatDate(value.from)
 								) : (
 									<>
-										{formatDate(value.from)} - {formatDate(value.to)}
+										{formatDate(value.from)} -{" "}
+										{formatDate(value.to)}
 									</>
 								)
 							) : (

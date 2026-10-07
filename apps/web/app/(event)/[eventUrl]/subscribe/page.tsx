@@ -44,7 +44,10 @@ export default async function EventSubscribePage({
 	return (
 		<Suspense fallback={<SubscribePageSkeleton />}>
 			<EventContainer.Holder>
-				<EventContainer.Hero coverUrl={project.coverUrl} showImage={theme.hero.image}>
+				<EventContainer.Hero
+					coverUrl={project.coverUrl}
+					showImage={theme.hero.image}
+				>
 					<div className="z-10 flex flex-1 flex-col items-center justify-center">
 						<EventContainer.Hero.Title className="text-center">
 							Inscreva-se em <br />

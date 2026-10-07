@@ -30,7 +30,13 @@ const STAT_ICONS: Record<StatIconKey, typeof Cake> = {
 	"book-open": BookOpen,
 };
 
-export function StatIcon({ icon, size = 24 }: { icon: StatIconKey; size?: number }) {
+export function StatIcon({
+	icon,
+	size = 24,
+}: {
+	icon: StatIconKey;
+	size?: number;
+}) {
 	const Icon = STAT_ICONS[icon] ?? Star;
 	return <Icon size={size} />;
 }

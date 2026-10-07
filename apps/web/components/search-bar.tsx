@@ -11,8 +11,10 @@ import { Input } from "@/components/ui/input";
 // Hooks
 import { useControlledParam } from "@/hooks/use-controlled-param";
 
-interface SearchBarProps
-	extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange"> {
+interface SearchBarProps extends Omit<
+	React.InputHTMLAttributes<HTMLInputElement>,
+	"onChange"
+> {
 	prefix?: string;
 	debounce?: number;
 	// Client-Driven: forneça ambas para gerenciar estado no pai

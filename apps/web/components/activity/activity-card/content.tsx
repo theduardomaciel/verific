@@ -1,6 +1,6 @@
 "use client";
 
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 import { activityCategoryLabels } from "@verific/drizzle/schema";
 import { Badge } from "@/components/ui/badge";
 import { InfoIcon } from "lucide-react";

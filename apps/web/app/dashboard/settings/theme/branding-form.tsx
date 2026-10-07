@@ -1,13 +1,8 @@
 "use client";
 import { type UseFormReturn } from "react-hook-form";
 
-// Icons
-import { ExternalLink } from "lucide-react";
-
 // Components
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { SettingsCard } from "@/components/settings/settings-card";
 import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
 import { FormField } from "@/components/ui/form";
 import { ImageUploader } from "@/components/ui/image-uploader";
@@ -17,7 +12,7 @@ import { brandingSchema } from "@/lib/validations/forms/settings-form/project/pr
 
 // tRPC
 import { trpc } from "@/lib/trpc/react";
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 
 interface Props {
 	project: RouterOutput["getProject"]["project"];
@@ -27,7 +22,7 @@ export function ProjectBrandingForm({ project }: Props) {
 	const utils = trpc.useUtils();
 	const updateMutation = trpc.updateProject.useMutation({
 		onSuccess: () => {
-			utils.getProject.invalidate();
+			void utils.getProject.invalidate();
 		},
 	});
 

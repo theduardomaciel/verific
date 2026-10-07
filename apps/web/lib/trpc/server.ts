@@ -35,6 +35,4 @@ export function createClientForUser(userId: string): Client {
  * own DB round-trip (and its own `getSession()` → `headers()` access).
  * Memoizing collapses layout + page into a single query per request.
  */
-export const getCachedAccountProjects = cache(() =>
-	serverClient.getProjects(),
-);
+export const getCachedAccountProjects = cache(() => serverClient.getProjects());

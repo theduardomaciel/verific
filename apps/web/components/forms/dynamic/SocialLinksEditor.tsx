@@ -10,8 +10,8 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import {
-	SOCIAL_SERVICES,
 	socialServiceById,
+	type SOCIAL_SERVICES,
 	type SocialServiceIcon,
 } from "@verific/drizzle/profile-layout";
 import { Globe, type LucideIcon, Link2Icon } from "lucide-react";

@@ -31,15 +31,18 @@ export const activityConflict = pgTable(
 	],
 );
 
-export const activityConflictRelations = relations(activityConflict, ({ one }) => ({
-	blockingActivity: one(activity, {
-		fields: [activityConflict.blockingActivityId],
-		references: [activity.id],
-		relationName: "blockedActivities",
+export const activityConflictRelations = relations(
+	activityConflict,
+	({ one }) => ({
+		blockingActivity: one(activity, {
+			fields: [activityConflict.blockingActivityId],
+			references: [activity.id],
+			relationName: "blockedActivities",
+		}),
+		blockedActivity: one(activity, {
+			fields: [activityConflict.blockedActivityId],
+			references: [activity.id],
+			relationName: "blockingActivities",
+		}),
 	}),
-	blockedActivity: one(activity, {
-		fields: [activityConflict.blockedActivityId],
-		references: [activity.id],
-		relationName: "blockingActivities",
-	}),
-}));
+);

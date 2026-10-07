@@ -2,7 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
+import {
+	ArrowDown,
+	ArrowUp,
+	Plus,
+	RotateCcw,
+	Save,
+	Trash2,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -82,7 +89,9 @@ function compatibleFields(
 
 function neededTypesLabel(slot: ProfileSlotKey): string {
 	const accepts = PROFILE_SLOTS[slot].accepts as readonly string[];
-	return accepts.map((t) => formFieldTypeLabels[t as keyof typeof formFieldTypeLabels]).join(" ou ");
+	return accepts
+		.map((t) => formFieldTypeLabels[t as keyof typeof formFieldTypeLabels])
+		.join(" ou ");
 }
 
 export function ProfileLayoutEditor({
@@ -111,7 +120,11 @@ export function ProfileLayoutEditor({
 	}
 
 	function setSingle(
-		key: "subtitleFieldId" | "bioFieldId" | "socialsFieldId" | "emailFieldId",
+		key:
+			| "subtitleFieldId"
+			| "bioFieldId"
+			| "socialsFieldId"
+			| "emailFieldId",
 		fieldId: string | null,
 	) {
 		patch({ [key]: fieldId } as Partial<ProfileLayout>);
@@ -126,7 +139,11 @@ export function ProfileLayoutEditor({
 		patch({
 			stats: [
 				...draft.stats,
-				{ fieldId: first.id, label: first.label, icon: "star" as StatIconKey },
+				{
+					fieldId: first.id,
+					label: first.label,
+					icon: "star" as StatIconKey,
+				},
 			],
 		});
 	}
@@ -157,7 +174,7 @@ export function ProfileLayoutEditor({
 		try {
 			await saveMutation.mutateAsync({ projectId, layout: parsed.data });
 			await revalidateEventProfiles(projectUrl);
-			utils.getProject.invalidate();
+			void utils.getProject.invalidate();
 			toast.success("Layout do perfil aplicado!");
 		} catch (e) {
 			toast.error(
@@ -199,9 +216,7 @@ export function ProfileLayoutEditor({
 				</div>
 			</div>
 
-			{(
-				["subtitle", "bio", "socials", "email"] as const
-			).map((slot) => (
+			{(["subtitle", "bio", "socials", "email"] as const).map((slot) => (
 				<SingleSlotCard
 					key={slot}
 					slot={slot}
@@ -285,7 +300,8 @@ export function ProfileLayoutEditor({
 					<div className="flex items-center justify-between gap-2 opacity-60">
 						<div className="flex flex-col">
 							<Label>
-								Adesivos <Badge variant="outline">Em breve</Badge>
+								Adesivos{" "}
+								<Badge variant="outline">Em breve</Badge>
 							</Label>
 							<span className="text-muted-foreground text-xs">
 								Só o flag é salvo; ainda não renderiza nada.
@@ -355,13 +371,14 @@ function SingleSlotCard({
 				</Select>
 				{currentMissing && (
 					<p className="text-destructive text-xs">
-						O campo ligado não existe mais nesta versão — escolha outro.
+						O campo ligado não existe mais nesta versão — escolha
+						outro.
 					</p>
 				)}
 				{!loading && compatible.length === 0 && (
 					<p className="text-muted-foreground text-xs">
-						Nenhum campo compatível no formulário. Crie um campo do tipo
-						“{neededTypesLabel(slot)}”.
+						Nenhum campo compatível no formulário. Crie um campo do
+						tipo “{neededTypesLabel(slot)}”.
 					</p>
 				)}
 			</CardContent>
@@ -382,7 +399,11 @@ function StatRow({
 	index: number;
 	total: number;
 	fields: FieldOption[];
-	onChange: (s: { fieldId: string; label: string; icon: StatIconKey }) => void;
+	onChange: (s: {
+		fieldId: string;
+		label: string;
+		icon: StatIconKey;
+	}) => void;
 	onMove: (dir: -1 | 1) => void;
 	onRemove: () => void;
 }) {
@@ -393,7 +414,11 @@ function StatRow({
 				<div className="flex items-center gap-2">
 					<StatIcon icon={item.icon} size={20} />
 					<Select
-						value={fields.some((f) => f.id === item.fieldId) ? item.fieldId : ""}
+						value={
+							fields.some((f) => f.id === item.fieldId)
+								? item.fieldId
+								: ""
+						}
 						onValueChange={(fieldId) => {
 							const f = fields.find((x) => x.id === fieldId);
 							onChange({
@@ -419,7 +444,9 @@ function StatRow({
 				<Input
 					value={item.label}
 					placeholder="Rótulo"
-					onChange={(e) => onChange({ ...item, label: e.target.value })}
+					onChange={(e) =>
+						onChange({ ...item, label: e.target.value })
+					}
 				/>
 				<div className="flex items-center gap-1">
 					<Button
@@ -440,7 +467,12 @@ function StatRow({
 					>
 						<ArrowDown className="h-4 w-4" />
 					</Button>
-					<Button size="sm" variant="ghost" onClick={onRemove} aria-label="Remover">
+					<Button
+						size="sm"
+						variant="ghost"
+						onClick={onRemove}
+						aria-label="Remover"
+					>
 						<Trash2 className="h-4 w-4" />
 					</Button>
 				</div>
@@ -454,7 +486,9 @@ function StatRow({
 				<Label className="text-xs">Ícone</Label>
 				<Select
 					value={item.icon}
-					onValueChange={(v) => onChange({ ...item, icon: v as StatIconKey })}
+					onValueChange={(v) =>
+						onChange({ ...item, icon: v as StatIconKey })
+					}
 				>
 					<SelectTrigger className="w-48">
 						<SelectValue />

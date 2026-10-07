@@ -26,7 +26,12 @@ export function ActivityRegistrationFormAction({
 
 	if (!form) {
 		return (
-			<Button type="button" variant="outline" className="shrink-0" asChild>
+			<Button
+				type="button"
+				variant="outline"
+				className="shrink-0"
+				asChild
+			>
 				<Link href={`/dashboard/activities/${activityId}/form`}>
 					<Plus size={16} />
 					Adicionar formulário
@@ -91,7 +96,7 @@ export function ActivityRegistrationFormAction({
 					size="sm"
 					className="flex-1"
 					disabled={unpublish.isPending || remove.isPending}
-					onClick={handleRemove}
+					onClick={() => void handleRemove()}
 				>
 					<Trash2 size={14} />
 					Remover

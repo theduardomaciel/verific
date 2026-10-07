@@ -72,7 +72,9 @@ export const auth = betterAuth({
 	advanced: {
 		database: {
 			joins: true,
-			generateId: crypto.randomUUID,
+			// Arrow preserva o receiver: `crypto.randomUUID` destacada
+			// lança "Illegal invocation" em runtimes WebCrypto (edge).
+			generateId: () => crypto.randomUUID(),
 		},
 		useSecureCookies: env.NODE_ENV === "production",
 	},

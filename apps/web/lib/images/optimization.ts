@@ -53,10 +53,16 @@ async function fileToBitmap(file: File | Blob): Promise<ImageBitmap> {
 	}
 }
 
-function canvasToWebp(canvas: HTMLCanvasElement, quality = 0.82): Promise<Blob> {
+function canvasToWebp(
+	canvas: HTMLCanvasElement,
+	quality = 0.82,
+): Promise<Blob> {
 	return new Promise((resolve, reject) => {
 		canvas.toBlob(
-			(blob) => (blob ? resolve(blob) : reject(new Error("Falha ao converter imagem."))),
+			(blob) =>
+				blob
+					? resolve(blob)
+					: reject(new Error("Falha ao converter imagem.")),
 			"image/webp",
 			quality,
 		);

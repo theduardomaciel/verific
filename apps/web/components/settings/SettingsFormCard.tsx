@@ -7,15 +7,19 @@ import { LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	SettingsCard,
-	SettingsCardFooterProps,
+	type SettingsCardFooterProps,
 } from "@/components/settings/settings-card";
 
 // Forms
-import { useForm, UseFormReturn, Resolver } from "react-hook-form";
-import { FormProvider } from "react-hook-form";
+import {
+	FormProvider,
+	useForm,
+	type Resolver,
+	type UseFormReturn,
+} from "react-hook-form";
 
 // Validations
-import z from "@verific/zod";
+import type z from "@verific/zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 interface SettingsFormCardProps<
@@ -25,7 +29,7 @@ interface SettingsFormCardProps<
 	title: string;
 	description: string;
 	initialState: Partial<z.output<T>>;
-	onSubmit: (form: UseFormReturn<z.output<T>>) => void;
+	onSubmit: (form: UseFormReturn<z.output<T>>) => void | Promise<void>;
 	renderField: (form: UseFormReturn<z.output<T>>) => React.ReactNode;
 	footer?: {
 		text?: SettingsCardFooterProps["text"];
@@ -48,7 +52,7 @@ export function SettingsFormCard<
 	footer,
 }: SettingsFormCardProps<T>) {
 	const form = useForm<z.output<T>, any, z.output<T>>({
-		resolver: zodResolver(schema) as Resolver<z.output<T>, any>,
+		resolver: zodResolver(schema) as unknown as Resolver<z.output<T>, any>,
 		defaultValues: initialState as any,
 	});
 
@@ -57,7 +61,9 @@ export function SettingsFormCard<
 	return (
 		<FormProvider {...form}>
 			<form
-				onSubmit={form.handleSubmit(() => onSubmit(form))}
+				onSubmit={(e) =>
+					void form.handleSubmit(() => void onSubmit(form))(e)
+				}
 				className="space-y-0"
 			>
 				<SettingsCard

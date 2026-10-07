@@ -12,7 +12,14 @@ import {
 	projectModerator,
 	sessionAttendance,
 } from "@verific/drizzle/schema";
-import { and, asc, eq, count, countDistinct, inArray } from "@verific/drizzle/orm";
+import {
+	and,
+	asc,
+	eq,
+	count,
+	countDistinct,
+	inArray,
+} from "@verific/drizzle/orm";
 import type { ParticipantActivitySession } from "../schemas";
 
 // tRPC
@@ -56,46 +63,44 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 				});
 			}
 
-			const activities =
-				await db.query.participantOnActivity.findMany({
-					where: (participantOnActivity, { eq }) =>
-						eq(
-							participantOnActivity.participantId,
-							participantId,
-						),
-					with: {
-						activity: {
-							with: {
-								sessions: {
-									orderBy: asc(activitySession.startsAt),
-									with: {
-										attendances: {
-											where: eq(
-												sessionAttendance.participantId,
-												participantId,
-											),
-										},
+			const activities = await db.query.participantOnActivity.findMany({
+				where: (participantOnActivity, { eq }) =>
+					eq(participantOnActivity.participantId, participantId),
+				with: {
+					activity: {
+						with: {
+							sessions: {
+								orderBy: asc(activitySession.startsAt),
+								with: {
+									attendances: {
+										where: eq(
+											sessionAttendance.participantId,
+											participantId,
+										),
 									},
 								},
-								tagOnActivity: {
-									with: {
-										tag: true,
-									},
+							},
+							tagOnActivity: {
+								with: {
+									tag: true,
 								},
-								speakerOnActivity: {
-									with: {
-										speaker: true,
-									},
+							},
+							speakerOnActivity: {
+								with: {
+									speaker: true,
 								},
 							},
 						},
 					},
-				});
+				},
+			});
 
 			// Retornamos a atividade com os palestrantes e o papel do participante na atividade
 			// Não retornamos outros dados como os outros participantes inscritos
 
-			const activityIds = activities.map(onActivity => onActivity.activity.id);
+			const activityIds = activities.map(
+				(onActivity) => onActivity.activity.id,
+			);
 
 			// Presentes = participantes distintos com pelo menos uma presença em sessão
 			const attendedCounts =
@@ -115,11 +120,18 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 									activitySession.id,
 								),
 							)
-							.where(inArray(activitySession.activityId, activityIds))
+							.where(
+								inArray(
+									activitySession.activityId,
+									activityIds,
+								),
+							)
 							.groupBy(activitySession.activityId)
 					: [];
 
-			const countsMap = new Map(attendedCounts.map(c => [c.activityId, c.count]));
+			const countsMap = new Map(
+				attendedCounts.map((c) => [c.activityId, c.count]),
+			);
 
 			// Presentes por sessão (para a visão do monitor no ingresso)
 			const sessionIds = activities.flatMap(
@@ -134,7 +146,12 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 								count: count(),
 							})
 							.from(sessionAttendance)
-							.where(inArray(sessionAttendance.sessionId, sessionIds))
+							.where(
+								inArray(
+									sessionAttendance.sessionId,
+									sessionIds,
+								),
+							)
 							.groupBy(sessionAttendance.sessionId)
 					: [];
 			const sessionCountsMap = new Map(
@@ -142,8 +159,12 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 			);
 
 			const formattedActivities = activities.map((onActivity) => {
-				const { speakerOnActivity, sessions, tagOnActivity, ...activityData } =
-					onActivity.activity;
+				const {
+					speakerOnActivity,
+					sessions,
+					tagOnActivity,
+					...activityData
+				} = onActivity.activity;
 
 				const dtoSessions: ParticipantActivitySession[] = (
 					sessions ?? []
@@ -158,7 +179,7 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 
 				return {
 					...activityData,
-					speakers: speakerOnActivity.map(s => s.speaker),
+					speakers: speakerOnActivity.map((s) => s.speaker),
 					tags: (tagOnActivity ?? []).map((t) => t.tag),
 					sessions: dtoSessions,
 					role: onActivity.role,
@@ -170,7 +191,6 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 				activities: formattedActivities,
 				participantId,
 			};
-
 		}),
 	deleteParticipantFromActivity: protectedProcedure
 		.input(
@@ -242,7 +262,8 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 			if (!isParticipant && !isOwner && !isModerator) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
-					message: "Você não tem permissão para remover participantes desta atividade.",
+					message:
+						"Você não tem permissão para remover participantes desta atividade.",
 				});
 			}
 
@@ -314,7 +335,10 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 					eq(participant.id, participantOnActivity.participantId),
 				)
 				.innerJoin(project, eq(project.id, participant.projectId))
-				.innerJoin(activity, eq(activity.id, participantOnActivity.activityId))
+				.innerJoin(
+					activity,
+					eq(activity.id, participantOnActivity.activityId),
+				)
 				.where(
 					and(
 						eq(participant.userId, userId),
@@ -324,12 +348,14 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 				);
 
 			const participantId =
-				activities.length > 0 ? activities[0]?.participantId : undefined;
+				activities.length > 0
+					? activities[0]?.participantId
+					: undefined;
 
 			if (!participantId) {
 				return null;
 			}
 
-			return { ids: activities.map((a) => a.activityId), participantId }
+			return { ids: activities.map((a) => a.activityId), participantId };
 		}),
 });

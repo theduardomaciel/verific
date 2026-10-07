@@ -38,7 +38,8 @@ function FormSection({ form, children, ...rest }: FormSectionProps) {
 	// Formulários sem wizard (sem `formType`, ex: formulário dinâmico) exibem todas as seções.
 	const hasWizard = formSection !== undefined;
 	const canSelect =
-		!hasWizard || (!Number.isNaN(sectionNumber) && rest.section < sectionNumber);
+		!hasWizard ||
+		(!Number.isNaN(sectionNumber) && rest.section < sectionNumber);
 	const isSelected =
 		!hasWizard ||
 		formSection === `section${rest.section}` ||
@@ -47,10 +48,7 @@ function FormSection({ form, children, ...rest }: FormSectionProps) {
 	function handleSelect() {
 		if (!isSelected && canSelect) {
 			// Atualizamos o valor do formulário para o valor da seção atual
-			form.setValue(
-				"formType",
-				`section${rest.section}`,
-			);
+			form.setValue("formType", `section${rest.section}`);
 
 			// Realizamos o scroll para a seção atual
 			scrollToNextSection(rest.section);
@@ -71,9 +69,17 @@ function FormSection({ form, children, ...rest }: FormSectionProps) {
 			<FormProgress {...rest} />
 			<div
 				className="bg-card relative flex w-full flex-col items-start justify-start gap-6 rounded-2xl border p-6 md:p-9"
+				role="button"
+				tabIndex={0}
 				onClick={handleSelect}
 				onKeyUp={(e) => {
 					if (e.key === "Enter") handleSelect();
+				}}
+				onKeyDown={(e) => {
+					if (e.key === " ") {
+						e.preventDefault();
+						handleSelect();
+					}
 				}}
 			>
 				{children}
@@ -120,7 +126,7 @@ function FormProgress({
 
 export interface PanelProps extends React.HTMLAttributes<HTMLParagraphElement> {
 	className?: string;
-	type?: "error" | "warning" | "info" | "success" | "success";
+	type?: "error" | "warning" | "info" | "success";
 	showIcon?: boolean;
 	children: React.ReactNode;
 }

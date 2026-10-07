@@ -1,5 +1,5 @@
-import { uuid } from "drizzle-orm/pg-core";
 import {
+	uuid,
 	pgTable,
 	primaryKey,
 	timestamp,

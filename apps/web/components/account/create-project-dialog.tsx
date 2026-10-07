@@ -79,15 +79,17 @@ export function CreateProjectDialog() {
 	const isDesktop = useMediaQuery("(min-width: 768px)");
 
 	// Inicializamos o formulário com o Zod e o React Hook Form
+	// Datas padrão fixadas na montagem (inicializador executa uma única vez).
+	const [defaultDates] = useState(() => ({
+		from: new Date(),
+		to: new Date(),
+	}));
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			name: "",
 			description: "",
-			date: {
-				from: new Date(),
-				to: new Date(),
-			},
+			date: defaultDates,
 			location: {
 				address: "",
 				latitude: 0,
@@ -117,7 +119,7 @@ export function CreateProjectDialog() {
 
 			// Atualiza o cookie com as informações do projeto
 			await revalidateProjects(url);
-			updateProjectCookies(id);
+			void updateProjectCookies(id);
 		} catch (error) {
 			console.error(error);
 			setCurrentState("error");
@@ -139,10 +141,12 @@ export function CreateProjectDialog() {
 				<DialogContent className="sm:max-w-md">
 					<Form {...form}>
 						<form
-							onSubmit={form.handleSubmit(onSubmit, (error) => {
-								console.log(error);
-								console.log(form.getValues());
-							})}
+							onSubmit={(e) =>
+								void form.handleSubmit(onSubmit, (error) => {
+									console.log(error);
+									console.log(form.getValues());
+								})(e)
+							}
 							className="flex w-full flex-col space-y-6"
 						>
 							<DialogHeader>
@@ -182,14 +186,14 @@ export function CreateProjectDialog() {
 			<DrawerContent>
 				<Form {...form}>
 					<form
-						onSubmit={form.handleSubmit(onSubmit)}
+						onSubmit={(e) => void form.handleSubmit(onSubmit)(e)}
 						className="flex w-full flex-col space-y-6"
 					>
 						<DrawerHeader className="text-left">
 							<DrawerTitle>Criar projeto</DrawerTitle>
 						</DrawerHeader>
 
-						<div className="px-4 space-y-4">
+						<div className="space-y-4 px-4">
 							<CreateProjectForm form={form} />
 						</div>
 

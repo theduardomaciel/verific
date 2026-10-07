@@ -2,7 +2,7 @@ import { db } from "@verific/drizzle";
 
 import { z } from "@verific/zod";
 
-import { project, speaker } from "@verific/drizzle/schema";
+import { speaker } from "@verific/drizzle/schema";
 import { eq } from "@verific/drizzle/orm";
 
 import { createTRPCRouter, protectedProcedure } from "../trpc";

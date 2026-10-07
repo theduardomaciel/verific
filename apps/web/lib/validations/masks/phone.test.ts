@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { formatPhone, toE164BR, toNationalBR } from "@/lib/validations/masks/phone";
+import {
+	formatPhone,
+	toE164BR,
+	toNationalBR,
+} from "@/lib/validations/masks/phone";
 
 describe("formatPhone", () => {
 	it("returns an empty string for empty input", () => {

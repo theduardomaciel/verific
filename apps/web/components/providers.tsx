@@ -7,7 +7,8 @@ import { ThemeProvider } from "next-themes";
 
 import { Toaster } from "./ui/sonner";
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 
 import { trpcLinks } from "@/lib/trpc/client";
 import { trpc } from "@/lib/trpc/react";

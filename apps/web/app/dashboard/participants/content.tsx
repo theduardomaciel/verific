@@ -44,17 +44,18 @@ export function ParticipantsContent() {
 		getParticipantsParams.parse(raw),
 	);
 
-	const { data, isPending, isError, isFetching } = trpc.getParticipants.useQuery(
-		{
-			projectId,
-			...parsedParams,
-		},
-		{
-			placeholderData: keepPreviousData,
-			staleTime: 30 * 1000,
-			refetchOnWindowFocus: false,
-		},
-	);
+	const { data, isPending, isError, isFetching } =
+		trpc.getParticipants.useQuery(
+			{
+				projectId,
+				...parsedParams,
+			},
+			{
+				placeholderData: keepPreviousData,
+				staleTime: 30 * 1000,
+				refetchOnWindowFocus: false,
+			},
+		);
 
 	if (isPending) {
 		return <ParticipantsSkeleton />;
@@ -101,6 +102,7 @@ export function ParticipantsContent() {
 						{participants && participants.length > 0 ? (
 							<div className="flex flex-col items-start justify-start gap-4">
 								{participants.map((participant) => (
+									// oxlint-disable-next-line typescript/unbound-method -- expressão membro JSX (`<A.B />`), não extração de método; sem `this` envolvido.
 									<ParticipantListItem.General
 										key={participant.id}
 										participant={participant}

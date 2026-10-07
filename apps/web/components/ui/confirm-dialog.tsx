@@ -60,7 +60,9 @@ export function ConfirmDialog({
 						onClick={onConfirm}
 						disabled={isPending}
 					>
-						{isPending && pendingLabel ? pendingLabel : confirmLabel}
+						{isPending && pendingLabel
+							? pendingLabel
+							: confirmLabel}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

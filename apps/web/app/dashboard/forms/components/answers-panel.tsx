@@ -58,7 +58,7 @@ export function AnswersPanel({ projectId }: { projectId: string }) {
 				<Button
 					size="sm"
 					variant="outline"
-					onClick={handleExport}
+					onClick={() => void handleExport()}
 					disabled={exp.isFetching}
 				>
 					{exp.isFetching ? "Exportando..." : "Exportar CSV"}

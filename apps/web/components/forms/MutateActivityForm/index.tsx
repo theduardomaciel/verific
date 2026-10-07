@@ -3,7 +3,8 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { useForm, Resolver } from "react-hook-form";
+import type { Resolver } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 // Components
@@ -30,7 +31,7 @@ import { trpc } from "@/lib/trpc/react";
 import { revalidateActivities } from "@/app/actions";
 
 // Types
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 import { dateToTimeString } from "@/components/pickers/time-picker";
 
 interface Props {
@@ -53,11 +54,15 @@ export default function MutateActivityForm({
 	const [currentState, setCurrentState] = useState<
 		false | "submitting" | "submitted" | "error"
 	>(false);
-	const submittedActivityId = useRef<string | undefined>(undefined);
+	const [submittedActivityId, setSubmittedActivityId] = useState<string>();
 	const configureAfterSave = useRef(false);
 	const router = useRouter();
 
 	// 1. Define your form.
+	// Data padrão fixada na montagem (inicializador executa uma única vez).
+	const [defaultSessionDate] = useState(
+		() => new Date(startDate || Date.now()),
+	);
 	const form = useForm<MutateActivityFormSchema>({
 		resolver: zodResolver(mutateActivityFormSchema) as Resolver<
 			MutateActivityFormSchema,
@@ -81,7 +86,7 @@ export default function MutateActivityForm({
 					}))
 				: [
 						{
-							date: new Date(startDate || Date.now()),
+							date: defaultSessionDate,
 							timeFrom: undefined,
 							timeTo: undefined,
 							address: "",
@@ -129,7 +134,7 @@ export default function MutateActivityForm({
 					...rest,
 				});
 
-				submittedActivityId.current = activity.id;
+				setSubmittedActivityId(activity.id);
 				setCurrentState("submitted");
 			} else {
 				const { activityId } = await createMutation.mutateAsync({
@@ -139,15 +144,13 @@ export default function MutateActivityForm({
 					...rest,
 				});
 
-				submittedActivityId.current = activityId;
+				setSubmittedActivityId(activityId);
 
 				if (configureAfterSave.current) {
 					configureAfterSave.current = false;
 					await revalidateActivities();
-					utils.getActivities.invalidate();
-					router.push(
-						`/dashboard/activities/${activityId}/form`,
-					);
+					void utils.getActivities.invalidate();
+					router.push(`/dashboard/activities/${activityId}/form`);
 					return;
 				}
 
@@ -155,9 +158,9 @@ export default function MutateActivityForm({
 			}
 
 			await revalidateActivities();
-			utils.getActivities.invalidate();
-			utils.getActivity.invalidate();
-			utils.getDashboardStats.invalidate();
+			void utils.getActivities.invalidate();
+			void utils.getActivity.invalidate();
+			void utils.getDashboardStats.invalidate();
 		} catch (error) {
 			console.error(error);
 			setCurrentState("error");
@@ -168,10 +171,12 @@ export default function MutateActivityForm({
 		<Form {...form}>
 			<form
 				id="mutate-activity-form"
-				onSubmit={form.handleSubmit(onSubmit, () => {
-					console.log(form.getValues());
-					console.log(form.formState.errors);
-				})}
+				onSubmit={(e) =>
+					void form.handleSubmit(onSubmit, () => {
+						console.log(form.getValues());
+						console.log(form.formState.errors);
+					})(e)
+				}
 				className="flex w-full flex-1 flex-col items-center justify-start gap-9"
 			>
 				<MutateActivityFormContent
@@ -196,7 +201,7 @@ export default function MutateActivityForm({
 			/>
 			<SuccessDialog
 				isOpen={currentState === "submitted"}
-				href={`/dashboard/activities/${submittedActivityId.current}`}
+				href={`/dashboard/activities/${submittedActivityId}`}
 				description={
 					<>
 						A atividade foi {activity ? "atualizada" : "criada"} por

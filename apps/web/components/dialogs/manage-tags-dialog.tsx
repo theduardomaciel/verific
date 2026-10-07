@@ -37,8 +37,7 @@ export function ManageTagsDialog({ projectId }: ManageTagsDialogProps) {
 	const renameTag = trpc.renameTag.useMutation();
 	const deleteTag = trpc.deleteTag.useMutation();
 
-	const invalidate = () =>
-		utils.getProjectTags.invalidate({ projectId });
+	const invalidate = () => utils.getProjectTags.invalidate({ projectId });
 
 	const handleCreate = async () => {
 		const name = newName.trim();
@@ -125,7 +124,7 @@ export function ManageTagsDialog({ projectId }: ManageTagsDialogProps) {
 										}
 										onKeyDown={(e) => {
 											if (e.key === "Enter")
-												handleRename(tag.id);
+												void handleRename(tag.id);
 										}}
 									/>
 									<Button
@@ -134,7 +133,9 @@ export function ManageTagsDialog({ projectId }: ManageTagsDialogProps) {
 											!editingName.trim() ||
 											renameTag.isPending
 										}
-										onClick={() => handleRename(tag.id)}
+										onClick={() =>
+											void handleRename(tag.id)
+										}
 									>
 										Salvar
 									</Button>
@@ -180,7 +181,7 @@ export function ManageTagsDialog({ projectId }: ManageTagsDialogProps) {
 											className="h-8 w-8"
 											disabled={deleteTag.isPending}
 											onClick={() =>
-												handleDelete(tag.id)
+												void handleDelete(tag.id)
 											}
 										>
 											<Trash2 size={14} />
@@ -200,13 +201,13 @@ export function ManageTagsDialog({ projectId }: ManageTagsDialogProps) {
 							maxLength={30}
 							onChange={(e) => setNewName(e.target.value)}
 							onKeyDown={(e) => {
-								if (e.key === "Enter") handleCreate();
+								if (e.key === "Enter") void handleCreate();
 							}}
 						/>
 						<Button
 							type="button"
 							disabled={!newName.trim() || createTag.isPending}
-							onClick={handleCreate}
+							onClick={() => void handleCreate()}
 						>
 							<Plus size={16} />
 							Criar
@@ -217,11 +218,12 @@ export function ManageTagsDialog({ projectId }: ManageTagsDialogProps) {
 							<button
 								key={color}
 								type="button"
+								// oxlint-disable-next-line jsx-a11y/control-has-associated-label -- `title={color}` IS an accessible label (ATs announce it on focus); linter only checks for <label> or aria-label.
 								title={color}
 								onClick={() => setNewColor(color)}
 								className={`h-6 w-6 rounded-full border-2 transition-transform ${
 									newColor === color
-										? "scale-110 border-foreground"
+										? "border-foreground scale-110"
 										: "border-transparent"
 								}`}
 								style={{ backgroundColor: color }}

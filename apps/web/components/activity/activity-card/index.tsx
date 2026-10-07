@@ -16,7 +16,7 @@ import { TagBadges } from "../tag-badge";
 import { ExpandableDescription } from "@/components/shared/expandable-description";
 
 // Types
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 
 // Lib
 import { activityCategoryLabels } from "@verific/drizzle/schema";
@@ -126,7 +126,7 @@ export function ActivityCard({
 									href={`/${activity.project?.url}/schedule/${activity.id}`}
 									scroll={false}
 								>
-									{!!participantId ? (
+									{participantId ? (
 										<>
 											<Check className="mr-2 h-4 w-4" />
 											Inscrito
@@ -140,16 +140,14 @@ export function ActivityCard({
 								</Link>
 							</Button>
 						) : null}
-						{!!participantId &&
-							!!userId &&
-							!hasEnded && (
-								<ParticipantQuitButton
-									activityId={activity.id}
-									userId={userId}
-									participantId={participantId}
-									projectUrl={activity.project?.url}
-								/>
-							)}
+						{!!participantId && !!userId && !hasEnded && (
+							<ParticipantQuitButton
+								activityId={activity.id}
+								userId={userId}
+								participantId={participantId}
+								projectUrl={activity.project?.url}
+							/>
+						)}
 					</div>
 				</div>
 			</div>

@@ -29,9 +29,10 @@ export async function writeProjectLayout(
 	projectId: string,
 	layout: ProfileLayout,
 ): Promise<void> {
-	await db.update(project).set({ profileLayout: layout }).where(
-		eq(project.id, projectId),
-	);
+	await db
+		.update(project)
+		.set({ profileLayout: layout })
+		.where(eq(project.id, projectId));
 }
 
 /** Todos os fieldIds ligados, em qualquer slot. */

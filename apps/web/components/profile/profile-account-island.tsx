@@ -51,8 +51,8 @@ export function ProfileAccountIsland({
 					Perfil indisponível
 				</h1>
 				<p className="text-muted-foreground mt-2">
-					Use o link enviado na confirmação da sua inscrição para acessar
-					sua conta.
+					Use o link enviado na confirmação da sua inscrição para
+					acessar sua conta.
 				</p>
 			</Card>
 		);
@@ -86,7 +86,10 @@ export function ProfileAccountIsland({
 					<div className="absolute top-8 right-8 z-20 flex gap-2">
 						<Dialog>
 							<DialogTrigger asChild>
-								<Button size="lg" className="ev-button rounded-full">
+								<Button
+									size="lg"
+									className="ev-button rounded-full"
+								>
 									<Pencil className="h-4 w-4" />
 									Editar inscrição
 								</Button>
@@ -95,7 +98,10 @@ export function ProfileAccountIsland({
 								<DialogHeader>
 									<DialogTitle>Editar inscrição</DialogTitle>
 								</DialogHeader>
-								<EditMyAnswersForm projectId={projectId} projectUrl={eventUrl} />
+								<EditMyAnswersForm
+									projectId={projectId}
+									projectUrl={eventUrl}
+								/>
 							</DialogContent>
 						</Dialog>
 						<LogoutForm redirectTo={`/${eventUrl}`}>

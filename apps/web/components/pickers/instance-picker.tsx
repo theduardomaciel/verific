@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Image from "next/image";
 
 import { cn } from "@/lib/utils";
 import { Check, ChevronsUpDown, Loader2, Plus, User } from "lucide-react";
@@ -240,7 +239,6 @@ function PickerTrigger<T extends Item = Item>({
 	return (
 		<Button
 			variant="outline"
-			role="combobox"
 			type="button"
 			className={cn(
 				"hover:text-neutral h-fit flex-1 justify-between px-3 text-sm font-normal lg:px-4",

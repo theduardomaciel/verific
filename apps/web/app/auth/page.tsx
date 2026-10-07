@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 
 import Logo from "@/public/logo.svg";
@@ -21,7 +22,7 @@ async function LoginContent({
 
 	return (
 		<div className="flex min-h-screen flex-col md:flex-row">
-			<div className="bg-primary relative flex flex-col justify-center gap-4 overflow-hidden rounded-b bg-[linear-gradient(180deg,#2563EB_0%,#3B82F6_100%)] p-6 text-white md:m-8 md:w-1/2 md:justify-between md:rounded md:p-12">
+			<div className="bg-primary relative flex flex-col justify-center gap-4 overflow-hidden rounded-b-lg bg-[linear-gradient(180deg,#2563EB_0%,#3B82F6_100%)] p-6 text-white md:m-8 md:w-1/2 md:justify-between md:rounded md:p-12">
 				<h1 className="font-dashboard z-10 hidden text-4xl leading-[110%] font-extrabold tracking-normal text-white md:flex md:text-6xl">
 					Tecnologia de eventos ao seu alcance
 				</h1>
@@ -52,19 +53,19 @@ async function LoginContent({
 					<p className="text-muted-foreground text-center text-sm">
 						Ao continuar, você concorda com nossos
 						<br />
-						<a
+						<Link
 							href="/terms"
 							className="text-muted-foreground hover:text-foreground text-sm hover:underline"
 						>
 							Termos de Serviço
-						</a>{" "}
+						</Link>{" "}
 						e{" "}
-						<a
+						<Link
 							href="/privacy"
 							className="text-muted-foreground hover:text-foreground text-sm hover:underline"
 						>
 							Política de Privacidade
-						</a>
+						</Link>
 						.
 					</p>
 					<footer className="absolute bottom-0 left-1/2 flex w-full max-w-[50%] -translate-x-1/2 items-center justify-center pb-8 md:hidden">

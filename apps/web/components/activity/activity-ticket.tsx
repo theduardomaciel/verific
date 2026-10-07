@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 
 import { cn } from "@/lib/utils";
@@ -23,7 +24,7 @@ import {
 } from "@/lib/date";
 
 // API
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 
 export interface WorkshopTicketProps {
 	className?: string;
@@ -40,6 +41,9 @@ export function ActivityTicket({
 }: WorkshopTicketProps) {
 	const isMonitor = activity.role === "monitor";
 
+	// Congelado na montagem: evita que o selo de expiração oscile em
+	// re-renders não relacionados (não há timer).
+	const [now] = useState(() => new Date());
 	const sessions = getSessionsSorted(activity.sessions);
 	const attendedCount = sessions.filter((s) => s.joinedAt).length;
 
@@ -48,9 +52,7 @@ export function ActivityTicket({
 	const endDatePlusTolerance = lastEnd
 		? new Date(lastEnd.getTime() + tolerance * 60 * 1000)
 		: null;
-	const isExpired = endDatePlusTolerance
-		? new Date() > endDatePlusTolerance
-		: false;
+	const isExpired = endDatePlusTolerance ? now > endDatePlusTolerance : false;
 
 	return (
 		<div
@@ -65,7 +67,7 @@ export function ActivityTicket({
 				<div className="bg-card flex flex-1 flex-col gap-4 p-6">
 					{/* Header */}
 					<div className="flex w-full flex-wrap items-center justify-between gap-2 md:flex-nowrap">
-						<h2 className="line-clamp-2 text-2xl leading-tight font-bold break-words">
+						<h2 className="line-clamp-2 text-2xl leading-tight font-bold wrap-break-word">
 							{activity.name}
 						</h2>
 						<ActivityStatus
@@ -262,7 +264,7 @@ function DecorativeDivider() {
 	return (
 		<div className="relative h-16 w-full md:h-auto md:w-16 md:flex-col">
 			{/* Line decoration - vertical on mobile, horizontal on desktop */}
-			<div className="border-foreground absolute top-1/2 left-1/2 h-[1px] w-3/4 -translate-x-1/2 -translate-y-1/2 rounded border border-dashed opacity-30 md:h-3/4 md:w-[1px]" />
+			<div className="border-foreground absolute top-1/2 left-1/2 h-px w-3/4 -translate-x-1/2 -translate-y-1/2 rounded border border-dashed opacity-30 md:h-3/4 md:w-px" />
 
 			<div className="flex h-full flex-row md:flex-col">
 				{/* Left/Top cutout */}

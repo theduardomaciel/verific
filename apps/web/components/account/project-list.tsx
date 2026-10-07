@@ -6,7 +6,7 @@ import { AccountEventCard } from "./project-card";
 import { CreateProjectDialog } from "./create-project-dialog";
 
 // Types
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 
 interface Props {

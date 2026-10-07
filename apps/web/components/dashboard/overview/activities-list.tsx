@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SimpleActivityCard } from "@/components/activity/activity-card/dashboard";
 
 // Types
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 
 interface Props {
 	className?: string;
@@ -22,7 +22,7 @@ export function ActivitiesList({ activities, className }: Props) {
 			</CardHeader>
 			<CardContent className="grid gap-4">
 				{activities.length > 0 ? (
-					activities.map((activity, _) => (
+					activities.map((activity) => (
 						<SimpleActivityCard
 							key={activity.id}
 							activity={activity}

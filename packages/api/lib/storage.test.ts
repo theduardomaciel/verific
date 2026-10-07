@@ -15,11 +15,7 @@ vi.mock("@verific/env", () => ({
 	},
 }));
 
-import {
-	IMAGE_PURPOSES,
-	storage,
-	validateUploadInput,
-} from "./storage";
+import { IMAGE_PURPOSES, storage, validateUploadInput } from "./storage";
 
 describe("storage adapter", () => {
 	it("monta chaves por finalidade e projeto", () => {

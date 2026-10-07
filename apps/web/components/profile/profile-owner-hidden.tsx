@@ -33,17 +33,39 @@ export function ProfileOwnerHidden({
 	if (!myData.data || myData.data.shortId !== shortId) return null;
 	const hidden = [
 		...(myData.data.slots.subtitle?.hidden
-			? [{ label: "Título", icon: "star" as const, value: myData.data.slots.subtitle.value }]
+			? [
+					{
+						label: "Título",
+						icon: "star" as const,
+						value: myData.data.slots.subtitle.value,
+					},
+				]
 			: []),
 		...(myData.data.slots.bio?.hidden
-			? [{ label: "Bio", icon: "book-open" as const, value: myData.data.slots.bio.value }]
+			? [
+					{
+						label: "Bio",
+						icon: "book-open" as const,
+						value: myData.data.slots.bio.value,
+					},
+				]
 			: []),
 		...myData.data.slots.stats.filter((s) => s.hidden),
 		...myData.data.slots.socials
 			.filter((s) => s.hidden)
-			.map((s) => ({ label: s.label, icon: "globe" as const, value: s.url })),
+			.map((s) => ({
+				label: s.label,
+				icon: "globe" as const,
+				value: s.url,
+			})),
 		...(myData.data.slots.email?.hidden
-			? [{ label: "E-mail", icon: "globe" as const, value: myData.data.slots.email.value }]
+			? [
+					{
+						label: "E-mail",
+						icon: "globe" as const,
+						value: myData.data.slots.email.value,
+					},
+				]
 			: []),
 	];
 	if (hidden.length === 0) return null;

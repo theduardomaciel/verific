@@ -102,7 +102,15 @@ function describeRule(
 	section: Section,
 	fieldById: Map<string, Field>,
 ): string | null {
-	const rule = (section as { visibilityRule?: { sourceFieldId: string; operator: string; values?: string[] } | null }).visibilityRule;
+	const rule = (
+		section as {
+			visibilityRule?: {
+				sourceFieldId: string;
+				operator: string;
+				values?: string[];
+			} | null;
+		}
+	).visibilityRule;
 	if (!rule) return null;
 	const source = fieldById.get(rule.sourceFieldId);
 	const name = source?.label ?? "campo removido";
@@ -193,7 +201,10 @@ function SectionBlock({
 						{fieldIds.length === 1 ? "" : "s"}
 					</Badge>
 					{describeRule(section, fieldById) && (
-						<Badge variant="outline" title={describeRule(section, fieldById) ?? ""}>
+						<Badge
+							variant="outline"
+							title={describeRule(section, fieldById) ?? ""}
+						>
 							Condicional
 						</Badge>
 					)}
@@ -532,7 +543,11 @@ export function BuilderCard({
 	const [dragType, setDragType] = useState<string | null>(null);
 	const groups = fieldPreview ?? baseGroups;
 	const groupsRef = useRef(groups);
-	groupsRef.current = groups;
+	// Mantém a ref atualizada pós-commit: leitura durante o render
+	// rasgaria em modo concorrente (ver react/refs).
+	useEffect(() => {
+		groupsRef.current = groups;
+	});
 
 	// Keep the preview until the persisted/optimistic order lands in `fields`,
 	// otherwise the list flashes back to the old order on drop.

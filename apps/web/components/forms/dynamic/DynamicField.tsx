@@ -1,7 +1,7 @@
 "use client";
 
 import { type Control, type FieldValues } from "react-hook-form";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input, PhoneInput } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,10 +30,7 @@ import {
 	OTHER_TEXT_MAX_LENGTH,
 } from "@verific/api/schemas";
 import { SOCIAL_SERVICES } from "@verific/drizzle/profile-layout";
-import {
-	SocialLinksEditor,
-	type SocialEntry,
-} from "./SocialLinksEditor";
+import { SocialLinksEditor, type SocialEntry } from "./SocialLinksEditor";
 
 export type DynamicFormField = NonNullable<
 	RouterOutput["getPublishedForm"]
@@ -76,9 +73,11 @@ function SelectMultipleWithOther({
 	const others = value.filter((v) => !options.includes(v));
 	const [otherOpen, setOtherOpen] = useState(others.length > 0);
 	const othersKey = others.join("");
-	useEffect(() => {
+	const [prevOthersKey, setPrevOthersKey] = useState(othersKey);
+	if (othersKey !== prevOthersKey) {
+		setPrevOthersKey(othersKey);
 		if (others.length > 0) setOtherOpen(true);
-	}, [othersKey]);
+	}
 	const otherText = others[0] ?? "";
 
 	return (
@@ -86,7 +85,10 @@ function SelectMultipleWithOther({
 			{options.map((opt) => {
 				const checked = value.includes(opt);
 				return (
-					<label key={opt} className="flex cursor-pointer items-center gap-2 text-sm">
+					<label
+						key={opt}
+						className="flex cursor-pointer items-center gap-2 text-sm"
+					>
 						<Checkbox
 							disabled={disabled}
 							checked={checked}
@@ -110,7 +112,11 @@ function SelectMultipleWithOther({
 									setOtherOpen(true);
 								} else {
 									setOtherOpen(false);
-									onChange(value.filter((v) => options.includes(v)));
+									onChange(
+										value.filter((v) =>
+											options.includes(v),
+										),
+									);
 								}
 							}}
 						/>
@@ -125,7 +131,9 @@ function SelectMultipleWithOther({
 							value={otherText}
 							onChange={(e) => {
 								const text = e.target.value;
-								const kept = value.filter((v) => options.includes(v));
+								const kept = value.filter((v) =>
+									options.includes(v),
+								);
 								onChange(text === "" ? kept : [...kept, text]);
 							}}
 						/>
@@ -261,7 +269,9 @@ export function DynamicField({
 					case "select_single": {
 						const singleOptions = field.options ?? [];
 						const singleAllowOther = getAllowOther(field);
-						const singleRaw = (value ?? undefined) as string | undefined;
+						const singleRaw = (value ?? undefined) as
+							| string
+							| undefined;
 						const singleInOptions =
 							typeof singleRaw === "string" &&
 							singleRaw !== "" &&
@@ -273,7 +283,8 @@ export function DynamicField({
 							singleAllowOther &&
 							typeof singleRaw === "string" &&
 							(singleRaw === "" ||
-								(singleRaw !== "" && !singleOptions.includes(singleRaw)));
+								(singleRaw !== "" &&
+									!singleOptions.includes(singleRaw)));
 						const singleSelectValue = singleInOptions
 							? singleRaw
 							: singleOtherSelected
@@ -291,17 +302,17 @@ export function DynamicField({
 								// Keep already-typed custom text when re-picking.
 								rhf.onChange(
 									typeof singleRaw === "string" &&
-									singleRaw !== "" &&
-									!singleOptions.includes(singleRaw)
-									? singleRaw
-									: "",
+										singleRaw !== "" &&
+										!singleOptions.includes(singleRaw)
+										? singleRaw
+										: "",
 								);
 							} else {
 								rhf.onChange(
 									!field.required &&
-									(v === EMPTY_SELECT_VALUE ||
-										v === undefined ||
-										v === "")
+										(v === EMPTY_SELECT_VALUE ||
+											v === undefined ||
+											v === "")
 										? undefined
 										: v,
 								);
@@ -325,7 +336,12 @@ export function DynamicField({
 								value: opt,
 							})),
 							...(singleAllowOther
-								? [{ label: OTHER_LABEL, value: OTHER_SENTINEL }]
+								? [
+										{
+											label: OTHER_LABEL,
+											value: OTHER_SENTINEL,
+										},
+									]
 								: []),
 						];
 						return (
@@ -350,37 +366,44 @@ export function DynamicField({
 										/>
 									</FormControl>
 								) : (
-								<Select
-									disabled={disabled}
-									value={singleSelectValue}
-									onValueChange={handleSingleChange}
-								>
-									<FormControl>
-										<SelectTrigger className="w-full">
-											<SelectValue placeholder="Selecione uma opção" />
-										</SelectTrigger>
-									</FormControl>
-									<SelectContent>
-										{!field.required && (
-											<SelectItem
-												value={EMPTY_SELECT_VALUE}
-												className="text-muted-foreground"
-											>
-												Limpar seleção
-											</SelectItem>
-										)}
-										{(field.options ?? []).map((opt) => (
-											<SelectItem key={opt} value={opt}>
-												{opt}
-											</SelectItem>
-										))}
-										{singleAllowOther && (
-											<SelectItem value={OTHER_SENTINEL}>
-												{OTHER_LABEL}
-											</SelectItem>
-										)}
-									</SelectContent>
-								</Select>
+									<Select
+										disabled={disabled}
+										value={singleSelectValue}
+										onValueChange={handleSingleChange}
+									>
+										<FormControl>
+											<SelectTrigger className="w-full">
+												<SelectValue placeholder="Selecione uma opção" />
+											</SelectTrigger>
+										</FormControl>
+										<SelectContent>
+											{!field.required && (
+												<SelectItem
+													value={EMPTY_SELECT_VALUE}
+													className="text-muted-foreground"
+												>
+													Limpar seleção
+												</SelectItem>
+											)}
+											{(field.options ?? []).map(
+												(opt) => (
+													<SelectItem
+														key={opt}
+														value={opt}
+													>
+														{opt}
+													</SelectItem>
+												),
+											)}
+											{singleAllowOther && (
+												<SelectItem
+													value={OTHER_SENTINEL}
+												>
+													{OTHER_LABEL}
+												</SelectItem>
+											)}
+										</SelectContent>
+									</Select>
 								)}
 								{singleOtherSelected && (
 									<FormControl>
@@ -390,7 +413,9 @@ export function DynamicField({
 											disabled={disabled}
 											maxLength={OTHER_TEXT_MAX_LENGTH}
 											value={singleOtherText}
-											onChange={(e) => rhf.onChange(e.target.value)}
+											onChange={(e) =>
+												rhf.onChange(e.target.value)
+											}
 											onBlur={rhf.onBlur}
 											name={rhf.name}
 										/>
@@ -403,14 +428,18 @@ export function DynamicField({
 					case "radio_group": {
 						const radioOptions = field.options ?? [];
 						const radioAllowOther = getAllowOther(field);
-						const radioRaw = (value ?? undefined) as string | undefined;
+						const radioRaw = (value ?? undefined) as
+							| string
+							| undefined;
 						const radioInOptions =
-							typeof radioRaw === "string" && radioOptions.includes(radioRaw);
+							typeof radioRaw === "string" &&
+							radioOptions.includes(radioRaw);
 						const radioOtherSelected =
 							radioAllowOther &&
 							typeof radioRaw === "string" &&
 							(radioRaw === "" ||
-								(radioRaw !== "" && !radioOptions.includes(radioRaw)));
+								(radioRaw !== "" &&
+									!radioOptions.includes(radioRaw)));
 						const radioValue = radioInOptions
 							? radioRaw
 							: radioOtherSelected
@@ -438,13 +467,19 @@ export function DynamicField({
 										onValueChange={(v) => {
 											if (v === OTHER_SENTINEL) {
 												rhf.onChange(
-													typeof radioRaw === "string" &&
-													radioRaw !== "" &&
-													!radioOptions.includes(radioRaw)
+													typeof radioRaw ===
+														"string" &&
+														radioRaw !== "" &&
+														!radioOptions.includes(
+															radioRaw,
+														)
 														? radioRaw
 														: "",
 												);
-											} else if (!field.required && v === EMPTY_SELECT_VALUE) {
+											} else if (
+												!field.required &&
+												v === EMPTY_SELECT_VALUE
+											) {
 												rhf.onChange(undefined);
 											} else {
 												rhf.onChange(v);
@@ -454,24 +489,45 @@ export function DynamicField({
 									>
 										{!field.required && (
 											<div className="flex items-center gap-2 text-sm">
-												<RadioGroupItem value={EMPTY_SELECT_VALUE} id={`${name}-clear`} />
-												<label htmlFor={`${name}-clear`} className="text-muted-foreground cursor-pointer">
+												<RadioGroupItem
+													value={EMPTY_SELECT_VALUE}
+													id={`${name}-clear`}
+												/>
+												<label
+													htmlFor={`${name}-clear`}
+													className="text-muted-foreground cursor-pointer"
+												>
 													Limpar seleção
 												</label>
 											</div>
 										)}
 										{radioOptions.map((opt) => (
-											<div key={opt} className="flex items-center gap-2 text-sm">
-												<RadioGroupItem value={opt} id={`${name}-${opt}`} />
-												<label htmlFor={`${name}-${opt}`} className="cursor-pointer">
+											<div
+												key={opt}
+												className="flex items-center gap-2 text-sm"
+											>
+												<RadioGroupItem
+													value={opt}
+													id={`${name}-${opt}`}
+												/>
+												<label
+													htmlFor={`${name}-${opt}`}
+													className="cursor-pointer"
+												>
 													{opt}
 												</label>
 											</div>
 										))}
 										{radioAllowOther && (
 											<div className="flex items-center gap-2 text-sm">
-												<RadioGroupItem value={OTHER_SENTINEL} id={`${name}-other`} />
-												<label htmlFor={`${name}-other`} className="cursor-pointer">
+												<RadioGroupItem
+													value={OTHER_SENTINEL}
+													id={`${name}-other`}
+												/>
+												<label
+													htmlFor={`${name}-other`}
+													className="cursor-pointer"
+												>
 													{OTHER_LABEL}
 												</label>
 											</div>
@@ -486,7 +542,9 @@ export function DynamicField({
 											disabled={disabled}
 											maxLength={OTHER_TEXT_MAX_LENGTH}
 											value={radioOtherText}
-											onChange={(e) => rhf.onChange(e.target.value)}
+											onChange={(e) =>
+												rhf.onChange(e.target.value)
+											}
 											onBlur={rhf.onBlur}
 											name={rhf.name}
 										/>

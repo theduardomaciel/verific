@@ -17,7 +17,6 @@ import {
 	Drawer,
 	DrawerClose,
 	DrawerContent,
-	DrawerDescription,
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle,
@@ -26,7 +25,6 @@ import {
 import {
 	Form,
 	FormControl,
-	FormDescription,
 	FormField,
 	FormItem,
 	FormLabel,
@@ -49,7 +47,7 @@ import { z } from "@verific/zod";
 import { trpc } from "@/lib/trpc/react";
 
 // Types
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 import type { FormState } from "@/lib/types/forms";
 
 const formSchema = z.object({
@@ -95,6 +93,7 @@ export function MutateSpeakerDialog({
 	});
 
 	// Sincroniza o formulário com a prop speaker sempre que ela mudar
+	// oxlint-disable-line react-hooks/exhaustive-deps -- `form` from RHF is stable; adding it to deps is unnecessary and triggers the linter incorrectly (form is not a hook).
 	useEffect(() => {
 		form.reset({
 			name: speaker?.name ?? "",
@@ -146,6 +145,23 @@ export function MutateSpeakerDialog({
 		}
 	}
 
+	// TODO: Fazemos o submit do formulário manualmente pois estamos acidentalmente rodando
+	// o formulário da página junto com o do dialog/drawer
+	async function handleManualSubmit() {
+		// Manually trigger validation on all fields and wait for it to complete
+		// oxlint-disable-line react-hooks/exhaustive-deps -- `form` from RHF is stable; adding it to deps is unnecessary and triggers the linter incorrectly (form is not a hook).
+		const isValid = await form.trigger();
+
+		if (isValid) {
+			// If valid, get values and submit
+			const values = form.getValues();
+			await onSubmit(values);
+		} else {
+			// Log errors for debugging
+			console.log("Form validation failed:", form.formState.errors);
+		}
+	}
+
 	if (isDesktop) {
 		return (
 			<Dialog open={open} onOpenChange={setOpen}>
@@ -163,7 +179,10 @@ export function MutateSpeakerDialog({
 										: "Adicionar palestrante"}
 								</DialogTitle>
 							</DialogHeader>
-							<MutateSpeakerForm form={form} projectId={projectId} />
+							<MutateSpeakerForm
+								form={form}
+								projectId={projectId}
+							/>
 							<DialogFooter className="w-full grid-cols-2 gap-3 md:grid">
 								<DialogClose asChild>
 									<Button type="button" variant={"outline"}>
@@ -178,22 +197,7 @@ export function MutateSpeakerDialog({
 									}
 									// TODO: Fazemos o submit do formulário manualmente pois estamos acidentalmente rodando
 									// o formulário da página junto com o do dialog/drawer
-									onClick={async () => {
-										// Manually trigger validation on all fields and wait for it to complete
-										const isValid = await form.trigger();
-
-										if (isValid) {
-											// If valid, get values and submit
-											const values = form.getValues();
-											onSubmit(values);
-										} else {
-											// Log errors for debugging
-											console.log(
-												"Form validation failed:",
-												form.formState.errors,
-											);
-										}
-									}}
+									onClick={() => void handleManualSubmit()}
 								>
 									{speaker ? "Salvar" : "Criar"}
 								</Button>
@@ -205,7 +209,7 @@ export function MutateSpeakerDialog({
 					currentState={currentState}
 					onClose={(refresh) => {
 						if (refresh) {
-							utils.getSpeakers.invalidate();
+							void utils.getSpeakers.invalidate();
 						}
 						setCurrentState(false);
 						setOpen(false);
@@ -232,29 +236,17 @@ export function MutateSpeakerDialog({
 							</DrawerTitle>
 						</DrawerHeader>
 						<div className="space-y-6 px-4">
-							<MutateSpeakerForm form={form} projectId={projectId} />
+							<MutateSpeakerForm
+								form={form}
+								projectId={projectId}
+							/>
 						</div>
 						<DrawerFooter className="flex w-full gap-2">
 							<Button
 								type="button"
 								// TODO: Fazemos o submit do formulário manualmente pois estamos acidentalmente rodando
 								// o formulário da página junto com o do dialog/drawer
-								onClick={async () => {
-									// Manually trigger validation on all fields and wait for it to complete
-									const isValid = await form.trigger();
-
-									if (isValid) {
-										// If valid, get values and submit
-										const values = form.getValues();
-										onSubmit(values);
-									} else {
-										// Log errors for debugging
-										console.log(
-											"Form validation failed:",
-											form.formState.errors,
-										);
-									}
-								}}
+								onClick={() => void handleManualSubmit()}
 							>
 								{speaker ? "Atualizar" : "Criar"}
 							</Button>
@@ -271,7 +263,7 @@ export function MutateSpeakerDialog({
 				currentState={currentState}
 				onClose={(refresh) => {
 					if (refresh) {
-						utils.getSpeakers.invalidate();
+						void utils.getSpeakers.invalidate();
 					}
 					setCurrentState(false);
 					setOpen(false);

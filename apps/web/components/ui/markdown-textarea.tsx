@@ -23,8 +23,10 @@ import {
 	Edit,
 } from "lucide-react";
 
-interface MarkdownTextareaProps
-	extends Omit<React.ComponentProps<"textarea">, "onChange"> {
+interface MarkdownTextareaProps extends Omit<
+	React.ComponentProps<"textarea">,
+	"onChange"
+> {
 	value?: string;
 	onChange?: (value: string) => void;
 }
@@ -215,6 +217,7 @@ const MarkdownTextarea = React.forwardRef<
 	return (
 		<div className={cn("flex flex-col gap-2", className)}>
 			<div className="bg-muted/50 flex flex-wrap gap-1 rounded-md border p-2">
+				{/* oxlint-disable-next-line react/refs -- textareaRef is read only inside click handlers; the actions array defeats the compiler's handler detection (false positive). */}
 				{toolbarButtons.map((button, index) => (
 					<Button
 						key={index}

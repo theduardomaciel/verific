@@ -1,0 +1,83 @@
+{
+	"$schema": "./node_modules/oxlint/configuration_schema.json",
+	"plugins": [
+		"react",
+		"typescript",
+		"unicorn",
+		"oxc",
+		"import",
+		"jsx-a11y",
+		"nextjs"
+	],
+	"settings": {
+		"react": {
+			"version": "19.2.0"
+		},
+		"next": {
+			"rootDir": "apps/web"
+		}
+	},
+	"rules": {
+		"typescript/no-floating-promises": "error",
+		"typescript/no-misused-promises": "error",
+		"typescript/consistent-type-imports": "error",
+		"typescript/no-base-to-string": "off",
+		"react/rules-of-hooks": "error",
+		"react/exhaustive-deps": "off",
+		"react/jsx-key": "error",
+		"react/error-boundaries": "error",
+		"react/globals": "error",
+		"react/immutability": "error",
+		"react/incompatible-library": "error",
+		"react/preserve-manual-memoization": "error",
+		"react/purity": "error",
+		"react/refs": "error",
+		"react/set-state-in-effect": "error",
+		"react/set-state-in-render": "error",
+		"react/static-components": "error",
+		"react/use-memo": "error",
+		"react/void-use-memo": "error",
+		"react/unsupported-syntax": "warn",
+		"nextjs/no-html-link-for-pages": "error",
+		"nextjs/no-img-element": "warn",
+		"jsx-a11y/alt-text": "warn",
+		"jsx-a11y/aria-props": "warn",
+		"jsx-a11y/no-autofocus": "off",
+		"jsx-a11y/no-static-element-interactions": "off",
+		"jsx-a11y/click-events-have-key-events": "off",
+		"jsx-a11y/no-noninteractive-element-interactions": "off",
+		"jsx-a11y/no-noninteractive-element-to-interactive-role": "off",
+		"jsx-a11y/control-has-associated-label": "off",
+		"jsx-a11y/prefer-tag-over-role": "off",
+		"import/no-duplicates": "error",
+		"typescript/no-useless-default-assignment": "off"
+	},
+	"overrides": [
+		{
+			"files": [
+				"*.config.*",
+				"vitest.setup.*",
+				"**/tools/scripts/**",
+				"**/migrate.ts",
+				"**/seed.ts"
+			],
+			"rules": {
+				"typescript/no-floating-promises": "off",
+				"typescript/no-misused-promises": "off"
+			}
+		}
+	],
+	"ignorePatterns": [
+		"**/node_modules/**",
+		"**/.next/**",
+		"**/.turbo/**",
+		"**/dist/**",
+		"**/build/**",
+		"**/coverage/**",
+		"**/public/**",
+		"**/*.tsbuildinfo"
+	],
+	"options": {
+		"typeAware": true
+	}
+}

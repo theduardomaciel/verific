@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { XIcon } from "lucide-react";
-import { ReactNode, useEffect, useState } from "react";
+import type { ReactNode } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 
 interface FullScreenDrawerProps {
@@ -19,15 +20,18 @@ export function FullScreenDrawer({
 	className,
 	closeButton,
 }: FullScreenDrawerProps) {
-	const [open, setOpen] = useState(false);
+	const [open, setOpen] = useState(openProp ?? true);
 	const [mounted, setMounted] = useState(false);
+	const [prevOpenProp, setPrevOpenProp] = useState(openProp);
 
-	useEffect(() => {
-		setMounted(true);
-		if (openProp !== undefined) setOpen(openProp);
-		else setOpen(true);
-		return () => setMounted(false);
-	}, [openProp]);
+	// Sincroniza sem efeito em cascata: montagem garante o portal só no
+	// client (sem mismatch de hidratação) e a prop controla o estado.
+	if (!mounted) setMounted(true);
+
+	if (openProp !== prevOpenProp) {
+		setPrevOpenProp(openProp);
+		setOpen(openProp ?? true);
+	}
 
 	function handleClose() {
 		setOpen(false);

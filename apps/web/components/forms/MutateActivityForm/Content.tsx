@@ -1,6 +1,5 @@
 "use client";
 import * as React from "react";
-import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 // Icons
@@ -51,7 +50,7 @@ import { trpc } from "@/lib/trpc/react";
 import { tagColors } from "@verific/api/schemas";
 
 // Types
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 import {
 	activityCategories,
 	activityCategoryLabels,
@@ -462,7 +461,7 @@ function TagsPicker({
 								disabled={
 									!newTagName.trim() || createTag.isPending
 								}
-								onClick={createAndSelect}
+								onClick={() => void createAndSelect()}
 							>
 								<Plus size={16} />
 								Criar
@@ -474,6 +473,7 @@ function TagsPicker({
 									<button
 										key={color}
 										type="button"
+										// oxlint-disable-next-line jsx-a11y/control-has-associated-label -- `title={color}` IS an accessible label (ATs announce it on focus); linter only checks for <label> or aria-label.
 										title={color}
 										onClick={() => setNewTagColor(color)}
 										className={`h-6 w-6 rounded-full border-2 transition-transform ${
@@ -505,7 +505,6 @@ function TagsPicker({
 export function MutateActivityFormContent({
 	form,
 	projectId,
-	endDate,
 	isEditing,
 	registrationFormAction,
 	onSecondarySubmit,
@@ -566,23 +565,23 @@ export function MutateActivityFormContent({
 						</Button>
 					) : null}
 					<Button type="submit" size="lg" className="shrink-0 !px-5">
-					{isEditing ? (
-						<>
-							<Edit className="h-5 w-5" />
-							<span className="hidden sm:inline">
-								Editar atividade
-							</span>
-							<span className="sm:hidden">Editar</span>
-						</>
-					) : (
-						<>
-							<CloudUpload className="h-5 w-5" />
-							<span className="hidden sm:inline">
-								Cadastrar atividade
-							</span>
-							<span className="sm:hidden">Cadastrar</span>
-						</>
-					)}
+						{isEditing ? (
+							<>
+								<Edit className="h-5 w-5" />
+								<span className="hidden sm:inline">
+									Editar atividade
+								</span>
+								<span className="sm:hidden">Editar</span>
+							</>
+						) : (
+							<>
+								<CloudUpload className="h-5 w-5" />
+								<span className="hidden sm:inline">
+									Cadastrar atividade
+								</span>
+								<span className="sm:hidden">Cadastrar</span>
+							</>
+						)}
 					</Button>
 				</div>
 			</header>
@@ -815,17 +814,16 @@ export function MutateActivityFormContent({
 													</Button>
 												}
 												onSuccess={() => {
-													utils.getSpeakers.invalidate();
-													refetch()
-														.catch((error) => {
+													void utils.getSpeakers.invalidate();
+													// Keep existing speakers after adding new one
+													void refetch().catch(
+														(error) => {
 															console.error(
 																"Error refetching speakers:",
 																error,
 															);
-														})
-														.then(() => {
-															// Keep existing speakers after adding new one
-														});
+														},
+													);
 												}}
 											/>
 										}
@@ -834,16 +832,11 @@ export function MutateActivityFormContent({
 												id.toString(),
 											) || []
 										}
-										onSelect={useCallback(
-											(items: string[]) => {
-												field.onChange(
-													items.map((id) =>
-														parseInt(id),
-													),
-												);
-											},
-											[field.onChange],
-										)}
+										onSelect={(items: string[]) => {
+											field.onChange(
+												items.map((id) => parseInt(id)),
+											);
+										}}
 										placeholder={
 											isLoading
 												? "Carregando palestrantes..."
@@ -895,24 +888,19 @@ export function MutateActivityFormContent({
 																</Button>
 															}
 															onSuccess={() => {
-																refetch()
-																	.catch(
-																		(
+																void (async () => {
+																	try {
+																		await refetch();
+																		toast.success(
+																			"Palestrante atualizado com sucesso!",
+																		);
+																	} catch (error) {
+																		console.error(
+																			"Error refetching speakers:",
 																			error,
-																		) => {
-																			console.error(
-																				"Error refetching speakers:",
-																				error,
-																			);
-																		},
-																	)
-																	.then(
-																		() => {
-																			toast.success(
-																				"Palestrante atualizado com sucesso!",
-																			);
-																		},
-																	);
+																		);
+																	}
+																})();
 															}}
 														/>
 														<SpeakerDeleteDialog
@@ -920,35 +908,30 @@ export function MutateActivityFormContent({
 																speaker.id
 															}
 															onSuccess={() => {
-																refetch()
-																	.catch(
-																		(
+																void (async () => {
+																	try {
+																		await refetch();
+																		toast.success(
+																			"Palestrante excluído com sucesso!",
+																		);
+																		// Remove this speaker from the selected list
+																		field.onChange(
+																			field.value?.filter(
+																				(
+																					id,
+																				) =>
+																					id !==
+																					speaker.id,
+																			) ||
+																				[],
+																		);
+																	} catch (error) {
+																		console.error(
+																			"Error refetching speakers:",
 																			error,
-																		) => {
-																			console.error(
-																				"Error refetching speakers:",
-																				error,
-																			);
-																		},
-																	)
-																	.then(
-																		() => {
-																			toast.success(
-																				"Palestrante excluído com sucesso!",
-																			);
-																			// Remove this speaker from the selected list
-																			field.onChange(
-																				field.value?.filter(
-																					(
-																						id,
-																					) =>
-																						id !==
-																						speaker.id,
-																				) ||
-																					[],
-																			);
-																		},
-																	);
+																		);
+																	}
+																})();
 															}}
 														>
 															<Button

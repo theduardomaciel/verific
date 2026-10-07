@@ -1,6 +1,11 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { cleanup } from "@testing-library/react";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import JoinForm from "@/components/forms/JoinForm/index";
@@ -18,11 +23,12 @@ vi.mock("@/app/actions", () => ({
 	signOutAction: vi.fn(),
 }));
 vi.mock("@/lib/validations", async (importOriginal) => {
-	const actual = await importOriginal<typeof import("@/lib/validations")>();
+	const actual = await importOriginal<typeof ValidationsModule>();
 	return { ...actual, scrollToNextSection: vi.fn() };
 });
 
 import { scrollToNextSection } from "@/lib/validations";
+import type * as ValidationsModule from "@/lib/validations";
 
 const mockMutateAsync = vi.fn();
 
@@ -64,8 +70,18 @@ vi.mock("@/lib/trpc/react", () => ({
 						},
 					],
 					sections: [
-						{ id: "s1", title: "Dados", order: 0, visibilityRule: null },
-						{ id: "s2", title: "Termos", order: 1, visibilityRule: null },
+						{
+							id: "s1",
+							title: "Dados",
+							order: 0,
+							visibilityRule: null,
+						},
+						{
+							id: "s2",
+							title: "Termos",
+							order: 1,
+							visibilityRule: null,
+						},
 					],
 				},
 				isPending: false,
@@ -75,7 +91,10 @@ vi.mock("@/lib/trpc/react", () => ({
 			useQuery: () => ({ data: null, isPending: false }),
 		},
 		submitAnswers: {
-			useMutation: () => ({ mutateAsync: mockMutateAsync, isPending: false }),
+			useMutation: () => ({
+				mutateAsync: mockMutateAsync,
+				isPending: false,
+			}),
 		},
 	},
 }));

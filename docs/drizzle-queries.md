@@ -12,9 +12,9 @@ the relational query builder (`db.query.*`) with subqueries or raw `sql`.
 The same table can be referenced with **two different names** depending on the
 API you use:
 
-| API | Root table reference in the generated SQL |
-| --- | --- |
-| `db.select().from(activity)` | `"activities"` (the **SQL table name**) |
+| API                            | Root table reference in the generated SQL                                         |
+| ------------------------------ | --------------------------------------------------------------------------------- |
+| `db.select().from(activity)`   | `"activities"` (the **SQL table name**)                                           |
 | `db.query.activity.findMany()` | `"activity"` (the **schema key** — the key in `packages/drizzle/schema/index.ts`) |
 
 So a condition like `eq(activity.id, x)` renders as `"activities"."id"` in one
@@ -43,9 +43,10 @@ alias (`activity`), producing a column that doesn't exist → `Failed query`.
 ```ts
 // ☠️ WRONG — built once, so it captures the SQL name "activities"
 const hasUpcoming = exists(
-  db.select({ id: activitySession.id })
-    .from(activitySession)
-    .where(eq(activitySession.activityId, activity.id)), // -> "activities"."id"
+	db
+		.select({ id: activitySession.id })
+		.from(activitySession)
+		.where(eq(activitySession.activityId, activity.id)), // -> "activities"."id"
 );
 
 await db.query.activity.findMany({ where: and(projectFilter, hasUpcoming) });
@@ -66,17 +67,17 @@ rather than `typeof activity`.
 
 ```ts
 function firstSessionStart(table: Pick<typeof activity, "id">) {
-  return db
-    .select({ value: min(activitySession.startsAt) })
-    .from(activitySession)
-    .where(eq(activitySession.activityId, table.id));
+	return db
+		.select({ value: min(activitySession.startsAt) })
+		.from(activitySession)
+		.where(eq(activitySession.activityId, table.id));
 }
 
 await db.query.activity.findMany({
-  with: { sessions: { orderBy: asc(activitySession.startsAt) } },
-  where: (table, { and, eq }) =>
-    and(eq(table.projectId, projectId), hasUpcomingSession(table)),
-  orderBy: (table, { asc }) => asc(firstSessionStart(table)),
+	with: { sessions: { orderBy: asc(activitySession.startsAt) } },
+	where: (table, { and, eq }) =>
+		and(eq(table.projectId, projectId), hasUpcomingSession(table)),
+	orderBy: (table, { asc }) => asc(firstSessionStart(table)),
 });
 ```
 
@@ -92,27 +93,28 @@ alias its own query uses.
 
 ```ts
 function buildActivitiesWhere(
-  table: Pick<typeof activity, "id" | "projectId" | "name">,
-  opts: { projectId: string; query?: string },
+	table: Pick<typeof activity, "id" | "projectId" | "name">,
+	opts: { projectId: string; query?: string },
 ) {
-  return and(
-    eq(table.projectId, opts.projectId),
-    opts.query ? ilike(table.name, `%${opts.query}%`) : undefined,
-  );
+	return and(
+		eq(table.projectId, opts.projectId),
+		opts.query ? ilike(table.name, `%${opts.query}%`) : undefined,
+	);
 }
 
 // relational query -> callback table ("activity")
 db.query.activity.findMany({ where: (t) => buildActivitiesWhere(t, opts) });
 
 // count query -> plain table ("activities")
-db.select({ n: count() }).from(activity).where(buildActivitiesWhere(activity, opts));
+db.select({ n: count() })
+	.from(activity)
+	.where(buildActivitiesWhere(activity, opts));
 ```
 
 ## When raw `sql` is fine
 
 Raw `sql` is appropriate for things the builder has no API for, e.g.
-`sql<string>\`date(${participant.joinedAt})\``, `excluded."col"` in upserts, and
-`date_trunc`. The danger is specifically **correlated references to the outer
+`sql<string>\`date(${participant.joinedAt})\``, `excluded."col"`in upserts, and`date_trunc`. The danger is specifically **correlated references to the outer
 query**, so keep raw `sql` fragments self-contained or free of other tables'
 columns.
 

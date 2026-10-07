@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
@@ -19,7 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Button } from "../ui/button";
 
 // API
-import { RouterOutput } from "@verific/api";
+import type { RouterOutput } from "@verific/api";
 
 // Utils
 import { getTimeString } from "@/lib/date";
@@ -82,9 +81,7 @@ export const ParticipantListItem = {
 		url,
 	}: ActivityParticipantCardProps) {
 		const attendances = participant.sessionAttendances ?? [];
-		const attendedSessionIds = new Set(
-			attendances.map((a) => a.sessionId),
-		);
+		const attendedSessionIds = new Set(attendances.map((a) => a.sessionId));
 		const attendedCount = sessions
 			? sessions.filter((s) => attendedSessionIds.has(s.id)).length
 			: attendances.length;
@@ -110,8 +107,8 @@ export const ParticipantListItem = {
 									<p className="text-left text-sm leading-tight font-medium">
 										{attendedCount > 0 ? (
 											<>
-												Presente em {attendedCount}{" "}
-												de {sessions?.length ?? 0}{" "}
+												Presente em {attendedCount} de{" "}
+												{sessions?.length ?? 0}{" "}
 												{sessions?.length === 1
 													? "sessão"
 													: "sessões"}

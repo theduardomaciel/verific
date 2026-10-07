@@ -1,4 +1,4 @@
-import { z } from "@verific/zod"
+import { z } from "@verific/zod";
 
 // Schema para gerenciamento de inscrições
 const subscriptionManagementSchema = z.object({
