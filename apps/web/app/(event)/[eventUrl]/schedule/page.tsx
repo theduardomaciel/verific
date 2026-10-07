@@ -9,6 +9,13 @@ import { SchedulePageSkeleton } from "./skeleton";
 import { getProject } from "@/lib/data";
 import { parseEventTheme } from "@verific/drizzle/theme";
 
+/**
+ * Exige saída estática completa (nível `navigation`): o build falha se
+ * alguém introduzir `cookies()`, `headers()` ou dado não cacheado nesta
+ * rota — mantém a programação servida pela CDN sob carga pública.
+ */
+export const ensureStatic = "navigation";
+
 interface Props {
 	params: Promise<{ eventUrl: string }>;
 }
