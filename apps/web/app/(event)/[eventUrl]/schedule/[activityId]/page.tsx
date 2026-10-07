@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 // Components
 import { ActivityJoinPageContent } from "@/components/activity-join";
@@ -15,12 +16,19 @@ export async function generateStaticParams() {
 	return getActivityStaticParams();
 }
 
-// Gate `notFound` real sobre dados 100% específicos da URL antes de
-// qualquer `<Suspense>`: opta por navegação com bloqueio (mesmo padrão
-// das páginas irmãs do evento + `profile/[shortId]`).
-export const instant = false;
+export default function Page({
+	params,
+}: {
+	params: Promise<{ activityId: string; eventUrl: string }>;
+}) {
+	return (
+		<Suspense>
+			<ActivityPageLoader params={params} />
+		</Suspense>
+	);
+}
 
-export default async function Page({
+async function ActivityPageLoader({
 	params,
 }: {
 	params: Promise<{ activityId: string; eventUrl: string }>;

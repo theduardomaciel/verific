@@ -28,7 +28,6 @@ export function ProfileVisitRecorder({
 		if (fired.current === key) return;
 		fired.current = key;
 		mutate.mutate({ projectUrl: eventUrl, shortId });
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [eventUrl, shortId, userId]);
 
 	return null;

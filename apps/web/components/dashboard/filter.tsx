@@ -1,12 +1,6 @@
 "use client";
 
-import {
-	useRef,
-	type Dispatch,
-	type SetStateAction,
-	useEffect,
-	useState,
-} from "react";
+import { type Dispatch, type SetStateAction, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -48,19 +42,30 @@ interface FilterProps {
 	onChange?: (value: string[]) => void;
 }
 
-const FILTERS = {
-	checkbox: CheckboxFilter,
-	select: SelectFilter,
-	radio: () => {
-		return (
-			<div className="flex w-full flex-col items-start justify-center gap-4">
-				<p className="text-foreground text-center text-sm font-medium">
-					Em desenvolvimento
-				</p>
-			</div>
-		);
-	},
-};
+function RadioFilter() {
+	return (
+		<div className="flex w-full flex-col items-start justify-center gap-4">
+			<p className="text-foreground text-center text-sm font-medium">
+				Em desenvolvimento
+			</p>
+		</div>
+	);
+}
+
+function FilterBody({
+	type,
+	...props
+}: ItemsProps & { type: NonNullable<FilterProps["type"]> }) {
+	switch (type) {
+		case "select":
+			return <SelectFilter {...props} />;
+		case "radio":
+			return <RadioFilter />;
+		case "checkbox":
+		default:
+			return <CheckboxFilter {...props} />;
+	}
+}
 
 export function Filter({
 	title,
@@ -100,15 +105,16 @@ export function Filter({
 					{title}
 				</p>
 			)}
-			{FILTERS[type]({
-				items,
-				filters: safeFilters,
-				setFilters,
-				config,
-				isPendingFilterTransition,
-				value,
-				onChange,
-			})}
+			<FilterBody
+				type={type}
+				items={items}
+				filters={safeFilters}
+				setFilters={setFilters}
+				config={config}
+				isPendingFilterTransition={isPendingFilterTransition}
+				value={value}
+				onChange={onChange}
+			/>
 		</div>
 	);
 }
@@ -190,7 +196,7 @@ function SelectFilter({
 }
 
 interface CheckboxItemsProps extends ItemsProps {
-	isPendingFilterTransition: boolean;
+	isPendingFilterTransition?: boolean;
 }
 
 const MAX_VISIBLE_FILTERS = 2;
@@ -204,8 +210,6 @@ function CheckboxFilter({
 	onChange,
 }: CheckboxItemsProps) {
 	const [isExpanded, setIsExpanded] = useState(false);
-	const itemsContainerRef = useRef<HTMLUListElement>(null);
-	const [collapsedHeight, setCollapsedHeight] = useState<number | null>(null);
 
 	const currentFilters = value ?? filters;
 
@@ -221,87 +225,55 @@ function CheckboxFilter({
 		}
 	};
 
-	// Usar ResizeObserver para calcular a altura real baseada nos elementos visíveis
-	useEffect(() => {
-		if (!itemsContainerRef.current) return;
-
-		const calculateCollapsedHeight = () => {
-			if (!itemsContainerRef.current) return;
-
-			const items = Array.from(itemsContainerRef.current.children).slice(
-				0,
-				MAX_VISIBLE_FILTERS,
-			);
-
-			if (items.length === 0) return;
-
-			// Calcula a altura real dos primeiros MAX_VISIBLE_FILTERS itens
-			const lastVisibleItem = items[items.length - 1] as HTMLElement;
-			const containerTop =
-				itemsContainerRef.current.getBoundingClientRect().top;
-			const lastItemBottom =
-				lastVisibleItem.getBoundingClientRect().bottom;
-
-			setCollapsedHeight(lastItemBottom - containerTop);
-		};
-
-		// Observer para recalcular quando o tamanho mudar (ex: quando o zoom mudar)
-		const resizeObserver = new ResizeObserver(calculateCollapsedHeight);
-		resizeObserver.observe(itemsContainerRef.current);
-
-		// Cálculo inicial
-		calculateCollapsedHeight();
-
-		return () => resizeObserver.disconnect();
-	}, []);
-
 	return (
 		<>
-			<ul
-				ref={itemsContainerRef}
-				className="flex w-full flex-col items-start justify-start gap-4 overflow-hidden transition-all duration-300 ease-in-out"
-				style={{
-					maxHeight: isExpanded
-						? `${items.length * 100}px` // Altura suficientemente grande para todos os itens
-						: collapsedHeight
-							? `${collapsedHeight}px`
-							: "auto",
-				}}
-			>
+			<ul className="flex w-full flex-col items-start justify-start gap-4">
 				{items.length > 0 ? (
-					items.map((item) => (
-						<li
-							key={item.value}
-							className={cn(
-								"relative flex w-full items-center justify-start gap-2",
-								{
-									"pointer-events-none animate-pulse select-none":
-										isPendingFilterTransition,
-								},
-							)}
-						>
-							<Checkbox
-								id={item.value}
-								name={item.name}
-								value={item.value}
-								checked={currentFilters.includes(item.value)}
-								onCheckedChange={(checked) => {
-									handleFilterChange(
-										item.value,
-										checked === "indeterminate"
-											? false
-											: checked,
-									);
-								}}
-							/>
-							<Label
-								className="line-clamp-2 overflow-hidden leading-tight text-ellipsis lg:text-sm"
-								htmlFor={item.value}
+					items.map((item, index) => {
+						// Colapsado: mostra os primeiros itens + os já selecionados,
+						// para que um filtro ativo nunca fique escondido.
+						const isHidden =
+							!isExpanded &&
+							index >= MAX_VISIBLE_FILTERS &&
+							!currentFilters.includes(item.value);
+
+						return (
+							<li
+								key={item.value}
+								className={cn(
+									"relative flex w-full items-center justify-start gap-2",
+									{
+										hidden: isHidden,
+										"pointer-events-none animate-pulse select-none":
+											isPendingFilterTransition,
+									},
+								)}
 							>
-								{item.name}
-							</Label>
-						</li>
-					))
+								<Checkbox
+									id={item.value}
+									name={item.name}
+									value={item.value}
+									checked={currentFilters.includes(
+										item.value,
+									)}
+									onCheckedChange={(checked) => {
+										handleFilterChange(
+											item.value,
+											checked === "indeterminate"
+												? false
+												: checked,
+										);
+									}}
+								/>
+								<Label
+									className="line-clamp-2 overflow-hidden leading-tight text-ellipsis lg:text-sm"
+									htmlFor={item.value}
+								>
+									{item.name}
+								</Label>
+							</li>
+						);
+					})
 				) : (
 					// If there are no items, we show a message
 					<li className="text-muted-foreground flex w-full items-center justify-start gap-3">
