@@ -54,13 +54,6 @@ const markdownComponents: Components = {
  */
 export const ensureStatic = "navigation";
 
-// Página 100% específica da URL (`eventUrl`) com gate `notFound` real
-// antes de qualquer `<Suspense>`: opta por navegação com bloqueio em
-// vez de "instant". Todo o conteúdo depende do evento, então mover para
-// `<Suspense>` só trocaria a página completa por um esqueleto a cada
-// navegação — o bloqueio serve a saída estática da CDN de uma vez.
-export const instant = false;
-
 export async function generateStaticParams() {
 	return getEventStaticParams();
 }
@@ -230,11 +223,25 @@ function EventPageBody({ project }: { project: EventPageProject }) {
 }
 
 /**
- * Gate antes de qualquer `<Suspense>`: evento desconhecido responde
- * 404 real. (O gate do layout já cobre isso; este `notFound` fica como
- * rede de segurança + narrowing de tipos.)
+ * `params` é dado de URL: lido fora de `<Suspense>`, prende o App Shell a
+ * um único link e quebra o prefetch compartilhado (`instant-shell-url-data`).
+ * Por isso a leitura + `getProject` vivem no loader abaixo, dentro da
+ * fronteira. O `notFound` continua valendo — e o layout acima já barra
+ * `eventUrl` desconhecido com 404 real antes disso.
  */
-export default async function EventPage({
+export default function EventPage({
+	params,
+}: {
+	params: Promise<{ eventUrl: string }>;
+}) {
+	return (
+		<Suspense fallback={<EventPageSkeleton />}>
+			<EventPageLoader params={params} />
+		</Suspense>
+	);
+}
+
+async function EventPageLoader({
 	params,
 }: {
 	params: Promise<{ eventUrl: string }>;
@@ -246,9 +253,5 @@ export default async function EventPage({
 		notFound();
 	}
 
-	return (
-		<Suspense fallback={<EventPageSkeleton />}>
-			<EventPageBody project={result.project} />
-		</Suspense>
-	);
+	return <EventPageBody project={result.project} />;
 }
