@@ -1,8 +1,8 @@
-import SuperJSON from "superjson";
 import { initTRPC, TRPCError } from "@trpc/server";
-import { ZodError } from "@verific/zod";
+import SuperJSON from "superjson";
 
 import type { Session } from "@verific/auth";
+import { ZodError } from "@verific/zod";
 
 type TRPCContext = {
 	session: Session | null;
@@ -35,6 +35,16 @@ const t = initTRPC.context<TRPCContext>().create({
 				zodError:
 					error.cause instanceof ZodError
 						? error.cause.flatten()
+						: null,
+				// Motivo legível por máquina (`{ code: "FORM_REQUIRED" }`
+				// no `cause` do throw): o `cause` não atravessa o fio,
+				// então só o código viaja — aditivo, nada existente muda.
+				reason:
+					typeof error.cause === "object" &&
+					error.cause !== null &&
+					"code" in error.cause &&
+					typeof error.cause.code === "string"
+						? error.cause.code
 						: null,
 			},
 		};

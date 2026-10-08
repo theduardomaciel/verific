@@ -1,14 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+
 import { toast } from "sonner";
-import { useDashboard } from "@/components/dashboard/dashboard-context";
-import { trpc } from "@/lib/trpc/react";
-import { findOrphanHalfIds, groupFieldsBySection } from "@/lib/forms/layout";
-import { animateFlip, animateSectionFlip } from "../lib/animate-flip";
-import type { Field, FormsTab, Section, Version } from "../types";
+
 import type { RouterInputs, RouterOutput } from "@verific/api";
 import type { UpsertFormSectionInput } from "@verific/api/schemas";
+
+import { useDashboard } from "@/components/dashboard/dashboard-context";
+
+import { revalidateActivities } from "@/app/actions";
+import { findOrphanHalfIds, groupFieldsBySection } from "@/lib/forms/layout";
+import { trpc } from "@/lib/trpc/react";
+
+import { animateFlip, animateSectionFlip } from "../lib/animate-flip";
+
+import type { Field, FormsTab, Section, Version } from "../types";
 
 /**
  * Structural, nameable wrappers around tRPC results.
@@ -91,10 +98,13 @@ export function useFormsBuilder() {
 		});
 	const publishVersion: MutationResult<RouterInputs["publishVersion"]> =
 		trpc.publishVersion.useMutation({
-			onSuccess: async () => {
+			onSuccess: async (data) => {
 				await utils.listVersions.invalidate();
 				await utils.getVersion.invalidate();
 				await utils.getPublishedForm.invalidate();
+				// Só versões de atividade mudam o `hasForm` servido na
+				// programação (cache `activities`): evento passa batido.
+				if (data.activityId) await revalidateActivities();
 				toast.success("Versão publicada!");
 			},
 			onError: (e) => toast.error(e.message),

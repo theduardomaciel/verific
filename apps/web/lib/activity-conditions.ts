@@ -1,0 +1,44 @@
+import { describeSeats, hasAvailableSeat } from "./activity-seats";
+import { hasEverySessionEnded, type ActivitySessionLike } from "./date";
+
+export interface ActivityConditionSource {
+	sessions?: ActivitySessionLike[] | null;
+	isRegistrationOpen?: boolean | null;
+	participantsLimit?: number | null;
+}
+
+/**
+ * Predicados puros da situação da atividade, compartilhados entre a
+ * máquina de estados da página (`useActivityEnrollmentState`) e a
+ * elegibilidade do quick join: uma única definição de "encerrada",
+ * "inscrições fechadas" e "lotada".
+ */
+
+/** Todas as sessões já terminaram. */
+export function isActivityEnded(
+	sessions: ActivitySessionLike[] | undefined | null,
+): boolean {
+	return hasEverySessionEnded(sessions);
+}
+
+/** Inscrições fechadas (flag da atividade). */
+export function isRegistrationClosed(activity: {
+	isRegistrationOpen?: boolean | null;
+}): boolean {
+	return !activity.isRegistrationOpen;
+}
+
+/**
+ * Lotada: não há vaga disponível. É exatamente a expressão que a máquina
+ * de estados já usava: limite com contagem desconhecida (`null`) lê como
+ * lotada — direção conservadora (nunca adivinhar vaga), mantida aqui para
+ * a máquina e o quick join concordarem sempre.
+ */
+export function isActivityFull(
+	participantsLimit: number | null | undefined,
+	participantsCount: number | null | undefined,
+): boolean {
+	return !hasAvailableSeat(
+		describeSeats({ participantsLimit, participantsCount }),
+	);
+}

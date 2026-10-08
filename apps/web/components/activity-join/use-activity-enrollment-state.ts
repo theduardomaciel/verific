@@ -6,9 +6,12 @@ import type { RouterOutput } from "@verific/api";
 
 // Hooks
 import { useSubscribedActivities } from "@/hooks/use-subscribed-activities";
-import { describeSeats, hasAvailableSeat } from "@/lib/activity-seats";
 // Lib
-import { hasEverySessionEnded } from "@/lib/date";
+import {
+	isActivityEnded,
+	isActivityFull,
+	isRegistrationClosed,
+} from "@/lib/activity-conditions";
 // API
 import { trpc } from "@/lib/trpc/react";
 
@@ -82,12 +85,10 @@ export function useActivityEnrollmentState({
 		[formQuery.data],
 	);
 
-	const hasEnded = hasEverySessionEnded(activity.sessions);
-	const seatsFull = !hasAvailableSeat(
-		describeSeats({
-			participantsLimit: activity.participantsLimit,
-			participantsCount,
-		}),
+	const hasEnded = isActivityEnded(activity.sessions);
+	const seatsFull = isActivityFull(
+		activity.participantsLimit,
+		participantsCount,
 	);
 
 	const state: EnrollmentState = (() => {
@@ -96,7 +97,7 @@ export function useActivityEnrollmentState({
 		if (!participantId) return "not-in-event";
 		if (subscribedIds?.includes(activity.id)) return "already-subscribed";
 		if (hasEnded) return "ended";
-		if (!activity.isRegistrationOpen) return "registration-closed";
+		if (isRegistrationClosed(activity)) return "registration-closed";
 		if (seatsFull) return "full";
 		return "form";
 	})();

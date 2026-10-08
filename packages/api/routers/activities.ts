@@ -1,20 +1,7 @@
+// tRPC
+import { TRPCError } from "@trpc/server";
+
 import { db } from "@verific/drizzle";
-import type { speaker } from "@verific/drizzle/schema";
-import {
-	activity,
-	activitySession,
-	formAnswer,
-	formField,
-	formVersion,
-	sessionAttendance,
-	speakerOnActivity,
-	participant,
-	participantOnActivity,
-	project,
-	tag,
-	tagOnActivity,
-	user,
-} from "@verific/drizzle/schema";
 import {
 	and,
 	desc,
@@ -32,15 +19,26 @@ import {
 	exists,
 	min,
 } from "@verific/drizzle/orm";
+import type { speaker } from "@verific/drizzle/schema";
+import {
+	activity,
+	activitySession,
+	formAnswer,
+	formField,
+	formVersion,
+	sessionAttendance,
+	speakerOnActivity,
+	participant,
+	participantOnActivity,
+	project,
+	tag,
+	tagOnActivity,
+	user,
+} from "@verific/drizzle/schema";
 import { z } from "@verific/zod";
-
-// tRPC
-import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
 // Utils
 import { isMemberAuthenticated } from "../auth";
-import { transformSingleToArray } from "../utils";
 import {
 	activitySort,
 	getActivitiesParams,
@@ -48,9 +46,12 @@ import {
 	answerValueSchema,
 	validateAnswers,
 } from "../schemas";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
+import { transformSingleToArray } from "../utils";
 import {
 	buildAnswerRows,
 	getPublishedVersionWithFields,
+	hasPublishedActivityForm,
 	toValidationFields,
 	toVisibilitySections,
 } from "./forms";
@@ -59,9 +60,9 @@ import {
 // Client components must import from `@verific/api/schemas` instead.
 export { activitySort, getActivitiesParams, getActivityParams };
 
+import { activityAudiences } from "@verific/drizzle/enum/audience";
 // Enums
 import { activityCategories } from "@verific/drizzle/enum/category";
-import { activityAudiences } from "@verific/drizzle/enum/audience";
 
 const activitySessionSchema = z.object({
 	startsAt: z.coerce.date(),
@@ -297,6 +298,10 @@ export const activitiesRouter = createTRPCRouter({
 							(t) => t.tag,
 						),
 						form: null,
+						hasForm: await hasPublishedActivityForm(
+							selectedActivity.projectId,
+							activityId,
+						),
 						participants: [],
 					},
 					pageCount: 0,
@@ -489,7 +494,14 @@ export const activitiesRouter = createTRPCRouter({
 			}
 
 			return {
-				activity: { ...formattedActivity, form: formSummary },
+				activity: {
+					...formattedActivity,
+					form: formSummary,
+					hasForm: await hasPublishedActivityForm(
+						selectedActivity.projectId,
+						activityId,
+					),
+				},
 				participantsAmount: amount,
 				pageCount,
 				participantId: allParticipants.find(
@@ -688,10 +700,79 @@ export const activitiesRouter = createTRPCRouter({
 				}
 			}
 
+			// `hasForm` por atividade: existe versão publicada no escopo da
+			// atividade com ao menos um campo visível e ativo. Duas queries
+			// agregadas (não por card): versões publicadas do projeto +
+			// contagem de campos por versão, vencendo a mais recente.
+			const hasFormByActivity = new Map<string, boolean>();
+			if (projectIdToUse) {
+				const activityIds = activities.map((act) => act.id);
+				if (activityIds.length > 0) {
+					const publishedVersions =
+						await db.query.formVersion.findMany({
+							where: and(
+								eq(formVersion.projectId, projectIdToUse),
+								inArray(formVersion.activityId, activityIds),
+								eq(formVersion.isPublished, true),
+							),
+							columns: {
+								id: true,
+								activityId: true,
+								version: true,
+							},
+						});
+					const versionIds = publishedVersions.map((v) => v.id);
+					const fieldCounts =
+						versionIds.length > 0
+							? await db
+									.select({
+										versionId: formField.formVersionId,
+										amount: count(),
+									})
+									.from(formField)
+									.where(
+										and(
+											inArray(
+												formField.formVersionId,
+												versionIds,
+											),
+											eq(formField.isActive, true),
+											eq(formField.isVisible, true),
+										),
+									)
+									.groupBy(formField.formVersionId)
+							: [];
+					const countByVersion = new Map(
+						fieldCounts.map((row) => [row.versionId, row.amount]),
+					);
+					const latestByActivity = new Map<
+						string,
+						{ id: string; version: number }
+					>();
+					for (const v of publishedVersions) {
+						if (!v.activityId) continue;
+						const current = latestByActivity.get(v.activityId);
+						if (!current || v.version > current.version) {
+							latestByActivity.set(v.activityId, {
+								id: v.id,
+								version: v.version,
+							});
+						}
+					}
+					for (const [activityId, latest] of latestByActivity) {
+						hasFormByActivity.set(
+							activityId,
+							(countByVersion.get(latest.id) ?? 0) > 0,
+						);
+					}
+				}
+			}
+
 			const formattedActivities = activities.map(
 				(act: ActivityWithRelations) => ({
 					...act,
 					participantsCount: participantsCountMap[act.id] ?? 0,
+					hasForm: hasFormByActivity.get(act.id) ?? false,
 					tags: (act.tagOnActivity ?? []).map((t) => t.tag),
 					participants: act.participantOnActivity
 						? act.participantOnActivity.map(
@@ -1044,6 +1125,7 @@ export const activitiesRouter = createTRPCRouter({
 				throw new TRPCError({
 					message: "Activity registration is closed.",
 					code: "BAD_REQUEST",
+					cause: { code: "REGISTRATION_CLOSED" },
 				});
 			}
 
@@ -1085,6 +1167,7 @@ export const activitiesRouter = createTRPCRouter({
 						message:
 							"Adding these participants exceeds the activity limit.",
 						code: "BAD_REQUEST",
+						cause: { code: "ACTIVITY_FULL" },
 					});
 				}
 			}
@@ -1119,7 +1202,10 @@ export const activitiesRouter = createTRPCRouter({
 							message:
 								"Respostas inválidas. Verifique os campos obrigatórios.",
 							code: "BAD_REQUEST",
-							cause: validation.errors,
+							cause: {
+								code: "FORM_REQUIRED",
+								errors: validation.errors,
+							},
 						});
 					}
 					answerRows = buildAnswerRows({
@@ -1158,7 +1244,10 @@ export const activitiesRouter = createTRPCRouter({
 								message:
 									"Esta atividade exige o preenchimento do formulário de inscrição.",
 								code: "BAD_REQUEST",
-								cause: probe.errors,
+								cause: {
+									code: "FORM_REQUIRED",
+									errors: probe.errors,
+								},
 							});
 						}
 					}
