@@ -1,11 +1,7 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { env } from "@verific/env";
-import ReactMarkdown, { type Components } from "react-markdown";
-import remarkGfm from "remark-gfm";
 
-// Icons
 import {
 	Calendar,
 	MapPin,
@@ -14,21 +10,27 @@ import {
 	Check,
 	TicketCheck,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { EventAction } from "@/components/event-action";
-import { Skeleton } from "@/components/ui/skeleton";
-import { EVENT_BADGE_COLORS } from "@/components/landing/event-nav";
-import { cn } from "@/lib/utils";
+import ReactMarkdown, { type Components } from "react-markdown";
+import remarkGfm from "remark-gfm";
+
 import { parseEventTheme } from "@verific/drizzle/theme";
+import { env } from "@verific/env";
 
 // Components
-import * as EventContainer from "@/components/landing/event-container";
-import { ShareDialog } from "@/components/dialogs/share-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+
 import { ReportEventDialog } from "@/components/dialogs/report-event-dialog";
-import { EventPageSkeleton } from "./skeleton";
+import { ShareDialog } from "@/components/dialogs/share-dialog";
+import { EventAction } from "@/components/event-action";
+import * as EventContainer from "@/components/landing/event-container";
+import { EVENT_BADGE_COLORS } from "@/components/landing/event-nav";
 
 import { getEventStaticParams, getProject } from "@/lib/data";
+import { cn } from "@/lib/utils";
+
+import { EventPageSkeleton } from "./skeleton";
 
 /**
  * `next/image` exige `src`/`width`/`height` próprios, então a imagem do

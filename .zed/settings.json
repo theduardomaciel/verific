@@ -1,5 +1,11 @@
 {
 	"lsp": {
+		"typescript-ls": {
+			"binary": {
+				"path": "node_modules/.bin/tsc.cmd",
+				"arguments": ["--lsp", "--stdio"]
+			}
+		},
 		"oxlint": {
 			"initialization_options": {
 				"settings": {
@@ -22,6 +28,7 @@
 	},
 	"languages": {
 		"JavaScript": {
+			"language_servers": ["!eslint", "..."],
 			"format_on_save": "on",
 			"prettier": {
 				"allowed": false
@@ -38,6 +45,13 @@
 			]
 		},
 		"TypeScript": {
+			"language_servers": [
+				"typescript-ls",
+				"!vtsls",
+				"!typescript-language-server",
+				"!eslint",
+				"..."
+			],
 			"format_on_save": "on",
 			"prettier": {
 				"allowed": false
@@ -54,6 +68,13 @@
 			]
 		},
 		"TSX": {
+			"language_servers": [
+				"typescript-ls",
+				"!vtsls",
+				"!typescript-language-server",
+				"!eslint",
+				"..."
+			],
 			"format_on_save": "on",
 			"prettier": {
 				"allowed": false
@@ -70,6 +91,7 @@
 			]
 		},
 		"JSON": {
+			"language_servers": ["!eslint", "..."],
 			"format_on_save": "on",
 			"prettier": {
 				"allowed": false
@@ -83,6 +105,7 @@
 			]
 		},
 		"JSONC": {
+			"language_servers": ["!eslint", "..."],
 			"format_on_save": "on",
 			"prettier": {
 				"allowed": false
