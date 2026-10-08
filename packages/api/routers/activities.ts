@@ -47,6 +47,7 @@ import {
 	answerValueSchema,
 	validateAnswers,
 } from "../schemas";
+import { assertSeatsAvailable, lockActivity } from "../seats";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { transformSingleToArray } from "../utils";
 import {
@@ -223,9 +224,9 @@ type DbOrTx = {
 };
 
 /**
- * Persiste a inscrição (vínculos + respostas): corpo idêntico para o
- * fluxo de auto-inscrição (dentro da transação do lock) e de
- * organizador (fora dela). Só insere; nunca remove nada.
+ * Persiste a inscrição (vínculos + respostas) dentro da transação que
+ * travou a atividade, nos fluxos de auto-inscrição e de organizador.
+ * Só insere; nunca remove nada.
  */
 async function persistEnrollment(
 	executor: DbOrTx,
@@ -1110,26 +1111,20 @@ export const activitiesRouter = createTRPCRouter({
 			});
 			if (error) throw new TRPCError(error);
 
-			// Busca apenas os IDs atuais dos participantes da atividade
-			const current = await db
-				.select({ participantId: participantOnActivity.participantId })
-				.from(participantOnActivity)
-				.where(eq(participantOnActivity.activityId, activityId));
-			const currentIds = current.map((p) => p.participantId);
+			await db.transaction(async (tx) => {
+				const locked = await lockActivity(tx, activityId);
+				await assertSeatsAvailable(tx, locked, participantsIdsToMutate);
 
-			// Só adiciona quem ainda não está
-			const toAdd = participantsIdsToMutate.filter(
-				(id) => !currentIds.includes(id),
-			);
-
-			if (toAdd.length > 0) {
-				await db.insert(participantOnActivity).values(
-					toAdd.map((participantId) => ({
-						activityId,
-						participantId,
-					})),
-				);
-			}
+				await tx
+					.insert(participantOnActivity)
+					.values(
+						participantsIdsToMutate.map((participantId) => ({
+							activityId,
+							participantId,
+						})),
+					)
+					.onConflictDoNothing();
+			});
 
 			return { success: true };
 		}),
@@ -1199,31 +1194,6 @@ export const activitiesRouter = createTRPCRouter({
 						"Participants must belong to the activity project.",
 					code: "FORBIDDEN",
 				});
-			}
-
-			if (foundActivity.participantsLimit) {
-				const currentCountResult = await db
-					.select({ amount: count() })
-					.from(participantOnActivity)
-					.where(
-						and(
-							eq(participantOnActivity.activityId, activityId),
-							eq(participantOnActivity.role, "participant"),
-						),
-					);
-
-				const currentCount = currentCountResult?.[0]?.amount ?? 0;
-				const availableSpots =
-					foundActivity.participantsLimit - currentCount;
-
-				if (participantsIdsToAdd.length > availableSpots) {
-					throw new TRPCError({
-						message:
-							"Adding these participants exceeds the activity limit.",
-						code: "BAD_REQUEST",
-						cause: { code: "ACTIVITY_FULL" },
-					});
-				}
 			}
 
 			// Participante do requisitante no evento (uma única leitura,
@@ -1397,6 +1367,13 @@ export const activitiesRouter = createTRPCRouter({
 						});
 					}
 
+					const locked = await lockActivity(tx, activityId);
+					await assertSeatsAvailable(
+						tx,
+						locked,
+						participantsIdsToAdd,
+					);
+
 					await persistEnrollment(tx, {
 						activityId,
 						participantIds: participantsIdsToAdd,
@@ -1408,10 +1385,15 @@ export const activitiesRouter = createTRPCRouter({
 			}
 
 			// Fluxo de organizador: sem checagem de conflito.
-			await persistEnrollment(db, {
-				activityId,
-				participantIds: participantsIdsToAdd,
-				answerRows,
+			await db.transaction(async (tx) => {
+				const locked = await lockActivity(tx, activityId);
+				await assertSeatsAvailable(tx, locked, participantsIdsToAdd);
+
+				await persistEnrollment(tx, {
+					activityId,
+					participantIds: participantsIdsToAdd,
+					answerRows,
+				});
 			});
 
 			return { success: true };
