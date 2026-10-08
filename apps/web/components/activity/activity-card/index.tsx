@@ -227,15 +227,14 @@ export function ActivityCard({
 							</>
 						) : (
 							<Button
-								variant={"default"}
+								variant={isFull ? "outline" : "default"}
 								size={"lg"}
-								className={cn({
-									"pointer-events-none opacity-50": isFull,
-								})}
 								asChild
 							>
 								<Link href={pageHref}>
-									Quero participar
+									{isFull
+										? "Entrar na fila"
+										: "Quero participar"}
 									<ArrowRight className="ml-2 h-4 w-4" />
 								</Link>
 							</Button>

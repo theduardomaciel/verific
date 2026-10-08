@@ -131,7 +131,9 @@ export function ScheduleContent({
 			setExhaustedIds((prev) =>
 				prev.includes(activity.id) ? prev : [...prev, activity.id],
 			);
-			toast.error("Vagas esgotadas.");
+			toast.error(
+				"As vagas acabaram. Você ainda pode entrar na fila de espera.",
+			);
 		} else if (reason === "closed") {
 			setClosedIds((prev) =>
 				prev.includes(activity.id) ? prev : [...prev, activity.id],
