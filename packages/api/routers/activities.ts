@@ -23,6 +23,7 @@ import type { speaker } from "@verific/drizzle/schema";
 import {
 	activity,
 	activitySession,
+	activityWaitlist,
 	formField,
 	formVersion,
 	sessionAttendance,
@@ -217,6 +218,7 @@ const mutateActivityParams = z.object({
 	tolerance: z.coerce.number().optional(),
 	workload: z.coerce.number().optional(),
 	allowOverlap: z.boolean().optional(),
+	waitlistOfferHours: z.coerce.number().int().min(1).max(168).optional(),
 	projectId: z.uuid(),
 });
 
@@ -667,35 +669,62 @@ export const activitiesRouter = createTRPCRouter({
 
 			// Query de contagem
 			// Get activities count and participants count per activity
-			const [amountDb, participantsCounts] = await Promise.all([
-				db
-					.select({ amount: countDistinct(activity.id) })
-					.from(activity)
-					.where(buildActivitiesWhere(activity, filterOpts)),
-				fullQuery
-					? null
-					: db
-							.select({
-								activityId: participantOnActivity.activityId,
-								count: count(),
-							})
-							.from(participantOnActivity)
-							.innerJoin(
-								activity,
-								and(
-									eq(
+			const [amountDb, participantsCounts, openOffers] =
+				await Promise.all([
+					db
+						.select({ amount: countDistinct(activity.id) })
+						.from(activity)
+						.where(buildActivitiesWhere(activity, filterOpts)),
+					fullQuery
+						? null
+						: db
+								.select({
+									activityId:
 										participantOnActivity.activityId,
-										activity.id,
+									count: count(),
+								})
+								.from(participantOnActivity)
+								.innerJoin(
+									activity,
+									and(
+										eq(
+											participantOnActivity.activityId,
+											activity.id,
+										),
+										eq(
+											participantOnActivity.role,
+											"participant",
+										),
 									),
-									eq(
-										participantOnActivity.role,
-										"participant",
+								)
+								.where(
+									buildActivitiesWhere(activity, filterOpts),
+								)
+								.groupBy(participantOnActivity.activityId),
+					// Vagas oferecidas pela fila também estão ocupadas
+					fullQuery
+						? null
+						: db
+								.select({
+									activityId: activityWaitlist.activityId,
+									count: count(),
+								})
+								.from(activityWaitlist)
+								.innerJoin(
+									activity,
+									and(
+										eq(
+											activityWaitlist.activityId,
+											activity.id,
+										),
+										eq(activityWaitlist.status, "offered"),
 									),
-								),
-							)
-							.where(buildActivitiesWhere(activity, filterOpts))
-							.groupBy(participantOnActivity.activityId),
-			]);
+								)
+								.where(
+									buildActivitiesWhere(activity, filterOpts),
+								)
+								.groupBy(activityWaitlist.activityId),
+				]);
 
 			// Map activityId to participant count
 			const participantsCountMap: Record<string, number> = {};
@@ -703,6 +732,10 @@ export const activitiesRouter = createTRPCRouter({
 				for (const row of participantsCounts) {
 					participantsCountMap[row.activityId] = row.count;
 				}
+			}
+			for (const row of openOffers ?? []) {
+				participantsCountMap[row.activityId] =
+					(participantsCountMap[row.activityId] ?? 0) + row.count;
 			}
 
 			// `hasForm` por atividade: existe versão publicada no escopo da
@@ -845,6 +878,7 @@ export const activitiesRouter = createTRPCRouter({
 				tolerance,
 				workload,
 				allowOverlap,
+				waitlistOfferHours,
 				address,
 				latitude,
 				longitude,
@@ -863,6 +897,7 @@ export const activitiesRouter = createTRPCRouter({
 						tolerance,
 						workload,
 						allowOverlap,
+						waitlistOfferHours,
 						address,
 						latitude,
 						longitude,
@@ -954,6 +989,7 @@ export const activitiesRouter = createTRPCRouter({
 				tolerance,
 				workload,
 				allowOverlap,
+				waitlistOfferHours,
 				address,
 				latitude,
 				longitude,
@@ -992,6 +1028,7 @@ export const activitiesRouter = createTRPCRouter({
 						tolerance,
 						workload,
 						allowOverlap,
+						waitlistOfferHours,
 						address,
 						latitude,
 						longitude,

@@ -26,11 +26,15 @@ export type EnrollmentState =
 	| "signed-out"
 	| "not-in-event"
 	| "already-subscribed"
+	| "offered"
+	| "waitlisted"
 	| "ended"
 	| "registration-closed"
-	| "full"
 	| "schedule-conflict"
+	| "waitlist"
 	| "form";
+
+export type WaitlistEntry = RouterOutput["getMyWaitlistEntries"][number];
 
 export interface PublishedActivityForm {
 	fields: NonNullable<RouterOutput["getPublishedForm"]>["fields"];
@@ -52,6 +56,8 @@ export interface ActivityEnrollment {
 	hasEnded: boolean;
 	seatsFull: boolean;
 	conflicts: Conflict[];
+	/** Lugar do usuário na fila desta atividade, se estiver nela. */
+	waitlistEntry: WaitlistEntry | null;
 	form: PublishedActivityForm;
 	hasForm: boolean;
 	isResolvingForm: boolean;
@@ -59,14 +65,15 @@ export interface ActivityEnrollment {
 
 /**
  * Deriva o estado da máquina de inscrição em ordem de prioridade:
- * sessão → vínculo com o evento → inscrição na atividade → situação da
- * atividade → conflito de horário → formulário. Reutiliza
+ * sessão → vínculo com o evento → inscrição ou lugar na fila → situação
+ * da atividade → conflito de horário → fila (lotada) ou formulário. Reutiliza
  * `useSubscribedActivities` (sem gate duplicado) e resolve o formulário
  * publicado e as atividades inscritas em paralelo.
  *
- * O conflito vem por último porque o usuário resolve: basta cancelar a
- * outra inscrição. Enquanto as atividades inscritas carregam para quem
- * chegaria ao formulário, o estado é `loading` (sem flash do form);
+ * O conflito vem antes da fila porque também impede entrar nela, e o
+ * usuário resolve: basta cancelar a outra inscrição. Enquanto as
+ * atividades inscritas carregam para quem chegaria ao formulário, o
+ * estado é `loading` (sem flash do form);
  * se a leitura falhar, cai no formulário — o servidor impõe o bloqueio.
  */
 export function useActivityEnrollmentState({
@@ -88,6 +95,14 @@ export function useActivityEnrollmentState({
 			refetchOnWindowFocus: false,
 		},
 	);
+
+	const waitlistQuery = trpc.getMyWaitlistEntries.useQuery(
+		{ projectUrl: eventUrl },
+		{ enabled: Boolean(participantId), refetchOnWindowFocus: true },
+	);
+	const waitlistEntry =
+		waitlistQuery.data?.find((entry) => entry.activityId === activity.id) ??
+		null;
 
 	const { conflicts, isLoading: conflictsLoading } = useScheduleConflicts(
 		activity,
@@ -113,11 +128,14 @@ export function useActivityEnrollmentState({
 		if (!userId) return "signed-out";
 		if (!participantId) return "not-in-event";
 		if (subscribedIds?.includes(activity.id)) return "already-subscribed";
+		if (waitlistQuery.isPending) return "loading";
+		if (waitlistEntry?.status === "offered") return "offered";
+		if (waitlistEntry) return "waitlisted";
 		if (hasEnded) return "ended";
 		if (isRegistrationClosed(activity)) return "registration-closed";
-		if (seatsFull) return "full";
 		if (conflictsLoading) return "loading";
 		if (conflicts.length > 0) return "schedule-conflict";
+		if (seatsFull) return "waitlist";
 		return "form";
 	})();
 
@@ -129,6 +147,7 @@ export function useActivityEnrollmentState({
 		hasEnded,
 		seatsFull,
 		conflicts,
+		waitlistEntry,
 		form,
 		hasForm: form.fields.length > 0,
 		isResolvingForm: formQuery.isPending,

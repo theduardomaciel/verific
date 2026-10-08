@@ -95,6 +95,7 @@ export default function MutateActivityForm({
 			tolerance: activity?.tolerance || 0,
 			workload: activity?.workload || undefined,
 			allowOverlap: activity?.allowOverlap ?? false,
+			waitlistOfferHours: activity?.waitlistOfferHours ?? 12,
 			category: activity?.category || undefined,
 			participantsLimit: activity?.participantsLimit || undefined,
 			audience: activity?.audience || "external",

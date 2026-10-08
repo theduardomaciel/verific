@@ -1,19 +1,22 @@
 "use client";
 
+import { InfoIcon } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
 import type { RouterOutput } from "@verific/api";
 import { activityCategoryLabels } from "@verific/drizzle/schema";
+
 import { Badge } from "@/components/ui/badge";
-import { InfoIcon } from "lucide-react";
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+
 import { ActivitySpeakers } from "./speakers";
 import { ActivityCardTags } from "./tags";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 
 type Activity =
 	| RouterOutput["getActivity"]["activity"]
@@ -59,7 +62,8 @@ export function ActivityDetailsContent({
 			{activity?.tolerance ? (
 				<div className="bg-muted/50 flex flex-row items-center justify-between gap-3 rounded-sm p-4 text-sm select-none">
 					<span className="text-muted-foreground text-sm">
-						Este evento possui <strong>fila de espera</strong>.
+						Esta atividade tem{" "}
+						<strong>tolerância de {activity.tolerance} min</strong>.
 					</span>
 					<TooltipProvider>
 						<Tooltip>

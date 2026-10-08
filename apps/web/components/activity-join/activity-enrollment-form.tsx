@@ -25,11 +25,12 @@ import { DynamicField } from "@/components/forms/dynamic/DynamicField";
 
 // Hooks
 import { useJoinActivity, type JoinError } from "@/hooks/use-join-activity";
+import { useWaitlist } from "@/hooks/use-waitlist";
 import { focusFieldControl, getFieldId } from "@/lib/forms/field-id";
 // Lib
 import { groupFieldsBySection } from "@/lib/forms/layout";
 
-import { WaitlistNotice } from "./enrollment-status";
+import { ToleranceNotice } from "./enrollment-status";
 
 // Types
 import type {
@@ -57,7 +58,12 @@ interface ActivityEnrollmentFormProps {
 	participantId: string;
 	userId: string;
 	form: PublishedActivityForm;
-	onSubmitted: () => void;
+	/** `waitlist`: a atividade está lotada e o envio entra na fila. */
+	mode?: "enroll" | "waitlist";
+	/** Vaga garantida (`enrolled`) ou lugar na fila (`waiting`). */
+	onSubmitted: (result: "enrolled" | "waiting") => void;
+	/** As vagas acabaram durante o envio; o painel passa para a fila. */
+	onFull?: () => void;
 }
 
 /**
@@ -71,13 +77,16 @@ export function ActivityEnrollmentForm({
 	participantId,
 	userId,
 	form: published,
+	mode = "enroll",
 	onSubmitted,
+	onFull,
 }: ActivityEnrollmentFormProps) {
 	const { join, status } = useJoinActivity({
 		activityId: activity.id,
 		participantId,
 		userId,
 	});
+	const waitlist = useWaitlist({ activityId: activity.id, userId });
 	const [serverError, setServerError] = useState<string | null>(null);
 
 	const fieldsForValidation = useMemo(
@@ -229,7 +238,9 @@ export function ActivityEnrollmentForm({
 	}, [answerErrors, answersForm.formState.submitCount, published.fields]);
 
 	const isSubmitting =
-		answersForm.formState.isSubmitting || status === "pending";
+		answersForm.formState.isSubmitting ||
+		status === "pending" ||
+		waitlist.pending === "join";
 
 	// Cópias por motivo de falha (mesmo comportamento de antes: alerta
 	// inline destrutivo acima do envio, botão habilitado para retry).
@@ -237,7 +248,7 @@ export function ActivityEnrollmentForm({
 	// painel vira o estado bloqueado; abaixo só sai o toast.
 	const joinErrorCopy: Record<Exclude<JoinError, "conflict">, string> = {
 		"form-required": "Esta atividade pede informações adicionais.",
-		full: "Vagas esgotadas.",
+		full: "As vagas acabaram enquanto você se inscrevia. Envie de novo para entrar na fila de espera.",
 		closed: "As inscrições foram encerradas.",
 		unknown: "Houve um erro ao confirmar sua inscrição. Tente novamente.",
 	};
@@ -259,13 +270,26 @@ export function ActivityEnrollmentForm({
 			if (allowed.has(key)) stripped[key] = value as ActivityAnswerValue;
 		}
 
-		const joinError = await join(
-			published.fields.length > 0 ? stripped : undefined,
-		);
-		if (!joinError) {
-			onSubmitted();
-			return;
+		const answers = published.fields.length > 0 ? stripped : undefined;
+		let joinError: JoinError | null;
+		if (mode === "waitlist") {
+			const { result, error } = await waitlist.join(answers);
+			joinError = error;
+			if (result) {
+				onSubmitted(
+					result.status === "enrolled" ? "enrolled" : "waiting",
+				);
+				return;
+			}
+		} else {
+			joinError = await join(answers);
+			if (!joinError) {
+				onSubmitted("enrolled");
+				return;
+			}
+			if (joinError === "full") onFull?.();
 		}
+		if (!joinError) return;
 		if (joinError === "conflict") {
 			toast.error(
 				"Esta atividade conflita com outra em que você já está inscrito.",
@@ -329,7 +353,7 @@ export function ActivityEnrollmentForm({
 				</fieldset>
 
 				{activity.tolerance ? (
-					<WaitlistNotice tolerance={activity.tolerance} />
+					<ToleranceNotice tolerance={activity.tolerance} />
 				) : null}
 
 				{errorEntries.length > 0 ? (
@@ -377,8 +401,12 @@ export function ActivityEnrollmentForm({
 					{isSubmitting ? (
 						<>
 							<Loader2 className="h-4 w-4 animate-spin" />
-							Inscrevendo...
+							{mode === "waitlist"
+								? "Entrando na fila..."
+								: "Inscrevendo..."}
 						</>
+					) : mode === "waitlist" ? (
+						"Entrar na fila"
 					) : (
 						"Inscrever-se"
 					)}

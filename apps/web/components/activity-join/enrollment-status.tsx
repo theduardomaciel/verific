@@ -5,12 +5,15 @@ import { useEffect, useRef } from "react";
 
 // Icons
 import {
+	BellRing,
 	BookLock,
 	CalendarClock,
 	Check,
 	CheckCircle2,
 	CircleSlash,
+	Hourglass,
 	InfoIcon,
+	Loader2,
 	LogIn,
 	TicketX,
 } from "lucide-react";
@@ -24,6 +27,7 @@ import { ParticipantQuitButton } from "@/components/participant/participant-quit
 
 // Lib
 import {
+	formatFriendlyDate,
 	getSessionsDateString,
 	getSessionsSorted,
 	hasEverySessionEnded,
@@ -156,7 +160,7 @@ export function AlreadySubscribedStatus({
 }
 
 const mutedCopy: Record<
-	"ended" | "registration-closed" | "full",
+	"ended" | "registration-closed",
 	{ title: string; message: string }
 > = {
 	ended: {
@@ -167,20 +171,11 @@ const mutedCopy: Record<
 		title: "Inscrições encerradas",
 		message: "As inscrições para esta atividade estão encerradas.",
 	},
-	full: {
-		title: "Vagas esgotadas",
-		message: "Vagas esgotadas.",
-	},
 };
 
 export function MutedStatus({ kind }: { kind: keyof typeof mutedCopy }) {
 	const copy = mutedCopy[kind];
-	const Icon =
-		kind === "full"
-			? TicketX
-			: kind === "ended"
-				? CalendarClock
-				: CircleSlash;
+	const Icon = kind === "ended" ? CalendarClock : CircleSlash;
 
 	return (
 		<StatusShell
@@ -223,20 +218,136 @@ export function ScheduleConflictStatus({
 }
 
 /**
- * Aviso de fila de espera: sempre visível no corpo do painel, nunca
- * atrás de tooltip (inalcançável no toque e no teclado).
+ * Aviso de tolerância: sempre visível no corpo do painel, nunca atrás de
+ * tooltip (inalcançável no toque e no teclado).
  */
-export function WaitlistNotice({ tolerance }: { tolerance: number }) {
+export function ToleranceNotice({ tolerance }: { tolerance: number }) {
 	return (
 		<Alert>
 			<InfoIcon className="h-4 w-4" />
-			<AlertTitle>Fila de espera</AlertTitle>
+			<AlertTitle>Tolerância de {tolerance} min</AlertTitle>
 			<AlertDescription>
-				Este evento possui fila de espera. Caso não haja confirmação de
-				sua presença em {tolerance}m a partir do início da atividade,
-				sua vaga será cedida a outra pessoa.
+				Caso não haja confirmação de sua presença em {tolerance}m a
+				partir do início da atividade, sua vaga será cedida a outra
+				pessoa.
 			</AlertDescription>
 		</Alert>
+	);
+}
+
+/** Atividade lotada: o formulário abaixo coloca a pessoa na fila. */
+export function WaitlistIntro({ offerHours }: { offerHours: number }) {
+	return (
+		<StatusShell
+			icon={<TicketX className="h-5 w-5" />}
+			title="Vagas esgotadas"
+			message={`Entre na fila de espera. Se uma vaga abrir, ela será oferecida a você pela ordem de chegada, e você terá até ${offerHours}h para confirmar.`}
+		/>
+	);
+}
+
+export function WaitlistedStatus({
+	position,
+	offerHours,
+	onLeave,
+	leaving,
+}: {
+	position: number | null;
+	offerHours: number;
+	onLeave: () => void;
+	leaving: boolean;
+}) {
+	return (
+		<StatusShell
+			icon={<Hourglass className="h-5 w-5" />}
+			title={
+				position
+					? `Você está na fila: ${position}º lugar`
+					: "Você está na fila de espera"
+			}
+			message={`Quando uma vaga abrir, ela será oferecida a você e você terá até ${offerHours}h para confirmar. Volte a esta página para acompanhar.`}
+			action={
+				<Button
+					variant="outline"
+					size="lg"
+					className="w-full"
+					disabled={leaving}
+					aria-busy={leaving}
+					onClick={onLeave}
+				>
+					{leaving ? (
+						<Loader2 className="h-4 w-4 animate-spin" />
+					) : null}
+					Sair da fila
+				</Button>
+			}
+		/>
+	);
+}
+
+export function OfferStatus({
+	expiresAt,
+	conflicts,
+	eventUrl,
+	onConfirm,
+	onDecline,
+	pending,
+}: {
+	expiresAt: Date | null;
+	conflicts: Conflict[];
+	eventUrl: string;
+	onConfirm: () => void;
+	onDecline: () => void;
+	pending: "confirm" | "leave" | null;
+}) {
+	const deadline = expiresAt
+		? ` Prazo: ${formatFriendlyDate(new Date(expiresAt), { includeHour: true })}.`
+		: "";
+	const blocked = conflicts.length > 0;
+
+	return (
+		<StatusShell
+			tone="success"
+			icon={<BellRing className="h-5 w-5" />}
+			title="Uma vaga abriu para você"
+			message={
+				blocked
+					? `Para confirmar, cancele antes a inscrição que ocupa o mesmo horário.${deadline}`
+					: `Confirme para garantir sua vaga.${deadline}`
+			}
+			action={
+				<div className="flex flex-col gap-2">
+					{blocked ? (
+						<ConflictList
+							conflicts={conflicts}
+							eventUrl={eventUrl}
+						/>
+					) : null}
+					<Button
+						size="lg"
+						className="w-full"
+						disabled={pending !== null || blocked}
+						aria-busy={pending === "confirm"}
+						onClick={onConfirm}
+					>
+						{pending === "confirm" ? (
+							<Loader2 className="h-4 w-4 animate-spin" />
+						) : null}
+						Confirmar vaga
+					</Button>
+					<Button
+						variant="outline"
+						size="lg"
+						className="w-full"
+						disabled={pending !== null}
+						aria-busy={pending === "leave"}
+						onClick={onDecline}
+					>
+						Recusar
+					</Button>
+				</div>
+			}
+		/>
 	);
 }
 
