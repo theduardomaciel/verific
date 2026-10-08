@@ -30,6 +30,10 @@ import {
 	getSessionTimeString,
 } from "@/lib/date";
 
+import { ScheduleConflictAlert } from "./schedule-conflict-alert";
+
+import type { Conflict } from "@/lib/schedule/conflicts";
+
 export type QuickJoinActivity =
 	RouterOutput["getActivities"]["activities"][number];
 
@@ -39,11 +43,16 @@ interface QuickJoinDialogProps {
 	activity: QuickJoinActivity | null;
 	participantId: string;
 	userId: string;
+	eventUrl: string;
+	conflicts?: Conflict[];
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onJoined: (activity: QuickJoinActivity) => void;
 	onBlocked: (activity: QuickJoinActivity, reason: JoinBlockReason) => void;
 }
+
+const CONFLICT_ALERT_ID = "quick-join-conflicts";
+const DESCRIPTION_ID = "quick-join-description";
 
 /**
  * Confirmação de inscrição rápida: uma instância por programação (o dono
@@ -55,6 +64,8 @@ export function QuickJoinDialog({
 	activity,
 	participantId,
 	userId,
+	eventUrl,
+	conflicts = [],
 	open,
 	onOpenChange,
 	onJoined,
@@ -67,6 +78,7 @@ export function QuickJoinDialog({
 		userId,
 	});
 	const pending = status === "pending";
+	const hasConflicts = conflicts.length > 0;
 
 	useEffect(() => {
 		if (open) reset();
@@ -92,6 +104,11 @@ export function QuickJoinDialog({
 			{activity ? (
 				<AlertDialogContent
 					className="sm:max-w-[420px]"
+					aria-describedby={
+						hasConflicts
+							? `${DESCRIPTION_ID} ${CONFLICT_ALERT_ID}`
+							: DESCRIPTION_ID
+					}
 					onOpenAutoFocus={(event) => {
 						event.preventDefault();
 						cancelRef.current?.focus();
@@ -104,7 +121,7 @@ export function QuickJoinDialog({
 						<AlertDialogTitle>
 							Confirmar inscrição?
 						</AlertDialogTitle>
-						<AlertDialogDescription>
+						<AlertDialogDescription id={DESCRIPTION_ID}>
 							Confirme sua inscrição em{" "}
 							<span className="text-foreground font-semibold">
 								{activity.name}
@@ -138,6 +155,14 @@ export function QuickJoinDialog({
 						<p className="text-muted-foreground text-sm">
 							Esta inscrição vale para todas as sessões.
 						</p>
+					) : null}
+
+					{hasConflicts ? (
+						<ScheduleConflictAlert
+							id={CONFLICT_ALERT_ID}
+							conflicts={conflicts}
+							eventUrl={eventUrl}
+						/>
 					) : null}
 
 					{status === "error" ? (
@@ -175,6 +200,8 @@ export function QuickJoinDialog({
 									<Loader2 className="h-4 w-4 animate-spin" />
 									Inscrevendo...
 								</>
+							) : hasConflicts ? (
+								"Inscrever-se mesmo assim"
 							) : (
 								"Confirmar inscrição"
 							)}

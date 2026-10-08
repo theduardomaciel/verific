@@ -66,6 +66,11 @@ function setup(overrides?: {
 	onJoined?: (a: QuickJoinActivity) => void;
 	onBlocked?: (a: QuickJoinActivity, r: string) => void;
 	onOpenChange?: (open: boolean) => void;
+	conflicts?: Array<{
+		otherActivity: { id: string; name: string };
+		otherSession: { startsAt: Date; endsAt: Date | null };
+		targetSession: { startsAt: Date; endsAt: Date | null };
+	}>;
 }) {
 	vi.clearAllMocks();
 	mutateAsyncMock.mockResolvedValue({ ok: true });
@@ -77,6 +82,8 @@ function setup(overrides?: {
 			activity={activity}
 			participantId="part-1"
 			userId="user-1"
+			eventUrl="evento"
+			conflicts={overrides?.conflicts ?? []}
 			open
 			onOpenChange={onOpenChange}
 			onJoined={onJoined}
@@ -125,6 +132,35 @@ describe("QuickJoinDialog", () => {
 		fireEvent.click(confirm);
 		release();
 
+		await screen.findByText("Oficina de Cerâmica");
+		expect(mutateAsyncMock).toHaveBeenCalledTimes(1);
+		expect(onJoined).toHaveBeenCalledWith(activity);
+	});
+
+	it("com conflito, avisa e muda o botão sem bloquear", async () => {
+		const { onJoined } = setup({
+			conflicts: [
+				{
+					otherActivity: { id: "act-2", name: "Mesa Redonda" },
+					otherSession: {
+						startsAt: new Date("2026-11-10T15:00:00-03:00"),
+						endsAt: new Date("2026-11-10T17:00:00-03:00"),
+					},
+					targetSession: {
+						startsAt: new Date("2026-11-10T14:00:00-03:00"),
+						endsAt: new Date("2026-11-10T16:00:00-03:00"),
+					},
+				},
+			],
+		});
+
+		expect(screen.getByText("Conflito de horário")).toBeInTheDocument();
+		expect(screen.getByText("Mesa Redonda")).toBeInTheDocument();
+		const confirm = screen.getByRole("button", {
+			name: "Inscrever-se mesmo assim",
+		});
+
+		fireEvent.click(confirm);
 		await screen.findByText("Oficina de Cerâmica");
 		expect(mutateAsyncMock).toHaveBeenCalledTimes(1);
 		expect(onJoined).toHaveBeenCalledWith(activity);
