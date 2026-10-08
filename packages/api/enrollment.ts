@@ -178,6 +178,34 @@ export async function saveActivityAnswers(
 		});
 }
 
+/**
+ * Persiste a inscrição (vínculos + respostas) dentro da transação que
+ * travou a atividade.
+ * Só insere; nunca remove nada.
+ */
+export async function persistEnrollment(
+	tx: Tx,
+	args: {
+		activityId: string;
+		participantIds: string[];
+		answerRows: Awaited<ReturnType<typeof prepareActivityAnswers>>;
+	},
+) {
+	const { activityId, participantIds, answerRows } = args;
+
+	await tx
+		.insert(participantOnActivity)
+		.values(
+			participantIds.map((participantId) => ({
+				activityId,
+				participantId,
+			})),
+		)
+		.onConflictDoNothing();
+
+	await saveActivityAnswers(tx, answerRows);
+}
+
 export async function deleteActivityAnswers(
 	tx: Tx,
 	activityId: string,

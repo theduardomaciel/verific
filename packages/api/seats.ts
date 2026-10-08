@@ -50,14 +50,14 @@ export async function countEnrolled(tx: Tx, activityId: string) {
 }
 
 /**
- * Com a atividade travada e a fila acertada (`queue`, de `settleActivity`), recusa a
- * inscrição de quem ainda não tem vínculo com ela se faltar vaga. Ofertas
- * em aberto ocupam vaga, exceto a da própria pessoa. Com `queueFirst`,
- * quem não tem oferta também não passa à frente de quem espera.
+ * Com a atividade travada e a fila acertada (`queue`, de `settleActivity`),
+ * diz se há vaga para quem ainda não tem vínculo com ela. Ofertas em aberto
+ * ocupam vaga, exceto a da própria pessoa. Com `queueFirst`, quem não tem
+ * oferta também não passa à frente de quem espera.
  *
- * Devolve quem, entre os inscritos agora, estava na fila.
+ * `queued` são os que, entre os novos, estavam na fila.
  */
-export async function assertSeatsAvailable(
+export async function checkSeats(
 	tx: Tx,
 	locked: LockedActivity,
 	queue: Pick<ActiveEntry, "participantId" | "status">[],
@@ -75,20 +75,14 @@ export async function assertSeatsAvailable(
 		);
 	const linkedIds = new Set(linked.map((row) => row.participantId));
 	const newcomers = participantIds.filter((id) => !linkedIds.has(id));
-	if (newcomers.length === 0) return [];
+	if (newcomers.length === 0) return { ok: true, queued: [] };
 
 	const isNewcomer = (id: string) => newcomers.includes(id);
+	const queued = queue.map((entry) => entry.participantId).filter(isNewcomer);
 	const othersOffers = queue.filter(
 		(entry) =>
 			entry.status === "offered" && !isNewcomer(entry.participantId),
 	).length;
-
-	const full = () =>
-		new TRPCError({
-			message: "Adding these participants exceeds the activity limit.",
-			code: "BAD_REQUEST",
-			cause: { code: "ACTIVITY_FULL" },
-		});
 
 	if (queueFirst) {
 		const holdsOffer = (id: string) =>
@@ -100,18 +94,31 @@ export async function assertSeatsAvailable(
 			(entry) =>
 				entry.status === "waiting" && !isNewcomer(entry.participantId),
 		);
-		if (othersWaiting && !newcomers.every(holdsOffer)) throw full();
+		if (othersWaiting && !newcomers.every(holdsOffer)) {
+			return { ok: false, queued };
+		}
 	}
 
 	if (locked.participantsLimit != null) {
 		const enrolled = await countEnrolled(tx, locked.id);
-		if (
-			newcomers.length >
-			locked.participantsLimit - enrolled - othersOffers
-		) {
-			throw full();
-		}
+		const free = locked.participantsLimit - enrolled - othersOffers;
+		if (newcomers.length > free) return { ok: false, queued };
 	}
 
-	return queue.map((entry) => entry.participantId).filter(isNewcomer);
+	return { ok: true, queued };
+}
+
+/** Como `checkSeats`, mas recusa com `ACTIVITY_FULL` e devolve `queued`. */
+export async function assertSeatsAvailable(
+	...args: Parameters<typeof checkSeats>
+) {
+	const { ok, queued } = await checkSeats(...args);
+	if (!ok) {
+		throw new TRPCError({
+			message: "Adding these participants exceeds the activity limit.",
+			code: "BAD_REQUEST",
+			cause: { code: "ACTIVITY_FULL" },
+		});
+	}
+	return queued;
 }

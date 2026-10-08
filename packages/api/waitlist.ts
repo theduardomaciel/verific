@@ -56,6 +56,21 @@ export async function getActiveEntries(tx: Tx, activityId: string) {
 		) as Promise<ActiveEntry[]>;
 }
 
+/** Início da primeira sessão e fim da última (`null` sem sessões). */
+export async function getActivityRange(tx: Tx, activityId: string) {
+	const [range] = await tx
+		.select({
+			startsAt: min(activitySession.startsAt),
+			endsAt: max(activitySession.endsAt),
+		})
+		.from(activitySession)
+		.where(eq(activitySession.activityId, activityId));
+	return {
+		startsAt: range?.startsAt ? new Date(range.startsAt) : null,
+		endsAt: range?.endsAt ? new Date(range.endsAt) : null,
+	};
+}
+
 /** Posição de cada pessoa que espera (1 = próxima), pela ordem da fila. */
 export function queuePositions(entries: ActiveEntry[]) {
 	return new Map(
@@ -80,21 +95,14 @@ export async function settleActivity(
 	const entries = await getActiveEntries(tx, locked.id);
 	if (entries.length === 0) return entries;
 
-	const [range] = await tx
-		.select({
-			startsAt: min(activitySession.startsAt),
-			endsAt: max(activitySession.endsAt),
-		})
-		.from(activitySession)
-		.where(eq(activitySession.activityId, locked.id));
+	const range = await getActivityRange(tx, locked.id);
 
 	const plan = planSettlement({
 		limit: locked.participantsLimit,
 		enrolled: await countEnrolled(tx, locked.id),
 		entries,
 		now,
-		startsAt: range?.startsAt ? new Date(range.startsAt) : null,
-		endsAt: range?.endsAt ? new Date(range.endsAt) : null,
+		...range,
 		offerHours: locked.waitlistOfferHours,
 	});
 
