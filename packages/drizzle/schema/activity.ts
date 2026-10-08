@@ -13,6 +13,7 @@ import { audienceEnum } from "../enum/audience";
 import { categoryEnum } from "../enum/category";
 import { activityConflict } from "./activity-conflict";
 import { activitySession } from "./activity-session";
+import { activityWaitlist } from "./activity-waitlist";
 import { participantOnActivity } from "./participant-on-activity";
 import { project } from "./project";
 import { speakerOnActivity } from "./speaker-on-activity";
@@ -33,6 +34,8 @@ export const activity = pgTable("activities", {
 	tolerance: integer("tolerance"),
 	workload: integer("workload"),
 	allowOverlap: boolean("allow_overlap").notNull().default(false),
+	// Prazo para confirmar a vaga oferecida pela fila de espera
+	waitlistOfferHours: integer("waitlist_offer_hours").notNull().default(12),
 
 	// 📍 Location fields
 	address: text("address"), // Human-readable address for display
@@ -58,6 +61,7 @@ export const activityRelations = relations(activity, ({ one, many }) => ({
 	speakerOnActivity: many(speakerOnActivity),
 	sessions: many(activitySession),
 	tagOnActivity: many(tagOnActivity),
+	waitlist: many(activityWaitlist),
 	conflictsAsBlocking: many(activityConflict, {
 		relationName: "blockingActivities",
 	}),
