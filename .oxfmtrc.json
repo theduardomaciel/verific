@@ -5,5 +5,32 @@
 	"printWidth": 80,
 	"sortPackageJson": false,
 	"sortTailwindcss": {},
-	"ignorePatterns": []
+	"ignorePatterns": [],
+
+	"sortImports": {
+		"newlinesBetween": true,
+		"internalPattern": ["@/"],
+		"customGroups": [
+			{
+				"groupName": "framework",
+				"elementNamePattern": ["react", "react-dom", "next", "next/**"]
+			},
+			{ "groupName": "workspace", "elementNamePattern": ["@verific/**"] },
+			{ "groupName": "ui", "elementNamePattern": ["@/components/ui/**"] },
+			{
+				"groupName": "components",
+				"elementNamePattern": ["@/components/**"]
+			}
+		],
+		"groups": [
+			"framework",
+			["value-builtin", "value-external"],
+			"workspace",
+			"ui",
+			"components",
+			"value-internal",
+			["value-parent", "value-sibling", "value-index"],
+			"unknown"
+		]
+	}
 }
