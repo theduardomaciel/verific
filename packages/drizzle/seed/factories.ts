@@ -120,6 +120,7 @@ export function buildActivity(
 		category: faker.helpers.arrayElement(activityCategories),
 		participantsLimit: faker.number.int({ min: 10, max: 100 }),
 		tolerance: faker.helpers.arrayElement([0, 10, 15, 20]),
+		waitlistOfferHours: 12,
 		workload: params.workload,
 		projectId: params.projectId,
 		...overrides,

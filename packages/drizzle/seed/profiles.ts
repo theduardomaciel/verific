@@ -42,7 +42,14 @@ export const profiles = {
 				monitors: 2,
 				moderators: 1,
 				speakers: 6,
-				activities: [...randomActivities(19), OVERLAPPING_ACTIVITY],
+				activities: [
+					{
+						participantsLimit: 8,
+						waitlist: { waiting: 3, offered: 1 },
+					},
+					...randomActivities(18),
+					OVERLAPPING_ACTIVITY,
+				],
 			},
 			{
 				startsInDays: -1,
@@ -65,7 +72,15 @@ export const profiles = {
 				monitors: 5,
 				moderators: 2,
 				speakers: 15,
-				activities: [...randomActivities(59), OVERLAPPING_ACTIVITY],
+				activities: [
+					{
+						participantsLimit: 20,
+						waitlist: { waiting: 5, offered: 1 },
+					},
+					{ participantsLimit: 15, waitlist: { waiting: 3 } },
+					...randomActivities(57),
+					OVERLAPPING_ACTIVITY,
+				],
 			},
 			{
 				startsInDays: -1,

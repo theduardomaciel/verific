@@ -32,6 +32,9 @@ export interface ActivitySpec {
 	// Inscritos com papel `participant`, sempre limitado às vagas
 	enrolled?: number | "all" | "random";
 	monitors?: number | "all";
+	// Lota a atividade e põe gente na fila; os `offered` primeiros já têm
+	// vaga oferecida. Só vale para atividades que ainda não começaram.
+	waitlist?: { waiting: number; offered?: number };
 }
 
 export interface EventSpec {
@@ -167,6 +170,11 @@ export async function seedEvent(
 					participantsLimit: activitySpec.participantsLimit,
 				}),
 				...(activitySpec.allowOverlap && { allowOverlap: true }),
+				// A data de referência é meia-noite: com 48h, a oferta semeada
+				// ainda vale no dia em que o seed roda
+				...(activitySpec.waitlist?.offered && {
+					waitlistOfferHours: 48,
+				}),
 			},
 		);
 		for (let i = 0; i < sessionCount; i++) {
@@ -208,7 +216,7 @@ export async function seedEvent(
 
 	// Sessões que ocupam o horário de cada participante
 	const busy = new Map<string, Session[]>();
-	const enrollments = activities.flatMap((activity, i) =>
+	const built = activities.map((activity, i) =>
 		buildEnrollments(faker, {
 			activity,
 			sessions: sessions.filter((s) => s.activityId === activity.id),
@@ -219,7 +227,32 @@ export async function seedEvent(
 			refDate,
 		}),
 	);
+	const enrollments = built.flatMap((b) => b.enrollments);
 	await insertInChunks(db, schema.participantOnActivity, enrollments);
+	const waitlist = built.flatMap((b) => b.waitlist);
+	await insertInChunks(db, schema.activityWaitlist, waitlist);
+	await insertInChunks(
+		db,
+		schema.activityWaitlistEvent,
+		waitlist.flatMap((entry) => [
+			{
+				activityId: entry.activityId,
+				participantId: entry.participantId,
+				type: "joined" as const,
+				createdAt: entry.joinedAt,
+			},
+			...(entry.offeredAt
+				? [
+						{
+							activityId: entry.activityId,
+							participantId: entry.participantId,
+							type: "offered" as const,
+							createdAt: entry.offeredAt,
+						},
+					]
+				: []),
+		]),
+	);
 
 	const attendances = buildAttendances(faker, {
 		activities,
@@ -235,6 +268,7 @@ export async function seedEvent(
 		activities: activities.length,
 		sessions: sessions.length,
 		enrollments: enrollments.length,
+		waitlist: waitlist.length,
 		attendances: attendances.length,
 	};
 }
@@ -322,22 +356,90 @@ function buildEnrollments(
 		}),
 	});
 
+	// Com fila, as vagas oferecidas saem das inscrições
+	const startsAt = sessions[0]!.startsAt;
+	const queue = startsAt > refDate ? spec.waitlist : undefined;
+	const offered = queue?.offered ?? 0;
+	const chosen = faker.helpers.arrayElements(
+		candidates,
+		queue ? Math.max(0, max - offered) : count,
+	);
+
 	const enrollments = [
 		...monitors.map((monitor) => row(monitor.id, "monitor")),
-		...faker.helpers
-			.arrayElements(candidates, count)
-			.map((participant) => row(participant.id, "participant")),
+		...chosen.map((participant) => row(participant.id, "participant")),
 	];
-	// Uma atividade que permite sobreposição não ocupa o horário de ninguém
-	if (!activity.allowOverlap) {
-		for (const { participantId } of enrollments) {
-			busy.set(participantId, [
-				...(busy.get(participantId) ?? []),
-				...sessions,
-			]);
-		}
+	const queued = queue
+		? faker.helpers.arrayElements(
+				candidates.filter((c) => !chosen.includes(c)),
+				queue.waiting + offered,
+			)
+		: [];
+	// Quem está na fila também ocupa o horário, para poder confirmar. Uma
+	// atividade que permite sobreposição não ocupa o horário de ninguém.
+	for (const participantId of activity.allowOverlap
+		? []
+		: [
+				...enrollments.map((e) => e.participantId),
+				...queued.map((q) => q.id),
+			]) {
+		busy.set(participantId, [
+			...(busy.get(participantId) ?? []),
+			...sessions,
+		]);
 	}
-	return enrollments;
+
+	return {
+		enrollments,
+		waitlist: queue
+			? buildWaitlist(faker, {
+					activity,
+					startsAt,
+					people: queued,
+					offered,
+					refDate,
+				})
+			: [],
+	};
+}
+
+// Fila pela ordem de chegada: os primeiros receberam a oferta na data de referência
+function buildWaitlist(
+	faker: Faker,
+	params: {
+		activity: ReturnType<typeof buildActivity>;
+		startsAt: Date;
+		people: { id: string }[];
+		offered: number;
+		refDate: Date;
+	},
+) {
+	const { activity, startsAt, offered, refDate } = params;
+	const offeredAt = refDate;
+	const offerExpiresAt = new Date(
+		Math.min(
+			addMinutes(offeredAt, activity.waitlistOfferHours * 60).getTime(),
+			startsAt.getTime(),
+		),
+	);
+	const joinedAt = params.people
+		.map(() =>
+			faker.date.between({
+				from: addDays(offeredAt, -10),
+				to: offeredAt,
+			}),
+		)
+		.sort((a, b) => a.getTime() - b.getTime());
+
+	return params.people.map((person, i) => ({
+		id: faker.string.uuid(),
+		activityId: activity.id,
+		participantId: person.id,
+		joinedAt: joinedAt[i]!,
+		...(i < offered
+			? { status: "offered" as const, offeredAt, offerExpiresAt }
+			: { status: "waiting" as const, offeredAt: null }),
+	}));
 }
 
 // Presença em ~70% das sessões que já começaram, dentro da tolerância
