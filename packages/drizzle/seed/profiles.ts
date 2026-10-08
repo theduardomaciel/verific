@@ -8,6 +8,18 @@ export interface SeedProfile {
 const randomActivities = (count: number): ActivitySpec[] =>
 	Array.from({ length: count }, () => ({}));
 
+// As atividades aleatórias terminam até as 21h. Às 21h do último dia, ninguém
+// do seed está ocupado, então a inscrição dos testes de carga não esbarra em
+// conflito de horário.
+const STRESS_JOIN_SLOT = { day: 2, startHour: 21, hours: 1 };
+
+// Atividade longa, como uma maratona, que não conflita com as outras
+const OVERLAPPING_ACTIVITY: ActivitySpec = {
+	allowOverlap: true,
+	sessions: 1,
+	slot: { day: 1, startHour: 8, hours: 10 },
+};
+
 // Nomes usados pelos testes de carga para localizar o cenário
 export const STRESS_EVENT = {
 	url: "seed-stress",
@@ -30,7 +42,7 @@ export const profiles = {
 				monitors: 2,
 				moderators: 1,
 				speakers: 6,
-				activities: randomActivities(20),
+				activities: [...randomActivities(19), OVERLAPPING_ACTIVITY],
 			},
 			{
 				startsInDays: -1,
@@ -53,7 +65,7 @@ export const profiles = {
 				monitors: 5,
 				moderators: 2,
 				speakers: 15,
-				activities: randomActivities(60),
+				activities: [...randomActivities(59), OVERLAPPING_ACTIVITY],
 			},
 			{
 				startsInDays: -1,
@@ -85,6 +97,7 @@ export const profiles = {
 						name: STRESS_EVENT.activities.limit50,
 						participantsLimit: 50,
 						sessions: 1,
+						slot: STRESS_JOIN_SLOT,
 						enrolled: 0,
 						monitors: 0,
 					},
@@ -94,6 +107,7 @@ export const profiles = {
 							name: STRESS_EVENT.activities.limit100(i + 1),
 							participantsLimit: 100,
 							sessions: 1,
+							slot: STRESS_JOIN_SLOT,
 							enrolled: 0,
 							monitors: 0,
 						}),
@@ -102,6 +116,7 @@ export const profiles = {
 						name: STRESS_EVENT.activities.checkin,
 						participantsLimit: null,
 						sessions: 1,
+						slot: { day: 0, startHour: 8, hours: 2 },
 						enrolled: "all",
 						monitors: "all",
 					},

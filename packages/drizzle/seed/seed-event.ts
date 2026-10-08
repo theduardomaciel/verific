@@ -16,12 +16,19 @@ import { addDays, addMinutes, insertInChunks, type SeedDb } from "./utils";
 
 import type { Faker } from "@faker-js/faker";
 
+// As inscrições seguem a ordem das atividades no perfil: quem já está em uma
+// atividade, como participante ou monitor, não entra nas seguintes que cruzam
+// o mesmo horário, a menos que uma das duas permita sobreposição
 export interface ActivitySpec {
 	name?: string;
 	// `null` = sem limite; omitido = limite aleatório
 	participantsLimit?: number | null;
 	// Omitido = uma sessão, às vezes duas em dias seguidos
 	sessions?: number;
+	// Omitido = dia, início entre 8h e 18h e duração de 1 a 3h aleatórios
+	slot?: { day: number; startHour: number; hours: number };
+	// Como no app: não conflita com nenhuma outra atividade
+	allowOverlap?: boolean;
 	// Inscritos com papel `participant`, sempre limitado às vagas
 	enrolled?: number | "all" | "random";
 	monitors?: number | "all";
@@ -141,10 +148,12 @@ export async function seedEvent(
 
 	const sessions: Session[] = [];
 	const activities = spec.activities.map((activitySpec) => {
-		const day = faker.number.int({ min: 0, max: spec.durationDays - 1 });
-		const startMinutes = faker.number.int({ min: 8, max: 18 }) * 60;
-		const startsAt = addMinutes(addDays(startDate, day), startMinutes);
-		const hours = faker.number.int({ min: 1, max: 3 });
+		const { day, startHour, hours } = activitySpec.slot ?? {
+			day: faker.number.int({ min: 0, max: spec.durationDays - 1 }),
+			startHour: faker.number.int({ min: 8, max: 18 }),
+			hours: faker.number.int({ min: 1, max: 3 }),
+		};
+		const startsAt = addMinutes(addDays(startDate, day), startHour * 60);
 		const sessionCount =
 			activitySpec.sessions ??
 			(faker.datatype.boolean({ probability: 1 / 3 }) ? 2 : 1);
@@ -157,6 +166,7 @@ export async function seedEvent(
 				...(activitySpec.participantsLimit !== undefined && {
 					participantsLimit: activitySpec.participantsLimit,
 				}),
+				...(activitySpec.allowOverlap && { allowOverlap: true }),
 			},
 		);
 		for (let i = 0; i < sessionCount; i++) {
@@ -196,13 +206,16 @@ export async function seedEvent(
 		: [];
 	await insertInChunks(db, schema.speakerOnActivity, speakerLinks);
 
+	// Sessões que ocupam o horário de cada participante
+	const busy = new Map<string, Session[]>();
 	const enrollments = activities.flatMap((activity, i) =>
 		buildEnrollments(faker, {
 			activity,
-			firstSession: sessions.find((s) => s.activityId === activity.id)!,
+			sessions: sessions.filter((s) => s.activityId === activity.id),
 			spec: spec.activities[i]!,
 			participants,
 			monitorPool,
+			busy,
 			refDate,
 		}),
 	);
@@ -230,29 +243,52 @@ function buildEnrollments(
 	faker: Faker,
 	params: {
 		activity: ReturnType<typeof buildActivity>;
-		firstSession: Session;
+		sessions: Session[];
 		spec: ActivitySpec;
 		participants: { id: string }[];
 		monitorPool: { id: string }[];
+		busy: Map<string, Session[]>;
 		refDate: Date;
 	},
 ) {
-	const { activity, firstSession, spec, participants, monitorPool, refDate } =
-		params;
+	const {
+		activity,
+		sessions,
+		spec,
+		participants,
+		monitorPool,
+		busy,
+		refDate,
+	} = params;
 
+	// Sobreposição estrita, como na regra do app: atividades em sequência não
+	// conflitam, e quem permite sobreposição não conflita com nada
+	const isFree = (participant: { id: string }) =>
+		activity.allowOverlap ||
+		!busy
+			.get(participant.id)
+			?.some((taken) =>
+				sessions.some(
+					(session) =>
+						taken.startsAt < session.endsAt &&
+						session.startsAt < taken.endsAt,
+				),
+			);
+
+	const freeMonitors = monitorPool.filter(isFree);
 	const monitorCount =
 		spec.monitors === "all"
-			? monitorPool.length
+			? freeMonitors.length
 			: (spec.monitors ??
 				faker.number.int({
 					min: 0,
-					max: Math.min(2, monitorPool.length),
+					max: Math.min(2, freeMonitors.length),
 				}));
-	const monitors = faker.helpers.arrayElements(monitorPool, monitorCount);
+	const monitors = faker.helpers.arrayElements(freeMonitors, monitorCount);
 	const monitorIds = new Set(monitors.map((monitor) => monitor.id));
 
 	const candidates = participants.filter(
-		(participant) => !monitorIds.has(participant.id),
+		(participant) => !monitorIds.has(participant.id) && isFree(participant),
 	);
 	const limit = activity.participantsLimit ?? null;
 	const max = Math.min(candidates.length, limit ?? candidates.length);
@@ -273,7 +309,7 @@ function buildEnrollments(
 
 	// A inscrição acontece antes da atividade e nunca depois da data de referência
 	const subscribedUntil = new Date(
-		Math.min(firstSession.startsAt.getTime(), refDate.getTime()),
+		Math.min(sessions[0]!.startsAt.getTime(), refDate.getTime()),
 	);
 
 	const row = (participantId: string, role: "participant" | "monitor") => ({
@@ -286,12 +322,22 @@ function buildEnrollments(
 		}),
 	});
 
-	return [
+	const enrollments = [
 		...monitors.map((monitor) => row(monitor.id, "monitor")),
 		...faker.helpers
 			.arrayElements(candidates, count)
 			.map((participant) => row(participant.id, "participant")),
 	];
+	// Uma atividade que permite sobreposição não ocupa o horário de ninguém
+	if (!activity.allowOverlap) {
+		for (const { participantId } of enrollments) {
+			busy.set(participantId, [
+				...(busy.get(participantId) ?? []),
+				...sessions,
+			]);
+		}
+	}
+	return enrollments;
 }
 
 // Presença em ~70% das sessões que já começaram, dentro da tolerância
