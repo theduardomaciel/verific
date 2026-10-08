@@ -46,6 +46,7 @@ export const mutateActivityFormSchema = z
 			.refine((val) => val === undefined || val >= 0, {
 				message: "A tolerância deve ser maior ou igual a 0",
 			}),
+		waitlistOfferHours: z.coerce.number().int().min(1).max(168).optional(),
 		workload: z.coerce
 			.number()
 			.optional()

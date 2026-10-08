@@ -17,10 +17,11 @@ interface MobileActionBarProps {
 	seatsUrgent?: boolean;
 	/** `true` em qualquer estado não acionável (ou após o envio). */
 	hidden: boolean;
+	actionLabel?: string;
 }
 
 /**
- * Barra fixa de ação no mobile: status das vagas + "Inscrever-se",
+ * Barra fixa de ação no mobile: status das vagas + a ação do painel,
  * rolando até o card e focando o título. Some quando o card está
  * visível ou o painel não é acionável.
  */
@@ -30,6 +31,7 @@ export function MobileActionBar({
 	seatsLabel,
 	seatsUrgent = false,
 	hidden,
+	actionLabel = "Inscrever-se",
 }: MobileActionBarProps) {
 	const [cardInView, setCardInView] = useState(true);
 
@@ -85,7 +87,7 @@ export function MobileActionBar({
 					onClick={goToForm}
 					className="min-h-11 shrink-0"
 				>
-					Inscrever-se
+					{actionLabel}
 				</Button>
 			</div>
 		</div>

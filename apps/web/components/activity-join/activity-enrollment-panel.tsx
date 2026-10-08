@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 
+import { toast } from "sonner";
+
+// Hooks
+import { useWaitlist } from "@/hooks/use-waitlist";
 // Lib
 import { describeSeats } from "@/lib/activity-seats";
 
@@ -12,9 +16,11 @@ import {
 	EnrollmentSuccess,
 	MutedStatus,
 	NotInEventStatus,
+	OfferStatus,
 	ScheduleConflictStatus,
 	SignedOutStatus,
-	WaitlistNotice,
+	WaitlistedStatus,
+	WaitlistIntro,
 } from "./enrollment-status";
 import { MobileActionBar } from "./mobile-action-bar";
 import { EnrollmentPanelSkeleton } from "./page-skeleton";
@@ -44,20 +50,57 @@ export function ActivityEnrollmentPanel({
 	participantsCount,
 }: ActivityEnrollmentPanelProps) {
 	const [submitted, setSubmitted] = useState(false);
+	// As vagas acabaram durante o envio (contagem em cache desatualizada)
+	const [becameFull, setBecameFull] = useState(false);
 	const enrollment = useActivityEnrollmentState({
 		activity,
 		eventUrl,
 		participantsCount,
 	});
 
-	const { state, userId, participantId } = enrollment;
+	const { state: rawState, userId, participantId } = enrollment;
+	const state = rawState === "form" && becameFull ? "waitlist" : rawState;
+	const waitlist = useWaitlist({
+		activityId: activity.id,
+		userId: userId ?? "",
+	});
+	const offerHours = activity.waitlistOfferHours;
+
+	async function confirmOffer() {
+		const { error } = await waitlist.confirm();
+		if (error === "conflict") {
+			toast.error(
+				"Esta atividade conflita com outra em que você já está inscrito.",
+			);
+		} else if (error) {
+			toast.error(
+				"Não foi possível confirmar: a oferta pode ter expirado.",
+			);
+		} else {
+			setSubmitted(true);
+		}
+	}
+
+	async function leaveQueue() {
+		const { error } = await waitlist.leave();
+		if (error)
+			toast.error("Não foi possível sair da fila. Tente novamente.");
+	}
 	const scheduleHref = `/${eventUrl}/schedule#${activity.id}`;
 	const seats = describeSeats({
 		participantsLimit: activity.participantsLimit,
 		participantsCount,
 	});
 
-	const isActionable = state === "form" && !submitted;
+	const isActionable =
+		(state === "form" || state === "waitlist" || state === "offered") &&
+		!submitted;
+	const actionLabel =
+		state === "waitlist"
+			? "Entrar na fila"
+			: state === "offered"
+				? "Confirmar vaga"
+				: "Inscrever-se";
 
 	return (
 		<>
@@ -96,22 +139,52 @@ export function ActivityEnrollmentPanel({
 							participantId={participantId ?? ""}
 							projectUrl={activity.project?.url ?? eventUrl}
 						/>
-					) : state === "ended" ||
-					  state === "registration-closed" ||
-					  state === "full" ? (
-						<div className="flex flex-col gap-4">
-							<MutedStatus kind={state} />
-							{state === "full" && activity.tolerance ? (
-								<WaitlistNotice
-									tolerance={activity.tolerance}
-								/>
-							) : null}
-						</div>
+					) : state === "offered" ? (
+						<OfferStatus
+							expiresAt={
+								enrollment.waitlistEntry?.offerExpiresAt ?? null
+							}
+							conflicts={enrollment.conflicts}
+							eventUrl={eventUrl}
+							onConfirm={() => void confirmOffer()}
+							onDecline={() => void leaveQueue()}
+							pending={
+								waitlist.pending === "join"
+									? null
+									: waitlist.pending
+							}
+						/>
+					) : state === "waitlisted" ? (
+						<WaitlistedStatus
+							position={
+								enrollment.waitlistEntry?.position ?? null
+							}
+							offerHours={offerHours}
+							onLeave={() => void leaveQueue()}
+							leaving={waitlist.pending === "leave"}
+						/>
+					) : state === "ended" || state === "registration-closed" ? (
+						<MutedStatus kind={state} />
 					) : state === "schedule-conflict" ? (
 						<ScheduleConflictStatus
 							conflicts={enrollment.conflicts}
 							eventUrl={eventUrl}
 						/>
+					) : state === "waitlist" ? (
+						<div className="flex flex-col gap-4">
+							<WaitlistIntro offerHours={offerHours} />
+							<ActivityEnrollmentForm
+								activity={activity}
+								participantId={participantId ?? ""}
+								userId={userId ?? ""}
+								form={enrollment.form}
+								mode="waitlist"
+								onSubmitted={(result) => {
+									if (result === "enrolled")
+										setSubmitted(true);
+								}}
+							/>
+						</div>
 					) : (
 						<div className="flex flex-col gap-4">
 							<p className="text-muted-foreground text-sm">
@@ -125,6 +198,7 @@ export function ActivityEnrollmentPanel({
 								userId={userId ?? ""}
 								form={enrollment.form}
 								onSubmitted={() => setSubmitted(true)}
+								onFull={() => setBecameFull(true)}
 							/>
 						</div>
 					)}
@@ -137,6 +211,7 @@ export function ActivityEnrollmentPanel({
 				seatsLabel={seats.label}
 				seatsUrgent={seats.status === "low" || seats.status === "full"}
 				hidden={!isActionable}
+				actionLabel={actionLabel}
 			/>
 		</>
 	);

@@ -6,11 +6,13 @@ import { useActivityEnrollmentState } from "@/components/activity-join/use-activ
 
 afterEach(cleanup);
 
-const { subscribedMock, publishedMock, enrolledMock } = vi.hoisted(() => ({
-	subscribedMock: vi.fn(),
-	publishedMock: vi.fn(),
-	enrolledMock: vi.fn(),
-}));
+const { subscribedMock, publishedMock, enrolledMock, waitlistMock } =
+	vi.hoisted(() => ({
+		subscribedMock: vi.fn(),
+		publishedMock: vi.fn(),
+		enrolledMock: vi.fn(),
+		waitlistMock: vi.fn(),
+	}));
 
 vi.mock("@/hooks/use-subscribed-activities", () => ({
 	useSubscribedActivities: subscribedMock,
@@ -20,6 +22,7 @@ vi.mock("@/lib/trpc/react", () => ({
 	trpc: {
 		getPublishedForm: { useQuery: publishedMock },
 		getActivitiesFromParticipant: { useQuery: enrolledMock },
+		getMyWaitlistEntries: { useQuery: waitlistMock },
 	},
 }));
 
@@ -59,7 +62,16 @@ function setup(overrides?: {
 	enrolled?: ReturnType<typeof enrolledActivity>[];
 	enrolledPending?: boolean;
 	enrolledError?: boolean;
+	participantsCount?: number;
+	waitlist?: { activityId: string; status: "waiting" | "offered" }[];
+	waitlistPending?: boolean;
 }) {
+	waitlistMock.mockReturnValue({
+		data: overrides?.waitlistPending
+			? undefined
+			: (overrides?.waitlist ?? []),
+		isPending: overrides?.waitlistPending ?? false,
+	});
 	subscribedMock.mockReturnValue({
 		userId: "user-1",
 		participantId: "part-1",
@@ -84,7 +96,7 @@ function setup(overrides?: {
 		useActivityEnrollmentState({
 			activity,
 			eventUrl: "evento",
-			participantsCount: 0,
+			participantsCount: overrides?.participantsCount ?? 0,
 		}),
 	);
 }
@@ -126,5 +138,54 @@ describe("useActivityEnrollmentState schedule-conflict", () => {
 		});
 
 		expect(result.current.state).toBe("already-subscribed");
+	});
+});
+
+describe("useActivityEnrollmentState fila de espera", () => {
+	it("atividade lotada vira entrada na fila", () => {
+		const { result } = setup({ participantsCount: 30 });
+
+		expect(result.current.state).toBe("waitlist");
+	});
+
+	it("conflito de horário vem antes da fila", () => {
+		const { result } = setup({
+			participantsCount: 30,
+			enrolled: [enrolledActivity("act-2", OVERLAPPING)],
+		});
+
+		expect(result.current.state).toBe("schedule-conflict");
+	});
+
+	it("quem está na fila vê o próprio lugar", () => {
+		const { result } = setup({
+			participantsCount: 30,
+			waitlist: [{ activityId: "act-1", status: "waiting" }],
+		});
+
+		expect(result.current.state).toBe("waitlisted");
+	});
+
+	it("quem recebeu oferta vê a oferta, mesmo com conflito", () => {
+		const { result } = setup({
+			waitlist: [{ activityId: "act-1", status: "offered" }],
+			enrolled: [enrolledActivity("act-2", OVERLAPPING)],
+		});
+
+		expect(result.current.state).toBe("offered");
+	});
+
+	it("ignora a fila de outras atividades", () => {
+		const { result } = setup({
+			waitlist: [{ activityId: "act-9", status: "offered" }],
+		});
+
+		expect(result.current.state).toBe("form");
+	});
+
+	it("segura loading enquanto a fila carrega", () => {
+		const { result } = setup({ waitlistPending: true });
+
+		expect(result.current.state).toBe("loading");
 	});
 });
