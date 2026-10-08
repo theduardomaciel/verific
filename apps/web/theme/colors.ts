@@ -85,6 +85,18 @@ const allColors = {
 		light: "hsl(140, 100%, 27%)",
 		dark: "hsl(150, 86%, 65%)",
 	},
+	"$warning-bg": {
+		light: "hsl(48, 100%, 96%)",
+		dark: "hsl(45, 100%, 7%)",
+	},
+	"$warning-border": {
+		light: "hsl(45, 90%, 78%)",
+		dark: "hsl(45, 100%, 16%)",
+	},
+	"$warning-text": {
+		light: "hsl(32, 100%, 30%)",
+		dark: "hsl(45, 95%, 68%)",
+	},
 
 	/***********************************************************/
 	/* Semantic, light/dark color groups are prefixed with `$` */

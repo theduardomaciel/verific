@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 // Icons
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, CalendarClock, Check } from "lucide-react";
 
 // Types
 import type { RouterOutput } from "@verific/api";
@@ -28,6 +28,8 @@ import { TagBadges } from "../tag-badge";
 import { ActivitySpeakers } from "./speakers";
 import { ActivityCardTags } from "./tags";
 
+import type { Conflict } from "@/lib/schedule/conflicts";
+
 type CardActivity = RouterOutput["getActivities"]["activities"][number];
 
 interface EventCardProps {
@@ -45,6 +47,8 @@ interface EventCardProps {
 	seatDelta?: number;
 	/** Resposta do servidor em corrida: força o estado do card. */
 	statusOverride?: "full" | "closed" | null;
+	/** Conflitos com atividades já inscritas (só exibição, nunca bloqueia). */
+	conflicts?: Conflict[];
 	lowSeatsThreshold?: number;
 	/** When rendered as one day of a multi-session activity. */
 	occurrenceSession?: ActivitySessionLike | null;
@@ -60,6 +64,7 @@ export function ActivityCard({
 	onQuickJoin,
 	seatDelta = 0,
 	statusOverride = null,
+	conflicts = [],
 	className,
 	lowSeatsThreshold = 7,
 	occurrenceSession,
@@ -150,6 +155,12 @@ export function ActivityCard({
 					activity={activity}
 					highlightSession={occurrenceSession}
 				/>
+				{conflicts.length > 0 ? (
+					<p className="text-muted-foreground flex w-full items-center gap-1.5 text-sm">
+						<CalendarClock className="size-4 shrink-0" />
+						Conflito de horário
+					</p>
+				) : null}
 				<div className="flex flex-row flex-wrap items-center justify-start gap-4">
 					{(activity.workload ?? 0) > 0 && isOpen ? (
 						participantId ? (

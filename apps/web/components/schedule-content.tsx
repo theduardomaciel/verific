@@ -41,7 +41,9 @@ import {
 	categorizeByDate,
 	expandSessionOccurrences,
 	getFirstSessionStart,
+	hasEverySessionEnded,
 } from "@/lib/date";
+import { findScheduleConflicts, type Conflict } from "@/lib/schedule/conflicts";
 
 interface ScheduleContentProps {
 	activities: RouterOutput["getActivities"]["activities"];
@@ -73,6 +75,33 @@ export function ScheduleContent({
 		() => activities.find((a) => a.id === quickJoinId) ?? null,
 		[activities, quickJoinId],
 	);
+
+	// Conflitos de horário por atividade: conjunto inscrito = vínculo do
+	// servidor (`subscribedIds`) ∪ join local (`joinedIds`, imediato).
+	// Fonte é sempre `activities` (nunca a lista filtrada) para busca e
+	// filtros nunca esconderem conflitos. Uma computação, sem hook por card.
+	// O `now` congela na montagem (regras `react(purity)`/`set-state-in-effect`
+	// barram relógio no render): suficiente para avisos consultivos, que
+	// recalculam a cada navegação.
+	const [now] = useState(() => new Date());
+
+	const conflictMap = useMemo(() => {
+		const map = new Map<string, Conflict[]>();
+		if (!userId || !participantId || !now) return map;
+		const enrolledIds = new Set([...(subscribedIds ?? []), ...joinedIds]);
+		if (enrolledIds.size === 0) return map;
+		const enrolledById = new Map(activities.map((a) => [a.id, a]));
+		const enrolled = [...enrolledIds]
+			.map((id) => enrolledById.get(id))
+			.filter((a) => a !== undefined);
+		for (const activity of activities) {
+			if (enrolledIds.has(activity.id)) continue;
+			if (hasEverySessionEnded(activity.sessions)) continue;
+			const conflicts = findScheduleConflicts(activity, enrolled, now);
+			if (conflicts.length > 0) map.set(activity.id, conflicts);
+		}
+		return map;
+	}, [activities, subscribedIds, joinedIds, userId, participantId, now]);
 
 	function handleJoined(activity: QuickJoinActivity): void {
 		setQuickJoinId(null);
@@ -330,6 +359,11 @@ export function ScheduleContent({
 																	? "closed"
 																	: null
 														}
+														conflicts={
+															conflictMap.get(
+																activity.id,
+															) ?? []
+														}
 													/>
 												);
 											})}
@@ -362,6 +396,8 @@ export function ScheduleContent({
 					activity={quickJoinActivity}
 					participantId={participantId}
 					userId={userId}
+					eventUrl={eventUrl}
+					conflicts={conflictMap.get(quickJoinActivity.id) ?? []}
 					open={quickJoinId !== null}
 					onOpenChange={(next) => {
 						if (!next) setQuickJoinId(null);

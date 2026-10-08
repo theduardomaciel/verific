@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
 
+import { ScheduleConflictAlert } from "@/components/activity/schedule-conflict-alert";
 import { DynamicField } from "@/components/forms/dynamic/DynamicField";
 
 // Hooks
@@ -35,6 +36,7 @@ import type {
 	ActivityDetail,
 	PublishedActivityForm,
 } from "./use-activity-enrollment-state";
+import type { Conflict } from "@/lib/schedule/conflicts";
 
 type ActivityAnswerValue =
 	| string
@@ -56,6 +58,9 @@ interface ActivityEnrollmentFormProps {
 	participantId: string;
 	userId: string;
 	form: PublishedActivityForm;
+	/** Conflitos com atividades já inscritas (só exibição, nunca bloqueia). */
+	conflicts?: Conflict[];
+	eventUrl: string;
 	onSubmitted: () => void;
 }
 
@@ -70,6 +75,8 @@ export function ActivityEnrollmentForm({
 	participantId,
 	userId,
 	form: published,
+	conflicts = [],
+	eventUrl,
 	onSubmitted,
 }: ActivityEnrollmentFormProps) {
 	const { join, status } = useJoinActivity({
@@ -322,6 +329,13 @@ export function ActivityEnrollmentForm({
 
 				{activity.tolerance ? (
 					<WaitlistNotice tolerance={activity.tolerance} />
+				) : null}
+
+				{conflicts.length > 0 ? (
+					<ScheduleConflictAlert
+						conflicts={conflicts}
+						eventUrl={eventUrl}
+					/>
 				) : null}
 
 				{errorEntries.length > 0 ? (
