@@ -53,7 +53,11 @@ import {
 import { assertSeatsAvailable, lockActivity } from "../seats";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { transformSingleToArray } from "../utils";
-import { resolveEnrolledEntries, settleActivity } from "../waitlist";
+import {
+	closeEntry,
+	resolveEnrolledEntries,
+	settleActivity,
+} from "../waitlist";
 import { hasPublishedActivityForm } from "./forms";
 
 // Re-export client-safe schemas so existing server imports keep working.
@@ -974,6 +978,8 @@ export const activitiesRouter = createTRPCRouter({
 			}
 
 			await db.transaction(async (tx) => {
+				await lockActivity(tx, activityId);
+
 				await tx
 					.update(activity)
 					.set({
@@ -1033,6 +1039,9 @@ export const activitiesRouter = createTRPCRouter({
 						existing.projectId,
 					);
 				}
+
+				// Limite ou horários novos podem abrir vagas na fila
+				await settleActivity(tx, await lockActivity(tx, activityId));
 			});
 			return { success: true };
 		}),
@@ -1258,19 +1267,31 @@ export const activitiesRouter = createTRPCRouter({
 					role: "monitor",
 				}));
 
-			// Add to activity
-			await db
-				.insert(participantOnActivity)
-				.values(toInsert)
-				.onConflictDoUpdate({
-					target: [
-						participantOnActivity.activityId,
-						participantOnActivity.participantId,
-					],
-					set: {
-						role: "monitor",
-					},
-				});
+			await db.transaction(async (tx) => {
+				const locked = await lockActivity(tx, activityId);
+
+				// Quem já estava inscrito vira monitor e libera a vaga
+				await tx
+					.insert(participantOnActivity)
+					.values(toInsert)
+					.onConflictDoUpdate({
+						target: [
+							participantOnActivity.activityId,
+							participantOnActivity.participantId,
+						],
+						set: {
+							role: "monitor",
+						},
+					});
+
+				for (const participantId of participantsIdsToAdd) {
+					await closeEntry(tx, activityId, participantId, {
+						type: "removed",
+						actorUserId: ctx.session.user.id,
+					});
+				}
+				await settleActivity(tx, locked);
+			});
 		}),
 	deleteActivity: protectedProcedure
 		.input(z.object({ activityId: z.string().uuid() }))
