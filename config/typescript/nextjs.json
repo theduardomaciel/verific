@@ -1,12 +1,33 @@
 {
 	"$schema": "https://json.schemastore.org/tsconfig",
-	"extends": "./base.json",
 	"compilerOptions": {
-		"plugins": [{ "name": "next" }],
-		"module": "ESNext",
-		"moduleResolution": "Bundler",
+		"target": "ES2017",
+		"lib": ["dom", "dom.iterable", "esnext"],
 		"allowJs": true,
-		"jsx": "preserve",
-		"noEmit": true
-	}
+		"skipLibCheck": true,
+		"strict": true,
+		"noEmit": true,
+		"esModuleInterop": true,
+		"module": "esnext",
+		"moduleResolution": "bundler",
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"noUncheckedIndexedAccess": true,
+		"jsx": "react-jsx",
+		"incremental": true,
+		"plugins": [
+			{
+				"name": "next"
+			}
+		]
+	},
+	"include": [
+		"${configDir}/next-env.d.ts",
+		"${configDir}/**/*.ts",
+		"${configDir}/**/*.tsx",
+		"${configDir}/.next/types/**/*.ts",
+		"${configDir}/.next/dev/types/**/*.ts",
+		"${configDir}/**/*.mts"
+	],
+	"exclude": ["${configDir}/node_modules"]
 }
