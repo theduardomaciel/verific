@@ -23,7 +23,6 @@ import type { speaker } from "@verific/drizzle/schema";
 import {
 	activity,
 	activitySession,
-	formAnswer,
 	formField,
 	formVersion,
 	sessionAttendance,
@@ -39,24 +38,23 @@ import { z } from "@verific/zod";
 
 // Utils
 import { isMemberAuthenticated } from "../auth";
-import { findScheduleConflicts } from "../schedule-conflicts";
+import {
+	assertNoScheduleConflict,
+	lockParticipant,
+	prepareActivityAnswers,
+	saveActivityAnswers,
+} from "../enrollment";
 import {
 	activitySort,
 	getActivitiesParams,
 	getActivityParams,
 	answerValueSchema,
-	validateAnswers,
 } from "../schemas";
-import { assertSeatsAvailable, lockActivity } from "../seats";
+import { assertSeatsAvailable, lockActivity, type Tx } from "../seats";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { transformSingleToArray } from "../utils";
-import {
-	buildAnswerRows,
-	getPublishedVersionWithFields,
-	hasPublishedActivityForm,
-	toValidationFields,
-	toVisibilitySections,
-} from "./forms";
+import { resolveEnrolledEntries, settleActivity } from "../waitlist";
+import { hasPublishedActivityForm } from "./forms";
 
 // Re-export client-safe schemas so existing server imports keep working.
 // Client components must import from `@verific/api/schemas` instead.
@@ -218,27 +216,22 @@ const mutateActivityParams = z.object({
 	projectId: z.uuid(),
 });
 
-/** Executor que aceita tanto `db` quanto a `tx` de `db.transaction`. */
-type DbOrTx = {
-	insert: typeof db.insert;
-};
-
 /**
  * Persiste a inscrição (vínculos + respostas) dentro da transação que
  * travou a atividade, nos fluxos de auto-inscrição e de organizador.
  * Só insere; nunca remove nada.
  */
 async function persistEnrollment(
-	executor: DbOrTx,
+	tx: Tx,
 	args: {
 		activityId: string;
 		participantIds: string[];
-		answerRows: ReturnType<typeof buildAnswerRows>;
+		answerRows: Awaited<ReturnType<typeof prepareActivityAnswers>>;
 	},
 ) {
 	const { activityId, participantIds, answerRows } = args;
 
-	await executor
+	await tx
 		.insert(participantOnActivity)
 		.values(
 			participantIds.map((participantId) => ({
@@ -248,22 +241,7 @@ async function persistEnrollment(
 		)
 		.onConflictDoNothing();
 
-	if (answerRows.length > 0) {
-		await executor
-			.insert(formAnswer)
-			.values(answerRows)
-			.onConflictDoUpdate({
-				target: [formAnswer.participantId, formAnswer.fieldId],
-				set: {
-					valueText: sql`excluded."value_text"`,
-					valueNumber: sql`excluded."value_number"`,
-					valueDate: sql`excluded."value_date"`,
-					valueJson: sql`excluded."value_json"`,
-					fieldSnapshot: sql`excluded."field_snapshot"`,
-					updatedAt: new Date(),
-				},
-			});
-	}
+	await saveActivityAnswers(tx, answerRows);
 }
 
 /** Replaces the tag links of an activity. Tags must belong to the project. */
@@ -1113,7 +1091,13 @@ export const activitiesRouter = createTRPCRouter({
 
 			await db.transaction(async (tx) => {
 				const locked = await lockActivity(tx, activityId);
-				await assertSeatsAvailable(tx, locked, participantsIdsToMutate);
+				const queue = await settleActivity(tx, locked);
+				const queued = await assertSeatsAvailable(
+					tx,
+					locked,
+					queue,
+					participantsIdsToMutate,
+				);
 
 				await tx
 					.insert(participantOnActivity)
@@ -1124,6 +1108,10 @@ export const activitiesRouter = createTRPCRouter({
 						})),
 					)
 					.onConflictDoNothing();
+				await resolveEnrolledEntries(tx, activityId, queued, {
+					type: "promoted",
+					actorUserId: ctx.session.user.id,
+				});
 			});
 
 			return { success: true };
@@ -1218,181 +1206,49 @@ export const activitiesRouter = createTRPCRouter({
 				participantsIdsToAdd.includes(requesterParticipantId);
 
 			// Respostas do formulário de inscrição da atividade (quando houver)
-			const {
-				version: activityFormVersion,
-				fields: activityFormFields,
-				sections: activityFormSections,
-			} = await getPublishedVersionWithFields(
-				foundActivity.projectId,
+			const answerRows = await prepareActivityAnswers({
+				projectId: foundActivity.projectId,
 				activityId,
-			);
+				participantIds: participantsIdsToAdd,
+				formAnswers,
+				subscribesSelf:
+					!!requesterParticipantId &&
+					participantsIdsToAdd.includes(requesterParticipantId),
+			});
 
-			let answerRows: ReturnType<typeof buildAnswerRows> = [];
-			if (activityFormVersion) {
-				if (formAnswers) {
-					if (participantsIdsToAdd.length !== 1) {
-						throw new TRPCError({
-							message:
-								"Respostas só podem ser enviadas para uma inscrição por vez.",
-							code: "BAD_REQUEST",
-						});
-					}
-					const validation = validateAnswers(
-						toValidationFields(activityFormFields),
-						formAnswers.answers,
-						toVisibilitySections(activityFormSections),
-					);
-					if (!validation.success) {
-						throw new TRPCError({
-							message:
-								"Respostas inválidas. Verifique os campos obrigatórios.",
-							code: "BAD_REQUEST",
-							cause: {
-								code: "FORM_REQUIRED",
-								errors: validation.errors,
-							},
-						});
-					}
-					answerRows = buildAnswerRows({
-						participantId: participantsIdsToAdd[0]!,
-						projectId: foundActivity.projectId,
-						versionId: activityFormVersion.id,
-						fields: activityFormFields,
-						sections: activityFormSections,
-						data: validation.data as Record<string, unknown>,
-					});
-				} else {
-					// Sem respostas: só bloqueia quando o próprio usuário se
-					// inscreve e o formulário exige preenchimento.
-					// (`requesterParticipantId` já resolvido acima; a
-					// semântica aqui é idêntica: `includes`, sem exigir
-					// lista unitária.)
-					const subscribesSelf =
-						!!requesterParticipantId &&
-						participantsIdsToAdd.includes(requesterParticipantId);
-					if (subscribesSelf) {
-						const probe = validateAnswers(
-							toValidationFields(activityFormFields),
-							{},
-							toVisibilitySections(activityFormSections),
-						);
-						if (!probe.success) {
-							throw new TRPCError({
-								message:
-									"Esta atividade exige o preenchimento do formulário de inscrição.",
-								code: "BAD_REQUEST",
-								cause: {
-									code: "FORM_REQUIRED",
-									errors: probe.errors,
-								},
-							});
-						}
-					}
-				}
-			}
-
-			if (isSelfServiceJoin) {
-				// Auto-inscrição: checagem de conflito + inserção atômicas
-				// sob lock consultivo por participante (o driver Neon
-				// suporta `pg_advisory_xact_lock` em transação): dois joins
-				// concorrentes do mesmo participante serializam e no máximo
-				// um vence. Só conta vínculo `participant` (monitor não é
-				// inscrição). Inscrições existentes nunca são tocadas.
-				await db.transaction(async (tx) => {
-					await tx.execute(
-						sql`SELECT pg_advisory_xact_lock(hashtext(${"activity-join:" + requesterParticipantId}))`,
-					);
-
-					const target = await tx.query.activity.findFirst({
-						where: eq(activity.id, activityId),
-						columns: {
-							id: true,
-							name: true,
-							workload: true,
-							allowOverlap: true,
-						},
-						with: {
-							sessions: {
-								columns: { startsAt: true, endsAt: true },
-							},
-						},
-					});
-					if (!target) {
-						throw new TRPCError({
-							message: "Activity not found.",
-							code: "BAD_REQUEST",
-						});
-					}
-
-					const enrolledRows =
-						await tx.query.participantOnActivity.findMany({
-							where: and(
-								eq(
-									participantOnActivity.participantId,
-									requesterParticipantId,
-								),
-								eq(participantOnActivity.role, "participant"),
-							),
-							with: {
-								activity: {
-									columns: {
-										id: true,
-										name: true,
-										workload: true,
-										allowOverlap: true,
-									},
-									with: {
-										sessions: {
-											columns: {
-												startsAt: true,
-												endsAt: true,
-											},
-										},
-									},
-								},
-							},
-						});
-
-					const conflicts = findScheduleConflicts(
-						target,
-						enrolledRows.map((row) => row.activity),
-						new Date(),
-					);
-					if (conflicts.length > 0) {
-						throw new TRPCError({
-							message:
-								"Você já está inscrito em outra atividade neste horário.",
-							code: "BAD_REQUEST",
-							cause: { code: "SCHEDULE_CONFLICT" },
-						});
-					}
-
-					const locked = await lockActivity(tx, activityId);
-					await assertSeatsAvailable(
-						tx,
-						locked,
-						participantsIdsToAdd,
-					);
-
-					await persistEnrollment(tx, {
-						activityId,
-						participantIds: participantsIdsToAdd,
-						answerRows,
-					});
-				});
-
-				return { success: true };
-			}
-
-			// Fluxo de organizador: sem checagem de conflito.
 			await db.transaction(async (tx) => {
+				if (isSelfServiceJoin && requesterParticipantId) {
+					// Checagem de conflito + inserção atômicas: dois joins
+					// concorrentes do mesmo participante serializam e no
+					// máximo um vence. Inscrições existentes nunca são tocadas.
+					await lockParticipant(tx, requesterParticipantId);
+					await assertNoScheduleConflict(
+						tx,
+						activityId,
+						requesterParticipantId,
+					);
+				}
+
+				// Quem se inscreve sozinho não passa à frente da fila; quem
+				// tem oferta em aberto usa a vaga reservada para si.
 				const locked = await lockActivity(tx, activityId);
-				await assertSeatsAvailable(tx, locked, participantsIdsToAdd);
+				const queue = await settleActivity(tx, locked);
+				const queued = await assertSeatsAvailable(
+					tx,
+					locked,
+					queue,
+					participantsIdsToAdd,
+					{ queueFirst: isSelfServiceJoin },
+				);
 
 				await persistEnrollment(tx, {
 					activityId,
 					participantIds: participantsIdsToAdd,
 					answerRows,
+				});
+				await resolveEnrolledEntries(tx, activityId, queued, {
+					type: isSelfServiceJoin ? "confirmed" : "promoted",
+					actorUserId: isSelfServiceJoin ? null : ctx.session.user.id,
 				});
 			});
 
