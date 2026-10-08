@@ -22,15 +22,11 @@ import { Separator } from "@/components/ui/separator";
 
 import { DynamicField } from "@/components/forms/dynamic/DynamicField";
 
-import {
-	revalidateParticipantActivities,
-	revalidateSubscribedActivitiesIdsFromParticipant,
-} from "@/app/actions";
+// Hooks
+import { useJoinActivity, type JoinError } from "@/hooks/use-join-activity";
 import { focusFieldControl, getFieldId } from "@/lib/forms/field-id";
 // Lib
 import { groupFieldsBySection } from "@/lib/forms/layout";
-// API
-import { trpc } from "@/lib/trpc/react";
 
 import { WaitlistNotice } from "./enrollment-status";
 
@@ -76,8 +72,11 @@ export function ActivityEnrollmentForm({
 	form: published,
 	onSubmitted,
 }: ActivityEnrollmentFormProps) {
-	const utils = trpc.useUtils();
-	const addMutation = trpc.addActivityParticipants.useMutation();
+	const { join, status } = useJoinActivity({
+		activityId: activity.id,
+		participantId,
+		userId,
+	});
 	const [serverError, setServerError] = useState<string | null>(null);
 
 	const fieldsForValidation = useMemo(
@@ -229,10 +228,19 @@ export function ActivityEnrollmentForm({
 	}, [answerErrors, answersForm.formState.submitCount, published.fields]);
 
 	const isSubmitting =
-		answersForm.formState.isSubmitting || addMutation.isPending;
+		answersForm.formState.isSubmitting || status === "pending";
+
+	// Cópias por motivo de falha (mesmo comportamento de antes: alerta
+	// inline destrutivo acima do envio, botão habilitado para retry).
+	const joinErrorCopy: Record<JoinError, string> = {
+		"form-required": "Esta atividade pede informações adicionais.",
+		full: "Vagas esgotadas.",
+		closed: "As inscrições foram encerradas.",
+		unknown: "Houve um erro ao confirmar sua inscrição. Tente novamente.",
+	};
 
 	async function handleValid(values: AnswersFormValues): Promise<void> {
-		if (addMutation.isPending) return;
+		if (status === "pending") return;
 		setServerError(null);
 
 		// Descarta respostas de seções ocultas antes de enviar.
@@ -248,38 +256,12 @@ export function ActivityEnrollmentForm({
 			if (allowed.has(key)) stripped[key] = value as ActivityAnswerValue;
 		}
 
-		try {
-			await addMutation.mutateAsync({
-				activityId: activity.id,
-				participantsIdsToAdd: [participantId],
-				...(published.fields.length > 0
-					? { formAnswers: { answers: stripped } }
-					: {}),
-			});
-		} catch (error) {
-			setServerError(
-				error instanceof Error && error.message
-					? error.message
-					: "Houve um erro ao confirmar sua inscrição. Tente novamente.",
-			);
+		const joinError = await join(
+			published.fields.length > 0 ? stripped : undefined,
+		);
+		if (joinError) {
+			setServerError(joinErrorCopy[joinError]);
 			return;
-		}
-
-		// A inscrição deu certo: revalidações em paralelo; se alguma
-		// falhar, só registra — nunca vira erro para o usuário.
-		const settled = await Promise.allSettled([
-			revalidateSubscribedActivitiesIdsFromParticipant(userId),
-			revalidateParticipantActivities(userId),
-			utils.getSubscribedActivitiesIdsFromParticipant.invalidate(),
-			utils.getActivitiesFromParticipant.invalidate(),
-		]);
-		for (const result of settled) {
-			if (result.status === "rejected") {
-				console.warn(
-					"[activity-join] falha na revalidação pós-inscrição:",
-					result.reason,
-				);
-			}
 		}
 
 		onSubmitted();

@@ -1,4 +1,3 @@
-import { z } from "@verific/zod";
 import {
 	isValidPhoneNumber,
 	parsePhoneNumberFromString,
@@ -13,6 +12,7 @@ import {
 	socialEntrySchema,
 	socialServiceById,
 } from "@verific/drizzle/profile-layout";
+import { z } from "@verific/zod";
 
 import { createEnumArraySchema, sortOptions } from "./utils";
 
@@ -28,6 +28,20 @@ import { createEnumArraySchema, sortOptions } from "./utils";
  */
 
 export const activitySort = ["asc", "desc", "name_asc", "name_desc"] as const;
+
+/**
+ * Códigos legíveis por máquina para falhas de inscrição em atividades.
+ * Viajam no `data.reason` da resposta tRPC (ver `errorFormatter` em
+ * `trpc.ts`): o `code` padrão continua sendo `BAD_REQUEST` e as mensagens
+ * humanas não mudam — o cliente distingue os casos por este código.
+ */
+export const JOIN_ERROR_CODES = [
+	"FORM_REQUIRED",
+	"ACTIVITY_FULL",
+	"REGISTRATION_CLOSED",
+] as const;
+
+export type JoinErrorCode = (typeof JOIN_ERROR_CODES)[number];
 
 export const getActivityParams = z.object({
 	page: z.coerce.number().default(1).optional(),
