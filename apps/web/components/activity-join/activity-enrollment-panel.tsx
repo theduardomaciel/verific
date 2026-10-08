@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 
-// Hooks
-import { useScheduleConflicts } from "@/hooks/use-schedule-conflicts";
 // Lib
 import { describeSeats } from "@/lib/activity-seats";
 
@@ -14,6 +12,7 @@ import {
 	EnrollmentSuccess,
 	MutedStatus,
 	NotInEventStatus,
+	ScheduleConflictStatus,
 	SignedOutStatus,
 	WaitlistNotice,
 } from "./enrollment-status";
@@ -50,9 +49,6 @@ export function ActivityEnrollmentPanel({
 		eventUrl,
 		participantsCount,
 	});
-	// Aviso de conflito só existe no estado `form`: nos demais (e no
-	// `submitted` local) nada é renderizado — e vazio enquanto carrega.
-	const { conflicts } = useScheduleConflicts(activity, eventUrl);
 
 	const { state, userId, participantId } = enrollment;
 	const scheduleHref = `/${eventUrl}/schedule#${activity.id}`;
@@ -111,6 +107,11 @@ export function ActivityEnrollmentPanel({
 								/>
 							) : null}
 						</div>
+					) : state === "schedule-conflict" ? (
+						<ScheduleConflictStatus
+							conflicts={enrollment.conflicts}
+							eventUrl={eventUrl}
+						/>
 					) : (
 						<div className="flex flex-col gap-4">
 							<p className="text-muted-foreground text-sm">
@@ -123,8 +124,6 @@ export function ActivityEnrollmentPanel({
 								participantId={participantId ?? ""}
 								userId={userId ?? ""}
 								form={enrollment.form}
-								conflicts={conflicts}
-								eventUrl={eventUrl}
 								onSubmitted={() => setSubmitted(true)}
 							/>
 						</div>

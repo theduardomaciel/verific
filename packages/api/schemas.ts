@@ -39,6 +39,7 @@ export const JOIN_ERROR_CODES = [
 	"FORM_REQUIRED",
 	"ACTIVITY_FULL",
 	"REGISTRATION_CLOSED",
+	"SCHEDULE_CONFLICT",
 ] as const;
 
 export type JoinErrorCode = (typeof JOIN_ERROR_CODES)[number];

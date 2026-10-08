@@ -1,6 +1,6 @@
-import { z } from "@verific/zod";
 import { activityAudiences } from "@verific/drizzle/enum/audience";
 import { activityCategories } from "@verific/drizzle/enum/category";
+import { z } from "@verific/zod";
 
 const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -33,6 +33,7 @@ export const mutateActivityFormSchema = z
 		}),
 		description: z.string().optional(),
 		isRegistrationOpen: z.boolean().optional(),
+		allowOverlap: z.boolean().optional(),
 		participantsLimit: z.coerce
 			.number()
 			.optional()

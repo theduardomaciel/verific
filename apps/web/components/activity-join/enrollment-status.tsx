@@ -19,6 +19,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
+import { ConflictList } from "@/components/activity/conflict-list";
 import { ParticipantQuitButton } from "@/components/participant/participant-quit-button";
 
 // Lib
@@ -32,6 +33,7 @@ import { cn } from "@/lib/utils";
 
 // Types
 import type { ActivityDetail } from "./use-activity-enrollment-state";
+import type { Conflict } from "@/lib/schedule/conflicts";
 
 function sessionsSummary(
 	sessions: ActivitySessionLike[] | undefined | null,
@@ -186,6 +188,37 @@ export function MutedStatus({ kind }: { kind: keyof typeof mutedCopy }) {
 			title={copy.title}
 			message={copy.message}
 		/>
+	);
+}
+
+/**
+ * Bloqueio por conflito de horário: padrão calmo dos estados
+ * não-acionáveis (nunca destrutivo — não é erro). Só os links da lista
+ * são ação; sem botão de saída inline.
+ */
+export function ScheduleConflictStatus({
+	conflicts,
+	eventUrl,
+}: {
+	conflicts: Conflict[];
+	eventUrl: string;
+}) {
+	return (
+		<div className="flex flex-col items-start gap-4">
+			<div className="flex items-start gap-4">
+				<span className="bg-muted text-muted-foreground flex size-10 shrink-0 items-center justify-center rounded-full">
+					<CalendarClock className="h-5 w-5" />
+				</span>
+				<div className="flex flex-col gap-1">
+					<p className="text-sm font-bold">Conflito de horário</p>
+					<p className="text-muted-foreground text-sm">
+						Você já está inscrito em outra atividade no mesmo
+						horário. Cancele essa inscrição para participar desta.
+					</p>
+				</div>
+			</div>
+			<ConflictList conflicts={conflicts} eventUrl={eventUrl} />
+		</div>
 	);
 }
 

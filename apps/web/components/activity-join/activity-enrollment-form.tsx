@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 // Icons
 import { CircleAlert, Loader2 } from "lucide-react";
 import { useForm, useWatch, type Resolver } from "react-hook-form";
+import { toast } from "sonner";
 
 import {
 	buildAnswersSchema,
@@ -20,7 +21,6 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
 
-import { ScheduleConflictAlert } from "@/components/activity/schedule-conflict-alert";
 import { DynamicField } from "@/components/forms/dynamic/DynamicField";
 
 // Hooks
@@ -36,7 +36,6 @@ import type {
 	ActivityDetail,
 	PublishedActivityForm,
 } from "./use-activity-enrollment-state";
-import type { Conflict } from "@/lib/schedule/conflicts";
 
 type ActivityAnswerValue =
 	| string
@@ -58,9 +57,6 @@ interface ActivityEnrollmentFormProps {
 	participantId: string;
 	userId: string;
 	form: PublishedActivityForm;
-	/** Conflitos com atividades já inscritas (só exibição, nunca bloqueia). */
-	conflicts?: Conflict[];
-	eventUrl: string;
 	onSubmitted: () => void;
 }
 
@@ -75,8 +71,6 @@ export function ActivityEnrollmentForm({
 	participantId,
 	userId,
 	form: published,
-	conflicts = [],
-	eventUrl,
 	onSubmitted,
 }: ActivityEnrollmentFormProps) {
 	const { join, status } = useJoinActivity({
@@ -239,7 +233,9 @@ export function ActivityEnrollmentForm({
 
 	// Cópias por motivo de falha (mesmo comportamento de antes: alerta
 	// inline destrutivo acima do envio, botão habilitado para retry).
-	const joinErrorCopy: Record<JoinError, string> = {
+	// `conflict` não aparece aqui: o hook atualiza as leituras e o
+	// painel vira o estado bloqueado; abaixo só sai o toast.
+	const joinErrorCopy: Record<Exclude<JoinError, "conflict">, string> = {
 		"form-required": "Esta atividade pede informações adicionais.",
 		full: "Vagas esgotadas.",
 		closed: "As inscrições foram encerradas.",
@@ -266,12 +262,17 @@ export function ActivityEnrollmentForm({
 		const joinError = await join(
 			published.fields.length > 0 ? stripped : undefined,
 		);
-		if (joinError) {
-			setServerError(joinErrorCopy[joinError]);
+		if (!joinError) {
+			onSubmitted();
 			return;
 		}
-
-		onSubmitted();
+		if (joinError === "conflict") {
+			toast.error(
+				"Esta atividade conflita com outra em que você já está inscrito.",
+			);
+			return;
+		}
+		setServerError(joinErrorCopy[joinError]);
 	}
 
 	return (
@@ -329,13 +330,6 @@ export function ActivityEnrollmentForm({
 
 				{activity.tolerance ? (
 					<WaitlistNotice tolerance={activity.tolerance} />
-				) : null}
-
-				{conflicts.length > 0 ? (
-					<ScheduleConflictAlert
-						conflicts={conflicts}
-						eventUrl={eventUrl}
-					/>
 				) : null}
 
 				{errorEntries.length > 0 ? (

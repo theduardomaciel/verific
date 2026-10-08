@@ -11,13 +11,19 @@ import {
 // API
 import { trpc } from "@/lib/trpc/react";
 
-export type JoinError = "form-required" | "full" | "closed" | "unknown";
+export type JoinError =
+	| "form-required"
+	| "full"
+	| "closed"
+	| "conflict"
+	| "unknown";
 export type JoinStatus = "idle" | "pending" | "success" | "error";
 
 const REASON_TO_JOIN_ERROR: Record<JoinErrorCode, JoinError> = {
 	FORM_REQUIRED: "form-required",
 	ACTIVITY_FULL: "full",
 	REGISTRATION_CLOSED: "closed",
+	SCHEDULE_CONFLICT: "conflict",
 };
 
 /**
@@ -101,6 +107,14 @@ export function useJoinActivity({
 					});
 				} catch (err) {
 					const joinError = toJoinError(err);
+					// Conflito: o conjunto inscrito mudou (outra aba, corrida)
+					// — atualiza as leituras para card e painel refletirem.
+					if (joinError === "conflict") {
+						await Promise.allSettled([
+							utils.getSubscribedActivitiesIdsFromParticipant.invalidate(),
+							utils.getActivitiesFromParticipant.invalidate(),
+						]);
+					}
 					setError(joinError);
 					setStatus("error");
 					return joinError;

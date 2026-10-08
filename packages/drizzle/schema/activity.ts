@@ -9,14 +9,14 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 
-import { participantOnActivity } from "./participant-on-activity";
-import { activitySession } from "./activity-session";
-import { tagOnActivity } from "./tag-on-activity";
-import { project } from "./project";
-import { categoryEnum } from "../enum/category";
 import { audienceEnum } from "../enum/audience";
-import { speakerOnActivity } from "./speaker-on-activity";
+import { categoryEnum } from "../enum/category";
 import { activityConflict } from "./activity-conflict";
+import { activitySession } from "./activity-session";
+import { participantOnActivity } from "./participant-on-activity";
+import { project } from "./project";
+import { speakerOnActivity } from "./speaker-on-activity";
+import { tagOnActivity } from "./tag-on-activity";
 
 export const activity = pgTable("activities", {
 	id: uuid("id").primaryKey().defaultRandom(),
@@ -32,6 +32,7 @@ export const activity = pgTable("activities", {
 	participantsLimit: integer("participants_limit"),
 	tolerance: integer("tolerance"),
 	workload: integer("workload"),
+	allowOverlap: boolean("allow_overlap").notNull().default(false),
 
 	// 📍 Location fields
 	address: text("address"), // Human-readable address for display

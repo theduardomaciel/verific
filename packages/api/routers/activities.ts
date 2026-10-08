@@ -39,6 +39,7 @@ import { z } from "@verific/zod";
 
 // Utils
 import { isMemberAuthenticated } from "../auth";
+import { findScheduleConflicts } from "../schedule-conflicts";
 import {
 	activitySort,
 	getActivitiesParams,
@@ -212,8 +213,57 @@ const mutateActivityParams = z.object({
 	longitude: z.number().optional(),
 	tolerance: z.coerce.number().optional(),
 	workload: z.coerce.number().optional(),
+	allowOverlap: z.boolean().optional(),
 	projectId: z.uuid(),
 });
+
+/** Executor que aceita tanto `db` quanto a `tx` de `db.transaction`. */
+type DbOrTx = {
+	insert: typeof db.insert;
+};
+
+/**
+ * Persiste a inscrição (vínculos + respostas): corpo idêntico para o
+ * fluxo de auto-inscrição (dentro da transação do lock) e de
+ * organizador (fora dela). Só insere; nunca remove nada.
+ */
+async function persistEnrollment(
+	executor: DbOrTx,
+	args: {
+		activityId: string;
+		participantIds: string[];
+		answerRows: ReturnType<typeof buildAnswerRows>;
+	},
+) {
+	const { activityId, participantIds, answerRows } = args;
+
+	await executor
+		.insert(participantOnActivity)
+		.values(
+			participantIds.map((participantId) => ({
+				activityId,
+				participantId,
+			})),
+		)
+		.onConflictDoNothing();
+
+	if (answerRows.length > 0) {
+		await executor
+			.insert(formAnswer)
+			.values(answerRows)
+			.onConflictDoUpdate({
+				target: [formAnswer.participantId, formAnswer.fieldId],
+				set: {
+					valueText: sql`excluded."value_text"`,
+					valueNumber: sql`excluded."value_number"`,
+					valueDate: sql`excluded."value_date"`,
+					valueJson: sql`excluded."value_json"`,
+					fieldSnapshot: sql`excluded."field_snapshot"`,
+					updatedAt: new Date(),
+				},
+			});
+	}
+}
 
 /** Replaces the tag links of an activity. Tags must belong to the project. */
 async function setActivityTags(
@@ -839,6 +889,7 @@ export const activitiesRouter = createTRPCRouter({
 				participantsLimit,
 				tolerance,
 				workload,
+				allowOverlap,
 				address,
 				latitude,
 				longitude,
@@ -856,6 +907,7 @@ export const activitiesRouter = createTRPCRouter({
 						participantsLimit,
 						tolerance,
 						workload,
+						allowOverlap,
 						address,
 						latitude,
 						longitude,
@@ -946,6 +998,7 @@ export const activitiesRouter = createTRPCRouter({
 				participantsLimit,
 				tolerance,
 				workload,
+				allowOverlap,
 				address,
 				latitude,
 				longitude,
@@ -981,6 +1034,7 @@ export const activitiesRouter = createTRPCRouter({
 						participantsLimit,
 						tolerance,
 						workload,
+						allowOverlap,
 						address,
 						latitude,
 						longitude,
@@ -1172,6 +1226,27 @@ export const activitiesRouter = createTRPCRouter({
 				}
 			}
 
+			// Participante do requisitante no evento (uma única leitura,
+			// reutilizada pelo probe do formulário e pelo gate de
+			// auto-inscrição abaixo).
+			const requesterParticipant = await db.query.participant.findFirst({
+				where: and(
+					eq(participant.projectId, foundActivity.projectId),
+					eq(participant.userId, ctx.session.user.id),
+				),
+				columns: { id: true },
+			});
+			const requesterParticipantId = requesterParticipant?.id ?? null;
+
+			// Auto-inscrição: o requisitante inscreve SOMENTE a si mesmo.
+			// Lote misto ou terceiros = fluxo de organizador (sem checagem
+			// de conflito). Um organizador inscrevendo só a si mesmo cai
+			// aqui — nenhum fluxo de UI faz isso hoje.
+			const isSelfServiceJoin =
+				!!requesterParticipantId &&
+				participantsIdsToAdd.length === 1 &&
+				participantsIdsToAdd.includes(requesterParticipantId);
+
 			// Respostas do formulário de inscrição da atividade (quando houver)
 			const {
 				version: activityFormVersion,
@@ -1219,20 +1294,12 @@ export const activitiesRouter = createTRPCRouter({
 				} else {
 					// Sem respostas: só bloqueia quando o próprio usuário se
 					// inscreve e o formulário exige preenchimento.
-					const requesterParticipant =
-						await db.query.participant.findFirst({
-							where: and(
-								eq(
-									participant.projectId,
-									foundActivity.projectId,
-								),
-								eq(participant.userId, ctx.session.user.id),
-							),
-							columns: { id: true },
-						});
+					// (`requesterParticipantId` já resolvido acima; a
+					// semântica aqui é idêntica: `includes`, sem exigir
+					// lista unitária.)
 					const subscribesSelf =
-						!!requesterParticipant &&
-						participantsIdsToAdd.includes(requesterParticipant.id);
+						!!requesterParticipantId &&
+						participantsIdsToAdd.includes(requesterParticipantId);
 					if (subscribesSelf) {
 						const probe = validateAnswers(
 							toValidationFields(activityFormFields),
@@ -1254,36 +1321,97 @@ export const activitiesRouter = createTRPCRouter({
 				}
 			}
 
-			await db.transaction(async (tx) => {
-				await tx
-					.insert(participantOnActivity)
-					.values(
-						participantsIdsToAdd.map((participantId) => ({
-							activityId,
-							participantId,
-						})),
-					)
-					.onConflictDoNothing();
+			if (isSelfServiceJoin) {
+				// Auto-inscrição: checagem de conflito + inserção atômicas
+				// sob lock consultivo por participante (o driver Neon
+				// suporta `pg_advisory_xact_lock` em transação): dois joins
+				// concorrentes do mesmo participante serializam e no máximo
+				// um vence. Só conta vínculo `participant` (monitor não é
+				// inscrição). Inscrições existentes nunca são tocadas.
+				await db.transaction(async (tx) => {
+					await tx.execute(
+						sql`SELECT pg_advisory_xact_lock(hashtext(${"activity-join:" + requesterParticipantId}))`,
+					);
 
-				if (answerRows.length > 0) {
-					await tx
-						.insert(formAnswer)
-						.values(answerRows)
-						.onConflictDoUpdate({
-							target: [
-								formAnswer.participantId,
-								formAnswer.fieldId,
-							],
-							set: {
-								valueText: sql`excluded."value_text"`,
-								valueNumber: sql`excluded."value_number"`,
-								valueDate: sql`excluded."value_date"`,
-								valueJson: sql`excluded."value_json"`,
-								fieldSnapshot: sql`excluded."field_snapshot"`,
-								updatedAt: new Date(),
+					const target = await tx.query.activity.findFirst({
+						where: eq(activity.id, activityId),
+						columns: {
+							id: true,
+							name: true,
+							workload: true,
+							allowOverlap: true,
+						},
+						with: {
+							sessions: {
+								columns: { startsAt: true, endsAt: true },
+							},
+						},
+					});
+					if (!target) {
+						throw new TRPCError({
+							message: "Activity not found.",
+							code: "BAD_REQUEST",
+						});
+					}
+
+					const enrolledRows =
+						await tx.query.participantOnActivity.findMany({
+							where: and(
+								eq(
+									participantOnActivity.participantId,
+									requesterParticipantId,
+								),
+								eq(participantOnActivity.role, "participant"),
+							),
+							with: {
+								activity: {
+									columns: {
+										id: true,
+										name: true,
+										workload: true,
+										allowOverlap: true,
+									},
+									with: {
+										sessions: {
+											columns: {
+												startsAt: true,
+												endsAt: true,
+											},
+										},
+									},
+								},
 							},
 						});
-				}
+
+					const conflicts = findScheduleConflicts(
+						target,
+						enrolledRows.map((row) => row.activity),
+						new Date(),
+					);
+					if (conflicts.length > 0) {
+						throw new TRPCError({
+							message:
+								"Você já está inscrito em outra atividade neste horário.",
+							code: "BAD_REQUEST",
+							cause: { code: "SCHEDULE_CONFLICT" },
+						});
+					}
+
+					await persistEnrollment(tx, {
+						activityId,
+						participantIds: participantsIdsToAdd,
+						answerRows,
+					});
+				});
+
+				return { success: true };
+			}
+
+			// Fluxo de organizador: sem checagem de conflito.
+			await persistEnrollment(db, {
+				activityId,
+				participantIds: participantsIdsToAdd,
+				answerRows,
 			});
 
 			return { success: true };

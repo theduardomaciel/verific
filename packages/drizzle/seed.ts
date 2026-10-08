@@ -7,6 +7,7 @@ console.log(env.DATABASE_URL);
 import { fakerPT_BR as faker } from "@faker-js/faker";
 import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
+
 import * as schema from "./schema";
 
 // Extrai ownerId da linha de comando
@@ -152,6 +153,7 @@ async function seedActivities(projects: any[], speakers: any[], tags: any[]) {
 			participantsLimit: faker.number.int({ min: 10, max: 100 }),
 			tolerance: faker.number.int({ min: 0, max: 20 }),
 			workload: faker.number.int({ min: 1, max: 60 }),
+			allowOverlap: false,
 			projectId: projects[i % projects.length].id,
 			createdAt: faker.date.past(),
 		});
