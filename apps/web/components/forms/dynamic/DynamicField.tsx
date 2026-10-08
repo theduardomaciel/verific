@@ -1,27 +1,13 @@
 "use client";
 
-import { type Control, type FieldValues } from "react-hook-form";
 import { useState } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input, PhoneInput } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+
 import {
-	FormControl,
-	FormDescription,
-	FormItem,
-	FormLabel,
-	FormMessage,
-	FormField as RHFFormField,
-} from "@/components/ui/form";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Combobox } from "@/components/ui/combobox";
+	type Control,
+	type FieldPath,
+	type FieldValues,
+} from "react-hook-form";
+
 import type { RouterOutput } from "@verific/api";
 import {
 	OTHER_LABEL,
@@ -30,15 +16,37 @@ import {
 	OTHER_TEXT_MAX_LENGTH,
 } from "@verific/api/schemas";
 import { SOCIAL_SERVICES } from "@verific/drizzle/profile-layout";
+
+import { Checkbox } from "@/components/ui/checkbox";
+import { Combobox } from "@/components/ui/combobox";
+import {
+	FormControl,
+	FormDescription,
+	FormItem,
+	FormLabel,
+	FormMessage,
+	FormField as RHFFormField,
+} from "@/components/ui/form";
+import { Input, PhoneInput } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+
 import { SocialLinksEditor, type SocialEntry } from "./SocialLinksEditor";
 
 export type DynamicFormField = NonNullable<
 	RouterOutput["getPublishedForm"]
 >["fields"][number];
 
-interface DynamicFieldProps {
+interface DynamicFieldProps<TFieldValues extends FieldValues = FieldValues> {
 	field: DynamicFormField;
-	control: Control<FieldValues>;
+	control: Control<TFieldValues>;
 	name: string;
 	disabled?: boolean;
 }
@@ -152,12 +160,12 @@ const EMPTY_SELECT_VALUE = "__verific_empty__";
  */
 const COMBOBOX_THRESHOLD = 10;
 
-export function DynamicField({
+export function DynamicField<TFieldValues extends FieldValues = FieldValues>({
 	field,
 	control,
 	name,
 	disabled,
-}: DynamicFieldProps) {
+}: DynamicFieldProps<TFieldValues>) {
 	const label = (
 		<FormLabel>
 			{field.label}
@@ -168,7 +176,7 @@ export function DynamicField({
 	return (
 		<RHFFormField
 			control={control}
-			name={name}
+			name={name as FieldPath<TFieldValues>}
 			render={({ field: rhf }) => {
 				const value = rhf.value;
 				switch (field.type) {
@@ -248,8 +256,13 @@ export function DynamicField({
 										type="date"
 										disabled={disabled}
 										value={
-											value instanceof Date
-												? value
+											// `instanceof Date` exige `any`/`object` no LHS; com o
+											// controle genérico o valor chega como tipo preciso,
+											// então detecta Date por duck-typing sem casts.
+											Object.prototype.toString.call(
+												value,
+											) === "[object Date]"
+												? (value as unknown as Date)
 														.toISOString()
 														.slice(0, 10)
 												: ((value as string) ?? "")
