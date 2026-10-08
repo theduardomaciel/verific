@@ -5,22 +5,24 @@ import Link from "next/link";
 // Icons
 import { ArrowRight, Check } from "lucide-react";
 
-import { cn } from "@/lib/utils";
+// Types
+import type { RouterOutput } from "@verific/api";
+// Lib
+import { activityCategoryLabels } from "@verific/drizzle/schema";
 
 // Components
 import { Button } from "@/components/ui/button";
+
 import { ParticipantQuitButton } from "@/components/participant/participant-quit-button";
-import { ActivitySpeakers } from "./speakers";
-import { ActivityCardTags } from "./tags";
-import { TagBadges } from "../tag-badge";
 import { ExpandableDescription } from "@/components/shared/expandable-description";
 
-// Types
-import type { RouterOutput } from "@verific/api";
-
-// Lib
-import { activityCategoryLabels } from "@verific/drizzle/schema";
+import { describeSeats } from "@/lib/activity-seats";
 import { hasEverySessionEnded, type ActivitySessionLike } from "@/lib/date";
+import { cn } from "@/lib/utils";
+
+import { TagBadges } from "../tag-badge";
+import { ActivitySpeakers } from "./speakers";
+import { ActivityCardTags } from "./tags";
 
 interface EventCardProps {
 	className?: string;
@@ -42,11 +44,13 @@ export function ActivityCard({
 	occurrenceSession,
 	occurrenceLabel,
 }: EventCardProps) {
-	const remainingSeats = activity.participantsLimit
-		? activity.participantsLimit - activity.participantsCount
-		: null;
+	const seats = describeSeats({
+		participantsLimit: activity.participantsLimit,
+		participantsCount: activity.participantsCount,
+		lowSeatsThreshold,
+	});
 
-	const hasRemainingSeats = remainingSeats === null || remainingSeats > 0;
+	const hasRemainingSeats = seats.status !== "full";
 	const hasEnded = hasEverySessionEnded(activity.sessions);
 
 	return (
@@ -68,23 +72,14 @@ export function ActivityCard({
 						</span>
 						<span
 							className={cn("text-muted-foreground text-sm", {
-								"opacity-50":
-									remainingSeats !== null &&
-									remainingSeats <= 0,
+								"opacity-50": seats.status === "full",
 								"animate-pulse font-bold":
-									remainingSeats !== null &&
-									remainingSeats > 0 &&
-									remainingSeats <= lowSeatsThreshold,
-								"text-red-500 uppercase": !hasRemainingSeats,
+									seats.status === "low",
+								"text-destructive uppercase":
+									!hasRemainingSeats,
 							})}
 						>
-							{remainingSeats === null
-								? ""
-								: remainingSeats > lowSeatsThreshold
-									? `${remainingSeats} vagas restantes`
-									: remainingSeats > 0
-										? "Últimas vagas!"
-										: "Esgotado"}
+							{seats.label ?? ""}
 						</span>
 					</div>
 
@@ -124,7 +119,6 @@ export function ActivityCard({
 							>
 								<Link
 									href={`/${activity.project?.url}/schedule/${activity.id}`}
-									scroll={false}
 								>
 									{participantId ? (
 										<>
