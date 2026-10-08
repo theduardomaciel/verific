@@ -66,6 +66,7 @@ describe("toJoinError", () => {
 		expect(toJoinError(serverError("FORM_REQUIRED"))).toBe("form-required");
 		expect(toJoinError(serverError("ACTIVITY_FULL"))).toBe("full");
 		expect(toJoinError(serverError("REGISTRATION_CLOSED"))).toBe("closed");
+		expect(toJoinError(serverError("SCHEDULE_CONFLICT"))).toBe("conflict");
 	});
 
 	it("retorna unknown para o resto", () => {
@@ -133,6 +134,21 @@ describe("useJoinActivity", () => {
 			expect(result.current.error).toBe(kind);
 			unmount();
 		}
+	});
+
+	it("no conflito, atualiza as leituras de inscrição", async () => {
+		const { result } = setup();
+		mutateAsyncMock.mockRejectedValueOnce(serverError("SCHEDULE_CONFLICT"));
+
+		let joinError: unknown = null;
+		await act(async () => {
+			joinError = await result.current.join();
+		});
+
+		expect(joinError).toBe("conflict");
+		expect(result.current.status).toBe("error");
+		expect(invalidateSubscribedMock).toHaveBeenCalled();
+		expect(invalidateActivitiesMock).toHaveBeenCalled();
 	});
 
 	it("reset volta ao ocioso", async () => {

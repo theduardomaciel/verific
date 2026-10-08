@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
 	findScheduleConflicts,
 	type ConflictActivityLike,
-} from "@/lib/schedule/conflicts";
+} from "./schedule-conflicts";
 
 const NOW = new Date("2026-11-10T12:00:00-03:00");
 
@@ -237,5 +237,65 @@ describe("findScheduleConflicts", () => {
 		expect(
 			findScheduleConflicts(activity("t", "Alvo", []), [target], NOW),
 		).toHaveLength(0);
+	});
+});
+
+describe("findScheduleConflicts com allowOverlap", () => {
+	const overlapping = activity("a", "Sobreposta", [
+		session("2026-11-10T15:00:00-03:00", "2026-11-10T17:00:00-03:00"),
+	]);
+
+	it("ignora o par quando o alvo permite", () => {
+		const conflicts = findScheduleConflicts(
+			{ ...target, allowOverlap: true },
+			[overlapping],
+			NOW,
+		);
+
+		expect(conflicts).toHaveLength(0);
+	});
+
+	it("ignora o par quando a inscrita permite", () => {
+		const conflicts = findScheduleConflicts(
+			target,
+			[{ ...overlapping, allowOverlap: true }],
+			NOW,
+		);
+
+		expect(conflicts).toHaveLength(0);
+	});
+
+	it("ignora quando ambos permitem", () => {
+		const conflicts = findScheduleConflicts(
+			{ ...target, allowOverlap: true },
+			[{ ...overlapping, allowOverlap: true }],
+			NOW,
+		);
+
+		expect(conflicts).toHaveLength(0);
+	});
+
+	it("bloqueia quando nenhum permite", () => {
+		const conflicts = findScheduleConflicts(target, [overlapping], NOW);
+
+		expect(conflicts).toHaveLength(1);
+	});
+
+	it("ignora só a inscrita sinalizada e mantém o conflito real", () => {
+		const conflicts = findScheduleConflicts(
+			target,
+			[
+				{ ...overlapping, allowOverlap: true },
+				activity("b", "Bloqueadora", [
+					session(
+						"2026-11-10T15:30:00-03:00",
+						"2026-11-10T16:30:00-03:00",
+					),
+				]),
+			],
+			NOW,
+		);
+
+		expect(conflicts.map((c) => c.otherActivity.id)).toEqual(["b"]);
 	});
 });

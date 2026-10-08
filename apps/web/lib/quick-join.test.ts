@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+	getQuickJoinBlockReason,
 	getQuickJoinEligibility,
 	type QuickJoinActivity,
 	type QuickJoinMembership,
 } from "@/lib/quick-join";
+
+import type { Conflict } from "@/lib/schedule/conflicts";
 
 const baseActivity: QuickJoinActivity = {
 	id: "act-1",
@@ -154,5 +157,45 @@ describe("getQuickJoinEligibility", () => {
 				baseMembership,
 			),
 		).toBe(false);
+	});
+
+	it("barra com conflito de horário, com motivo distinguível", () => {
+		const conflicts: Conflict[] = [
+			{
+				otherActivity: { id: "act-2", name: "Mesa" },
+				otherSession: {
+					startsAt: new Date(Date.now() + 25 * 3600 * 1000),
+					endsAt: new Date(Date.now() + 27 * 3600 * 1000),
+				},
+				targetSession: {
+					startsAt: new Date(Date.now() + 24 * 3600 * 1000),
+					endsAt: new Date(Date.now() + 26 * 3600 * 1000),
+				},
+			},
+		];
+		const membership: QuickJoinMembership = {
+			...baseMembership,
+			conflicts,
+		};
+
+		expect(getQuickJoinEligibility(baseActivity, membership)).toBe(false);
+		expect(getQuickJoinBlockReason(baseActivity, membership)).toBe(
+			"conflict",
+		);
+	});
+
+	it("sem conflito, não há motivo de bloqueio", () => {
+		expect(getQuickJoinEligibility(baseActivity, baseMembership)).toBe(
+			true,
+		);
+		expect(
+			getQuickJoinBlockReason(baseActivity, baseMembership),
+		).toBeNull();
+		expect(
+			getQuickJoinBlockReason(baseActivity, {
+				...baseMembership,
+				userId: null,
+			}),
+		).toBeNull();
 	});
 });

@@ -1,6 +1,6 @@
 "use client";
-import * as React from "react";
 import { useRouter } from "next/navigation";
+import * as React from "react";
 
 // Icons
 import {
@@ -14,12 +14,22 @@ import {
 	TrashIcon,
 	User,
 } from "lucide-react";
-
+import { useFieldArray, useWatch, type UseFormReturn } from "react-hook-form";
 // Components
 import { toast } from "sonner";
+
+// Types
+import type { RouterOutput } from "@verific/api";
+import { tagColors } from "@verific/api/schemas";
+import {
+	activityCategories,
+	activityCategoryLabels,
+} from "@verific/drizzle/enum/category";
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Input, InputWithSuffix } from "@/components/ui/input";
-import { MarkdownTextarea } from "@/components/ui/markdown-textarea";
+// Date and Time
+import { Calendar } from "@/components/ui/calendar";
 import {
 	FormControl,
 	FormDescription,
@@ -28,6 +38,8 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
+import { Input, InputWithSuffix } from "@/components/ui/input";
+import { MarkdownTextarea } from "@/components/ui/markdown-textarea";
 import {
 	Select,
 	SelectContent,
@@ -35,35 +47,24 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { InstancePicker } from "@/components/pickers/instance-picker";
-import { MutateSpeakerDialog } from "@/components/dialogs/mutate-speaker-dialog";
-import { SpeakerDeleteDialog } from "@/components/dialogs/delete-dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
-
-// Date and Time
-import { Calendar } from "@/components/ui/calendar";
-import { TimePicker } from "@/components/pickers/time-picker";
-
-// API
-import { trpc } from "@/lib/trpc/react";
-import { tagColors } from "@verific/api/schemas";
-
-// Types
-import type { RouterOutput } from "@verific/api";
-import {
-	activityCategories,
-	activityCategoryLabels,
-} from "@verific/drizzle/enum/category";
-import type { MutateActivityFormSchema } from "@/lib/validations/forms/mutate-activity-form";
-import { useFieldArray, useWatch, type UseFormReturn } from "react-hook-form";
-import { sumSessionsHours } from "@/lib/date";
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+
+import { SpeakerDeleteDialog } from "@/components/dialogs/delete-dialog";
+import { MutateSpeakerDialog } from "@/components/dialogs/mutate-speaker-dialog";
+import { InstancePicker } from "@/components/pickers/instance-picker";
+import { TimePicker } from "@/components/pickers/time-picker";
+
+import { sumSessionsHours } from "@/lib/date";
+// API
+import { trpc } from "@/lib/trpc/react";
+
+import type { MutateActivityFormSchema } from "@/lib/validations/forms/mutate-activity-form";
 
 interface Props {
 	form: UseFormReturn<MutateActivityFormSchema>;
@@ -177,6 +178,33 @@ function RegistrationSettings({
 						)}
 					/>
 				</div>
+
+				<FormField
+					control={form.control}
+					name="allowOverlap"
+					render={({ field }) => (
+						<FormItem className="flex flex-row items-center justify-between gap-4 space-y-0 border-t p-4">
+							<div className="flex flex-col gap-0.5">
+								<FormLabel>
+									Permitir sobreposição de horário
+								</FormLabel>
+								<p className="text-muted-foreground text-sm">
+									Participantes poderão se inscrever nesta
+									atividade mesmo que ela aconteça no mesmo
+									horário de outras, e em outras que acontecem
+									no horário dela. Use para atividades longas,
+									como maratonas, exposições e estandes.
+								</p>
+							</div>
+							<FormControl>
+								<Switch
+									checked={field.value ?? false}
+									onCheckedChange={field.onChange}
+								/>
+							</FormControl>
+						</FormItem>
+					)}
+				/>
 
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
 					<div className="flex flex-col gap-0.5">

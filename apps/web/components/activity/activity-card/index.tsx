@@ -84,6 +84,7 @@ export function ActivityCard({
 		userId,
 		participantId: eventParticipantId ?? participantId,
 		subscribedIds,
+		conflicts,
 	};
 	const quickJoinEligible =
 		Boolean(onQuickJoin) &&
@@ -97,6 +98,13 @@ export function ActivityCard({
 		);
 
 	const pageHref = `/${activity.project?.url}/schedule/${activity.id}`;
+
+	// Bloqueio por conflito: só quando o botão de inscrição renderizaria
+	// (vaga, aberta, não inscrito, não encerrada) — aí o primário some e
+	// entra o tratamento bloqueado; fora disso vale a dica genérica.
+	const showJoinButton = (activity.workload ?? 0) > 0 && isOpen;
+	const showConflictBlock =
+		showJoinButton && !participantId && conflicts.length > 0;
 
 	return (
 		<div
@@ -155,14 +163,14 @@ export function ActivityCard({
 					activity={activity}
 					highlightSession={occurrenceSession}
 				/>
-				{conflicts.length > 0 ? (
+				{conflicts.length > 0 && !showConflictBlock ? (
 					<p className="text-muted-foreground flex w-full items-center gap-1.5 text-sm">
 						<CalendarClock className="size-4 shrink-0" />
 						Conflito de horário
 					</p>
 				) : null}
 				<div className="flex flex-row flex-wrap items-center justify-start gap-4">
-					{(activity.workload ?? 0) > 0 && isOpen ? (
+					{showJoinButton ? (
 						participantId ? (
 							<Button
 								variant={"default"}
@@ -178,6 +186,24 @@ export function ActivityCard({
 									Inscrito
 								</Link>
 							</Button>
+						) : showConflictBlock ? (
+							<>
+								<p className="text-muted-foreground text-sm">
+									Conflita com{" "}
+									{conflicts[0]!.otherActivity.name}
+									{conflicts.length > 1
+										? ` e mais ${conflicts.length - 1}`
+										: ""}
+								</p>
+								<Button
+									type="button"
+									variant={"outline"}
+									size={"sm"}
+									asChild
+								>
+									<Link href={pageHref}>Ver detalhes</Link>
+								</Button>
+							</>
 						) : quickJoinEligible ? (
 							<>
 								<Button

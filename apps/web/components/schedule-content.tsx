@@ -137,6 +137,12 @@ export function ScheduleContent({
 				prev.includes(activity.id) ? prev : [...prev, activity.id],
 			);
 			toast.error("As inscrições foram encerradas.");
+		} else if (reason === "conflict") {
+			// O hook já invalidou vínculo + inscritas: o mapa recalcula
+			// e o card vira o tratamento bloqueado sozinho.
+			toast.error(
+				"Esta atividade conflita com outra em que você já está inscrito.",
+			);
 		} else {
 			toast.info("Esta atividade pede informações adicionais.");
 			router.push(`/${eventUrl}/schedule/${activity.id}`);
@@ -396,8 +402,6 @@ export function ScheduleContent({
 					activity={quickJoinActivity}
 					participantId={participantId}
 					userId={userId}
-					eventUrl={eventUrl}
-					conflicts={conflictMap.get(quickJoinActivity.id) ?? []}
 					open={quickJoinId !== null}
 					onOpenChange={(next) => {
 						if (!next) setQuickJoinId(null);

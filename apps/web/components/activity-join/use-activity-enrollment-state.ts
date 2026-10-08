@@ -4,6 +4,7 @@ import { useMemo } from "react";
 
 import type { RouterOutput } from "@verific/api";
 
+import { useScheduleConflicts } from "@/hooks/use-schedule-conflicts";
 // Hooks
 import { useSubscribedActivities } from "@/hooks/use-subscribed-activities";
 // Lib
@@ -15,6 +16,9 @@ import {
 // API
 import { trpc } from "@/lib/trpc/react";
 
+// Types
+import type { Conflict } from "@/lib/schedule/conflicts";
+
 export type ActivityDetail = RouterOutput["getActivity"]["activity"];
 
 export type EnrollmentState =
@@ -25,6 +29,7 @@ export type EnrollmentState =
 	| "ended"
 	| "registration-closed"
 	| "full"
+	| "schedule-conflict"
 	| "form";
 
 export interface PublishedActivityForm {
@@ -46,6 +51,7 @@ export interface ActivityEnrollment {
 	subscribedIds: string[] | undefined;
 	hasEnded: boolean;
 	seatsFull: boolean;
+	conflicts: Conflict[];
 	form: PublishedActivityForm;
 	hasForm: boolean;
 	isResolvingForm: boolean;
@@ -54,8 +60,14 @@ export interface ActivityEnrollment {
 /**
  * Deriva o estado da máquina de inscrição em ordem de prioridade:
  * sessão → vínculo com o evento → inscrição na atividade → situação da
- * atividade → formulário. Reutiliza `useSubscribedActivities` (sem gate
- * duplicado) e resolve o formulário publicado em paralelo.
+ * atividade → conflito de horário → formulário. Reutiliza
+ * `useSubscribedActivities` (sem gate duplicado) e resolve o formulário
+ * publicado e as atividades inscritas em paralelo.
+ *
+ * O conflito vem por último porque o usuário resolve: basta cancelar a
+ * outra inscrição. Enquanto as atividades inscritas carregam para quem
+ * chegaria ao formulário, o estado é `loading` (sem flash do form);
+ * se a leitura falhar, cai no formulário — o servidor impõe o bloqueio.
  */
 export function useActivityEnrollmentState({
 	activity,
@@ -75,6 +87,11 @@ export function useActivityEnrollmentState({
 			gcTime: 10 * 60 * 1000,
 			refetchOnWindowFocus: false,
 		},
+	);
+
+	const { conflicts, isLoading: conflictsLoading } = useScheduleConflicts(
+		activity,
+		eventUrl,
 	);
 
 	const form = useMemo<PublishedActivityForm>(
@@ -99,6 +116,8 @@ export function useActivityEnrollmentState({
 		if (hasEnded) return "ended";
 		if (isRegistrationClosed(activity)) return "registration-closed";
 		if (seatsFull) return "full";
+		if (conflictsLoading) return "loading";
+		if (conflicts.length > 0) return "schedule-conflict";
 		return "form";
 	})();
 
@@ -109,6 +128,7 @@ export function useActivityEnrollmentState({
 		subscribedIds,
 		hasEnded,
 		seatsFull,
+		conflicts,
 		form,
 		hasForm: form.fields.length > 0,
 		isResolvingForm: formQuery.isPending,
