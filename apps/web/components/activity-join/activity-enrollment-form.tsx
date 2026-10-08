@@ -26,6 +26,7 @@ import {
 	revalidateParticipantActivities,
 	revalidateSubscribedActivitiesIdsFromParticipant,
 } from "@/app/actions";
+import { focusFieldControl, getFieldId } from "@/lib/forms/field-id";
 // Lib
 import { groupFieldsBySection } from "@/lib/forms/layout";
 // API
@@ -52,26 +53,6 @@ interface AnswersFormValues {
 	// `buildAnswersSchema`, então o `zodResolver` tipa sem casts. Os
 	// valores só ganham o tipo de resposta na borda do envio (validados).
 	answers: Record<string, unknown>;
-}
-
-/** Âncora estável de cada campo para o resumo de erros (`#id` + foco). */
-export function fieldAnchorId(key: string): string {
-	return `inscricao-campo-${key}`;
-}
-
-function focusField(key: string): void {
-	const wrapper = document.getElementById(fieldAnchorId(key));
-	if (!wrapper) return;
-	wrapper.scrollIntoView({
-		behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-			? "auto"
-			: "smooth",
-		block: "center",
-	});
-	const target = wrapper.querySelector<HTMLElement>(
-		"input, select, textarea, button, [tabindex]",
-	);
-	target?.focus({ preventScroll: true });
 }
 
 interface ActivityEnrollmentFormProps {
@@ -239,6 +220,7 @@ export function ActivityEnrollmentForm({
 						: "Inválido";
 				return {
 					key,
+					name: `answers.${key}`,
 					label: field?.label ?? key,
 					message,
 				};
@@ -334,32 +316,22 @@ export function ActivityEnrollmentForm({
 										{group.section.title}
 									</legend>
 									{group.fields.map((field) => (
-										<div
-											key={field.id}
-											id={fieldAnchorId(field.key)}
-											className="scroll-mt-24"
-										>
-											<DynamicField
-												field={field}
-												control={answersForm.control}
-												name={`answers.${field.key}`}
-											/>
-										</div>
-									))}
-								</fieldset>
-							) : (
-								group.fields.map((field) => (
-									<div
-										key={field.id}
-										id={fieldAnchorId(field.key)}
-										className="scroll-mt-24"
-									>
 										<DynamicField
+											key={field.id}
 											field={field}
 											control={answersForm.control}
 											name={`answers.${field.key}`}
 										/>
-									</div>
+									))}
+								</fieldset>
+							) : (
+								group.fields.map((field) => (
+									<DynamicField
+										key={field.id}
+										field={field}
+										control={answersForm.control}
+										name={`answers.${field.key}`}
+									/>
 								))
 							)}
 						</div>
@@ -379,10 +351,12 @@ export function ActivityEnrollmentForm({
 								{errorEntries.map((entry) => (
 									<li key={entry.key}>
 										<a
-											href={`#${fieldAnchorId(entry.key)}`}
+											href={`#${getFieldId(entry.name)}`}
 											onClick={(e) => {
 												e.preventDefault();
-												focusField(entry.key);
+												focusFieldControl(
+													getFieldId(entry.name),
+												);
 											}}
 											className="underline underline-offset-4"
 										>
