@@ -57,6 +57,13 @@
 			"when": 1791429355285,
 			"tag": "0007_lovely_clint_barton",
 			"breakpoints": true
+		},
+		{
+			"idx": 8,
+			"version": "7",
+			"when": 1791480588585,
+			"tag": "0008_waitlist",
+			"breakpoints": true
 		}
 	]
 }
