@@ -1,12 +1,15 @@
 import { TRPCError } from "@trpc/server";
 
 import { db } from "@verific/drizzle";
-import { and, eq, inArray } from "@verific/drizzle/orm";
+import { and, desc, eq, inArray } from "@verific/drizzle/orm";
 import {
 	activity,
 	activityWaitlist,
+	activityWaitlistEvent,
 	participant,
 	project,
+	projectModerator,
+	user,
 } from "@verific/drizzle/schema";
 import { z } from "@verific/zod";
 
@@ -18,7 +21,12 @@ import {
 	saveActivityAnswers,
 } from "../enrollment";
 import { answerValueSchema, type WaitlistErrorCode } from "../schemas";
-import { assertSeatsAvailable, checkSeats, lockActivity } from "../seats";
+import {
+	assertSeatsAvailable,
+	checkSeats,
+	countEnrolled,
+	lockActivity,
+} from "../seats";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import {
 	addToWaitlist,
@@ -30,6 +38,7 @@ import {
 	settleActivity,
 	type ActiveEntry,
 } from "../waitlist";
+import { byQueueOrder } from "../waitlist-plan";
 
 function waitlistError(code: WaitlistErrorCode, message: string) {
 	return new TRPCError({ code: "BAD_REQUEST", message, cause: { code } });
@@ -52,6 +61,38 @@ async function findActivity(activityId: string) {
 		});
 	}
 	return found;
+}
+
+/** Só o dono do evento ou um moderador opera a fila da atividade. */
+async function assertCanManageActivity(activityId: string, userId: string) {
+	const found = await db.query.activity.findFirst({
+		where: eq(activity.id, activityId),
+		columns: { id: true },
+		with: {
+			project: {
+				columns: { ownerId: true },
+				with: {
+					moderators: {
+						where: eq(projectModerator.userId, userId),
+						columns: { userId: true },
+					},
+				},
+			},
+		},
+	});
+	if (!found) {
+		throw new TRPCError({
+			message: "Atividade não encontrada.",
+			code: "NOT_FOUND",
+		});
+	}
+	const { ownerId, moderators } = found.project;
+	if (ownerId !== userId && moderators.length === 0) {
+		throw new TRPCError({
+			message: "Você não pode gerenciar a fila desta atividade.",
+			code: "FORBIDDEN",
+		});
+	}
 }
 
 /** Participante do usuário no evento da atividade. */
@@ -296,5 +337,192 @@ export const waitlistRouter = createTRPCRouter({
 				}
 				return entries;
 			});
+		}),
+	/**
+	 * Fila da atividade para a organização: vagas livres, quem espera e
+	 * quem tem oferta, na ordem da fila.
+	 */
+	getActivityWaitlist: protectedProcedure
+		.input(z.object({ activityId: z.uuid() }))
+		.query(async ({ input, ctx }) => {
+			const { activityId } = input;
+			await assertCanManageActivity(activityId, ctx.session.user.id);
+
+			const { locked, queue, enrolled } = await db.transaction(
+				async (tx) => {
+					const locked = await lockActivity(tx, activityId);
+					const queue = await settleActivity(tx, locked);
+					return {
+						locked,
+						queue,
+						enrolled: await countEnrolled(tx, activityId),
+					};
+				},
+			);
+
+			const people = queue.length
+				? await db
+						.select({
+							participantId: participant.id,
+							name: user.name,
+							email: user.email,
+							imageUrl: user.image_url,
+						})
+						.from(participant)
+						.innerJoin(user, eq(user.id, participant.userId))
+						.where(
+							inArray(
+								participant.id,
+								queue.map((entry) => entry.participantId),
+							),
+						)
+				: [];
+			const personOf = new Map(people.map((p) => [p.participantId, p]));
+			const positions = queuePositions(queue);
+			const offers = queue.filter((e) => e.status === "offered").length;
+
+			return {
+				participantsLimit: locked.participantsLimit,
+				enrolled,
+				freeSeats:
+					locked.participantsLimit == null
+						? null
+						: Math.max(
+								0,
+								locked.participantsLimit - enrolled - offers,
+							),
+				entries: [...queue].sort(byQueueOrder).map((entry) => ({
+					...personOf.get(entry.participantId),
+					participantId: entry.participantId,
+					status: entry.status,
+					position: positions.get(entry.participantId) ?? null,
+					joinedAt: entry.joinedAt,
+					offerExpiresAt: entry.offerExpiresAt,
+				})),
+			};
+		}),
+
+	/** Movimentações da fila, mais recentes primeiro. */
+	getActivityWaitlistHistory: protectedProcedure
+		.input(z.object({ activityId: z.uuid() }))
+		.query(async ({ input, ctx }) => {
+			await assertCanManageActivity(
+				input.activityId,
+				ctx.session.user.id,
+			);
+
+			const rows = await db.query.activityWaitlistEvent.findMany({
+				where: eq(activityWaitlistEvent.activityId, input.activityId),
+				orderBy: desc(activityWaitlistEvent.createdAt),
+				limit: 500,
+				columns: {
+					id: true,
+					type: true,
+					createdAt: true,
+					participantId: true,
+				},
+				with: {
+					participant: {
+						with: { user: { columns: { name: true } } },
+					},
+					actor: { columns: { name: true } },
+				},
+			});
+			return rows.map(({ participant: p, actor, ...event }) => ({
+				...event,
+				participantName: p.user.name,
+				actorName: actor?.name ?? null,
+			}));
+		}),
+
+	/**
+	 * Inscreve na hora quem está na fila, fora da ordem se preciso, desde
+	 * que haja vagas livres. Quem tem conflito de horário é recusado.
+	 */
+	promoteFromWaitlist: protectedProcedure
+		.input(
+			z.object({
+				activityId: z.uuid(),
+				participantIds: z.array(z.uuid()).min(1),
+			}),
+		)
+		.mutation(async ({ input, ctx }) => {
+			const { activityId } = input;
+			const participantIds = [...new Set(input.participantIds)].sort();
+			await assertCanManageActivity(activityId, ctx.session.user.id);
+
+			await db.transaction(async (tx) => {
+				for (const participantId of participantIds) {
+					await lockParticipant(tx, participantId);
+				}
+				for (const participantId of participantIds) {
+					await assertNoScheduleConflict(
+						tx,
+						activityId,
+						participantId,
+					);
+				}
+
+				const locked = await lockActivity(tx, activityId);
+				const queue = await settleActivity(tx, locked);
+				const missing = participantIds.filter(
+					(id) => !queue.some((entry) => entry.participantId === id),
+				);
+				if (missing.length > 0) {
+					throw waitlistError(
+						"NOT_IN_WAITLIST",
+						"Alguém selecionado não está mais na fila.",
+					);
+				}
+
+				const queued = await assertSeatsAvailable(
+					tx,
+					locked,
+					queue,
+					participantIds,
+				);
+				// As respostas foram salvas ao entrar na fila
+				await persistEnrollment(tx, {
+					activityId,
+					participantIds,
+					answerRows: [],
+				});
+				await resolveEnrolledEntries(tx, activityId, queued, {
+					type: "promoted",
+					actorUserId: ctx.session.user.id,
+				});
+			});
+
+			return { success: true };
+		}),
+
+	/** Tira alguém da fila; a vaga oferecida, se houver, vai ao próximo. */
+	removeFromWaitlist: protectedProcedure
+		.input(
+			z.object({
+				activityId: z.uuid(),
+				participantId: z.uuid(),
+			}),
+		)
+		.mutation(async ({ input, ctx }) => {
+			const { activityId, participantId } = input;
+			await assertCanManageActivity(activityId, ctx.session.user.id);
+
+			await db.transaction(async (tx) => {
+				const locked = await lockActivity(tx, activityId);
+				const closed = await closeEntry(tx, activityId, participantId, {
+					type: "removed",
+					actorUserId: ctx.session.user.id,
+				});
+				if (!closed) {
+					throw waitlistError(
+						"NOT_IN_WAITLIST",
+						"Esta pessoa não está na fila.",
+					);
+				}
+				await settleActivity(tx, locked);
+			});
+
+			return { success: true };
 		}),
 });
