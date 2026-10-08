@@ -44,6 +44,16 @@ export const JOIN_ERROR_CODES = [
 
 export type JoinErrorCode = (typeof JOIN_ERROR_CODES)[number];
 
+/** Falhas próprias da fila de espera, no mesmo formato. */
+export const WAITLIST_ERROR_CODES = [
+	"ACTIVITY_ENDED",
+	"NO_WAITLIST",
+	"OFFER_EXPIRED",
+	"NOT_IN_WAITLIST",
+] as const;
+
+export type WaitlistErrorCode = (typeof WAITLIST_ERROR_CODES)[number];
+
 export const getActivityParams = z.object({
 	page: z.coerce.number().default(1).optional(),
 	pageSize: z.coerce.number().default(5).optional(),

@@ -41,8 +41,8 @@ import { isMemberAuthenticated } from "../auth";
 import {
 	assertNoScheduleConflict,
 	lockParticipant,
+	persistEnrollment,
 	prepareActivityAnswers,
-	saveActivityAnswers,
 } from "../enrollment";
 import {
 	activitySort,
@@ -50,7 +50,7 @@ import {
 	getActivityParams,
 	answerValueSchema,
 } from "../schemas";
-import { assertSeatsAvailable, lockActivity, type Tx } from "../seats";
+import { assertSeatsAvailable, lockActivity } from "../seats";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { transformSingleToArray } from "../utils";
 import { resolveEnrolledEntries, settleActivity } from "../waitlist";
@@ -215,34 +215,6 @@ const mutateActivityParams = z.object({
 	allowOverlap: z.boolean().optional(),
 	projectId: z.uuid(),
 });
-
-/**
- * Persiste a inscrição (vínculos + respostas) dentro da transação que
- * travou a atividade, nos fluxos de auto-inscrição e de organizador.
- * Só insere; nunca remove nada.
- */
-async function persistEnrollment(
-	tx: Tx,
-	args: {
-		activityId: string;
-		participantIds: string[];
-		answerRows: Awaited<ReturnType<typeof prepareActivityAnswers>>;
-	},
-) {
-	const { activityId, participantIds, answerRows } = args;
-
-	await tx
-		.insert(participantOnActivity)
-		.values(
-			participantIds.map((participantId) => ({
-				activityId,
-				participantId,
-			})),
-		)
-		.onConflictDoNothing();
-
-	await saveActivityAnswers(tx, answerRows);
-}
 
 /** Replaces the tag links of an activity. Tags must belong to the project. */
 async function setActivityTags(
