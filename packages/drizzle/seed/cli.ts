@@ -44,7 +44,7 @@ async function main() {
 		console.log(`✅ ${result.users} usuários`);
 		for (const event of result.events) {
 			console.log(
-				`✅ /${event.project.url}: ${event.participants} participantes, ${event.activities} atividades (${event.sessions} sessões), ${event.enrollments} inscrições em atividades, ${event.attendances} presenças`,
+				`✅ /${event.project.url}: ${event.participants} participantes, ${event.activities} atividades (${event.sessions} sessões), ${event.enrollments} inscrições em atividades, ${event.waitlist} na fila, ${event.attendances} presenças`,
 			);
 		}
 	} finally {
