@@ -1,6 +1,5 @@
 {
 	"$schema": "https://v2-11-7.turborepo.dev/schema.json",
-	"globalDependencies": [".env"],
 	"tasks": {
 		"dev": {
 			"cache": false,
