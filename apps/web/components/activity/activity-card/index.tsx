@@ -123,9 +123,11 @@ export function ActivityCard({
 	// (vaga, aberta, não inscrito, fora da fila, não encerrada) — aí o primário some e
 	// entra o tratamento bloqueado; fora disso vale a dica genérica.
 	// Lotada sem fila não tem ação a bloquear: a lotação vence o conflito.
-	const showJoinButton = (activity.workload ?? 0) > 0 && isOpen;
+	const showJoinButton = (activity.workload ?? 0) > 0;
+	const isRegistrationClosed = !isOpen;
 	const showConflictBlock =
 		showJoinButton &&
+		isOpen &&
 		!participantId &&
 		!isWaitlisted &&
 		conflicts.length > 0 &&
@@ -281,6 +283,17 @@ export function ActivityCard({
 									<Link href={pageHref}>Ver detalhes</Link>
 								</Button>
 							</>
+						) : isRegistrationClosed ? (
+							<Button
+								type="button"
+								variant="outline"
+								size="lg"
+								disabled
+								title="As inscrições para esta atividade ainda não foram liberadas pelos organizadores."
+								aria-label="Inscrições ainda não liberadas"
+							>
+								Em breve
+							</Button>
 						) : (
 							<Button
 								variant={isFull ? "outline" : "default"}
