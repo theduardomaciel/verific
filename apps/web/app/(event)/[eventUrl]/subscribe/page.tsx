@@ -3,12 +3,18 @@ import { Suspense } from "react";
 
 import { Calendar } from "lucide-react";
 
-import * as EventContainer from "@/components/landing/event-container";
-import { SubscribeGate } from "@/components/subscribe-gate";
-import { SubscribePageSkeleton } from "./skeleton";
 import { parseEventTheme } from "@verific/drizzle/theme";
 
-import { getEventRegistration, getProject } from "@/lib/data";
+import * as EventContainer from "@/components/landing/event-container";
+import { SubscribeGate } from "@/components/subscribe-gate";
+
+import {
+	getEventRegistration,
+	getEventStaticParams,
+	getProject,
+} from "@/lib/data";
+
+import { SubscribePageSkeleton } from "./skeleton";
 
 /**
  * Exige saída estática completa (nível `navigation`): o build falha se
@@ -16,6 +22,10 @@ import { getEventRegistration, getProject } from "@/lib/data";
  * rota — mantém a página de inscrição servida pela CDN sob carga pública.
  */
 export const ensureStatic = "navigation";
+
+export async function generateStaticParams() {
+	return getEventStaticParams();
+}
 
 // Mesmo padrão das páginas irmãs (`[eventUrl]`, `schedule`): gate
 // `notFound`/`redirect` real antes de qualquer `<Suspense>` sobre dados

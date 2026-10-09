@@ -1,5 +1,6 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+
 import { useQueryString } from "./use-query-string";
 
 type ParamType = "string" | "array";
@@ -142,7 +143,9 @@ export function useControlledParam<T extends string | string[]>({
 		[isControlled, onChange],
 	);
 
-	const currentValue = isControlled ? value : localValue;
+	const currentValue = isControlled
+		? ((value ?? defaultValue ?? (type === "array" ? [] : "")) as T)
+		: localValue;
 
 	return {
 		value: currentValue,
