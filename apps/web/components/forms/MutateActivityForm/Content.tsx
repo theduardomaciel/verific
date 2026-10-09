@@ -255,7 +255,7 @@ function RegistrationSettings({
 					control={form.control}
 					name="allowOverlap"
 					render={({ field }) => (
-						<FormItem className="flex flex-row items-center justify-between gap-4 space-y-0 border-t p-4">
+						<FormItem className="flex flex-row items-center justify-between gap-4 space-y-0 border-t pt-4">
 							<div className="flex flex-col gap-0.5">
 								<FormLabel>
 									Permitir sobreposição de horário
@@ -278,7 +278,7 @@ function RegistrationSettings({
 					)}
 				/>
 
-				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+				<div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
 					<div className="flex flex-col gap-0.5">
 						<p className="text-sm leading-none font-medium">
 							Formulário de inscrição

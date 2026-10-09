@@ -252,7 +252,7 @@ export function FullStatus() {
 		<StatusShell
 			icon={<TicketX className="h-5 w-5" />}
 			title="Vagas esgotadas"
-			message="Vagas esgotadas."
+			message="Infelizmente, não há vagas disponíveis e esta atividade não possui fila de espera."
 		/>
 	);
 }
