@@ -702,7 +702,7 @@ export function MutateActivityFormContent({
 									<FormLabel>Categoria</FormLabel>
 									<Select
 										onValueChange={field.onChange}
-										value={field.value}
+										value={field.value ?? ""}
 									>
 										<FormControl>
 											<SelectTrigger className="w-full">
@@ -806,7 +806,7 @@ export function MutateActivityFormContent({
 									<FormLabel>Público</FormLabel>
 									<Select
 										onValueChange={field.onChange}
-										value={field.value}
+										value={field.value ?? ""}
 									>
 										<FormControl>
 											<SelectTrigger className="w-full">
