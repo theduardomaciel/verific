@@ -44,6 +44,8 @@ import {
 	hasEverySessionEnded,
 } from "@/lib/date";
 import { findScheduleConflicts, type Conflict } from "@/lib/schedule/conflicts";
+// API
+import { trpc } from "@/lib/trpc/react";
 
 interface ScheduleContentProps {
 	activities: RouterOutput["getActivities"]["activities"];
@@ -55,8 +57,40 @@ export function ScheduleContent({
 	eventUrl,
 }: ScheduleContentProps) {
 	const router = useRouter();
-	const { userId, subscribedIds, participantId } =
-		useSubscribedActivities(eventUrl);
+	const {
+		userId,
+		subscribedIds,
+		participantId,
+		isPending: isMembershipPending,
+	} = useSubscribedActivities(eventUrl);
+
+	// Uma única leitura das filas do usuário no evento (sem N+1 por
+	// card): `Map<activityId, entry>` reutilizado por todos os cards.
+	const waitlistQuery = trpc.getMyWaitlistEntries.useQuery(
+		{ projectUrl: eventUrl },
+		{
+			enabled: Boolean(participantId),
+			staleTime: 30 * 1000,
+			gcTime: 5 * 60 * 1000,
+			refetchOnWindowFocus: false,
+		},
+	);
+	const waitlistByActivity = useMemo(
+		() =>
+			new Map(
+				(waitlistQuery.data ?? []).map((entry) => [
+					entry.activityId,
+					entry,
+				]),
+			),
+		[waitlistQuery.data],
+	);
+	// Enquanto vínculo ou fila resolvem, os cards mostram ação neutra
+	// (`Carregando...`) em vez de piscar "Quero participar" -> "Inscrito"
+	// ou "Entrar na fila" -> "Aguardando na fila".
+	const isActionResolving =
+		isMembershipPending ||
+		(Boolean(participantId) && waitlistQuery.isPending);
 	const [searchQuery, setSearchQuery] = useState<string>("");
 	const [sortBy, setSortBy] = useState<string | undefined>(undefined);
 	const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
@@ -309,6 +343,10 @@ export function ScheduleContent({
 													joinedIds.includes(
 														activity.id,
 													);
+												const waitlistEntry =
+													waitlistByActivity.get(
+														activity.id,
+													);
 												return (
 													<ActivityCard
 														key={`${activity.id}-${occurrence.sessionIndex}`}
@@ -344,6 +382,17 @@ export function ScheduleContent({
 														}
 														subscribedIds={
 															subscribedIds
+														}
+														waitlistPosition={
+															waitlistEntry?.position ??
+															null
+														}
+														hasWaitlistOffer={
+															waitlistEntry?.status ===
+															"offered"
+														}
+														isActionLoading={
+															isActionResolving
 														}
 														userId={userId}
 														onQuickJoin={(

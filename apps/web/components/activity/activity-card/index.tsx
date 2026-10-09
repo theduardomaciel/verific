@@ -3,7 +3,13 @@
 import Link from "next/link";
 
 // Icons
-import { ArrowRight, CalendarClock, Check } from "lucide-react";
+import {
+	ArrowRight,
+	CalendarClock,
+	Check,
+	Hourglass,
+	Loader2,
+} from "lucide-react";
 
 // Types
 import type { RouterOutput } from "@verific/api";
@@ -41,6 +47,12 @@ interface EventCardProps {
 	/** Vínculo com o evento (para a elegibilidade), mesmo sem inscrição aqui. */
 	eventParticipantId?: string | null;
 	subscribedIds?: string[];
+	/** Lugar na fila de espera desta atividade, quando o usuário espera vaga. */
+	waitlistPosition?: number | null;
+	/** Existe oferta de vaga para o usuário nesta atividade. */
+	hasWaitlistOffer?: boolean;
+	/** Vínculo/fila ainda resolvendo: ação neutra em vez de flash. */
+	isActionLoading?: boolean;
 	/** Abre o diálogo de confirmação em vez de navegar. */
 	onQuickJoin?: (activity: CardActivity) => void;
 	/** Delta otimista de vagas aplicado após o próprio join (+1). */
@@ -61,6 +73,9 @@ export function ActivityCard({
 	userId,
 	eventParticipantId,
 	subscribedIds,
+	waitlistPosition = null,
+	hasWaitlistOffer = false,
+	isActionLoading = false,
 	onQuickJoin,
 	seatDelta = 0,
 	statusOverride = null,
@@ -86,9 +101,11 @@ export function ActivityCard({
 		subscribedIds,
 		conflicts,
 	};
+	const isWaitlisted = hasWaitlistOffer || waitlistPosition != null;
 	const quickJoinEligible =
 		Boolean(onQuickJoin) &&
 		!participantId &&
+		!isWaitlisted &&
 		getQuickJoinEligibility(
 			{
 				...activity,
@@ -100,11 +117,14 @@ export function ActivityCard({
 	const pageHref = `/${activity.project?.url}/schedule/${activity.id}`;
 
 	// Bloqueio por conflito: só quando o botão de inscrição renderizaria
-	// (vaga, aberta, não inscrito, não encerrada) — aí o primário some e
+	// (vaga, aberta, não inscrito, fora da fila, não encerrada) — aí o primário some e
 	// entra o tratamento bloqueado; fora disso vale a dica genérica.
 	const showJoinButton = (activity.workload ?? 0) > 0 && isOpen;
 	const showConflictBlock =
-		showJoinButton && !participantId && conflicts.length > 0;
+		showJoinButton &&
+		!participantId &&
+		!isWaitlisted &&
+		conflicts.length > 0;
 
 	return (
 		<div
@@ -163,7 +183,7 @@ export function ActivityCard({
 					activity={activity}
 					highlightSession={occurrenceSession}
 				/>
-				{conflicts.length > 0 && !showConflictBlock ? (
+				{conflicts.length > 0 && !showConflictBlock && !isWaitlisted ? (
 					<p className="text-muted-foreground flex w-full items-center gap-1.5 text-sm">
 						<CalendarClock className="size-4 shrink-0" />
 						Conflito de horário
@@ -184,6 +204,32 @@ export function ActivityCard({
 								<Link href={pageHref}>
 									<Check className="mr-2 h-4 w-4" />
 									Inscrito
+								</Link>
+							</Button>
+						) : isActionLoading ? (
+							<Button
+								type="button"
+								variant="outline"
+								size="lg"
+								disabled
+								aria-busy="true"
+								aria-label="Carregando inscrição"
+							>
+								<Loader2 className="h-4 w-4 animate-spin" />
+								Carregando...
+							</Button>
+						) : hasWaitlistOffer ? (
+							<Button variant="default" size="lg" asChild>
+								<Link href={pageHref}>
+									Confirmar vaga
+									<ArrowRight className="ml-2 h-4 w-4" />
+								</Link>
+							</Button>
+						) : waitlistPosition != null ? (
+							<Button variant="outline" size="lg" asChild>
+								<Link href={pageHref}>
+									<Hourglass className="mr-2 h-4 w-4" />
+									{`Aguardando na fila${waitlistPosition > 0 ? ` • ${waitlistPosition}º` : ""}`}
 								</Link>
 							</Button>
 						) : showConflictBlock ? (
