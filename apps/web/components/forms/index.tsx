@@ -1,5 +1,3 @@
-import { cn } from "@/lib/utils";
-
 // Icons
 import {
 	ArrowRightIcon,
@@ -12,11 +10,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { FormLabel } from "@/components/ui/form";
 
-// Types
-import type { FieldValues, UseFormReturn } from "react-hook-form";
-
+import { cn } from "@/lib/utils";
 // Utils
 import { scrollToNextSection } from "@/lib/validations";
+
+// Types
+import type { FieldValues, UseFormReturn } from "react-hook-form";
 
 export type GenericForm = UseFormReturn<FieldValues>;
 
@@ -55,6 +54,21 @@ function FormSection({ form, children, ...rest }: FormSectionProps) {
 		}
 	}
 
+	/**
+	 * Ignora teclas vindas de campos editáveis: o `onKeyDown` abaixo chama
+	 * `preventDefault()` para o espaço (ativação via teclado no `role=button`),
+	 * e sem esse filtro o espaço digitado em inputs/textareas dentro da seção
+	 * borbulha até aqui e é engolido — o usuário não consegue digitar espaços.
+	 */
+	function isFromEditableField(e: React.KeyboardEvent) {
+		const target = e.target as HTMLElement | null;
+		return Boolean(
+			target?.closest?.(
+				"input, textarea, select, [contenteditable='true']",
+			),
+		);
+	}
+
 	return (
 		<div
 			id={`section${rest.section}`}
@@ -73,10 +87,11 @@ function FormSection({ form, children, ...rest }: FormSectionProps) {
 				tabIndex={0}
 				onClick={handleSelect}
 				onKeyUp={(e) => {
-					if (e.key === "Enter") handleSelect();
+					if (e.key === "Enter" && !isFromEditableField(e))
+						handleSelect();
 				}}
 				onKeyDown={(e) => {
-					if (e.key === " ") {
+					if (e.key === " " && !isFromEditableField(e)) {
 						e.preventDefault();
 						handleSelect();
 					}
