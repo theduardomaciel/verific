@@ -139,11 +139,11 @@ export function ActivityCard({
 				"bg-card flex flex-col justify-between gap-4 rounded-lg border p-6 outline-none z-20",
 				{
 					"pointer-events-none opacity-50 select-none": hasEnded,
-					/* "border-red-950 bg-[color-mix(in_oklab,var(--color-red-500)_5%,var(--card))]":
-						isFull && ![WHEN THE ACTIVITY HAS A WAITLIST],
-					"border-yellow-950 bg-[color-mix(in_oklab,var(--color-yellow-500)_5%,var(--card))]":
+					"border-red-950 bg-[color-mix(in_oklab,var(--color-red-500)_3%,var(--card))]":
+						isFull && !waitlistEnabled && !isWaitlisted,
+					"border-yellow-950 bg-[color-mix(in_oklab,var(--color-yellow-500)_3%,var(--card))]":
 						(seats.status === "low" && !isFull) ||
-						(isFull && [WHEN THE ACTIVITY HAS A WAITLIST]), */
+						(isFull && (waitlistEnabled || isWaitlisted)),
 				},
 				className,
 			)}
@@ -157,7 +157,8 @@ export function ActivityCard({
 						className={cn("text-muted-foreground text-sm", {
 							"animate-pulse font-bold":
 								seats.status === "low" && !isFull,
-							"text-destructive uppercase font-black": isFull,
+							"text-destructive uppercase font-black":
+								isFull && !waitlistEnabled,
 						})}
 					>
 						{isFull ? "Esgotado" : (seats.label ?? "")}
