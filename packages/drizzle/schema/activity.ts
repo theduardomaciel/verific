@@ -34,6 +34,10 @@ export const activity = pgTable("activities", {
 	tolerance: integer("tolerance"),
 	workload: integer("workload"),
 	allowOverlap: boolean("allow_overlap").notNull().default(false),
+	// Fila de espera: quando as vagas acabarem, participantes podem entrar
+	// em uma fila e receber a vaga caso alguém desista. Desligar bloqueia
+	// novas entradas, sem apagar as existentes nem as ofertas pendentes.
+	waitlistEnabled: boolean("waitlist_enabled").notNull().default(true),
 	// Prazo para confirmar a vaga oferecida pela fila de espera
 	waitlistOfferHours: integer("waitlist_offer_hours").notNull().default(12),
 

@@ -34,6 +34,7 @@ export const mutateActivityFormSchema = z
 		description: z.string().optional(),
 		isRegistrationOpen: z.boolean().optional(),
 		allowOverlap: z.boolean().optional(),
+		waitlistEnabled: z.boolean().optional(),
 		participantsLimit: z.coerce
 			.number()
 			.optional()

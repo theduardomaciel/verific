@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { ParticipantQuitButton } from "@/components/participant/participant-quit-button";
 import { ExpandableDescription } from "@/components/shared/expandable-description";
 
+import { offersWaitlistSpot } from "@/lib/activity-conditions";
 import { describeSeats } from "@/lib/activity-seats";
 import { hasEverySessionEnded, type ActivitySessionLike } from "@/lib/date";
 import {
@@ -94,6 +95,8 @@ export function ActivityCard({
 	const isFull = statusOverride === "full" || seats.status === "full";
 	const isOpen = activity.isRegistrationOpen && statusOverride !== "closed";
 	const hasEnded = hasEverySessionEnded(activity.sessions);
+	// Sem fila, lotada não oferece ação de fila: só "Esgotado".
+	const waitlistEnabled = offersWaitlistSpot(activity);
 
 	const membership: QuickJoinMembership = {
 		userId,
@@ -119,12 +122,14 @@ export function ActivityCard({
 	// Bloqueio por conflito: só quando o botão de inscrição renderizaria
 	// (vaga, aberta, não inscrito, fora da fila, não encerrada) — aí o primário some e
 	// entra o tratamento bloqueado; fora disso vale a dica genérica.
+	// Lotada sem fila não tem ação a bloquear: a lotação vence o conflito.
 	const showJoinButton = (activity.workload ?? 0) > 0 && isOpen;
 	const showConflictBlock =
 		showJoinButton &&
 		!participantId &&
 		!isWaitlisted &&
-		conflicts.length > 0;
+		conflicts.length > 0 &&
+		(!isFull || waitlistEnabled);
 
 	return (
 		<div
@@ -283,7 +288,9 @@ export function ActivityCard({
 							>
 								<Link href={pageHref}>
 									{isFull
-										? "Entrar na fila"
+										? waitlistEnabled
+											? "Entrar na fila"
+											: "Ver detalhes"
 										: "Quero participar"}
 									<ArrowRight className="ml-2 h-4 w-4" />
 								</Link>

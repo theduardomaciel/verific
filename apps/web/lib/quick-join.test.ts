@@ -159,6 +159,19 @@ describe("getQuickJoinEligibility", () => {
 		).toBe(false);
 	});
 
+	it("ignora tolerância obsoleta com a fila desligada", () => {
+		expect(
+			getQuickJoinEligibility(
+				{
+					...baseActivity,
+					tolerance: 10,
+					waitlistEnabled: false,
+				},
+				baseMembership,
+			),
+		).toBe(true);
+	});
+
 	it("barra com conflito de horário, com motivo distinguível", () => {
 		const conflicts: Conflict[] = [
 			{

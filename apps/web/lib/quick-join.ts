@@ -1,4 +1,5 @@
 import {
+	getEffectiveTolerance,
 	isActivityEnded,
 	isActivityFull,
 	isRegistrationClosed,
@@ -15,6 +16,7 @@ export interface QuickJoinActivity {
 	participantsCount?: number | null;
 	sessions?: ActivitySessionLike[] | null;
 	tolerance?: number | null;
+	waitlistEnabled?: boolean | null;
 	/**
 	 * `false` = sem formulário; `true` = com formulário; `undefined` =
 	 * desconhecido. Desconhecido nunca é adivinhado: inelegível.
@@ -69,7 +71,7 @@ export function getQuickJoinEligibility(
 	if (isActivityEnded(activity.sessions)) return false;
 	if (membership.subscribedIds?.includes(activity.id)) return false;
 	if (activity.hasForm !== false) return false;
-	if (activity.tolerance) return false;
+	if (getEffectiveTolerance(activity)) return false;
 	if ((membership.conflicts ?? []).length > 0) return false;
 	return true;
 }

@@ -44,6 +44,7 @@ const activity = {
 	participantsLimit: 30,
 	workload: 2,
 	tolerance: null,
+	waitlistEnabled: true,
 	hasForm: false,
 	sessions: [FUTURE],
 } as Parameters<typeof useActivityEnrollmentState>[0]["activity"];
@@ -65,6 +66,7 @@ function setup(overrides?: {
 	participantsCount?: number;
 	waitlist?: { activityId: string; status: "waiting" | "offered" }[];
 	waitlistPending?: boolean;
+	activity?: Partial<typeof activity>;
 }) {
 	waitlistMock.mockReturnValue({
 		data: overrides?.waitlistPending
@@ -94,7 +96,10 @@ function setup(overrides?: {
 	});
 	return renderHook(() =>
 		useActivityEnrollmentState({
-			activity,
+			activity: {
+				...activity,
+				...overrides?.activity,
+			} as typeof activity,
 			eventUrl: "evento",
 			participantsCount: overrides?.participantsCount ?? 0,
 		}),
@@ -187,5 +192,54 @@ describe("useActivityEnrollmentState fila de espera", () => {
 		const { result } = setup({ waitlistPending: true });
 
 		expect(result.current.state).toBe("loading");
+	});
+});
+
+describe("useActivityEnrollmentState fila desligada", () => {
+	it("lotada sem fila vira full, sem ação de fila", () => {
+		const { result } = setup({
+			participantsCount: 30,
+			activity: { waitlistEnabled: false },
+		});
+
+		expect(result.current.state).toBe("full");
+	});
+
+	it("lotada com fila segue em waitlist", () => {
+		const { result } = setup({
+			participantsCount: 30,
+			activity: { waitlistEnabled: true },
+		});
+
+		expect(result.current.state).toBe("waitlist");
+	});
+
+	it("full vence o conflito quando não há ação de fila", () => {
+		const { result } = setup({
+			participantsCount: 30,
+			activity: { waitlistEnabled: false },
+			enrolled: [enrolledActivity("act-2", OVERLAPPING)],
+		});
+
+		expect(result.current.state).toBe("full");
+	});
+
+	it("quem já está na fila continua nela mesmo desligada", () => {
+		const { result } = setup({
+			participantsCount: 30,
+			activity: { waitlistEnabled: false },
+			waitlist: [{ activityId: "act-1", status: "waiting" }],
+		});
+
+		expect(result.current.state).toBe("waitlisted");
+	});
+
+	it("quem tem oferta continua na oferta mesmo desligada", () => {
+		const { result } = setup({
+			activity: { waitlistEnabled: false },
+			waitlist: [{ activityId: "act-1", status: "offered" }],
+		});
+
+		expect(result.current.state).toBe("offered");
 	});
 });

@@ -48,6 +48,7 @@ export type JoinErrorCode = (typeof JOIN_ERROR_CODES)[number];
 export const WAITLIST_ERROR_CODES = [
 	"ACTIVITY_ENDED",
 	"NO_WAITLIST",
+	"WAITLIST_DISABLED",
 	"OFFER_EXPIRED",
 	"NOT_IN_WAITLIST",
 ] as const;

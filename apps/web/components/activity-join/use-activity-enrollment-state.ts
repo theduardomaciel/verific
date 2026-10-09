@@ -12,6 +12,7 @@ import {
 	isActivityEnded,
 	isActivityFull,
 	isRegistrationClosed,
+	offersWaitlistSpot,
 } from "@/lib/activity-conditions";
 // API
 import { trpc } from "@/lib/trpc/react";
@@ -32,6 +33,7 @@ export type EnrollmentState =
 	| "registration-closed"
 	| "schedule-conflict"
 	| "waitlist"
+	| "full"
 	| "form";
 
 export type WaitlistEntry = RouterOutput["getMyWaitlistEntries"][number];
@@ -66,12 +68,14 @@ export interface ActivityEnrollment {
 /**
  * Deriva o estado da máquina de inscrição em ordem de prioridade:
  * sessão → vínculo com o evento → inscrição ou lugar na fila → situação
- * da atividade → conflito de horário → fila (lotada) ou formulário. Reutiliza
+ * da atividade → conflito de horário → fila (lotada com fila) ou
+ * lotada sem ação (`full`) ou formulário. Reutiliza
  * `useSubscribedActivities` (sem gate duplicado) e resolve o formulário
  * publicado e as atividades inscritas em paralelo.
  *
  * O conflito vem antes da fila porque também impede entrar nela, e o
- * usuário resolve: basta cancelar a outra inscrição. Enquanto as
+ * usuário resolve: basta cancelar a outra inscrição. Sem ação de fila
+ * (`full`, fila desligada), a lotação vence o conflito. Enquanto as
  * atividades inscritas carregam para quem chegaria ao formulário, o
  * estado é `loading` (sem flash do form);
  * se a leitura falhar, cai no formulário — o servidor impõe o bloqueio.
@@ -134,8 +138,12 @@ export function useActivityEnrollmentState({
 		if (hasEnded) return "ended";
 		if (isRegistrationClosed(activity)) return "registration-closed";
 		if (conflictsLoading) return "loading";
-		if (conflicts.length > 0) return "schedule-conflict";
-		if (seatsFull) return "waitlist";
+		// O conflito vem antes da fila porque também impede entrar nela;
+		// sem ação de fila (lotada com a fila desligada), a lotação vence.
+		const offersQueue = seatsFull && offersWaitlistSpot(activity);
+		if (conflicts.length > 0 && (!seatsFull || offersQueue))
+			return "schedule-conflict";
+		if (seatsFull) return offersQueue ? "waitlist" : "full";
 		return "form";
 	})();
 
