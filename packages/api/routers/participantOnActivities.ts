@@ -320,37 +320,47 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 			const { projectUrl } = input;
 			const userId = ctx.session.user.id;
 
+			// Vínculo com o evento primeiro: quem está inscrito no evento
+			// mas em zero atividades precisa receber `{ ids: [], participantId }`
+			// — retornar `null` aqui travava a primeira inscrição (o painel
+			// virava `not-in-event`).
+			const projectWithParticipant = await db
+				.select({
+					projectId: project.id,
+					participantId: participant.id,
+				})
+				.from(project)
+				.leftJoin(
+					participant,
+					and(
+						eq(participant.projectId, project.id),
+						eq(participant.userId, userId),
+					),
+				)
+				.where(eq(project.url, projectUrl));
+
+			const projectRow = projectWithParticipant[0];
+			const participantId = projectRow?.participantId;
+
+			if (!projectRow || !participantId) {
+				return null;
+			}
+
 			const activities = await db
 				.select({
 					activityId: participantOnActivity.activityId,
-					participantId: participantOnActivity.participantId,
 				})
 				.from(participantOnActivity)
-				.innerJoin(
-					participant,
-					eq(participant.id, participantOnActivity.participantId),
-				)
-				.innerJoin(project, eq(project.id, participant.projectId))
 				.innerJoin(
 					activity,
 					eq(activity.id, participantOnActivity.activityId),
 				)
 				.where(
 					and(
-						eq(participant.userId, userId),
-						eq(project.url, projectUrl),
-						eq(activity.projectId, project.id),
+						eq(participantOnActivity.participantId, participantId),
+						eq(activity.projectId, projectRow.projectId),
 					),
 				);
-
-			const participantId =
-				activities.length > 0
-					? activities[0]?.participantId
-					: undefined;
-
-			if (!participantId) {
-				return null;
-			}
 
 			return { ids: activities.map((a) => a.activityId), participantId };
 		}),
