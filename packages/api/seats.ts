@@ -19,6 +19,7 @@ export async function lockActivity(tx: Tx, activityId: string) {
 		.select({
 			id: activity.id,
 			participantsLimit: activity.participantsLimit,
+			waitlistEnabled: activity.waitlistEnabled,
 			waitlistOfferHours: activity.waitlistOfferHours,
 		})
 		.from(activity)

@@ -96,6 +96,10 @@ function RegistrationSettings({
 	form: UseFormReturn<MutateActivityFormSchema>;
 	formAction: React.ReactNode;
 }) {
+	// Esconde os campos da fila quando desligada; os valores seguem salvos
+	// no formulário (sem `shouldUnregister`, desmontar não apaga).
+	const waitlistEnabled =
+		useWatch({ control: form.control, name: "waitlistEnabled" }) ?? true;
 	return (
 		<div className="w-full rounded-lg border">
 			<FormField
@@ -117,6 +121,29 @@ function RegistrationSettings({
 			/>
 
 			<div className="flex flex-col gap-4 border-t p-4">
+				<FormField
+					control={form.control}
+					name="waitlistEnabled"
+					render={({ field }) => (
+						<FormItem className="flex flex-row items-center justify-between gap-4 space-y-0">
+							<div className="flex flex-col gap-0.5">
+								<FormLabel>Habilitar fila de espera</FormLabel>
+								<p className="text-muted-foreground text-sm">
+									Quando as vagas acabarem, participantes
+									poderão entrar em uma fila e receber a vaga
+									caso alguém desista.
+								</p>
+							</div>
+							<FormControl>
+								<Switch
+									checked={field.value ?? true}
+									onCheckedChange={field.onChange}
+								/>
+							</FormControl>
+						</FormItem>
+					)}
+				/>
+
 				<div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
 					<FormField
 						control={form.control}
@@ -140,12 +167,56 @@ function RegistrationSettings({
 							</FormItem>
 						)}
 					/>
+					{waitlistEnabled ? (
+						<FormField
+							control={form.control}
+							name="tolerance"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Tempo de tolerância</FormLabel>
+									<Select
+										onValueChange={field.onChange}
+										value={field.value?.toString() ?? ""}
+									>
+										<FormControl>
+											<SelectTrigger className="w-full">
+												<SelectValue placeholder="Selecione" />
+											</SelectTrigger>
+										</FormControl>
+										<SelectContent>
+											<SelectItem value="0">
+												Sem tolerância
+											</SelectItem>
+											<SelectItem value="5">
+												5 minutos
+											</SelectItem>
+											<SelectItem value="10">
+												10 minutos
+											</SelectItem>
+											<SelectItem value="15">
+												15 minutos
+											</SelectItem>
+											<SelectItem value="20">
+												20 minutos
+											</SelectItem>
+										</SelectContent>
+									</Select>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+					) : null}
+				</div>
+
+				{waitlistEnabled ? (
 					<FormField
 						control={form.control}
-						name="tolerance"
+						name="waitlistOfferHours"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Tempo de tolerância</FormLabel>
+								<FormLabel>
+									Prazo para confirmar vaga da fila
+								</FormLabel>
 								<Select
 									onValueChange={field.onChange}
 									value={field.value?.toString() ?? ""}
@@ -156,68 +227,29 @@ function RegistrationSettings({
 										</SelectTrigger>
 									</FormControl>
 									<SelectContent>
-										<SelectItem value="0">
-											Sem tolerância
-										</SelectItem>
-										<SelectItem value="5">
-											5 minutos
-										</SelectItem>
-										<SelectItem value="10">
-											10 minutos
-										</SelectItem>
-										<SelectItem value="15">
-											15 minutos
-										</SelectItem>
-										<SelectItem value="20">
-											20 minutos
-										</SelectItem>
+										{[1, 2, 6, 12, 24, 48].map((hours) => (
+											<SelectItem
+												key={hours}
+												value={hours.toString()}
+											>
+												{hours === 1
+													? "1 hora"
+													: `${hours} horas`}
+											</SelectItem>
+										))}
 									</SelectContent>
 								</Select>
+								<p className="text-muted-foreground text-sm">
+									Com as vagas esgotadas, quem entra na fila
+									recebe a vaga que abrir e tem este prazo
+									para confirmar, sempre antes do início da
+									atividade.
+								</p>
 								<FormMessage />
 							</FormItem>
 						)}
 					/>
-				</div>
-
-				<FormField
-					control={form.control}
-					name="waitlistOfferHours"
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel>
-								Prazo para confirmar vaga da fila
-							</FormLabel>
-							<Select
-								onValueChange={field.onChange}
-								value={field.value?.toString() ?? ""}
-							>
-								<FormControl>
-									<SelectTrigger className="w-full">
-										<SelectValue placeholder="Selecione" />
-									</SelectTrigger>
-								</FormControl>
-								<SelectContent>
-									{[1, 2, 6, 12, 24, 48].map((hours) => (
-										<SelectItem
-											key={hours}
-											value={hours.toString()}
-										>
-											{hours === 1
-												? "1 hora"
-												: `${hours} horas`}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-							<p className="text-muted-foreground text-sm">
-								Com as vagas esgotadas, quem entra na fila
-								recebe a vaga que abrir e tem este prazo para
-								confirmar, sempre antes do início da atividade.
-							</p>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
+				) : null}
 
 				<FormField
 					control={form.control}

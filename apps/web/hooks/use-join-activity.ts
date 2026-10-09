@@ -16,6 +16,7 @@ export type JoinError =
 	| "full"
 	| "closed"
 	| "conflict"
+	| "disabled"
 	| "unknown";
 export type JoinStatus = "idle" | "pending" | "success" | "error";
 
@@ -35,6 +36,7 @@ const REASON_TO_JOIN_ERROR: Record<JoinErrorCode, JoinError> = {
 export function toJoinError(error: unknown): JoinError {
 	if (typeof error === "object" && error !== null && "data" in error) {
 		const reason = (error as { data?: { reason?: unknown } }).data?.reason;
+		if (reason === "WAITLIST_DISABLED") return "disabled";
 		if (
 			typeof reason === "string" &&
 			(JOIN_ERROR_CODES as readonly string[]).includes(reason)

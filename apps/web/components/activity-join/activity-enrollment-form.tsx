@@ -26,6 +26,7 @@ import { DynamicField } from "@/components/forms/dynamic/DynamicField";
 // Hooks
 import { useJoinActivity, type JoinError } from "@/hooks/use-join-activity";
 import { useWaitlist } from "@/hooks/use-waitlist";
+import { getEffectiveTolerance } from "@/lib/activity-conditions";
 import { focusFieldControl, getFieldId } from "@/lib/forms/field-id";
 // Lib
 import { groupFieldsBySection } from "@/lib/forms/layout";
@@ -242,6 +243,10 @@ export function ActivityEnrollmentForm({
 		status === "pending" ||
 		waitlist.pending === "join";
 
+	// A tolerância só vale com fila: sem fila, o aviso some mesmo com
+	// valor obsoleto salvo.
+	const effectiveTolerance = getEffectiveTolerance(activity);
+
 	// Cópias por motivo de falha (mesmo comportamento de antes: alerta
 	// inline destrutivo acima do envio, botão habilitado para retry).
 	// `conflict` não aparece aqui: o hook atualiza as leituras e o
@@ -250,6 +255,7 @@ export function ActivityEnrollmentForm({
 		"form-required": "Esta atividade pede informações adicionais.",
 		full: "As vagas acabaram enquanto você se inscrevia. Envie de novo para entrar na fila de espera.",
 		closed: "As inscrições foram encerradas.",
+		disabled: "A fila de espera desta atividade foi desativada.",
 		unknown: "Houve um erro ao confirmar sua inscrição. Tente novamente.",
 	};
 
@@ -352,8 +358,8 @@ export function ActivityEnrollmentForm({
 					))}
 				</fieldset>
 
-				{activity.tolerance ? (
-					<ToleranceNotice tolerance={activity.tolerance} />
+				{effectiveTolerance ? (
+					<ToleranceNotice tolerance={effectiveTolerance} />
 				) : null}
 
 				{errorEntries.length > 0 ? (

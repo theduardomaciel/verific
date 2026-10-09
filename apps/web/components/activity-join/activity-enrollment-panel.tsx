@@ -14,6 +14,7 @@ import { ActivityEnrollmentForm } from "./activity-enrollment-form";
 import {
 	AlreadySubscribedStatus,
 	EnrollmentSuccess,
+	FullStatus,
 	MutedStatus,
 	NotInEventStatus,
 	OfferStatus,
@@ -59,7 +60,14 @@ export function ActivityEnrollmentPanel({
 	});
 
 	const { state: rawState, userId, participantId } = enrollment;
-	const state = rawState === "form" && becameFull ? "waitlist" : rawState;
+	// A fila pode ter sido desligada depois do primeiro render: lotada sem
+	// fila cai em `full`, sem ação de fila.
+	const state =
+		rawState === "form" && becameFull
+			? activity.waitlistEnabled === false
+				? "full"
+				: "waitlist"
+			: rawState;
 	const waitlist = useWaitlist({
 		activityId: activity.id,
 		userId: userId ?? "",
@@ -170,6 +178,8 @@ export function ActivityEnrollmentPanel({
 							conflicts={enrollment.conflicts}
 							eventUrl={eventUrl}
 						/>
+					) : state === "full" ? (
+						<FullStatus />
 					) : state === "waitlist" ? (
 						<div className="flex flex-col gap-4">
 							<WaitlistIntro offerHours={offerHours} />

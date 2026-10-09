@@ -166,8 +166,13 @@ export function ScheduleContent({
 				prev.includes(activity.id) ? prev : [...prev, activity.id],
 			);
 			toast.error(
-				"As vagas acabaram. Você ainda pode entrar na fila de espera.",
+				activity.waitlistEnabled === false
+					? "As vagas acabaram."
+					: "As vagas acabaram. Você ainda pode entrar na fila de espera.",
 			);
+		} else if (reason === "disabled") {
+			toast.error("A fila de espera desta atividade foi desativada.");
+			router.push(`/${eventUrl}/schedule/${activity.id}`);
 		} else if (reason === "closed") {
 			setClosedIds((prev) =>
 				prev.includes(activity.id) ? prev : [...prev, activity.id],

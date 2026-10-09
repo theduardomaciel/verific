@@ -246,6 +246,17 @@ export function WaitlistIntro({ offerHours }: { offerHours: number }) {
 	);
 }
 
+/** Atividade lotada sem fila: terminal, sem ação. */
+export function FullStatus() {
+	return (
+		<StatusShell
+			icon={<TicketX className="h-5 w-5" />}
+			title="Vagas esgotadas"
+			message="Vagas esgotadas."
+		/>
+	);
+}
+
 export function WaitlistedStatus({
 	position,
 	offerHours,

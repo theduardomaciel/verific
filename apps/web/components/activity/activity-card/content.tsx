@@ -15,6 +15,8 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+import { getEffectiveTolerance } from "@/lib/activity-conditions";
+
 import { ActivitySpeakers } from "./speakers";
 import { ActivityCardTags } from "./tags";
 
@@ -36,6 +38,10 @@ export function ActivityDetailsContent({
 	} else if ("speakers" in activity && activity.speakers) {
 		speakers = activity.speakers;
 	}
+
+	// A tolerância só vale com fila: sem fila, o aviso some mesmo com
+	// valor obsoleto salvo.
+	const effectiveTolerance = getEffectiveTolerance(activity);
 
 	return (
 		<div className="flex w-full flex-col items-center justify-center gap-4">
@@ -59,11 +65,11 @@ export function ActivityDetailsContent({
 
 			<ActivityCardTags tagsClassName="bg-muted" activity={activity} />
 
-			{activity?.tolerance ? (
+			{effectiveTolerance ? (
 				<div className="bg-muted/50 flex flex-row items-center justify-between gap-3 rounded-sm p-4 text-sm select-none">
 					<span className="text-muted-foreground text-sm">
 						Esta atividade tem{" "}
-						<strong>tolerância de {activity.tolerance} min</strong>.
+						<strong>tolerância de {effectiveTolerance} min</strong>.
 					</span>
 					<TooltipProvider>
 						<Tooltip>
@@ -73,7 +79,7 @@ export function ActivityDetailsContent({
 							<TooltipContent className="max-w-[22rem]">
 								<p>
 									Caso não haja confirmação de sua presença em{" "}
-									{activity.tolerance}m a partir do início da
+									{effectiveTolerance}m a partir do início da
 									atividade, sua vaga será cedida a outra
 									pessoa.
 								</p>

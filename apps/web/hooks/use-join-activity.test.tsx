@@ -67,6 +67,7 @@ describe("toJoinError", () => {
 		expect(toJoinError(serverError("ACTIVITY_FULL"))).toBe("full");
 		expect(toJoinError(serverError("REGISTRATION_CLOSED"))).toBe("closed");
 		expect(toJoinError(serverError("SCHEDULE_CONFLICT"))).toBe("conflict");
+		expect(toJoinError(serverError("WAITLIST_DISABLED"))).toBe("disabled");
 	});
 
 	it("retorna unknown para o resto", () => {

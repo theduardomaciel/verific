@@ -52,6 +52,7 @@ async function findActivity(activityId: string) {
 			projectId: true,
 			isRegistrationOpen: true,
 			participantsLimit: true,
+			waitlistEnabled: true,
 		},
 	});
 	if (!found) {
@@ -205,6 +206,15 @@ export const waitlistRouter = createTRPCRouter({
 						answerRows,
 					});
 					return { status: "enrolled" as const };
+				}
+
+				// Desligar a fila bloqueia novas entradas, sem apagar as
+				// existentes: quem já espera ou tem oferta continua valendo.
+				if (locked.waitlistEnabled === false) {
+					throw waitlistError(
+						"WAITLIST_DISABLED",
+						"A fila de espera desta atividade está desativada.",
+					);
 				}
 
 				await addToWaitlist(tx, activityId, participantId);
