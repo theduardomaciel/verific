@@ -156,12 +156,16 @@ function Panel({
 	return (
 		<div
 			className={cn(
-				"bg-primary/50 relative inline-flex w-full flex-row items-center justify-start gap-2.5 rounded-lg px-6 py-3 text-white",
+				"bg-primary/50 relative inline-flex w-full flex-row items-center justify-start gap-2.5 rounded-lg px-6 py-3",
 				{
-					"bg-red-600 text-white": type === "error",
-					"bg-yellow-500 text-white": type === "warning",
-					"bg-blue-500 text-white": type === "info",
-					"bg-green-500 text-white": type === "success",
+					"bg-destructive border-destructive-foreground/50 text-destructive-foreground":
+						type === "error",
+					"bg-warning border-warning-foreground/50 text-warning-foreground":
+						type === "warning",
+					"bg-info border-info-foreground/50 text-info-foreground":
+						type === "info",
+					"bg-success border-success-foreground/50 text-success-foreground":
+						type === "success",
 				},
 			)}
 		>

@@ -1,7 +1,7 @@
 import { cacheLife, cacheTag } from "next/cache";
 
-import { createClientForUser, publicClient } from "@/lib/trpc/server";
 import { isAfterEnd } from "@/lib/date";
+import { createClientForUser, publicClient } from "@/lib/trpc/server";
 
 export async function getProject(projectUrl: string) {
 	"use cache";
@@ -98,7 +98,7 @@ export async function getCachedActivities(
 		"activities",
 		`activities:${params.projectId ?? params.projectUrl ?? "all"}`,
 	);
-	return publicClient.getActivities(params);
+	return await publicClient.getActivities(params);
 }
 
 export async function getCachedActivity(

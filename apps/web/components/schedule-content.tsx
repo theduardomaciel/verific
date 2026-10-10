@@ -291,7 +291,7 @@ export function ScheduleContent({
 					value={searchQuery}
 					onChange={setSearchQuery}
 				/>
-				<div className="flex gap-4">
+				<div className="flex gap-4 max-md:flex-wrap">
 					<SortBy
 						value={sortBy}
 						onChange={setSortBy}

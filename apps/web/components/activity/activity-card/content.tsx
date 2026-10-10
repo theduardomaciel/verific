@@ -76,7 +76,7 @@ export function ActivityDetailsContent({
 							<TooltipTrigger asChild>
 								<InfoIcon className="mt-0.5" size={16} />
 							</TooltipTrigger>
-							<TooltipContent className="max-w-[22rem]">
+							<TooltipContent className="max-w-88">
 								<p>
 									Caso não haja confirmação de sua presença em{" "}
 									{effectiveTolerance}m a partir do início da

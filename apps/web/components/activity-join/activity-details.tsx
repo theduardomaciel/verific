@@ -54,15 +54,20 @@ export function ActivityDetails({
 		<div className={cn("flex w-full flex-col gap-6", className)}>
 			<div className="flex flex-col gap-4">
 				<div className="flex items-start justify-between gap-4">
-					<span className="text-sm font-extrabold uppercase">
-						{activityCategoryLabels[activity.category]}
-					</span>
+					<div className="flex flex-col gap-3">
+						<span className="text-sm font-extrabold uppercase">
+							{activityCategoryLabels[activity.category]}
+						</span>
+						<h1 className="font-heading text-3xl font-bold text-balance md:text-4xl">
+							{activity.name}
+						</h1>
+					</div>
+
 					{seats.label ? (
-						<span
+						/* <span
 							className={cn(
 								"text-muted-foreground shrink-0 text-sm",
 								{
-									"opacity-50": seats.status === "full",
 									"animate-pulse font-bold":
 										seats.status === "low",
 									"text-destructive font-bold uppercase":
@@ -71,13 +76,26 @@ export function ActivityDetails({
 							)}
 						>
 							{seats.label}
-						</span>
+						</span> */
+						<Badge
+							variant={
+								seats.status === "full"
+									? "destructive"
+									: seats.status === "low"
+										? "warning"
+										: "default"
+							}
+							className={cn(
+								"shrink-0 py-1 text-sm font-semibold uppercase p-3",
+								{
+									"animate-pulse ": seats.status === "low",
+								},
+							)}
+						>
+							{seats.label}
+						</Badge>
 					) : null}
 				</div>
-
-				<h1 className="font-heading text-3xl font-bold text-balance md:text-4xl">
-					{activity.name}
-				</h1>
 
 				<TagBadges tags={activity.tags ?? []} />
 
@@ -91,22 +109,22 @@ export function ActivityDetails({
 								}
 								className="flex flex-wrap gap-2"
 							>
-								<Badge className="bg-background text-foreground py-1 break-words brightness-95">
-									<Calendar className="mr-2 !h-3.5 !w-3.5" />
+								<Badge className="bg-background text-foreground py-1 wrap-break-word brightness-95">
+									<Calendar className="mr-2 h-3.5! w-3.5!" />
 									<span className="-mt-0.5 text-sm">
 										{getSessionsDateString([session])}
 										{` · Sessão ${index + 1} de ${sessions.length}`}
 									</span>
 								</Badge>
-								<Badge className="bg-background text-foreground py-1 break-words brightness-95">
-									<Clock className="mr-2 !h-3.5 !w-3.5" />
+								<Badge className="bg-background text-foreground py-1 wrap-break-word brightness-95">
+									<Clock className="mr-2 h-3.5! w-3.5!" />
 									<span className="-mt-0.5 text-sm">
 										{getSessionTimeString(session)}
 									</span>
 								</Badge>
 								{(session.address ?? activity.address) ? (
-									<Badge className="bg-background text-foreground py-1 break-words brightness-95">
-										<MapPin className="mr-2 !h-3.5 !w-3.5" />
+									<Badge className="bg-background text-foreground py-1 wrap-break-word brightness-95">
+										<MapPin className="mr-2 h-3.5! w-3.5!" />
 										<span className="-mt-0.5 text-sm">
 											{session.address ??
 												activity.address}
