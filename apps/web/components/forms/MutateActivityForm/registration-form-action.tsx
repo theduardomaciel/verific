@@ -1,13 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { toast } from "sonner";
-import { ClipboardList, Pencil, Plus, Trash2 } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { trpc } from "@/lib/trpc/react";
+import { ClipboardList, Pencil, Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+
 import type { RouterOutput } from "@verific/api";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+
+import { revalidateActivities } from "@/app/actions";
+import { trpc } from "@/lib/trpc/react";
 
 type ActivityFormSummary = NonNullable<
 	RouterOutput["getActivity"]["activity"]["form"]
@@ -44,6 +48,8 @@ export function ActivityRegistrationFormAction({
 		try {
 			if (form.isPublished) {
 				await unpublish.mutateAsync({ versionId: form.versionId });
+				// Saiu do ar: o `hasForm` da programação precisa cair junto.
+				await revalidateActivities();
 				toast.success(
 					"Formulário desvinculado. As inscrições voltam a ser diretas.",
 				);

@@ -2,14 +2,15 @@
 "use client";
 
 import { LogOutIcon } from "lucide-react";
-import { DeleteDialog } from "../dialogs/delete-dialog";
-import { Button } from "../ui/button";
 
-import { trpc } from "@/lib/trpc/react";
 import {
 	revalidateParticipantActivities,
 	revalidateSubscribedActivitiesIdsFromParticipant,
 } from "@/app/actions";
+import { trpc } from "@/lib/trpc/react";
+
+import { DeleteDialog } from "../dialogs/delete-dialog";
+import { Button } from "../ui/button";
 
 interface Props {
 	activityId: string;
@@ -51,8 +52,9 @@ export function ParticipantQuitButton({
 			onSuccessRedirect={`/${projectUrl}`}
 			onDelete={handleQuit}
 		>
-			<Button variant={"ghost"} size={"icon"}>
+			<Button variant={"ghost"}>
 				<LogOutIcon />
+				Cancelar inscrição
 			</Button>
 		</DeleteDialog>
 	);

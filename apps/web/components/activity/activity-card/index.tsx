@@ -3,30 +3,65 @@
 import Link from "next/link";
 
 // Icons
-import { ArrowRight, Check } from "lucide-react";
-
-import { cn } from "@/lib/utils";
-
-// Components
-import { Button } from "@/components/ui/button";
-import { ParticipantQuitButton } from "@/components/participant/participant-quit-button";
-import { ActivitySpeakers } from "./speakers";
-import { ActivityCardTags } from "./tags";
-import { TagBadges } from "../tag-badge";
-import { ExpandableDescription } from "@/components/shared/expandable-description";
+import {
+	ArrowRight,
+	CalendarClock,
+	Check,
+	Hourglass,
+	Loader2,
+} from "lucide-react";
 
 // Types
 import type { RouterOutput } from "@verific/api";
-
 // Lib
 import { activityCategoryLabels } from "@verific/drizzle/schema";
+
+// Components
+import { Button } from "@/components/ui/button";
+
+import { ParticipantQuitButton } from "@/components/participant/participant-quit-button";
+import { ExpandableDescription } from "@/components/shared/expandable-description";
+
+import { offersWaitlistSpot } from "@/lib/activity-conditions";
+import { describeSeats } from "@/lib/activity-seats";
 import { hasEverySessionEnded, type ActivitySessionLike } from "@/lib/date";
+import {
+	getQuickJoinEligibility,
+	type QuickJoinMembership,
+} from "@/lib/quick-join";
+import { cn } from "@/lib/utils";
+
+import { TagBadges } from "../tag-badge";
+import { ActivitySpeakers } from "./speakers";
+import { ActivityCardTags } from "./tags";
+
+import type { Conflict } from "@/lib/schedule/conflicts";
+
+type CardActivity = RouterOutput["getActivities"]["activities"][number];
 
 interface EventCardProps {
 	className?: string;
-	activity: RouterOutput["getActivities"]["activities"][number];
+	activity: CardActivity;
+	/** Definido quando o usuário já está inscrito NESTA atividade. */
 	participantId?: string;
 	userId?: string;
+	/** Vínculo com o evento (para a elegibilidade), mesmo sem inscrição aqui. */
+	eventParticipantId?: string | null;
+	subscribedIds?: string[];
+	/** Lugar na fila de espera desta atividade, quando o usuário espera vaga. */
+	waitlistPosition?: number | null;
+	/** Existe oferta de vaga para o usuário nesta atividade. */
+	hasWaitlistOffer?: boolean;
+	/** Vínculo/fila ainda resolvendo: ação neutra em vez de flash. */
+	isActionLoading?: boolean;
+	/** Abre o diálogo de confirmação em vez de navegar. */
+	onQuickJoin?: (activity: CardActivity) => void;
+	/** Delta otimista de vagas aplicado após o próprio join (+1). */
+	seatDelta?: number;
+	/** Resposta do servidor em corrida: força o estado do card. */
+	statusOverride?: "full" | "closed" | null;
+	/** Conflitos com atividades já inscritas (só exibição, nunca bloqueia). */
+	conflicts?: Conflict[];
 	lowSeatsThreshold?: number;
 	/** When rendered as one day of a multi-session activity. */
 	occurrenceSession?: ActivitySessionLike | null;
@@ -37,120 +72,254 @@ export function ActivityCard({
 	activity,
 	participantId,
 	userId,
+	eventParticipantId,
+	subscribedIds,
+	waitlistPosition = null,
+	hasWaitlistOffer = false,
+	isActionLoading = false,
+	onQuickJoin,
+	seatDelta = 0,
+	statusOverride = null,
+	conflicts = [],
 	className,
 	lowSeatsThreshold = 7,
 	occurrenceSession,
 	occurrenceLabel,
 }: EventCardProps) {
-	const remainingSeats = activity.participantsLimit
-		? activity.participantsLimit - activity.participantsCount
-		: null;
+	const seats = describeSeats({
+		participantsLimit: activity.participantsLimit,
+		participantsCount: activity.participantsCount + seatDelta,
+		lowSeatsThreshold,
+	});
 
-	const hasRemainingSeats = remainingSeats === null || remainingSeats > 0;
+	const isFull = statusOverride === "full" || seats.status === "full";
+	const isOpen = activity.isRegistrationOpen && statusOverride !== "closed";
 	const hasEnded = hasEverySessionEnded(activity.sessions);
+	// Sem fila, lotada não oferece ação de fila: só "Esgotado".
+	const waitlistEnabled = offersWaitlistSpot(activity);
+
+	const membership: QuickJoinMembership = {
+		userId,
+		participantId: eventParticipantId ?? participantId,
+		subscribedIds,
+		conflicts,
+	};
+	const isWaitlisted = hasWaitlistOffer || waitlistPosition != null;
+	const quickJoinEligible =
+		Boolean(onQuickJoin) &&
+		!participantId &&
+		!isWaitlisted &&
+		getQuickJoinEligibility(
+			{
+				...activity,
+				participantsCount: activity.participantsCount + seatDelta,
+			},
+			membership,
+		);
+
+	const pageHref = `/${activity.project?.url}/schedule/${activity.id}`;
+
+	// Bloqueio por conflito: só quando o botão de inscrição renderizaria
+	// (vaga, aberta, não inscrito, fora da fila, não encerrada) — aí o primário some e
+	// entra o tratamento bloqueado; fora disso vale a dica genérica.
+	// Lotada sem fila não tem ação a bloquear: a lotação vence o conflito.
+	const showJoinButton = (activity.workload ?? 0) > 0;
+	const isRegistrationClosed = !isOpen;
+	const showConflictBlock =
+		showJoinButton &&
+		isOpen &&
+		!participantId &&
+		!isWaitlisted &&
+		conflicts.length > 0 &&
+		(!isFull || waitlistEnabled);
 
 	return (
-		<>
-			<div
-				id={activity.id}
-				className={cn(
-					"bg-card flex flex-col justify-between gap-4 rounded-lg border p-6",
-					{
-						"pointer-events-none opacity-50 select-none": hasEnded,
-					},
-					className,
-				)}
-			>
-				<div className="flex flex-col gap-2">
-					<div className="flex items-start justify-between">
-						<span className="text-sm font-extrabold uppercase">
-							{activityCategoryLabels[activity.category]}
-						</span>
-						<span
-							className={cn("text-muted-foreground text-sm", {
-								"opacity-50":
-									remainingSeats !== null &&
-									remainingSeats <= 0,
-								"animate-pulse font-bold":
-									remainingSeats !== null &&
-									remainingSeats > 0 &&
-									remainingSeats <= lowSeatsThreshold,
-								"text-red-500 uppercase": !hasRemainingSeats,
-							})}
-						>
-							{remainingSeats === null
-								? ""
-								: remainingSeats > lowSeatsThreshold
-									? `${remainingSeats} vagas restantes`
-									: remainingSeats > 0
-										? "Últimas vagas!"
-										: "Esgotado"}
-						</span>
-					</div>
-
-					<h3 className="text-lg font-bold">{activity.name}</h3>
-					{occurrenceLabel ? (
-						<span className="text-muted-foreground text-sm font-medium">
-							{occurrenceLabel}
-						</span>
-					) : null}
-					<TagBadges tags={activity.tags ?? []} />
-					{activity.description && (
-						<ExpandableDescription activity={activity} />
-					)}
+		<div
+			id={activity.id}
+			tabIndex={-1}
+			className={cn(
+				"bg-card flex flex-col justify-between gap-4 rounded-lg border p-6 outline-none z-20",
+				{
+					"pointer-events-none opacity-50 select-none": hasEnded,
+					"border-destructive/50 bg-[color-mix(in_oklab,var(--color-red-500)_3%,var(--card))]":
+						isFull && !waitlistEnabled && !isWaitlisted,
+					"border-warning/50 bg-[color-mix(in_oklab,var(--color-yellow-500)_3%,var(--card))]":
+						seats.status === "low" && !isFull,
+				},
+				className,
+			)}
+		>
+			<div className="flex flex-col gap-2">
+				<div className="flex items-start justify-between">
+					<span className="text-sm font-extrabold uppercase">
+						{activityCategoryLabels[activity.category]}
+					</span>
+					<span
+						className={cn("text-muted-foreground text-sm", {
+							"animate-pulse font-bold":
+								seats.status === "low" && !isFull,
+							"text-destructive uppercase font-black":
+								isFull && !waitlistEnabled,
+						})}
+					>
+						{isFull ? "Esgotado" : (seats.label ?? "")}
+					</span>
 				</div>
 
-				{activity.speakers.length ? (
-					<ActivitySpeakers speakers={activity.speakers} />
+				<h3 className="text-lg font-bold">
+					<Link
+						href={pageHref}
+						className="focus-visible:ring-ring/50 rounded-sm outline-none hover:underline focus-visible:ring-[3px]"
+					>
+						{activity.name}
+					</Link>
+				</h3>
+				{occurrenceLabel ? (
+					<span className="text-muted-foreground text-sm font-medium">
+						{occurrenceLabel}
+					</span>
 				) : null}
+				<TagBadges tags={activity.tags ?? []} />
+				{activity.description && (
+					<ExpandableDescription activity={activity} />
+				)}
+			</div>
 
-				<div className="mt-auto flex flex-col flex-wrap items-start justify-center gap-4 md:flex-row-reverse md:items-center md:justify-between">
-					<ActivityCardTags
-						activity={activity}
-						highlightSession={occurrenceSession}
-					/>
-					<div className="flex flex-row items-center justify-start gap-4">
-						{activity.workload &&
-						activity.workload > 0 &&
-						activity.isRegistrationOpen ? (
+			{activity.speakers.length ? (
+				<ActivitySpeakers speakers={activity.speakers} />
+			) : null}
+
+			<div className="mt-auto flex flex-col flex-wrap items-start justify-center gap-4 md:flex-row-reverse md:items-center md:justify-between">
+				<ActivityCardTags
+					activity={activity}
+					highlightSession={occurrenceSession}
+				/>
+				{conflicts.length > 0 && !showConflictBlock && !isWaitlisted ? (
+					<p className="text-muted-foreground flex w-full items-center gap-1.5 text-sm">
+						<CalendarClock className="size-4 shrink-0" />
+						Conflito de horário
+					</p>
+				) : null}
+				<div className="flex flex-row flex-wrap items-center justify-start gap-4">
+					{showJoinButton ? (
+						participantId ? (
 							<Button
 								variant={"default"}
 								size={"lg"}
 								className={cn({
 									"pointer-events-none opacity-50":
-										!hasRemainingSeats || !!participantId,
+										isFull || !!participantId,
 								})}
 								asChild
 							>
-								<Link
-									href={`/${activity.project?.url}/schedule/${activity.id}`}
-									scroll={false}
-								>
-									{participantId ? (
-										<>
-											<Check className="mr-2 h-4 w-4" />
-											Inscrito
-										</>
-									) : (
-										<>
-											Quero participar
-											<ArrowRight className="ml-2 h-4 w-4" />
-										</>
-									)}
+								<Link href={pageHref}>
+									<Check className="mr-2 h-4 w-4" />
+									Inscrito
 								</Link>
 							</Button>
-						) : null}
-						{!!participantId && !!userId && !hasEnded && (
-							<ParticipantQuitButton
-								activityId={activity.id}
-								userId={userId}
-								participantId={participantId}
-								projectUrl={activity.project?.url}
-							/>
-						)}
-					</div>
+						) : isActionLoading ? (
+							<Button
+								type="button"
+								variant="outline"
+								size="lg"
+								disabled
+								aria-busy="true"
+								aria-label="Carregando inscrição"
+							>
+								<Loader2 className="h-4 w-4 animate-spin" />
+								Carregando...
+							</Button>
+						) : hasWaitlistOffer ? (
+							<Button variant="default" size="lg" asChild>
+								<Link href={pageHref}>
+									Confirmar vaga
+									<ArrowRight className="ml-2 h-4 w-4" />
+								</Link>
+							</Button>
+						) : waitlistPosition != null ? (
+							<Button variant="outline" size="lg" asChild>
+								<Link href={pageHref}>
+									<Hourglass className="mr-2 h-4 w-4" />
+									{`Aguardando na fila${waitlistPosition > 0 ? ` • ${waitlistPosition}º` : ""}`}
+								</Link>
+							</Button>
+						) : showConflictBlock ? (
+							<>
+								<p className="text-muted-foreground text-sm">
+									Conflita com{" "}
+									{conflicts[0]!.otherActivity.name}
+									{conflicts.length > 1
+										? ` e mais ${conflicts.length - 1}`
+										: ""}
+								</p>
+								<Button
+									type="button"
+									variant={"outline"}
+									size={"sm"}
+									asChild
+								>
+									<Link href={pageHref}>Ver detalhes</Link>
+								</Button>
+							</>
+						) : quickJoinEligible ? (
+							<>
+								<Button
+									type="button"
+									variant={"default"}
+									size={"lg"}
+									aria-haspopup="dialog"
+									onClick={() => onQuickJoin?.(activity)}
+								>
+									Quero participar
+									<ArrowRight className="ml-2 h-4 w-4" />
+								</Button>
+								<Button
+									type="button"
+									variant={"ghost"}
+									size={"sm"}
+									asChild
+								>
+									<Link href={pageHref}>Ver detalhes</Link>
+								</Button>
+							</>
+						) : isRegistrationClosed ? (
+							<Button
+								type="button"
+								variant="outline"
+								size="lg"
+								disabled
+								title="As inscrições para esta atividade ainda não foram liberadas pelos organizadores."
+								aria-label="Inscrições ainda não liberadas"
+							>
+								Em breve
+							</Button>
+						) : (
+							<Button
+								variant={isFull ? "outline" : "default"}
+								size={"lg"}
+								asChild
+							>
+								<Link href={pageHref}>
+									{isFull
+										? waitlistEnabled
+											? "Entrar na fila"
+											: "Ver detalhes"
+										: "Quero participar"}
+									<ArrowRight className="ml-2 h-4 w-4" />
+								</Link>
+							</Button>
+						)
+					) : null}
+					{!!participantId && !!userId && !hasEnded && (
+						<ParticipantQuitButton
+							activityId={activity.id}
+							userId={userId}
+							participantId={participantId}
+							projectUrl={activity.project?.url}
+						/>
+					)}
 				</div>
 			</div>
-		</>
+		</div>
 	);
 }

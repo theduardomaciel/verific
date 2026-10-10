@@ -1,5 +1,3 @@
-import { cn } from "@/lib/utils";
-
 // Icons
 import {
 	ArrowRightIcon,
@@ -12,11 +10,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { FormLabel } from "@/components/ui/form";
 
-// Types
-import type { FieldValues, UseFormReturn } from "react-hook-form";
-
+import { cn } from "@/lib/utils";
 // Utils
 import { scrollToNextSection } from "@/lib/validations";
+
+// Types
+import type { FieldValues, UseFormReturn } from "react-hook-form";
 
 export type GenericForm = UseFormReturn<FieldValues>;
 
@@ -55,6 +54,21 @@ function FormSection({ form, children, ...rest }: FormSectionProps) {
 		}
 	}
 
+	/**
+	 * Ignora teclas vindas de campos editáveis: o `onKeyDown` abaixo chama
+	 * `preventDefault()` para o espaço (ativação via teclado no `role=button`),
+	 * e sem esse filtro o espaço digitado em inputs/textareas dentro da seção
+	 * borbulha até aqui e é engolido — o usuário não consegue digitar espaços.
+	 */
+	function isFromEditableField(e: React.KeyboardEvent) {
+		const target = e.target as HTMLElement | null;
+		return Boolean(
+			target?.closest?.(
+				"input, textarea, select, [contenteditable='true']",
+			),
+		);
+	}
+
 	return (
 		<div
 			id={`section${rest.section}`}
@@ -73,10 +87,11 @@ function FormSection({ form, children, ...rest }: FormSectionProps) {
 				tabIndex={0}
 				onClick={handleSelect}
 				onKeyUp={(e) => {
-					if (e.key === "Enter") handleSelect();
+					if (e.key === "Enter" && !isFromEditableField(e))
+						handleSelect();
 				}}
 				onKeyDown={(e) => {
-					if (e.key === " ") {
+					if (e.key === " " && !isFromEditableField(e)) {
 						e.preventDefault();
 						handleSelect();
 					}
@@ -141,12 +156,16 @@ function Panel({
 	return (
 		<div
 			className={cn(
-				"bg-primary/50 relative inline-flex w-full flex-row items-center justify-start gap-2.5 rounded-lg px-6 py-3 text-white",
+				"bg-primary/50 relative inline-flex w-full flex-row items-center justify-start gap-2.5 rounded-lg px-6 py-3",
 				{
-					"bg-red-600 text-white": type === "error",
-					"bg-yellow-500 text-white": type === "warning",
-					"bg-blue-500 text-white": type === "info",
-					"bg-green-500 text-white": type === "success",
+					"bg-destructive border-destructive-foreground/50 text-destructive-foreground":
+						type === "error",
+					"bg-warning border-warning-foreground/50 text-warning-foreground":
+						type === "warning",
+					"bg-info border-info-foreground/50 text-info-foreground":
+						type === "info",
+					"bg-success border-success-foreground/50 text-success-foreground":
+						type === "success",
 				},
 			)}
 		>

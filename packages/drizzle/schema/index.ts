@@ -1,6 +1,7 @@
 export * from "./account";
 export * from "./activity";
 export * from "./activity-session";
+export * from "./activity-waitlist";
 export * from "./session-attendance";
 export * from "./tag";
 export * from "./tag-on-activity";
@@ -27,3 +28,4 @@ export * from "../enum/audience";
 export * from "../enum/category";
 export * from "../enum/form-field-type";
 export * from "../enum/role";
+export * from "../enum/waitlist";

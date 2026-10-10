@@ -1,15 +1,4 @@
-import { z } from "@verific/zod";
-
 import { db } from "@verific/drizzle";
-import {
-	activity,
-	activitySession,
-	participant,
-	participantOnActivity,
-	project,
-	sessionAttendance,
-	user,
-} from "@verific/drizzle/schema";
 import type { SQL } from "@verific/drizzle/orm";
 import {
 	and,
@@ -23,10 +12,23 @@ import {
 	or,
 	sql,
 } from "@verific/drizzle/orm";
+import {
+	activity,
+	activitySession,
+	activityWaitlist,
+	participant,
+	participantOnActivity,
+	project,
+	sessionAttendance,
+	user,
+} from "@verific/drizzle/schema";
+import { z } from "@verific/zod";
 
 // Utils
 import { isMemberAuthenticated } from "../auth";
 import { getParticipantsParams } from "../schemas";
+import { lockActivity } from "../seats";
+import { settleActivity } from "../waitlist";
 
 // Re-export client-safe schema so existing server imports keep working.
 // Client components must import from `@verific/api/schemas` instead.
@@ -34,6 +36,7 @@ export { getParticipantsParams };
 
 // tRPC
 import { TRPCError } from "@trpc/server";
+
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
 export const participantsRouter = createTRPCRouter({
@@ -424,9 +427,48 @@ export const participantsRouter = createTRPCRouter({
 				});
 			}
 
-			await db
-				.delete(participant)
-				.where(eq(participant.id, participantId));
+			// Atividades em que a pessoa ocupa vaga ou está na fila: a remoção
+			// (em cascata) libera lugar para o próximo de cada fila
+			const [enrolled, queued] = await Promise.all([
+				db
+					.select({ activityId: participantOnActivity.activityId })
+					.from(participantOnActivity)
+					.where(
+						eq(participantOnActivity.participantId, participantId),
+					),
+				db
+					.select({ activityId: activityWaitlist.activityId })
+					.from(activityWaitlist)
+					.where(
+						and(
+							eq(activityWaitlist.participantId, participantId),
+							inArray(activityWaitlist.status, [
+								"waiting",
+								"offered",
+							]),
+						),
+					),
+			]);
+			const activityIds = [
+				...new Set(
+					[...enrolled, ...queued].map((row) => row.activityId),
+				),
+			].sort();
+
+			await db.transaction(async (tx) => {
+				const locked = [];
+				for (const activityId of activityIds) {
+					locked.push(await lockActivity(tx, activityId));
+				}
+
+				await tx
+					.delete(participant)
+					.where(eq(participant.id, participantId));
+
+				for (const lockedActivity of locked) {
+					await settleActivity(tx, lockedActivity);
+				}
+			});
 
 			return { success: true };
 		}),

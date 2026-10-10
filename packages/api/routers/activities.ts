@@ -1,20 +1,7 @@
+// tRPC
+import { TRPCError } from "@trpc/server";
+
 import { db } from "@verific/drizzle";
-import type { speaker } from "@verific/drizzle/schema";
-import {
-	activity,
-	activitySession,
-	formAnswer,
-	formField,
-	formVersion,
-	sessionAttendance,
-	speakerOnActivity,
-	participant,
-	participantOnActivity,
-	project,
-	tag,
-	tagOnActivity,
-	user,
-} from "@verific/drizzle/schema";
 import {
 	and,
 	desc,
@@ -32,36 +19,55 @@ import {
 	exists,
 	min,
 } from "@verific/drizzle/orm";
+import type { speaker } from "@verific/drizzle/schema";
+import {
+	activity,
+	activitySession,
+	activityWaitlist,
+	formField,
+	formVersion,
+	sessionAttendance,
+	speakerOnActivity,
+	participant,
+	participantOnActivity,
+	project,
+	tag,
+	tagOnActivity,
+	user,
+} from "@verific/drizzle/schema";
 import { z } from "@verific/zod";
-
-// tRPC
-import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
 // Utils
 import { isMemberAuthenticated } from "../auth";
-import { transformSingleToArray } from "../utils";
+import {
+	assertNoScheduleConflict,
+	lockParticipant,
+	persistEnrollment,
+	prepareActivityAnswers,
+} from "../enrollment";
 import {
 	activitySort,
 	getActivitiesParams,
 	getActivityParams,
 	answerValueSchema,
-	validateAnswers,
 } from "../schemas";
+import { assertSeatsAvailable, lockActivity } from "../seats";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
+import { transformSingleToArray } from "../utils";
 import {
-	buildAnswerRows,
-	getPublishedVersionWithFields,
-	toValidationFields,
-	toVisibilitySections,
-} from "./forms";
+	closeEntry,
+	resolveEnrolledEntries,
+	settleActivity,
+} from "../waitlist";
+import { hasPublishedActivityForm } from "./forms";
 
 // Re-export client-safe schemas so existing server imports keep working.
 // Client components must import from `@verific/api/schemas` instead.
 export { activitySort, getActivitiesParams, getActivityParams };
 
+import { activityAudiences } from "@verific/drizzle/enum/audience";
 // Enums
 import { activityCategories } from "@verific/drizzle/enum/category";
-import { activityAudiences } from "@verific/drizzle/enum/audience";
 
 const activitySessionSchema = z.object({
 	startsAt: z.coerce.date(),
@@ -211,6 +217,9 @@ const mutateActivityParams = z.object({
 	longitude: z.number().optional(),
 	tolerance: z.coerce.number().optional(),
 	workload: z.coerce.number().optional(),
+	allowOverlap: z.boolean().optional(),
+	waitlistEnabled: z.boolean().optional(),
+	waitlistOfferHours: z.coerce.number().int().min(1).max(168).optional(),
 	projectId: z.uuid(),
 });
 
@@ -297,6 +306,10 @@ export const activitiesRouter = createTRPCRouter({
 							(t) => t.tag,
 						),
 						form: null,
+						hasForm: await hasPublishedActivityForm(
+							selectedActivity.projectId,
+							activityId,
+						),
 						participants: [],
 					},
 					pageCount: 0,
@@ -489,7 +502,14 @@ export const activitiesRouter = createTRPCRouter({
 			}
 
 			return {
-				activity: { ...formattedActivity, form: formSummary },
+				activity: {
+					...formattedActivity,
+					form: formSummary,
+					hasForm: await hasPublishedActivityForm(
+						selectedActivity.projectId,
+						activityId,
+					),
+				},
 				participantsAmount: amount,
 				pageCount,
 				participantId: allParticipants.find(
@@ -650,35 +670,62 @@ export const activitiesRouter = createTRPCRouter({
 
 			// Query de contagem
 			// Get activities count and participants count per activity
-			const [amountDb, participantsCounts] = await Promise.all([
-				db
-					.select({ amount: countDistinct(activity.id) })
-					.from(activity)
-					.where(buildActivitiesWhere(activity, filterOpts)),
-				fullQuery
-					? null
-					: db
-							.select({
-								activityId: participantOnActivity.activityId,
-								count: count(),
-							})
-							.from(participantOnActivity)
-							.innerJoin(
-								activity,
-								and(
-									eq(
+			const [amountDb, participantsCounts, openOffers] =
+				await Promise.all([
+					db
+						.select({ amount: countDistinct(activity.id) })
+						.from(activity)
+						.where(buildActivitiesWhere(activity, filterOpts)),
+					fullQuery
+						? null
+						: db
+								.select({
+									activityId:
 										participantOnActivity.activityId,
-										activity.id,
+									count: count(),
+								})
+								.from(participantOnActivity)
+								.innerJoin(
+									activity,
+									and(
+										eq(
+											participantOnActivity.activityId,
+											activity.id,
+										),
+										eq(
+											participantOnActivity.role,
+											"participant",
+										),
 									),
-									eq(
-										participantOnActivity.role,
-										"participant",
+								)
+								.where(
+									buildActivitiesWhere(activity, filterOpts),
+								)
+								.groupBy(participantOnActivity.activityId),
+					// Vagas oferecidas pela fila também estão ocupadas
+					fullQuery
+						? null
+						: db
+								.select({
+									activityId: activityWaitlist.activityId,
+									count: count(),
+								})
+								.from(activityWaitlist)
+								.innerJoin(
+									activity,
+									and(
+										eq(
+											activityWaitlist.activityId,
+											activity.id,
+										),
+										eq(activityWaitlist.status, "offered"),
 									),
-								),
-							)
-							.where(buildActivitiesWhere(activity, filterOpts))
-							.groupBy(participantOnActivity.activityId),
-			]);
+								)
+								.where(
+									buildActivitiesWhere(activity, filterOpts),
+								)
+								.groupBy(activityWaitlist.activityId),
+				]);
 
 			// Map activityId to participant count
 			const participantsCountMap: Record<string, number> = {};
@@ -687,11 +734,84 @@ export const activitiesRouter = createTRPCRouter({
 					participantsCountMap[row.activityId] = row.count;
 				}
 			}
+			for (const row of openOffers ?? []) {
+				participantsCountMap[row.activityId] =
+					(participantsCountMap[row.activityId] ?? 0) + row.count;
+			}
+
+			// `hasForm` por atividade: existe versão publicada no escopo da
+			// atividade com ao menos um campo visível e ativo. Duas queries
+			// agregadas (não por card): versões publicadas do projeto +
+			// contagem de campos por versão, vencendo a mais recente.
+			const hasFormByActivity = new Map<string, boolean>();
+			if (projectIdToUse) {
+				const activityIds = activities.map((act) => act.id);
+				if (activityIds.length > 0) {
+					const publishedVersions =
+						await db.query.formVersion.findMany({
+							where: and(
+								eq(formVersion.projectId, projectIdToUse),
+								inArray(formVersion.activityId, activityIds),
+								eq(formVersion.isPublished, true),
+							),
+							columns: {
+								id: true,
+								activityId: true,
+								version: true,
+							},
+						});
+					const versionIds = publishedVersions.map((v) => v.id);
+					const fieldCounts =
+						versionIds.length > 0
+							? await db
+									.select({
+										versionId: formField.formVersionId,
+										amount: count(),
+									})
+									.from(formField)
+									.where(
+										and(
+											inArray(
+												formField.formVersionId,
+												versionIds,
+											),
+											eq(formField.isActive, true),
+											eq(formField.isVisible, true),
+										),
+									)
+									.groupBy(formField.formVersionId)
+							: [];
+					const countByVersion = new Map(
+						fieldCounts.map((row) => [row.versionId, row.amount]),
+					);
+					const latestByActivity = new Map<
+						string,
+						{ id: string; version: number }
+					>();
+					for (const v of publishedVersions) {
+						if (!v.activityId) continue;
+						const current = latestByActivity.get(v.activityId);
+						if (!current || v.version > current.version) {
+							latestByActivity.set(v.activityId, {
+								id: v.id,
+								version: v.version,
+							});
+						}
+					}
+					for (const [activityId, latest] of latestByActivity) {
+						hasFormByActivity.set(
+							activityId,
+							(countByVersion.get(latest.id) ?? 0) > 0,
+						);
+					}
+				}
+			}
 
 			const formattedActivities = activities.map(
 				(act: ActivityWithRelations) => ({
 					...act,
 					participantsCount: participantsCountMap[act.id] ?? 0,
+					hasForm: hasFormByActivity.get(act.id) ?? false,
 					tags: (act.tagOnActivity ?? []).map((t) => t.tag),
 					participants: act.participantOnActivity
 						? act.participantOnActivity.map(
@@ -758,6 +878,9 @@ export const activitiesRouter = createTRPCRouter({
 				participantsLimit,
 				tolerance,
 				workload,
+				allowOverlap,
+				waitlistEnabled,
+				waitlistOfferHours,
 				address,
 				latitude,
 				longitude,
@@ -775,6 +898,9 @@ export const activitiesRouter = createTRPCRouter({
 						participantsLimit,
 						tolerance,
 						workload,
+						allowOverlap,
+						waitlistEnabled,
+						waitlistOfferHours,
 						address,
 						latitude,
 						longitude,
@@ -865,6 +991,9 @@ export const activitiesRouter = createTRPCRouter({
 				participantsLimit,
 				tolerance,
 				workload,
+				allowOverlap,
+				waitlistEnabled,
+				waitlistOfferHours,
 				address,
 				latitude,
 				longitude,
@@ -889,6 +1018,8 @@ export const activitiesRouter = createTRPCRouter({
 			}
 
 			await db.transaction(async (tx) => {
+				await lockActivity(tx, activityId);
+
 				await tx
 					.update(activity)
 					.set({
@@ -900,6 +1031,9 @@ export const activitiesRouter = createTRPCRouter({
 						participantsLimit,
 						tolerance,
 						workload,
+						allowOverlap,
+						waitlistEnabled,
+						waitlistOfferHours,
 						address,
 						latitude,
 						longitude,
@@ -947,6 +1081,9 @@ export const activitiesRouter = createTRPCRouter({
 						existing.projectId,
 					);
 				}
+
+				// Limite ou horários novos podem abrir vagas na fila
+				await settleActivity(tx, await lockActivity(tx, activityId));
 			});
 			return { success: true };
 		}),
@@ -975,26 +1112,30 @@ export const activitiesRouter = createTRPCRouter({
 			});
 			if (error) throw new TRPCError(error);
 
-			// Busca apenas os IDs atuais dos participantes da atividade
-			const current = await db
-				.select({ participantId: participantOnActivity.participantId })
-				.from(participantOnActivity)
-				.where(eq(participantOnActivity.activityId, activityId));
-			const currentIds = current.map((p) => p.participantId);
-
-			// Só adiciona quem ainda não está
-			const toAdd = participantsIdsToMutate.filter(
-				(id) => !currentIds.includes(id),
-			);
-
-			if (toAdd.length > 0) {
-				await db.insert(participantOnActivity).values(
-					toAdd.map((participantId) => ({
-						activityId,
-						participantId,
-					})),
+			await db.transaction(async (tx) => {
+				const locked = await lockActivity(tx, activityId);
+				const queue = await settleActivity(tx, locked);
+				const queued = await assertSeatsAvailable(
+					tx,
+					locked,
+					queue,
+					participantsIdsToMutate,
 				);
-			}
+
+				await tx
+					.insert(participantOnActivity)
+					.values(
+						participantsIdsToMutate.map((participantId) => ({
+							activityId,
+							participantId,
+						})),
+					)
+					.onConflictDoNothing();
+				await resolveEnrolledEntries(tx, activityId, queued, {
+					type: "promoted",
+					actorUserId: ctx.session.user.id,
+				});
+			});
 
 			return { success: true };
 		}),
@@ -1044,6 +1185,7 @@ export const activitiesRouter = createTRPCRouter({
 				throw new TRPCError({
 					message: "Activity registration is closed.",
 					code: "BAD_REQUEST",
+					cause: { code: "REGISTRATION_CLOSED" },
 				});
 			}
 
@@ -1065,136 +1207,72 @@ export const activitiesRouter = createTRPCRouter({
 				});
 			}
 
-			if (foundActivity.participantsLimit) {
-				const currentCountResult = await db
-					.select({ amount: count() })
-					.from(participantOnActivity)
-					.where(
-						and(
-							eq(participantOnActivity.activityId, activityId),
-							eq(participantOnActivity.role, "participant"),
-						),
-					);
+			// Participante do requisitante no evento (uma única leitura,
+			// reutilizada pelo probe do formulário e pelo gate de
+			// auto-inscrição abaixo).
+			const requesterParticipant = await db.query.participant.findFirst({
+				where: and(
+					eq(participant.projectId, foundActivity.projectId),
+					eq(participant.userId, ctx.session.user.id),
+				),
+				columns: { id: true },
+			});
+			const requesterParticipantId = requesterParticipant?.id ?? null;
 
-				const currentCount = currentCountResult?.[0]?.amount ?? 0;
-				const availableSpots =
-					foundActivity.participantsLimit - currentCount;
-
-				if (participantsIdsToAdd.length > availableSpots) {
-					throw new TRPCError({
-						message:
-							"Adding these participants exceeds the activity limit.",
-						code: "BAD_REQUEST",
-					});
-				}
-			}
+			// Auto-inscrição: o requisitante inscreve SOMENTE a si mesmo.
+			// Lote misto ou terceiros = fluxo de organizador (sem checagem
+			// de conflito). Um organizador inscrevendo só a si mesmo cai
+			// aqui — nenhum fluxo de UI faz isso hoje.
+			const isSelfServiceJoin =
+				!!requesterParticipantId &&
+				participantsIdsToAdd.length === 1 &&
+				participantsIdsToAdd.includes(requesterParticipantId);
 
 			// Respostas do formulário de inscrição da atividade (quando houver)
-			const {
-				version: activityFormVersion,
-				fields: activityFormFields,
-				sections: activityFormSections,
-			} = await getPublishedVersionWithFields(
-				foundActivity.projectId,
+			const answerRows = await prepareActivityAnswers({
+				projectId: foundActivity.projectId,
 				activityId,
-			);
-
-			let answerRows: ReturnType<typeof buildAnswerRows> = [];
-			if (activityFormVersion) {
-				if (formAnswers) {
-					if (participantsIdsToAdd.length !== 1) {
-						throw new TRPCError({
-							message:
-								"Respostas só podem ser enviadas para uma inscrição por vez.",
-							code: "BAD_REQUEST",
-						});
-					}
-					const validation = validateAnswers(
-						toValidationFields(activityFormFields),
-						formAnswers.answers,
-						toVisibilitySections(activityFormSections),
-					);
-					if (!validation.success) {
-						throw new TRPCError({
-							message:
-								"Respostas inválidas. Verifique os campos obrigatórios.",
-							code: "BAD_REQUEST",
-							cause: validation.errors,
-						});
-					}
-					answerRows = buildAnswerRows({
-						participantId: participantsIdsToAdd[0]!,
-						projectId: foundActivity.projectId,
-						versionId: activityFormVersion.id,
-						fields: activityFormFields,
-						sections: activityFormSections,
-						data: validation.data as Record<string, unknown>,
-					});
-				} else {
-					// Sem respostas: só bloqueia quando o próprio usuário se
-					// inscreve e o formulário exige preenchimento.
-					const requesterParticipant =
-						await db.query.participant.findFirst({
-							where: and(
-								eq(
-									participant.projectId,
-									foundActivity.projectId,
-								),
-								eq(participant.userId, ctx.session.user.id),
-							),
-							columns: { id: true },
-						});
-					const subscribesSelf =
-						!!requesterParticipant &&
-						participantsIdsToAdd.includes(requesterParticipant.id);
-					if (subscribesSelf) {
-						const probe = validateAnswers(
-							toValidationFields(activityFormFields),
-							{},
-							toVisibilitySections(activityFormSections),
-						);
-						if (!probe.success) {
-							throw new TRPCError({
-								message:
-									"Esta atividade exige o preenchimento do formulário de inscrição.",
-								code: "BAD_REQUEST",
-								cause: probe.errors,
-							});
-						}
-					}
-				}
-			}
+				participantIds: participantsIdsToAdd,
+				formAnswers,
+				subscribesSelf:
+					!!requesterParticipantId &&
+					participantsIdsToAdd.includes(requesterParticipantId),
+			});
 
 			await db.transaction(async (tx) => {
-				await tx
-					.insert(participantOnActivity)
-					.values(
-						participantsIdsToAdd.map((participantId) => ({
-							activityId,
-							participantId,
-						})),
-					)
-					.onConflictDoNothing();
-
-				if (answerRows.length > 0) {
-					await tx
-						.insert(formAnswer)
-						.values(answerRows)
-						.onConflictDoUpdate({
-							target: [
-								formAnswer.participantId,
-								formAnswer.fieldId,
-							],
-							set: {
-								valueText: sql`excluded."value_text"`,
-								valueNumber: sql`excluded."value_number"`,
-								valueDate: sql`excluded."value_date"`,
-								valueJson: sql`excluded."value_json"`,
-								fieldSnapshot: sql`excluded."field_snapshot"`,
-								updatedAt: new Date(),
-							},
-						});
+				if (isSelfServiceJoin && requesterParticipantId) {
+					// Checagem de conflito + inserção atômicas: dois joins
+					// concorrentes do mesmo participante serializam e no
+					// máximo um vence. Inscrições existentes nunca são tocadas.
+					await lockParticipant(tx, requesterParticipantId);
+					await assertNoScheduleConflict(
+						tx,
+						activityId,
+						requesterParticipantId,
+					);
 				}
+
+				// Quem se inscreve sozinho não passa à frente da fila; quem
+				// tem oferta em aberto usa a vaga reservada para si.
+				const locked = await lockActivity(tx, activityId);
+				const queue = await settleActivity(tx, locked);
+				const queued = await assertSeatsAvailable(
+					tx,
+					locked,
+					queue,
+					participantsIdsToAdd,
+					{ queueFirst: isSelfServiceJoin },
+				);
+
+				await persistEnrollment(tx, {
+					activityId,
+					participantIds: participantsIdsToAdd,
+					answerRows,
+				});
+				await resolveEnrolledEntries(tx, activityId, queued, {
+					type: isSelfServiceJoin ? "confirmed" : "promoted",
+					actorUserId: isSelfServiceJoin ? null : ctx.session.user.id,
+				});
 			});
 
 			return { success: true };
@@ -1231,19 +1309,31 @@ export const activitiesRouter = createTRPCRouter({
 					role: "monitor",
 				}));
 
-			// Add to activity
-			await db
-				.insert(participantOnActivity)
-				.values(toInsert)
-				.onConflictDoUpdate({
-					target: [
-						participantOnActivity.activityId,
-						participantOnActivity.participantId,
-					],
-					set: {
-						role: "monitor",
-					},
-				});
+			await db.transaction(async (tx) => {
+				const locked = await lockActivity(tx, activityId);
+
+				// Quem já estava inscrito vira monitor e libera a vaga
+				await tx
+					.insert(participantOnActivity)
+					.values(toInsert)
+					.onConflictDoUpdate({
+						target: [
+							participantOnActivity.activityId,
+							participantOnActivity.participantId,
+						],
+						set: {
+							role: "monitor",
+						},
+					});
+
+				for (const participantId of participantsIdsToAdd) {
+					await closeEntry(tx, activityId, participantId, {
+						type: "removed",
+						actorUserId: ctx.session.user.id,
+					});
+				}
+				await settleActivity(tx, locked);
+			});
 		}),
 	deleteActivity: protectedProcedure
 		.input(z.object({ activityId: z.string().uuid() }))

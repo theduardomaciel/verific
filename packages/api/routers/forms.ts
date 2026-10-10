@@ -1,17 +1,6 @@
-import { z } from "@verific/zod";
+import { TRPCError } from "@trpc/server";
 
 import { db } from "@verific/drizzle";
-import {
-	activity,
-	formAnswer,
-	formField,
-	formSection,
-	formVersion,
-	participant,
-	project,
-	user,
-} from "@verific/drizzle/schema";
-import { generateShortId } from "./profiles";
 import {
 	and,
 	asc,
@@ -23,9 +12,19 @@ import {
 	isNull,
 	or,
 } from "@verific/drizzle/orm";
+import { socialServiceById } from "@verific/drizzle/profile-layout";
+import {
+	activity,
+	formAnswer,
+	formField,
+	formSection,
+	formVersion,
+	participant,
+	project,
+	user,
+} from "@verific/drizzle/schema";
+import { z } from "@verific/zod";
 
-import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import {
 	dropVisibilityForFields,
 	remapProfileLinksOnClone,
@@ -34,7 +33,6 @@ import {
 	isCompatible,
 	readProjectLayout,
 } from "../lib/profile-links";
-import { socialServiceById } from "@verific/drizzle/profile-layout";
 import {
 	answerValueSchema,
 	filterVisibleFields,
@@ -50,6 +48,8 @@ import {
 	validateSectionVisibilityRule,
 	type FormFieldForValidation,
 } from "../schemas";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
+import { generateShortId } from "./profiles";
 
 export async function requireProjectAccess(projectId: string, userId: string) {
 	const data = await db.query.project.findFirst({
@@ -236,6 +236,39 @@ export async function getPublishedVersionWithFields(
 		}),
 	]);
 	return { version, fields, sections };
+}
+
+/**
+ * "Existe formulário publicado com ao menos um campo visível e ativo":
+ * o `hasForm` servido em `getActivities`/`getActivity` para o quick join.
+ * Espelha a definição do formulário de inscrição (versão publicada mais
+ * recente; visibilidade como no cliente, sobre campos ativos).
+ */
+export async function hasPublishedActivityForm(
+	projectId: string,
+	activityId: string,
+): Promise<boolean> {
+	const version = await db.query.formVersion.findFirst({
+		where: and(
+			eq(formVersion.projectId, projectId),
+			eq(formVersion.activityId, activityId),
+			eq(formVersion.isPublished, true),
+		),
+		orderBy: desc(formVersion.version),
+		columns: { id: true },
+	});
+	if (!version) return false;
+	const rows = await db
+		.select({ amount: count() })
+		.from(formField)
+		.where(
+			and(
+				eq(formField.formVersionId, version.id),
+				eq(formField.isActive, true),
+				eq(formField.isVisible, true),
+			),
+		);
+	return (rows[0]?.amount ?? 0) > 0;
 }
 
 /** Builds answer rows (with snapshots + typed columns) for already-validated data. */
@@ -1340,7 +1373,7 @@ export const formsRouter = createTRPCRouter({
 					.set({ isPublished: true, publishedAt: new Date() })
 					.where(eq(formVersion.id, input.versionId));
 			});
-			return { success: true };
+			return { success: true, activityId: version.activityId };
 		}),
 
 	deleteVersion: protectedProcedure
@@ -1410,7 +1443,7 @@ export const formsRouter = createTRPCRouter({
 				.update(formVersion)
 				.set({ isPublished: false })
 				.where(eq(formVersion.id, input.versionId));
-			return { success: true };
+			return { success: true, activityId: version.activityId };
 		}),
 
 	/**

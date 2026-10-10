@@ -1,19 +1,24 @@
 "use client";
 
+import { InfoIcon } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
 import type { RouterOutput } from "@verific/api";
 import { activityCategoryLabels } from "@verific/drizzle/schema";
+
 import { Badge } from "@/components/ui/badge";
-import { InfoIcon } from "lucide-react";
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+
+import { getEffectiveTolerance } from "@/lib/activity-conditions";
+
 import { ActivitySpeakers } from "./speakers";
 import { ActivityCardTags } from "./tags";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 
 type Activity =
 	| RouterOutput["getActivity"]["activity"]
@@ -33,6 +38,10 @@ export function ActivityDetailsContent({
 	} else if ("speakers" in activity && activity.speakers) {
 		speakers = activity.speakers;
 	}
+
+	// A tolerância só vale com fila: sem fila, o aviso some mesmo com
+	// valor obsoleto salvo.
+	const effectiveTolerance = getEffectiveTolerance(activity);
 
 	return (
 		<div className="flex w-full flex-col items-center justify-center gap-4">
@@ -56,20 +65,21 @@ export function ActivityDetailsContent({
 
 			<ActivityCardTags tagsClassName="bg-muted" activity={activity} />
 
-			{activity?.tolerance ? (
+			{effectiveTolerance ? (
 				<div className="bg-muted/50 flex flex-row items-center justify-between gap-3 rounded-sm p-4 text-sm select-none">
 					<span className="text-muted-foreground text-sm">
-						Este evento possui <strong>fila de espera</strong>.
+						Esta atividade tem{" "}
+						<strong>tolerância de {effectiveTolerance} min</strong>.
 					</span>
 					<TooltipProvider>
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<InfoIcon className="mt-0.5" size={16} />
 							</TooltipTrigger>
-							<TooltipContent className="max-w-[22rem]">
+							<TooltipContent className="max-w-88">
 								<p>
 									Caso não haja confirmação de sua presença em{" "}
-									{activity.tolerance}m a partir do início da
+									{effectiveTolerance}m a partir do início da
 									atividade, sua vaga será cedida a outra
 									pessoa.
 								</p>

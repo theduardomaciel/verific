@@ -1,13 +1,17 @@
-import { Calendar } from "lucide-react";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
-import * as EventContainer from "@/components/landing/event-container";
-import { ScheduleLoading } from "./content-skeleton";
-import { ScheduleWrapper } from "@/components/schedule-wrapper";
-import { SchedulePageSkeleton } from "./skeleton";
-import { getProject } from "@/lib/data";
+import { Calendar } from "lucide-react";
+
 import { parseEventTheme } from "@verific/drizzle/theme";
+
+import * as EventContainer from "@/components/landing/event-container";
+import { ScheduleWrapper } from "@/components/schedule-wrapper";
+
+import { getEventStaticParams, getProject } from "@/lib/data";
+
+import { ScheduleLoading } from "./content-skeleton";
+import { SchedulePageSkeleton } from "./skeleton";
 
 /**
  * Exige saída estática completa (nível `navigation`): o build falha se
@@ -15,6 +19,10 @@ import { parseEventTheme } from "@verific/drizzle/theme";
  * rota — mantém a programação servida pela CDN sob carga pública.
  */
 export const ensureStatic = "navigation";
+
+export async function generateStaticParams() {
+	return getEventStaticParams();
+}
 
 interface Props {
 	params: Promise<{ eventUrl: string }>;

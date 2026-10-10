@@ -1,6 +1,6 @@
 "use client";
-import * as React from "react";
 import { useRouter } from "next/navigation";
+import * as React from "react";
 
 // Icons
 import {
@@ -14,12 +14,22 @@ import {
 	TrashIcon,
 	User,
 } from "lucide-react";
-
+import { useFieldArray, useWatch, type UseFormReturn } from "react-hook-form";
 // Components
 import { toast } from "sonner";
+
+// Types
+import type { RouterOutput } from "@verific/api";
+import { tagColors } from "@verific/api/schemas";
+import {
+	activityCategories,
+	activityCategoryLabels,
+} from "@verific/drizzle/enum/category";
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Input, InputWithSuffix } from "@/components/ui/input";
-import { MarkdownTextarea } from "@/components/ui/markdown-textarea";
+// Date and Time
+import { Calendar } from "@/components/ui/calendar";
 import {
 	FormControl,
 	FormDescription,
@@ -28,6 +38,8 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
+import { Input, InputWithSuffix } from "@/components/ui/input";
+import { MarkdownTextarea } from "@/components/ui/markdown-textarea";
 import {
 	Select,
 	SelectContent,
@@ -35,35 +47,24 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { InstancePicker } from "@/components/pickers/instance-picker";
-import { MutateSpeakerDialog } from "@/components/dialogs/mutate-speaker-dialog";
-import { SpeakerDeleteDialog } from "@/components/dialogs/delete-dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
-
-// Date and Time
-import { Calendar } from "@/components/ui/calendar";
-import { TimePicker } from "@/components/pickers/time-picker";
-
-// API
-import { trpc } from "@/lib/trpc/react";
-import { tagColors } from "@verific/api/schemas";
-
-// Types
-import type { RouterOutput } from "@verific/api";
-import {
-	activityCategories,
-	activityCategoryLabels,
-} from "@verific/drizzle/enum/category";
-import type { MutateActivityFormSchema } from "@/lib/validations/forms/mutate-activity-form";
-import { useFieldArray, useWatch, type UseFormReturn } from "react-hook-form";
-import { sumSessionsHours } from "@/lib/date";
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+
+import { SpeakerDeleteDialog } from "@/components/dialogs/delete-dialog";
+import { MutateSpeakerDialog } from "@/components/dialogs/mutate-speaker-dialog";
+import { InstancePicker } from "@/components/pickers/instance-picker";
+import { TimePicker } from "@/components/pickers/time-picker";
+
+import { sumSessionsHours } from "@/lib/date";
+// API
+import { trpc } from "@/lib/trpc/react";
+
+import type { MutateActivityFormSchema } from "@/lib/validations/forms/mutate-activity-form";
 
 interface Props {
 	form: UseFormReturn<MutateActivityFormSchema>;
@@ -95,6 +96,10 @@ function RegistrationSettings({
 	form: UseFormReturn<MutateActivityFormSchema>;
 	formAction: React.ReactNode;
 }) {
+	// Esconde os campos da fila quando desligada; os valores seguem salvos
+	// no formulário (sem `shouldUnregister`, desmontar não apaga).
+	const waitlistEnabled =
+		useWatch({ control: form.control, name: "waitlistEnabled" }) ?? true;
 	return (
 		<div className="w-full rounded-lg border">
 			<FormField
@@ -116,6 +121,29 @@ function RegistrationSettings({
 			/>
 
 			<div className="flex flex-col gap-4 border-t p-4">
+				<FormField
+					control={form.control}
+					name="waitlistEnabled"
+					render={({ field }) => (
+						<FormItem className="flex flex-row items-center justify-between gap-4 space-y-0">
+							<div className="flex flex-col gap-0.5">
+								<FormLabel>Habilitar fila de espera</FormLabel>
+								<p className="text-muted-foreground text-sm">
+									Quando as vagas acabarem, participantes
+									poderão entrar em uma fila e receber a vaga
+									caso alguém desista.
+								</p>
+							</div>
+							<FormControl>
+								<Switch
+									checked={field.value ?? true}
+									onCheckedChange={field.onChange}
+								/>
+							</FormControl>
+						</FormItem>
+					)}
+				/>
+
 				<div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
 					<FormField
 						control={form.control}
@@ -139,12 +167,56 @@ function RegistrationSettings({
 							</FormItem>
 						)}
 					/>
+					{waitlistEnabled ? (
+						<FormField
+							control={form.control}
+							name="tolerance"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Tempo de tolerância</FormLabel>
+									<Select
+										onValueChange={field.onChange}
+										value={field.value?.toString() ?? ""}
+									>
+										<FormControl>
+											<SelectTrigger className="w-full">
+												<SelectValue placeholder="Selecione" />
+											</SelectTrigger>
+										</FormControl>
+										<SelectContent>
+											<SelectItem value="0">
+												Sem tolerância
+											</SelectItem>
+											<SelectItem value="5">
+												5 minutos
+											</SelectItem>
+											<SelectItem value="10">
+												10 minutos
+											</SelectItem>
+											<SelectItem value="15">
+												15 minutos
+											</SelectItem>
+											<SelectItem value="20">
+												20 minutos
+											</SelectItem>
+										</SelectContent>
+									</Select>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+					) : null}
+				</div>
+
+				{waitlistEnabled ? (
 					<FormField
 						control={form.control}
-						name="tolerance"
+						name="waitlistOfferHours"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Tempo de tolerância</FormLabel>
+								<FormLabel>
+									Prazo para confirmar vaga da fila
+								</FormLabel>
 								<Select
 									onValueChange={field.onChange}
 									value={field.value?.toString() ?? ""}
@@ -155,30 +227,58 @@ function RegistrationSettings({
 										</SelectTrigger>
 									</FormControl>
 									<SelectContent>
-										<SelectItem value="0">
-											Não incluir fila de espera
-										</SelectItem>
-										<SelectItem value="5">
-											5 minutos
-										</SelectItem>
-										<SelectItem value="10">
-											10 minutos
-										</SelectItem>
-										<SelectItem value="15">
-											15 minutos
-										</SelectItem>
-										<SelectItem value="20">
-											20 minutos
-										</SelectItem>
+										{[1, 2, 6, 12, 24, 48].map((hours) => (
+											<SelectItem
+												key={hours}
+												value={hours.toString()}
+											>
+												{hours === 1
+													? "1 hora"
+													: `${hours} horas`}
+											</SelectItem>
+										))}
 									</SelectContent>
 								</Select>
+								<p className="text-muted-foreground text-sm">
+									Com as vagas esgotadas, quem entra na fila
+									recebe a vaga que abrir e tem este prazo
+									para confirmar, sempre antes do início da
+									atividade.
+								</p>
 								<FormMessage />
 							</FormItem>
 						)}
 					/>
-				</div>
+				) : null}
 
-				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+				<FormField
+					control={form.control}
+					name="allowOverlap"
+					render={({ field }) => (
+						<FormItem className="flex flex-row items-center justify-between gap-4 space-y-0 border-t pt-4">
+							<div className="flex flex-col gap-0.5">
+								<FormLabel>
+									Permitir sobreposição de horário
+								</FormLabel>
+								<p className="text-muted-foreground text-sm">
+									Participantes poderão se inscrever nesta
+									atividade mesmo que ela aconteça no mesmo
+									horário de outras, e em outras que acontecem
+									no horário dela. Use para atividades longas,
+									como maratonas, exposições e estandes.
+								</p>
+							</div>
+							<FormControl>
+								<Switch
+									checked={field.value ?? false}
+									onCheckedChange={field.onChange}
+								/>
+							</FormControl>
+						</FormItem>
+					)}
+				/>
+
+				<div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
 					<div className="flex flex-col gap-0.5">
 						<p className="text-sm leading-none font-medium">
 							Formulário de inscrição
@@ -634,7 +734,7 @@ export function MutateActivityFormContent({
 									<FormLabel>Categoria</FormLabel>
 									<Select
 										onValueChange={field.onChange}
-										value={field.value}
+										value={field.value ?? ""}
 									>
 										<FormControl>
 											<SelectTrigger className="w-full">
@@ -738,7 +838,7 @@ export function MutateActivityFormContent({
 									<FormLabel>Público</FormLabel>
 									<Select
 										onValueChange={field.onChange}
-										value={field.value}
+										value={field.value ?? ""}
 									>
 										<FormControl>
 											<SelectTrigger className="w-full">

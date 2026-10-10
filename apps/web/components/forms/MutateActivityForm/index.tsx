@@ -1,38 +1,37 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLayoutEffect, useRef, useState } from "react";
 
-import type { Resolver } from "react-hook-form";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+
+// Types
+import type { RouterOutput } from "@verific/api";
 
 // Components
 import { Form } from "@/components/ui/form";
+
 import {
 	ErrorDialog,
 	LoadingDialog,
 	SuccessDialog,
 } from "@/components/forms/dialogs";
-
 // Content
 import { MutateActivityFormContent } from "@/components/forms/MutateActivityForm/Content";
+import { dateToTimeString } from "@/components/pickers/time-picker";
 
+// Actions
+import { revalidateActivities } from "@/app/actions";
+// API
+import { trpc } from "@/lib/trpc/react";
 // Validation
 import {
 	type MutateActivityFormSchema,
 	mutateActivityFormSchema,
 } from "@/lib/validations/forms/mutate-activity-form";
 
-// API
-import { trpc } from "@/lib/trpc/react";
-
-// Actions
-import { revalidateActivities } from "@/app/actions";
-
-// Types
-import type { RouterOutput } from "@verific/api";
-import { dateToTimeString } from "@/components/pickers/time-picker";
+import type { Resolver } from "react-hook-form";
 
 interface Props {
 	projectId: string;
@@ -95,6 +94,9 @@ export default function MutateActivityForm({
 					],
 			tolerance: activity?.tolerance || 0,
 			workload: activity?.workload || undefined,
+			allowOverlap: activity?.allowOverlap ?? false,
+			waitlistEnabled: activity?.waitlistEnabled ?? true,
+			waitlistOfferHours: activity?.waitlistOfferHours ?? 12,
 			category: activity?.category || undefined,
 			participantsLimit: activity?.participantsLimit || undefined,
 			audience: activity?.audience || "external",

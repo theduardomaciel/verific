@@ -2,9 +2,6 @@
 
 import { useCallback } from "react";
 
-// Hooks
-import { useControlledParam } from "@/hooks/use-controlled-param";
-
 // Components
 import {
 	Select,
@@ -13,6 +10,9 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+
+// Hooks
+import { useControlledParam } from "@/hooks/use-controlled-param";
 
 interface SortByProps {
 	items: Array<{ value: string; label: string }>;
@@ -43,7 +43,7 @@ export function SortBy({ items, value, onChange }: SortByProps) {
 
 	return (
 		<Select
-			value={currentSort as string}
+			value={(currentSort ?? "") as string}
 			onValueChange={onValueChange}
 			disabled={isPending}
 		>
