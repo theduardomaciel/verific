@@ -112,6 +112,7 @@ async function ActivityPageLoader({
 							<ActivityDetails
 								activity={activity}
 								participantsCount={participantsCount}
+								projectUrl={eventUrl}
 							/>
 						</div>
 						<ActivityEnrollmentPanel

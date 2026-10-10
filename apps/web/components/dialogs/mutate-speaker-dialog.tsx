@@ -2,6 +2,20 @@
 
 import { useState, useEffect } from "react";
 
+// Form
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm, type UseFormReturn } from "react-hook-form";
+
+// Types
+import type { RouterOutput } from "@verific/api";
+import {
+	SOCIAL_SERVICES,
+	socialServiceById,
+	type SocialLinks,
+} from "@verific/drizzle/profile-layout";
+import { z } from "@verific/zod";
+
+import { Button } from "@/components/ui/button";
 // Components
 import {
 	Dialog,
@@ -12,7 +26,6 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import {
 	Drawer,
 	DrawerClose,
@@ -25,29 +38,25 @@ import {
 import {
 	Form,
 	FormControl,
+	FormDescription,
 	FormField,
 	FormItem,
 	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
-import { Button } from "@/components/ui/button";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { Input } from "@/components/ui/input";
-import { ErrorDialog, LoadingDialog, SuccessDialog } from "../forms/dialogs";
+import { Textarea } from "@/components/ui/textarea";
+
+import { SocialLinksEditor } from "@/components/forms/dynamic/SocialLinksEditor";
 
 // Hooks
 import { useMediaQuery } from "@/hooks/use-media-query";
-
-// Form
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, type UseFormReturn } from "react-hook-form";
-import { z } from "@verific/zod";
-
 // tRPC
 import { trpc } from "@/lib/trpc/react";
 
-// Types
-import type { RouterOutput } from "@verific/api";
+import { ErrorDialog, LoadingDialog, SuccessDialog } from "../forms/dialogs";
+
 import type { FormState } from "@/lib/types/forms";
 
 const formSchema = z.object({
@@ -57,6 +66,17 @@ const formSchema = z.object({
 	description: z.string().max(3000, {
 		message: "Descrições devem ter no máximo 500 caracteres.",
 	}),
+	email: z
+		.string()
+		.refine((val) => val === "" || z.email().safeParse(val).success, {
+			message: "Insira um e-mail válido ou deixe em branco.",
+		}),
+	title: z.string().max(140, {
+		message: "Título deve ter no máximo 140 caracteres.",
+	}),
+	socials: z
+		.array(z.object({ service: z.string(), value: z.string() }))
+		.max(8),
 	imageUrl: z
 		.string()
 		.url({ message: "Insira uma URL válida para a imagem." })
@@ -87,6 +107,9 @@ export function MutateSpeakerDialog({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			name: speaker?.name ?? "",
+			email: speaker?.email ?? "",
+			title: speaker?.title ?? "",
+			socials: speaker?.socials ?? [],
 			description: speaker?.description ?? "",
 			imageUrl: speaker?.imageUrl ?? "",
 		},
@@ -97,6 +120,9 @@ export function MutateSpeakerDialog({
 	useEffect(() => {
 		form.reset({
 			name: speaker?.name ?? "",
+			email: speaker?.email ?? "",
+			title: speaker?.title ?? "",
+			socials: speaker?.socials ?? [],
 			description: speaker?.description ?? "",
 			imageUrl: speaker?.imageUrl ?? "",
 		});
@@ -130,10 +156,23 @@ export function MutateSpeakerDialog({
 			}
 
 			if (onSuccess) {
+				const normalizedEmail = data.email.trim().toLowerCase() || null;
+				const normalizedTitle = data.title.trim() || null;
+				const normalizedSocials = data.socials.filter(
+					(e) =>
+						socialServiceById(e.service) && e.value.trim() !== "",
+				) as SocialLinks;
 				onSuccess({
 					id: speakerId!,
 					projectId,
 					...data,
+					email: normalizedEmail,
+					title: normalizedTitle,
+					socials: normalizedSocials,
+					// O vínculo é recarregado via getSpeakers; mantém o
+					// estado anterior até o refetch.
+					participantId: speaker?.participantId ?? null,
+					linkedParticipant: speaker?.linkedParticipant ?? null,
 				});
 			}
 
@@ -182,6 +221,7 @@ export function MutateSpeakerDialog({
 							<MutateSpeakerForm
 								form={form}
 								projectId={projectId}
+								speaker={speaker}
 							/>
 							<DialogFooter className="w-full grid-cols-2 gap-3 md:grid">
 								<DialogClose asChild>
@@ -239,6 +279,7 @@ export function MutateSpeakerDialog({
 							<MutateSpeakerForm
 								form={form}
 								projectId={projectId}
+								speaker={speaker}
 							/>
 						</div>
 						<DrawerFooter className="flex w-full gap-2">
@@ -301,11 +342,13 @@ function StatusDialogs({
 
 interface MutateSpeakerForm {
 	form: UseFormReturn<z.infer<typeof formSchema>>;
+	speaker?: RouterOutput["getSpeaker"];
 }
 
 function MutateSpeakerForm({
 	form,
 	projectId,
+	speaker,
 }: MutateSpeakerForm & { projectId: string }) {
 	return (
 		<>
@@ -327,6 +370,57 @@ function MutateSpeakerForm({
 			/>
 			<FormField
 				control={form.control}
+				name="title"
+				render={({ field }) => (
+					<FormItem>
+						<FormLabel>Título (opcional)</FormLabel>
+						<FormControl>
+							<Input
+								placeholder="Ex.: Professora · UFAL"
+								{...field}
+								value={field.value ?? ""}
+							/>
+						</FormControl>
+						<FormMessage />
+					</FormItem>
+				)}
+			/>
+			<FormField
+				control={form.control}
+				name="email"
+				render={({ field }) => (
+					<FormItem>
+						<FormLabel>E-mail do palestrante (opcional)</FormLabel>
+						<FormControl>
+							<Input
+								type="email"
+								placeholder="palestrante@email.com"
+								{...field}
+								value={field.value ?? ""}
+							/>
+						</FormControl>
+						<FormDescription>
+							Com o e-mail, o palestrante ganha um perfil público
+							assim que se inscrever no evento com esse e-mail
+							automaticamente
+						</FormDescription>
+						<FormMessage />
+					</FormItem>
+				)}
+			/>
+			{speaker?.linkedParticipant ? (
+				<p className="text-sm font-medium text-green-700 dark:text-green-500">
+					Perfil vinculado. O cartão do palestrante leva ao perfil
+					público.
+				</p>
+			) : speaker?.email ? (
+				<p className="text-sm font-medium text-amber-700 dark:text-amber-500">
+					Aguardando inscrição com {speaker.email}. Verifique se o
+					e-mail está correto — é ele que faz o vínculo.
+				</p>
+			) : null}
+			<FormField
+				control={form.control}
 				name="description"
 				render={({ field }) => (
 					<FormItem>
@@ -337,6 +431,26 @@ function MutateSpeakerForm({
 								{...field}
 							/>
 						</FormControl>
+						<FormMessage />
+					</FormItem>
+				)}
+			/>
+			<FormField
+				control={form.control}
+				name="socials"
+				render={({ field }) => (
+					<FormItem>
+						<FormLabel>Redes sociais (opcional)</FormLabel>
+						<FormControl>
+							<SocialLinksEditor
+								services={[...SOCIAL_SERVICES]}
+								value={field.value ?? []}
+								onChange={(next) => field.onChange(next)}
+							/>
+						</FormControl>
+						<FormDescription>
+							Exibidas no cartão de detalhes do palestrante.
+						</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}

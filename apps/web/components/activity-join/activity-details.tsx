@@ -30,6 +30,7 @@ import type { ActivityDetail } from "./use-activity-enrollment-state";
 interface ActivityDetailsProps {
 	activity: ActivityDetail;
 	participantsCount: number | null;
+	projectUrl?: string;
 	className?: string;
 }
 
@@ -41,6 +42,7 @@ interface ActivityDetailsProps {
 export function ActivityDetails({
 	activity,
 	participantsCount,
+	projectUrl,
 	className,
 }: ActivityDetailsProps) {
 	const seats = describeSeats({
@@ -48,7 +50,10 @@ export function ActivityDetails({
 		participantsCount,
 	});
 	const sessions = getSessionsSorted(activity.sessions);
-	const speakers = (activity.speakerOnActivity ?? []).map((s) => s.speaker);
+	const speakers = (activity.speakerOnActivity ?? []).map((s) => ({
+		...s.speaker,
+		socials: s.speaker.socials ?? [],
+	}));
 
 	return (
 		<div className={cn("flex w-full flex-col gap-6", className)}>
@@ -147,7 +152,7 @@ export function ActivityDetails({
 					>
 						Palestrantes
 					</h2>
-					<SpeakersList speakers={speakers} />
+					<SpeakersList speakers={speakers} projectUrl={projectUrl} />
 				</section>
 			) : null}
 
