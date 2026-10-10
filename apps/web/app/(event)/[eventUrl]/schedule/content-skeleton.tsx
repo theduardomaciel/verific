@@ -12,7 +12,7 @@ export function ScheduleLoading() {
 				{Array.from({ length: 4 }).map((_, index) => (
 					<div
 						key={index}
-						className="border-accent flex flex-col gap-4 rounded-md border p-6"
+						className="border-border flex flex-col gap-4 rounded-md border p-6"
 					>
 						<Skeleton className="h-6 w-3/4 rounded" />
 						<Skeleton className="h-4 w-1/2 rounded" />

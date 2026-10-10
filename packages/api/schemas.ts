@@ -1,4 +1,3 @@
-import { z } from "@verific/zod";
 import {
 	isValidPhoneNumber,
 	parsePhoneNumberFromString,
@@ -13,6 +12,7 @@ import {
 	socialEntrySchema,
 	socialServiceById,
 } from "@verific/drizzle/profile-layout";
+import { z } from "@verific/zod";
 
 import { createEnumArraySchema, sortOptions } from "./utils";
 
@@ -28,6 +28,32 @@ import { createEnumArraySchema, sortOptions } from "./utils";
  */
 
 export const activitySort = ["asc", "desc", "name_asc", "name_desc"] as const;
+
+/**
+ * Códigos legíveis por máquina para falhas de inscrição em atividades.
+ * Viajam no `data.reason` da resposta tRPC (ver `errorFormatter` em
+ * `trpc.ts`): o `code` padrão continua sendo `BAD_REQUEST` e as mensagens
+ * humanas não mudam — o cliente distingue os casos por este código.
+ */
+export const JOIN_ERROR_CODES = [
+	"FORM_REQUIRED",
+	"ACTIVITY_FULL",
+	"REGISTRATION_CLOSED",
+	"SCHEDULE_CONFLICT",
+] as const;
+
+export type JoinErrorCode = (typeof JOIN_ERROR_CODES)[number];
+
+/** Falhas próprias da fila de espera, no mesmo formato. */
+export const WAITLIST_ERROR_CODES = [
+	"ACTIVITY_ENDED",
+	"NO_WAITLIST",
+	"WAITLIST_DISABLED",
+	"OFFER_EXPIRED",
+	"NOT_IN_WAITLIST",
+] as const;
+
+export type WaitlistErrorCode = (typeof WAITLIST_ERROR_CODES)[number];
 
 export const getActivityParams = z.object({
 	page: z.coerce.number().default(1).optional(),

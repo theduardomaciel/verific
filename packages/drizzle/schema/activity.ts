@@ -9,14 +9,15 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 
-import { participantOnActivity } from "./participant-on-activity";
-import { activitySession } from "./activity-session";
-import { tagOnActivity } from "./tag-on-activity";
-import { project } from "./project";
-import { categoryEnum } from "../enum/category";
 import { audienceEnum } from "../enum/audience";
-import { speakerOnActivity } from "./speaker-on-activity";
+import { categoryEnum } from "../enum/category";
 import { activityConflict } from "./activity-conflict";
+import { activitySession } from "./activity-session";
+import { activityWaitlist } from "./activity-waitlist";
+import { participantOnActivity } from "./participant-on-activity";
+import { project } from "./project";
+import { speakerOnActivity } from "./speaker-on-activity";
+import { tagOnActivity } from "./tag-on-activity";
 
 export const activity = pgTable("activities", {
 	id: uuid("id").primaryKey().defaultRandom(),
@@ -32,6 +33,13 @@ export const activity = pgTable("activities", {
 	participantsLimit: integer("participants_limit"),
 	tolerance: integer("tolerance"),
 	workload: integer("workload"),
+	allowOverlap: boolean("allow_overlap").notNull().default(false),
+	// Fila de espera: quando as vagas acabarem, participantes podem entrar
+	// em uma fila e receber a vaga caso alguém desista. Desligar bloqueia
+	// novas entradas, sem apagar as existentes nem as ofertas pendentes.
+	waitlistEnabled: boolean("waitlist_enabled").notNull().default(true),
+	// Prazo para confirmar a vaga oferecida pela fila de espera
+	waitlistOfferHours: integer("waitlist_offer_hours").notNull().default(12),
 
 	// 📍 Location fields
 	address: text("address"), // Human-readable address for display
@@ -57,6 +65,7 @@ export const activityRelations = relations(activity, ({ one, many }) => ({
 	speakerOnActivity: many(speakerOnActivity),
 	sessions: many(activitySession),
 	tagOnActivity: many(tagOnActivity),
+	waitlist: many(activityWaitlist),
 	conflictsAsBlocking: many(activityConflict, {
 		relationName: "blockingActivities",
 	}),

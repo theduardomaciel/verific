@@ -1,0 +1,1 @@
+ALTER TABLE "activities" ADD COLUMN "allow_overlap" boolean DEFAULT false NOT NULL;

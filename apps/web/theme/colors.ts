@@ -73,19 +73,6 @@ const baseColors = {
 const allColors = {
 	...baseColors,
 
-	"$success-bg": {
-		light: "hsl(143, 85%, 96%)",
-		dark: "hsl(150, 100%, 6%)",
-	},
-	"$success-border": {
-		light: "hsl(145, 92%, 87%)",
-		dark: "hsl(147, 100%, 12%)",
-	},
-	"$success-text": {
-		light: "hsl(140, 100%, 27%)",
-		dark: "hsl(150, 86%, 65%)",
-	},
-
 	/***********************************************************/
 	/* Semantic, light/dark color groups are prefixed with `$` */
 	/***********************************************************/
@@ -147,12 +134,36 @@ const allColors = {
 		dark: baseColors.brand[200],
 	},
 	$destructive: {
-		light: baseColors.red[500],
+		light: baseColors.red[600],
 		dark: baseColors.red[900],
 	},
 	$destructiveForeground: {
 		light: baseColors.white,
-		dark: baseColors.white,
+		dark: baseColors.red[50],
+	},
+	$warning: {
+		light: baseColors.yellow[400],
+		dark: baseColors.yellow[900],
+	},
+	$warningForeground: {
+		light: baseColors.neutral[900],
+		dark: baseColors.yellow[100],
+	},
+	$success: {
+		light: baseColors.green[700],
+		dark: baseColors.green[900],
+	},
+	$successForeground: {
+		light: baseColors.white,
+		dark: baseColors.green[50],
+	},
+	$info: {
+		light: customColors.blue[600],
+		dark: customColors.blue[900],
+	},
+	$infoForeground: {
+		light: baseColors.white,
+		dark: customColors.blue[50],
 	},
 	$border: {
 		light: baseColors.gray[200],

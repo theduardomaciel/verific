@@ -1,8 +1,8 @@
-// Components
-import { Badge } from "@/components/ui/badge";
-
 // Icons
 import { Calendar, Clock, MapPin } from "lucide-react";
+
+// Components
+import { Badge } from "@/components/ui/badge";
 
 // Lib
 import {
@@ -52,30 +52,30 @@ export function ActivityCardTags({
 		<div className="flex flex-wrap gap-2">
 			<Badge
 				className={cn(
-					"bg-background text-foreground py-1 break-words brightness-95",
+					"bg-background text-foreground py-1 wrap-break-word brightness-95",
 					tagsClassName,
 				)}
 			>
-				<Calendar className="mr-2 !h-3.5 !w-3.5" />
+				<Calendar className="mr-2 h-3.5! w-3.5!" />
 				<span className="-mt-0.5 text-sm">{displayDate}</span>
 			</Badge>
 			<Badge
 				className={cn(
-					"bg-background text-foreground py-1 break-words brightness-95",
+					"bg-background text-foreground py-1 wrap-break-word brightness-95",
 					tagsClassName,
 				)}
 			>
-				<Clock className="mr-2 !h-3.5 !w-3.5" />
+				<Clock className="mr-2 h-3.5! w-3.5!" />
 				<span className="-mt-0.5 text-sm">{displayTime}</span>
 			</Badge>
 			{/* {activity.workload ? (
 				<Badge
 					className={cn(
-						"bg-background text-foreground py-1 break-words brightness-95",
+						"bg-background text-foreground py-1 wrap-break-word brightness-95",
 						tagsClassName,
 					)}
 				>
-					<BookOpen className="mr-2 !h-3.5 !w-3.5" />
+					<BookOpen className="mr-2 h-3.5! w-3.5!" />
 					<span className="-mt-0.5 text-sm">
 						{activity.workload}h
 					</span>
@@ -84,11 +84,11 @@ export function ActivityCardTags({
 			{(highlightSession?.address ?? activity.address) ? (
 				<Badge
 					className={cn(
-						"bg-background text-foreground py-1 break-words brightness-95",
+						"bg-background text-foreground py-1 wrap-break-word brightness-95",
 						tagsClassName,
 					)}
 				>
-					<MapPin className="mr-2 !h-3.5 !w-3.5" />
+					<MapPin className="mr-2 h-3.5! w-3.5!" />
 					<span className="-mt-0.5 text-sm">
 						{highlightSession?.address ?? activity.address}
 					</span>
@@ -96,11 +96,11 @@ export function ActivityCardTags({
 			) : null}
 			{/* <Badge
 				className={cn(
-					"bg-background text-foreground py-1 brightness-95 break-words",
+					"bg-background text-foreground py-1 brightness-95 wrap-break-word",
 					tagsClassName,
 				)}
 			>
-				<Users className="mr-2 !h-3.5 !w-3.5" />
+				<Users className="mr-2 h-3.5! w-3.5!" />
 				<span className="-mt-0.5 text-sm capitalize">
 					{activity.audience === "internal" ? "Interno" : "Externo"}
 				</span>

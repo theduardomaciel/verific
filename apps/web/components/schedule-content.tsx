@@ -1,13 +1,19 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
-// Components
-import { ActivityCard } from "@/components/activity/activity-card";
-import { SearchBar } from "@/components/search-bar";
-import { SortBy } from "@/components/sort-by";
-import { Empty } from "@/components/empty";
-import { FilterBy } from "@/components/filter-by";
+import { toast } from "sonner";
+
+// Types
+import type { RouterOutput } from "@verific/api";
+import { sortOptions, sortOptionsLabels } from "@verific/api/utils";
+// Enums
+import {
+	activityCategories,
+	activityCategoryLabels,
+} from "@verific/drizzle/enum/category";
+
 import {
 	Accordion,
 	AccordionContent,
@@ -15,27 +21,31 @@ import {
 	AccordionTrigger,
 } from "@/components/ui/accordion";
 
+// Components
+import { ActivityCard } from "@/components/activity/activity-card";
+import {
+	QuickJoinDialog,
+	type JoinBlockReason,
+	type QuickJoinActivity,
+} from "@/components/activity/quick-join-dialog";
+import { Empty } from "@/components/empty";
 // Icons
+import { FilterBy } from "@/components/filter-by";
+import { SearchBar } from "@/components/search-bar";
+import { SortBy } from "@/components/sort-by";
 
+// Hooks
+import { useSubscribedActivities } from "@/hooks/use-subscribed-activities";
 // Utils
 import {
 	categorizeByDate,
 	expandSessionOccurrences,
 	getFirstSessionStart,
+	hasEverySessionEnded,
 } from "@/lib/date";
-
-// Enums
-import {
-	activityCategories,
-	activityCategoryLabels,
-} from "@verific/drizzle/enum/category";
-import { sortOptions, sortOptionsLabels } from "@verific/api/utils";
-
-// Types
-import type { RouterOutput } from "@verific/api";
-
-// Hooks
-import { useSubscribedActivities } from "@/hooks/use-subscribed-activities";
+import { findScheduleConflicts, type Conflict } from "@/lib/schedule/conflicts";
+// API
+import { trpc } from "@/lib/trpc/react";
 
 interface ScheduleContentProps {
 	activities: RouterOutput["getActivities"]["activities"];
@@ -46,12 +56,139 @@ export function ScheduleContent({
 	activities,
 	eventUrl,
 }: ScheduleContentProps) {
-	const { userId, subscribedIds, participantId } =
-		useSubscribedActivities(eventUrl);
+	const router = useRouter();
+	const {
+		userId,
+		subscribedIds,
+		participantId,
+		isPending: isMembershipPending,
+	} = useSubscribedActivities(eventUrl);
+
+	// Uma única leitura das filas do usuário no evento (sem N+1 por
+	// card): `Map<activityId, entry>` reutilizado por todos os cards.
+	const waitlistQuery = trpc.getMyWaitlistEntries.useQuery(
+		{ projectUrl: eventUrl },
+		{
+			enabled: Boolean(participantId),
+			staleTime: 30 * 1000,
+			gcTime: 5 * 60 * 1000,
+			refetchOnWindowFocus: false,
+		},
+	);
+	const waitlistByActivity = useMemo(
+		() =>
+			new Map(
+				(waitlistQuery.data ?? []).map((entry) => [
+					entry.activityId,
+					entry,
+				]),
+			),
+		[waitlistQuery.data],
+	);
+	// Enquanto vínculo ou fila resolvem, os cards mostram ação neutra
+	// (`Carregando...`) em vez de piscar "Quero participar" -> "Inscrito"
+	// ou "Entrar na fila" -> "Aguardando na fila".
+	const isActionResolving =
+		isMembershipPending ||
+		(Boolean(participantId) && waitlistQuery.isPending);
 	const [searchQuery, setSearchQuery] = useState<string>("");
 	const [sortBy, setSortBy] = useState<string | undefined>(undefined);
 	const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
 	const [tagFilter, setTagFilter] = useState<string[]>([]);
+
+	// Quick join: uma instância de diálogo para a programação inteira.
+	const [quickJoinId, setQuickJoinId] = useState<string | null>(null);
+	// Pós-join local (a contagem estática não muda sozinha): +1 vaga
+	// ocupada e estado "Inscrito" imediatos até dados frescos chegarem.
+	const [joinedIds, setJoinedIds] = useState<string[]>([]);
+	// Respostas do servidor em corrida: o card reflete o estado real.
+	const [exhaustedIds, setExhaustedIds] = useState<string[]>([]);
+	const [closedIds, setClosedIds] = useState<string[]>([]);
+
+	const quickJoinActivity = useMemo(
+		() => activities.find((a) => a.id === quickJoinId) ?? null,
+		[activities, quickJoinId],
+	);
+
+	// Conflitos de horário por atividade: conjunto inscrito = vínculo do
+	// servidor (`subscribedIds`) ∪ join local (`joinedIds`, imediato).
+	// Fonte é sempre `activities` (nunca a lista filtrada) para busca e
+	// filtros nunca esconderem conflitos. Uma computação, sem hook por card.
+	// O `now` congela na montagem (regras `react(purity)`/`set-state-in-effect`
+	// barram relógio no render): suficiente para avisos consultivos, que
+	// recalculam a cada navegação.
+	const [now] = useState(() => new Date());
+
+	const conflictMap = useMemo(() => {
+		const map = new Map<string, Conflict[]>();
+		if (!userId || !participantId || !now) return map;
+		const enrolledIds = new Set([...(subscribedIds ?? []), ...joinedIds]);
+		if (enrolledIds.size === 0) return map;
+		const enrolledById = new Map(activities.map((a) => [a.id, a]));
+		const enrolled = [...enrolledIds]
+			.map((id) => enrolledById.get(id))
+			.filter((a) => a !== undefined);
+		for (const activity of activities) {
+			if (enrolledIds.has(activity.id)) continue;
+			if (hasEverySessionEnded(activity.sessions)) continue;
+			const conflicts = findScheduleConflicts(activity, enrolled, now);
+			if (conflicts.length > 0) map.set(activity.id, conflicts);
+		}
+		return map;
+	}, [activities, subscribedIds, joinedIds, userId, participantId, now]);
+
+	function handleJoined(activity: QuickJoinActivity): void {
+		setQuickJoinId(null);
+		setJoinedIds((prev) =>
+			prev.includes(activity.id) ? prev : [...prev, activity.id],
+		);
+		// `id` fixo no toast: duplo clique compartilha a promessa e pode
+		// chamar isto duas vezes — o segundo substitui, não empilha.
+		toast.success(`Inscrição confirmada em ${activity.name}`, {
+			id: `quick-join-${activity.id}`,
+		});
+		// Atrasa o foco para depois do retorno de foco do Radix (que
+		// mira o botão "Quero participar", já trocado por "Inscrito").
+		window.setTimeout(() => {
+			document
+				.getElementById(activity.id)
+				?.focus({ preventScroll: true });
+		}, 50);
+	}
+
+	function handleBlocked(
+		activity: QuickJoinActivity,
+		reason: JoinBlockReason,
+	): void {
+		setQuickJoinId(null);
+		if (reason === "full") {
+			setExhaustedIds((prev) =>
+				prev.includes(activity.id) ? prev : [...prev, activity.id],
+			);
+			toast.error(
+				activity.waitlistEnabled === false
+					? "As vagas acabaram."
+					: "As vagas acabaram. Você ainda pode entrar na fila de espera.",
+			);
+		} else if (reason === "disabled") {
+			toast.error("A fila de espera desta atividade foi desativada.");
+			router.push(`/${eventUrl}/schedule/${activity.id}`);
+		} else if (reason === "closed") {
+			setClosedIds((prev) =>
+				prev.includes(activity.id) ? prev : [...prev, activity.id],
+			);
+			toast.error("As inscrições foram encerradas.");
+		} else if (reason === "conflict") {
+			// O hook já invalidou vínculo + inscritas: o mapa recalcula
+			// e o card vira o tratamento bloqueado sozinho.
+			toast.error(
+				"Esta atividade conflita com outra em que você já está inscrito.",
+			);
+		} else {
+			toast.info("Esta atividade pede informações adicionais.");
+			router.push(`/${eventUrl}/schedule/${activity.id}`);
+		}
+	}
 
 	const cleanFilters = () => {
 		setSearchQuery("");
@@ -154,7 +291,7 @@ export function ScheduleContent({
 					value={searchQuery}
 					onChange={setSearchQuery}
 				/>
-				<div className="flex gap-4">
+				<div className="flex gap-4 max-md:flex-wrap">
 					<SortBy
 						value={sortBy}
 						onChange={setSortBy}
@@ -207,6 +344,14 @@ export function ScheduleContent({
 												const isLastOdd =
 													arr.length % 2 === 1 &&
 													idx === arr.length - 1;
+												const isJoined =
+													joinedIds.includes(
+														activity.id,
+													);
+												const waitlistEntry =
+													waitlistByActivity.get(
+														activity.id,
+													);
 												return (
 													<ActivityCard
 														key={`${activity.id}-${occurrence.sessionIndex}`}
@@ -229,13 +374,58 @@ export function ScheduleContent({
 																: null
 														}
 														participantId={
-															subscribedIds?.includes(
-																activity.id,
-															)
+															isJoined
 																? participantId
-																: undefined
+																: subscribedIds?.includes(
+																			activity.id,
+																	  )
+																	? participantId
+																	: undefined
+														}
+														eventParticipantId={
+															participantId
+														}
+														subscribedIds={
+															subscribedIds
+														}
+														waitlistPosition={
+															waitlistEntry?.position ??
+															null
+														}
+														hasWaitlistOffer={
+															waitlistEntry?.status ===
+															"offered"
+														}
+														isActionLoading={
+															isActionResolving
 														}
 														userId={userId}
+														onQuickJoin={(
+															selected,
+														) =>
+															setQuickJoinId(
+																selected.id,
+															)
+														}
+														seatDelta={
+															isJoined ? 1 : 0
+														}
+														statusOverride={
+															exhaustedIds.includes(
+																activity.id,
+															)
+																? "full"
+																: closedIds.includes(
+																			activity.id,
+																	  )
+																	? "closed"
+																	: null
+														}
+														conflicts={
+															conflictMap.get(
+																activity.id,
+															) ?? []
+														}
 													/>
 												);
 											})}
@@ -262,6 +452,20 @@ export function ScheduleContent({
 					/>
 				)}
 			</div>
+
+			{quickJoinActivity && participantId && userId ? (
+				<QuickJoinDialog
+					activity={quickJoinActivity}
+					participantId={participantId}
+					userId={userId}
+					open={quickJoinId !== null}
+					onOpenChange={(next) => {
+						if (!next) setQuickJoinId(null);
+					}}
+					onJoined={handleJoined}
+					onBlocked={handleBlocked}
+				/>
+			) : null}
 		</>
 	);
 }

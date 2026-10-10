@@ -1,0 +1,145 @@
+import type { ActivitySpec, EventSpec } from "./seed-event";
+
+export interface SeedProfile {
+	users: number;
+	events: EventSpec[];
+}
+
+const randomActivities = (count: number): ActivitySpec[] =>
+	Array.from({ length: count }, () => ({}));
+
+// As atividades aleatórias terminam até as 21h. Às 21h do último dia, ninguém
+// do seed está ocupado, então a inscrição dos testes de carga não esbarra em
+// conflito de horário.
+const STRESS_JOIN_SLOT = { day: 2, startHour: 21, hours: 1 };
+
+// Atividade longa, como uma maratona, que não conflita com as outras
+const OVERLAPPING_ACTIVITY: ActivitySpec = {
+	allowOverlap: true,
+	sessions: 1,
+	slot: { day: 1, startHour: 8, hours: 10 },
+};
+
+// Nomes usados pelos testes de carga para localizar o cenário
+export const STRESS_EVENT = {
+	url: "seed-stress",
+	activities: {
+		limit50: "Estresse: limite 50",
+		limit100: (n: number) => `Estresse: limite 100 (${n})`,
+		checkin: "Estresse: check-in",
+	},
+	limit100Count: 10,
+} as const;
+
+export const profiles = {
+	light: {
+		users: 30,
+		events: [
+			{
+				startsInDays: 14,
+				durationDays: 5,
+				participants: 15,
+				monitors: 2,
+				moderators: 1,
+				speakers: 6,
+				activities: [
+					{
+						participantsLimit: 8,
+						waitlist: { waiting: 3, offered: 1 },
+					},
+					...randomActivities(18),
+					OVERLAPPING_ACTIVITY,
+				],
+			},
+			{
+				startsInDays: -1,
+				durationDays: 4,
+				participants: 15,
+				monitors: 2,
+				moderators: 1,
+				speakers: 6,
+				activities: randomActivities(20),
+			},
+		],
+	},
+	default: {
+		users: 400,
+		events: [
+			{
+				startsInDays: 14,
+				durationDays: 5,
+				participants: 250,
+				monitors: 5,
+				moderators: 2,
+				speakers: 15,
+				activities: [
+					{
+						participantsLimit: 20,
+						waitlist: { waiting: 5, offered: 1 },
+					},
+					{ participantsLimit: 15, waitlist: { waiting: 3 } },
+					...randomActivities(57),
+					OVERLAPPING_ACTIVITY,
+				],
+			},
+			{
+				startsInDays: -1,
+				durationDays: 4,
+				participants: 200,
+				monitors: 5,
+				moderators: 2,
+				speakers: 10,
+				activities: randomActivities(50),
+			},
+		],
+	},
+	// Cenário dos testes de estresse: 1500 inscritos + 20 monitores no evento
+	// e 1500 usuários ainda não inscritos
+	stress: {
+		users: 3020,
+		events: [
+			{
+				name: "Evento de Estresse",
+				url: STRESS_EVENT.url,
+				startsInDays: 7,
+				durationDays: 3,
+				participants: 1520,
+				monitors: 20,
+				moderators: 0,
+				speakers: 10,
+				activities: [
+					{
+						name: STRESS_EVENT.activities.limit50,
+						participantsLimit: 50,
+						sessions: 1,
+						slot: STRESS_JOIN_SLOT,
+						enrolled: 0,
+						monitors: 0,
+					},
+					...Array.from(
+						{ length: STRESS_EVENT.limit100Count },
+						(_, i) => ({
+							name: STRESS_EVENT.activities.limit100(i + 1),
+							participantsLimit: 100,
+							sessions: 1,
+							slot: STRESS_JOIN_SLOT,
+							enrolled: 0,
+							monitors: 0,
+						}),
+					),
+					{
+						name: STRESS_EVENT.activities.checkin,
+						participantsLimit: null,
+						sessions: 1,
+						slot: { day: 0, startHour: 8, hours: 2 },
+						enrolled: "all",
+						monitors: "all",
+					},
+					...randomActivities(40),
+				],
+			},
+		],
+	},
+} satisfies Record<string, SeedProfile>;
+
+export type ProfileName = keyof typeof profiles;

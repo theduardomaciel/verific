@@ -2,15 +2,8 @@
 
 export default function ScheduleLayout({
 	children,
-	modal, // rota paralela
 }: {
 	children: React.ReactNode;
-	modal: React.ReactNode;
 }) {
-	return (
-		<>
-			{children}
-			{modal}
-		</>
-	);
+	return <>{children}</>;
 }

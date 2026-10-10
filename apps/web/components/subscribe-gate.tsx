@@ -4,13 +4,16 @@ import Link from "next/link";
 
 import { CircleCheckBig } from "lucide-react";
 
-import JoinForm from "@/components/forms/JoinForm";
+import type { RouterOutput } from "@verific/api";
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+
+import JoinForm from "@/components/forms/JoinForm";
+
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc/react";
-import type { RouterOutput } from "@verific/api";
 
 interface SubscribeGateProps {
 	project: {

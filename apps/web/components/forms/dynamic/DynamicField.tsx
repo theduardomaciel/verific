@@ -1,27 +1,13 @@
 "use client";
 
-import { type Control, type FieldValues } from "react-hook-form";
 import { useState } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input, PhoneInput } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+
 import {
-	FormControl,
-	FormDescription,
-	FormItem,
-	FormLabel,
-	FormMessage,
-	FormField as RHFFormField,
-} from "@/components/ui/form";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Combobox } from "@/components/ui/combobox";
+	type Control,
+	type FieldPath,
+	type FieldValues,
+} from "react-hook-form";
+
 import type { RouterOutput } from "@verific/api";
 import {
 	OTHER_LABEL,
@@ -30,21 +16,50 @@ import {
 	OTHER_TEXT_MAX_LENGTH,
 } from "@verific/api/schemas";
 import { SOCIAL_SERVICES } from "@verific/drizzle/profile-layout";
+
+import { Checkbox } from "@/components/ui/checkbox";
+import { Combobox } from "@/components/ui/combobox";
+import {
+	FormControl,
+	FormDescription,
+	FormItem,
+	FormLabel,
+	FormMessage,
+	FormField as RHFFormField,
+} from "@/components/ui/form";
+import { Input, PhoneInput } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+
+import { getFieldId } from "@/lib/forms/field-id";
+import { cn } from "@/lib/utils";
+
 import { SocialLinksEditor, type SocialEntry } from "./SocialLinksEditor";
 
 export type DynamicFormField = NonNullable<
 	RouterOutput["getPublishedForm"]
 >["fields"][number];
 
-interface DynamicFieldProps {
+interface DynamicFieldProps<TFieldValues extends FieldValues = FieldValues> {
 	field: DynamicFormField;
-	control: Control<FieldValues>;
+	control: Control<TFieldValues>;
 	name: string;
 	disabled?: boolean;
 }
 
 function requiredMark(required: boolean) {
-	return required ? <span className="text-destructive ml-1">*</span> : null;
+	return required ? (
+		<span aria-hidden="true" className="text-destructive ml-1">
+			*
+		</span>
+	) : null;
 }
 
 function getAllowOther(field: DynamicFormField): boolean {
@@ -58,12 +73,14 @@ function getAllowOther(field: DynamicFormField): boolean {
  * gracefully handles options deleted/renamed after answering).
  */
 function SelectMultipleWithOther({
+	idPrefix,
 	options,
 	allowOther,
 	value,
 	disabled,
 	onChange,
 }: {
+	idPrefix: string;
 	options: string[];
 	allowOther: boolean;
 	value: string[];
@@ -79,17 +96,21 @@ function SelectMultipleWithOther({
 		if (others.length > 0) setOtherOpen(true);
 	}
 	const otherText = others[0] ?? "";
+	const otherId = `${idPrefix}-other`;
+	const otherTextId = `${idPrefix}-other-text`;
 
 	return (
 		<div className="flex flex-col gap-2">
-			{options.map((opt) => {
+			{options.map((opt, index) => {
 				const checked = value.includes(opt);
+				const optionId = `${idPrefix}-option-${index}`;
 				return (
-					<label
+					<div
 						key={opt}
 						className="flex cursor-pointer items-center gap-2 text-sm"
 					>
 						<Checkbox
+							id={optionId}
 							disabled={disabled}
 							checked={checked}
 							onCheckedChange={(c) => {
@@ -97,14 +118,17 @@ function SelectMultipleWithOther({
 								else onChange(value.filter((v) => v !== opt));
 							}}
 						/>
-						{opt}
-					</label>
+						<label htmlFor={optionId} className="cursor-pointer">
+							{opt}
+						</label>
+					</div>
 				);
 			})}
 			{allowOther && (
 				<>
-					<label className="flex cursor-pointer items-center gap-2 text-sm">
+					<div className="flex cursor-pointer items-center gap-2 text-sm">
 						<Checkbox
+							id={otherId}
 							disabled={disabled}
 							checked={otherOpen}
 							onCheckedChange={(c) => {
@@ -120,10 +144,14 @@ function SelectMultipleWithOther({
 								}
 							}}
 						/>
-						{OTHER_LABEL}
-					</label>
+						<label htmlFor={otherId} className="cursor-pointer">
+							{OTHER_LABEL}
+						</label>
+					</div>
 					{otherOpen && (
 						<Input
+							id={otherTextId}
+							aria-label={OTHER_LABEL}
 							type="text"
 							placeholder={OTHER_PLACEHOLDER}
 							disabled={disabled}
@@ -152,36 +180,81 @@ const EMPTY_SELECT_VALUE = "__verific_empty__";
  */
 const COMBOBOX_THRESHOLD = 10;
 
-export function DynamicField({
+export function DynamicField<TFieldValues extends FieldValues = FieldValues>({
 	field,
 	control,
 	name,
 	disabled,
-}: DynamicFieldProps) {
-	const label = (
-		<FormLabel>
-			{field.label}
-			{requiredMark(field.required)}
-		</FormLabel>
-	);
-
+}: DynamicFieldProps<TFieldValues>) {
 	return (
 		<RHFFormField
 			control={control}
-			name={name}
-			render={({ field: rhf }) => {
+			name={name as FieldPath<TFieldValues>}
+			render={({ field: rhf, fieldState }) => {
+				// Identificadores estáveis derivados do `name` (e não do
+				// `useId` interno do shadcn): o `FormControl`/`FormLabel`
+				// repassam via `Slot`, então os ids explícitos aqui
+				// vencem os aleatórios — `htmlFor`, `#âncora` e foco
+				// passam a funcionar para todo tipo de campo.
+				const controlId = getFieldId(name);
+				const legendId = `${controlId}-legend`;
+				const descriptionId = `${controlId}-description`;
+				const messageId = `${controlId}-message`;
+				const error = fieldState.error;
+
+				const describedIds: string[] = [];
+				if (field.helpText) describedIds.push(descriptionId);
+				if (error) describedIds.push(messageId);
+				const describedBy =
+					describedIds.length > 0
+						? describedIds.join(" ")
+						: undefined;
+				const required = field.required || undefined;
+
+				const label = (
+					<FormLabel htmlFor={controlId}>
+						{field.label}
+						{requiredMark(field.required)}
+					</FormLabel>
+				);
+
+				// Controles agrupados (grupo de rádio, múltipla escolha,
+				// links sociais): sem `htmlFor` único — o `span` nomeia o
+				// grupo via `aria-labelledby` e o grupo carrega
+				// `aria-required`/`aria-describedby`/`aria-invalid`.
+				const groupLabel = (
+					<span
+						id={legendId}
+						data-error={!!error}
+						className={cn(
+							"text-sm leading-none font-medium select-none data-[error=true]:text-destructive",
+						)}
+					>
+						{field.label}
+						{requiredMark(field.required)}
+					</span>
+				);
+
+				const help = field.helpText ? (
+					<FormDescription id={descriptionId}>
+						{field.helpText}
+					</FormDescription>
+				) : null;
+
+				const message = <FormMessage id={messageId} />;
+
 				const value = rhf.value;
 				switch (field.type) {
 					case "textarea":
 						return (
-							<FormItem className="w-full">
+							<FormItem className="w-full scroll-mt-24">
 								{label}
-								{field.helpText && (
-									<FormDescription>
-										{field.helpText}
-									</FormDescription>
-								)}
-								<FormControl>
+								{help}
+								<FormControl
+									id={controlId}
+									aria-describedby={describedBy}
+									aria-required={required}
+								>
 									<Textarea
 										className="resize-y"
 										placeholder={field.helpText ?? ""}
@@ -195,19 +268,19 @@ export function DynamicField({
 										ref={rhf.ref}
 									/>
 								</FormControl>
-								<FormMessage />
+								{message}
 							</FormItem>
 						);
 					case "number":
 						return (
-							<FormItem className="w-full">
+							<FormItem className="w-full scroll-mt-24">
 								{label}
-								{field.helpText && (
-									<FormDescription>
-										{field.helpText}
-									</FormDescription>
-								)}
-								<FormControl>
+								{help}
+								<FormControl
+									id={controlId}
+									aria-describedby={describedBy}
+									aria-required={required}
+								>
 									<Input
 										type="text"
 										inputMode="decimal"
@@ -231,25 +304,30 @@ export function DynamicField({
 										name={rhf.name}
 									/>
 								</FormControl>
-								<FormMessage />
+								{message}
 							</FormItem>
 						);
 					case "date":
 						return (
-							<FormItem className="w-full">
+							<FormItem className="w-full scroll-mt-24">
 								{label}
-								{field.helpText && (
-									<FormDescription>
-										{field.helpText}
-									</FormDescription>
-								)}
-								<FormControl>
+								{help}
+								<FormControl
+									id={controlId}
+									aria-describedby={describedBy}
+									aria-required={required}
+								>
 									<Input
 										type="date"
 										disabled={disabled}
 										value={
-											value instanceof Date
-												? value
+											// `instanceof Date` exige `any`/`object` no LHS; com o
+											// controle genérico o valor chega como tipo preciso,
+											// então detecta Date por duck-typing sem casts.
+											Object.prototype.toString.call(
+												value,
+											) === "[object Date]"
+												? (value as unknown as Date)
 														.toISOString()
 														.slice(0, 10)
 												: ((value as string) ?? "")
@@ -263,7 +341,7 @@ export function DynamicField({
 										name={rhf.name}
 									/>
 								</FormControl>
-								<FormMessage />
+								{message}
 							</FormItem>
 						);
 					case "select_single": {
@@ -345,15 +423,15 @@ export function DynamicField({
 								: []),
 						];
 						return (
-							<FormItem className="w-full">
+							<FormItem className="w-full scroll-mt-24">
 								{label}
-								{field.helpText && (
-									<FormDescription>
-										{field.helpText}
-									</FormDescription>
-								)}
+								{help}
 								{useCombobox ? (
-									<FormControl>
+									<FormControl
+										id={controlId}
+										aria-describedby={describedBy}
+										aria-required={required}
+									>
 										<Combobox
 											value={singleSelectValue}
 											onChange={handleSingleChange}
@@ -371,7 +449,11 @@ export function DynamicField({
 										value={singleSelectValue}
 										onValueChange={handleSingleChange}
 									>
-										<FormControl>
+										<FormControl
+											id={controlId}
+											aria-describedby={describedBy}
+											aria-required={required}
+										>
 											<SelectTrigger className="w-full">
 												<SelectValue placeholder="Selecione uma opção" />
 											</SelectTrigger>
@@ -406,7 +488,13 @@ export function DynamicField({
 									</Select>
 								)}
 								{singleOtherSelected && (
-									<FormControl>
+									<FormControl
+										id={`${controlId}-other`}
+										aria-label={OTHER_LABEL}
+										aria-describedby={
+											error ? messageId : undefined
+										}
+									>
 										<Input
 											type="text"
 											placeholder={OTHER_PLACEHOLDER}
@@ -421,7 +509,7 @@ export function DynamicField({
 										/>
 									</FormControl>
 								)}
-								<FormMessage />
+								{message}
 							</FormItem>
 						);
 					}
@@ -453,14 +541,15 @@ export function DynamicField({
 								? radioRaw
 								: "";
 						return (
-							<FormItem className="w-full">
-								{label}
-								{field.helpText && (
-									<FormDescription>
-										{field.helpText}
-									</FormDescription>
-								)}
-								<FormControl>
+							<FormItem className="w-full scroll-mt-24">
+								{groupLabel}
+								{help}
+								<FormControl
+									id={controlId}
+									aria-labelledby={legendId}
+									aria-describedby={describedBy}
+									aria-required={required}
+								>
 									<RadioGroup
 										disabled={disabled}
 										value={radioValue}
@@ -491,41 +580,54 @@ export function DynamicField({
 											<div className="flex items-center gap-2 text-sm">
 												<RadioGroupItem
 													value={EMPTY_SELECT_VALUE}
-													id={`${name}-clear`}
+													id={getFieldId(
+														`${name}-clear`,
+													)}
 												/>
 												<label
-													htmlFor={`${name}-clear`}
+													htmlFor={getFieldId(
+														`${name}-clear`,
+													)}
 													className="text-muted-foreground cursor-pointer"
 												>
 													Limpar seleção
 												</label>
 											</div>
 										)}
-										{radioOptions.map((opt) => (
-											<div
-												key={opt}
-												className="flex items-center gap-2 text-sm"
-											>
-												<RadioGroupItem
-													value={opt}
-													id={`${name}-${opt}`}
-												/>
-												<label
-													htmlFor={`${name}-${opt}`}
-													className="cursor-pointer"
+										{radioOptions.map((opt, index) => {
+											const optionId = getFieldId(
+												`${name}-option-${index}`,
+											);
+											return (
+												<div
+													key={opt}
+													className="flex items-center gap-2 text-sm"
 												>
-													{opt}
-												</label>
-											</div>
-										))}
+													<RadioGroupItem
+														value={opt}
+														id={optionId}
+													/>
+													<label
+														htmlFor={optionId}
+														className="cursor-pointer"
+													>
+														{opt}
+													</label>
+												</div>
+											);
+										})}
 										{radioAllowOther && (
 											<div className="flex items-center gap-2 text-sm">
 												<RadioGroupItem
 													value={OTHER_SENTINEL}
-													id={`${name}-other`}
+													id={getFieldId(
+														`${name}-other`,
+													)}
 												/>
 												<label
-													htmlFor={`${name}-other`}
+													htmlFor={getFieldId(
+														`${name}-other`,
+													)}
 													className="cursor-pointer"
 												>
 													{OTHER_LABEL}
@@ -535,7 +637,13 @@ export function DynamicField({
 									</RadioGroup>
 								</FormControl>
 								{radioOtherSelected && (
-									<FormControl>
+									<FormControl
+										id={`${controlId}-other-text`}
+										aria-label={OTHER_LABEL}
+										aria-describedby={
+											error ? messageId : undefined
+										}
+									>
 										<Input
 											type="text"
 											placeholder={OTHER_PLACEHOLDER}
@@ -550,7 +658,7 @@ export function DynamicField({
 										/>
 									</FormControl>
 								)}
-								<FormMessage />
+								{message}
 							</FormItem>
 						);
 					}
@@ -559,28 +667,38 @@ export function DynamicField({
 							? value
 							: [];
 						return (
-							<FormItem className="w-full">
-								{label}
-								{field.helpText && (
-									<FormDescription>
-										{field.helpText}
-									</FormDescription>
-								)}
-								<SelectMultipleWithOther
-									options={field.options ?? []}
-									allowOther={getAllowOther(field)}
-									value={selected}
-									disabled={disabled}
-									onChange={rhf.onChange}
-								/>
-								<FormMessage />
+							<FormItem className="w-full scroll-mt-24">
+								{groupLabel}
+								{help}
+								<FormControl
+									id={controlId}
+									aria-labelledby={legendId}
+									aria-describedby={describedBy}
+									aria-required={required}
+								>
+									<div role="group">
+										<SelectMultipleWithOther
+											idPrefix={controlId}
+											options={field.options ?? []}
+											allowOther={getAllowOther(field)}
+											value={selected}
+											disabled={disabled}
+											onChange={rhf.onChange}
+										/>
+									</div>
+								</FormControl>
+								{message}
 							</FormItem>
 						);
 					}
 					case "checkbox":
 						return (
-							<FormItem className="flex flex-row items-start gap-3 space-y-0">
-								<FormControl>
+							<FormItem className="flex scroll-mt-24 flex-row items-start gap-3 space-y-0">
+								<FormControl
+									id={controlId}
+									aria-describedby={describedBy}
+									aria-required={required}
+								>
 									<Checkbox
 										disabled={disabled}
 										checked={Boolean(value)}
@@ -588,29 +706,25 @@ export function DynamicField({
 									/>
 								</FormControl>
 								<div className="space-y-1 leading-none">
-									<FormLabel>
+									<FormLabel htmlFor={controlId}>
 										{field.label}
 										{requiredMark(field.required)}
 									</FormLabel>
-									{field.helpText && (
-										<FormDescription>
-											{field.helpText}
-										</FormDescription>
-									)}
-									<FormMessage />
+									{help}
+									{message}
 								</div>
 							</FormItem>
 						);
 					case "phone":
 						return (
-							<FormItem className="w-full">
+							<FormItem className="w-full scroll-mt-24">
 								{label}
-								{field.helpText && (
-									<FormDescription>
-										{field.helpText}
-									</FormDescription>
-								)}
-								<FormControl>
+								{help}
+								<FormControl
+									id={controlId}
+									aria-describedby={describedBy}
+									aria-required={required}
+								>
 									<PhoneInput
 										name={rhf.name}
 										disabled={disabled}
@@ -623,19 +737,19 @@ export function DynamicField({
 										onBlur={rhf.onBlur}
 									/>
 								</FormControl>
-								<FormMessage />
+								{message}
 							</FormItem>
 						);
 					case "email":
 						return (
-							<FormItem className="w-full">
+							<FormItem className="w-full scroll-mt-24">
 								{label}
-								{field.helpText && (
-									<FormDescription>
-										{field.helpText}
-									</FormDescription>
-								)}
-								<FormControl>
+								{help}
+								<FormControl
+									id={controlId}
+									aria-describedby={describedBy}
+									aria-required={required}
+								>
 									<Input
 										type="email"
 										inputMode="email"
@@ -658,7 +772,7 @@ export function DynamicField({
 										name={rhf.name}
 									/>
 								</FormControl>
-								<FormMessage />
+								{message}
 							</FormItem>
 						);
 					case "social_links": {
@@ -675,32 +789,41 @@ export function DynamicField({
 							Array.isArray(value) ? value : []
 						) as SocialEntry[];
 						return (
-							<FormItem className="w-full">
-								{label}
-								{field.helpText && (
-									<FormDescription>
-										{field.helpText}
-									</FormDescription>
-								)}
-								<FormControl>
-									<SocialLinksEditor
-										services={services}
-										value={entries}
-										disabled={disabled}
-										onChange={(next) => rhf.onChange(next)}
-									/>
+							<FormItem className="w-full scroll-mt-24">
+								{groupLabel}
+								{help}
+								<FormControl
+									id={controlId}
+									aria-labelledby={legendId}
+									aria-describedby={describedBy}
+									aria-required={required}
+								>
+									<div role="group">
+										<SocialLinksEditor
+											services={services}
+											value={entries}
+											disabled={disabled}
+											onChange={(next) =>
+												rhf.onChange(next)
+											}
+										/>
+									</div>
 								</FormControl>
-								<FormMessage />
+								{message}
 							</FormItem>
 						);
 					}
 					case "text":
 					default:
 						return (
-							<FormItem className="w-full">
+							<FormItem className="w-full scroll-mt-24">
 								{label}
 
-								<FormControl>
+								<FormControl
+									id={controlId}
+									aria-describedby={describedBy}
+									aria-required={required}
+								>
 									<Input
 										type="text"
 										placeholder=""
@@ -721,12 +844,8 @@ export function DynamicField({
 										name={rhf.name}
 									/>
 								</FormControl>
-								{field.helpText && (
-									<FormDescription>
-										{field.helpText}
-									</FormDescription>
-								)}
-								<FormMessage />
+								{help}
+								{message}
 							</FormItem>
 						);
 				}

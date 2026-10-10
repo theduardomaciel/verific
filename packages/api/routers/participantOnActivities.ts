@@ -1,17 +1,7 @@
-import { z } from "@verific/zod";
+// tRPC
+import { TRPCError } from "@trpc/server";
 
 import { db } from "@verific/drizzle";
-import {
-	activity,
-	activitySession,
-	formAnswer,
-	formVersion,
-	participant,
-	participantOnActivity,
-	project,
-	projectModerator,
-	sessionAttendance,
-} from "@verific/drizzle/schema";
 import {
 	and,
 	asc,
@@ -20,11 +10,23 @@ import {
 	countDistinct,
 	inArray,
 } from "@verific/drizzle/orm";
-import type { ParticipantActivitySession } from "../schemas";
+import {
+	activity,
+	activitySession,
+	participant,
+	participantOnActivity,
+	project,
+	projectModerator,
+	sessionAttendance,
+} from "@verific/drizzle/schema";
+import { z } from "@verific/zod";
 
-// tRPC
-import { TRPCError } from "@trpc/server";
+import { deleteActivityAnswers } from "../enrollment";
+import { lockActivity } from "../seats";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { settleActivity } from "../waitlist";
+
+import type { ParticipantActivitySession } from "../schemas";
 
 export const participantOnActivitiesRouter = createTRPCRouter({
 	getActivitiesFromParticipant: protectedProcedure
@@ -267,50 +269,44 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 				});
 			}
 
-			await db
-				.delete(participantOnActivity)
-				.where(
-					and(
-						eq(participantOnActivity.activityId, activityId),
-						eq(participantOnActivity.participantId, participantId),
-					),
-				);
+			await db.transaction(async (tx) => {
+				const locked = await lockActivity(tx, activityId);
 
-			// Remove presenças em sessões desta atividade (assinatura removida)
-			const activitySessions = await db
-				.select({ id: activitySession.id })
-				.from(activitySession)
-				.where(eq(activitySession.activityId, activityId));
-
-			if (activitySessions.length > 0) {
-				await db.delete(sessionAttendance).where(
-					and(
-						eq(sessionAttendance.participantId, participantId),
-						inArray(
-							sessionAttendance.sessionId,
-							activitySessions.map((s) => s.id),
+				await tx
+					.delete(participantOnActivity)
+					.where(
+						and(
+							eq(participantOnActivity.activityId, activityId),
+							eq(
+								participantOnActivity.participantId,
+								participantId,
+							),
 						),
-					),
-				);
-			}
+					);
 
-			// Remove respostas do formulário da atividade
-			const activityFormVersions = await db
-				.select({ id: formVersion.id })
-				.from(formVersion)
-				.where(eq(formVersion.activityId, activityId));
+				// Remove presenças em sessões desta atividade (assinatura removida)
+				const activitySessions = await tx
+					.select({ id: activitySession.id })
+					.from(activitySession)
+					.where(eq(activitySession.activityId, activityId));
 
-			if (activityFormVersions.length > 0) {
-				await db.delete(formAnswer).where(
-					and(
-						eq(formAnswer.participantId, participantId),
-						inArray(
-							formAnswer.formVersionId,
-							activityFormVersions.map((v) => v.id),
+				if (activitySessions.length > 0) {
+					await tx.delete(sessionAttendance).where(
+						and(
+							eq(sessionAttendance.participantId, participantId),
+							inArray(
+								sessionAttendance.sessionId,
+								activitySessions.map((s) => s.id),
+							),
 						),
-					),
-				);
-			}
+					);
+				}
+
+				await deleteActivityAnswers(tx, activityId, [participantId]);
+
+				// A vaga liberada vai para o próximo da fila
+				await settleActivity(tx, locked);
+			});
 
 			return { success: true };
 		}),
@@ -324,37 +320,47 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 			const { projectUrl } = input;
 			const userId = ctx.session.user.id;
 
+			// Vínculo com o evento primeiro: quem está inscrito no evento
+			// mas em zero atividades precisa receber `{ ids: [], participantId }`
+			// — retornar `null` aqui travava a primeira inscrição (o painel
+			// virava `not-in-event`).
+			const projectWithParticipant = await db
+				.select({
+					projectId: project.id,
+					participantId: participant.id,
+				})
+				.from(project)
+				.leftJoin(
+					participant,
+					and(
+						eq(participant.projectId, project.id),
+						eq(participant.userId, userId),
+					),
+				)
+				.where(eq(project.url, projectUrl));
+
+			const projectRow = projectWithParticipant[0];
+			const participantId = projectRow?.participantId;
+
+			if (!projectRow || !participantId) {
+				return null;
+			}
+
 			const activities = await db
 				.select({
 					activityId: participantOnActivity.activityId,
-					participantId: participantOnActivity.participantId,
 				})
 				.from(participantOnActivity)
-				.innerJoin(
-					participant,
-					eq(participant.id, participantOnActivity.participantId),
-				)
-				.innerJoin(project, eq(project.id, participant.projectId))
 				.innerJoin(
 					activity,
 					eq(activity.id, participantOnActivity.activityId),
 				)
 				.where(
 					and(
-						eq(participant.userId, userId),
-						eq(project.url, projectUrl),
-						eq(activity.projectId, project.id),
+						eq(participantOnActivity.participantId, participantId),
+						eq(activity.projectId, projectRow.projectId),
 					),
 				);
-
-			const participantId =
-				activities.length > 0
-					? activities[0]?.participantId
-					: undefined;
-
-			if (!participantId) {
-				return null;
-			}
 
 			return { ids: activities.map((a) => a.activityId), participantId };
 		}),
