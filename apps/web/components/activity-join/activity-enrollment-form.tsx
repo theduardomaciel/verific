@@ -174,7 +174,6 @@ export function ActivityEnrollmentForm({
 		name: "answers",
 	}) ?? {}) as Record<string, unknown>;
 
-	// oxlint-disable-line react-hooks/exhaustive-deps -- watchedAnswers é resultado de watch() e muda a cada render; incluí-lo derrotaria a memoização.
 	const groupedSections = useMemo(() => {
 		if (!hasConditional) {
 			return groupFieldsBySection(published.fields, published.sections);
@@ -182,7 +181,6 @@ export function ActivityEnrollmentForm({
 		const visible = filterVisibleFields(
 			published.fields,
 			sectionsForVisibility,
-			// oxlint-disable-line react-hooks/exhaustive-deps -- vide comentário acima.
 			watchedAnswers,
 		);
 		const visibleIds = getVisibleSectionIds(
@@ -199,7 +197,6 @@ export function ActivityEnrollmentForm({
 		published.sections,
 		sectionsForVisibility,
 		fieldsForValidation,
-		// oxlint-disable-line react-hooks/exhaustive-deps -- vide comentário acima.
 		watchedAnswers,
 	]);
 
@@ -310,7 +307,7 @@ export function ActivityEnrollmentForm({
 			<form
 				onSubmit={(e) => void answersForm.handleSubmit(handleValid)(e)}
 				noValidate
-				className="flex flex-col gap-6"
+				className="flex flex-col gap-4"
 			>
 				{hasRequired ? (
 					<p className="text-muted-foreground text-sm">
@@ -318,45 +315,49 @@ export function ActivityEnrollmentForm({
 					</p>
 				) : null}
 
-				<fieldset
-					disabled={isSubmitting}
-					className="flex min-w-0 flex-col gap-6 border-0 p-0"
-				>
-					{groupedSections.map((group, groupIndex) => (
-						<div
-							key={group.section.id}
-							className="flex flex-col gap-6"
-						>
-							{groupIndex > 0 && group.section.title ? (
-								<Separator />
-							) : null}
-							{group.section.title ? (
-								<fieldset className="flex min-w-0 flex-col gap-4 border-0 p-0">
-									<legend className="text-sm font-semibold">
-										{group.section.title}
-									</legend>
-									{group.fields.map((field) => (
+				<Separator />
+
+				{groupedSections.length > 0 ? (
+					<fieldset
+						disabled={isSubmitting}
+						className="flex min-w-0 flex-col gap-6 border-0 p-0"
+					>
+						{groupedSections.map((group, groupIndex) => (
+							<div
+								key={group.section.id}
+								className="flex flex-col gap-6"
+							>
+								{groupIndex > 0 && group.section.title ? (
+									<Separator />
+								) : null}
+								{group.section.title ? (
+									<fieldset className="flex min-w-0 flex-col gap-4 border-0 p-0">
+										<legend className="mb-4 text-sm font-semibold">
+											{group.section.title}
+										</legend>
+										{group.fields.map((field) => (
+											<DynamicField
+												key={field.id}
+												field={field}
+												control={answersForm.control}
+												name={`answers.${field.key}`}
+											/>
+										))}
+									</fieldset>
+								) : (
+									group.fields.map((field) => (
 										<DynamicField
 											key={field.id}
 											field={field}
 											control={answersForm.control}
 											name={`answers.${field.key}`}
 										/>
-									))}
-								</fieldset>
-							) : (
-								group.fields.map((field) => (
-									<DynamicField
-										key={field.id}
-										field={field}
-										control={answersForm.control}
-										name={`answers.${field.key}`}
-									/>
-								))
-							)}
-						</div>
-					))}
-				</fieldset>
+									))
+								)}
+							</div>
+						))}
+					</fieldset>
+				) : null}
 
 				{effectiveTolerance ? (
 					<ToleranceNotice tolerance={effectiveTolerance} />

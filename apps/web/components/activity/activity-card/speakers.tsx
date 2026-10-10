@@ -1,7 +1,10 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import Autoplay from "embla-carousel-autoplay";
 import { User } from "lucide-react";
+
+// Types
+import type { RouterOutput } from "@verific/api";
 
 // Components
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -10,10 +13,8 @@ import {
 	CarouselContent,
 	CarouselItem,
 } from "@/components/ui/carousel";
-import Autoplay from "embla-carousel-autoplay";
 
-// Types
-import type { RouterOutput } from "@verific/api";
+import { cn } from "@/lib/utils";
 
 interface Props {
 	className?: string;

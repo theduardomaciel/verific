@@ -141,11 +141,10 @@ export function ActivityCard({
 				"bg-card flex flex-col justify-between gap-4 rounded-lg border p-6 outline-none z-20",
 				{
 					"pointer-events-none opacity-50 select-none": hasEnded,
-					"border-red-950 bg-[color-mix(in_oklab,var(--color-red-500)_3%,var(--card))]":
+					"border-destructive/50 bg-[color-mix(in_oklab,var(--color-red-500)_3%,var(--card))]":
 						isFull && !waitlistEnabled && !isWaitlisted,
-					"border-yellow-950 bg-[color-mix(in_oklab,var(--color-yellow-500)_3%,var(--card))]":
-						(seats.status === "low" && !isFull) ||
-						(isFull && (waitlistEnabled || isWaitlisted)),
+					"border-warning/50 bg-[color-mix(in_oklab,var(--color-yellow-500)_3%,var(--card))]":
+						seats.status === "low" && !isFull,
 				},
 				className,
 			)}
