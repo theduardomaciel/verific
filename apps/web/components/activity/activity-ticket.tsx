@@ -1,17 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { QRCodeSVG } from "qrcode.react";
-
-import { cn } from "@/lib/utils";
 
 // Icons
 import { Check, User, Clock, Frown } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
+
+// API
+import type { RouterOutput } from "@verific/api";
 
 // Components
 import { BadgeScanner } from "@/components/badge-scanner";
-import { ActivityStatus } from "./activity-status";
-import { ActivitySpeakers } from "./activity-card/speakers";
 import { ExpandableDescription } from "@/components/shared/expandable-description";
 
 // Utils
@@ -22,14 +21,16 @@ import {
 	getSessionsSorted,
 	getSessionTimeString,
 } from "@/lib/date";
+import { cn } from "@/lib/utils";
 
-// API
-import type { RouterOutput } from "@verific/api";
+import { ActivitySpeakers } from "./activity-card/speakers";
+import { ActivityStatus } from "./activity-status";
 
 export interface WorkshopTicketProps {
 	className?: string;
 	activity: RouterOutput["getActivitiesFromParticipant"]["activities"][0];
 	participantId: string;
+	projectUrl?: string;
 }
 
 const DEFAULT_TOLERANCE = 15; // minutes
@@ -37,6 +38,7 @@ const DEFAULT_TOLERANCE = 15; // minutes
 export function ActivityTicket({
 	activity,
 	participantId,
+	projectUrl,
 	className,
 }: WorkshopTicketProps) {
 	const isMonitor = activity.role === "monitor";
@@ -148,7 +150,10 @@ export function ActivityTicket({
 
 					{/* Speakers */}
 					{activity.speakers && activity.role === "participant" && (
-						<ActivitySpeakers speakers={activity.speakers} />
+						<ActivitySpeakers
+							speakers={activity.speakers}
+							projectUrl={projectUrl}
+						/>
 					)}
 
 					{/* Monitor: Credentialed Participants Count */}
