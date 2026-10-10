@@ -60,7 +60,14 @@ export function ActivityDetailsContent({
 			</div>
 
 			{speakers && speakers.length > 0 && (
-				<ActivitySpeakers speakers={speakers} />
+				<ActivitySpeakers
+					speakers={speakers}
+					projectUrl={
+						"project" in activity
+							? (activity.project?.url ?? undefined)
+							: undefined
+					}
+				/>
 			)}
 
 			<ActivityCardTags tagsClassName="bg-muted" activity={activity} />
