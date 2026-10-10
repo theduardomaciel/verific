@@ -89,7 +89,16 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 							},
 							speakerOnActivity: {
 								with: {
-									speaker: true,
+									speaker: {
+										with: {
+											linkedParticipant: {
+												columns: {
+													id: true,
+													shortId: true,
+												},
+											},
+										},
+									},
 								},
 							},
 						},
@@ -181,7 +190,21 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 
 				return {
 					...activityData,
-					speakers: speakerOnActivity.map((s) => s.speaker),
+					speakers: speakerOnActivity.map((s) => {
+						const {
+							email: _email,
+							linkedParticipant,
+							...rest
+						} = s.speaker as typeof s.speaker & {
+							email?: string | null;
+							linkedParticipant?: { shortId: string } | null;
+						};
+						return {
+							...rest,
+							socials: rest.socials ?? [],
+							profileShortId: linkedParticipant?.shortId ?? null,
+						};
+					}),
 					tags: (tagOnActivity ?? []).map((t) => t.tag),
 					sessions: dtoSessions,
 					role: onActivity.role,

@@ -260,6 +260,23 @@ async function setActivityTags(
 	);
 }
 
+/**
+ * Public speaker shape: strips the organizer-entered `email` (linking
+ * intent, never public) and flattens the resolved profile link.
+ */
+function toPublicSpeaker<
+	T extends {
+		email?: string | null;
+		linkedParticipant?: { shortId: string } | null;
+	},
+>(speaker: T) {
+	const { email: _email, linkedParticipant, ...rest } = speaker;
+	return {
+		...rest,
+		profileShortId: linkedParticipant?.shortId ?? null,
+	};
+}
+
 export const activitiesRouter = createTRPCRouter({
 	getActivity: publicProcedure
 		.input(getActivityParams.extend({ activityId: z.uuid() }))
@@ -279,7 +296,13 @@ export const activitiesRouter = createTRPCRouter({
 					},
 					speakerOnActivity: {
 						with: {
-							speaker: true,
+							speaker: {
+								with: {
+									linkedParticipant: {
+										columns: { id: true, shortId: true },
+									},
+								},
+							},
 						},
 					},
 					tagOnActivity: {
@@ -302,6 +325,12 @@ export const activitiesRouter = createTRPCRouter({
 				return {
 					activity: {
 						...selectedActivity,
+						speakerOnActivity: (
+							selectedActivity.speakerOnActivity ?? []
+						).map((s) => ({
+							...s,
+							speaker: toPublicSpeaker(s.speaker),
+						})),
 						tags: (selectedActivity.tagOnActivity ?? []).map(
 							(t) => t.tag,
 						),
@@ -465,6 +494,12 @@ export const activitiesRouter = createTRPCRouter({
 
 			const formattedActivity = {
 				...selectedActivity,
+				speakerOnActivity: (
+					selectedActivity.speakerOnActivity ?? []
+				).map((s) => ({
+					...s,
+					speaker: toPublicSpeaker(s.speaker),
+				})),
 				sessions: sessionsWithCounts,
 				tags: (selectedActivity.tagOnActivity ?? []).map((t) => t.tag),
 				participants: participantsWithAttendance,
@@ -586,7 +621,12 @@ export const activitiesRouter = createTRPCRouter({
 				sessions: Array<typeof activitySession.$inferSelect>;
 				speakerOnActivity: Array<
 					typeof speakerOnActivity.$inferSelect & {
-						speaker: typeof speaker.$inferSelect;
+						speaker: typeof speaker.$inferSelect & {
+							linkedParticipant?: {
+								id: string;
+								shortId: string;
+							} | null;
+						};
 					}
 				>;
 				tagOnActivity: Array<
@@ -612,7 +652,16 @@ export const activitiesRouter = createTRPCRouter({
 						},
 						speakerOnActivity: {
 							with: {
-								speaker: true,
+								speaker: {
+									with: {
+										linkedParticipant: {
+											columns: {
+												id: true,
+												shortId: true,
+											},
+										},
+									},
+								},
 							},
 						},
 						tagOnActivity: {
@@ -637,7 +686,16 @@ export const activitiesRouter = createTRPCRouter({
 						},
 						speakerOnActivity: {
 							with: {
-								speaker: true,
+								speaker: {
+									with: {
+										linkedParticipant: {
+											columns: {
+												id: true,
+												shortId: true,
+											},
+										},
+									},
+								},
 							},
 						},
 						tagOnActivity: {
@@ -838,8 +896,14 @@ export const activitiesRouter = createTRPCRouter({
 								) => ({
 									id: s.speaker.id,
 									name: s.speaker.name,
+									title: s.speaker.title,
 									description: s.speaker.description,
 									imageUrl: s.speaker.imageUrl,
+									socials: s.speaker.socials ?? [],
+									participantId: s.speaker.participantId,
+									profileShortId:
+										s.speaker.linkedParticipant?.shortId ??
+										null,
 								}),
 							)
 						: [],
