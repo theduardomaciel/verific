@@ -7,16 +7,15 @@ import { RotateCcw } from "lucide-react";
 import {
 	DEFAULT_THEME,
 	presetFont,
-	presetOfFamily,
 	type EffectColor,
 	type EventTheme,
-	type FontPreset,
 	type HeroOverlayColor,
 	type PageGradient,
 	type SkeletonBg,
 	type ThemeColorSource,
 	type ThemeRole,
 } from "@verific/drizzle/theme";
+import type { FontRole } from "@verific/fonts";
 
 import {
 	Accordion,
@@ -41,6 +40,11 @@ import { ColorPicker } from "@/components/pickers/color-picker";
 import { darkenUntilContrast, HERO_NEUTRAL_TINT } from "@/lib/theme/resolve";
 import { cn } from "@/lib/utils";
 
+import { SUGGESTED_PAIRINGS } from "./font-pairings";
+import { FontPicker } from "./font-picker";
+
+import type { FontHoverHint } from "./font-picker-utils";
+
 interface ContrastInfo {
 	primary: { fg: string; ratio: number };
 	secondary: { fg: string; ratio: number };
@@ -50,6 +54,7 @@ interface ThemeControlsProps {
 	draft: EventTheme;
 	patch: (p: Partial<EventTheme>) => void;
 	contrast: ContrastInfo;
+	onFontHover: (role: FontRole, hint: FontHoverHint | null) => void;
 }
 
 function RatioBadge({ ratio }: { ratio: number }) {
@@ -354,47 +359,6 @@ function RangeRow({
 	);
 }
 
-const FONT_LABELS: Record<FontPreset, string> = {
-	"hanken-grotesk": "Hanken Grotesk",
-	rem: "REM",
-	inter: "Inter",
-	sora: "Sora",
-	"space-grotesk": "Space Grotesk",
-};
-
-function FontRow({
-	label,
-	value,
-	onChange,
-}: {
-	label: string;
-	value: FontPreset;
-	onChange: (v: FontPreset) => void;
-}) {
-	return (
-		<div className="flex items-center justify-between gap-2">
-			<Label>{label}</Label>
-			<Select
-				value={value}
-				onValueChange={(v) => onChange(v as FontPreset)}
-			>
-				<SelectTrigger className="w-44">
-					<SelectValue />
-				</SelectTrigger>
-				<SelectContent>
-					{(Object.keys(FONT_LABELS) as FontPreset[]).map(
-						(preset) => (
-							<SelectItem key={preset} value={preset}>
-								{FONT_LABELS[preset]}
-							</SelectItem>
-						),
-					)}
-				</SelectContent>
-			</Select>
-		</div>
-	);
-}
-
 interface ThemePreset {
 	name: string;
 	primary: string;
@@ -543,7 +507,12 @@ function PresetGrid({
 
 const eq = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
-export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
+export function ThemeControls({
+	draft,
+	patch,
+	contrast,
+	onFontHover,
+}: ThemeControlsProps) {
 	const roleSwatches = {
 		primary: draft.primary,
 		secondary: draft.secondary,
@@ -646,37 +615,62 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 					</span>
 				</AccordionTrigger>
 				<AccordionContent className="flex flex-col gap-4">
-					<FontRow
-						label="Títulos"
-						// TODO(Fase 4): trocar pelo FontPicker; aqui o objeto é
-						// mapeado para o preset mais próximo só para exibir.
-						value={
-							presetOfFamily(draft.fonts.heading.family) ?? "rem"
-						}
-						onChange={(heading) =>
-							patch({
-								fonts: {
-									...draft.fonts,
-									heading: presetFont(heading),
-								},
-							})
-						}
-					/>
-					<FontRow
-						label="Texto"
-						value={
-							presetOfFamily(draft.fonts.body.family) ??
-							"hanken-grotesk"
-						}
-						onChange={(body) =>
-							patch({
-								fonts: {
-									...draft.fonts,
-									body: presetFont(body),
-								},
-							})
-						}
-					/>
+					<div className="flex items-center justify-between gap-2">
+						<Label>Títulos</Label>
+						<FontPicker
+							label="Fonte dos títulos"
+							fontRole="heading"
+							value={draft.fonts.heading}
+							onChange={(heading) =>
+								patch({
+									fonts: { ...draft.fonts, heading },
+								})
+							}
+							onHoverPreview={(hint) =>
+								onFontHover("heading", hint)
+							}
+						/>
+					</div>
+					<div className="flex items-center justify-between gap-2">
+						<Label>Texto</Label>
+						<FontPicker
+							label="Fonte do texto"
+							fontRole="body"
+							value={draft.fonts.body}
+							onChange={(body) =>
+								patch({ fonts: { ...draft.fonts, body } })
+							}
+							onHoverPreview={(hint) => onFontHover("body", hint)}
+						/>
+					</div>
+					<div>
+						<Label className="mb-2 block text-xs">
+							Combinações sugeridas
+						</Label>
+						<div className="flex flex-wrap gap-1.5">
+							{SUGGESTED_PAIRINGS.map((pairing) => (
+								<Button
+									key={pairing.name}
+									size="sm"
+									variant="secondary"
+									title={`${pairing.heading.family} + ${pairing.body.family}`}
+									onClick={() =>
+										patch({
+											fonts: {
+												heading: {
+													...pairing.heading,
+												},
+												body: { ...pairing.body },
+											},
+										})
+									}
+									type="button"
+								>
+									{pairing.name}
+								</Button>
+							))}
+						</div>
+					</div>
 					<SectionReset
 						visible={changed.fontes}
 						onReset={() => patch({ fonts: DEFAULT_THEME.fonts })}
