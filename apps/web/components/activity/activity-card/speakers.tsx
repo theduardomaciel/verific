@@ -1,7 +1,7 @@
 "use client";
 
 import Autoplay from "embla-carousel-autoplay";
-import { Info, User } from "lucide-react";
+import { Info, SquareUser, User } from "lucide-react";
 
 // Types
 import type { RouterOutput } from "@verific/api";
@@ -109,7 +109,7 @@ function SpeakerCard({
 								"Palestrante"}
 						</p>
 					</div>
-					<Info
+					<SquareUser
 						className="text-muted-foreground hover:text-foreground ml-auto h-5 w-5 shrink-0 transition-colors"
 						aria-hidden
 					/>
