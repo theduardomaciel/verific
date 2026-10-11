@@ -98,6 +98,39 @@ the number of _distinct_ fonts organizers actually pick, not by the number of
 events, since files are shared. Once implemented, compare real usage with
 `SUM(bytes)` on `font_assets` against these estimates.
 
+## Storage guard
+
+The project runs on free tiers — Supabase storage today, Cloudflare R2
+planned — so self-hosting must never be able to exhaust storage or egress.
+Usage grows with distinct font/weight/subset combinations rather than event
+count, but a hard guard is still required so growth can never surprise us.
+Free-tier limits change over time: as far as we know, Supabase's free plan
+includes a small storage and egress allowance, while Cloudflare R2's free
+tier offers a larger storage allowance with no egress fees — re-check the
+current numbers when this work is picked up instead of relying on this note.
+
+- Hard cap on total bytes tracked in `font_assets` (`SUM(bytes)`),
+  configurable via a `FONTS_STORAGE_CAP_BYTES` env var. When the cap is
+  reached, ingestion skips (the theme save still succeeds), logs the skip,
+  and `getFontDelivery` keeps serving the existing Google CDN path.
+- Per-font weight limit (e.g. at most 4 weights per family; when over, keep
+  the weights the saved themes actually use), a per-file size cap, and
+  `latin` + `latin-ext` subsets only by default.
+- Warning threshold at 80% of the cap, surfaced as a log line and in the
+  admin report.
+- Admin report: a small script or admin-only query showing total size,
+  font/file counts, and the largest families by bytes, runnable at any time.
+- Egress: serve files with long immutable cache headers, put a CDN in front,
+  and prefer enabling self-hosting once storage is Cloudflare R2 rather than
+  on the Supabase free tier.
+- Cleanup of fonts no theme references is manual or admin-triggered at
+  first, never automatic.
+- Tests: cap reached skips ingestion and serves CDN; weight limit enforced;
+  oversized file rejected.
+- Develop and test against a local or throwaway bucket and a dev database,
+  never production: reverting code does not delete uploaded files or roll
+  back applied migrations.
+
 ## Testing plan and acceptance criteria
 
 Cover the risky seams with unit tests before wiring ingestion into the save
@@ -116,7 +149,6 @@ Google Fonts are published under open licenses (OFL/Apache) that permit
 self-hosting; keep the per-font `license` field from the catalog alongside
 hosted files if feasible, and surface it in the picker later. Optionally, add
 size-adjusted fallback `@font-face` rules from each font's metrics to cut
-layout shift further — only if it stays cheap. Decide a cleanup policy for
-fonts no event references anymore (likely: keep forever while storage is
-small, revisit past a threshold). Unresolved: whether the generated CSS lives
+layout shift further — only if it stays cheap. Cleanup of unreferenced fonts follows
+the Storage guard section (manual/admin-triggered, never automatic). Unresolved: whether the generated CSS lives
 inline per page or as one shared file per family in storage.
