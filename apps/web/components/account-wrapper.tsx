@@ -5,15 +5,17 @@ import { useMemo, useState } from "react";
 
 // Components
 import { ExternalLinkIcon } from "lucide-react";
-import { ActivityTicket } from "@/components/activity/activity-ticket";
-import { Button } from "@/components/ui/button";
-import { Empty } from "@/components/empty";
+
 import {
 	Accordion,
 	AccordionContent,
 	AccordionItem,
 	AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
+
+import { ActivityTicket } from "@/components/activity/activity-ticket";
+import { Empty } from "@/components/empty";
 
 // Utils
 import { categorizeByDate, getFirstSessionStart } from "@/lib/date";
@@ -84,6 +86,7 @@ export function AccountWrapper({
 														participantId={
 															participantId || ""
 														}
+														projectUrl={eventUrl}
 													/>
 												</li>
 											))}

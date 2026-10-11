@@ -186,7 +186,10 @@ export function ActivityCard({
 			</div>
 
 			{activity.speakers.length ? (
-				<ActivitySpeakers speakers={activity.speakers} />
+				<ActivitySpeakers
+					speakers={activity.speakers}
+					projectUrl={activity.project?.url}
+				/>
 			) : null}
 
 			<div className="mt-auto flex flex-col flex-wrap items-start justify-center gap-4 md:flex-row-reverse md:items-center md:justify-between">

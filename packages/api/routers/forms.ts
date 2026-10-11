@@ -21,6 +21,7 @@ import {
 	formVersion,
 	participant,
 	project,
+	speaker,
 	user,
 } from "@verific/drizzle/schema";
 import { z } from "@verific/zod";
@@ -1650,6 +1651,40 @@ export const formsRouter = createTRPCRouter({
 					data: (validation.data ?? {}) as Record<string, unknown>,
 				});
 				if (rows.length > 0) await db.insert(formAnswer).values(rows);
+			}
+
+			// Speaker claim: if the organizer pre-registered this email as a
+			// speaker, link the first unlinked speaker row. Never steals a
+			// link from another speaker.
+			const subscriber = await db.query.user.findFirst({
+				where: eq(user.id, userId),
+				columns: { email: true },
+			});
+			const subscriberEmail = subscriber?.email.trim().toLowerCase();
+			if (subscriberEmail) {
+				const candidate = await db.query.speaker.findFirst({
+					where: and(
+						eq(speaker.projectId, input.projectId),
+						eq(speaker.email, subscriberEmail),
+						isNull(speaker.participantId),
+					),
+					columns: { id: true },
+				});
+				if (candidate) {
+					const alreadyLinked = await db.query.speaker.findFirst({
+						where: and(
+							eq(speaker.projectId, input.projectId),
+							eq(speaker.participantId, participantId),
+						),
+						columns: { id: true },
+					});
+					if (!alreadyLinked) {
+						await db
+							.update(speaker)
+							.set({ participantId })
+							.where(eq(speaker.id, candidate.id));
+					}
+				}
 			}
 			return { participantId, shortId };
 		}),
