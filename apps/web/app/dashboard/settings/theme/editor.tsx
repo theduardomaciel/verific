@@ -1,19 +1,26 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+
 import { Eye, RotateCcw, Save } from "lucide-react";
+import { toast } from "sonner";
+
+import { DEFAULT_THEME, type EventTheme } from "@verific/drizzle/theme";
+import type { FontRole } from "@verific/fonts";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
-import { trpc } from "@/lib/trpc/react";
+
 import { revalidateProjectTheme } from "@/lib/theme/actions";
 import { bestOnColor, contrastRatio } from "@/lib/theme/resolve";
-import { DEFAULT_THEME, type EventTheme } from "@verific/drizzle/theme";
+import { trpc } from "@/lib/trpc/react";
+import { cn } from "@/lib/utils";
+
 import { ThemeControls } from "./controls";
 import { ThemePreview } from "./preview";
+
+import type { FontHoverHint } from "./font-picker-utils";
 
 interface ThemeEditorProps {
 	projectId: string;
@@ -29,6 +36,9 @@ export function ThemeEditor({
 	initial,
 }: ThemeEditorProps) {
 	const [draft, setDraft] = useState<EventTheme>(initial);
+	const [fontHints, setFontHints] = useState<
+		Record<FontRole, FontHoverHint | null>
+	>({ heading: null, body: null });
 	const [mobileView, setMobileView] = useState<"controls" | "preview">(
 		"controls",
 	);
@@ -170,6 +180,12 @@ export function ThemeEditor({
 						draft={draft}
 						patch={patch}
 						contrast={contrast}
+						onFontHover={(role, hint) =>
+							setFontHints((hints) => ({
+								...hints,
+								[role]: hint,
+							}))
+						}
 					/>
 				</div>
 
@@ -179,7 +195,11 @@ export function ThemeEditor({
 						mobileView === "preview" ? "block" : "hidden",
 					)}
 				>
-					<ThemePreview draft={draft} projectName={projectName} />
+					<ThemePreview
+						draft={draft}
+						projectName={projectName}
+						fontHints={fontHints}
+					/>
 				</div>
 			</div>
 

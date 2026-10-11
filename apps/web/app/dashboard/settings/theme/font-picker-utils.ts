@@ -7,6 +7,16 @@ export interface FontFilter {
 	sort: "popularity" | "name";
 }
 
+/**
+ * Prévia temporária de família (hover/teclado no picker → prévia grande).
+ * O editor eleva até o `ThemePreview` sem tocar o rascunho.
+ */
+export interface FontHoverHint {
+	family: string;
+	category: FontCategory;
+	weight: number;
+}
+
 /** Minúsculas sem acento p/ busca pt-BR ("otica" acha "ótica"). */
 export function normalizeSearch(text: string): string {
 	return text
@@ -117,8 +127,9 @@ export function pushRecentFont(family: string): string[] {
 	return recents;
 }
 
-/** Padrão de cada papel (ação "restaurar padrão" do picker). */
-export function defaultFontForRole(role: FontRole): {
+/** Padrão de cada papel (ação "restaurar padrão" do picker). */ export function defaultFontForRole(
+	role: FontRole,
+): {
 	family: string;
 	weights: number[];
 } {
