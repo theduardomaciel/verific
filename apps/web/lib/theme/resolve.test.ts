@@ -40,6 +40,38 @@ describe("theme resolve", () => {
 		expect(theme.secondary).toBe("#ABCDEF");
 	});
 
+	it("resolve --ev-font-* para presets e fontes avulsas", () => {
+		const def = resolveEventTheme({});
+		expect(def.cssVars["--ev-font-heading"]).toBe("REM, sans-serif");
+		expect(def.cssVars["--ev-font-body"]).toBe(
+			"Hanken Grotesk, sans-serif",
+		);
+
+		const legacy = resolveEventTheme({
+			theme: { version: 2, fonts: { heading: "sora", body: "inter" } },
+		});
+		expect(legacy.cssVars["--ev-font-heading"]).toBe("Sora, sans-serif");
+		expect(legacy.cssVars["--ev-font-body"]).toBe("Inter, sans-serif");
+
+		const custom = resolveEventTheme({
+			theme: {
+				version: 2,
+				fonts: {
+					heading: {
+						family: "Playfair Display",
+						weights: [700],
+						category: "serif",
+					},
+					body: { family: "Inter", weights: [400] },
+				},
+			},
+		});
+		expect(custom.cssVars["--ev-font-heading"]).toContain(
+			'"Playfair Display"',
+		);
+		expect(custom.cssVars["--ev-font-heading"]).toContain("Georgia");
+	});
+
 	it("emite variáveis semânticas (sem cores chapadas)", () => {
 		const { cssVars } = resolveEventTheme({});
 		expect(cssVars["--primary"]).toBe("#6D28D9");

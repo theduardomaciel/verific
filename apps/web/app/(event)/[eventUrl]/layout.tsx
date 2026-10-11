@@ -1,21 +1,25 @@
+import type { Metadata } from "next";
+import { cacheLife, cacheTag } from "next/cache";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { Metadata } from "next";
 import { Suspense } from "react";
-import { cacheLife, cacheTag } from "next/cache";
 
-import Logo from "@/public/logo.svg";
+import { presetOfFamily } from "@verific/drizzle/theme";
+import { env } from "@verific/env";
+
+import { Skeleton } from "@/components/ui/skeleton";
+
 import { EventHeader } from "@/components/event-header";
 import { EventThemeSync } from "@/components/event-theme-sync";
 import { Footer } from "@/components/footer";
 import { EventBackgroundEffects } from "@/components/landing/event-container";
-import { Skeleton } from "@/components/ui/skeleton";
+
 import { getEventStaticParams, getProject } from "@/lib/data";
+import { getFontDelivery } from "@/lib/theme/font-delivery";
 import { FONT_PRESETS } from "@/lib/theme/fonts";
 import { resolveEventTheme } from "@/lib/theme/resolve";
-import type { FontPreset } from "@verific/drizzle/theme";
-import { env } from "@verific/env";
+import Logo from "@/public/logo.svg";
 
 export async function generateMetadata({
 	params,
@@ -204,15 +208,18 @@ export default async function EventLayout({
 		primaryColor: project.primaryColor,
 		secondaryColor: project.secondaryColor,
 	});
+	const headingPreset = presetOfFamily(theme.fonts.heading.family);
+	const bodyPreset = presetOfFamily(theme.fonts.body.family);
 	const fontVariables = [
-		FONT_PRESETS[theme.fonts.heading as FontPreset]?.variable,
-		FONT_PRESETS[theme.fonts.body as FontPreset]?.variable,
+		headingPreset ? FONT_PRESETS[headingPreset].variable : null,
+		bodyPreset ? FONT_PRESETS[bodyPreset].variable : null,
 		// TODO(Fase 3): remover; `font-dashboard` ainda é usado em páginas
 		// de evento e migra para `font-heading`.
 		FONT_PRESETS.rem.variable,
 	]
 		.filter(Boolean)
 		.join(" ");
+	const fontDelivery = getFontDelivery(theme);
 	// Espelha o tema no `:root` para elementos que escapam da `div` temada:
 	// `Dialog` (portal em `document.body`), `Toaster` e `NextTopLoader`
 	// (ambos fora do escopo, no `Providers`). Sem isso eles usam as cores
@@ -226,6 +233,20 @@ export default async function EventLayout({
 		<>
 			{/* Fora da fronteira: o tema do evento já vale para o esqueleto. */}
 			<style>{`:root{${rootCssText}}`}</style>
+			{fontDelivery.googleFontsUrl ? (
+				<>
+					<link
+						rel="preconnect"
+						href="https://fonts.googleapis.com"
+					/>
+					<link
+						rel="preconnect"
+						href="https://fonts.gstatic.com"
+						crossOrigin="anonymous"
+					/>
+					<link rel="stylesheet" href={fontDelivery.googleFontsUrl} />
+				</>
+			) : null}
 			<Suspense fallback={<EventLayoutFallback />}>
 				<EventThemeSync cssVars={cssVars} />
 				<div

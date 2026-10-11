@@ -7,7 +7,7 @@ import {
 	type PageGradient,
 } from "@verific/drizzle/theme";
 
-import { FONT_FAMILIES } from "./presets";
+import { resolveThemeFontFamily } from "./presets";
 
 function luminance(hex: string): number {
 	const c = hex.replace("#", "");
@@ -493,8 +493,8 @@ export function resolveEventTheme(input: {
 		"--ev-hero-tint": heroTint(theme, theme.hero.overlayColor),
 		"--ev-hero-overlay-opacity": String(theme.hero.overlayOpacity),
 		"--ev-card-radius": `${theme.card.radius}px`,
-		"--ev-font-heading": FONT_FAMILIES[theme.fonts.heading]!,
-		"--ev-font-body": FONT_FAMILIES[theme.fonts.body]!,
+		"--ev-font-heading": resolveThemeFontFamily(theme.fonts.heading),
+		"--ev-font-body": resolveThemeFontFamily(theme.fonts.body),
 		"--ev-bg-image": bgImage,
 		"--ev-bg-size": `${theme.page.effectSize}px ${theme.page.effectSize}px`,
 		"--ev-bg-opacity": String(theme.page.effectOpacity),
