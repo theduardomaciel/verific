@@ -1,7 +1,8 @@
 /**
  * Gera `packages/fonts/catalog.json` a partir da Google Fonts Developer API.
  *
- * Uso:
+ * Uso (a chave pode ir no ambiente, no `.env` da raiz ou em
+ * `packages/fonts/.env` — nunca commitada):
  *   GOOGLE_FONTS_API_KEY=... pnpm --filter @verific/fonts generate-catalog
  *
  * A chave é usada SOMENTE por este script (tempo de geração). Nada em
@@ -11,11 +12,20 @@
  *
  * Sem a chave, o script aborta com instruções (não sobrescreve o catálogo).
  */
+import { config as loadPackageDotenv } from "dotenv";
+import "dotenv/config";
 import { writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type { FontCatalogEntry, FontCategory } from "../types";
+
+// `dotenv/config` lê o `.env` do diretório de execução (raiz do repo via
+// `pnpm --filter`); esta linha soma o `.env` local do pacote sem sobrescrever
+// o que já veio do ambiente ou da raiz (dotenv nunca sobrescreve).
+loadPackageDotenv({
+	path: join(dirname(fileURLToPath(import.meta.url)), "..", ".env"),
+});
 
 const API_URL =
 	"https://www.googleapis.com/webfonts/v1/webfonts?sort=popularity";

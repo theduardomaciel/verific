@@ -21,7 +21,11 @@ A Google Fonts Developer API exige uma chave **somente para o script**
 GOOGLE_FONTS_API_KEY=... pnpm --filter @verific/fonts generate-catalog
 ```
 
-Chave gratuita em
+A chave é lida nesta ordem (a primeira que existir vale; `dotenv` nunca
+sobrescreve o ambiente): variável de ambiente do shell, `.env` na raiz do
+repo, `packages/fonts/.env` (mesma convenção `dotenv/config` de
+`packages/drizzle/migrate.ts`). Nenhum `.env` é commitado (`.gitignore`
+global). Chave gratuita em
 <https://console.cloud.google.com/apis/library/webfonts.googleapis.com>.
 O catálogo comprometido é limitado às ~500 fontes mais populares.
 
