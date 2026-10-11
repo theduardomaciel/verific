@@ -8,20 +8,8 @@ import {
 	presetOfFamily,
 } from "./theme";
 
-describe("migração de presets legados", () => {
-	it("converte presets (string) em seleções", () => {
-		const parsed = eventThemeSchema.parse({
-			fonts: { heading: "sora", body: "inter" },
-		});
-		expect(parsed.fonts.heading).toMatchObject({
-			family: "Sora",
-			category: "sans-serif",
-		});
-		expect(parsed.fonts.heading.weights).toContain(400);
-		expect(parsed.fonts.body.family).toBe("Inter");
-	});
-
-	it("preserva seleções novas com pesos e categoria", () => {
+describe("seleções de fonte (formato atual, sem legado)", () => {
+	it("preserva seleções com pesos e categoria", () => {
 		const parsed = eventThemeSchema.parse({
 			fonts: {
 				heading: {
@@ -47,26 +35,34 @@ describe("migração de presets legados", () => {
 		expect(parsed.fonts.heading.category).toBe("sans-serif");
 	});
 
-	it("recupera valores inválidos com o padrão do papel", () => {
-		const parsed = eventThemeSchema.parse({
-			fonts: {
-				heading: "fonte-qualquer",
-				body: { family: "", weights: [] },
-			},
-		});
-		expect(parsed.fonts.heading.family).toBe("REM");
-		expect(parsed.fonts.body.family).toBe("Hanken Grotesk");
+	it("rejeita presets legados (string) e valores inválidos", () => {
+		expect(
+			eventThemeSchema.safeParse({
+				fonts: { heading: "sora", body: "inter" },
+			}).success,
+		).toBe(false);
+		expect(
+			eventThemeSchema.safeParse({
+				fonts: {
+					heading: { family: "", weights: [] },
+					body: presetFont("inter"),
+				},
+			}).success,
+		).toBe(false);
 	});
 });
 
 describe("compatibilidade com temas armazenados", () => {
-	it("lê JSON antigo com presets sem quebrar", () => {
+	it("lê JSON no formato atual", () => {
 		const theme = parseEventTheme({
 			theme: {
 				version: 2,
 				primary: "#123456",
 				secondary: "#654321",
-				fonts: { heading: "space-grotesk", body: "hanken-grotesk" },
+				fonts: {
+					heading: presetFont("space-grotesk"),
+					body: presetFont("hanken-grotesk"),
+				},
 			},
 		});
 		expect(theme.fonts.heading.family).toBe("Space Grotesk");
