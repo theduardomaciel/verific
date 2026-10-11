@@ -1,0 +1,34 @@
+{
+	"name": "@verific/fonts",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"main": "./index.ts",
+	"types": "./index.ts",
+	"exports": {
+		".": "./index.ts",
+		"./catalog": "./catalog.ts",
+		"./validation": "./validation.ts",
+		"./package.json": "./package.json"
+	},
+	"scripts": {
+		"lint": "oxlint --type-aware",
+		"fmt": "oxfmt",
+		"fmt:check": "oxfmt --check",
+		"typecheck": "tsc --noEmit",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:coverage": "vitest run --coverage",
+		"generate-catalog": "tsx scripts/generate-font-catalog.ts"
+	},
+	"dependencies": {
+		"@verific/zod": "workspace:*"
+	},
+	"devDependencies": {
+		"@types/node": "^24.9.1",
+		"@verific/typescript-config": "workspace:*",
+		"@vitest/coverage-v8": "^5.0.3",
+		"tsx": "^4.20.6",
+		"vitest": "^5.0.3"
+	}
+}
