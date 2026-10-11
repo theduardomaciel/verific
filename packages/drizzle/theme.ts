@@ -1,3 +1,4 @@
+import { FONT_CATEGORIES, normalizeFamily } from "@verific/fonts";
 import { z } from "@verific/zod";
 
 /**
@@ -32,6 +33,98 @@ export const fontPresetSchema = z.enum([
 	"space-grotesk",
 ]);
 export type FontPreset = z.infer<typeof fontPresetSchema>;
+
+/**
+ * Seleção de fonte por papel do tema. É o formato atual; os presets acima
+ * são o formato legado (aceitos na leitura e migrados para cá).
+ */
+const themeFontSelectionSchema = z.object({
+	family: z.string().trim().min(1).max(64),
+	weights: z.array(z.number().int().min(100).max(900)).min(1).max(9),
+	italic: z.boolean().optional(),
+	category: z.enum(FONT_CATEGORIES).optional(),
+});
+export type ThemeFontSelection = z.infer<typeof themeFontSelectionSchema>;
+
+/** Pesos padrão ao migrar cada preset legado para seleção. */
+export const PRESET_FONT_DEFAULTS: Record<
+	FontPreset,
+	{ family: string; weights: number[] }
+> = {
+	"hanken-grotesk": {
+		family: "Hanken Grotesk",
+		weights: [400, 500, 600, 700],
+	},
+	rem: { family: "REM", weights: [400, 500, 600, 700] },
+	inter: { family: "Inter", weights: [400, 500, 600, 700] },
+	sora: { family: "Sora", weights: [400, 600, 700] },
+	"space-grotesk": { family: "Space Grotesk", weights: [400, 500, 700] },
+};
+
+const DEFAULT_HEADING_FONT: ThemeFontSelection = {
+	family: "REM",
+	weights: [400, 500, 600, 700],
+	category: "sans-serif",
+};
+const DEFAULT_BODY_FONT: ThemeFontSelection = {
+	family: "Hanken Grotesk",
+	weights: [400, 500, 600, 700],
+	category: "sans-serif",
+};
+
+/** Seleção canônica para um preset (usada pelo editor e pelos presets). */
+export function presetFont(preset: FontPreset): ThemeFontSelection {
+	const defaults = PRESET_FONT_DEFAULTS[preset];
+	return {
+		family: defaults.family,
+		weights: [...defaults.weights],
+		category: "sans-serif",
+	};
+}
+
+/** Preset correspondente à família, ou `null` (fonte avulsa do catálogo). */
+export function presetOfFamily(family: string): FontPreset | null {
+	const normalized = normalizeFamily(family);
+	for (const preset of fontPresetSchema.options) {
+		if (
+			normalizeFamily(PRESET_FONT_DEFAULTS[preset].family) === normalized
+		) {
+			return preset;
+		}
+	}
+	return null;
+}
+
+function migrateFontSelection(
+	input: unknown,
+	fallback: ThemeFontSelection,
+): ThemeFontSelection {
+	if (typeof input === "string") {
+		const preset = fontPresetSchema.safeParse(input);
+		if (preset.success) return presetFont(preset.data);
+		return fallback;
+	}
+	const parsed = themeFontSelectionSchema.safeParse(input);
+	if (!parsed.success) return fallback;
+	const selection = parsed.data;
+	const weights = [...new Set(selection.weights)].sort((a, b) => a - b);
+	return {
+		family: selection.family,
+		weights: weights.length > 0 ? weights : [...fallback.weights],
+		...(selection.italic !== undefined ? { italic: selection.italic } : {}),
+		category: selection.category ?? "sans-serif",
+	} satisfies ThemeFontSelection;
+}
+
+const fontRoleField = (
+	presetDefault: FontPreset,
+	fallback: ThemeFontSelection,
+) =>
+	z
+		.union([fontPresetSchema, themeFontSelectionSchema])
+		.default(presetDefault)
+		.catch(presetDefault)
+		.transform((value) => migrateFontSelection(value, fallback));
 
 export const themeRoleSchema = z.enum(["primary", "secondary"]);
 export type ThemeRole = z.infer<typeof themeRoleSchema>;
@@ -91,10 +184,13 @@ export const eventThemeSchema = z.object({
 	secondary: hexColor.default("#14B8A6"),
 	fonts: z
 		.object({
-			heading: fontPresetSchema.default("rem"),
-			body: fontPresetSchema.default("hanken-grotesk"),
+			heading: fontRoleField("rem", DEFAULT_HEADING_FONT),
+			body: fontRoleField("hanken-grotesk", DEFAULT_BODY_FONT),
 		})
-		.default({ heading: "rem", body: "hanken-grotesk" }),
+		.default({
+			heading: presetFont("rem"),
+			body: presetFont("hanken-grotesk"),
+		}),
 	header: z
 		.object({
 			bg: themeRoleSchema.default("primary"),

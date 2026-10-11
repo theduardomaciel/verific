@@ -280,6 +280,9 @@ importers:
       '@verific/env':
         specifier: workspace:*
         version: link:../../packages/env
+      '@verific/fonts':
+        specifier: workspace:*
+        version: link:../../packages/fonts
       '@verific/zod':
         specifier: workspace:*
         version: link:../../config/zod
@@ -460,6 +463,9 @@ importers:
       '@verific/env':
         specifier: workspace:*
         version: link:../env
+      '@verific/fonts':
+        specifier: workspace:*
+        version: link:../fonts
       '@verific/zod':
         specifier: workspace:*
         version: link:../../config/zod
@@ -516,6 +522,9 @@ importers:
       '@verific/env':
         specifier: workspace:*
         version: link:../env
+      '@verific/fonts':
+        specifier: workspace:*
+        version: link:../fonts
       '@verific/zod':
         specifier: workspace:*
         version: link:../../config/zod
@@ -541,9 +550,15 @@ importers:
       '@verific/typescript-config':
         specifier: workspace:*
         version: link:../../config/typescript
+      '@vitest/coverage-v8':
+        specifier: ^5.0.3
+        version: 5.0.3(vitest@5.0.3)
       drizzle-kit:
         specifier: ^0.31.11
         version: 0.31.11
+      vitest:
+        specifier: ^5.0.3
+        version: 5.0.3(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.2(@noble/hashes@2.4.0))(vite@8.3.2(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
 
   packages/env:
     dependencies:

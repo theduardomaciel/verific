@@ -1,28 +1,13 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+
 import { RotateCcw } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import {
-	Accordion,
-	AccordionContent,
-	AccordionItem,
-	AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import { ColorPicker } from "@/components/pickers/color-picker";
-import { cn } from "@/lib/utils";
 import {
 	DEFAULT_THEME,
+	presetFont,
+	presetOfFamily,
 	type EffectColor,
 	type EventTheme,
 	type FontPreset,
@@ -32,8 +17,29 @@ import {
 	type ThemeColorSource,
 	type ThemeRole,
 } from "@verific/drizzle/theme";
+
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+
+import { ColorPicker } from "@/components/pickers/color-picker";
+
 import { darkenUntilContrast, HERO_NEUTRAL_TINT } from "@/lib/theme/resolve";
-import { useEffect, useRef } from "react";
+import { cn } from "@/lib/utils";
 
 interface ContrastInfo {
 	primary: { fg: string; ratio: number };
@@ -402,56 +408,71 @@ const THEME_PRESETS: ThemePreset[] = [
 		name: "Padrão",
 		primary: "#6D28D9",
 		secondary: "#14B8A6",
-		fonts: { heading: "rem", body: "hanken-grotesk" },
+		fonts: {
+			heading: presetFont("rem"),
+			body: presetFont("hanken-grotesk"),
+		},
 		header: { bg: "primary", style: "solid" },
 	},
 	{
 		name: "Oceano",
 		primary: "#1D4ED8",
 		secondary: "#06B6D4",
-		fonts: { heading: "sora", body: "inter" },
+		fonts: { heading: presetFont("sora"), body: presetFont("inter") },
 		header: { bg: "primary", style: "solid" },
 	},
 	{
 		name: "Pôr do sol",
 		primary: "#EA580C",
 		secondary: "#DB2777",
-		fonts: { heading: "sora", body: "hanken-grotesk" },
+		fonts: {
+			heading: presetFont("sora"),
+			body: presetFont("hanken-grotesk"),
+		},
 		header: { bg: "primary", style: "gradient" },
 	},
 	{
 		name: "Floresta",
 		primary: "#166534",
 		secondary: "#84CC16",
-		fonts: { heading: "space-grotesk", body: "inter" },
+		fonts: {
+			heading: presetFont("space-grotesk"),
+			body: presetFont("inter"),
+		},
 		header: { bg: "primary", style: "solid" },
 	},
 	{
 		name: "Vinho",
 		primary: "#881337",
 		secondary: "#F59E0B",
-		fonts: { heading: "rem", body: "inter" },
+		fonts: { heading: presetFont("rem"), body: presetFont("inter") },
 		header: { bg: "primary", style: "solid" },
 	},
 	{
 		name: "Meia-noite",
 		primary: "#1E1B4B",
 		secondary: "#818CF8",
-		fonts: { heading: "space-grotesk", body: "hanken-grotesk" },
+		fonts: {
+			heading: presetFont("space-grotesk"),
+			body: presetFont("hanken-grotesk"),
+		},
 		header: { bg: "primary", style: "gradient" },
 	},
 	{
 		name: "Tropical",
 		primary: "#0F766E",
 		secondary: "#F97316",
-		fonts: { heading: "rem", body: "hanken-grotesk" },
+		fonts: {
+			heading: presetFont("rem"),
+			body: presetFont("hanken-grotesk"),
+		},
 		header: { bg: "secondary", style: "solid" },
 	},
 	{
 		name: "Uva",
 		primary: "#7E22CE",
 		secondary: "#F0ABFC",
-		fonts: { heading: "sora", body: "inter" },
+		fonts: { heading: presetFont("sora"), body: presetFont("inter") },
 		header: { bg: "primary", style: "solid" },
 	},
 ];
@@ -627,16 +648,33 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 				<AccordionContent className="flex flex-col gap-4">
 					<FontRow
 						label="Títulos"
-						value={draft.fonts.heading}
+						// TODO(Fase 4): trocar pelo FontPicker; aqui o objeto é
+						// mapeado para o preset mais próximo só para exibir.
+						value={
+							presetOfFamily(draft.fonts.heading.family) ?? "rem"
+						}
 						onChange={(heading) =>
-							patch({ fonts: { ...draft.fonts, heading } })
+							patch({
+								fonts: {
+									...draft.fonts,
+									heading: presetFont(heading),
+								},
+							})
 						}
 					/>
 					<FontRow
 						label="Texto"
-						value={draft.fonts.body}
+						value={
+							presetOfFamily(draft.fonts.body.family) ??
+							"hanken-grotesk"
+						}
 						onChange={(body) =>
-							patch({ fonts: { ...draft.fonts, body } })
+							patch({
+								fonts: {
+									...draft.fonts,
+									body: presetFont(body),
+								},
+							})
 						}
 					/>
 					<SectionReset
