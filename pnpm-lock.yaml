@@ -581,6 +581,9 @@ importers:
       '@verific/zod':
         specifier: workspace:*
         version: link:../../config/zod
+      dotenv:
+        specifier: ^17.2.3
+        version: 17.4.2
     devDependencies:
       '@types/node':
         specifier: ^24.9.1
