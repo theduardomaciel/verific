@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { presetFont } from "@verific/drizzle/theme";
+
 import {
 	bestOnColor,
 	bestOnColors,
@@ -48,7 +50,13 @@ describe("theme resolve", () => {
 		);
 
 		const legacy = resolveEventTheme({
-			theme: { version: 2, fonts: { heading: "sora", body: "inter" } },
+			theme: {
+				version: 2,
+				fonts: {
+					heading: presetFont("sora"),
+					body: presetFont("inter"),
+				},
+			},
 		});
 		expect(legacy.cssVars["--ev-font-heading"]).toBe("Sora, sans-serif");
 		expect(legacy.cssVars["--ev-font-body"]).toBe("Inter, sans-serif");

@@ -14,7 +14,11 @@ describe("normalizeThemeFonts", () => {
 					weights: [700, 400],
 					category: "sans-serif",
 				},
-				body: { family: "inter", weights: [400] },
+				body: {
+					family: "inter",
+					weights: [400],
+					category: "sans-serif",
+				},
 			},
 		});
 		expect(theme.fonts.heading).toEqual({
@@ -35,7 +39,11 @@ describe("normalizeThemeFonts", () => {
 				...DEFAULT_THEME,
 				fonts: {
 					...DEFAULT_THEME.fonts,
-					heading: { family: "Comic Papyrus", weights: [400] },
+					heading: {
+						family: "Comic Papyrus",
+						weights: [400],
+						category: "sans-serif",
+					},
 				},
 			}),
 		).toThrow(/desconhecida/);
@@ -47,7 +55,11 @@ describe("normalizeThemeFonts", () => {
 				...DEFAULT_THEME,
 				fonts: {
 					...DEFAULT_THEME.fonts,
-					heading: { family: "Bebas Neue", weights: [700] },
+					heading: {
+						family: "Bebas Neue",
+						weights: [700],
+						category: "sans-serif",
+					},
 				},
 			}),
 		).toThrow(/peso 700/);
@@ -63,6 +75,7 @@ describe("normalizeThemeFonts", () => {
 						family: "Bebas Neue",
 						weights: [400],
 						italic: true,
+						category: "sans-serif",
 					},
 				},
 			}),
