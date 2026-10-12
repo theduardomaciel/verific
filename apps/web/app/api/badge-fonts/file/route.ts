@@ -8,9 +8,10 @@ import { type NextRequest } from "next/server";
  * então a resolução família+peso → URL do TTF acontece aqui no servidor
  * e os bytes do fonts.gstatic.com são repassados com cache longo.
  * Sem autenticação: só serve arquivos de fonte públicos (OFL).
+ *
+ * Sem `export const dynamic`: com `cacheComponents` o segment config é
+ * inferido — o uso de `searchParams` já torna a rota dinâmica.
  */
-
-export const dynamic = "force-dynamic";
 
 const META_TTL_MS = 24 * 60 * 60 * 1000;
 const metaCache = new Map<string, { at: number; variants: Variant[] }>();
