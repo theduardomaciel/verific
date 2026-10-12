@@ -8,9 +8,15 @@ Catálogo estático de Google Fonts + helpers compartilhados (servidor e editor)
   módulo que páginas públicas de eventos podem importar (não aumenta o bundle).
 - `catalog.ts` — catálogo completo (`catalog.json`) + `getFont`/`hasFont`.
   **Servidor e editor apenas** (no editor, via `import()` preguiçoso).
-- `validation.ts` — schema zod da seleção contra o catálogo. **Servidor apenas**.
-- `catalog.json` — dados estáticos comprometidos (semente curada; ver abaixo).
-- `scripts/generate-font-catalog.ts` — regenera o catálogo (top 500).
+- `aspects.ts` — mapa enxuto família → `xHeightRatio` (`aspects.json`, ~2 KB).
+  Usado para emitir `font-size-adjust` sem puxar o catálogo.
+- `validation.ts` — schema zod da seleção contra o catálogo, com clamp de
+  escala por papel (`fontSelectionSchemaForRole`). **Servidor apenas**.
+- `catalog.json` — dados estáticos comprometidos, com `xHeightRatio`
+  (x-height / unitsPerEm via `@capsizecss/metrics`) quando há métricas; sem
+  elas, o picker desabilita a escala em vez de adivinhar.
+- `scripts/generate-font-catalog.ts` — regenera o catálogo (top 500) e o
+  `aspects.json`; `scripts/font-metrics.ts` concentra o enriquecimento.
 
 ## Regenerar o catálogo
 

@@ -374,6 +374,7 @@ const THEME_PRESETS: ThemePreset[] = [
 		secondary: "#14B8A6",
 		fonts: {
 			heading: presetFont("rem"),
+			subtitle: presetFont("rem"),
 			body: presetFont("hanken-grotesk"),
 		},
 		header: { bg: "primary", style: "solid" },
@@ -382,7 +383,11 @@ const THEME_PRESETS: ThemePreset[] = [
 		name: "Oceano",
 		primary: "#1D4ED8",
 		secondary: "#06B6D4",
-		fonts: { heading: presetFont("sora"), body: presetFont("inter") },
+		fonts: {
+			heading: presetFont("sora"),
+			subtitle: presetFont("sora"),
+			body: presetFont("inter"),
+		},
 		header: { bg: "primary", style: "solid" },
 	},
 	{
@@ -391,6 +396,7 @@ const THEME_PRESETS: ThemePreset[] = [
 		secondary: "#DB2777",
 		fonts: {
 			heading: presetFont("sora"),
+			subtitle: presetFont("sora"),
 			body: presetFont("hanken-grotesk"),
 		},
 		header: { bg: "primary", style: "gradient" },
@@ -401,6 +407,7 @@ const THEME_PRESETS: ThemePreset[] = [
 		secondary: "#84CC16",
 		fonts: {
 			heading: presetFont("space-grotesk"),
+			subtitle: presetFont("space-grotesk"),
 			body: presetFont("inter"),
 		},
 		header: { bg: "primary", style: "solid" },
@@ -409,7 +416,11 @@ const THEME_PRESETS: ThemePreset[] = [
 		name: "Vinho",
 		primary: "#881337",
 		secondary: "#F59E0B",
-		fonts: { heading: presetFont("rem"), body: presetFont("inter") },
+		fonts: {
+			heading: presetFont("rem"),
+			subtitle: presetFont("rem"),
+			body: presetFont("inter"),
+		},
 		header: { bg: "primary", style: "solid" },
 	},
 	{
@@ -418,6 +429,7 @@ const THEME_PRESETS: ThemePreset[] = [
 		secondary: "#818CF8",
 		fonts: {
 			heading: presetFont("space-grotesk"),
+			subtitle: presetFont("space-grotesk"),
 			body: presetFont("hanken-grotesk"),
 		},
 		header: { bg: "primary", style: "gradient" },
@@ -428,6 +440,7 @@ const THEME_PRESETS: ThemePreset[] = [
 		secondary: "#F97316",
 		fonts: {
 			heading: presetFont("rem"),
+			subtitle: presetFont("rem"),
 			body: presetFont("hanken-grotesk"),
 		},
 		header: { bg: "secondary", style: "solid" },
@@ -436,7 +449,11 @@ const THEME_PRESETS: ThemePreset[] = [
 		name: "Uva",
 		primary: "#7E22CE",
 		secondary: "#F0ABFC",
-		fonts: { heading: presetFont("sora"), body: presetFont("inter") },
+		fonts: {
+			heading: presetFont("sora"),
+			subtitle: presetFont("sora"),
+			body: presetFont("inter"),
+		},
 		header: { bg: "primary", style: "solid" },
 	},
 ];
@@ -643,6 +660,22 @@ export function ThemeControls({
 							onHoverPreview={(hint) => onFontHover("body", hint)}
 						/>
 					</div>
+					<div className="flex items-center justify-between gap-2">
+						<Label>Subtítulos e seções</Label>
+						<FontPicker
+							label="Fonte dos subtítulos"
+							fontRole="subtitle"
+							value={draft.fonts.subtitle}
+							onChange={(subtitle) =>
+								patch({
+									fonts: { ...draft.fonts, subtitle },
+								})
+							}
+							onHoverPreview={(hint) =>
+								onFontHover("subtitle", hint)
+							}
+						/>
+					</div>
 					<div>
 						<Label className="mb-2 block text-xs">
 							Combinações sugeridas
@@ -653,14 +686,22 @@ export function ThemeControls({
 									key={pairing.name}
 									size="sm"
 									variant="secondary"
-									title={`${pairing.heading.family} + ${pairing.body.family}`}
+									title={`${pairing.heading.family} + ${pairing.subtitle.family} + ${pairing.body.family}`}
 									onClick={() =>
 										patch({
 											fonts: {
 												heading: {
 													...pairing.heading,
+													scale: 1,
 												},
-												body: { ...pairing.body },
+												subtitle: {
+													...pairing.subtitle,
+													scale: 1,
+												},
+												body: {
+													...pairing.body,
+													scale: 1,
+												},
 											},
 										})
 									}

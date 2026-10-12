@@ -38,7 +38,7 @@ export function ThemeEditor({
 	const [draft, setDraft] = useState<EventTheme>(initial);
 	const [fontHints, setFontHints] = useState<
 		Record<FontRole, FontHoverHint | null>
-	>({ heading: null, body: null });
+	>({ heading: null, subtitle: null, body: null });
 	const [mobileView, setMobileView] = useState<"controls" | "preview">(
 		"controls",
 	);
