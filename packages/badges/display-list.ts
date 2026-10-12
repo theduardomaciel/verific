@@ -27,6 +27,8 @@ export type DisplayPrimitive =
 			maxWidthMm: number;
 			lines: string[];
 			fontRole: "heading" | "subtitle" | "body";
+			/** Resolved font family (theme role → family). */
+			family: string;
 			fontSizePt: number;
 			weight: number;
 			color: string;
@@ -115,6 +117,7 @@ export function buildDisplayList(
 				maxWidthMm: abs.w,
 				lines: fitted.lines,
 				fontRole: item.fontRole,
+				family,
 				fontSizePt: Math.round(fitted.fontSizePt * 10) / 10,
 				weight: item.weight,
 				color: hexToCss(item.color),

@@ -101,6 +101,7 @@ describe("display-list", () => {
 		if (text?.kind === "text") {
 			// Heading default 20pt × 1.2 = 24pt.
 			expect(text.fontSizePt).toBeCloseTo(24, 9);
+			expect(text.family).toBe("heading");
 		} else {
 			expect.unreachable("expected a text primitive");
 		}

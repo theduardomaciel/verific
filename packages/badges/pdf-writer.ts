@@ -160,14 +160,8 @@ function drawBadgeContent(target: ContentTarget, o: BadgeContentOptions): void {
 				cornerRadius: mmToPt(p.radiusMm),
 			});
 		} else if (p.kind === "text") {
-			const font =
-				o.res.embedded.get(fontKey(p.fontRole, p.weight)) ??
-				o.res.embedded.get(
-					[...o.res.embedded.keys()].find((k) =>
-						k.endsWith(`@${p.weight}`),
-					) ?? "",
-				);
-			// Caller must supply exact family@weight; missing = skip (spike asserts).
+			const font = o.res.embedded.get(fontKey(p.family, p.weight));
+			// Caller must supply the exact family@weight bytes.
 			const text = p.lines.join("\n");
 			target.drawText(text, {
 				x: toX(p.xMm + o.calDxMm),

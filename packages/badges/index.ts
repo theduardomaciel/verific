@@ -7,5 +7,6 @@ export * from "./qr-payload";
 export * from "./schema";
 export * from "./display-list";
 export * from "./fonts";
+export * from "./pdf-writer";
 export * from "./sheet";
 export * from "./batch";

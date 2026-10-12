@@ -1,24 +1,29 @@
 "use client";
 
-import { keepPreviousData } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 
-// Components
-import { DashboardPagination } from "@/components/dashboard/pagination";
-import { FiltersPanel } from "@/components/dashboard/filters-panel";
-import { SearchBar } from "@/components/search-bar";
-import { SortBy } from "@/components/sort-by";
-import { Filter } from "@/components/dashboard/filter";
-import { ParticipantListItem } from "@/components/participant/participant-item";
-import { Empty } from "@/components/empty";
-import { Skeleton } from "@/components/ui/skeleton";
+import { keepPreviousData } from "@tanstack/react-query";
 
 // Validation (client-safe: no db / server env imports)
 import { getParticipantsParams } from "@verific/api/schemas";
+import { parseEventTheme } from "@verific/drizzle/theme";
 
+import { Skeleton } from "@/components/ui/skeleton";
+
+import BadgesGeneratorCallout from "@/components/badges-generator-callout";
+import { useDashboard } from "@/components/dashboard/dashboard-context";
+import { Filter } from "@/components/dashboard/filter";
+import { FiltersPanel } from "@/components/dashboard/filters-panel";
+// Components
+import { DashboardPagination } from "@/components/dashboard/pagination";
+import { Empty } from "@/components/empty";
+import { ParticipantListItem } from "@/components/participant/participant-item";
+import { SearchBar } from "@/components/search-bar";
+import { SortBy } from "@/components/sort-by";
+
+import { useCurrentProject } from "@/hooks/use-current-project";
 // Hooks
 import { useParsedSearchParams } from "@/hooks/use-parsed-search-params";
-import { useDashboard } from "@/components/dashboard/dashboard-context";
-
 // API
 import { trpc } from "@/lib/trpc/react";
 
@@ -40,6 +45,8 @@ function ParticipantsSkeleton() {
 
 export function ParticipantsContent() {
 	const { projectId } = useDashboard();
+	const router = useRouter();
+	const { data: projectData } = useCurrentProject();
 	const parsedParams = useParsedSearchParams((raw) =>
 		getParticipantsParams.parse(raw),
 	);
@@ -73,6 +80,21 @@ export function ParticipantsContent() {
 	}
 
 	const { participants, pageCount, emailDomains } = data;
+	const project = projectData?.project as
+		| {
+				logoUrl?: string | null;
+				theme?: unknown;
+				primaryColor?: string | null;
+				secondaryColor?: string | null;
+		  }
+		| undefined;
+	const theme = project
+		? parseEventTheme({
+				theme: project.theme,
+				primaryColor: project.primaryColor,
+				secondaryColor: project.secondaryColor,
+			})
+		: null;
 
 	return (
 		<div className="container-d py-container-v min-h-screen">
@@ -102,7 +124,6 @@ export function ParticipantsContent() {
 						{participants && participants.length > 0 ? (
 							<div className="flex flex-col items-start justify-start gap-4">
 								{participants.map((participant) => (
-									// oxlint-disable-next-line typescript/unbound-method -- expressão membro JSX (`<A.B />`), não extração de método; sem `this` envolvido.
 									<ParticipantListItem.General
 										key={participant.id}
 										participant={participant}
@@ -134,6 +155,16 @@ export function ParticipantsContent() {
 							}))}
 						/>
 					</FiltersPanel>
+					<BadgesGeneratorCallout
+						name="Fulano da Silva"
+						qrValue="https://example.com"
+						logoSrc={project?.logoUrl ?? undefined}
+						primaryColor={theme?.primary}
+						secondaryColor={theme?.secondary}
+						onGenerate={() => {
+							router.push("/dashboard/badges");
+						}}
+					/>
 				</div>
 			</div>
 		</div>
