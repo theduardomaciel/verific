@@ -1,10 +1,13 @@
 "use client";
 
-import { AccountWrapper } from "@/components/account-wrapper";
+import { useSearchParams } from "next/navigation";
+
 import { Skeleton } from "@/components/ui/skeleton";
+
+import { AccountWrapper } from "@/components/account-wrapper";
+
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc/react";
-import { useSearchParams } from "next/navigation";
 
 interface ProfileOwnerTicketsProps {
 	eventUrl: string;
@@ -58,7 +61,7 @@ export function ProfileOwnerTickets({
 			<AccountWrapper
 				eventUrl={eventUrl}
 				activities={activities.data?.activities ?? []}
-				participantId={activities.data?.participantId ?? null}
+				checkInCode={activities.data?.shortId ?? null}
 			/>
 		</div>
 	);

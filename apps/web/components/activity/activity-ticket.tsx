@@ -29,7 +29,8 @@ import { ActivityStatus } from "./activity-status";
 export interface WorkshopTicketProps {
 	className?: string;
 	activity: RouterOutput["getActivitiesFromParticipant"]["activities"][0];
-	participantId: string;
+	/** shortId do participante (QR compacto do ingresso). */
+	checkInCode: string;
 	projectUrl?: string;
 }
 
@@ -37,7 +38,7 @@ const DEFAULT_TOLERANCE = 15; // minutes
 
 export function ActivityTicket({
 	activity,
-	participantId,
+	checkInCode,
 	projectUrl,
 	className,
 }: WorkshopTicketProps) {
@@ -253,7 +254,7 @@ export function ActivityTicket({
 							</p>
 							<QRCodeSVG
 								className="rounded-sm bg-white p-3"
-								value={participantId}
+								value={checkInCode}
 								width={200}
 								height={200}
 							/>

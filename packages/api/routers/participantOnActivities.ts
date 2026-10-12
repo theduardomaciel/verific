@@ -25,6 +25,7 @@ import { deleteActivityAnswers } from "../enrollment";
 import { lockActivity } from "../seats";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { settleActivity } from "../waitlist";
+import { ensureShortId } from "./profiles";
 
 import type { ParticipantActivitySession } from "../schemas";
 
@@ -45,6 +46,7 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 				.select({
 					projectId: project.id,
 					participantId: participant.id,
+					shortId: participant.shortId,
 				})
 				.from(project)
 				.leftJoin(participant, eq(participant.projectId, project.id))
@@ -64,6 +66,12 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 					message: "Participante não encontrado no projeto",
 				});
 			}
+
+			// shortId alimenta o QR do ingresso (preenche legados).
+			const shortId = await ensureShortId(
+				participantId,
+				projectRow?.shortId ?? null,
+			);
 
 			const activities = await db.query.participantOnActivity.findMany({
 				where: (participantOnActivity, { eq }) =>
@@ -215,6 +223,7 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 			return {
 				activities: formattedActivities,
 				participantId,
+				shortId,
 			};
 		}),
 	deleteParticipantFromActivity: protectedProcedure
