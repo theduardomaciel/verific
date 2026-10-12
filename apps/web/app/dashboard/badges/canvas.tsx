@@ -43,11 +43,7 @@ function itemLabel(item: BadgeItem, fieldLabels: Map<string, string>): string {
 	return fieldLabels.get(item.source) ?? item.label ?? "Linha";
 }
 
-function itemSample(
-	item: BadgeItem,
-	sample: Props["sample"],
-	fieldLabels: Map<string, string>,
-): string {
+function itemSample(item: BadgeItem, sample: Props["sample"]): string {
 	if (item.kind !== "text") return "";
 	if (item.source === "name") return sample.name;
 	if (!item.source) return "—";
@@ -121,28 +117,34 @@ export function BadgeCanvas({
 
 		if (d.mode === "move-item" && d.id) {
 			const id = d.id;
+			const item = layout.items.find((i) => i.id === id);
+			if (!item) return;
+			// Snap fora do updater: setState dentro do setState alheio
+			// causa "Cannot update a component while rendering".
+			const abs = relativeToBadge(item.rect, layout.freeArea);
+			const moved = { ...abs, x: abs.x + dx, y: abs.y + dy };
+			const snapped = snapRect(
+				moved,
+				layout.items
+					.filter((i) => i.enabled && i.id !== id)
+					.map((i) => relativeToBadge(i.rect, layout.freeArea)),
+				{ ...layout.freeArea },
+				snapOpts,
+			);
+			setGuides(snapped.guides);
+			const fx = layout.freeArea.x;
+			const fy = layout.freeArea.y;
+			const fw = layout.freeArea.w;
+			const fh = layout.freeArea.h;
+			const rel = {
+				x: (snapped.rect.x - fx) / fw,
+				y: (snapped.rect.y - fy) / fh,
+				w: item.rect.w,
+				h: item.rect.h,
+			};
 			onPatch((draft) => {
-				const item = draft.items.find((i) => i.id === id);
-				if (!item) return;
-				const abs = relativeToBadge(item.rect, draft.freeArea);
-				const moved = { ...abs, x: abs.x + dx, y: abs.y + dy };
-				const { rect, guides } = snapRect(
-					moved,
-					layout.items
-						.filter((i) => i.enabled && i.id !== id)
-						.map((i) => relativeToBadge(i.rect, draft.freeArea)),
-					{ ...draft.freeArea },
-					snapOpts,
-				);
-				setGuides(guides);
-				const fw = draft.freeArea.w;
-				const fh = draft.freeArea.h;
-				item.rect = {
-					x: (rect.x - draft.freeArea.x) / fw,
-					y: (rect.y - draft.freeArea.y) / fh,
-					w: item.rect.w,
-					h: item.rect.h,
-				};
+				const target = draft.items.find((i) => i.id === id);
+				if (target) target.rect = rel;
 			});
 		} else if (d.mode === "resize-item" && d.id) {
 			const id = d.id;
@@ -383,11 +385,7 @@ export function BadgeCanvas({
 										overflow: "hidden",
 									}}
 								>
-									{itemSample(
-										item,
-										sample,
-										fieldLabels,
-									).slice(0, 60)}
+									{itemSample(item, sample).slice(0, 60)}
 								</text>
 							) : null}
 							{item.kind === "qr" ? (
