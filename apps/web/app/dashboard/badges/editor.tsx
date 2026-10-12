@@ -40,9 +40,11 @@ import {
 import { Switch } from "@/components/ui/switch";
 
 import {
+	allowedWeightsForItem,
 	buildRowPrimitives,
 	createBadgePrintContext,
 	fetchBadgeArtwork,
+	getBadgeCatalogWeights,
 	missingFontWeights,
 	runBadgePrint,
 	type BadgePrintContext,
@@ -145,7 +147,23 @@ export function BadgeEditor({
 	}>({ running: false, progress: null, files: [], error: null });
 	const [artAspect, setArtAspect] = useState<number | null>(null);
 	const [lockAspect, setLockAspect] = useState(true);
+	const [catalogWeights, setCatalogWeights] = useState<Map<
+		string,
+		number[]
+	> | null>(null);
 	const prevArtUrl = useRef<string | null>(null);
+
+	// Catálogo de pesos por família: alimenta o seletor de peso e a
+	// resolução de peso no contexto de impressão.
+	useEffect(() => {
+		let active = true;
+		void getBadgeCatalogWeights().then((map) => {
+			if (active) setCatalogWeights(map);
+		});
+		return () => {
+			active = false;
+		};
+	}, []);
 
 	const utils = trpc.useUtils();
 	const saveMutation = trpc.saveLayout.useMutation();
@@ -235,7 +253,6 @@ export function BadgeEditor({
 			if (item.kind !== "text" || !item.enabled) continue;
 			const family = item.family || roles[item.fontRole].family;
 			families.add(family);
-			const w = item.weight;
 			const existing = weights.get(family) || [];
 			if (!existing.includes(item.weight)) existing.push(item.weight);
 			weights.set(family, existing);
@@ -272,6 +289,17 @@ export function BadgeEditor({
 	}, [ctx, draft, samples, sampleKey, fontsError]);
 
 	const selected = draft.items.find((i) => i.id === selectedId) ?? null;
+
+	const [fontWarnings, setFontWarnings] = useState<string[]>([]);
+	useEffect(() => {
+		let active = true;
+		void missingFontWeights(draft, roles).then((list) => {
+			if (active) setFontWarnings(list);
+		});
+		return () => {
+			active = false;
+		};
+	}, [draft, roles]);
 
 	const warnings = useMemo(() => {
 		const list: string[] = [];
@@ -344,9 +372,9 @@ export function BadgeEditor({
 				"A proporção da arte difere do tamanho do crachá — a arte será esticada na impressão.",
 			);
 		}
-		list.push(...missingFontWeights(draft, roles));
+		list.push(...fontWarnings);
 		return list;
-	}, [draft, profilesEnabled, roles, fieldLabels]);
+	}, [draft, profilesEnabled, fieldLabels, fontWarnings]);
 
 	const imposition = useMemo(() => {
 		if (draft.manualGrid.enabled) return null;
@@ -1091,7 +1119,11 @@ export function BadgeEditor({
 					<TextPanel
 						item={selected}
 						fieldOptions={fieldOptions}
-						roleWeights={roles[selected.fontRole].weights}
+						weightOptions={allowedWeightsForItem(
+							selected,
+							roles,
+							catalogWeights,
+						)}
 						roleFamilies={{
 							heading: roles.heading.family,
 							subtitle: roles.subtitle.family,
@@ -1368,7 +1400,7 @@ export function BadgeEditor({
 function TextPanel({
 	item,
 	fieldOptions,
-	roleWeights,
+	weightOptions,
 	roleFamilies,
 	mm,
 	onMm,
@@ -1376,18 +1408,14 @@ function TextPanel({
 }: {
 	item: Extract<BadgeItem, { kind: "text" }>;
 	fieldOptions: { id: string; label: string }[];
-	/** Pesos que o papel do tema oferece (o impresso usa o mais próximo). */
-	roleWeights: number[];
+	/** Pesos disponíveis para a fonte do item (catálogo + peso atual). */
+	weightOptions: number[];
 	/** Famílias de fonte disponíveis por papel do tema. */
 	roleFamilies: { heading: string; subtitle: string; body: string };
 	mm: { x: number; y: number; w: number; h: number };
 	onMm: (v: { x: number; y: number; w: number; h: number }) => void;
 	onEdit: (fn: (it: Extract<BadgeItem, { kind: "text" }>) => void) => void;
 }) {
-	const weightOptions = roleWeights.includes(item.weight)
-		? roleWeights
-		: [...roleWeights, item.weight].sort((a, b) => a - b);
-
 	// Unique font families from theme roles
 	const familyOptions = [
 		...new Set([
@@ -1511,9 +1539,6 @@ function TextPanel({
 								{weightOptions.map((w) => (
 									<SelectItem key={w} value={String(w)}>
 										{w}
-										{roleWeights.includes(w)
-											? ""
-											: " (aprox.)"}
 									</SelectItem>
 								))}
 							</SelectContent>

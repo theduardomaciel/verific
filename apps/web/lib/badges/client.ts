@@ -15,6 +15,7 @@ import {
 	planBatchFiles,
 	renderBadgeSheets,
 	resolveFontWeight,
+	type BadgeItem,
 	type BadgeLayout,
 	type DisplayPrimitive,
 } from "@verific/badges";
@@ -93,14 +94,77 @@ export function getBadgeFontLoader(): FontLoader {
 	return loader;
 }
 
-/** Famílias+pesos exigidos pelos itens de texto (via papéis do tema).
- * O peso pedido é resolvido para o mais próximo disponível (regra CSS),
- * pois o PDF não sintetiza negrito — ver `resolveFontWeight`.
- * Se o item tem `family` customizado, usa essa família em vez da do papel. */
-export function collectBadgeFonts(
+/**
+ * Pesos do catálogo Google Fonts por família (fallback: array vazio).
+ * Cache compartilhado — usado pelo editor (lista de pesos) e pelo
+ * contexto de impressão (resolução de peso).
+ */
+let catalogCache: Map<string, number[]> | null = null;
+
+async function loadCatalogWeights(): Promise<Map<string, number[]>> {
+	if (catalogCache) return catalogCache;
+	try {
+		const catalogModule = await import("@verific/fonts/catalog");
+		const map = new Map<string, number[]>();
+		for (const entry of catalogModule.getCatalog()) {
+			map.set(entry.family.toLowerCase(), entry.weights);
+		}
+		catalogCache = map;
+	} catch {
+		catalogCache = new Map();
+	}
+	return catalogCache;
+}
+
+/** Exposto para o editor montar as opções de peso por família. */
+export async function getBadgeCatalogWeights(): Promise<Map<string, number[]>> {
+	return loadCatalogWeights();
+}
+
+/** Pesos reais disponíveis para uma família (papel do tema ou custom). */
+function weightsForFamily(
+	family: string,
+	roleWeights: number[],
+	catalog: Map<string, number[]>,
+): number[] {
+	const fromCatalog = catalog.get(family.toLowerCase());
+	if (fromCatalog && fromCatalog.length > 0) return fromCatalog;
+	return roleWeights;
+}
+
+/**
+ * Pesos permitidos para um item no editor: catálogo da família real
+ * (quando disponível) ou os pesos do papel do tema. O peso pedido
+ * sempre aparece, mesmo sem métricas no catálogo.
+ */
+export function allowedWeightsForItem(
+	item: Extract<BadgeItem, { kind: "text" }>,
+	roles: ThemeFontRoles,
+	catalogWeights: Map<string, number[]> | null,
+): number[] {
+	const role = roles[item.fontRole as FontRole];
+	const family = item.family || role.family;
+	const base = weightsForFamily(
+		family,
+		role.weights,
+		catalogWeights ?? new Map(),
+	);
+	const options = new Set(base);
+	options.add(item.weight);
+	return [...options].sort((a, b) => a - b);
+}
+
+/**
+ * Famílias+pesos exigidos pelos itens de texto. O peso pedido é
+ * resolvido para o mais próximo disponível (regra CSS), pois o PDF não
+ * sintetiza negrito. Dedup por família@peso-resolvido — o par pedido/
+ * resolvido é usado para registrar o arquivo sob ambas as chaves.
+ */
+export async function collectBadgeFonts(
 	layout: BadgeLayout,
 	roles: ThemeFontRoles,
-): { family: string; requested: number; resolved: number }[] {
+): Promise<{ family: string; requested: number; resolved: number }[]> {
+	const catalog = await loadCatalogWeights();
 	const seen = new Map<
 		string,
 		{ family: string; requested: number; resolved: number }
@@ -108,10 +172,12 @@ export function collectBadgeFonts(
 	for (const item of layout.items) {
 		if (item.kind !== "text" || !item.enabled) continue;
 		const role = roles[item.fontRole as FontRole];
-		// Usa família customizada do item se definida, senão a do papel
 		const family = item.family || role.family;
-		const resolved = resolveFontWeight(item.weight, role.weights);
-		const key = `${family.toLowerCase()}@${item.weight}`;
+		const available = weightsForFamily(family, role.weights, catalog);
+		const resolved = resolveFontWeight(item.weight, available);
+		// Dedup pelo peso resolvido: dois itens com o mesmo peso pedido
+		// em papéis diferentes podem resolver para arquivos distintos.
+		const key = `${family.toLowerCase()}@${resolved}`;
 		if (!seen.has(key))
 			seen.set(key, { family, requested: item.weight, resolved });
 	}
@@ -119,17 +185,19 @@ export function collectBadgeFonts(
 }
 
 /** Pesos pedidos sem arquivo exato (informa o peso substituto usado). */
-export function missingFontWeights(
+export async function missingFontWeights(
 	layout: BadgeLayout,
 	roles: ThemeFontRoles,
-): string[] {
+): Promise<string[]> {
+	const catalog = await loadCatalogWeights();
 	const warnings: string[] = [];
 	for (const item of layout.items) {
 		if (item.kind !== "text" || !item.enabled) continue;
 		const role = roles[item.fontRole as FontRole];
 		const family = item.family || role.family;
-		if (!role.weights.includes(item.weight)) {
-			const resolved = resolveFontWeight(item.weight, role.weights);
+		const available = weightsForFamily(family, role.weights, catalog);
+		if (!available.includes(item.weight)) {
+			const resolved = resolveFontWeight(item.weight, available);
 			warnings.push(
 				`"${item.label || item.id}": peso ${item.weight} indisponível em ${family} — usando ${resolved} no impresso.`,
 			);
@@ -159,7 +227,7 @@ export async function createBadgePrintContext(
 	layout: BadgeLayout,
 	roles: ThemeFontRoles,
 ): Promise<BadgePrintContext> {
-	const needed = collectBadgeFonts(layout, roles);
+	const needed = await collectBadgeFonts(layout, roles);
 	const fontBytes = new Map<string, Uint8Array>();
 	await Promise.all(
 		needed.map(async ({ family, requested, resolved }) => {
