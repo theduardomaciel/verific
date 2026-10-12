@@ -95,7 +95,8 @@ export function getBadgeFontLoader(): FontLoader {
 
 /** Famílias+pesos exigidos pelos itens de texto (via papéis do tema).
  * O peso pedido é resolvido para o mais próximo disponível (regra CSS),
- * pois o PDF não sintetiza negrito — ver `resolveFontWeight`. */
+ * pois o PDF não sintetiza negrito — ver `resolveFontWeight`.
+ * Se o item tem `family` customizado, usa essa família em vez da do papel. */
 export function collectBadgeFonts(
 	layout: BadgeLayout,
 	roles: ThemeFontRoles,
@@ -107,7 +108,8 @@ export function collectBadgeFonts(
 	for (const item of layout.items) {
 		if (item.kind !== "text" || !item.enabled) continue;
 		const role = roles[item.fontRole as FontRole];
-		const family = role.family;
+		// Usa família customizada do item se definida, senão a do papel
+		const family = item.family || role.family;
 		const resolved = resolveFontWeight(item.weight, role.weights);
 		const key = `${family.toLowerCase()}@${item.weight}`;
 		if (!seen.has(key))
@@ -125,10 +127,11 @@ export function missingFontWeights(
 	for (const item of layout.items) {
 		if (item.kind !== "text" || !item.enabled) continue;
 		const role = roles[item.fontRole as FontRole];
+		const family = item.family || role.family;
 		if (!role.weights.includes(item.weight)) {
 			const resolved = resolveFontWeight(item.weight, role.weights);
 			warnings.push(
-				`"${item.label || item.id}": peso ${item.weight} indisponível em ${role.family} — usando ${resolved} no impresso.`,
+				`"${item.label || item.id}": peso ${item.weight} indisponível em ${family} — usando ${resolved} no impresso.`,
 			);
 		}
 	}
