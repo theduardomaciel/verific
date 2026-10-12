@@ -332,7 +332,7 @@ export function ScheduleContent({
 					>
 						{categories.map((category) => (
 							<AccordionItem key={category} value={category}>
-								<AccordionTrigger className="font-heading text-xl font-bold">
+								<AccordionTrigger className="font-subtitle text-xl font-bold">
 									{category}
 								</AccordionTrigger>
 								<AccordionContent className="-m-4 p-4">

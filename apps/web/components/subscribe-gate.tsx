@@ -73,7 +73,7 @@ export function SubscribeGate({ project }: SubscribeGateProps) {
 		return (
 			<Card className="mx-auto flex w-full max-w-xl flex-col items-center gap-4 p-8 text-center">
 				<CircleCheckBig className="text-secondary h-12 w-12" />
-				<h2 className="font-heading text-2xl font-bold">
+				<h2 className="font-subtitle text-2xl font-bold">
 					Você já está inscrito!
 				</h2>
 				<p className="text-muted-foreground">

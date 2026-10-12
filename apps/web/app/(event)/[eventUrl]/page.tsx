@@ -145,7 +145,7 @@ function EventPageBody({ project }: { project: EventPageProject }) {
 			<EventContainer.Content>
 				<div className="container-p relative mx-auto flex flex-col gap-16 lg:flex-row">
 					<div className="lg:w-2/3">
-						<h2 className="font-heading mb-6 text-2xl font-bold">
+						<h2 className="font-subtitle mb-6 text-2xl font-bold">
 							Descrição do Evento
 						</h2>
 						<div className="space-y-6">
@@ -161,7 +161,7 @@ function EventPageBody({ project }: { project: EventPageProject }) {
 					</div>
 					<div className="sticky top-16 right-0 z-10 lg:w-1/3">
 						<div className="bg-card mb-6 rounded-(--ev-card-radius,1.5rem) border p-6">
-							<h3 className="font-heading mb-4 text-xl font-medium">
+							<h3 className="font-subtitle mb-4 text-xl font-medium">
 								Local
 							</h3>
 							<p className="mb-4">{project.address}</p>
@@ -199,7 +199,7 @@ function EventPageBody({ project }: { project: EventPageProject }) {
 							</Button>
 						</div>
 						<div className="bg-card flex flex-col rounded-(--ev-card-radius,1.5rem) border p-6">
-							<h3 className="font-heading mb-4 text-xl font-medium">
+							<h3 className="font-subtitle mb-4 text-xl font-medium">
 								Sobre o produtor
 							</h3>
 							<p className="mb-4">{project.owner.name}</p>

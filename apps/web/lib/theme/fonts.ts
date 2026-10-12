@@ -8,7 +8,7 @@ import {
 
 import type { FontPreset } from "@verific/drizzle/theme";
 
-export { FONT_FAMILIES } from "./presets";
+export { FONT_FAMILIES, resolveThemeFontFamily } from "./presets";
 
 /**
  * Fontes com curadoria (Fase 2). Todas via next/font: baixadas no build,

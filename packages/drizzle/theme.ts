@@ -1,3 +1,5 @@
+import { FONT_CATEGORIES, SCALE_LIMITS, normalizeFamily } from "@verific/fonts";
+import type { FontRole } from "@verific/fonts";
 import { z } from "@verific/zod";
 
 /**
@@ -32,6 +34,83 @@ export const fontPresetSchema = z.enum([
 	"space-grotesk",
 ]);
 export type FontPreset = z.infer<typeof fontPresetSchema>;
+
+/** Família e pesos canônicos de cada preset. */
+export const PRESET_FONT_DEFAULTS: Record<
+	FontPreset,
+	{ family: string; weights: number[] }
+> = {
+	"hanken-grotesk": {
+		family: "Hanken Grotesk",
+		weights: [400, 500, 600, 700],
+	},
+	rem: { family: "REM", weights: [400, 500, 600, 700] },
+	inter: { family: "Inter", weights: [400, 500, 600, 700] },
+	sora: { family: "Sora", weights: [400, 600, 700] },
+	"space-grotesk": { family: "Space Grotesk", weights: [400, 500, 700] },
+};
+
+/**
+ * Seleção de fonte por papel do tema (família + pesos + escala).
+ * `subtitle` ausente copia o `heading` do próprio tema (temas com título
+ * personalizado renderizam idêntico após a mudança).
+ */
+const themeFontSelectionBase = z.object({
+	family: z.string().trim().min(1).max(64),
+	weights: z.array(z.number().int().min(100).max(900)).min(1).max(9),
+	italic: z.boolean().optional(),
+	category: z.enum(FONT_CATEGORIES).default("sans-serif"),
+});
+
+const fontRoleSelection = (role: FontRole) =>
+	themeFontSelectionBase.extend({
+		scale: z
+			.number()
+			.min(SCALE_LIMITS[role].min)
+			.max(SCALE_LIMITS[role].max)
+			.default(1),
+	});
+
+const themeFontsSchema = z
+	.object({
+		heading: fontRoleSelection("heading").default(presetFont("rem")),
+		subtitle: fontRoleSelection("subtitle").optional(),
+		body: fontRoleSelection("body").default(presetFont("hanken-grotesk")),
+	})
+	.transform((fonts) => ({
+		...fonts,
+		subtitle: fonts.subtitle ?? { ...fonts.heading },
+	}));
+export type ThemeFontSelection = z.infer<typeof themeFontsSchema>["subtitle"];
+
+/** Seleção canônica para um preset (usada pelo editor e pelos presets). */
+export function presetFont(preset: FontPreset): {
+	family: string;
+	weights: number[];
+	category: "sans-serif";
+	scale: 1;
+} {
+	const defaults = PRESET_FONT_DEFAULTS[preset];
+	return {
+		family: defaults.family,
+		weights: [...defaults.weights],
+		category: "sans-serif",
+		scale: 1,
+	};
+}
+
+/** Preset correspondente à família, ou `null` (fonte avulsa do catálogo). */
+export function presetOfFamily(family: string): FontPreset | null {
+	const normalized = normalizeFamily(family);
+	for (const preset of fontPresetSchema.options) {
+		if (
+			normalizeFamily(PRESET_FONT_DEFAULTS[preset].family) === normalized
+		) {
+			return preset;
+		}
+	}
+	return null;
+}
 
 export const themeRoleSchema = z.enum(["primary", "secondary"]);
 export type ThemeRole = z.infer<typeof themeRoleSchema>;
@@ -89,12 +168,11 @@ export const eventThemeSchema = z.object({
 	version: z.literal(THEME_VERSION).default(THEME_VERSION),
 	primary: hexColor.default("#6D28D9"),
 	secondary: hexColor.default("#14B8A6"),
-	fonts: z
-		.object({
-			heading: fontPresetSchema.default("rem"),
-			body: fontPresetSchema.default("hanken-grotesk"),
-		})
-		.default({ heading: "rem", body: "hanken-grotesk" }),
+	fonts: themeFontsSchema.default({
+		heading: presetFont("rem"),
+		subtitle: presetFont("rem"),
+		body: presetFont("hanken-grotesk"),
+	}),
 	header: z
 		.object({
 			bg: themeRoleSchema.default("primary"),

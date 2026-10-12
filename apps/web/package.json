@@ -48,6 +48,7 @@
 		"@verific/auth": "workspace:*",
 		"@verific/drizzle": "workspace:*",
 		"@verific/env": "workspace:*",
+		"@verific/fonts": "workspace:*",
 		"@verific/zod": "workspace:*",
 		"@yudiel/react-qr-scanner": "^2.4.0",
 		"better-auth": "1.7.7",

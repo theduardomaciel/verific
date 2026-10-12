@@ -148,7 +148,7 @@ export function ActivityDetails({
 				<section aria-labelledby="activity-speakers-heading">
 					<h2
 						id="activity-speakers-heading"
-						className="font-heading mb-4 text-xl font-bold"
+						className="font-subtitle mb-4 text-xl font-bold"
 					>
 						Palestrantes
 					</h2>
@@ -160,7 +160,7 @@ export function ActivityDetails({
 				<section aria-labelledby="activity-about-heading">
 					<h2
 						id="activity-about-heading"
-						className="font-heading mb-4 text-xl font-bold"
+						className="font-subtitle mb-4 text-xl font-bold"
 					>
 						Sobre a atividade
 					</h2>

@@ -1,17 +1,31 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+
 import { RotateCcw } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import {
+	DEFAULT_THEME,
+	presetFont,
+	type EffectColor,
+	type EventTheme,
+	type HeroOverlayColor,
+	type PageGradient,
+	type SkeletonBg,
+	type ThemeColorSource,
+	type ThemeRole,
+} from "@verific/drizzle/theme";
+import type { FontRole } from "@verific/fonts";
+
 import {
 	Accordion,
 	AccordionContent,
 	AccordionItem,
 	AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -19,21 +33,17 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+
 import { ColorPicker } from "@/components/pickers/color-picker";
-import { cn } from "@/lib/utils";
-import {
-	DEFAULT_THEME,
-	type EffectColor,
-	type EventTheme,
-	type FontPreset,
-	type HeroOverlayColor,
-	type PageGradient,
-	type SkeletonBg,
-	type ThemeColorSource,
-	type ThemeRole,
-} from "@verific/drizzle/theme";
+
 import { darkenUntilContrast, HERO_NEUTRAL_TINT } from "@/lib/theme/resolve";
-import { useEffect, useRef } from "react";
+import { cn } from "@/lib/utils";
+
+import { SUGGESTED_PAIRINGS } from "./font-pairings";
+import { FontPicker } from "./font-picker";
+
+import type { FontHoverHint } from "./font-picker-utils";
 
 interface ContrastInfo {
 	primary: { fg: string; ratio: number };
@@ -44,6 +54,7 @@ interface ThemeControlsProps {
 	draft: EventTheme;
 	patch: (p: Partial<EventTheme>) => void;
 	contrast: ContrastInfo;
+	onFontHover: (role: FontRole, hint: FontHoverHint | null) => void;
 }
 
 function RatioBadge({ ratio }: { ratio: number }) {
@@ -348,47 +359,6 @@ function RangeRow({
 	);
 }
 
-const FONT_LABELS: Record<FontPreset, string> = {
-	"hanken-grotesk": "Hanken Grotesk",
-	rem: "REM",
-	inter: "Inter",
-	sora: "Sora",
-	"space-grotesk": "Space Grotesk",
-};
-
-function FontRow({
-	label,
-	value,
-	onChange,
-}: {
-	label: string;
-	value: FontPreset;
-	onChange: (v: FontPreset) => void;
-}) {
-	return (
-		<div className="flex items-center justify-between gap-2">
-			<Label>{label}</Label>
-			<Select
-				value={value}
-				onValueChange={(v) => onChange(v as FontPreset)}
-			>
-				<SelectTrigger className="w-44">
-					<SelectValue />
-				</SelectTrigger>
-				<SelectContent>
-					{(Object.keys(FONT_LABELS) as FontPreset[]).map(
-						(preset) => (
-							<SelectItem key={preset} value={preset}>
-								{FONT_LABELS[preset]}
-							</SelectItem>
-						),
-					)}
-				</SelectContent>
-			</Select>
-		</div>
-	);
-}
-
 interface ThemePreset {
 	name: string;
 	primary: string;
@@ -402,56 +372,88 @@ const THEME_PRESETS: ThemePreset[] = [
 		name: "Padrão",
 		primary: "#6D28D9",
 		secondary: "#14B8A6",
-		fonts: { heading: "rem", body: "hanken-grotesk" },
+		fonts: {
+			heading: presetFont("rem"),
+			subtitle: presetFont("rem"),
+			body: presetFont("hanken-grotesk"),
+		},
 		header: { bg: "primary", style: "solid" },
 	},
 	{
 		name: "Oceano",
 		primary: "#1D4ED8",
 		secondary: "#06B6D4",
-		fonts: { heading: "sora", body: "inter" },
+		fonts: {
+			heading: presetFont("sora"),
+			subtitle: presetFont("sora"),
+			body: presetFont("inter"),
+		},
 		header: { bg: "primary", style: "solid" },
 	},
 	{
 		name: "Pôr do sol",
 		primary: "#EA580C",
 		secondary: "#DB2777",
-		fonts: { heading: "sora", body: "hanken-grotesk" },
+		fonts: {
+			heading: presetFont("sora"),
+			subtitle: presetFont("sora"),
+			body: presetFont("hanken-grotesk"),
+		},
 		header: { bg: "primary", style: "gradient" },
 	},
 	{
 		name: "Floresta",
 		primary: "#166534",
 		secondary: "#84CC16",
-		fonts: { heading: "space-grotesk", body: "inter" },
+		fonts: {
+			heading: presetFont("space-grotesk"),
+			subtitle: presetFont("space-grotesk"),
+			body: presetFont("inter"),
+		},
 		header: { bg: "primary", style: "solid" },
 	},
 	{
 		name: "Vinho",
 		primary: "#881337",
 		secondary: "#F59E0B",
-		fonts: { heading: "rem", body: "inter" },
+		fonts: {
+			heading: presetFont("rem"),
+			subtitle: presetFont("rem"),
+			body: presetFont("inter"),
+		},
 		header: { bg: "primary", style: "solid" },
 	},
 	{
 		name: "Meia-noite",
 		primary: "#1E1B4B",
 		secondary: "#818CF8",
-		fonts: { heading: "space-grotesk", body: "hanken-grotesk" },
+		fonts: {
+			heading: presetFont("space-grotesk"),
+			subtitle: presetFont("space-grotesk"),
+			body: presetFont("hanken-grotesk"),
+		},
 		header: { bg: "primary", style: "gradient" },
 	},
 	{
 		name: "Tropical",
 		primary: "#0F766E",
 		secondary: "#F97316",
-		fonts: { heading: "rem", body: "hanken-grotesk" },
+		fonts: {
+			heading: presetFont("rem"),
+			subtitle: presetFont("rem"),
+			body: presetFont("hanken-grotesk"),
+		},
 		header: { bg: "secondary", style: "solid" },
 	},
 	{
 		name: "Uva",
 		primary: "#7E22CE",
 		secondary: "#F0ABFC",
-		fonts: { heading: "sora", body: "inter" },
+		fonts: {
+			heading: presetFont("sora"),
+			subtitle: presetFont("sora"),
+			body: presetFont("inter"),
+		},
 		header: { bg: "primary", style: "solid" },
 	},
 ];
@@ -522,7 +524,12 @@ function PresetGrid({
 
 const eq = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
-export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
+export function ThemeControls({
+	draft,
+	patch,
+	contrast,
+	onFontHover,
+}: ThemeControlsProps) {
 	const roleSwatches = {
 		primary: draft.primary,
 		secondary: draft.secondary,
@@ -625,20 +632,86 @@ export function ThemeControls({ draft, patch, contrast }: ThemeControlsProps) {
 					</span>
 				</AccordionTrigger>
 				<AccordionContent className="flex flex-col gap-4">
-					<FontRow
-						label="Títulos"
-						value={draft.fonts.heading}
-						onChange={(heading) =>
-							patch({ fonts: { ...draft.fonts, heading } })
-						}
-					/>
-					<FontRow
-						label="Texto"
-						value={draft.fonts.body}
-						onChange={(body) =>
-							patch({ fonts: { ...draft.fonts, body } })
-						}
-					/>
+					<div className="flex items-center justify-between gap-2">
+						<Label>Títulos</Label>
+						<FontPicker
+							label="Fonte dos títulos"
+							fontRole="heading"
+							value={draft.fonts.heading}
+							onChange={(heading) =>
+								patch({
+									fonts: { ...draft.fonts, heading },
+								})
+							}
+							onHoverPreview={(hint) =>
+								onFontHover("heading", hint)
+							}
+						/>
+					</div>
+					<div className="flex items-center justify-between gap-2">
+						<Label>Subtítulos e seções</Label>
+						<FontPicker
+							label="Fonte dos subtítulos"
+							fontRole="subtitle"
+							value={draft.fonts.subtitle}
+							onChange={(subtitle) =>
+								patch({
+									fonts: { ...draft.fonts, subtitle },
+								})
+							}
+							onHoverPreview={(hint) =>
+								onFontHover("subtitle", hint)
+							}
+						/>
+					</div>
+					<div className="flex items-center justify-between gap-2">
+						<Label>Texto</Label>
+						<FontPicker
+							label="Fonte do texto"
+							fontRole="body"
+							value={draft.fonts.body}
+							onChange={(body) =>
+								patch({ fonts: { ...draft.fonts, body } })
+							}
+							onHoverPreview={(hint) => onFontHover("body", hint)}
+						/>
+					</div>
+					<div>
+						<Label className="mb-2 block text-xs">
+							Combinações sugeridas
+						</Label>
+						<div className="flex flex-wrap gap-1.5">
+							{SUGGESTED_PAIRINGS.map((pairing) => (
+								<Button
+									key={pairing.name}
+									size="sm"
+									variant="secondary"
+									title={`${pairing.heading.family} + ${pairing.subtitle.family} + ${pairing.body.family}`}
+									onClick={() =>
+										patch({
+											fonts: {
+												heading: {
+													...pairing.heading,
+													scale: 1,
+												},
+												subtitle: {
+													...pairing.subtitle,
+													scale: 1,
+												},
+												body: {
+													...pairing.body,
+													scale: 1,
+												},
+											},
+										})
+									}
+									type="button"
+								>
+									{pairing.name}
+								</Button>
+							))}
+						</div>
+					</div>
 					<SectionReset
 						visible={changed.fontes}
 						onReset={() => patch({ fonts: DEFAULT_THEME.fonts })}

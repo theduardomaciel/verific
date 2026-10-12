@@ -20,6 +20,7 @@
 		"@verific/auth": "workspace:*",
 		"@verific/drizzle": "workspace:*",
 		"@verific/env": "workspace:*",
+		"@verific/fonts": "workspace:*",
 		"@verific/zod": "workspace:*",
 		"libphonenumber-js": "^1.13.14",
 		"superjson": "^2.2.2"
