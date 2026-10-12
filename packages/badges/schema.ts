@@ -30,8 +30,8 @@ const textItemSchema = z.object({
 	id: z.string().min(1),
 	enabled: z.boolean().default(true),
 	rect: rectRelativeSchema,
-	/** "name" | form field id. */
-	source: z.string().min(1),
+	/** "name", a form field id, or "" when unbound (omitted at render). */
+	source: z.string().max(64).default(""),
 	label: z.string().max(80).default(""),
 	align: z.enum(["left", "center", "right"]).default("center"),
 	fontRole: fontRoleSchema.default("body"),
