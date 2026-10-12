@@ -145,6 +145,7 @@ export function BadgeEditor({
 	}>({ running: false, progress: null, files: [], error: null });
 	const [artAspect, setArtAspect] = useState<number | null>(null);
 	const [lockAspect, setLockAspect] = useState(true);
+	const prevArtUrl = useRef<string | null>(null);
 
 	const utils = trpc.useUtils();
 	const saveMutation = trpc.saveLayout.useMutation();
@@ -286,6 +287,22 @@ export function BadgeEditor({
 				`Arte com baixa resolução nesta largura (abaixo de ~300dpi).`,
 			);
 		}
+		if (
+			draft.artworkUrl &&
+			draft.artworkKind !== "pdf" &&
+			draft.artworkPixels &&
+			draft.artworkPixels.h > 0 &&
+			Math.abs(
+				draft.badgeW / draft.badgeH -
+					draft.artworkPixels.w / draft.artworkPixels.h,
+			) /
+				(draft.artworkPixels.w / draft.artworkPixels.h) >
+				0.01
+		) {
+			list.push(
+				"A proporção da arte difere do tamanho do crachá — a arte será esticada na impressão.",
+			);
+		}
 		list.push(...missingFontWeights(draft, roles));
 		return list;
 	}, [draft, profilesEnabled, roles]);
@@ -328,12 +345,40 @@ export function BadgeEditor({
 		}
 	};
 
-	const setArtworkPixels = (w: number, h: number) => {
+	const setArtworkPixels = (w: number, h: number, fitBadge = false) => {
 		setArtAspect(w / h);
 		patch((d) => {
 			d.artworkPixels = { w, h };
+			// O crachá acompanha a proporção da arte: sem isso a arte
+			// estica (a saída imprime exatamente o tamanho configurado).
+			if (fitBadge && lockAspect) {
+				d.badgeH = Math.max(10, (d.badgeW * h) / w);
+			}
 		});
 	};
+
+	// Arte colada por URL: sonda as dimensões uma vez por URL.
+	useEffect(() => {
+		const url = draft.artworkUrl;
+		if (!url || url === prevArtUrl.current) return;
+		prevArtUrl.current = url;
+		if (draft.artworkKind === "pdf") return;
+		const probe = new Image();
+		probe.src = url;
+		probe
+			.decode()
+			.then(() => {
+				if (probe.naturalWidth > 0 && probe.naturalHeight > 0) {
+					setArtworkPixels(
+						probe.naturalWidth,
+						probe.naturalHeight,
+						true,
+					);
+				}
+			})
+			.catch(() => null);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [draft.artworkUrl, draft.artworkKind]);
 
 	const uploadArtwork = async (file: File) => {
 		try {
@@ -410,7 +455,11 @@ export function BadgeEditor({
 				probe.src = publicUrl;
 				await probe.decode().catch(() => null);
 				if (probe.naturalWidth > 0) {
-					setArtworkPixels(probe.naturalWidth, probe.naturalHeight);
+					setArtworkPixels(
+						probe.naturalWidth,
+						probe.naturalHeight,
+						true,
+					);
 				}
 			}
 			toast.success("Arte enviada.");
