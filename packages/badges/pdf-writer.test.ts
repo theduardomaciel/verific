@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 
 import { buildDisplayList } from "./display-list";
-import { renderBadgesToPdf } from "./pdf-writer";
+import { renderBadgeSheets, renderBadgesToPdf } from "./pdf-writer";
 import {
 	assertPublicProfilePayload,
 	buildProfileUrl,
@@ -177,4 +177,67 @@ describe("pdf-writer", () => {
 		const sideMm = Math.min(qr.rect.w, qr.rect.h);
 		expect(sideMm).toBeGreaterThanOrEqual(15);
 	});
+
+	it("renders imposed A4 sheets in both modes with crop marks", async () => {
+		const { fontBytes, primitives } = await renderOne();
+		const png = new Uint8Array(
+			Buffer.from(
+				"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+				"base64",
+			),
+		);
+		const badges = Array.from({ length: 10 }, () => primitives);
+		for (const mode of ["data-only", "full"] as const) {
+			const sheetLayout = { ...layout(), mode };
+			const bytes = await renderBadgeSheets({
+				layout: sheetLayout,
+				badges,
+				fontBytes,
+				artworkBytes: png,
+				artworkMime: "png",
+				artworkPdfBytes: null,
+			});
+			const pdf = await PDF.load(bytes as never);
+			expect(pdf.getPageCount()).toBe(2);
+			const page = pdf.getPage(0);
+			expect(page?.width).toBeCloseTo(mmToPt(210), 1);
+			expect(page?.height).toBeCloseTo(mmToPt(297), 1);
+			const extracted = page?.extractText() as unknown as {
+				text?: string;
+			};
+			expect(extracted.text ?? "").toContain("Conceição");
+		}
+	}, 120_000);
+
+	it("renders rotated sheets and outlines test prints", async () => {
+		const { fontBytes, primitives } = await renderOne();
+		const rotatedLayout = {
+			...layout(),
+			mode: "data-only" as const,
+			badgeW: 120,
+			badgeH: 40,
+		};
+		const rotated = await renderBadgeSheets({
+			layout: rotatedLayout,
+			badges: Array.from({ length: 8 }, () => primitives),
+			fontBytes,
+			artworkBytes: null,
+			artworkMime: null,
+			artworkPdfBytes: null,
+		});
+		const rotatedPdf = await PDF.load(rotated as never);
+		expect(rotatedPdf.getPageCount()).toBe(1);
+
+		const outlines = await renderBadgeSheets({
+			layout: layout(),
+			badges: [primitives],
+			fontBytes,
+			artworkBytes: null,
+			artworkMime: null,
+			artworkPdfBytes: null,
+			testPrint: "outlines",
+		});
+		const outlinesPdf = await PDF.load(outlines as never);
+		expect(outlinesPdf.getPageCount()).toBe(1);
+	}, 120_000);
 });
