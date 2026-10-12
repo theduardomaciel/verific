@@ -151,37 +151,42 @@ export function BadgeEditor({
 	const saveMutation = trpc.saveLayout.useMutation();
 	const uploadMutation = trpc.requestImageUpload.useMutation();
 
+	const draftRef = useRef(draft);
+	const commit = (next: BadgeLayout) => {
+		draftRef.current = next;
+		setDraft(next);
+	};
+
 	const patch = (fn: (d: BadgeLayout) => void, pushHistory = false) => {
-		setDraft((prev) => {
-			if (pushHistory) {
-				past.current.push(clone(prev));
-				if (past.current.length > 50) past.current.shift();
-				future.current = [];
-			}
-			const next = clone(prev);
-			fn(next);
-			return next;
-		});
+		const prev = draftRef.current;
+		if (pushHistory) {
+			past.current.push(clone(prev));
+			if (past.current.length > 50) past.current.shift();
+			future.current = [];
+		}
+		const next = clone(prev);
+		fn(next);
+		commit(next);
 	};
 
 	const undo = () => {
 		const prev = past.current.pop();
 		if (!prev) return;
 		future.current.push(clone(draft));
-		setDraft(prev);
+		commit(prev);
 		bump((n) => n + 1);
 	};
 	const redo = () => {
 		const next = future.current.pop();
 		if (!next) return;
 		past.current.push(clone(draft));
-		setDraft(next);
+		commit(next);
 		bump((n) => n + 1);
 	};
 	const reset = () => {
 		past.current.push(clone(draft));
 		future.current = [];
-		setDraft(defaultLayout());
+		commit(defaultLayout());
 		setSelectedId(null);
 	};
 
@@ -600,6 +605,7 @@ export function BadgeEditor({
 							layout={draft}
 							roles={roles}
 							sample={samples[sampleKey]}
+							primitives={preview.primitives}
 							fieldLabels={fieldLabels}
 							selectedId={selectedId}
 							onSelect={setSelectedId}

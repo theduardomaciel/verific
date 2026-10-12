@@ -15,43 +15,17 @@ interface Props {
 }
 
 /**
- * Pré-visualização fiel: rende a mesma display list do PDF, nas mesmas
- * coordenadas em mm. Texto usa as fontes TTF registradas via FontFace.
+ * Renderiza a display list (mesmas coordenadas em mm do PDF).
+ * Usado pela prévia e pelo canvas do editor, para ambos mostrarem
+ * exatamente o que será impresso.
  */
-export function BadgePreviewSvg({
+export function PrimitiveLayer({
 	primitives,
-	badgeWMm,
-	badgeHMm,
-	pxPerMm,
-	artworkUrl,
-	artworkKind,
-	mode,
-}: Props) {
-	const w = badgeWMm * pxPerMm;
-	const h = badgeHMm * pxPerMm;
-	const showArtwork =
-		artworkUrl && (artworkKind === "png" || artworkKind === "jpg");
-
+}: {
+	primitives: DisplayPrimitive[];
+}) {
 	return (
-		<svg
-			width={w}
-			height={h}
-			viewBox={`0 0 ${badgeWMm} ${badgeHMm}`}
-			className="bg-white shadow-md"
-			role="img"
-			aria-label="Prévia do crachá"
-		>
-			{showArtwork ? (
-				<image
-					href={artworkUrl}
-					x={0}
-					y={0}
-					width={badgeWMm}
-					height={badgeHMm}
-					preserveAspectRatio="none"
-					opacity={mode === "full" ? 1 : 0.45}
-				/>
-			) : null}
+		<>
 			{primitives.map((p, i) => {
 				if (p.kind === "rect") {
 					return (
@@ -152,6 +126,49 @@ export function BadgePreviewSvg({
 				}
 				return null;
 			})}
+		</>
+	);
+}
+
+/**
+ * Pré-visualização fiel: rende a mesma display list do PDF, nas mesmas
+ * coordenadas em mm. Texto usa as fontes TTF registradas via FontFace.
+ */
+export function BadgePreviewSvg({
+	primitives,
+	badgeWMm,
+	badgeHMm,
+	pxPerMm,
+	artworkUrl,
+	artworkKind,
+	mode,
+}: Props) {
+	const w = badgeWMm * pxPerMm;
+	const h = badgeHMm * pxPerMm;
+	const showArtwork =
+		artworkUrl && (artworkKind === "png" || artworkKind === "jpg");
+
+	return (
+		<svg
+			width={w}
+			height={h}
+			viewBox={`0 0 ${badgeWMm} ${badgeHMm}`}
+			className="bg-white shadow-md"
+			role="img"
+			aria-label="Prévia do crachá"
+		>
+			{showArtwork ? (
+				<image
+					href={artworkUrl}
+					x={0}
+					y={0}
+					width={badgeWMm}
+					height={badgeHMm}
+					preserveAspectRatio="none"
+					opacity={mode === "full" ? 1 : 0.45}
+				/>
+			) : null}
+			<PrimitiveLayer primitives={primitives} />
 		</svg>
 	);
 }
