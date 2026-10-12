@@ -649,18 +649,6 @@ export function ThemeControls({
 						/>
 					</div>
 					<div className="flex items-center justify-between gap-2">
-						<Label>Texto</Label>
-						<FontPicker
-							label="Fonte do texto"
-							fontRole="body"
-							value={draft.fonts.body}
-							onChange={(body) =>
-								patch({ fonts: { ...draft.fonts, body } })
-							}
-							onHoverPreview={(hint) => onFontHover("body", hint)}
-						/>
-					</div>
-					<div className="flex items-center justify-between gap-2">
 						<Label>Subtítulos e seções</Label>
 						<FontPicker
 							label="Fonte dos subtítulos"
@@ -674,6 +662,18 @@ export function ThemeControls({
 							onHoverPreview={(hint) =>
 								onFontHover("subtitle", hint)
 							}
+						/>
+					</div>
+					<div className="flex items-center justify-between gap-2">
+						<Label>Texto</Label>
+						<FontPicker
+							label="Fonte do texto"
+							fontRole="body"
+							value={draft.fonts.body}
+							onChange={(body) =>
+								patch({ fonts: { ...draft.fonts, body } })
+							}
+							onHoverPreview={(hint) => onFontHover("body", hint)}
 						/>
 					</div>
 					<div>
