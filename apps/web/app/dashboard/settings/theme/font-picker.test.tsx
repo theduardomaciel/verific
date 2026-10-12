@@ -49,10 +49,13 @@ describe("FontPicker", () => {
 				screen.getByPlaceholderText("Pesquisar fonte..."),
 			).toBeInTheDocument();
 		});
+		// data-value é exato ("Inter" colidiria com "Inter Tight" no nome).
+		// Opções vivem em portal: busca entre todos os options renderizados.
 		await waitFor(() => {
+			const options = screen.getAllByRole("option");
 			expect(
-				screen.getByRole("option", { name: /Inter/ }),
-			).toBeInTheDocument();
+				options.some((el) => el.getAttribute("data-value") === "Inter"),
+			).toBe(true);
 		});
 
 		await user.type(
@@ -74,7 +77,8 @@ describe("FontPicker", () => {
 		expect(onChange).toHaveBeenCalledWith(
 			expect.objectContaining({ family: "Playfair Display" }),
 		);
-	});
+		// Catálogo de 500 fontes sem virtualização (só em testes) é lento.
+	}, 30000);
 
 	it("alterna pesos e restaura o padrão", async () => {
 		const user = userEvent.setup();
@@ -152,5 +156,39 @@ describe("FontPicker", () => {
 		} finally {
 			stubMatchMedia(true);
 		}
+	});
+
+	it("ajusta a escala em passos de 5% e desabilita sem métricas", async () => {
+		const user = userEvent.setup();
+		const onChange = vi.fn();
+		renderPicker(onChange);
+
+		await user.click(screen.getByRole("button", { name: /Títulos: REM/i }));
+		await waitFor(() => {
+			expect(
+				screen.getByRole("option", { name: /REM/ }),
+			).toBeInTheDocument();
+		});
+
+		expect(screen.getByText("100%")).toBeInTheDocument();
+		await user.click(
+			screen.getByRole("button", { name: "Aumentar escala" }),
+		);
+		expect(onChange).toHaveBeenCalledWith(
+			expect.objectContaining({ family: "REM", scale: 1.05 }),
+		);
+
+		// Oxigênio não tem métricas: controle desabilitado, sem adivinhação.
+		await user.type(
+			screen.getByPlaceholderText("Pesquisar fonte..."),
+			"Oxygen",
+		);
+		await user.click(screen.getByRole("option", { name: /^Oxygen/ }));
+		expect(
+			screen.getByRole("button", { name: "Aumentar escala" }),
+		).toBeDisabled();
+		expect(
+			screen.getByText("Sem métricas nesta fonte"),
+		).toBeInTheDocument();
 	});
 });

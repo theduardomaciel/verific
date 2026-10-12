@@ -41,6 +41,12 @@ export interface FontCatalogEntry {
 	popularity: number;
 	/** Licença de uso (ex.: "OFL" — permite self-hosting). */
 	license: string;
+	/**
+	 * x-height / unitsPerEm (via @capsizecss/metrics, no script de geração).
+	 * Ausente em poucas famílias — sem ele, o controle de escala do picker
+	 * fica desabilitado em vez de adivinhar.
+	 */
+	xHeightRatio?: number;
 }
 
 /** Seleção de fonte feita pelo organizador para um papel do tema. */
@@ -49,8 +55,24 @@ export interface FontSelection {
 	weights: number[];
 	/** Itálico incluído na seleção (padrão: false). */
 	italic?: boolean;
+	/** Multiplicador de tamanho (1 = natural); limites por papel. */
+	scale?: number;
 }
 
-/** Papéis de fonte do tema (nomes mantidos por compatibilidade). */
-export type FontRole = "heading" | "body";
-export const FONT_ROLES: readonly FontRole[] = ["heading", "body"] as const;
+/** Papéis de fonte do tema. */
+export type FontRole = "heading" | "subtitle" | "body";
+export const FONT_ROLES: readonly FontRole[] = [
+	"heading",
+	"subtitle",
+	"body",
+] as const;
+
+/** Limites do multiplicador de escala por papel (passo 0.05 no picker). */
+export const SCALE_LIMITS: Record<
+	FontRole,
+	{ min: number; max: number; step: number }
+> = {
+	heading: { min: 0.5, max: 1.5, step: 0.05 },
+	subtitle: { min: 0.5, max: 1.5, step: 0.05 },
+	body: { min: 0.75, max: 1.25, step: 0.05 },
+};

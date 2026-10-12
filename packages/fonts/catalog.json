@@ -20,7 +20,8 @@
 				"vietnamese"
 			],
 			"popularity": 1,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5352
 		},
 		{
 			"family": "Roboto",
@@ -39,7 +40,8 @@
 				"vietnamese"
 			],
 			"popularity": 2,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5283
 		},
 		{
 			"family": "Roboto Mono",
@@ -55,7 +57,8 @@
 				"vietnamese"
 			],
 			"popularity": 3,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5283
 		},
 		{
 			"family": "Montserrat",
@@ -70,7 +73,8 @@
 				"vietnamese"
 			],
 			"popularity": 4,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.525
 		},
 		{
 			"family": "Prompt",
@@ -79,7 +83,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "thai", "vietnamese"],
 			"popularity": 5,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.536
 		},
 		{
 			"family": "Bricolage Grotesque",
@@ -88,7 +93,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 6,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.517
 		},
 		{
 			"family": "Google Sans",
@@ -123,7 +129,8 @@
 				"vietnamese"
 			],
 			"popularity": 7,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.51
 		},
 		{
 			"family": "Lato",
@@ -132,7 +139,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 8,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5065
 		},
 		{
 			"family": "Arimo",
@@ -150,7 +158,8 @@
 				"vietnamese"
 			],
 			"popularity": 9,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5283
 		},
 		{
 			"family": "Inter",
@@ -167,7 +176,8 @@
 				"vietnamese"
 			],
 			"popularity": 10,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5459
 		},
 		{
 			"family": "Roboto Condensed",
@@ -184,7 +194,8 @@
 				"vietnamese"
 			],
 			"popularity": 11,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5283
 		},
 		{
 			"family": "Be Vietnam Pro",
@@ -193,7 +204,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 12,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.53
 		},
 		{
 			"family": "DM Sans",
@@ -202,7 +214,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 13,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.504
 		},
 		{
 			"family": "Poppins",
@@ -211,7 +224,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["devanagari", "latin", "latin-ext"],
 			"popularity": 14,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.548
 		},
 		{
 			"family": "Unbounded",
@@ -226,7 +240,8 @@
 				"vietnamese"
 			],
 			"popularity": 15,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.566
 		},
 		{
 			"family": "Fira Sans Condensed",
@@ -243,7 +258,8 @@
 				"vietnamese"
 			],
 			"popularity": 16,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.526
 		},
 		{
 			"family": "Noto Kufi Arabic",
@@ -252,7 +268,8 @@
 			"styles": ["normal"],
 			"subsets": ["arabic", "latin", "latin-ext", "math", "symbols"],
 			"popularity": 17,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.536
 		},
 		{
 			"family": "Noto Sans JP",
@@ -267,7 +284,8 @@
 				"vietnamese"
 			],
 			"popularity": 18,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.543
 		},
 		{
 			"family": "Playfair Display",
@@ -276,7 +294,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["cyrillic", "latin", "latin-ext", "vietnamese"],
 			"popularity": 19,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.514
 		},
 		{
 			"family": "Nunito Sans",
@@ -291,7 +310,8 @@
 				"vietnamese"
 			],
 			"popularity": 20,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.486
 		},
 		{
 			"family": "Signika",
@@ -300,7 +320,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 21,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.498
 		},
 		{
 			"family": "Aleo",
@@ -309,7 +330,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 22,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.507
 		},
 		{
 			"family": "Kanit",
@@ -318,7 +340,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "thai", "vietnamese"],
 			"popularity": 23,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.474
 		},
 		{
 			"family": "Material Icons",
@@ -342,7 +365,8 @@
 				"vietnamese"
 			],
 			"popularity": 25,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5555
 		},
 		{
 			"family": "Rowdies",
@@ -351,7 +375,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 26,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.473
 		},
 		{
 			"family": "Libre Caslon Text",
@@ -360,7 +385,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 27,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.53
 		},
 		{
 			"family": "Work Sans",
@@ -369,7 +395,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 28,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Lora",
@@ -386,7 +413,8 @@
 				"vietnamese"
 			],
 			"popularity": 29,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "STIX Two Text",
@@ -402,7 +430,8 @@
 				"vietnamese"
 			],
 			"popularity": 30,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.473
 		},
 		{
 			"family": "Figtree",
@@ -411,7 +440,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 31,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Gruppo",
@@ -420,7 +450,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 32,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.374
 		},
 		{
 			"family": "JetBrains Mono",
@@ -436,7 +467,8 @@
 				"vietnamese"
 			],
 			"popularity": 33,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.55
 		},
 		{
 			"family": "Quattrocento",
@@ -445,7 +477,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 34,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.459
 		},
 		{
 			"family": "Archivo",
@@ -454,7 +487,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 35,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.526
 		},
 		{
 			"family": "Neuton",
@@ -478,7 +512,8 @@
 				"vietnamese"
 			],
 			"popularity": 37,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.578
 		},
 		{
 			"family": "Actor",
@@ -487,7 +522,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 38,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.503
 		},
 		{
 			"family": "Source Sans 3",
@@ -504,7 +540,8 @@
 				"vietnamese"
 			],
 			"popularity": 39,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.486
 		},
 		{
 			"family": "Noto Sans",
@@ -522,7 +559,8 @@
 				"vietnamese"
 			],
 			"popularity": 40,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.536
 		},
 		{
 			"family": "Palanquin Dark",
@@ -531,7 +569,8 @@
 			"styles": ["normal"],
 			"subsets": ["devanagari", "latin", "latin-ext"],
 			"popularity": 41,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Black Ops One",
@@ -540,7 +579,8 @@
 			"styles": ["normal"],
 			"subsets": ["cyrillic-ext", "latin", "latin-ext", "vietnamese"],
 			"popularity": 42,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5186
 		},
 		{
 			"family": "Caprasimo",
@@ -549,7 +589,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 43,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Material Symbols Rounded",
@@ -567,7 +608,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 45,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.413
 		},
 		{
 			"family": "K2D",
@@ -576,7 +618,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "thai", "vietnamese"],
 			"popularity": 46,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Raleway",
@@ -591,7 +634,8 @@
 				"vietnamese"
 			],
 			"popularity": 47,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.519
 		},
 		{
 			"family": "Cormorant Garamond",
@@ -606,7 +650,8 @@
 				"vietnamese"
 			],
 			"popularity": 48,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.386
 		},
 		{
 			"family": "UnifrakturMaguntia",
@@ -615,7 +660,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 49,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5347
 		},
 		{
 			"family": "Nunito",
@@ -630,7 +676,8 @@
 				"vietnamese"
 			],
 			"popularity": 50,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.484
 		},
 		{
 			"family": "Ropa Sans",
@@ -639,7 +686,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 51,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.488
 		},
 		{
 			"family": "Titillium Web",
@@ -648,7 +696,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 52,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Adamina",
@@ -657,7 +706,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 53,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.534
 		},
 		{
 			"family": "Material Symbols Outlined",
@@ -675,7 +725,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "sinhala"],
 			"popularity": 55,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.536
 		},
 		{
 			"family": "PT Serif",
@@ -684,7 +735,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["cyrillic", "cyrillic-ext", "latin", "latin-ext"],
 			"popularity": 56,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "IBM Plex Mono",
@@ -699,7 +751,8 @@
 				"vietnamese"
 			],
 			"popularity": 57,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.516
 		},
 		{
 			"family": "Roboto Slab",
@@ -716,7 +769,8 @@
 				"vietnamese"
 			],
 			"popularity": 58,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5283
 		},
 		{
 			"family": "Sree Krushnadevaraya",
@@ -725,7 +779,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "telugu"],
 			"popularity": 59,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.3792
 		},
 		{
 			"family": "Barlow Condensed",
@@ -734,7 +789,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 60,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.506
 		},
 		{
 			"family": "Rubik",
@@ -750,7 +806,8 @@
 				"latin-ext"
 			],
 			"popularity": 61,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.52
 		},
 		{
 			"family": "Chivo Mono",
@@ -759,7 +816,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 62,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.511
 		},
 		{
 			"family": "Manrope",
@@ -775,7 +833,8 @@
 				"vietnamese"
 			],
 			"popularity": 63,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.54
 		},
 		{
 			"family": "Noto Sans SC",
@@ -790,7 +849,8 @@
 				"vietnamese"
 			],
 			"popularity": 64,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.543
 		},
 		{
 			"family": "Inria Serif",
@@ -799,7 +859,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 65,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.495
 		},
 		{
 			"family": "Anton",
@@ -808,7 +869,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 66,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.7324
 		},
 		{
 			"family": "Kodchasan",
@@ -817,7 +879,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "thai", "vietnamese"],
 			"popularity": 67,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.49
 		},
 		{
 			"family": "Ubuntu",
@@ -833,7 +896,8 @@
 				"latin-ext"
 			],
 			"popularity": 68,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.52
 		},
 		{
 			"family": "Allison",
@@ -842,7 +906,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 69,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.22
 		},
 		{
 			"family": "Instrument Serif",
@@ -851,7 +916,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 70,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.51
 		},
 		{
 			"family": "Outfit",
@@ -860,7 +926,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 71,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.475
 		},
 		{
 			"family": "Fraunces",
@@ -869,7 +936,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 72,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.482
 		},
 		{
 			"family": "EB Garamond",
@@ -886,7 +954,8 @@
 				"vietnamese"
 			],
 			"popularity": 73,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4
 		},
 		{
 			"family": "Nanum Brush Script",
@@ -895,7 +964,8 @@
 			"styles": ["normal"],
 			"subsets": ["korean", "latin"],
 			"popularity": 74,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.3
 		},
 		{
 			"family": "Cairo Play",
@@ -904,7 +974,8 @@
 			"styles": ["normal"],
 			"subsets": ["arabic", "latin", "latin-ext"],
 			"popularity": 75,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Plus Jakarta Sans",
@@ -913,7 +984,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["cyrillic-ext", "latin", "latin-ext", "vietnamese"],
 			"popularity": 76,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.536
 		},
 		{
 			"family": "Public Sans",
@@ -922,7 +994,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 77,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.517
 		},
 		{
 			"family": "Urbanist",
@@ -931,7 +1004,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 78,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Hind Siliguri",
@@ -940,7 +1014,8 @@
 			"styles": ["normal"],
 			"subsets": ["bengali", "latin", "latin-ext"],
 			"popularity": 79,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.505
 		},
 		{
 			"family": "Kaisei Opti",
@@ -949,7 +1024,8 @@
 			"styles": ["normal"],
 			"subsets": ["cyrillic", "japanese", "latin", "latin-ext"],
 			"popularity": 80,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.501
 		},
 		{
 			"family": "Aguafina Script",
@@ -958,7 +1034,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 81,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.356
 		},
 		{
 			"family": "Material Icons Round",
@@ -976,7 +1053,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 83,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.503
 		},
 		{
 			"family": "Bebas Neue",
@@ -985,7 +1063,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 84,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.7
 		},
 		{
 			"family": "Coiny",
@@ -1003,7 +1082,8 @@
 			"styles": ["normal"],
 			"subsets": ["korean", "latin"],
 			"popularity": 86,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.542
 		},
 		{
 			"family": "Monofett",
@@ -1012,7 +1092,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 87,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.6689
 		},
 		{
 			"family": "Source Serif 4",
@@ -1028,7 +1109,8 @@
 				"vietnamese"
 			],
 			"popularity": 88,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.475
 		},
 		{
 			"family": "Archivo Black",
@@ -1037,7 +1119,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 89,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.528
 		},
 		{
 			"family": "Gulzar",
@@ -1046,7 +1129,8 @@
 			"styles": ["normal"],
 			"subsets": ["arabic", "latin", "latin-ext"],
 			"popularity": 90,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Instrument Sans",
@@ -1055,7 +1139,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 91,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.51
 		},
 		{
 			"family": "Cambo",
@@ -1064,7 +1149,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 92,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.506
 		},
 		{
 			"family": "Noto Sans KR",
@@ -1079,7 +1165,8 @@
 				"vietnamese"
 			],
 			"popularity": 93,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.543
 		},
 		{
 			"family": "Google Sans Flex",
@@ -1099,7 +1186,8 @@
 				"vietnamese"
 			],
 			"popularity": 94,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.51
 		},
 		{
 			"family": "Kufam",
@@ -1108,7 +1196,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["arabic", "latin", "latin-ext", "vietnamese"],
 			"popularity": 95,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.544
 		},
 		{
 			"family": "PT Sans",
@@ -1117,7 +1206,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["cyrillic", "cyrillic-ext", "latin", "latin-ext"],
 			"popularity": 96,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Loved by the King",
@@ -1126,7 +1216,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 97,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5425
 		},
 		{
 			"family": "Noto Sans Telugu",
@@ -1135,7 +1226,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "telugu"],
 			"popularity": 98,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Hind",
@@ -1144,7 +1236,8 @@
 			"styles": ["normal"],
 			"subsets": ["devanagari", "latin", "latin-ext"],
 			"popularity": 99,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.505
 		},
 		{
 			"family": "Noto Sans TC",
@@ -1159,7 +1252,8 @@
 				"vietnamese"
 			],
 			"popularity": 100,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.543
 		},
 		{
 			"family": "Stick",
@@ -1168,7 +1262,8 @@
 			"styles": ["normal"],
 			"subsets": ["cyrillic", "japanese", "latin", "latin-ext"],
 			"popularity": 101,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.52
 		},
 		{
 			"family": "Lemon",
@@ -1177,7 +1272,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 102,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.575
 		},
 		{
 			"family": "Ramabhadra",
@@ -1186,7 +1282,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "telugu"],
 			"popularity": 103,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5289
 		},
 		{
 			"family": "Anek Telugu",
@@ -1195,7 +1292,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "telugu"],
 			"popularity": 104,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.489
 		},
 		{
 			"family": "Miniver",
@@ -1204,7 +1302,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 105,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4893
 		},
 		{
 			"family": "Mulish",
@@ -1219,7 +1318,8 @@
 				"vietnamese"
 			],
 			"popularity": 106,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Barlow",
@@ -1228,7 +1328,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 107,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.506
 		},
 		{
 			"family": "Geist Mono",
@@ -1244,7 +1345,8 @@
 				"vietnamese"
 			],
 			"popularity": 108,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.53
 		},
 		{
 			"family": "Zilla Slab Highlight",
@@ -1253,7 +1355,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 109,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.445
 		},
 		{
 			"family": "Material Icons Sharp",
@@ -1278,7 +1381,8 @@
 				"vietnamese"
 			],
 			"popularity": 111,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.516
 		},
 		{
 			"family": "Teko",
@@ -1287,7 +1391,8 @@
 			"styles": ["normal"],
 			"subsets": ["devanagari", "latin", "latin-ext"],
 			"popularity": 112,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.485
 		},
 		{
 			"family": "Chakra Petch",
@@ -1296,7 +1401,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "thai", "vietnamese"],
 			"popularity": 113,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.498
 		},
 		{
 			"family": "Diplomata",
@@ -1305,7 +1411,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 114,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.558
 		},
 		{
 			"family": "Jost",
@@ -1314,7 +1421,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["cyrillic", "latin", "latin-ext"],
 			"popularity": 115,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.46
 		},
 		{
 			"family": "Bungee Tint",
@@ -1323,7 +1431,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 116,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Maven Pro",
@@ -1332,7 +1441,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 117,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.499
 		},
 		{
 			"family": "Inconsolata",
@@ -1341,7 +1451,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 118,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.457
 		},
 		{
 			"family": "Kedebideri",
@@ -1350,7 +1461,8 @@
 			"styles": ["normal"],
 			"subsets": ["beria-erfe", "latin"],
 			"popularity": 119,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.668
 		},
 		{
 			"family": "Shadows Into Light",
@@ -1359,7 +1471,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 120,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.6016
 		},
 		{
 			"family": "Fira Sans",
@@ -1376,7 +1489,8 @@
 				"vietnamese"
 			],
 			"popularity": 121,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.527
 		},
 		{
 			"family": "Playwrite IE",
@@ -1385,7 +1499,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 122,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Questrial",
@@ -1394,7 +1509,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 123,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Saira",
@@ -1403,7 +1519,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 124,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.51
 		},
 		{
 			"family": "TASA Explorer",
@@ -1412,7 +1529,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 125,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Zilla Slab",
@@ -1421,7 +1539,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 126,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.445
 		},
 		{
 			"family": "Great Vibes",
@@ -1437,7 +1556,8 @@
 				"vietnamese"
 			],
 			"popularity": 127,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.328
 		},
 		{
 			"family": "Hanalei Fill",
@@ -1455,7 +1575,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 129,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.317
 		},
 		{
 			"family": "Material Icons Outlined",
@@ -1473,7 +1594,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 131,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Noto Sans Old Permic",
@@ -1482,7 +1604,8 @@
 			"styles": ["normal"],
 			"subsets": ["cyrillic-ext", "latin", "latin-ext", "old-permic"],
 			"popularity": 132,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.536
 		},
 		{
 			"family": "Space Grotesk",
@@ -1491,7 +1614,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 133,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.486
 		},
 		{
 			"family": "ABeeZee",
@@ -1500,7 +1624,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 134,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.52
 		},
 		{
 			"family": "Trochut",
@@ -1509,7 +1634,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin"],
 			"popularity": 135,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.47
 		},
 		{
 			"family": "Albert Sans",
@@ -1518,7 +1644,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 136,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Edu AU VIC WA NT Guides",
@@ -1527,7 +1654,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 137,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4975
 		},
 		{
 			"family": "Libre Baskerville",
@@ -1536,7 +1664,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 138,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.53
 		},
 		{
 			"family": "Grandiflora One",
@@ -1545,7 +1674,8 @@
 			"styles": ["normal"],
 			"subsets": ["korean", "latin", "latin-ext"],
 			"popularity": 139,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.407
 		},
 		{
 			"family": "Noto Serif",
@@ -1563,7 +1693,8 @@
 				"vietnamese"
 			],
 			"popularity": 140,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.536
 		},
 		{
 			"family": "Satisfy",
@@ -1572,7 +1703,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 141,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4072
 		},
 		{
 			"family": "Caacupe One",
@@ -1581,7 +1713,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 142,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.493
 		},
 		{
 			"family": "Onest",
@@ -1598,7 +1731,8 @@
 				"vietnamese"
 			],
 			"popularity": 143,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.527
 		},
 		{
 			"family": "Bitcount Single Ink",
@@ -1607,7 +1741,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 144,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Karla",
@@ -1616,7 +1751,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 145,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.478
 		},
 		{
 			"family": "Lexend Deca",
@@ -1625,7 +1761,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 146,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.525
 		},
 		{
 			"family": "Gravitas One",
@@ -1634,7 +1771,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 147,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5435
 		},
 		{
 			"family": "Kay Pho Du",
@@ -1643,7 +1781,8 @@
 			"styles": ["normal"],
 			"subsets": ["kayah-li", "latin", "latin-ext"],
 			"popularity": 148,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5127
 		},
 		{
 			"family": "Noto Sans Wancho",
@@ -1652,7 +1791,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "wancho"],
 			"popularity": 149,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.536
 		},
 		{
 			"family": "Bitcount Grid Double Ink",
@@ -1661,7 +1801,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 150,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "IBM Plex Serif",
@@ -1676,7 +1817,8 @@
 				"vietnamese"
 			],
 			"popularity": 151,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.516
 		},
 		{
 			"family": "Share Tech",
@@ -1685,7 +1827,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 152,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Exo",
@@ -1694,7 +1837,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 153,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.531
 		},
 		{
 			"family": "Smooch Sans",
@@ -1703,7 +1847,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 154,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.47
 		},
 		{
 			"family": "Yarndings 12",
@@ -1712,7 +1857,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "math", "symbols"],
 			"popularity": 155,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4808
 		},
 		{
 			"family": "Heebo",
@@ -1721,7 +1867,8 @@
 			"styles": ["normal"],
 			"subsets": ["hebrew", "latin", "latin-ext", "math", "symbols"],
 			"popularity": 156,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5283
 		},
 		{
 			"family": "Noto Sans Sharada",
@@ -1730,7 +1877,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "sharada"],
 			"popularity": 157,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.536
 		},
 		{
 			"family": "Permanent Marker",
@@ -1739,7 +1887,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 158,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.6104
 		},
 		{
 			"family": "IBM Plex Sans Arabic",
@@ -1748,7 +1897,8 @@
 			"styles": ["normal"],
 			"subsets": ["arabic", "cyrillic-ext", "latin", "latin-ext"],
 			"popularity": 159,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.516
 		},
 		{
 			"family": "Playwrite IN Guides",
@@ -1757,7 +1907,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 160,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Frank Ruhl Libre",
@@ -1766,7 +1917,8 @@
 			"styles": ["normal"],
 			"subsets": ["hebrew", "latin", "latin-ext"],
 			"popularity": 161,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.468
 		},
 		{
 			"family": "Noto Sans Kayah Li",
@@ -1775,7 +1927,8 @@
 			"styles": ["normal"],
 			"subsets": ["kayah-li", "latin", "latin-ext"],
 			"popularity": 162,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.536
 		},
 		{
 			"family": "Kalam",
@@ -1784,7 +1937,8 @@
 			"styles": ["normal"],
 			"subsets": ["devanagari", "latin", "latin-ext"],
 			"popularity": 163,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.526
 		},
 		{
 			"family": "Josefin Sans",
@@ -1793,7 +1947,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 164,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.378
 		},
 		{
 			"family": "Noto Serif TC",
@@ -1808,7 +1963,8 @@
 				"vietnamese"
 			],
 			"popularity": 165,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.514
 		},
 		{
 			"family": "Noto Sans Tamil",
@@ -1817,7 +1973,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "tamil"],
 			"popularity": 166,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.554
 		},
 		{
 			"family": "Source Code Pro",
@@ -1834,7 +1991,8 @@
 				"vietnamese"
 			],
 			"popularity": 167,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.486
 		},
 		{
 			"family": "Vollkorn",
@@ -1850,7 +2008,8 @@
 				"vietnamese"
 			],
 			"popularity": 168,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.458
 		},
 		{
 			"family": "Noto Color Emoji",
@@ -1859,7 +2018,8 @@
 			"styles": ["normal"],
 			"subsets": ["emoji"],
 			"popularity": 169,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Noto Serif SC",
@@ -1874,7 +2034,8 @@
 				"vietnamese"
 			],
 			"popularity": 170,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.514
 		},
 		{
 			"family": "Inter Tight",
@@ -1891,7 +2052,8 @@
 				"vietnamese"
 			],
 			"popularity": 171,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5459
 		},
 		{
 			"family": "Noto Serif KR",
@@ -1906,7 +2068,8 @@
 				"vietnamese"
 			],
 			"popularity": 172,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.514
 		},
 		{
 			"family": "Faustina",
@@ -1915,7 +2078,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 173,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.494
 		},
 		{
 			"family": "Amiri",
@@ -1924,7 +2088,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["arabic", "latin", "latin-ext"],
 			"popularity": 174,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.433
 		},
 		{
 			"family": "Dancing Script",
@@ -1933,7 +2098,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 175,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.332
 		},
 		{
 			"family": "Yanone Kaffeesatz",
@@ -1950,7 +2116,8 @@
 				"vietnamese"
 			],
 			"popularity": 176,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Libre Franklin",
@@ -1965,7 +2132,8 @@
 				"vietnamese"
 			],
 			"popularity": 177,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.53
 		},
 		{
 			"family": "Red Hat Text",
@@ -1974,7 +2142,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 178,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.488
 		},
 		{
 			"family": "Material Symbols Sharp",
@@ -1992,7 +2161,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 180,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.6836
 		},
 		{
 			"family": "Literata",
@@ -2009,7 +2179,8 @@
 				"vietnamese"
 			],
 			"popularity": 181,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.507
 		},
 		{
 			"family": "Crimson Pro",
@@ -2018,7 +2189,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 182,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4199
 		},
 		{
 			"family": "Noto Serif JP",
@@ -2033,7 +2205,8 @@
 				"vietnamese"
 			],
 			"popularity": 183,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.514
 		},
 		{
 			"family": "Press Start 2P",
@@ -2048,7 +2221,8 @@
 				"latin-ext"
 			],
 			"popularity": 184,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.75
 		},
 		{
 			"family": "Baskervville",
@@ -2057,7 +2231,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 185,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.436
 		},
 		{
 			"family": "Fjalla One",
@@ -2066,7 +2241,8 @@
 			"styles": ["normal"],
 			"subsets": ["cyrillic-ext", "latin", "latin-ext", "vietnamese"],
 			"popularity": 186,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.6724
 		},
 		{
 			"family": "Prata",
@@ -2075,7 +2251,8 @@
 			"styles": ["normal"],
 			"subsets": ["cyrillic", "cyrillic-ext", "latin", "vietnamese"],
 			"popularity": 187,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.518
 		},
 		{
 			"family": "Sora",
@@ -2084,7 +2261,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 188,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.534
 		},
 		{
 			"family": "Andada Pro",
@@ -2093,7 +2271,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 189,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.494
 		},
 		{
 			"family": "Cairo",
@@ -2102,7 +2281,8 @@
 			"styles": ["normal"],
 			"subsets": ["arabic", "latin", "latin-ext"],
 			"popularity": 190,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Montserrat Alternates",
@@ -2117,7 +2297,8 @@
 				"vietnamese"
 			],
 			"popularity": 191,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.525
 		},
 		{
 			"family": "Rajdhani",
@@ -2126,7 +2307,8 @@
 			"styles": ["normal"],
 			"subsets": ["devanagari", "latin", "latin-ext"],
 			"popularity": 192,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.51
 		},
 		{
 			"family": "Creepster",
@@ -2135,7 +2317,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 193,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.7334
 		},
 		{
 			"family": "Changa One",
@@ -2144,7 +2327,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin"],
 			"popularity": 194,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Readex Pro",
@@ -2153,7 +2337,8 @@
 			"styles": ["normal"],
 			"subsets": ["arabic", "latin", "latin-ext", "vietnamese"],
 			"popularity": 195,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.525
 		},
 		{
 			"family": "Geist",
@@ -2168,7 +2353,8 @@
 				"vietnamese"
 			],
 			"popularity": 196,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.53
 		},
 		{
 			"family": "Quantico",
@@ -2177,7 +2363,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin"],
 			"popularity": 197,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Cabin",
@@ -2186,7 +2373,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 198,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.49
 		},
 		{
 			"family": "Chivo",
@@ -2195,7 +2383,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 199,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.511
 		},
 		{
 			"family": "Amatic SC",
@@ -2210,7 +2399,8 @@
 				"vietnamese"
 			],
 			"popularity": 200,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.659
 		},
 		{
 			"family": "Tenor Sans",
@@ -2219,7 +2409,8 @@
 			"styles": ["normal"],
 			"subsets": ["cyrillic", "latin", "latin-ext"],
 			"popularity": 201,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Lobster Two",
@@ -2228,7 +2419,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin"],
 			"popularity": 202,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Noto Sans Display",
@@ -2245,7 +2437,8 @@
 				"vietnamese"
 			],
 			"popularity": 203,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.536
 		},
 		{
 			"family": "Antic Slab",
@@ -2254,7 +2447,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 204,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Bitter",
@@ -2269,7 +2463,8 @@
 				"vietnamese"
 			],
 			"popularity": 205,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.528
 		},
 		{
 			"family": "Patua One",
@@ -2278,7 +2473,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 206,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Schibsted Grotesk",
@@ -2287,7 +2483,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 207,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5273
 		},
 		{
 			"family": "Assistant",
@@ -2296,7 +2493,8 @@
 			"styles": ["normal"],
 			"subsets": ["hebrew", "latin", "latin-ext"],
 			"popularity": 208,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Oxanium",
@@ -2305,7 +2503,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 209,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.515
 		},
 		{
 			"family": "Google Sans Code",
@@ -2326,7 +2525,8 @@
 				"vietnamese"
 			],
 			"popularity": 210,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5235
 		},
 		{
 			"family": "Mukta",
@@ -2335,7 +2535,8 @@
 			"styles": ["normal"],
 			"subsets": ["devanagari", "latin", "latin-ext"],
 			"popularity": 211,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.468
 		},
 		{
 			"family": "Lexend",
@@ -2344,7 +2545,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 212,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.525
 		},
 		{
 			"family": "Merriweather Sans",
@@ -2353,7 +2555,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["cyrillic-ext", "latin", "latin-ext", "vietnamese"],
 			"popularity": 213,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.557
 		},
 		{
 			"family": "Old Standard TT",
@@ -2368,7 +2571,8 @@
 				"vietnamese"
 			],
 			"popularity": 214,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.456
 		},
 		{
 			"family": "Kaushan Script",
@@ -2377,7 +2581,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 215,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.452
 		},
 		{
 			"family": "Caveat",
@@ -2386,7 +2591,8 @@
 			"styles": ["normal"],
 			"subsets": ["cyrillic", "cyrillic-ext", "latin", "latin-ext"],
 			"popularity": 216,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4
 		},
 		{
 			"family": "Patrick Hand",
@@ -2395,7 +2601,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 217,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.467
 		},
 		{
 			"family": "DM Serif Display",
@@ -2404,7 +2611,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 218,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.481
 		},
 		{
 			"family": "Sawarabi Mincho",
@@ -2413,7 +2621,8 @@
 			"styles": ["normal"],
 			"subsets": ["braille", "japanese", "latin", "latin-ext"],
 			"popularity": 219,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Share Tech Mono",
@@ -2422,7 +2631,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 220,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Dosis",
@@ -2431,7 +2641,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 221,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.472
 		},
 		{
 			"family": "Martel",
@@ -2440,7 +2651,8 @@
 			"styles": ["normal"],
 			"subsets": ["devanagari", "latin", "latin-ext"],
 			"popularity": 222,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.546
 		},
 		{
 			"family": "Francois One",
@@ -2449,7 +2661,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 223,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.563
 		},
 		{
 			"family": "Roboto Flex",
@@ -2465,7 +2678,8 @@
 				"vietnamese"
 			],
 			"popularity": 224,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5137
 		},
 		{
 			"family": "Alfa Slab One",
@@ -2474,7 +2688,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 225,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.556
 		},
 		{
 			"family": "Noto Sans Bengali",
@@ -2483,7 +2698,8 @@
 			"styles": ["normal"],
 			"subsets": ["bengali", "latin", "latin-ext"],
 			"popularity": 226,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.536
 		},
 		{
 			"family": "Antonio",
@@ -2492,7 +2708,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 227,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.7324
 		},
 		{
 			"family": "Alexandria",
@@ -2501,7 +2718,8 @@
 			"styles": ["normal"],
 			"subsets": ["arabic", "latin", "latin-ext", "vietnamese"],
 			"popularity": 228,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.531
 		},
 		{
 			"family": "Radio Canada",
@@ -2515,7 +2733,8 @@
 				"vietnamese"
 			],
 			"popularity": 229,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.515
 		},
 		{
 			"family": "Fredoka",
@@ -2524,7 +2743,8 @@
 			"styles": ["normal"],
 			"subsets": ["hebrew", "latin", "latin-ext"],
 			"popularity": 230,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Ubuntu Condensed",
@@ -2540,7 +2760,8 @@
 				"latin-ext"
 			],
 			"popularity": 231,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.52
 		},
 		{
 			"family": "Red Hat Display",
@@ -2549,7 +2770,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 232,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.501
 		},
 		{
 			"family": "Racing Sans One",
@@ -2558,7 +2780,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 233,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.43
 		},
 		{
 			"family": "Advent Pro",
@@ -2573,7 +2796,8 @@
 				"latin-ext"
 			],
 			"popularity": 234,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.501
 		},
 		{
 			"family": "Exo 2",
@@ -2588,7 +2812,8 @@
 				"vietnamese"
 			],
 			"popularity": 235,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.487
 		},
 		{
 			"family": "Josefin Slab",
@@ -2597,7 +2822,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin"],
 			"popularity": 236,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.375
 		},
 		{
 			"family": "Encode Sans Condensed",
@@ -2606,7 +2832,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 237,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5425
 		},
 		{
 			"family": "Noto Sans Khmer",
@@ -2615,7 +2842,8 @@
 			"styles": ["normal"],
 			"subsets": ["khmer", "latin", "latin-ext"],
 			"popularity": 238,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.536
 		},
 		{
 			"family": "Kosugi Maru",
@@ -2624,7 +2852,8 @@
 			"styles": ["normal"],
 			"subsets": ["cyrillic", "japanese", "latin", "latin-ext"],
 			"popularity": 239,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5332
 		},
 		{
 			"family": "Signika Negative",
@@ -2633,7 +2862,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 240,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.49
 		},
 		{
 			"family": "Bai Jamjuree",
@@ -2642,7 +2872,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "thai", "vietnamese"],
 			"popularity": 241,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.499
 		},
 		{
 			"family": "M PLUS Rounded 1c",
@@ -2670,7 +2901,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 243,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.426
 		},
 		{
 			"family": "Pinyon Script",
@@ -2679,7 +2911,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 244,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.3711
 		},
 		{
 			"family": "Eczar",
@@ -2694,7 +2927,8 @@
 				"latin-ext"
 			],
 			"popularity": 245,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.468
 		},
 		{
 			"family": "Cutive Mono",
@@ -2703,7 +2937,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 246,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.3779
 		},
 		{
 			"family": "Oxygen",
@@ -2721,7 +2956,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "thai", "vietnamese"],
 			"popularity": 248,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.55
 		},
 		{
 			"family": "Cookie",
@@ -2730,7 +2966,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 249,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.115
 		},
 		{
 			"family": "Orbitron",
@@ -2739,7 +2976,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 250,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.58
 		},
 		{
 			"family": "Amaranth",
@@ -2748,7 +2986,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin"],
 			"popularity": 251,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.498
 		},
 		{
 			"family": "Damion",
@@ -2757,7 +2996,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 252,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.3516
 		},
 		{
 			"family": "Overpass",
@@ -2772,7 +3012,8 @@
 				"vietnamese"
 			],
 			"popularity": 253,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.511
 		},
 		{
 			"family": "Cinzel",
@@ -2781,7 +3022,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 254,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Staatliches",
@@ -2790,7 +3032,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 255,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Noto Sans Hebrew",
@@ -2805,7 +3048,8 @@
 				"latin-ext"
 			],
 			"popularity": 256,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.536
 		},
 		{
 			"family": "IBM Plex Sans Thai",
@@ -2814,7 +3058,8 @@
 			"styles": ["normal"],
 			"subsets": ["cyrillic-ext", "latin", "latin-ext", "thai"],
 			"popularity": 257,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.516
 		},
 		{
 			"family": "Pacifico",
@@ -2829,7 +3074,8 @@
 				"vietnamese"
 			],
 			"popularity": 258,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.46
 		},
 		{
 			"family": "Concert One",
@@ -2838,7 +3084,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 259,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4902
 		},
 		{
 			"family": "Crimson Text",
@@ -2847,7 +3094,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 260,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4199
 		},
 		{
 			"family": "Barlow Semi Condensed",
@@ -2856,7 +3104,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 261,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.506
 		},
 		{
 			"family": "Pathway Gothic One",
@@ -2865,7 +3114,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 262,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.54
 		},
 		{
 			"family": "Reenie Beanie",
@@ -2874,7 +3124,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 263,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Tajawal",
@@ -2883,7 +3134,8 @@
 			"styles": ["normal"],
 			"subsets": ["arabic", "latin"],
 			"popularity": 264,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.454
 		},
 		{
 			"family": "Michroma",
@@ -2892,7 +3144,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 265,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5625
 		},
 		{
 			"family": "Italianno",
@@ -2901,7 +3154,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 266,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.273
 		},
 		{
 			"family": "Slabo 27px",
@@ -2910,7 +3164,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 267,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4815
 		},
 		{
 			"family": "Volkhov",
@@ -2919,7 +3174,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin"],
 			"popularity": 268,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Hanken Grotesk",
@@ -2928,7 +3184,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["cyrillic-ext", "latin", "latin-ext", "vietnamese"],
 			"popularity": 269,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.493
 		},
 		{
 			"family": "Lalezar",
@@ -2937,7 +3194,8 @@
 			"styles": ["normal"],
 			"subsets": ["arabic", "latin", "latin-ext", "vietnamese"],
 			"popularity": 270,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.186
 		},
 		{
 			"family": "Arvo",
@@ -2946,7 +3204,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin"],
 			"popularity": 271,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5059
 		},
 		{
 			"family": "Sofia Sans Extra Condensed",
@@ -2961,7 +3220,8 @@
 				"latin-ext"
 			],
 			"popularity": 272,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.486
 		},
 		{
 			"family": "Hind Guntur",
@@ -2970,7 +3230,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "telugu"],
 			"popularity": 273,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.505
 		},
 		{
 			"family": "Lobster",
@@ -2985,7 +3246,8 @@
 				"vietnamese"
 			],
 			"popularity": 274,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "PT Sans Narrow",
@@ -2994,7 +3256,8 @@
 			"styles": ["normal"],
 			"subsets": ["cyrillic", "cyrillic-ext", "latin", "latin-ext"],
 			"popularity": 275,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Petrona",
@@ -3003,7 +3266,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 276,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.443
 		},
 		{
 			"family": "Comfortaa",
@@ -3019,7 +3283,8 @@
 				"vietnamese"
 			],
 			"popularity": 277,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.547
 		},
 		{
 			"family": "Nothing You Could Do",
@@ -3028,7 +3293,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 278,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4512
 		},
 		{
 			"family": "Caveat Brush",
@@ -3037,7 +3303,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 279,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.42
 		},
 		{
 			"family": "Andika",
@@ -3052,7 +3319,8 @@
 				"vietnamese"
 			],
 			"popularity": 280,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5078
 		},
 		{
 			"family": "Bungee",
@@ -3061,7 +3329,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 281,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Domine",
@@ -3070,7 +3339,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 282,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.54
 		},
 		{
 			"family": "Syncopate",
@@ -3079,7 +3349,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 283,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4678
 		},
 		{
 			"family": "Bodoni Moda",
@@ -3088,7 +3359,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "math", "symbols"],
 			"popularity": 284,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.46
 		},
 		{
 			"family": "GFS Didot",
@@ -3097,7 +3369,8 @@
 			"styles": ["normal"],
 			"subsets": ["greek", "greek-ext", "latin", "vietnamese"],
 			"popularity": 285,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.456
 		},
 		{
 			"family": "Belleza",
@@ -3106,7 +3379,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 286,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.452
 		},
 		{
 			"family": "Zeyada",
@@ -3115,7 +3389,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 287,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.3047
 		},
 		{
 			"family": "Comic Relief",
@@ -3124,7 +3399,8 @@
 			"styles": ["normal"],
 			"subsets": ["cyrillic", "greek", "latin", "latin-ext"],
 			"popularity": 288,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5396
 		},
 		{
 			"family": "DM Mono",
@@ -3133,7 +3409,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 289,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.496
 		},
 		{
 			"family": "Cuprum",
@@ -3148,7 +3425,8 @@
 				"vietnamese"
 			],
 			"popularity": 290,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Material Icons Two Tone",
@@ -3166,7 +3444,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 292,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.3
 		},
 		{
 			"family": "Georama",
@@ -3175,7 +3454,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 293,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.55
 		},
 		{
 			"family": "Space Mono",
@@ -3184,7 +3464,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 294,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.496
 		},
 		{
 			"family": "Noto Sans Arabic",
@@ -3193,7 +3474,8 @@
 			"styles": ["normal"],
 			"subsets": ["arabic", "latin", "latin-ext", "math", "symbols"],
 			"popularity": 295,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.536
 		},
 		{
 			"family": "Calistoga",
@@ -3202,7 +3484,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 296,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.53
 		},
 		{
 			"family": "Noto Sans Thai",
@@ -3211,7 +3494,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "thai"],
 			"popularity": 297,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.556
 		},
 		{
 			"family": "Abel",
@@ -3220,7 +3504,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 298,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5098
 		},
 		{
 			"family": "Shippori Mincho B1",
@@ -3229,7 +3514,8 @@
 			"styles": ["normal"],
 			"subsets": ["japanese", "latin", "latin-ext"],
 			"popularity": 299,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.48
 		},
 		{
 			"family": "Zen Kaku Gothic New",
@@ -3238,7 +3524,8 @@
 			"styles": ["normal"],
 			"subsets": ["cyrillic", "japanese", "latin", "latin-ext"],
 			"popularity": 300,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.479
 		},
 		{
 			"family": "Unica One",
@@ -3247,7 +3534,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 301,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.65
 		},
 		{
 			"family": "Barriecito",
@@ -3256,7 +3544,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 302,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.582
 		},
 		{
 			"family": "Epilogue",
@@ -3265,7 +3554,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 303,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.531
 		},
 		{
 			"family": "M PLUS 1p",
@@ -3293,7 +3583,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 305,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.525
 		},
 		{
 			"family": "Asap",
@@ -3302,7 +3593,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 306,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.523
 		},
 		{
 			"family": "Jura",
@@ -3320,7 +3612,8 @@
 				"vietnamese"
 			],
 			"popularity": 307,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.461
 		},
 		{
 			"family": "Lilita One",
@@ -3329,7 +3622,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 308,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.506
 		},
 		{
 			"family": "Archivo Narrow",
@@ -3338,7 +3632,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 309,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.526
 		},
 		{
 			"family": "Funnel Sans",
@@ -3347,7 +3642,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 310,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Almarai",
@@ -3356,7 +3652,8 @@
 			"styles": ["normal"],
 			"subsets": ["arabic", "latin"],
 			"popularity": 311,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.514
 		},
 		{
 			"family": "Sriracha",
@@ -3365,7 +3662,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "thai", "vietnamese"],
 			"popularity": 312,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.474
 		},
 		{
 			"family": "Play",
@@ -3381,7 +3679,8 @@
 				"vietnamese"
 			],
 			"popularity": 313,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.484
 		},
 		{
 			"family": "Monoton",
@@ -3390,7 +3689,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 314,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.7031
 		},
 		{
 			"family": "Ms Madi",
@@ -3399,7 +3699,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 315,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.335
 		},
 		{
 			"family": "Hind Vadodara",
@@ -3408,7 +3709,8 @@
 			"styles": ["normal"],
 			"subsets": ["gujarati", "latin", "latin-ext"],
 			"popularity": 316,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.505
 		},
 		{
 			"family": "Lemonada",
@@ -3417,7 +3719,8 @@
 			"styles": ["normal"],
 			"subsets": ["arabic", "latin", "latin-ext", "vietnamese"],
 			"popularity": 317,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.575
 		},
 		{
 			"family": "Italiana",
@@ -3426,7 +3729,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 318,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "IBM Plex Sans JP",
@@ -3435,7 +3739,8 @@
 			"styles": ["normal"],
 			"subsets": ["cyrillic", "japanese", "latin", "latin-ext"],
 			"popularity": 319,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.541
 		},
 		{
 			"family": "Skranji",
@@ -3453,7 +3758,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 321,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.441
 		},
 		{
 			"family": "Abril Fatface",
@@ -3462,7 +3768,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 322,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.476
 		},
 		{
 			"family": "IM Fell English",
@@ -3471,7 +3778,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin"],
 			"popularity": 323,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4697
 		},
 		{
 			"family": "Germania One",
@@ -3480,7 +3788,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 324,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.539
 		},
 		{
 			"family": "Spectral",
@@ -3495,7 +3804,8 @@
 				"vietnamese"
 			],
 			"popularity": 325,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.45
 		},
 		{
 			"family": "Spline Sans",
@@ -3504,7 +3814,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 326,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5455
 		},
 		{
 			"family": "Pridi",
@@ -3513,7 +3824,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "thai", "vietnamese"],
 			"popularity": 327,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.536
 		},
 		{
 			"family": "Taviraj",
@@ -3522,7 +3834,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "thai", "vietnamese"],
 			"popularity": 328,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.47
 		},
 		{
 			"family": "MuseoModerno",
@@ -3531,7 +3844,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 329,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.51
 		},
 		{
 			"family": "Kaisei Decol",
@@ -3540,7 +3854,8 @@
 			"styles": ["normal"],
 			"subsets": ["cyrillic", "japanese", "latin", "latin-ext"],
 			"popularity": 330,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.501
 		},
 		{
 			"family": "Roboto Serif",
@@ -3555,7 +3870,8 @@
 				"vietnamese"
 			],
 			"popularity": 331,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.518
 		},
 		{
 			"family": "Dongle",
@@ -3564,7 +3880,8 @@
 			"styles": ["normal"],
 			"subsets": ["korean", "latin", "latin-ext", "vietnamese"],
 			"popularity": 332,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.28
 		},
 		{
 			"family": "Saira Condensed",
@@ -3573,7 +3890,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 333,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.51
 		},
 		{
 			"family": "Itim",
@@ -3582,7 +3900,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "thai", "vietnamese"],
 			"popularity": 334,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.474
 		},
 		{
 			"family": "Syne",
@@ -3591,7 +3910,8 @@
 			"styles": ["normal"],
 			"subsets": ["greek", "latin", "latin-ext"],
 			"popularity": 335,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Ruda",
@@ -3600,7 +3920,8 @@
 			"styles": ["normal"],
 			"subsets": ["cyrillic", "latin", "latin-ext", "vietnamese"],
 			"popularity": 336,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.582
 		},
 		{
 			"family": "Varela Round",
@@ -3609,7 +3930,8 @@
 			"styles": ["normal"],
 			"subsets": ["hebrew", "latin", "latin-ext", "vietnamese"],
 			"popularity": 337,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.51
 		},
 		{
 			"family": "Kablammo",
@@ -3625,7 +3947,8 @@
 				"vietnamese"
 			],
 			"popularity": 338,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.55
 		},
 		{
 			"family": "League Spartan",
@@ -3634,7 +3957,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 339,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4105
 		},
 		{
 			"family": "Fahkwang",
@@ -3643,7 +3967,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "thai", "vietnamese"],
 			"popularity": 340,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.49
 		},
 		{
 			"family": "Kreon",
@@ -3652,7 +3977,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 341,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.481
 		},
 		{
 			"family": "Cormorant",
@@ -3667,7 +3993,8 @@
 				"vietnamese"
 			],
 			"popularity": 342,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.386
 		},
 		{
 			"family": "Ovo",
@@ -3676,7 +4003,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 343,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.1738
 		},
 		{
 			"family": "Eater",
@@ -3685,7 +4013,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 344,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.833
 		},
 		{
 			"family": "Funnel Display",
@@ -3694,7 +4023,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 345,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Geologica",
@@ -3710,7 +4040,8 @@
 				"vietnamese"
 			],
 			"popularity": 346,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.495
 		},
 		{
 			"family": "Baloo 2",
@@ -3719,7 +4050,8 @@
 			"styles": ["normal"],
 			"subsets": ["devanagari", "latin", "latin-ext", "vietnamese"],
 			"popularity": 347,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.46
 		},
 		{
 			"family": "Red Rose",
@@ -3728,7 +4060,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 348,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.468
 		},
 		{
 			"family": "Slabo 13px",
@@ -3737,7 +4070,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 349,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5385
 		},
 		{
 			"family": "BenchNine",
@@ -3746,7 +4080,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 350,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4912
 		},
 		{
 			"family": "Doppio One",
@@ -3755,7 +4090,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 351,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5151
 		},
 		{
 			"family": "Indie Flower",
@@ -3764,7 +4100,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 352,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.3652
 		},
 		{
 			"family": "Metamorphous",
@@ -3773,7 +4110,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 353,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5898
 		},
 		{
 			"family": "BIZ UDGothic",
@@ -3788,7 +4126,8 @@
 				"latin-ext"
 			],
 			"popularity": 354,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.541
 		},
 		{
 			"family": "Geo",
@@ -3797,7 +4136,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin"],
 			"popularity": 355,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4404
 		},
 		{
 			"family": "Aboreto",
@@ -3806,7 +4146,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 356,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.7
 		},
 		{
 			"family": "Zen Maru Gothic",
@@ -3815,7 +4156,8 @@
 			"styles": ["normal"],
 			"subsets": ["cyrillic", "greek", "japanese", "latin", "latin-ext"],
 			"popularity": 357,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.479
 		},
 		{
 			"family": "Knewave",
@@ -3824,7 +4166,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 358,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.497
 		},
 		{
 			"family": "Rufina",
@@ -3833,7 +4176,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 359,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.488
 		},
 		{
 			"family": "Agbalumo",
@@ -3848,7 +4192,8 @@
 				"vietnamese"
 			],
 			"popularity": 360,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Atkinson Hyperlegible",
@@ -3857,7 +4202,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 361,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.496
 		},
 		{
 			"family": "Mali",
@@ -3866,7 +4212,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "thai", "vietnamese"],
 			"popularity": 362,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Sanchez",
@@ -3875,7 +4222,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 363,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.492
 		},
 		{
 			"family": "Chonburi",
@@ -3884,7 +4232,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "thai", "vietnamese"],
 			"popularity": 364,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.536
 		},
 		{
 			"family": "Nanum Myeongjo",
@@ -3893,7 +4242,8 @@
 			"styles": ["normal"],
 			"subsets": ["korean", "latin"],
 			"popularity": 365,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4688
 		},
 		{
 			"family": "Sofia Sans",
@@ -3908,7 +4258,8 @@
 				"latin-ext"
 			],
 			"popularity": 366,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.488
 		},
 		{
 			"family": "Stardos Stencil",
@@ -3917,7 +4268,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 367,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.479
 		},
 		{
 			"family": "REM",
@@ -3926,7 +4278,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 368,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.503
 		},
 		{
 			"family": "Amarante",
@@ -3935,7 +4288,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 369,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4932
 		},
 		{
 			"family": "Oleo Script",
@@ -3944,7 +4298,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 370,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.443
 		},
 		{
 			"family": "Alegreya Sans",
@@ -3961,7 +4316,8 @@
 				"vietnamese"
 			],
 			"popularity": 371,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.458
 		},
 		{
 			"family": "Just Another Hand",
@@ -3970,7 +4326,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 372,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4297
 		},
 		{
 			"family": "Lateef",
@@ -3979,7 +4336,8 @@
 			"styles": ["normal"],
 			"subsets": ["arabic", "latin", "latin-ext"],
 			"popularity": 373,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.3369
 		},
 		{
 			"family": "Sarabun",
@@ -3988,7 +4346,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "thai", "vietnamese"],
 			"popularity": 374,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Fuzzy Bubbles",
@@ -3997,7 +4356,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 375,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.52
 		},
 		{
 			"family": "Titan One",
@@ -4006,7 +4366,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 376,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.58
 		},
 		{
 			"family": "Courier Prime",
@@ -4015,7 +4376,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 377,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4512
 		},
 		{
 			"family": "Pontano Sans",
@@ -4024,7 +4386,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 378,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4995
 		},
 		{
 			"family": "Sancreek",
@@ -4033,7 +4396,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 379,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.1963
 		},
 		{
 			"family": "Kiwi Maru",
@@ -4042,7 +4406,8 @@
 			"styles": ["normal"],
 			"subsets": ["cyrillic", "japanese", "latin", "latin-ext"],
 			"popularity": 380,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.506
 		},
 		{
 			"family": "Rethink Sans",
@@ -4051,7 +4416,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 381,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.496
 		},
 		{
 			"family": "Silkscreen",
@@ -4060,7 +4426,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 382,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Young Serif",
@@ -4069,7 +4436,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 383,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Anek Latin",
@@ -4078,7 +4446,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 384,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.489
 		},
 		{
 			"family": "Encode Sans",
@@ -4087,7 +4456,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 385,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.54
 		},
 		{
 			"family": "Spline Sans Mono",
@@ -4096,7 +4466,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 386,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5455
 		},
 		{
 			"family": "IM Fell English SC",
@@ -4105,7 +4476,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 387,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4399
 		},
 		{
 			"family": "Trirong",
@@ -4114,7 +4486,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "thai", "vietnamese"],
 			"popularity": 388,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.498
 		},
 		{
 			"family": "Dhurjati",
@@ -4123,7 +4496,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "telugu"],
 			"popularity": 389,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.3609
 		},
 		{
 			"family": "Righteous",
@@ -4132,7 +4506,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 390,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5259
 		},
 		{
 			"family": "Fira Code",
@@ -4149,7 +4524,8 @@
 				"symbols2"
 			],
 			"popularity": 391,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5265
 		},
 		{
 			"family": "Zalando Sans",
@@ -4158,7 +4534,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 392,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.514
 		},
 		{
 			"family": "B612",
@@ -4167,7 +4544,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin"],
 			"popularity": 393,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.55
 		},
 		{
 			"family": "Catamaran",
@@ -4176,7 +4554,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "tamil"],
 			"popularity": 394,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.485
 		},
 		{
 			"family": "Kosugi",
@@ -4185,7 +4564,8 @@
 			"styles": ["normal"],
 			"subsets": ["cyrillic", "japanese", "latin", "latin-ext"],
 			"popularity": 395,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5264
 		},
 		{
 			"family": "Castoro",
@@ -4194,7 +4574,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 396,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.475
 		},
 		{
 			"family": "Bree Serif",
@@ -4203,7 +4584,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 397,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.503
 		},
 		{
 			"family": "Isometra",
@@ -4221,7 +4603,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 399,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5342
 		},
 		{
 			"family": "Viga",
@@ -4230,7 +4613,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 400,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.571
 		},
 		{
 			"family": "Hepta Slab",
@@ -4239,7 +4623,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 401,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.526
 		},
 		{
 			"family": "News Cycle",
@@ -4271,7 +4656,8 @@
 				"latin-ext"
 			],
 			"popularity": 403,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.509
 		},
 		{
 			"family": "Radley",
@@ -4280,7 +4666,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 404,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.439
 		},
 		{
 			"family": "Glegoo",
@@ -4304,7 +4691,8 @@
 				"vietnamese"
 			],
 			"popularity": 406,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4137
 		},
 		{
 			"family": "Graduate",
@@ -4313,7 +4701,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 407,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.65
 		},
 		{
 			"family": "Irish Grover",
@@ -4322,7 +4711,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 408,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5596
 		},
 		{
 			"family": "League Gothic",
@@ -4331,7 +4721,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 409,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.547
 		},
 		{
 			"family": "Petit Formal Script",
@@ -4340,7 +4731,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 410,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5786
 		},
 		{
 			"family": "Cantata One",
@@ -4349,7 +4741,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 411,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4995
 		},
 		{
 			"family": "Cardo",
@@ -4367,7 +4760,8 @@
 				"runic"
 			],
 			"popularity": 412,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4395
 		},
 		{
 			"family": "Ubuntu Sans",
@@ -4383,7 +4777,8 @@
 				"latin-ext"
 			],
 			"popularity": 413,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.518
 		},
 		{
 			"family": "Libre Barcode 128",
@@ -4392,7 +4787,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 414,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4
 		},
 		{
 			"family": "Charis SIL",
@@ -4407,7 +4803,8 @@
 				"vietnamese"
 			],
 			"popularity": 415,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4819
 		},
 		{
 			"family": "Noto Sans Devanagari",
@@ -4416,7 +4813,8 @@
 			"styles": ["normal"],
 			"subsets": ["devanagari", "latin", "latin-ext"],
 			"popularity": 416,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.536
 		},
 		{
 			"family": "Bitcount Ink",
@@ -4425,7 +4823,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 417,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Delius",
@@ -4434,7 +4833,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 418,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.085
 		},
 		{
 			"family": "DM Serif Text",
@@ -4443,7 +4843,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 419,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.48
 		},
 		{
 			"family": "Klee One",
@@ -4458,7 +4859,8 @@
 				"latin-ext"
 			],
 			"popularity": 420,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.468
 		},
 		{
 			"family": "Glory",
@@ -4467,7 +4869,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 421,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.472
 		},
 		{
 			"family": "Noto Naskh Arabic",
@@ -4485,7 +4888,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 423,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.514
 		},
 		{
 			"family": "Bona Nova SC",
@@ -4502,7 +4906,8 @@
 				"vietnamese"
 			],
 			"popularity": 424,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.44
 		},
 		{
 			"family": "Shippori Mincho",
@@ -4511,7 +4916,8 @@
 			"styles": ["normal"],
 			"subsets": ["japanese", "latin", "latin-ext"],
 			"popularity": 425,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.48
 		},
 		{
 			"family": "Alegreya",
@@ -4528,7 +4934,8 @@
 				"vietnamese"
 			],
 			"popularity": 426,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.452
 		},
 		{
 			"family": "Judson",
@@ -4537,7 +4944,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 427,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.44
 		},
 		{
 			"family": "Halant",
@@ -4546,7 +4954,8 @@
 			"styles": ["normal"],
 			"subsets": ["devanagari", "latin", "latin-ext"],
 			"popularity": 428,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.504
 		},
 		{
 			"family": "Hammersmith One",
@@ -4555,7 +4964,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 429,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5103
 		},
 		{
 			"family": "Podkova",
@@ -4570,7 +4980,8 @@
 				"vietnamese"
 			],
 			"popularity": 430,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.429
 		},
 		{
 			"family": "Share",
@@ -4579,7 +4990,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 431,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "TikTok Sans",
@@ -4595,7 +5007,8 @@
 				"vietnamese"
 			],
 			"popularity": 432,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.526
 		},
 		{
 			"family": "Brygada 1918",
@@ -4611,7 +5024,8 @@
 				"vietnamese"
 			],
 			"popularity": 433,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.46
 		},
 		{
 			"family": "Hind Madurai",
@@ -4620,7 +5034,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "tamil"],
 			"popularity": 434,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.505
 		},
 		{
 			"family": "Schoolbell",
@@ -4629,7 +5044,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 435,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4736
 		},
 		{
 			"family": "Yellowtail",
@@ -4653,7 +5069,8 @@
 				"latin-ext"
 			],
 			"popularity": 437,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.541
 		},
 		{
 			"family": "Tinos",
@@ -4671,7 +5088,8 @@
 				"vietnamese"
 			],
 			"popularity": 438,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.459
 		},
 		{
 			"family": "ZCOOL KuaiLe",
@@ -4680,7 +5098,8 @@
 			"styles": ["normal"],
 			"subsets": ["chinese-simplified", "latin"],
 			"popularity": 439,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.512
 		},
 		{
 			"family": "Rosario",
@@ -4689,7 +5108,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 440,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.497
 		},
 		{
 			"family": "Golos Text",
@@ -4698,7 +5118,8 @@
 			"styles": ["normal"],
 			"subsets": ["cyrillic", "cyrillic-ext", "latin", "latin-ext"],
 			"popularity": 441,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.53
 		},
 		{
 			"family": "Mouse Memoirs",
@@ -4707,7 +5128,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 442,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5098
 		},
 		{
 			"family": "Dawning of a New Day",
@@ -4716,7 +5138,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 443,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.2129
 		},
 		{
 			"family": "Playwrite CA Guides",
@@ -4725,7 +5148,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 444,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Courgette",
@@ -4734,7 +5158,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 445,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.0547
 		},
 		{
 			"family": "Rampart One",
@@ -4743,7 +5168,8 @@
 			"styles": ["normal"],
 			"subsets": ["cyrillic", "japanese", "latin", "latin-ext"],
 			"popularity": 446,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.555
 		},
 		{
 			"family": "Fugaz One",
@@ -4752,7 +5178,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 447,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.488
 		},
 		{
 			"family": "Scada",
@@ -4761,7 +5188,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["cyrillic", "cyrillic-ext", "latin", "latin-ext"],
 			"popularity": 448,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Russo One",
@@ -4770,7 +5198,8 @@
 			"styles": ["normal"],
 			"subsets": ["cyrillic", "latin", "latin-ext"],
 			"popularity": 449,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.53
 		},
 		{
 			"family": "Special Gothic",
@@ -4779,7 +5208,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 450,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.504
 		},
 		{
 			"family": "Cormorant Upright",
@@ -4788,7 +5218,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 451,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.386
 		},
 		{
 			"family": "Anybody",
@@ -4797,7 +5228,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 452,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.593
 		},
 		{
 			"family": "Hedvig Letters Serif",
@@ -4806,7 +5238,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "math", "symbols"],
 			"popularity": 453,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.52
 		},
 		{
 			"family": "Paytone One",
@@ -4815,7 +5248,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 454,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.501
 		},
 		{
 			"family": "Gothic A1",
@@ -4833,7 +5267,8 @@
 				"vietnamese"
 			],
 			"popularity": 455,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5254
 		},
 		{
 			"family": "MedievalSharp",
@@ -4842,7 +5277,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 456,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.1094
 		},
 		{
 			"family": "Bangers",
@@ -4851,7 +5287,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 457,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.721
 		},
 		{
 			"family": "Fjord One",
@@ -4860,7 +5297,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 458,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4639
 		},
 		{
 			"family": "AR One Sans",
@@ -4869,7 +5307,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 459,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.51
 		},
 		{
 			"family": "Audiowide",
@@ -4878,7 +5317,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 460,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5288
 		},
 		{
 			"family": "Goudy Bookletter 1911",
@@ -4887,7 +5327,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 461,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4473
 		},
 		{
 			"family": "Noto Sans Oriya",
@@ -4896,7 +5337,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "oriya"],
 			"popularity": 462,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.658
 		},
 		{
 			"family": "Special Elite",
@@ -4905,7 +5347,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 463,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.2578
 		},
 		{
 			"family": "RocknRoll One",
@@ -4914,7 +5357,8 @@
 			"styles": ["normal"],
 			"subsets": ["japanese", "latin", "latin-ext"],
 			"popularity": 464,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.572
 		},
 		{
 			"family": "Acme",
@@ -4923,7 +5367,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 465,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.107
 		},
 		{
 			"family": "Alatsi",
@@ -4932,7 +5377,8 @@
 			"styles": ["normal"],
 			"subsets": ["cyrillic-ext", "latin", "latin-ext", "vietnamese"],
 			"popularity": 466,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.498
 		},
 		{
 			"family": "Ysabeau Office",
@@ -4950,7 +5396,8 @@
 				"vietnamese"
 			],
 			"popularity": 467,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.414
 		},
 		{
 			"family": "Bubblegum Sans",
@@ -4959,7 +5406,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 468,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.41
 		},
 		{
 			"family": "Changa",
@@ -4968,7 +5416,8 @@
 			"styles": ["normal"],
 			"subsets": ["arabic", "latin", "latin-ext"],
 			"popularity": 469,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Kumbh Sans",
@@ -4977,7 +5426,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "math", "symbols"],
 			"popularity": 470,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4883
 		},
 		{
 			"family": "Sometype Mono",
@@ -4986,7 +5436,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 471,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.47
 		},
 		{
 			"family": "Birthstone",
@@ -4995,7 +5446,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 472,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.32
 		},
 		{
 			"family": "IBM Plex Sans Condensed",
@@ -5004,7 +5456,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["cyrillic-ext", "latin", "latin-ext", "vietnamese"],
 			"popularity": 473,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.516
 		},
 		{
 			"family": "Maitree",
@@ -5013,7 +5466,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "thai", "vietnamese"],
 			"popularity": 474,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.489
 		},
 		{
 			"family": "Noto Nastaliq Urdu",
@@ -5022,7 +5476,8 @@
 			"styles": ["normal"],
 			"subsets": ["arabic", "latin", "latin-ext"],
 			"popularity": 475,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.536
 		},
 		{
 			"family": "Calligraffitti",
@@ -5031,7 +5486,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 476,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.7998
 		},
 		{
 			"family": "Comic Neue",
@@ -5040,7 +5496,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin"],
 			"popularity": 477,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.487
 		},
 		{
 			"family": "KoHo",
@@ -5049,7 +5506,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "thai", "vietnamese"],
 			"popularity": 478,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.47
 		},
 		{
 			"family": "Cantarell",
@@ -5067,7 +5525,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 480,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.529
 		},
 		{
 			"family": "Anek Devanagari",
@@ -5076,7 +5535,8 @@
 			"styles": ["normal"],
 			"subsets": ["devanagari", "latin", "latin-ext"],
 			"popularity": 481,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.489
 		},
 		{
 			"family": "Noticia Text",
@@ -5085,7 +5545,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 482,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5298
 		},
 		{
 			"family": "Poetsen One",
@@ -5094,7 +5555,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 483,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.55
 		},
 		{
 			"family": "Recursive",
@@ -5103,7 +5565,8 @@
 			"styles": ["normal"],
 			"subsets": ["cyrillic-ext", "latin", "latin-ext", "vietnamese"],
 			"popularity": 484,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.532
 		},
 		{
 			"family": "Corinthia",
@@ -5112,7 +5575,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 485,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.24
 		},
 		{
 			"family": "Noto Sans Mono",
@@ -5129,7 +5593,8 @@
 				"vietnamese"
 			],
 			"popularity": 486,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.536
 		},
 		{
 			"family": "Farro",
@@ -5138,7 +5603,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 487,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.6
 		},
 		{
 			"family": "Alata",
@@ -5147,7 +5613,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 488,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.459
 		},
 		{
 			"family": "Allura",
@@ -5156,7 +5623,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 489,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.295
 		},
 		{
 			"family": "Atkinson Hyperlegible Mono",
@@ -5165,7 +5633,8 @@
 			"styles": ["italic", "normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 490,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.496
 		},
 		{
 			"family": "Bungee Spice",
@@ -5174,7 +5643,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "vietnamese"],
 			"popularity": 491,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Khand",
@@ -5183,7 +5653,8 @@
 			"styles": ["normal"],
 			"subsets": ["devanagari", "latin", "latin-ext"],
 			"popularity": 492,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.569
 		},
 		{
 			"family": "Rouge Script",
@@ -5192,7 +5663,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 493,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4272
 		},
 		{
 			"family": "Noto Serif Thai",
@@ -5201,7 +5673,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext", "thai"],
 			"popularity": 494,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.536
 		},
 		{
 			"family": "Passion One",
@@ -5210,7 +5683,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 495,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.479
 		},
 		{
 			"family": "Delicious Handrawn",
@@ -5219,7 +5693,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 496,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.5
 		},
 		{
 			"family": "Noto Serif Khojki",
@@ -5228,7 +5703,8 @@
 			"styles": ["normal"],
 			"subsets": ["khojki", "latin", "latin-ext"],
 			"popularity": 497,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.536
 		},
 		{
 			"family": "Sen",
@@ -5237,7 +5713,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin", "latin-ext"],
 			"popularity": 498,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4883
 		},
 		{
 			"family": "Zen Kurenaido",
@@ -5246,7 +5723,8 @@
 			"styles": ["normal"],
 			"subsets": ["cyrillic", "greek", "japanese", "latin", "latin-ext"],
 			"popularity": 499,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.406
 		},
 		{
 			"family": "Copse",
@@ -5255,7 +5733,8 @@
 			"styles": ["normal"],
 			"subsets": ["latin"],
 			"popularity": 500,
-			"license": "OFL"
+			"license": "OFL",
+			"xHeightRatio": 0.4888
 		}
 	]
 }

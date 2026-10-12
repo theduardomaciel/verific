@@ -127,15 +127,20 @@ export function pushRecentFont(family: string): string[] {
 	return recents;
 }
 
-/** Padrão de cada papel (ação "restaurar padrão" do picker). */ export function defaultFontForRole(
-	role: FontRole,
-): {
+/** Padrão de cada papel (ação "restaurar padrão" do picker). */
+export function defaultFontForRole(role: FontRole): {
 	family: string;
 	weights: number[];
+	scale: number;
 } {
-	return role === "heading"
-		? { family: "REM", weights: [400, 500, 600, 700] }
-		: { family: "Hanken Grotesk", weights: [400, 500, 600, 700] };
+	if (role === "heading" || role === "subtitle") {
+		return { family: "REM", weights: [400, 500, 600, 700], scale: 1 };
+	}
+	return {
+		family: "Hanken Grotesk",
+		weights: [400, 500, 600, 700],
+		scale: 1,
+	};
 }
 
 /** Amostras de prévia (inclui frase com acentos do português). */

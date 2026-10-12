@@ -8,6 +8,7 @@ import type { FontCategory } from "@verific/fonts";
 export interface SuggestedPairing {
 	name: string;
 	heading: { family: string; weights: number[]; category: FontCategory };
+	subtitle: { family: string; weights: number[]; category: FontCategory };
 	body: { family: string; weights: number[]; category: FontCategory };
 }
 
@@ -15,6 +16,11 @@ export const SUGGESTED_PAIRINGS: readonly SuggestedPairing[] = [
 	{
 		name: "Padrão verifIC",
 		heading: { family: "REM", weights: [600, 700], category: "sans-serif" },
+		subtitle: {
+			family: "REM",
+			weights: [500, 600],
+			category: "sans-serif",
+		},
 		body: {
 			family: "Hanken Grotesk",
 			weights: [400, 500],
@@ -28,6 +34,11 @@ export const SUGGESTED_PAIRINGS: readonly SuggestedPairing[] = [
 			weights: [700],
 			category: "serif",
 		},
+		subtitle: {
+			family: "Playfair Display",
+			weights: [600],
+			category: "serif",
+		},
 		body: { family: "Inter", weights: [400, 500], category: "sans-serif" },
 	},
 	{
@@ -35,6 +46,11 @@ export const SUGGESTED_PAIRINGS: readonly SuggestedPairing[] = [
 		heading: {
 			family: "Sora",
 			weights: [600, 700],
+			category: "sans-serif",
+		},
+		subtitle: {
+			family: "Sora",
+			weights: [500, 600],
 			category: "sans-serif",
 		},
 		body: { family: "Inter", weights: [400], category: "sans-serif" },
@@ -46,6 +62,11 @@ export const SUGGESTED_PAIRINGS: readonly SuggestedPairing[] = [
 			weights: [600, 700],
 			category: "sans-serif",
 		},
+		subtitle: {
+			family: "Outfit",
+			weights: [500],
+			category: "sans-serif",
+		},
 		body: {
 			family: "Manrope",
 			weights: [400, 500],
@@ -55,11 +76,17 @@ export const SUGGESTED_PAIRINGS: readonly SuggestedPairing[] = [
 	{
 		name: "Acolhedor",
 		heading: { family: "Lora", weights: [600], category: "serif" },
+		subtitle: { family: "Lora", weights: [500], category: "serif" },
 		body: { family: "Nunito Sans", weights: [400], category: "sans-serif" },
 	},
 	{
 		name: "Impacto",
 		heading: {
+			family: "Archivo Black",
+			weights: [400],
+			category: "display",
+		},
+		subtitle: {
 			family: "Archivo Black",
 			weights: [400],
 			category: "display",

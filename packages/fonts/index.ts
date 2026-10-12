@@ -12,12 +12,13 @@ export type {
 	FontSelection,
 	FontStyle,
 } from "./types";
-export { FONT_CATEGORIES, FONT_ROLES } from "./types";
+export { FONT_CATEGORIES, FONT_ROLES, SCALE_LIMITS } from "./types";
 export {
 	buildFontPreviewUrl,
 	buildFontStack,
 	buildFontStylesheetUrl,
 	buildSelectionStylesheetUrl,
+	buildSizeAdjust,
 	FALLBACK_STACKS,
 	hasLatin,
 	hasLatinExt,

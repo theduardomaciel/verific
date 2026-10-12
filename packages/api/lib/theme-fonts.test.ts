@@ -5,7 +5,7 @@ import { DEFAULT_THEME } from "@verific/drizzle/theme";
 import { normalizeThemeFonts } from "./theme-fonts";
 
 describe("normalizeThemeFonts", () => {
-	it("normaliza a categoria a partir do catálogo", () => {
+	it("normaliza a categoria a partir do catálogo (três papéis)", () => {
 		const theme = normalizeThemeFonts({
 			...DEFAULT_THEME,
 			fonts: {
@@ -13,11 +13,19 @@ describe("normalizeThemeFonts", () => {
 					family: "Playfair Display",
 					weights: [700, 400],
 					category: "sans-serif",
+					scale: 0.9,
+				},
+				subtitle: {
+					family: "Playfair Display",
+					weights: [700],
+					category: "sans-serif",
+					scale: 1,
 				},
 				body: {
 					family: "inter",
 					weights: [400],
 					category: "sans-serif",
+					scale: 1,
 				},
 			},
 		});
@@ -25,7 +33,9 @@ describe("normalizeThemeFonts", () => {
 			family: "Playfair Display",
 			weights: [400, 700],
 			category: "serif",
+			scale: 0.9,
 		});
+		expect(theme.fonts.subtitle.family).toBe("Playfair Display");
 		expect(theme.fonts.body.family).toBe("Inter");
 	});
 
@@ -43,6 +53,7 @@ describe("normalizeThemeFonts", () => {
 						family: "Comic Papyrus",
 						weights: [400],
 						category: "sans-serif",
+						scale: 1,
 					},
 				},
 			}),
@@ -59,6 +70,7 @@ describe("normalizeThemeFonts", () => {
 						family: "Bebas Neue",
 						weights: [700],
 						category: "sans-serif",
+						scale: 1,
 					},
 				},
 			}),
@@ -76,9 +88,27 @@ describe("normalizeThemeFonts", () => {
 						weights: [400],
 						italic: true,
 						category: "sans-serif",
+						scale: 1,
 					},
 				},
 			}),
 		).toThrow(/itálico/);
+	});
+
+	it("rejeita escala fora do limite do papel", () => {
+		expect(() =>
+			normalizeThemeFonts({
+				...DEFAULT_THEME,
+				fonts: {
+					...DEFAULT_THEME.fonts,
+					body: {
+						family: "Inter",
+						weights: [400],
+						category: "sans-serif",
+						scale: 1.5,
+					},
+				},
+			}),
+		).toThrow();
 	});
 });

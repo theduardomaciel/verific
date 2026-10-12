@@ -24,7 +24,11 @@ export function getFontDelivery(
 	theme: Pick<EventTheme, "fonts">,
 ): FontDelivery {
 	const merged = new Map<string, { weights: number[]; italic: boolean }>();
-	for (const role of [theme.fonts.heading, theme.fonts.body] as const) {
+	for (const role of [
+		theme.fonts.heading,
+		theme.fonts.subtitle,
+		theme.fonts.body,
+	] as const) {
 		const selection: ThemeFontSelection = role;
 		if (presetOfFamily(selection.family)) continue;
 		const key = selection.family.trim();

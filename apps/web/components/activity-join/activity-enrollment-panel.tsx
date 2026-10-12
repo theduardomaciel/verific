@@ -120,7 +120,7 @@ export function ActivityEnrollmentPanel({
 				<h2
 					id={ENROLLMENT_HEADING_ID}
 					tabIndex={-1}
-					className="font-heading text-xl font-bold"
+					className="font-subtitle text-xl font-bold"
 				>
 					Inscrição
 				</h2>

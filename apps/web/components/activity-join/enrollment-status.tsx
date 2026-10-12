@@ -386,7 +386,7 @@ export function EnrollmentSuccess({
 			<h2
 				ref={headingRef}
 				tabIndex={-1}
-				className="font-heading text-xl font-bold"
+				className="font-subtitle text-xl font-bold"
 			>
 				Inscrição confirmada!
 			</h2>

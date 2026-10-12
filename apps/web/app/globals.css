@@ -78,6 +78,22 @@
 /* Fonte de títulos do evento (cai para a fonte padrão fora do escopo) */
 .font-heading {
 	font-family: var(--ev-font-heading, var(--font-sans));
+	font-size-adjust: var(--ev-font-heading-adjust, from-font);
+}
+
+/* Fonte de subtítulos e seções do evento */
+.font-subtitle {
+	font-family: var(--ev-font-subtitle, var(--font-sans));
+	font-size-adjust: var(--ev-font-subtitle-adjust, from-font);
+}
+
+/* Ajuste do texto corrido: herda para todo o escopo do evento (títulos
+   e subtítulos sobrescrevem com o próprio ajuste). Sem ajuste salvo, a
+   palavra-chave `from-font` mantém a renderização natural de cada fonte.
+   Nota: o valor numérico também alcança trechos monoespaçados eventuais
+   dentro do escopo — aceito (não há `font-mono` nas páginas de evento). */
+.event-public {
+	font-size-adjust: var(--ev-font-body-adjust, from-font);
 }
 
 /* CTA primário do evento (fundo e texto derivados do tema) */

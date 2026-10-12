@@ -117,6 +117,7 @@ describe("estimateFontPayload", () => {
 describe("defaultFontForRole", () => {
 	it("devolve REM p/ títulos e Hanken p/ texto", () => {
 		expect(defaultFontForRole("heading").family).toBe("REM");
+		expect(defaultFontForRole("subtitle").family).toBe("REM");
 		expect(defaultFontForRole("body").family).toBe("Hanken Grotesk");
 	});
 });

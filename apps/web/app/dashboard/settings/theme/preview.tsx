@@ -7,6 +7,8 @@ import { useForm } from "react-hook-form";
 
 import type { EventTheme } from "@verific/drizzle/theme";
 import type { FontRole } from "@verific/fonts";
+import { buildSizeAdjust } from "@verific/fonts";
+import { getAspect } from "@verific/fonts/aspects";
 
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -138,7 +140,7 @@ function HomeContent({
 					className="border p-6"
 					style={{ borderRadius: "var(--ev-card-radius)" }}
 				>
-					<h3 className="font-heading mb-2 text-xl font-medium">
+					<h3 className="font-subtitle mb-2 text-xl font-medium">
 						Local
 					</h3>
 					<p className="text-muted-foreground text-sm">
@@ -318,6 +320,7 @@ export function ThemePreview({
 	// Fontes do rascunho + dica temporária do picker (hover/teclado): a
 	// prévia reflete na hora, sem esperar o salvamento.
 	const headingHint = fontHints?.heading ?? null;
+	const subtitleHint = fontHints?.subtitle ?? null;
 	const bodyHint = fontHints?.body ?? null;
 	const displayVars: Record<string, string> = { ...cssVars };
 	if (headingHint) {
@@ -326,16 +329,39 @@ export function ThemePreview({
 			headingHint.category,
 		);
 	}
+	if (subtitleHint) {
+		displayVars["--ev-font-subtitle"] = fontStack(
+			subtitleHint.family,
+			subtitleHint.category,
+		);
+	}
 	if (bodyHint) {
 		displayVars["--ev-font-body"] = fontStack(
 			bodyHint.family,
 			bodyHint.category,
 		);
 	}
+	// Ajuste de tamanho das dicas (escala do papel × métrica da família).
+	const hintAdjustVars: Record<string, string> = {};
+	const hintAdjusts = [
+		["--ev-font-heading-adjust", headingHint, draft.fonts.heading.scale],
+		["--ev-font-subtitle-adjust", subtitleHint, draft.fonts.subtitle.scale],
+		["--ev-font-body-adjust", bodyHint, draft.fonts.body.scale],
+	] as const;
+	for (const [cssVar, hint, scale] of hintAdjusts) {
+		if (!hint) continue;
+		const adjust = buildSizeAdjust(getAspect(hint.family), scale);
+		if (adjust !== null) hintAdjustVars[cssVar] = String(adjust);
+	}
+	Object.assign(displayVars, hintAdjustVars);
 
 	// Garante as faces do rascunho e das dicas na prévia (CDN no editor).
 	useEffect(() => {
-		const selections = [draft.fonts.heading, draft.fonts.body];
+		const selections = [
+			draft.fonts.heading,
+			draft.fonts.subtitle,
+			draft.fonts.body,
+		];
 		for (const selection of selections) {
 			ensureFullStylesheet(
 				selection.family,
@@ -343,21 +369,27 @@ export function ThemePreview({
 				selection.italic === true,
 			);
 		}
-		for (const hint of [headingHint, bodyHint]) {
+		for (const hint of [headingHint, subtitleHint, bodyHint]) {
 			if (hint) ensureFullStylesheet(hint.family, [hint.weight], false);
 		}
-	}, [draft.fonts, headingHint, bodyHint]);
+	}, [draft.fonts, headingHint, subtitleHint, bodyHint]);
 
 	const headingStatus = useFontFaceStatus(
 		headingHint?.family ?? draft.fonts.heading.family,
 		headingHint?.weight ?? draft.fonts.heading.weights[0] ?? 400,
+	);
+	const subtitleStatus = useFontFaceStatus(
+		subtitleHint?.family ?? draft.fonts.subtitle.family,
+		subtitleHint?.weight ?? draft.fonts.subtitle.weights[0] ?? 400,
 	);
 	const bodyStatus = useFontFaceStatus(
 		bodyHint?.family ?? draft.fonts.body.family,
 		bodyHint?.weight ?? draft.fonts.body.weights[0] ?? 400,
 	);
 	const fontsLoading =
-		headingStatus === "loading" || bodyStatus === "loading";
+		headingStatus === "loading" ||
+		subtitleStatus === "loading" ||
+		bodyStatus === "loading";
 
 	return (
 		<div className="flex min-w-0 flex-col gap-3">
@@ -419,7 +451,14 @@ export function ThemePreview({
 					"bg-background text-foreground relative isolate flex h-[70dvh] min-h-[480px] transform-[translateZ(0)] flex-col overflow-x-hidden overflow-y-auto rounded-2xl border lg:h-[calc(100dvh-11rem)]",
 					dark ? "dark" : "ev-theme-light",
 				)}
-				style={displayVars as React.CSSProperties}
+				style={
+					{
+						...displayVars,
+						// Texto corrido herda o ajuste (como `.event-public`
+						// faz na página real).
+						fontSizeAdjust: "var(--ev-font-body-adjust, from-font)",
+					} as React.CSSProperties
+				}
 			>
 				<div className="relative flex min-h-full shrink-0 flex-col">
 					<EventBackgroundEffects />

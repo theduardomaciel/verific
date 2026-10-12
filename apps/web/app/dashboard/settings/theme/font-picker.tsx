@@ -10,11 +10,18 @@ import {
 	ChevronsUpDown,
 	Italic,
 	Loader2,
+	Minus,
+	Plus,
 	RotateCcw,
 } from "lucide-react";
 
 import type { ThemeFontSelection } from "@verific/drizzle/theme";
-import { FONT_CATEGORIES, hasLatinExt } from "@verific/fonts";
+import {
+	FONT_CATEGORIES,
+	hasLatinExt,
+	SCALE_LIMITS,
+	buildSizeAdjust,
+} from "@verific/fonts";
 import type { FontCatalogEntry, FontCategory, FontRole } from "@verific/fonts";
 
 import { Badge } from "@/components/ui/badge";
@@ -297,6 +304,8 @@ export function FontPicker({
 				? { italic: true as const }
 				: {}),
 			category: entry.category,
+			// Nova família, novas métricas: escala volta ao natural.
+			scale: 1,
 		});
 		setPreviewFamily(entry.family);
 		setActiveValue(entry.family);
@@ -334,6 +343,7 @@ export function FontPicker({
 			family: fallback.family,
 			weights: fallback.weights,
 			category: entry?.category ?? "sans-serif",
+			scale: fallback.scale,
 		});
 		setPreviewFamily(fallback.family);
 		onHoverPreview?.({
@@ -356,6 +366,21 @@ export function FontPicker({
 		previewEntry?.styles ?? ["normal"],
 	);
 	const manyWeights = value.weights.length > 3;
+
+	// Escala do papel (passos de 5%): converte em `font-size-adjust` com a
+	// métrica pré-computada da família. Sem métricas, desabilita em vez de
+	// adivinhar.
+	const limits = SCALE_LIMITS[fontRole];
+	const aspect = previewEntry?.xHeightRatio;
+	const hasMetrics = aspect !== undefined;
+	const previewAdjust = buildSizeAdjust(aspect, value.scale);
+
+	function setScale(next: number) {
+		if (!hasMetrics) return;
+		const clamped = Math.min(limits.max, Math.max(limits.min, next));
+		const stepped = Math.round(clamped / limits.step) * limits.step;
+		onChange({ ...value, scale: Math.round(stepped * 100) / 100 });
+	}
 
 	const virtualRows = virtualize ? rowVirtualizer.getVirtualItems() : [];
 
@@ -614,6 +639,7 @@ export function FontPicker({
 							fontWeight: previewWeight,
 							fontStyle:
 								value.italic === true ? "italic" : "normal",
+							fontSizeAdjust: previewAdjust ?? undefined,
 						}}
 					>
 						{sampleText ?? sample.text}
@@ -629,6 +655,46 @@ export function FontPicker({
 			)}
 
 			<div className="flex flex-col gap-2 border-t p-3">
+				<div>
+					<Label className="text-xs">Escala</Label>
+					<div
+						className="mt-1 flex flex-wrap items-center gap-1.5"
+						role="group"
+						aria-label="Escala da fonte"
+					>
+						<Button
+							size="sm"
+							variant="outline"
+							aria-label="Diminuir escala"
+							disabled={!hasMetrics}
+							onClick={() => setScale(value.scale - limits.step)}
+							type="button"
+						>
+							<Minus className="h-3.5 w-3.5" aria-hidden />
+						</Button>
+						<span
+							className="min-w-14 text-center text-sm font-medium tabular-nums"
+							aria-live="polite"
+						>
+							{Math.round(value.scale * 100)}%
+						</span>
+						<Button
+							size="sm"
+							variant="outline"
+							aria-label="Aumentar escala"
+							disabled={!hasMetrics}
+							onClick={() => setScale(value.scale + limits.step)}
+							type="button"
+						>
+							<Plus className="h-3.5 w-3.5" aria-hidden />
+						</Button>
+						{!hasMetrics && (
+							<span className="text-muted-foreground text-xs">
+								Sem métricas nesta fonte
+							</span>
+						)}
+					</div>
+				</div>
 				<div>
 					<Label className="text-xs">Pesos</Label>
 					<div

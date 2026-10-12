@@ -5,7 +5,10 @@ import {
 	type GradientStop,
 	type HeroOverlayColor,
 	type PageGradient,
+	type ThemeFontSelection,
 } from "@verific/drizzle/theme";
+import { buildSizeAdjust } from "@verific/fonts";
+import { getAspect } from "@verific/fonts/aspects";
 
 import { resolveThemeFontFamily } from "./presets";
 
@@ -279,6 +282,21 @@ function navTokens(opts: {
 }
 
 /**
+ * Variável `--ev-font-*-adjust` (`font-size-adjust`) para o papel — ou nada.
+ * Escala 1 renderiza exatamente como hoje; sem métricas não há conversão.
+ */
+function fontAdjustVar(
+	cssVar: string,
+	selection: ThemeFontSelection,
+): Record<string, string> {
+	const adjust = buildSizeAdjust(
+		getAspect(selection.family),
+		selection.scale,
+	);
+	return adjust === null ? {} : { [cssVar]: String(adjust) };
+}
+
+/**
  * Resolve o tema efetivo do evento server-side (primeiro paint já temado,
  * sem cálculo no cliente): mescla padrões + cores legadas, deriva
  * `onPrimary`/`onSecondary` e emite variáveis CSS semânticas.
@@ -494,7 +512,11 @@ export function resolveEventTheme(input: {
 		"--ev-hero-overlay-opacity": String(theme.hero.overlayOpacity),
 		"--ev-card-radius": `${theme.card.radius}px`,
 		"--ev-font-heading": resolveThemeFontFamily(theme.fonts.heading),
+		"--ev-font-subtitle": resolveThemeFontFamily(theme.fonts.subtitle),
 		"--ev-font-body": resolveThemeFontFamily(theme.fonts.body),
+		...fontAdjustVar("--ev-font-heading-adjust", theme.fonts.heading),
+		...fontAdjustVar("--ev-font-subtitle-adjust", theme.fonts.subtitle),
+		...fontAdjustVar("--ev-font-body-adjust", theme.fonts.body),
 		"--ev-bg-image": bgImage,
 		"--ev-bg-size": `${theme.page.effectSize}px ${theme.page.effectSize}px`,
 		"--ev-bg-opacity": String(theme.page.effectOpacity),

@@ -7,7 +7,11 @@ import { getFontDelivery } from "./font-delivery";
 describe("getFontDelivery", () => {
 	it("não emite nada quando só há presets (next/font cobre)", () => {
 		const delivery = getFontDelivery({
-			fonts: { heading: presetFont("rem"), body: presetFont("inter") },
+			fonts: {
+				heading: presetFont("rem"),
+				subtitle: presetFont("rem"),
+				body: presetFont("inter"),
+			},
 		});
 		expect(delivery.googleFontsUrl).toBeNull();
 	});
@@ -19,7 +23,9 @@ describe("getFontDelivery", () => {
 					family: "Playfair Display",
 					weights: [700],
 					category: "serif",
+					scale: 1,
 				},
+				subtitle: presetFont("rem"),
 				body: presetFont("inter"),
 			},
 		});
@@ -30,23 +36,31 @@ describe("getFontDelivery", () => {
 		expect(delivery.googleFontsUrl).not.toContain("Inter");
 	});
 
-	it("mescla pesos quando os dois papéis usam a mesma família", () => {
+	it("mescla pesos quando os papéis compartilham a família", () => {
 		const delivery = getFontDelivery({
 			fonts: {
 				heading: {
 					family: "Caveat",
 					weights: [700],
 					category: "handwriting",
+					scale: 1,
+				},
+				subtitle: {
+					family: "Caveat",
+					weights: [500],
+					category: "handwriting",
+					scale: 0.9,
 				},
 				body: {
 					family: "Caveat",
 					weights: [400],
 					category: "handwriting",
+					scale: 1,
 				},
 			},
 		});
 		expect(delivery.googleFontsUrl).toBe(
-			"https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&display=swap",
+			"https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;700&display=swap",
 		);
 	});
 });

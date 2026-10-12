@@ -45,9 +45,14 @@ describe("theme resolve", () => {
 	it("resolve --ev-font-* para presets e fontes avulsas", () => {
 		const def = resolveEventTheme({});
 		expect(def.cssVars["--ev-font-heading"]).toBe("REM, sans-serif");
+		expect(def.cssVars["--ev-font-subtitle"]).toBe("REM, sans-serif");
 		expect(def.cssVars["--ev-font-body"]).toBe(
 			"Hanken Grotesk, sans-serif",
 		);
+		// Escala 1: nenhuma variável de ajuste (renderiza como hoje).
+		expect(def.cssVars["--ev-font-heading-adjust"]).toBeUndefined();
+		expect(def.cssVars["--ev-font-subtitle-adjust"]).toBeUndefined();
+		expect(def.cssVars["--ev-font-body-adjust"]).toBeUndefined();
 
 		const legacy = resolveEventTheme({
 			theme: {
@@ -60,6 +65,8 @@ describe("theme resolve", () => {
 		});
 		expect(legacy.cssVars["--ev-font-heading"]).toBe("Sora, sans-serif");
 		expect(legacy.cssVars["--ev-font-body"]).toBe("Inter, sans-serif");
+		// Subtítulo herdou o título.
+		expect(legacy.cssVars["--ev-font-subtitle"]).toBe("Sora, sans-serif");
 
 		const custom = resolveEventTheme({
 			theme: {
@@ -78,6 +85,26 @@ describe("theme resolve", () => {
 			'"Playfair Display"',
 		);
 		expect(custom.cssVars["--ev-font-heading"]).toContain("Georgia");
+	});
+
+	it("emite ajuste de tamanho só com escala diferente de 1", () => {
+		const scaled = resolveEventTheme({
+			theme: {
+				version: 2,
+				fonts: {
+					heading: {
+						family: "Playfair Display",
+						weights: [700],
+						category: "serif",
+						scale: 0.9,
+					},
+					body: presetFont("inter"),
+				},
+			},
+		});
+		// Playfair Display tem xHeightRatio 0.514: 0.9 × 0.514 = 0.4626.
+		expect(scaled.cssVars["--ev-font-heading-adjust"]).toBe("0.4626");
+		expect(scaled.cssVars["--ev-font-body-adjust"]).toBeUndefined();
 	});
 
 	it("emite variáveis semânticas (sem cores chapadas)", () => {

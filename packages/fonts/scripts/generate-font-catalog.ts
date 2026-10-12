@@ -18,6 +18,8 @@ import { writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { addMetricsToCatalog, buildAspectMap } from "./font-metrics";
+
 import type { FontCatalogEntry, FontCategory } from "../types";
 
 // `dotenv/config` lê o `.env` do diretório de execução (raiz do repo via
@@ -111,19 +113,29 @@ async function main(): Promise<void> {
 	});
 	const scriptDir = dirname(fileURLToPath(import.meta.url));
 	const outPath = join(scriptDir, "..", "catalog.json");
+	const { fonts: enriched, missing } = addMetricsToCatalog(fonts);
 	await writeFile(
 		outPath,
 		JSON.stringify(
 			{
 				generatedBy: `google-fonts-developer-api top ${MAX_FONTS} by popularity`,
-				count: fonts.length,
-				fonts,
+				count: enriched.length,
+				fonts: enriched,
 			},
 			null,
 			0,
 		) + "\n",
 	);
-	console.log(`Catálogo gerado: ${fonts.length} fontes em ${outPath}`);
+	await writeFile(
+		join(scriptDir, "..", "aspects.json"),
+		JSON.stringify(buildAspectMap(enriched), null, 0) + "\n",
+	);
+	console.log(`Catálogo gerado: ${enriched.length} fontes em ${outPath}`);
+	if (missing.length > 0) {
+		console.log(
+			`Sem métricas de x-height (${missing.length}, escala desabilitada): ${missing.join(", ")}`,
+		);
+	}
 }
 
 await main();

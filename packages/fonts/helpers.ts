@@ -137,6 +137,20 @@ export function hasLatinExt(entry: Pick<FontCatalogEntry, "subsets">): boolean {
 	return entry.subsets.includes("latin-ext");
 }
 
+/**
+ * Valor de `font-size-adjust` para a seleção, ou `null` quando nada deve
+ * ser emitido: escala 1 renderiza exatamente como hoje, e sem métricas
+ * (`xHeightRatio` ausente) não há como converter o multiplicador.
+ */
+export function buildSizeAdjust(
+	xHeightRatio: number | undefined,
+	scale: number,
+): number | null {
+	if (scale === 1) return null;
+	if (xHeightRatio === undefined || xHeightRatio <= 0) return null;
+	return Math.round(scale * xHeightRatio * 10000) / 10000;
+}
+
 /** A fonte tem ao menos `latin` (ou nada latino — p. ex. só `vietnamese`)? */
 export function hasLatin(entry: Pick<FontCatalogEntry, "subsets">): boolean {
 	return entry.subsets.includes("latin");
