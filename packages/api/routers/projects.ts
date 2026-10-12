@@ -1,20 +1,19 @@
+// API
+import { TRPCError } from "@trpc/server";
+
 import { db } from "@verific/drizzle";
-
-import { z } from "@verific/zod";
-
+import { eq } from "@verific/drizzle/orm";
 import {
 	participant,
 	project,
 	projectModerator,
 } from "@verific/drizzle/schema";
 import { eventThemeSchema } from "@verific/drizzle/theme";
-import { eq } from "@verific/drizzle/orm";
-import { generateShortId } from "./profiles";
+import { z } from "@verific/zod";
 
+import { normalizeThemeFonts } from "../lib/theme-fonts";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
-
-// API
-import { TRPCError } from "@trpc/server";
+import { generateShortId } from "./profiles";
 
 export const updateProjectSchema = z.object({
 	id: z.uuid(),
@@ -149,6 +148,12 @@ export const projectsRouter = createTRPCRouter({
 			const { id, ...rest } = input;
 
 			await requireProjectAccess(id, ctx.session.user.id);
+
+			// Valida as fontes contra o catálogo e normaliza a categoria
+			// (o schema é tolerante na leitura; aqui a escrita é estrita).
+			if (rest.theme) {
+				rest.theme = normalizeThemeFonts(rest.theme);
+			}
 
 			// Remove undefined fields so only provided fields are updated
 			const updateData = Object.fromEntries(

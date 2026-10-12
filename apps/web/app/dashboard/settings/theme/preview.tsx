@@ -1,15 +1,23 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+import { Loader2, Menu, Moon, Sun } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { Menu, Moon, Sun } from "lucide-react";
+
+import type { EventTheme } from "@verific/drizzle/theme";
+import type { FontRole } from "@verific/fonts";
+import { buildSizeAdjust } from "@verific/fonts";
+import { getAspect } from "@verific/fonts/aspects";
 
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+import { FormSection, type GenericForm } from "@/components/forms";
 import * as EventContainer from "@/components/landing/event-container";
 import { EventBackgroundEffects } from "@/components/landing/event-container";
 import {
@@ -19,14 +27,23 @@ import {
 } from "@/components/landing/event-nav";
 import { ProfileBanner } from "@/components/profile/profile-banner";
 import { ProfileStats } from "@/components/profile/profile-stats";
-import { FormSection, type GenericForm } from "@/components/forms";
+
 import { resolveEventTheme } from "@/lib/theme/resolve";
 import { cn } from "@/lib/utils";
-import type { EventTheme } from "@verific/drizzle/theme";
+
+import {
+	ensureFullStylesheet,
+	fontStack,
+	useFontFaceStatus,
+} from "./font-loading";
+
+import type { FontHoverHint } from "./font-picker-utils";
 
 interface ThemePreviewProps {
 	draft: EventTheme;
 	projectName: string;
+	/** Prévia temporária do picker (não altera o rascunho). */
+	fontHints?: Record<FontRole, FontHoverHint | null>;
 }
 
 type PreviewTab = "inicio" | "inscricao" | "perfil";
@@ -123,7 +140,7 @@ function HomeContent({
 					className="border p-6"
 					style={{ borderRadius: "var(--ev-card-radius)" }}
 				>
-					<h3 className="font-heading mb-2 text-xl font-medium">
+					<h3 className="font-subtitle mb-2 text-xl font-medium">
 						Local
 					</h3>
 					<p className="text-muted-foreground text-sm">
@@ -278,7 +295,11 @@ function PreviewHeader({
 	);
 }
 
-export function ThemePreview({ draft, projectName }: ThemePreviewProps) {
+export function ThemePreview({
+	draft,
+	projectName,
+	fontHints,
+}: ThemePreviewProps) {
 	const [tab, setTab] = useState<PreviewTab>("inicio");
 	// A página real segue a preferência do visitante (`next-themes`); a
 	// prévia começa no escuro, que é como a maioria vê eventos, e o botão
@@ -296,6 +317,80 @@ export function ThemePreview({ draft, projectName }: ThemePreviewProps) {
 		[draft],
 	);
 
+	// Fontes do rascunho + dica temporária do picker (hover/teclado): a
+	// prévia reflete na hora, sem esperar o salvamento.
+	const headingHint = fontHints?.heading ?? null;
+	const subtitleHint = fontHints?.subtitle ?? null;
+	const bodyHint = fontHints?.body ?? null;
+	const displayVars: Record<string, string> = { ...cssVars };
+	if (headingHint) {
+		displayVars["--ev-font-heading"] = fontStack(
+			headingHint.family,
+			headingHint.category,
+		);
+	}
+	if (subtitleHint) {
+		displayVars["--ev-font-subtitle"] = fontStack(
+			subtitleHint.family,
+			subtitleHint.category,
+		);
+	}
+	if (bodyHint) {
+		displayVars["--ev-font-body"] = fontStack(
+			bodyHint.family,
+			bodyHint.category,
+		);
+	}
+	// Ajuste de tamanho das dicas (escala do papel × métrica da família).
+	const hintAdjustVars: Record<string, string> = {};
+	const hintAdjusts = [
+		["--ev-font-heading-adjust", headingHint, draft.fonts.heading.scale],
+		["--ev-font-subtitle-adjust", subtitleHint, draft.fonts.subtitle.scale],
+		["--ev-font-body-adjust", bodyHint, draft.fonts.body.scale],
+	] as const;
+	for (const [cssVar, hint, scale] of hintAdjusts) {
+		if (!hint) continue;
+		const adjust = buildSizeAdjust(getAspect(hint.family), scale);
+		if (adjust !== null) hintAdjustVars[cssVar] = String(adjust);
+	}
+	Object.assign(displayVars, hintAdjustVars);
+
+	// Garante as faces do rascunho e das dicas na prévia (CDN no editor).
+	useEffect(() => {
+		const selections = [
+			draft.fonts.heading,
+			draft.fonts.subtitle,
+			draft.fonts.body,
+		];
+		for (const selection of selections) {
+			ensureFullStylesheet(
+				selection.family,
+				selection.weights,
+				selection.italic === true,
+			);
+		}
+		for (const hint of [headingHint, subtitleHint, bodyHint]) {
+			if (hint) ensureFullStylesheet(hint.family, [hint.weight], false);
+		}
+	}, [draft.fonts, headingHint, subtitleHint, bodyHint]);
+
+	const headingStatus = useFontFaceStatus(
+		headingHint?.family ?? draft.fonts.heading.family,
+		headingHint?.weight ?? draft.fonts.heading.weights[0] ?? 400,
+	);
+	const subtitleStatus = useFontFaceStatus(
+		subtitleHint?.family ?? draft.fonts.subtitle.family,
+		subtitleHint?.weight ?? draft.fonts.subtitle.weights[0] ?? 400,
+	);
+	const bodyStatus = useFontFaceStatus(
+		bodyHint?.family ?? draft.fonts.body.family,
+		bodyHint?.weight ?? draft.fonts.body.weights[0] ?? 400,
+	);
+	const fontsLoading =
+		headingStatus === "loading" ||
+		subtitleStatus === "loading" ||
+		bodyStatus === "loading";
+
 	return (
 		<div className="flex min-w-0 flex-col gap-3">
 			<div className="flex items-center justify-between gap-2">
@@ -309,23 +404,37 @@ export function ThemePreview({ draft, projectName }: ThemePreviewProps) {
 						<TabsTrigger value="perfil">Perfil</TabsTrigger>
 					</TabsList>
 				</Tabs>
-				<Button
-					variant="outline"
-					size="icon"
-					title={
-						dark
-							? "Ver prévia no modo claro"
-							: "Ver prévia no modo escuro"
-					}
-					aria-label={
-						dark
-							? "Ver prévia no modo claro"
-							: "Ver prévia no modo escuro"
-					}
-					onClick={() => setDark((d) => !d)}
-				>
-					{dark ? <Sun /> : <Moon />}
-				</Button>
+				<div className="flex items-center gap-2">
+					{fontsLoading && (
+						<span
+							role="status"
+							className="text-muted-foreground inline-flex items-center gap-1 text-xs"
+						>
+							<Loader2
+								className="h-3.5 w-3.5 animate-spin"
+								aria-hidden
+							/>
+							Carregando fontes…
+						</span>
+					)}
+					<Button
+						variant="outline"
+						size="icon"
+						title={
+							dark
+								? "Ver prévia no modo claro"
+								: "Ver prévia no modo escuro"
+						}
+						aria-label={
+							dark
+								? "Ver prévia no modo claro"
+								: "Ver prévia no modo escuro"
+						}
+						onClick={() => setDark((d) => !d)}
+					>
+						{dark ? <Sun /> : <Moon />}
+					</Button>
+				</div>
 			</div>
 
 			{/* Um único "navegador": header + conteúdo + footer, rolando por dentro.
@@ -342,7 +451,14 @@ export function ThemePreview({ draft, projectName }: ThemePreviewProps) {
 					"bg-background text-foreground relative isolate flex h-[70dvh] min-h-[480px] transform-[translateZ(0)] flex-col overflow-x-hidden overflow-y-auto rounded-2xl border lg:h-[calc(100dvh-11rem)]",
 					dark ? "dark" : "ev-theme-light",
 				)}
-				style={cssVars as React.CSSProperties}
+				style={
+					{
+						...displayVars,
+						// Texto corrido herda o ajuste (como `.event-public`
+						// faz na página real).
+						fontSizeAdjust: "var(--ev-font-body-adjust, from-font)",
+					} as React.CSSProperties
+				}
 			>
 				<div className="relative flex min-h-full shrink-0 flex-col">
 					<EventBackgroundEffects />
