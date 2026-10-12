@@ -14,6 +14,7 @@ import {
 	encodeQrModules,
 	planBatchFiles,
 	renderBadgeSheets,
+	resolveFontWeight,
 	type BadgeLayout,
 	type DisplayPrimitive,
 } from "@verific/badges";
@@ -92,23 +93,30 @@ export function getBadgeFontLoader(): FontLoader {
 	return loader;
 }
 
-/** Famílias+pesos exigidos pelos itens de texto (via papéis do tema). */
+/** Famílias+pesos exigidos pelos itens de texto (via papéis do tema).
+ * O peso pedido é resolvido para o mais próximo disponível (regra CSS),
+ * pois o PDF não sintetiza negrito — ver `resolveFontWeight`. */
 export function collectBadgeFonts(
 	layout: BadgeLayout,
 	roles: ThemeFontRoles,
-): { family: string; weight: number }[] {
-	const seen = new Map<string, { family: string; weight: number }>();
+): { family: string; requested: number; resolved: number }[] {
+	const seen = new Map<
+		string,
+		{ family: string; requested: number; resolved: number }
+	>();
 	for (const item of layout.items) {
 		if (item.kind !== "text" || !item.enabled) continue;
-		const role = item.fontRole as FontRole;
-		const family = roles[role].family;
+		const role = roles[item.fontRole as FontRole];
+		const family = role.family;
+		const resolved = resolveFontWeight(item.weight, role.weights);
 		const key = `${family.toLowerCase()}@${item.weight}`;
-		if (!seen.has(key)) seen.set(key, { family, weight: item.weight });
+		if (!seen.has(key))
+			seen.set(key, { family, requested: item.weight, resolved });
 	}
 	return [...seen.values()];
 }
 
-/** Pesos pedidos que o tema não oferece (aviso no editor, sem fallback mudo). */
+/** Pesos pedidos sem arquivo exato (informa o peso substituto usado). */
 export function missingFontWeights(
 	layout: BadgeLayout,
 	roles: ThemeFontRoles,
@@ -118,8 +126,9 @@ export function missingFontWeights(
 		if (item.kind !== "text" || !item.enabled) continue;
 		const role = roles[item.fontRole as FontRole];
 		if (!role.weights.includes(item.weight)) {
+			const resolved = resolveFontWeight(item.weight, role.weights);
 			warnings.push(
-				`"${item.label || item.id}": peso ${item.weight} indisponível em ${role.family} (oferece ${role.weights.join(", ")}).`,
+				`"${item.label || item.id}": peso ${item.weight} indisponível em ${role.family} — usando ${resolved} no impresso.`,
 			);
 		}
 	}
@@ -150,12 +159,16 @@ export async function createBadgePrintContext(
 	const needed = collectBadgeFonts(layout, roles);
 	const fontBytes = new Map<string, Uint8Array>();
 	await Promise.all(
-		needed.map(async ({ family, weight }) => {
+		needed.map(async ({ family, requested, resolved }) => {
 			const bytes = await getBadgeFontLoader().getFontBytes(
 				family,
-				weight,
+				resolved,
 			);
-			fontBytes.set(`${family.toLowerCase()}@${weight}`, bytes);
+			// Registra sob o peso pedido E o resolvido: a display list e
+			// o PDF consultam pelo peso pedido; arquivos idênticos são
+			// embutidos uma única vez (embedShared deduplica por bytes).
+			fontBytes.set(`${family.toLowerCase()}@${requested}`, bytes);
+			fontBytes.set(`${family.toLowerCase()}@${resolved}`, bytes);
 			if (typeof document !== "undefined" && "FontFace" in window) {
 				try {
 					const face = new FontFace(
