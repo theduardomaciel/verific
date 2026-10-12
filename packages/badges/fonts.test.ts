@@ -1,10 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
 	createMemoryFontStore,
+	createProxiedTtfFetcher,
 	fontCacheKey,
 	gwfhSlug,
 	pickStaticTtfUrl,
+	proxyFontUrl,
 } from "./fonts";
 
 describe("fonts", () => {
@@ -39,5 +41,44 @@ describe("fonts", () => {
 		expect(await store.get("inter@400")).toBeUndefined();
 		await store.set("inter@400", new Uint8Array([1, 2, 3]));
 		expect(await store.get("inter@400")).toEqual(new Uint8Array([1, 2, 3]));
+	});
+
+	it("builds same-origin proxy URLs", () => {
+		expect(
+			proxyFontUrl("/api/badge-fonts/file", "Hanken Grotesk", 700),
+		).toBe("/api/badge-fonts/file?family=Hanken%20Grotesk&weight=700");
+	});
+
+	it("fetches TTF bytes through the proxy", async () => {
+		const bytes = new Uint8Array([0, 1, 0, 0, 9]);
+		const fetchImpl = vi.fn(async (url: string) => {
+			expect(url).toBe("/api/badge-fonts/file?family=Poppins&weight=400");
+			return new Response(bytes as unknown as BodyInit, { status: 200 });
+		});
+		const fetcher = createProxiedTtfFetcher(
+			"/api/badge-fonts/file",
+			fetchImpl as unknown as typeof fetch,
+		);
+		await expect(
+			fetcher({ family: "Poppins", weight: 400 }),
+		).resolves.toEqual(bytes);
+	});
+
+	it("surfaces proxy errors without silent fallback", async () => {
+		const fetchImpl = vi.fn(
+			async () => new Response("nope", { status: 404 }),
+		);
+		const fetcher = createProxiedTtfFetcher(
+			"/api/badge-fonts/file",
+			fetchImpl as unknown as typeof fetch,
+		);
+		await expect(fetcher({ family: "Nope", weight: 400 })).rejects.toThrow(
+			/404/,
+		);
+		await expect(
+			createProxiedTtfFetcher("/api/badge-fonts/file", (async () => {
+				throw new TypeError("NetworkError");
+			}) as unknown as typeof fetch)({ family: "Poppins", weight: 400 }),
+		).rejects.toThrow(/rede/);
 	});
 });

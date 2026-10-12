@@ -10,7 +10,7 @@ import {
 	FontLoader,
 	buildDisplayList,
 	createMemoryFontStore,
-	createStaticTtfFetcher,
+	createProxiedTtfFetcher,
 	encodeQrModules,
 	planBatchFiles,
 	renderBadgeSheets,
@@ -85,7 +85,8 @@ export function getBadgeFontLoader(): FontLoader {
 			typeof window === "undefined"
 				? createMemoryFontStore()
 				: createBrowserFontStore(),
-			createStaticTtfFetcher(),
+			// Via proxy same-origin: o gwfh não envia cabeçalhos CORS.
+			createProxiedTtfFetcher("/api/badge-fonts/file"),
 		);
 	}
 	return loader;

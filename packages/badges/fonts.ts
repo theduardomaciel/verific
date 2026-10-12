@@ -110,6 +110,38 @@ export function createStaticTtfFetcher(
 /** Backwards-compatible alias (same static-TTF source). */
 export const createGoogleTtfFetcher = createStaticTtfFetcher;
 
+/**
+ * Same-origin proxy (Next route `/api/badge-fonts/file`): the browser
+ * must NOT call gwfh directly — it sends no CORS headers. The proxy
+ * resolves the static TTF server-side and streams the bytes, so the
+ * browser only talks to our own origin (also better for CSP/offline).
+ */
+export function proxyFontUrl(base: string, family: string, weight: number) {
+	return `${base}?family=${encodeURIComponent(family.trim())}&weight=${weight}`;
+}
+
+export function createProxiedTtfFetcher(
+	base: string,
+	fetchImpl: typeof fetch = fetch,
+): FontFetcher {
+	return async ({ family, weight }) => {
+		let res: Response;
+		try {
+			res = await fetchImpl(proxyFontUrl(base, family, weight));
+		} catch {
+			throw new Error(
+				`Falha de rede ao baixar fonte ${family} @${weight} — ofereça a fonte segura de fallback explicitamente.`,
+			);
+		}
+		if (!res.ok) {
+			throw new Error(
+				`Fonte ${family} @${weight} indisponível (HTTP ${res.status}) — ofereça a fonte segura de fallback explicitamente.`,
+			);
+		}
+		return new Uint8Array(await res.arrayBuffer());
+	};
+}
+
 /** TTF-only UA (kept for documentation; css2 no longer serves TTF). */
 export const TTF_USER_AGENT =
 	"Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0)";
