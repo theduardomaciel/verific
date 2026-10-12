@@ -1051,6 +1051,7 @@ export function BadgeEditor({
 										label: "Linha secundária",
 										align: "center",
 										fontRole: "body",
+										family: "",
 										fontSizePt: 11,
 										minFontSizePt: 7,
 										weight: 400,
@@ -1070,6 +1071,11 @@ export function BadgeEditor({
 						item={selected}
 						fieldOptions={fieldOptions}
 						roleWeights={roles[selected.fontRole].weights}
+						roleFamilies={{
+							heading: roles.heading.family,
+							subtitle: roles.subtitle.family,
+							body: roles.body.family,
+						}}
 						mm={mmRect(selected)}
 						onMm={(v) => setMmRect(selected, v)}
 						onEdit={(fn) =>
@@ -1342,6 +1348,7 @@ function TextPanel({
 	item,
 	fieldOptions,
 	roleWeights,
+	roleFamilies,
 	mm,
 	onMm,
 	onEdit,
@@ -1350,6 +1357,8 @@ function TextPanel({
 	fieldOptions: { id: string; label: string }[];
 	/** Pesos que o papel do tema oferece (o impresso usa o mais próximo). */
 	roleWeights: number[];
+	/** Famílias de fonte disponíveis por papel do tema. */
+	roleFamilies: { heading: string; subtitle: string; body: string };
 	mm: { x: number; y: number; w: number; h: number };
 	onMm: (v: { x: number; y: number; w: number; h: number }) => void;
 	onEdit: (fn: (it: Extract<BadgeItem, { kind: "text" }>) => void) => void;
@@ -1357,6 +1366,15 @@ function TextPanel({
 	const weightOptions = roleWeights.includes(item.weight)
 		? roleWeights
 		: [...roleWeights, item.weight].sort((a, b) => a - b);
+
+	// Unique font families from theme roles
+	const familyOptions = [
+		...new Set([
+			roleFamilies.heading,
+			roleFamilies.subtitle,
+			roleFamilies.body,
+		]),
+	];
 	return (
 		<Card>
 			<CardHeader>
@@ -1392,6 +1410,28 @@ function TextPanel({
 						</Select>
 					</div>
 				) : null}
+				<div className="flex flex-col gap-1 text-xs">
+					<span className="text-muted-foreground">Família</span>
+					<Select
+						value={item.family || roleFamilies[item.fontRole]}
+						onValueChange={(v) =>
+							onEdit((it) => {
+								it.family = v;
+							})
+						}
+					>
+						<SelectTrigger>
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{familyOptions.map((f) => (
+								<SelectItem key={f} value={f}>
+									{f}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
 				<div className="flex flex-col gap-1 text-xs">
 					<span className="text-muted-foreground">Alinhamento</span>
 					<Select

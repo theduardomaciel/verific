@@ -25,6 +25,7 @@ export type DisplayPrimitive =
 			xMm: number;
 			yMm: number;
 			maxWidthMm: number;
+			maxLines: number;
 			lines: string[];
 			fontRole: "heading" | "subtitle" | "body";
 			/** Resolved font family (theme role → family). */
@@ -95,7 +96,9 @@ export function buildDisplayList(
 					: (data.fields[item.source] ?? "").trim();
 			if (!value) continue;
 			const abs = relativeToBadge(item.rect, layout.freeArea);
-			const family = options.fontFamilyForRole(item.fontRole);
+			// Use item's family if specified, otherwise fall back to role's family
+			const family =
+				item.family || options.fontFamilyForRole(item.fontRole);
 			const scale = options.scaleForRole(item.fontRole);
 			const startSize = item.fontSizePt * scale;
 			const minSize = Math.min(item.minFontSizePt * scale, startSize);
@@ -116,6 +119,7 @@ export function buildDisplayList(
 				xMm: abs.x,
 				yMm: abs.y + recenterDy,
 				maxWidthMm: abs.w,
+				maxLines: item.maxLines,
 				lines: fitted.lines,
 				fontRole: item.fontRole,
 				family,
