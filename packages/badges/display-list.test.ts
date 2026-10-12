@@ -23,7 +23,7 @@ const OPTIONS = {
 	},
 };
 
-function layoutWith(missingFieldBehavior: "recenter" | "keep") {
+function layoutWith() {
 	return badgeLayoutSchema.parse({
 		badgeW: 90,
 		badgeH: 55,
@@ -33,14 +33,13 @@ function layoutWith(missingFieldBehavior: "recenter" | "keep") {
 				? { ...item, source: "institution" }
 				: item,
 		),
-		missingFieldBehavior,
 	});
 }
 
 describe("display-list", () => {
 	it("omits empty secondary lines without breaking the layout", () => {
 		const list = buildDisplayList(
-			layoutWith("keep"),
+			layoutWith(),
 			{ name: "Ana", fields: {}, qrPayload: "/ev/profile/Ab12Cd34Ef" },
 			OPTIONS,
 		);
@@ -49,28 +48,45 @@ describe("display-list", () => {
 		expect(list.some((p) => p.kind === "qr")).toBe(true);
 	});
 
-	it("re-centers remaining items when configured", () => {
-		const keep = buildDisplayList(
-			layoutWith("keep"),
+	it("keeps every box pinned when a line is missing", () => {
+		const full = buildDisplayList(
+			layoutWith(),
+			{
+				name: "Ana",
+				fields: { institution: "UFAL" },
+				qrPayload: "/ev/profile/X",
+			},
+			OPTIONS,
+		);
+		const missing = buildDisplayList(
+			layoutWith(),
 			{ name: "Ana", fields: {}, qrPayload: "/ev/profile/X" },
 			OPTIONS,
 		);
-		const recenter = buildDisplayList(
-			layoutWith("recenter"),
-			{ name: "Ana", fields: {}, qrPayload: "/ev/profile/X" },
-			OPTIONS,
-		);
-		const yKeep = keep.find((p) => p.kind === "text")!;
-		const yRecenter = recenter.find((p) => p.kind === "text")!;
-		expect(yKeep.kind === "text" && yRecenter.kind === "text").toBe(true);
-		if (yKeep.kind === "text" && yRecenter.kind === "text") {
-			expect(yRecenter.yMm).toBeGreaterThan(yKeep.yMm);
+		const at = (list: typeof full, kind: string) =>
+			list.find((p) => p.kind === kind);
+		for (const kind of ["text", "qr"] as const) {
+			const a = at(full, kind);
+			const b = at(missing, kind);
+			expect(a?.kind).toBe(kind);
+			expect(b?.kind).toBe(kind);
+			if (
+				a?.kind === "text" &&
+				b?.kind === "text" &&
+				a.lines.join() === b.lines.join()
+			) {
+				expect(b.yMm).toBeCloseTo(a.yMm, 9);
+			}
+			if (a?.kind === "qr" && b?.kind === "qr") {
+				expect(b.rect.x).toBeCloseTo(a.rect.x, 9);
+				expect(b.rect.y).toBeCloseTo(a.rect.y, 9);
+			}
 		}
 	});
 
 	it("keeps QR square and inside the free area", () => {
 		const list = buildDisplayList(
-			layoutWith("keep"),
+			layoutWith(),
 			{
 				name: "Ana",
 				fields: { institution: "UFAL" },
@@ -89,7 +105,7 @@ describe("display-list", () => {
 
 	it("applies the theme scale multiplier numerically", () => {
 		const list = buildDisplayList(
-			layoutWith("keep"),
+			layoutWith(),
 			{
 				name: "Ana",
 				fields: {},
