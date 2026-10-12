@@ -97,6 +97,7 @@ export const badgeLayoutSchema = z.object({
 		.regex(/^#[0-9A-Fa-f]{6}$/)
 		.default("#FFFFFF"),
 	items: z.array(badgeItemSchema).default([]),
+	missingFieldBehavior: z.enum(["recenter", "keep"]).default("recenter"),
 	page: z
 		.object({
 			size: z.enum(["a4", "letter", "custom"]).default("a4"),
