@@ -55,27 +55,45 @@ export function PrimitiveLayer({
 							: p.align === "right"
 								? p.xMm + p.maxWidthMm
 								: p.xMm;
+					// Clip text to box height to match PDF output
+					const boxHeightMm =
+						p.lineHeightPt * 0.3527777778 * p.maxLines;
 					return (
-						<text
-							key={i}
-							x={ax}
-							y={p.yMm + sizeMm}
-							textAnchor={anchor}
-							fontFamily={`"${p.family}", sans-serif`}
-							fontSize={sizeMm}
-							fontWeight={p.weight}
-							fill={p.color}
-						>
-							{p.lines.map((line, li) => (
-								<tspan
-									key={li}
-									x={ax}
-									dy={li === 0 ? 0 : lineMm}
-								>
-									{line}
-								</tspan>
-							))}
-						</text>
+						<g key={i} clipPath={`url(#clip-text-${i})`}>
+							<defs>
+								<clipPath id={`clip-text-${i}`}>
+									<rect
+										x={p.xMm}
+										y={p.yMm}
+										width={p.maxWidthMm}
+										height={boxHeightMm}
+									/>
+								</clipPath>
+							</defs>
+							<text
+								x={ax}
+								y={p.yMm + sizeMm}
+								textAnchor={anchor}
+								fontFamily={`"${p.family}", sans-serif`}
+								fontSize={sizeMm}
+								fontWeight={p.weight}
+								fill={p.color}
+							>
+								{p.lines.map((line, li) => (
+									<tspan
+										key={li}
+										x={ax}
+										dy={
+											li === 0
+												? 0
+												: p.lineHeightPt * 0.3527777778
+										}
+									>
+										{line}
+									</tspan>
+								))}
+							</text>
+						</g>
 					);
 				}
 				if (p.kind === "qr") {
