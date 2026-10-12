@@ -954,21 +954,10 @@ export function BadgeEditor({
 								className="h-8 w-20 p-1"
 							/>
 						</label>
-						<label className="flex items-center gap-2 text-xs">
-							<Switch
-								checked={
-									draft.missingFieldBehavior === "recenter"
-								}
-								onCheckedChange={(v) =>
-									patch((d) => {
-										d.missingFieldBehavior = v
-											? "recenter"
-											: "keep";
-									}, true)
-								}
-							/>
-							Recentralizar quando faltar campo
-						</label>
+						<p className="text-muted-foreground text-xs">
+							Campos vazios saem em branco no lugar — as demais
+							caixas não se movem.
+						</p>
 					</CardContent>
 				</Card>
 

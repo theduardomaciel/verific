@@ -69,22 +69,8 @@ export function buildDisplayList(
 	options: DisplayListOptions,
 ): DisplayPrimitive[] {
 	const out: DisplayPrimitive[] = [];
-	// Visible text items after omitting empty secondary lines.
-	const visibleTexts = layout.items.filter((item) => {
-		if (item.kind !== "text" || !item.enabled) return false;
-		if (item.source === "name") return true;
-		if (!item.source) return false;
-		const value = (data.fields[item.source] ?? "").trim();
-		return value.length > 0;
-	});
-
-	const omittedCount =
-		layout.items.filter((i) => i.kind === "text" && i.enabled).length -
-		visibleTexts.length;
-	const recenterDy =
-		layout.missingFieldBehavior === "recenter" && omittedCount > 0
-			? (omittedCount * layout.freeArea.h * 0.05) / 2
-			: 0;
+	// Cada caixa mantém seu espaço designado: linhas vazias são omitidas
+	// sem deslocar as demais (consistência visual entre crachás).
 
 	for (const item of layout.items) {
 		if (!item.enabled) continue;
@@ -100,11 +86,11 @@ export function buildDisplayList(
 			const startSize = item.fontSizePt * scale;
 			const minSize = Math.min(item.minFontSizePt * scale, startSize);
 			const maxWidthMm = abs.w;
-			// Measure closure converts mm budget to the measure fn's unit.
-			// measure() works in pt; convert mm→pt via 72/25.4 inside caller.
+			// measure() devolve largura na mesma unidade de maxWidth/maxHeight.
 			const fitted = fitTextLines({
 				text: value,
 				maxWidth: maxWidthMm,
+				maxHeight: abs.h,
 				fontSizePt: startSize,
 				minFontSizePt: minSize,
 				maxLines: item.maxLines,
@@ -113,7 +99,7 @@ export function buildDisplayList(
 			out.push({
 				kind: "text",
 				xMm: abs.x,
-				yMm: abs.y + recenterDy,
+				yMm: abs.y,
 				maxWidthMm: abs.w,
 				lines: fitted.lines,
 				fontRole: item.fontRole,
@@ -130,7 +116,7 @@ export function buildDisplayList(
 			const side = Math.min(abs.w, abs.h);
 			const square: Rect = {
 				x: abs.x + (abs.w - side) / 2,
-				y: abs.y + (abs.h - side) / 2 + recenterDy,
+				y: abs.y + (abs.h - side) / 2,
 				w: side,
 				h: side,
 			};
@@ -145,7 +131,7 @@ export function buildDisplayList(
 			const abs = relativeToBadge(item.rect, layout.freeArea);
 			out.push({
 				kind: "image",
-				rect: { ...abs, y: abs.y + recenterDy },
+				rect: { ...abs },
 				url: item.imageUrl,
 			});
 		}
