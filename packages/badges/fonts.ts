@@ -80,6 +80,45 @@ export function pickStaticTtfUrl(
 	return match?.ttf ?? null;
 }
 
+/**
+ * Resolve a requested weight to the nearest available one, following the
+ * CSS Fonts 4 matching rule (the same face the browser would render):
+ * exact match wins; 400 tries 500 first; 500 tries 400 first; below 400
+ * goes down then up; above 500 goes up then down. Empty list returns the
+ * request unchanged so the caller still fails loudly downstream.
+ */
+export function resolveFontWeight(
+	requested: number,
+	available: readonly number[],
+): number {
+	if (available.length === 0) return requested;
+	if (available.includes(requested)) return requested;
+	const asc = [...available].sort((a, b) => a - b);
+	const desc = [...asc].reverse();
+	if (requested === 400) {
+		return (
+			asc.find((w) => w === 500) ?? desc.find((w) => w < 400) ?? asc[0]!
+		);
+	}
+	if (requested === 500) {
+		return (
+			desc.find((w) => w === 400) ?? asc.find((w) => w > 500) ?? asc[0]!
+		);
+	}
+	if (requested < 400) {
+		return (
+			desc.find((w) => w < requested) ??
+			asc.find((w) => w > requested) ??
+			asc[0]!
+		);
+	}
+	return (
+		asc.find((w) => w > requested) ??
+		desc.find((w) => w < requested) ??
+		asc[0]!
+	);
+}
+
 export function createStaticTtfFetcher(
 	fetchImpl: typeof fetch = fetch,
 ): FontFetcher {

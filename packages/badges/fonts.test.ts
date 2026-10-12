@@ -7,6 +7,7 @@ import {
 	gwfhSlug,
 	pickStaticTtfUrl,
 	proxyFontUrl,
+	resolveFontWeight,
 } from "./fonts";
 
 describe("fonts", () => {
@@ -41,6 +42,19 @@ describe("fonts", () => {
 		expect(await store.get("inter@400")).toBeUndefined();
 		await store.set("inter@400", new Uint8Array([1, 2, 3]));
 		expect(await store.get("inter@400")).toEqual(new Uint8Array([1, 2, 3]));
+	});
+
+	it("resolves weights like CSS font matching", () => {
+		expect(resolveFontWeight(700, [400, 500, 600, 700])).toBe(700);
+		// Press Start 2P (400-only): bold request falls back to 400.
+		expect(resolveFontWeight(700, [400])).toBe(400);
+		expect(resolveFontWeight(400, [700])).toBe(700);
+		expect(resolveFontWeight(400, [300, 700])).toBe(300);
+		expect(resolveFontWeight(400, [300])).toBe(300);
+		expect(resolveFontWeight(500, [300, 700])).toBe(700);
+		expect(resolveFontWeight(300, [400, 700])).toBe(400);
+		expect(resolveFontWeight(800, [400, 700])).toBe(700);
+		expect(resolveFontWeight(700, [])).toBe(700);
 	});
 
 	it("builds same-origin proxy URLs", () => {

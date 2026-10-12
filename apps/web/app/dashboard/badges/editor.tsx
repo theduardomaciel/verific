@@ -1054,6 +1054,7 @@ export function BadgeEditor({
 					<TextPanel
 						item={selected}
 						fieldOptions={fieldOptions}
+						roleWeights={roles[selected.fontRole].weights}
 						mm={mmRect(selected)}
 						onMm={(v) => setMmRect(selected, v)}
 						onEdit={(fn) =>
@@ -1325,16 +1326,22 @@ export function BadgeEditor({
 function TextPanel({
 	item,
 	fieldOptions,
+	roleWeights,
 	mm,
 	onMm,
 	onEdit,
 }: {
 	item: Extract<BadgeItem, { kind: "text" }>;
 	fieldOptions: { id: string; label: string }[];
+	/** Pesos que o papel do tema oferece (o impresso usa o mais próximo). */
+	roleWeights: number[];
 	mm: { x: number; y: number; w: number; h: number };
 	onMm: (v: { x: number; y: number; w: number; h: number }) => void;
 	onEdit: (fn: (it: Extract<BadgeItem, { kind: "text" }>) => void) => void;
 }) {
+	const weightOptions = roleWeights.includes(item.weight)
+		? roleWeights
+		: [...roleWeights, item.weight].sort((a, b) => a - b);
 	return (
 		<Card>
 			<CardHeader>
@@ -1411,17 +1418,31 @@ function TextPanel({
 							})
 						}
 					/>
-					<Num
-						label="Peso"
-						unit=""
-						step={100}
-						value={item.weight}
-						onChange={(v) =>
-							onEdit((it) => {
-								it.weight = Math.round(v);
-							})
-						}
-					/>
+					<div className="flex flex-col gap-1 text-xs">
+						<span className="text-muted-foreground">Peso</span>
+						<Select
+							value={String(item.weight)}
+							onValueChange={(v) =>
+								onEdit((it) => {
+									it.weight = Number(v);
+								})
+							}
+						>
+							<SelectTrigger>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{weightOptions.map((w) => (
+									<SelectItem key={w} value={String(w)}>
+										{w}
+										{roleWeights.includes(w)
+											? ""
+											: " (aprox.)"}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
 					<Num
 						label="Máx. linhas"
 						unit=""

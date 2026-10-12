@@ -75,10 +75,19 @@ async function embedShared(
 	pdf: PDFDoc,
 	input: SharedArtwork,
 ): Promise<EmbeddedResources> {
-	// Embed fonts once (subset automatically on save).
+	// Embed fonts once (subset automatically on save). Chaves distintas
+	// podem apontar para os mesmos bytes (peso resolvido): embute uma vez.
 	const embedded = new Map<string, ReturnType<PDF["embedFont"]>>();
+	const byBytes = new Map<Uint8Array, ReturnType<PDF["embedFont"]>>();
 	for (const [key, bytes] of input.fontBytes) {
-		embedded.set(key, pdf.embedFont(bytes as unknown as Uint8Array));
+		const existing = byBytes.get(bytes);
+		if (existing) {
+			embedded.set(key, existing);
+			continue;
+		}
+		const font = pdf.embedFont(bytes as unknown as Uint8Array);
+		byBytes.set(bytes, font);
+		embedded.set(key, font);
 	}
 
 	// Embed artwork ONCE, reuse for every badge.
