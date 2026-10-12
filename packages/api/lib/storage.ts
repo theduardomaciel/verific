@@ -1,7 +1,7 @@
-import { randomUUID } from "node:crypto";
-
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { randomUUID } from "node:crypto";
+
 import { env } from "@verific/env";
 
 export type ImagePurpose =
@@ -10,7 +10,8 @@ export type ImagePurpose =
 	| "event-cover"
 	| "event-thumbnail"
 	| "speaker"
-	| "activity-banner";
+	| "activity-banner"
+	| "badge-artwork";
 
 interface PurposeConfig {
 	maxWidth: number;
@@ -22,7 +23,30 @@ interface PurposeConfig {
 	cacheControl: string;
 }
 
-export const IMAGE_PURPOSES: Record<ImagePurpose, PurposeConfig> = {
+interface PassthroughPurposeConfig {
+	maxBytes: number;
+	/** Uploaded as-is (no WebP conversion): sharp badge artwork. */
+	allowedMime: readonly string[];
+	cacheControl: string;
+	passthrough: true;
+}
+
+export function isPassthroughPurpose(purpose: ImagePurpose): boolean {
+	return purpose === "badge-artwork";
+}
+
+/** Extension for a passthrough upload content type. */
+export function passthroughExtension(contentType: string): string {
+	if (contentType === "image/png") return "png";
+	if (contentType === "image/jpeg") return "jpg";
+	if (contentType === "application/pdf") return "pdf";
+	throw new Error(`Tipo de arquivo inválido: ${contentType}.`);
+}
+
+export const IMAGE_PURPOSES: Record<
+	ImagePurpose,
+	PurposeConfig | PassthroughPurposeConfig
+> = {
 	"event-logo": {
 		maxWidth: 512,
 		maxHeight: 512,
@@ -77,11 +101,24 @@ export const IMAGE_PURPOSES: Record<ImagePurpose, PurposeConfig> = {
 		extension: "webp",
 		cacheControl: "public, max-age=31536000, immutable",
 	},
+	// Arte do crachá: enviada como está (PNG/JPEG/PDF), sem conversão
+	// para WebP nem redimensionamento — nitidez máxima na impressão.
+	// SVG é rasterizado no cliente (≥300dpi) antes do upload.
+	"badge-artwork": {
+		maxBytes: 5 * 1024 * 1024,
+		allowedMime: ["image/png", "image/jpeg", "application/pdf"],
+		cacheControl: "public, max-age=31536000, immutable",
+		passthrough: true,
+	},
 };
 
 export interface StorageAdapter {
 	isConfigured(): boolean;
-	buildKey(purpose: ImagePurpose, projectId: string): string;
+	buildKey(
+		purpose: ImagePurpose,
+		projectId: string,
+		extension?: string,
+	): string;
 	getPublicUrl(key: string): string;
 	extractKey(publicUrlOrKey: string): string | null;
 	createPresignedPut(input: {
@@ -138,9 +175,14 @@ export const storage: StorageAdapter = {
 		);
 	},
 
-	buildKey(purpose, projectId) {
+	buildKey(purpose, projectId, extension?: string) {
 		const safeProject = projectId.replace(/[^a-zA-Z0-9-_]/g, "");
-		return `${purpose}/${safeProject}/${randomUUID()}.${IMAGE_PURPOSES[purpose]!.extension}`;
+		const config = IMAGE_PURPOSES[purpose];
+		const ext =
+			config && "passthrough" in config
+				? (extension ?? "bin")
+				: (config as PurposeConfig).extension;
+		return `${purpose}/${safeProject}/${randomUUID()}.${ext}`;
 	},
 
 	getPublicUrl(key) {
@@ -172,10 +214,19 @@ export const storage: StorageAdapter = {
 				"Armazenamento S3 não configurado. Defina S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY e S3_PUBLIC_BASE_URL.",
 			);
 		}
-		const config = IMAGE_PURPOSES[key.split("/")[0] as ImagePurpose];
-		if (contentType !== config?.outputMime) {
+		const purpose = key.split("/")[0] as ImagePurpose;
+		const config = IMAGE_PURPOSES[purpose];
+		if (config && "passthrough" in config) {
+			if (!config.allowedMime.includes(contentType)) {
+				throw new Error(
+					`Tipo de arquivo inválido. Envie ${config.allowedMime.join(", ")}.`,
+				);
+			}
+		} else if (
+			contentType !== (config as PurposeConfig | undefined)?.outputMime
+		) {
 			throw new Error(
-				`Tipo de arquivo inválido. Envie ${config?.outputMime}.`,
+				`Tipo de arquivo inválido. Envie ${(config as PurposeConfig)?.outputMime}.`,
 			);
 		}
 		if (contentLength > (config?.maxBytes ?? 0)) {
@@ -213,7 +264,13 @@ export function validateUploadInput(input: {
 }) {
 	const config = IMAGE_PURPOSES[input.purpose];
 	if (!config) throw new Error("Finalidade de imagem inválida.");
-	if (input.contentType !== config.outputMime) {
+	if ("passthrough" in config) {
+		if (!config.allowedMime.includes(input.contentType)) {
+			throw new Error(
+				`Tipo inválido. Envie ${config.allowedMime.join(", ")}.`,
+			);
+		}
+	} else if (input.contentType !== config.outputMime) {
 		throw new Error(
 			`Tipo inválido. O otimizador deve converter para ${config.outputMime}.`,
 		);
