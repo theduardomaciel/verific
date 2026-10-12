@@ -15,7 +15,6 @@ import {
 	inArray,
 	isNull,
 } from "@verific/drizzle/orm";
-import { formatProfileValue } from "@verific/drizzle/profile-layout";
 import {
 	badgeLayout,
 	formAnswer,
@@ -28,6 +27,7 @@ import {
 import { env } from "@verific/env";
 import { z } from "@verific/zod";
 
+import { matchBadgeAnswers } from "../lib/badge-answers";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { ensureShortId } from "./profiles";
 
@@ -228,8 +228,29 @@ export const badgesRouter = createTRPCRouter({
 							columns: { id: true, key: true, type: true },
 						})
 					: [];
-			const typeByKey = new Map(fields.map((f) => [f.key, f.type]));
-			const wantedKeys = new Set(fields.map((f) => f.key));
+			// Falha alto em vez de imprimir crachás com linhas caladas: o
+			// vínculo pode ter apodrecido (campo editado/removido depois).
+			const boundById = new Map(
+				fields.map(
+					(f) => [f.id, { key: f.key, type: f.type }] as const,
+				),
+			);
+			for (const item of layout.items) {
+				if (
+					item.kind !== "text" ||
+					!item.enabled ||
+					!item.source ||
+					item.source === "name"
+				) {
+					continue;
+				}
+				if (!boundById.has(item.source)) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: `Linha "${item.label || "secundária"}" ligada a campo inexistente — vincule novamente no editor e salve.`,
+					});
+				}
+			}
 
 			const baseWhere = input.activityId
 				? and(
@@ -276,7 +297,7 @@ export const badgesRouter = createTRPCRouter({
 				string,
 				Record<string, string>
 			>();
-			if (ensured.length > 0 && wantedKeys.size > 0) {
+			if (ensured.length > 0 && boundById.size > 0) {
 				const answers = await db.query.formAnswer.findMany({
 					where: inArray(
 						formAnswer.participantId,
@@ -284,6 +305,7 @@ export const badgesRouter = createTRPCRouter({
 					),
 					columns: {
 						participantId: true,
+						fieldId: true,
 						valueText: true,
 						valueNumber: true,
 						valueDate: true,
@@ -293,36 +315,9 @@ export const badgesRouter = createTRPCRouter({
 					},
 					with: { field: { columns: { key: true } } },
 				});
-				const sorted = [...answers].sort(
-					(a, b) =>
-						new Date(b.updatedAt).getTime() -
-						new Date(a.updatedAt).getTime(),
-				);
-				const seen = new Set<string>();
-				for (const row of sorted) {
-					const key =
-						(row.fieldSnapshot as { key?: string } | null)?.key ??
-						row.field?.key;
-					if (!key || !wantedKeys.has(key)) continue;
-					const seenKey = `${row.participantId}:${key}`;
-					if (seen.has(seenKey)) continue;
-					seen.add(seenKey);
-					const raw =
-						(row.valueJson as unknown) ??
-						row.valueNumber ??
-						row.valueDate ??
-						row.valueText;
-					const formatted = formatProfileValue(
-						raw,
-						typeByKey.get(key) ?? "text",
-					);
-					if (!formatted) continue;
-					let entry = fieldsByParticipant.get(row.participantId);
-					if (!entry) {
-						entry = {};
-						fieldsByParticipant.set(row.participantId, entry);
-					}
-					entry[key] = formatted;
+				const matched = matchBadgeAnswers({ answers, boundById });
+				for (const [pid, entry] of matched) {
+					fieldsByParticipant.set(pid, entry);
 				}
 			}
 

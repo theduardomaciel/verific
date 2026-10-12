@@ -261,6 +261,21 @@ export function BadgeEditor({
 			);
 		}
 		for (const item of draft.items) {
+			if (
+				item.kind !== "text" ||
+				!item.enabled ||
+				!item.source ||
+				item.source === "name"
+			) {
+				continue;
+			}
+			if (!fieldLabels.has(item.source)) {
+				list.push(
+					`"${item.label || "Linha secundária"}": campo vinculado não existe mais — vincule novamente e salve, ou a linha sairá em branco.`,
+				);
+			}
+		}
+		for (const item of draft.items) {
 			if (item.kind !== "text" || !item.enabled) continue;
 			if (contrastRatio(item.color, draft.freeAreaBg) < 4.5) {
 				list.push(
@@ -310,7 +325,7 @@ export function BadgeEditor({
 		}
 		list.push(...missingFontWeights(draft, roles));
 		return list;
-	}, [draft, profilesEnabled, roles]);
+	}, [draft, profilesEnabled, roles, fieldLabels]);
 
 	const imposition = useMemo(() => {
 		if (draft.manualGrid.enabled) return null;
