@@ -227,10 +227,31 @@ export function BadgeEditor({
 		}
 	};
 
+	// Extrai as famílias/pesos relevantes do layout para saber quando recarregar fontes
+	const fontLayoutKey = useMemo(() => {
+		const families = new Set<string>();
+		const weights = new Map<string, number[]>();
+		for (const item of draft.items) {
+			if (item.kind !== "text" || !item.enabled) continue;
+			const family = item.family || roles[item.fontRole].family;
+			families.add(family);
+			const w = item.weight;
+			const existing = weights.get(family) || [];
+			if (!existing.includes(item.weight)) existing.push(item.weight);
+			weights.set(family, existing);
+		}
+		// Chave determinística baseada nas famílias e pesos usados
+		return JSON.stringify({
+			families: [...families].sort(),
+			weights: Object.fromEntries(
+				[...weights.entries()].map(([f, w]) => [f, [...w].sort()]),
+			),
+		});
+	}, [draft.items, roles]);
+
 	useEffect(() => {
 		void loadFonts(draft);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+	}, [fontLayoutKey]);
 
 	const preview = useMemo(() => {
 		if (!ctx) return { primitives: null, error: fontsError };
