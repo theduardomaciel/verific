@@ -18,6 +18,7 @@
 		"@aws-sdk/s3-request-presigner": "^3.1146.0",
 		"@trpc/server": "^11.6.0",
 		"@verific/auth": "workspace:*",
+		"@verific/badges": "workspace:*",
 		"@verific/drizzle": "workspace:*",
 		"@verific/env": "workspace:*",
 		"@verific/fonts": "workspace:*",
