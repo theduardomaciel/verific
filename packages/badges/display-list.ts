@@ -105,6 +105,7 @@ export function buildDisplayList(
 			const fitted = fitTextLines({
 				text: value,
 				maxWidth: maxWidthMm,
+				maxHeight: abs.h,
 				fontSizePt: startSize,
 				minFontSizePt: minSize,
 				maxLines: item.maxLines,
