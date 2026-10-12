@@ -53,7 +53,7 @@ describe("fonts", () => {
 		const bytes = new Uint8Array([0, 1, 0, 0, 9]);
 		const fetchImpl = vi.fn(async (url: string) => {
 			expect(url).toBe("/api/badge-fonts/file?family=Poppins&weight=400");
-			return new Response(bytes as unknown as BodyInit, { status: 200 });
+			return new Response(bytes, { status: 200 });
 		});
 		const fetcher = createProxiedTtfFetcher(
 			"/api/badge-fonts/file",
