@@ -2,12 +2,6 @@ export interface FitTextInput {
 	text: string;
 	/** Available width in mm (or pt — keep consistent with measure). */
 	maxWidth: number;
-	/**
-	 * Available block height, same unit as `measure` output. Text shrinks
-	 * and then loses lines (ellipsis) to fit — rendered text never
-	 * overflows its layout box into neighbouring items.
-	 */
-	maxHeight?: number;
 	/** Starting font size in pt. */
 	fontSizePt: number;
 	/** Minimum font size in pt before truncating. */
@@ -17,28 +11,16 @@ export interface FitTextInput {
 	maxLines: number;
 }
 
-const PT_TO_MM = 0.3527777778;
-const LINE_HEIGHT = 1.2;
-
-/** Visual block height: first baseline at font size + spacing per line. */
-function blockHeightMm(lineCount: number, sizePt: number): number {
-	if (lineCount <= 0) return 0;
-	return (
-		sizePt * PT_TO_MM + (lineCount - 1) * (sizePt * LINE_HEIGHT * PT_TO_MM)
-	);
-}
-
 /**
- * Shrink text down to min size, then truncate with ellipsis — fitting
- * width, line count AND block height. Returns laid-out lines.
+ * Shrink text down to min size, then truncate with ellipsis.
+ * Returns laid-out lines (already wrapped per maxLines).
  */
 export function fitTextLines(input: FitTextInput): {
 	fontSizePt: number;
 	lines: string[];
 	truncated: boolean;
 } {
-	const { text, maxWidth, maxHeight, minFontSizePt, measure, maxLines } =
-		input;
+	const { text, maxWidth, minFontSizePt, measure, maxLines } = input;
 	let size = input.fontSizePt;
 	const words = text.split(/\s+/).filter(Boolean);
 	const wrap = (s: number): string[] => {
@@ -56,16 +38,11 @@ export function fitTextLines(input: FitTextInput): {
 		if (current) lines.push(current);
 		return lines;
 	};
-	const fitsWidth = (ls: string[], s: number) =>
-		ls.every((l) => measure(l, s) <= maxWidth);
-	const fitsHeight = (count: number, s: number) =>
-		maxHeight === undefined || blockHeightMm(count, s) <= maxHeight;
 
 	let lines = wrap(size);
 	while (
 		(lines.length > maxLines ||
-			!fitsWidth(lines, size) ||
-			!fitsHeight(lines.length, size)) &&
+			lines.some((l) => measure(l, size) > maxWidth)) &&
 		size > minFontSizePt
 	) {
 		size = Math.max(minFontSizePt, Math.round((size - 0.5) * 10) / 10);
@@ -76,12 +53,7 @@ export function fitTextLines(input: FitTextInput): {
 		lines = lines.slice(0, maxLines);
 		truncated = true;
 	}
-	// Cut lines (ellipsis on the last) until the block fits the height.
-	while (lines.length > 1 && !fitsHeight(lines.length, size)) {
-		lines = lines.slice(0, -1);
-		truncated = true;
-	}
-	// Ellipsis on last line if still overflowing the width.
+	// Ellipsis on last line if still overflowing.
 	const last = lines[lines.length - 1];
 	if (last !== undefined && measure(last, size) > maxWidth) {
 		let cut = last;
