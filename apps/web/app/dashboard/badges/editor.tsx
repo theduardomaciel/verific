@@ -636,7 +636,7 @@ export function BadgeEditor({
 					</Button>
 					<Button
 						size="sm"
-						onClick={save}
+						onClick={() => { void save(); }}
 						disabled={saveMutation.isPending}
 					>
 						<Save className="size-4" />{" "}
