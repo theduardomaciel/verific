@@ -223,6 +223,34 @@ export interface BadgePrintContext {
  * registra no FontFace para a prévia SVG e monta a medida LibPDF.
  * Falha com erro claro (sem fallback silencioso).
  */
+const registeredFaces = new Set<string>();
+
+async function registerPreviewFace(
+	family: string,
+	weight: number,
+	bytes: Uint8Array,
+): Promise<void> {
+	if (typeof document === "undefined" || !("FontFace" in window)) return;
+	const key = `${family.toLowerCase()}@${weight}`;
+	if (registeredFaces.has(key)) return;
+	registeredFaces.add(key);
+	try {
+		// Descritores explícitos: sem eles, todas as faces da mesma
+		// família caem em weight 400 e o navegador escolhe entre
+		// arquivos distintos de forma ambígua — trocar a fonte de UM
+		// item mudava a renderização de OUTROS itens da mesma família.
+		const face = new FontFace(family, bytes as unknown as BufferSource, {
+			weight: String(weight),
+			style: "normal",
+		});
+		await face.load();
+		document.fonts.add(face);
+	} catch {
+		// Pré-visualização segue com fallback; o PDF usa o TTF.
+		registeredFaces.delete(key);
+	}
+}
+
 export async function createBadgePrintContext(
 	layout: BadgeLayout,
 	roles: ThemeFontRoles,
@@ -240,18 +268,7 @@ export async function createBadgePrintContext(
 			// embutidos uma única vez (embedShared deduplica por bytes).
 			fontBytes.set(`${family.toLowerCase()}@${requested}`, bytes);
 			fontBytes.set(`${family.toLowerCase()}@${resolved}`, bytes);
-			if (typeof document !== "undefined" && "FontFace" in window) {
-				try {
-					const face = new FontFace(
-						family,
-						bytes as unknown as BufferSource,
-					);
-					await face.load();
-					document.fonts.add(face);
-				} catch {
-					// Pré-visualização segue com fallback; o PDF usa o TTF.
-				}
-			}
+			await registerPreviewFace(family, resolved, bytes);
 		}),
 	);
 	const scratch = PDF.create();
