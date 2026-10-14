@@ -64,6 +64,9 @@ export function PrimitiveLayer({
 							fontFamily={`"${p.family}", sans-serif`}
 							fontSize={sizeMm}
 							fontWeight={p.weight}
+							// Sem negrito/itálico falsos: o PDF usa o arquivo do
+							// peso resolvido, sem sintetizar.
+							style={{ fontSynthesis: "none" }}
 							fill={p.color}
 						>
 							{p.lines.map((line, li) => (
