@@ -50,6 +50,7 @@ import {
 	buildRowPrimitives,
 	createBadgePrintContext,
 	fetchBadgeArtwork,
+	fetchBadgeLogos,
 	getBadgeCatalogWeights,
 	missingFontWeights,
 	runBadgePrint,
@@ -603,7 +604,10 @@ export function BadgeEditor({
 		try {
 			const c = ctx ?? (await loadFonts(draft));
 			if (!c) throw new Error(fontsError ?? "Fontes indisponíveis.");
-			const artwork = await fetchBadgeArtwork(draft);
+			const [artwork, logos] = await Promise.all([
+				fetchBadgeArtwork(draft),
+				fetchBadgeLogos(draft),
+			]);
 			const fetchPage = (cursor: number) =>
 				utils.getBadgeBatch.fetch({
 					projectId,
@@ -613,6 +617,7 @@ export function BadgeEditor({
 			const { files } = await runBadgePrint({
 				ctx: { ...c, layout: draft },
 				artwork,
+				logos,
 				eventUrl,
 				testPrint,
 				fetchPage,

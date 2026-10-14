@@ -338,6 +338,11 @@ export interface BadgeArtwork {
 	pdfBytes: Uint8Array | null;
 }
 
+export type BadgeLogos = Map<
+	string,
+	{ bytes: Uint8Array; mime: "png" | "jpeg" }
+>;
+
 /** Baixa a arte do URL do layout (raster direto; PDF via embedPage). */
 export async function fetchBadgeArtwork(
 	layout: BadgeLayout,
@@ -355,6 +360,39 @@ export async function fetchBadgeArtwork(
 	return { bytes, mime, pdfBytes: null };
 }
 
+function imageMime(bytes: Uint8Array): "png" | "jpeg" | null {
+	if (bytes[0] === 0x89 && bytes[1] === 0x50) return "png";
+	if (bytes[0] === 0xff && bytes[1] === 0xd8) return "jpeg";
+	return null;
+}
+
+/** Baixa as imagens dos itens de logo ativos (PNG ou JPEG). */
+export async function fetchBadgeLogos(
+	layout: BadgeLayout,
+): Promise<BadgeLogos> {
+	const urls = new Set(
+		layout.items.flatMap((item) =>
+			item.kind === "logo" && item.enabled && item.imageUrl
+				? [item.imageUrl]
+				: [],
+		),
+	);
+	const logos: BadgeLogos = new Map();
+	await Promise.all(
+		[...urls].map(async (url) => {
+			const res = await fetch(url);
+			if (!res.ok) {
+				throw new Error(`Falha ao baixar o logo (${res.status}).`);
+			}
+			const bytes = new Uint8Array(await res.arrayBuffer());
+			const mime = imageMime(bytes);
+			if (!mime) throw new Error("O logo precisa ser PNG ou JPG.");
+			logos.set(url, { bytes, mime });
+		}),
+	);
+	return logos;
+}
+
 const yieldUI = () =>
 	new Promise<void>((resolve) => {
 		setTimeout(resolve, 0);
@@ -370,6 +408,7 @@ export interface PrintProgress {
 export interface RunBadgePrintInput {
 	ctx: BadgePrintContext;
 	artwork: BadgeArtwork;
+	logos: BadgeLogos;
 	eventUrl: string;
 	title?: string;
 	perFile?: number;
@@ -444,6 +483,7 @@ export async function runBadgePrint(
 			artworkBytes: input.artwork.bytes,
 			artworkMime: input.artwork.mime,
 			artworkPdfBytes: input.artwork.pdfBytes,
+			logos: input.logos,
 			testPrint: input.testPrint,
 			title: input.title ?? `Crachás — ${input.eventUrl}`,
 		});

@@ -297,5 +297,26 @@ describe("pdf-writer", () => {
 		it("fails instead of falling back to Helvetica when a font is missing", async () => {
 			await expect(render([text])).rejects.toThrow(/REM @700/);
 		});
+
+		it("draws logo images", async () => {
+			const logo: DisplayPrimitive = {
+				kind: "image",
+				rect: { x: 10, y: 10, w: 20, h: 10 },
+				url: "https://example.com/logo.png",
+			};
+			await expect(render([logo])).rejects.toThrow(/Logo/);
+			const png = new Uint8Array(
+				Buffer.from(
+					"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+					"base64",
+				),
+			);
+			const bytes = await render([logo], {
+				logos: new Map([[logo.url, { bytes: png, mime: "png" }]]),
+			});
+			expect(Buffer.from(bytes).toString("latin1")).toMatch(
+				/\/Subtype\s*\/Image/,
+			);
+		});
 	});
 });

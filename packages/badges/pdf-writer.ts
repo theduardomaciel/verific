@@ -34,6 +34,8 @@ export interface SharedArtwork {
 	artworkMime: "png" | "jpeg" | null;
 	/** PDF artwork page bytes when LibPDF embedPage is used. */
 	artworkPdfBytes: Uint8Array | null;
+	/** Logo item images by URL (as in the display list). */
+	logos?: Map<string, { bytes: Uint8Array; mime: "png" | "jpeg" }>;
 }
 
 export interface RenderBadgePdfInput extends SharedArtwork {
@@ -65,6 +67,7 @@ type PDFDoc = ReturnType<typeof PDF.create>;
 interface EmbeddedResources {
 	embedded: Map<string, ReturnType<PDFDoc["embedFont"]>>;
 	artworkImage: ReturnType<PDFDoc["embedPng"]> | null;
+	logoImages: Map<string, ReturnType<PDFDoc["embedPng"]>>;
 	artworkPage: Awaited<ReturnType<PDFDoc["embedPage"]>> | null;
 }
 
@@ -102,7 +105,15 @@ async function embedShared(
 		);
 		artworkPage = await pdf.embedPage(src, 0);
 	}
-	return { embedded, artworkImage, artworkPage };
+	const logoImages = new Map<string, ReturnType<PDF["embedPng"]>>();
+	for (const [url, logo] of input.logos ?? []) {
+		const bytes = logo.bytes as unknown as Uint8Array;
+		logoImages.set(
+			url,
+			logo.mime === "png" ? pdf.embedPng(bytes) : pdf.embedJpeg(bytes),
+		);
+	}
+	return { embedded, artworkImage, logoImages, artworkPage };
 }
 
 interface BadgeContentOptions {
@@ -236,14 +247,34 @@ function drawBadgeContent(target: ContentTarget, o: BadgeContentOptions): void {
 			qrOps.push(ops.fill(), ops.popGraphicsState());
 			target.drawOperators(qrOps);
 		} else if (p.kind === "image") {
-			if (o.res.artworkImage && p.url === "__artwork__") {
-				target.drawImage(o.res.artworkImage, {
-					x: toX(p.rect.x + o.calDxMm),
-					y: toY(p.rect.y + o.calDyMm, p.rect.h),
-					width: mmToPt(p.rect.w),
-					height: mmToPt(p.rect.h),
-				});
+			if (p.url === "__artwork__") {
+				if (o.res.artworkImage) {
+					target.drawImage(o.res.artworkImage, {
+						x: toX(p.rect.x + o.calDxMm),
+						y: toY(p.rect.y + o.calDyMm, p.rect.h),
+						width: mmToPt(p.rect.w),
+						height: mmToPt(p.rect.h),
+					});
+				}
+				continue;
 			}
+			const logo = o.res.logoImages.get(p.url);
+			if (!logo) {
+				throw new Error("Logo não carregado para o PDF.");
+			}
+			// Fit inside the box keeping aspect (preview: xMidYMid meet).
+			const scale = Math.min(
+				p.rect.w / logo.width,
+				p.rect.h / logo.height,
+			);
+			const w = logo.width * scale;
+			const h = logo.height * scale;
+			target.drawImage(logo, {
+				x: toX(p.rect.x + o.calDxMm + (p.rect.w - w) / 2),
+				y: toY(p.rect.y + o.calDyMm + (p.rect.h - h) / 2, h),
+				width: mmToPt(w),
+				height: mmToPt(h),
+			});
 		}
 	}
 }
