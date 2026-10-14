@@ -17,11 +17,19 @@ export interface FitTextInput {
 	maxLines: number;
 }
 
-const PT_TO_MM = 0.3527777778;
-const LINE_HEIGHT = 1.2;
+export interface FitTextResult {
+	fontSizePt: number;
+	lines: string[];
+	truncated: boolean;
+	/** Visual block height in mm (first baseline at 1em + line spacing). */
+	heightMm: number;
+}
+
+export const PT_TO_MM = 0.3527777778;
+export const LINE_HEIGHT = 1.2;
 
 /** Visual block height: first baseline at font size + spacing per line. */
-function blockHeightMm(lineCount: number, sizePt: number): number {
+export function blockHeightMm(lineCount: number, sizePt: number): number {
 	if (lineCount <= 0) return 0;
 	return (
 		sizePt * PT_TO_MM + (lineCount - 1) * (sizePt * LINE_HEIGHT * PT_TO_MM)
@@ -32,13 +40,10 @@ function blockHeightMm(lineCount: number, sizePt: number): number {
  * Shrink text down to min size, then truncate with ellipsis — fitting
  * width, line count AND block height. Returns laid-out lines.
  */
-export function fitTextLines(input: FitTextInput): {
-	fontSizePt: number;
-	lines: string[];
-	truncated: boolean;
-} {
+export function fitTextLines(input: FitTextInput): FitTextResult {
 	const { text, maxWidth, maxHeight, minFontSizePt, measure, maxLines } =
 		input;
+	const eps = 1e-6;
 	let size = input.fontSizePt;
 	const words = text.split(/\s+/).filter(Boolean);
 	const wrap = (s: number): string[] => {
@@ -57,9 +62,22 @@ export function fitTextLines(input: FitTextInput): {
 		return lines;
 	};
 	const fitsWidth = (ls: string[], s: number) =>
-		ls.every((l) => measure(l, s) <= maxWidth);
+		ls.every((l) => measure(l, s) <= maxWidth + eps);
 	const fitsHeight = (count: number, s: number) =>
-		maxHeight === undefined || blockHeightMm(count, s) <= maxHeight;
+		maxHeight === undefined || blockHeightMm(count, s) <= maxHeight + eps;
+
+	/** Appends "…" to `line`, trimming characters until it fits the width. */
+	const ellipsize = (line: string, s: number): string => {
+		const chars = Array.from(line.trimEnd());
+		while (
+			chars.length > 1 &&
+			measure(`${chars.join("")}…`, s) > maxWidth
+		) {
+			chars.pop();
+		}
+		const base = chars.join("").trimEnd();
+		return base.length > 0 ? `${base}…` : "…";
+	};
 
 	let lines = wrap(size);
 	while (
@@ -71,25 +89,34 @@ export function fitTextLines(input: FitTextInput): {
 		size = Math.max(minFontSizePt, Math.round((size - 0.5) * 10) / 10);
 		lines = wrap(size);
 	}
+
 	let truncated = false;
+	let dropped = false;
 	if (lines.length > maxLines) {
 		lines = lines.slice(0, maxLines);
-		truncated = true;
+		dropped = true;
 	}
-	// Cut lines (ellipsis on the last) until the block fits the height.
+	// Cut lines until the block fits the height (always keep at least one).
 	while (lines.length > 1 && !fitsHeight(lines.length, size)) {
 		lines = lines.slice(0, -1);
-		truncated = true;
+		dropped = true;
 	}
-	// Ellipsis on last line if still overflowing the width.
-	const last = lines[lines.length - 1];
-	if (last !== undefined && measure(last, size) > maxWidth) {
-		let cut = last;
-		while (cut.length > 1 && measure(`${cut}…`, size) > maxWidth) {
-			cut = cut.slice(0, -1);
+
+	// Lines were dropped: say so with an ellipsis on the last kept line.
+	// A line still wider than the box (e.g. one long word) is also cut.
+	lines = lines.map((line, i) => {
+		const isLast = i === lines.length - 1;
+		if ((dropped && isLast) || measure(line, size) > maxWidth + eps) {
+			truncated = true;
+			return ellipsize(line, size);
 		}
-		lines[lines.length - 1] = cut.length > 1 ? `${cut}…` : "…";
-		truncated = true;
-	}
-	return { fontSizePt: size, lines, truncated };
+		return line;
+	});
+
+	return {
+		fontSizePt: size,
+		lines,
+		truncated,
+		heightMm: blockHeightMm(lines.length, size),
+	};
 }

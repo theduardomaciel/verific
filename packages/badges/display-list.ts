@@ -1,5 +1,5 @@
 import { relativeToBadge } from "./coords";
-import { fitTextLines } from "./text-fit";
+import { LINE_HEIGHT, fitTextLines } from "./text-fit";
 
 import type { Rect } from "./coords";
 import type { BadgeLayout } from "./schema";
@@ -114,20 +114,23 @@ export function buildDisplayList(
 				maxLines: item.maxLines,
 				measure: (t, s) => options.measure(t, family, item.weight, s),
 			});
+			// Centraliza o bloco verticalmente dentro da caixa do item.
+			const slackMm = Math.max(0, abs.h - fitted.heightMm);
 			out.push({
 				kind: "text",
 				xMm: abs.x,
-				yMm: abs.y + recenterDy,
+				yMm: abs.y + slackMm / 2 + recenterDy,
 				maxWidthMm: abs.w,
 				maxLines: item.maxLines,
 				lines: fitted.lines,
 				fontRole: item.fontRole,
 				family,
-				fontSizePt: Math.round(fitted.fontSizePt * 10) / 10,
+				// Sem re-arredondar: o tamanho ajustado é o que preview e PDF usam.
+				fontSizePt: fitted.fontSizePt,
 				weight: item.weight,
 				color: hexToCss(item.color),
 				align: item.align,
-				lineHeightPt: Math.round(fitted.fontSizePt * 1.2 * 10) / 10,
+				lineHeightPt: fitted.fontSizePt * LINE_HEIGHT,
 			});
 		} else if (item.kind === "qr") {
 			const abs = relativeToBadge(item.rect, layout.freeArea);

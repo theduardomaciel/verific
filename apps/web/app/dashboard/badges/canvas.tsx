@@ -571,7 +571,7 @@ export function BadgeCanvas({
 				background: C_WORKSPACE,
 				// Limita a ALTURA pela viewport: largura máx = altura útil × proporção.
 				// 18rem ≈ cabeçalho da página + card + dica abaixo; mínimo de 320px.
-				maxWidth: `max(320px, calc((100svh - 18rem) * ${VW / VH}))`,
+				maxWidth: `max(320px, calc((100svh) * ${VW / VH}))`,
 			}}
 			onPointerMove={move}
 			onPointerUp={end}
