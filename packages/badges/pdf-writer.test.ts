@@ -2,7 +2,7 @@ import { PDF } from "@libpdf/core";
 import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 
-import { buildDisplayList } from "./display-list";
+import { buildDisplayList, type DisplayPrimitive } from "./display-list";
 import { renderBadgeSheets, renderBadgesToPdf } from "./pdf-writer";
 import {
 	assertPublicProfilePayload,
@@ -240,4 +240,62 @@ describe("pdf-writer", () => {
 		const outlinesPdf = await PDF.load(outlines as never);
 		expect(outlinesPdf.getPageCount()).toBe(1);
 	}, 120_000);
+
+	describe("single badge primitives", () => {
+		const plainLayout = badgeLayoutSchema.parse({
+			badgeW: 90,
+			badgeH: 55,
+			freeArea: { x: 5, y: 5, w: 80, h: 45 },
+			items: [],
+		});
+		const render = (
+			primitives: DisplayPrimitive[],
+			extra: Partial<Parameters<typeof renderBadgesToPdf>[0]> = {},
+		) =>
+			renderBadgesToPdf({
+				layout: plainLayout,
+				badges: [primitives],
+				fontBytes: new Map(),
+				artworkBytes: null,
+				artworkMime: null,
+				artworkPdfBytes: null,
+				...extra,
+			});
+		const text: DisplayPrimitive = {
+			kind: "text",
+			xMm: 10,
+			yMm: 10,
+			maxWidthMm: 70,
+			maxLines: 2,
+			lines: ["Linha um", "Linha dois"],
+			fontRole: "heading",
+			family: "REM",
+			fontSizePt: 20,
+			weight: 700,
+			color: "#000000",
+			align: "left",
+			lineHeightPt: 24,
+		};
+
+		it("puts the first baseline one font size below the box top, like the preview", async () => {
+			const bytes = await render([text], {
+				fontBytes: new Map([["rem@700", await fixture("REM-700.ttf")]]),
+			});
+			const page = (await PDF.load(bytes as never)).getPage(0);
+			if (!page) throw new Error("expected one page");
+			const { lines } = page.extractText() as unknown as {
+				lines: { baseline: number }[];
+			};
+			const pageH = mmToPt(55);
+			expect(lines[0]?.baseline).toBeCloseTo(pageH - mmToPt(10) - 20, 1);
+			expect(lines[1]?.baseline).toBeCloseTo(
+				pageH - mmToPt(10) - 20 - 24,
+				1,
+			);
+		});
+
+		it("fails instead of falling back to Helvetica when a font is missing", async () => {
+			await expect(render([text])).rejects.toThrow(/REM @700/);
+		});
+	});
 });

@@ -52,6 +52,34 @@ describe("text-fit", () => {
 		expect(out.truncated).toBe(true);
 	});
 
+	it("marks dropped lines with an ellipsis even when the last kept line fits", () => {
+		const out = fitTextLines({
+			text: "Maria da Conceição Almeida Santos Oliveira",
+			maxWidth: 60,
+			fontSizePt: 10,
+			minFontSizePt: 10,
+			measure,
+			maxLines: 2,
+		});
+		expect(out.lines).toEqual(["Maria da", "Conceição…"]);
+		expect(out.truncated).toBe(true);
+	});
+
+	it("cuts a too-wide word on a line other than the last", () => {
+		const out = fitTextLines({
+			text: "Supercalifragilistic Ana",
+			maxWidth: 60,
+			fontSizePt: 10,
+			minFontSizePt: 10,
+			measure,
+			maxLines: 2,
+		});
+		expect(out.lines[0]?.endsWith("…")).toBe(true);
+		expect(measure(out.lines[0] ?? "", 10)).toBeLessThanOrEqual(60);
+		expect(out.lines[1]).toBe("Ana");
+		expect(out.truncated).toBe(true);
+	});
+
 	it("shrinks to fit the box height", () => {
 		const out = fitTextLines({
 			text: "Conceição de Almeida Souza e Silva",
