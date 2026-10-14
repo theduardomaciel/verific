@@ -911,7 +911,10 @@ export function BadgeEditor({
 									download={f.filename}
 									className="text-primary text-sm underline"
 								>
-									Baixar {f.filename} ({f.count} crachás)
+									Baixar {f.filename}
+									{f.count > 0
+										? ` (${f.count} ${f.count === 1 ? "crachá" : "crachás"})`
+										: ""}
 								</a>
 							))}
 						</CardContent>
