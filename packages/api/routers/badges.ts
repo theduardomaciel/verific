@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 
 import {
 	badgeLayoutSchema,
+	boundFieldIds,
 	defaultBadgeItems,
 	type BadgeLayout,
 } from "@verific/badges";
@@ -68,22 +69,6 @@ async function readStoredLayout(
 	if (!row) return null;
 	const parsed = badgeLayoutSchema.safeParse(row.layout);
 	return parsed.success ? parsed.data : null;
-}
-
-/** Campos ligados pelos itens de texto (id do campo, sem o nome). */
-function boundFieldIds(layout: BadgeLayout): string[] {
-	const ids = new Set<string>();
-	for (const item of layout.items) {
-		if (
-			item.kind === "text" &&
-			item.enabled &&
-			item.source &&
-			item.source !== "name"
-		) {
-			ids.add(item.source);
-		}
-	}
-	return [...ids];
 }
 
 export const badgesRouter = createTRPCRouter({

@@ -5,8 +5,9 @@
  */
 import { PDF, ops, rgb, type PDFPage } from "@libpdf/core";
 
+import { fontCacheKey } from "./fonts";
 import { planSheets, type TestPrint } from "./sheet";
-import { mmToPt } from "./units";
+import { mmToPt, ptToMm } from "./units";
 
 import type { DisplayPrimitive } from "./display-list";
 import type { BadgeLayout } from "./schema";
@@ -57,10 +58,6 @@ function hexToRgb(hex: string) {
 	const g = Number.parseInt(hex.slice(3, 5), 16) / 255;
 	const b = Number.parseInt(hex.slice(5, 7), 16) / 255;
 	return rgb(r, g, b);
-}
-
-function fontKey(family: string, weight: number): string {
-	return `${family.trim().toLowerCase()}@${weight}`;
 }
 
 type PDFDoc = ReturnType<typeof PDF.create>;
@@ -169,15 +166,14 @@ function drawBadgeContent(target: ContentTarget, o: BadgeContentOptions): void {
 				cornerRadius: mmToPt(p.radiusMm),
 			});
 		} else if (p.kind === "text") {
-			const key = fontKey(p.family, p.weight);
-			const font = o.res.embedded.get(key);
+			const font = o.res.embedded.get(fontCacheKey(p.family, p.weight));
 			if (!font) {
 				throw new Error(
 					`Fonte ${p.family} @${p.weight} não embutida no PDF — carregue a fonte ou ajuste o peso no editor.`,
 				);
 			}
-			const sizeMm = p.fontSizePt * 0.3527777778;
-			const lineMm = p.lineHeightPt * 0.3527777778;
+			const sizeMm = ptToMm(p.fontSizePt);
+			const lineMm = ptToMm(p.lineHeightPt);
 			// Mesma regra da prévia: 1ª linha na baseline yMm + 1em; demais a +entrelinha.
 			p.lines.forEach((line, i) => {
 				target.drawText(line, {

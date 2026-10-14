@@ -12,12 +12,14 @@ import {
 	createMemoryFontStore,
 	createProxiedTtfFetcher,
 	encodeQrModules,
+	fontCacheKey,
 	planBatchFiles,
+	ptToMm,
 	renderBadgeSheets,
 	resolveFontWeight,
-	type BadgeItem,
 	type BadgeLayout,
 	type DisplayPrimitive,
+	type TextItem,
 } from "@verific/badges";
 
 export interface ThemeFontRole {
@@ -138,7 +140,7 @@ function weightsForFamily(
  * sempre aparece, mesmo sem métricas no catálogo.
  */
 export function allowedWeightsForItem(
-	item: Extract<BadgeItem, { kind: "text" }>,
+	item: TextItem,
 	roles: ThemeFontRoles,
 	catalogWeights: Map<string, number[]> | null,
 ): number[] {
@@ -231,7 +233,7 @@ async function registerPreviewFace(
 	bytes: Uint8Array,
 ): Promise<void> {
 	if (typeof document === "undefined" || !("FontFace" in window)) return;
-	const key = `${family.toLowerCase()}@${weight}`;
+	const key = fontCacheKey(family, weight);
 	if (registeredFaces.has(key)) return;
 	registeredFaces.add(key);
 	try {
@@ -285,13 +287,13 @@ export async function createBadgePrintContext(
 		weight: number,
 		sizePt: number,
 	) => {
-		const font = embedded.get(`${family.toLowerCase()}@${weight}`);
+		const font = embedded.get(fontCacheKey(family, weight));
 		if (!font) {
 			throw new Error(
 				`Fonte ${family} @${weight} não carregada — ofereça o fallback explicitamente.`,
 			);
 		}
-		return font.widthOfTextAtSize(text, sizePt) * 0.3527777778;
+		return ptToMm(font.widthOfTextAtSize(text, sizePt));
 	};
 	return { layout, roles, fontBytes, measure };
 }

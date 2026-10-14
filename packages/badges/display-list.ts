@@ -60,10 +60,6 @@ export interface DisplayListOptions {
 	encodeQr: (payload: string) => boolean[][];
 }
 
-function hexToCss(hex: string): string {
-	return hex;
-}
-
 export function buildDisplayList(
 	layout: BadgeLayout,
 	data: ParticipantBadgeData,
@@ -177,7 +173,7 @@ export function buildDisplayList(
 				// Sem re-arredondar: o tamanho ajustado é o que preview e PDF usam.
 				fontSizePt: fitted.fontSizePt,
 				weight: item.weight,
-				color: hexToCss(item.color),
+				color: item.color,
 				align: item.align,
 				lineHeightPt: fitted.fontSizePt * LINE_HEIGHT,
 			});

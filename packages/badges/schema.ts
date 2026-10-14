@@ -187,3 +187,21 @@ export function defaultBadgeItems(): BadgeItem[] {
 		},
 	];
 }
+
+export type TextItem = Extract<BadgeItem, { kind: "text" }>;
+
+/** Enabled text items bound to a form field (not the name). */
+export function boundTextItems(layout: BadgeLayout): TextItem[] {
+	return layout.items.filter(
+		(item): item is TextItem =>
+			item.kind === "text" &&
+			item.enabled &&
+			item.source !== "" &&
+			item.source !== "name",
+	);
+}
+
+/** Distinct form field ids bound in the layout. */
+export function boundFieldIds(layout: BadgeLayout): string[] {
+	return [...new Set(boundTextItems(layout).map((item) => item.source))];
+}
