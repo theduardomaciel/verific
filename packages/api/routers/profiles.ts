@@ -1,18 +1,16 @@
-import { randomBytes } from "node:crypto";
-
 import { TRPCError } from "@trpc/server";
-import { z } from "@verific/zod";
+import { randomBytes } from "node:crypto";
 
 import { db } from "@verific/drizzle";
 import {
-	formAnswer,
-	formField,
-	formVersion,
-	participant,
-	profileConnection,
-	profileFieldVisibility,
-	project,
-} from "@verific/drizzle/schema";
+	and,
+	asc,
+	count,
+	desc,
+	eq,
+	inArray,
+	isNull,
+} from "@verific/drizzle/orm";
 import {
 	formatProfileValue,
 	normalizeSocialLink,
@@ -25,16 +23,16 @@ import {
 	type StatIconKey,
 } from "@verific/drizzle/profile-layout";
 import {
-	and,
-	asc,
-	count,
-	desc,
-	eq,
-	inArray,
-	isNull,
-} from "@verific/drizzle/orm";
+	formAnswer,
+	formField,
+	formVersion,
+	participant,
+	profileConnection,
+	profileFieldVisibility,
+	project,
+} from "@verific/drizzle/schema";
+import { z } from "@verific/zod";
 
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import {
 	dropVisibilityForFields,
 	isCompatible,
@@ -42,6 +40,7 @@ import {
 	slotForField,
 	writeProjectLayout,
 } from "../lib/profile-links";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
 async function requireProjectAccess(projectId: string, userId: string) {
 	const data = await db.query.project.findFirst({
@@ -82,15 +81,35 @@ export async function ensureShortId(
 	for (let i = 0; i < 5; i++) {
 		const shortId = generateShortId();
 		try {
-			await db
+			// Só preenche se ainda vazio: chamadas concorrentes não trocam
+			// um shortId já entregue (QR impresso, ingresso aberto).
+			const updated = await db
 				.update(participant)
 				.set({ shortId })
-				.where(eq(participant.id, participantId));
-			return shortId;
+				.where(
+					and(
+						eq(participant.id, participantId),
+						isNull(participant.shortId),
+					),
+				)
+				.returning({ shortId: participant.shortId });
+			if (updated[0]?.shortId) return updated[0].shortId;
+			const stored = await db.query.participant.findFirst({
+				where: eq(participant.id, participantId),
+				columns: { shortId: true },
+			});
+			if (!stored?.shortId) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Participante não encontrado.",
+				});
+			}
+			return stored.shortId;
 		} catch (e) {
 			lastError = e;
-			const msg = e instanceof Error ? e.message : String(e);
-			if (!/unique|duplicate/i.test(msg)) throw e;
+			// O Drizzle embrulha o erro do pg: o código fica em `cause`.
+			const code = (e as { cause?: { code?: string } }).cause?.code;
+			if (code !== "23505") throw e;
 		}
 	}
 	throw (
