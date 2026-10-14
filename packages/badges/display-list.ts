@@ -70,22 +70,52 @@ export function buildDisplayList(
 	options: DisplayListOptions,
 ): DisplayPrimitive[] {
 	const out: DisplayPrimitive[] = [];
-	// Visible text items after omitting empty secondary lines.
-	const visibleTexts = layout.items.filter((item) => {
-		if (item.kind !== "text" || !item.enabled) return false;
-		if (item.source === "name") return true;
-		if (!item.source) return false;
-		const value = (data.fields[item.source] ?? "").trim();
-		return value.length > 0;
-	});
+	const hasText = (
+		item: Extract<BadgeLayout["items"][number], { kind: "text" }>,
+	) =>
+		item.source === "name"
+			? data.name.trim().length > 0
+			: (data.fields[item.source] ?? "").trim().length > 0;
 
-	const omittedCount =
-		layout.items.filter((i) => i.kind === "text" && i.enabled).length -
-		visibleTexts.length;
-	const recenterDy =
-		layout.missingFieldBehavior === "recenter" && omittedCount > 0
-			? (omittedCount * layout.freeArea.h * 0.05) / 2
-			: 0;
+	// "Projetado": o que apareceria com todos os dados preenchidos.
+	const designed = layout.items.filter((item) => {
+		if (!item.enabled) return false;
+		if (item.kind === "text")
+			return item.source === "name" || !!item.source;
+		if (item.kind === "logo") return !!item.imageUrl;
+		return true;
+	});
+	const present = designed.filter((item) =>
+		item.kind === "text" ? hasText(item) : true,
+	);
+
+	const extent = (items: typeof designed) => {
+		let top = Number.POSITIVE_INFINITY;
+		let bottom = Number.NEGATIVE_INFINITY;
+		for (const item of items) {
+			const r = relativeToBadge(item.rect, layout.freeArea);
+			top = Math.min(top, r.y);
+			bottom = Math.max(bottom, r.y + r.h);
+		}
+		return { top, bottom };
+	};
+
+	// Centraliza o conteúdo presente na mesma faixa vertical do layout completo.
+	let recenterDy = 0;
+	if (
+		layout.missingFieldBehavior === "recenter" &&
+		present.length > 0 &&
+		present.length < designed.length
+	) {
+		const full = extent(designed);
+		const now = extent(present);
+		const wanted =
+			(full.top + full.bottom) / 2 - (now.top + now.bottom) / 2;
+		const F = layout.freeArea;
+		const lo = F.y + F.padding - now.top;
+		const hi = F.y + F.h - F.padding - now.bottom;
+		recenterDy = lo <= hi ? Math.min(Math.max(wanted, lo), hi) : 0;
+	}
 
 	for (const item of layout.items) {
 		if (!item.enabled) continue;
