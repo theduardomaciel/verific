@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import {
 	badgeLayoutSchema,
 	boundFieldIds,
+	boundTextItems,
 	defaultBadgeItems,
 	type BadgeLayout,
 } from "@verific/badges";
@@ -113,14 +114,7 @@ export const badgesRouter = createTRPCRouter({
 					},
 				});
 				const byId = new Map(rows.map((r) => [r.id, r]));
-				for (const item of layout.items) {
-					if (
-						item.kind !== "text" ||
-						!item.source ||
-						item.source === "name"
-					) {
-						continue;
-					}
+				for (const item of boundTextItems(layout)) {
 					const field = byId.get(item.source);
 					if (
 						!field ||
