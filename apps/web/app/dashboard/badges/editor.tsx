@@ -29,6 +29,11 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -124,15 +129,15 @@ function CollapsibleCard({
 }) {
 	return (
 		<Card>
-			<details open={defaultOpen} className="group">
-				<summary className="flex cursor-pointer list-none items-center justify-between px-6 text-base leading-none font-semibold [&::-webkit-details-marker]:hidden">
+			<Collapsible defaultOpen={defaultOpen}>
+				<CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between px-6 text-base leading-none font-semibold [&[data-state=open]>svg]:rotate-180">
 					{title}
-					<ChevronDown className="size-4 transition-transform group-open:rotate-180" />
-				</summary>
-				<CardContent className="mt-4 flex flex-col gap-3">
-					{children}
-				</CardContent>
-			</details>
+					<ChevronDown className="size-4 transition-transform" />
+				</CollapsibleTrigger>
+				<CollapsibleContent className="px-6 pt-4">
+					<div className="flex flex-col gap-3">{children}</div>
+				</CollapsibleContent>
+			</Collapsible>
 		</Card>
 	);
 }
@@ -150,7 +155,8 @@ export function BadgeEditor({
 	);
 	const past = useRef<BadgeLayout[]>([]);
 	const future = useRef<BadgeLayout[]>([]);
-	const [, bump] = useState(0);
+	const [undoDepth, setUndoDepth] = useState(0);
+	const [redoDepth, setRedoDepth] = useState(0);
 	const [selectedId, setSelectedId] = useState<string | null>(null);
 	const [snap, setSnap] = useState<SnapSettings>({
 		gridOn: true,
@@ -206,6 +212,8 @@ export function BadgeEditor({
 			past.current.push(clone(prev));
 			if (past.current.length > 50) past.current.shift();
 			future.current = [];
+			setUndoDepth(past.current.length);
+			setRedoDepth(0);
 		}
 		const next = clone(prev);
 		fn(next);
@@ -217,20 +225,24 @@ export function BadgeEditor({
 		if (!prev) return;
 		future.current.push(clone(draft));
 		commit(prev);
-		bump((n) => n + 1);
+		setUndoDepth(past.current.length);
+		setRedoDepth(future.current.length);
 	};
 	const redo = () => {
 		const next = future.current.pop();
 		if (!next) return;
 		past.current.push(clone(draft));
 		commit(next);
-		bump((n) => n + 1);
+		setUndoDepth(past.current.length);
+		setRedoDepth(future.current.length);
 	};
 	const reset = () => {
 		past.current.push(clone(draft));
 		future.current = [];
 		commit(defaultLayout());
 		setSelectedId(null);
+		setUndoDepth(past.current.length);
+		setRedoDepth(0);
 	};
 
 	const fieldLabels = useMemo(
@@ -292,6 +304,8 @@ export function BadgeEditor({
 	}, [draft.items, roles]);
 
 	useEffect(() => {
+		// Fonte externa: o estado só sincroniza quando o carregamento resolve.
+		// eslint-disable-next-line react/set-state-in-effect
 		void loadFonts(draft);
 	}, [fontLayoutKey]);
 
@@ -489,7 +503,6 @@ export function BadgeEditor({
 				}
 			})
 			.catch(() => null);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [draft.artworkUrl, draft.artworkKind]);
 
 	const uploadArtwork = async (file: File) => {
@@ -661,7 +674,7 @@ export function BadgeEditor({
 					size="sm"
 					variant="outline"
 					onClick={undo}
-					disabled={past.current.length === 0}
+					disabled={undoDepth === 0}
 				>
 					<Undo2 className="size-4" /> Desfazer
 				</Button>
@@ -669,7 +682,7 @@ export function BadgeEditor({
 					size="sm"
 					variant="outline"
 					onClick={redo}
-					disabled={future.current.length === 0}
+					disabled={redoDepth === 0}
 				>
 					<Redo2 className="size-4" /> Refazer
 				</Button>
