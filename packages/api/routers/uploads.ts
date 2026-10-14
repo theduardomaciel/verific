@@ -1,17 +1,19 @@
 import { TRPCError } from "@trpc/server";
-import { z } from "@verific/zod";
 
 import { db } from "@verific/drizzle";
-import { project } from "@verific/drizzle/schema";
 import { eq } from "@verific/drizzle/orm";
+import { project } from "@verific/drizzle/schema";
+import { z } from "@verific/zod";
 
-import { createTRPCRouter, protectedProcedure } from "../trpc";
 import {
 	IMAGE_PURPOSES,
+	isPassthroughPurpose,
+	passthroughExtension,
 	storage,
 	validateUploadInput,
 	type ImagePurpose,
 } from "../lib/storage";
+import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 const purposeSchema = z.enum([
 	"event-logo",
@@ -20,6 +22,7 @@ const purposeSchema = z.enum([
 	"event-thumbnail",
 	"speaker",
 	"activity-banner",
+	"badge-artwork",
 ]);
 
 async function requireProjectAccess(projectId: string, userId: string) {
@@ -69,10 +72,19 @@ export const uploadsRouter = createTRPCRouter({
 					message: "Armazenamento de imagens não configurado.",
 				});
 			}
-			const key = storage.buildKey(purpose, input.projectId);
+			const key = isPassthroughPurpose(purpose)
+				? storage.buildKey(
+						purpose,
+						input.projectId,
+						passthroughExtension(input.contentType),
+					)
+				: storage.buildKey(purpose, input.projectId);
+			const config = IMAGE_PURPOSES[purpose];
 			const { uploadUrl, publicUrl } = await storage.createPresignedPut({
 				key,
-				contentType: IMAGE_PURPOSES[purpose]!.outputMime,
+				contentType: isPassthroughPurpose(purpose)
+					? input.contentType
+					: (config as { outputMime: string }).outputMime,
 				contentLength: input.contentLength,
 			});
 			return { key, uploadUrl, publicUrl };

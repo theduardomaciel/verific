@@ -26,6 +26,7 @@ import { z } from "@verific/zod";
 
 // Utils
 import { isMemberAuthenticated } from "../auth";
+import { parseCheckInCode } from "../lib/checkin-code";
 import { getParticipantsParams } from "../schemas";
 import { lockActivity } from "../seats";
 import { settleActivity } from "../waitlist";
@@ -310,11 +311,12 @@ export const participantsRouter = createTRPCRouter({
 		.input(
 			z.object({
 				sessionId: z.string().uuid(),
-				participantId: z.string().uuid(),
+				// shortId do ingresso ou URL pública do perfil do crachá.
+				code: z.string().trim().min(1).max(2048),
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			const { sessionId, participantId } = input;
+			const { sessionId, code } = input;
 
 			const error = await isMemberAuthenticated({
 				userId: ctx.session.user.id,
@@ -324,16 +326,71 @@ export const participantsRouter = createTRPCRouter({
 				throw new TRPCError(error);
 			}
 
+			let parsed: ReturnType<typeof parseCheckInCode>;
+			try {
+				parsed = parseCheckInCode(code);
+			} catch {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "QR inválido para credenciamento.",
+				});
+			}
+
 			const session = await db.query.activitySession.findFirst({
 				where: eq(activitySession.id, sessionId),
+				with: {
+					activity: {
+						columns: { id: true, projectId: true },
+						with: {
+							project: {
+								columns: { id: true, ownerId: true },
+								with: {
+									moderators: { columns: { userId: true } },
+								},
+							},
+						},
+					},
+				},
 			});
 
-			if (!session) {
+			if (!session?.activity) {
 				throw new TRPCError({
 					code: "NOT_FOUND",
 					message: "Sessão não encontrada",
 				});
 			}
+
+			// Só a equipe do evento credencia (dono ou moderador).
+			const staffUserId = ctx.session.user.id;
+			const event = session.activity.project;
+			const isStaff =
+				event.ownerId === staffUserId ||
+				event.moderators.some((m) => m.userId === staffUserId);
+			if (!isStaff) {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "Apenas a equipe do evento pode credenciar.",
+				});
+			}
+
+			// Resolve o código para o participante, sempre no escopo do
+			// evento da sessão (índice único projectId + shortId).
+			const row = await db.query.participant.findFirst({
+				where: and(
+					eq(participant.projectId, event.id),
+					eq(participant.shortId, parsed.shortId),
+				),
+				columns: { id: true },
+				with: { user: { columns: { name: true } } },
+			});
+			if (!row) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Participante não encontrado neste evento.",
+				});
+			}
+			const participantId = row.id;
+			const participantName = row.user.name;
 
 			// Só permite credenciar quem está inscrito na atividade
 			const subscription = await db
@@ -356,6 +413,13 @@ export const participantsRouter = createTRPCRouter({
 				});
 			}
 
+			if (!participantName) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Participante não encontrado.",
+				});
+			}
+
 			await db
 				.insert(sessionAttendance)
 				.values({
@@ -373,7 +437,7 @@ export const participantsRouter = createTRPCRouter({
 					},
 				});
 
-			return { success: true };
+			return { success: true, participantId, name: participantName };
 		}),
 	removeParticipant: protectedProcedure
 		.input(
