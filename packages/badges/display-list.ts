@@ -100,22 +100,41 @@ export function buildDisplayList(
 		return { top, bottom };
 	};
 
-	// Centraliza o conteúdo presente na mesma faixa vertical do layout completo.
-	let recenterDy = 0;
+	// Fecha o espaço de linhas ausentes e centraliza o grupo restante na
+	// faixa vertical do layout completo. Deslocamento por item.
+	const rectOf = (item: (typeof designed)[number]) =>
+		relativeToBadge(item.rect, layout.freeArea);
+	const dyById = new Map<string, number>();
 	if (
 		layout.missingFieldBehavior === "recenter" &&
 		present.length > 0 &&
 		present.length < designed.length
 	) {
+		const eps = 1e-6;
+		const missing = designed
+			.filter((i) => !present.includes(i))
+			.map(rectOf);
+		const collapsed = present.map((item) => {
+			const r = rectOf(item);
+			// Soma a altura das caixas ausentes inteiramente acima do item.
+			const up = missing.reduce(
+				(sum, m) => (m.y + m.h <= r.y + eps ? sum + m.h : sum),
+				0,
+			);
+			return { item, up, top: r.y - up, bottom: r.y + r.h - up };
+		});
+		const top = Math.min(...collapsed.map((c) => c.top));
+		const bottom = Math.max(...collapsed.map((c) => c.bottom));
 		const full = extent(designed);
-		const now = extent(present);
-		const wanted =
-			(full.top + full.bottom) / 2 - (now.top + now.bottom) / 2;
+		const wanted = (full.top + full.bottom) / 2 - (top + bottom) / 2;
 		const F = layout.freeArea;
-		const lo = F.y + F.padding - now.top;
-		const hi = F.y + F.h - F.padding - now.bottom;
-		recenterDy = lo <= hi ? Math.min(Math.max(wanted, lo), hi) : 0;
+		// Se o próprio layout já passa da margem interna, permite esse limite.
+		const lo = Math.min(F.y + F.padding, full.top) - top;
+		const hi = Math.max(F.y + F.h - F.padding, full.bottom) - bottom;
+		const shift = lo <= hi ? Math.min(Math.max(wanted, lo), hi) : 0;
+		for (const c of collapsed) dyById.set(c.item.id, shift - c.up);
 	}
+	const dyOf = (item: { id: string }) => dyById.get(item.id) ?? 0;
 
 	for (const item of layout.items) {
 		if (!item.enabled) continue;
@@ -149,7 +168,7 @@ export function buildDisplayList(
 			out.push({
 				kind: "text",
 				xMm: abs.x,
-				yMm: abs.y + slackMm / 2 + recenterDy,
+				yMm: abs.y + slackMm / 2 + dyOf(item),
 				maxWidthMm: abs.w,
 				maxLines: item.maxLines,
 				lines: fitted.lines,
@@ -168,7 +187,7 @@ export function buildDisplayList(
 			const side = Math.min(abs.w, abs.h);
 			const square: Rect = {
 				x: abs.x + (abs.w - side) / 2,
-				y: abs.y + (abs.h - side) / 2 + recenterDy,
+				y: abs.y + (abs.h - side) / 2 + dyOf(item),
 				w: side,
 				h: side,
 			};
@@ -183,7 +202,7 @@ export function buildDisplayList(
 			const abs = relativeToBadge(item.rect, layout.freeArea);
 			out.push({
 				kind: "image",
-				rect: { ...abs, y: abs.y + recenterDy },
+				rect: { ...abs, y: abs.y + dyOf(item) },
 				url: item.imageUrl,
 			});
 		}
