@@ -609,6 +609,7 @@ export function BadgeEditor({
 				fetchBadgeArtwork(draft),
 				fetchBadgeLogos(draft),
 			]);
+			const single = testPrint === "single";
 			// Campos ligados no rascunho: imprime sem precisar salvar.
 			const fieldIds = boundFieldIds(draft);
 			const fetchPage = (cursor: number) =>
@@ -616,7 +617,7 @@ export function BadgeEditor({
 					projectId,
 					fieldIds,
 					cursor,
-					limit: testPrint ? 1 : 200,
+					limit: single ? 1 : 200,
 				});
 			const { files } = await runBadgePrint({
 				ctx: { ...c, layout: draft },
@@ -624,6 +625,7 @@ export function BadgeEditor({
 				logos,
 				eventUrl,
 				testPrint,
+				maxRows: single ? 1 : undefined,
 				fetchPage,
 				onProgress: (progress) =>
 					setPrintState((s) => ({ ...s, progress })),

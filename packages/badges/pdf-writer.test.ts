@@ -239,6 +239,18 @@ describe("pdf-writer", () => {
 		});
 		const outlinesPdf = await PDF.load(outlines as never);
 		expect(outlinesPdf.getPageCount()).toBe(1);
+
+		// Alignment sheet needs no participant data.
+		const emptyOutlines = await renderBadgeSheets({
+			layout: layout(),
+			badges: [],
+			fontBytes: new Map(),
+			artworkBytes: null,
+			artworkMime: null,
+			artworkPdfBytes: null,
+			testPrint: "outlines",
+		});
+		expect((await PDF.load(emptyOutlines as never)).getPageCount()).toBe(1);
 	}, 120_000);
 
 	describe("single badge primitives", () => {

@@ -413,6 +413,8 @@ export interface RunBadgePrintInput {
 	title?: string;
 	perFile?: number;
 	testPrint?: "single" | "outlines" | null;
+	/** Para de buscar após N participantes (prova de um crachá). */
+	maxRows?: number;
 	fetchPage: (cursor: number) => Promise<{
 		rows: BadgeRow[];
 		nextCursor: number | null;
@@ -433,11 +435,42 @@ export async function runBadgePrint(
 	input: RunBadgePrintInput,
 ): Promise<{ files: PrintedFile[]; total: number }> {
 	const perFile = input.perFile ?? 500;
-	// 1. Busca todas as páginas (limite do servidor: 200/lote).
+	const render = (badges: DisplayPrimitive[][]) =>
+		renderBadgeSheets({
+			layout: input.ctx.layout,
+			badges,
+			fontBytes: input.ctx.fontBytes,
+			artworkBytes: input.artwork.bytes,
+			artworkMime: input.artwork.mime,
+			artworkPdfBytes: input.artwork.pdfBytes,
+			logos: input.logos,
+			testPrint: input.testPrint,
+			title: input.title ?? `Crachás — ${input.eventUrl}`,
+		});
+	const toBlob = (bytes: Uint8Array) =>
+		new Blob([bytes as unknown as BlobPart], { type: "application/pdf" });
+	// Folha de alinhamento: só contornos, sem dados de participantes.
+	if (input.testPrint === "outlines") {
+		const blob = toBlob(await render([]));
+		return {
+			files: [
+				{
+					blob,
+					filename: `crachas-${input.eventUrl}-contornos.pdf`,
+					count: 0,
+				},
+			],
+			total: 0,
+		};
+	}
+	// 1. Busca as páginas (limite do servidor: 200/lote).
 	const rows: BadgeRow[] = [];
 	let cursor: number | null = 0;
 	let total: number | null = null;
-	while (cursor !== null) {
+	while (
+		cursor !== null &&
+		(input.maxRows === undefined || rows.length < input.maxRows)
+	) {
 		if (input.shouldAbort?.()) throw new Error("Impressão cancelada.");
 		const page = await input.fetchPage(cursor);
 		rows.push(...page.rows);
@@ -451,6 +484,7 @@ export async function runBadgePrint(
 		});
 		await yieldUI();
 	}
+	if (input.maxRows !== undefined) rows.splice(input.maxRows);
 	if (rows.length === 0) {
 		throw new Error("Nenhum participante selecionado para impressão.");
 	}
@@ -476,20 +510,7 @@ export async function runBadgePrint(
 	for (const chunk of chunks) {
 		if (input.shouldAbort?.()) throw new Error("Impressão cancelada.");
 		const slice = lists.slice(chunk.start, chunk.start + chunk.count);
-		const bytes = await renderBadgeSheets({
-			layout: input.ctx.layout,
-			badges: slice,
-			fontBytes: input.ctx.fontBytes,
-			artworkBytes: input.artwork.bytes,
-			artworkMime: input.artwork.mime,
-			artworkPdfBytes: input.artwork.pdfBytes,
-			logos: input.logos,
-			testPrint: input.testPrint,
-			title: input.title ?? `Crachás — ${input.eventUrl}`,
-		});
-		const blob = new Blob([bytes as unknown as BlobPart], {
-			type: "application/pdf",
-		});
+		const blob = toBlob(await render(slice));
 		files.push({
 			blob,
 			filename:
