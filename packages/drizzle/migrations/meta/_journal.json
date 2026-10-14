@@ -92,6 +92,13 @@
 			"when": 1791770770944,
 			"tag": "0012_uneven_electro",
 			"breakpoints": true
+		},
+		{
+			"idx": 13,
+			"version": "7",
+			"when": 1792004278311,
+			"tag": "0013_previous_bishop",
+			"breakpoints": true
 		}
 	]
 }
