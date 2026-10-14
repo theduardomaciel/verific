@@ -18,6 +18,7 @@ import { toast } from "sonner";
 
 import {
 	badgeLayoutSchema,
+	boundFieldIds,
 	computeImposition,
 	defaultBadgeItems,
 	isLowResolution,
@@ -608,9 +609,12 @@ export function BadgeEditor({
 				fetchBadgeArtwork(draft),
 				fetchBadgeLogos(draft),
 			]);
+			// Campos ligados no rascunho: imprime sem precisar salvar.
+			const fieldIds = boundFieldIds(draft);
 			const fetchPage = (cursor: number) =>
 				utils.getBadgeBatch.fetch({
 					projectId,
+					fieldIds,
 					cursor,
 					limit: testPrint ? 1 : 200,
 				});

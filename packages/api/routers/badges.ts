@@ -4,7 +4,6 @@ import {
 	badgeLayoutSchema,
 	boundFieldIds,
 	boundTextItems,
-	defaultBadgeItems,
 	type BadgeLayout,
 } from "@verific/badges";
 import { db } from "@verific/drizzle";
@@ -177,12 +176,14 @@ export const badgesRouter = createTRPCRouter({
 
 	/**
 	 * Página de participantes p/ impressão em lote (o worker busca em
-	 * páginas). Retorna só os campos ligados no layout + URL do perfil.
+	 * páginas). Retorna só os campos pedidos (ligados no rascunho do
+	 * editor, salvo ou não) + URL do perfil.
 	 */
 	getBadgeBatch: protectedProcedure
 		.input(
 			z.object({
 				projectId: z.string().uuid(),
+				fieldIds: z.array(z.string().uuid()).max(50),
 				activityId: z.string().uuid().optional(),
 				cursor: z.number().int().min(0).default(0),
 				limit: z.number().int().min(1).max(200).default(100),
@@ -193,10 +194,7 @@ export const badgesRouter = createTRPCRouter({
 				input.projectId,
 				ctx.session.user.id,
 			);
-			const layout =
-				(await readStoredLayout(input.projectId)) ??
-				badgeLayoutSchema.parse({ items: defaultBadgeItems() });
-			const ids = boundFieldIds(layout);
+			const ids = [...new Set(input.fieldIds)];
 			const fields =
 				ids.length > 0
 					? await db.query.formField.findMany({
@@ -209,27 +207,18 @@ export const badgesRouter = createTRPCRouter({
 					: [];
 			// Falha alto em vez de imprimir crachás com linhas caladas: o
 			// vínculo pode ter apodrecido (campo editado/removido depois).
+			if (fields.length !== ids.length) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message:
+						"Há linha ligada a campo inexistente — vincule novamente no editor.",
+				});
+			}
 			const boundById = new Map(
 				fields.map(
 					(f) => [f.id, { key: f.key, type: f.type }] as const,
 				),
 			);
-			for (const item of layout.items) {
-				if (
-					item.kind !== "text" ||
-					!item.enabled ||
-					!item.source ||
-					item.source === "name"
-				) {
-					continue;
-				}
-				if (!boundById.has(item.source)) {
-					throw new TRPCError({
-						code: "BAD_REQUEST",
-						message: `Linha "${item.label || "secundária"}" ligada a campo inexistente — vincule novamente no editor e salve.`,
-					});
-				}
-			}
 
 			const baseWhere = input.activityId
 				? and(
