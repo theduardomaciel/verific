@@ -311,7 +311,7 @@ export const participantsRouter = createTRPCRouter({
 		.input(
 			z.object({
 				sessionId: z.string().uuid(),
-				// shortId do ingresso ou URL pública do perfil do crachá.
+				// shortId do ingresso, URL do perfil do crachá ou id legado.
 				code: z.string().trim().min(1).max(2048),
 			}),
 		)
@@ -378,7 +378,9 @@ export const participantsRouter = createTRPCRouter({
 			const row = await db.query.participant.findFirst({
 				where: and(
 					eq(participant.projectId, event.id),
-					eq(participant.shortId, parsed.shortId),
+					parsed.kind === "participantId"
+						? eq(participant.id, parsed.id)
+						: eq(participant.shortId, parsed.shortId),
 				),
 				columns: { id: true },
 				with: { user: { columns: { name: true } } },
