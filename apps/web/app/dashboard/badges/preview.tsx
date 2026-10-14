@@ -1,6 +1,6 @@
 "use client";
 
-import type { DisplayPrimitive } from "@verific/badges";
+import { ptToMm, type DisplayPrimitive } from "@verific/badges";
 
 interface Props {
 	primitives: DisplayPrimitive[];
@@ -41,8 +41,8 @@ export function PrimitiveLayer({
 					);
 				}
 				if (p.kind === "text") {
-					const sizeMm = p.fontSizePt * 0.3527777778;
-					const lineMm = p.lineHeightPt * 0.3527777778;
+					const sizeMm = ptToMm(p.fontSizePt);
+					const lineMm = ptToMm(p.lineHeightPt);
 					const anchor =
 						p.align === "center"
 							? "middle"
@@ -55,45 +55,27 @@ export function PrimitiveLayer({
 							: p.align === "right"
 								? p.xMm + p.maxWidthMm
 								: p.xMm;
-					// Clip text to box height to match PDF output
-					const boxHeightMm =
-						p.lineHeightPt * 0.3527777778 * p.maxLines;
 					return (
-						<g key={i} clipPath={`url(#clip-text-${i})`}>
-							<defs>
-								<clipPath id={`clip-text-${i}`}>
-									<rect
-										x={p.xMm}
-										y={p.yMm}
-										width={p.maxWidthMm}
-										height={boxHeightMm}
-									/>
-								</clipPath>
-							</defs>
-							<text
-								x={ax}
-								y={p.yMm + sizeMm}
-								textAnchor={anchor}
-								fontFamily={`"${p.family}", sans-serif`}
-								fontSize={sizeMm}
-								fontWeight={p.weight}
-								fill={p.color}
-							>
-								{p.lines.map((line, li) => (
-									<tspan
-										key={li}
-										x={ax}
-										dy={
-											li === 0
-												? 0
-												: p.lineHeightPt * 0.3527777778
-										}
-									>
-										{line}
-									</tspan>
-								))}
-							</text>
-						</g>
+						<text
+							key={i}
+							x={ax}
+							y={p.yMm + sizeMm}
+							textAnchor={anchor}
+							fontFamily={`"${p.family}", sans-serif`}
+							fontSize={sizeMm}
+							fontWeight={p.weight}
+							fill={p.color}
+						>
+							{p.lines.map((line, li) => (
+								<tspan
+									key={li}
+									x={ax}
+									dy={li === 0 ? 0 : lineMm}
+								>
+									{line}
+								</tspan>
+							))}
+						</text>
 					);
 				}
 				if (p.kind === "qr") {
