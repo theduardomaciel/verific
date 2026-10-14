@@ -566,8 +566,13 @@ export function BadgeCanvas({
 		<svg
 			ref={svgRef}
 			viewBox={`${-PAD_MM} ${-PAD_MM} ${VW} ${VH}`}
-			className="h-auto w-full touch-none rounded-md outline-none select-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
-			style={{ background: C_WORKSPACE }}
+			className="mx-auto h-auto w-full touch-none rounded-md outline-none select-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+			style={{
+				background: C_WORKSPACE,
+				// Limita a ALTURA pela viewport: largura máx = altura útil × proporção.
+				// 18rem ≈ cabeçalho da página + card + dica abaixo; mínimo de 320px.
+				maxWidth: `max(320px, calc((100svh - 18rem) * ${VW / VH}))`,
+			}}
 			onPointerMove={move}
 			onPointerUp={end}
 			onPointerCancel={end}
