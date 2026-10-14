@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
+	ChevronDown,
 	Eye,
 	EyeOff,
 	Plus,
@@ -109,6 +110,30 @@ function Num({
 				className="h-8"
 			/>
 		</label>
+	);
+}
+
+function CollapsibleCard({
+	title,
+	defaultOpen = false,
+	children,
+}: {
+	title: string;
+	defaultOpen?: boolean;
+	children: React.ReactNode;
+}) {
+	return (
+		<Card>
+			<details open={defaultOpen} className="group">
+				<summary className="flex cursor-pointer list-none items-center justify-between px-6 text-base leading-none font-semibold [&::-webkit-details-marker]:hidden">
+					{title}
+					<ChevronDown className="size-4 transition-transform group-open:rotate-180" />
+				</summary>
+				<CardContent className="mt-4 flex flex-col gap-3">
+					{children}
+				</CardContent>
+			</details>
+		</Card>
 	);
 }
 
@@ -630,225 +655,491 @@ export function BadgeEditor({
 	const pxPerMm = zoom === "100" ? 3.7795 : zoom === "50" ? 1.8898 : 3.7795;
 
 	return (
-		<div className="grid gap-6 lg:grid-cols-[1fr_380px]">
-			<div className="flex min-w-0 flex-col gap-4">
-				<div className="flex flex-wrap items-center gap-2">
-					<Button
-						size="sm"
-						variant="outline"
-						onClick={undo}
-						disabled={past.current.length === 0}
-					>
-						<Undo2 className="size-4" /> Desfazer
-					</Button>
-					<Button
-						size="sm"
-						variant="outline"
-						onClick={redo}
-						disabled={future.current.length === 0}
-					>
-						<Redo2 className="size-4" /> Refazer
-					</Button>
-					<Button size="sm" variant="outline" onClick={reset}>
-						<RotateCcw className="size-4" /> Padrão
-					</Button>
-					<Button
-						size="sm"
-						onClick={() => {
-							void save();
-						}}
-						disabled={saveMutation.isPending}
-					>
-						<Save className="size-4" />{" "}
-						{saveMutation.isPending ? "Salvando…" : "Salvar"}
-					</Button>
-					<div className="ml-auto flex items-center gap-2 text-xs">
-						<Label>Grade</Label>
-						<Switch
-							checked={showGrid}
-							onCheckedChange={setShowGrid}
-						/>
-						<Label>Ajuste</Label>
-						<Switch
-							checked={snap.gridOn}
-							onCheckedChange={(v) =>
-								setSnap((s) => ({ ...s, gridOn: v }))
-							}
-						/>
-					</div>
+		<div className="flex flex-col gap-4">
+			<div className="bg-background/90 sticky top-0 z-20 -mx-2 flex flex-wrap items-center gap-2 border-b px-2 py-2 backdrop-blur">
+				<Button
+					size="sm"
+					variant="outline"
+					onClick={undo}
+					disabled={past.current.length === 0}
+				>
+					<Undo2 className="size-4" /> Desfazer
+				</Button>
+				<Button
+					size="sm"
+					variant="outline"
+					onClick={redo}
+					disabled={future.current.length === 0}
+				>
+					<Redo2 className="size-4" /> Refazer
+				</Button>
+				<Button size="sm" variant="outline" onClick={reset}>
+					<RotateCcw className="size-4" /> Padrão
+				</Button>
+				<Button
+					size="sm"
+					onClick={() => {
+						void save();
+					}}
+					disabled={saveMutation.isPending}
+				>
+					<Save className="size-4" />{" "}
+					{saveMutation.isPending ? "Salvando…" : "Salvar"}
+				</Button>
+				<div className="ml-auto flex items-center gap-2 text-xs">
+					<Label>Grade</Label>
+					<Switch checked={showGrid} onCheckedChange={setShowGrid} />
+					<Label>Ajuste</Label>
+					<Switch
+						checked={snap.gridOn}
+						onCheckedChange={(v) =>
+							setSnap((s) => ({ ...s, gridOn: v }))
+						}
+					/>
 				</div>
-
-				<Card>
-					<CardHeader>
-						<CardTitle className="text-base">
-							Editor (proporção real)
-						</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<BadgeCanvas
-							layout={draft}
-							roles={roles}
-							sample={samples[sampleKey]}
-							primitives={canvasPrimitives}
-							fieldLabels={fieldLabels}
-							selectedId={selectedId}
-							onSelect={setSelectedId}
-							onPatch={patch}
-							snap={snap}
-							showGrid={showGrid}
-						/>
-						<p className="text-muted-foreground mt-2 text-xs">
-							Arraste para mover/redimensionar. Setas movem 1mm
-							(Shift: 5mm). Clique fora para desselecionar.
-						</p>
-					</CardContent>
-				</Card>
-
-				<Card>
-					<CardHeader>
-						<CardTitle className="flex flex-wrap items-center gap-2 text-base">
-							Prévia em tamanho real
-							<Select
-								value={sampleKey}
-								onValueChange={(v) =>
-									setSampleKey(v as "long" | "missing")
-								}
-							>
-								<SelectTrigger size="sm" className="w-44">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="long">
-										Nome longo
-									</SelectItem>
-									<SelectItem value="missing">
-										Sem secundário
-									</SelectItem>
-								</SelectContent>
-							</Select>
-							<Select
-								value={zoom}
-								onValueChange={(v) => setZoom(v as typeof zoom)}
-							>
-								<SelectTrigger size="sm" className="w-32">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="fit">Ajustar</SelectItem>
-									<SelectItem value="50">50%</SelectItem>
-									<SelectItem value="100">
-										100% (1:1)
-									</SelectItem>
-								</SelectContent>
-							</Select>
-						</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<div className="overflow-auto rounded-md border p-4">
-							{preview.primitives ? (
-								<div
-									style={
-										zoom === "fit"
-											? { maxWidth: 520 }
-											: { width: draft.badgeW * pxPerMm }
-									}
-								>
-									<BadgePreviewSvg
-										primitives={preview.primitives}
-										badgeWMm={draft.badgeW}
-										badgeHMm={draft.badgeH}
-										pxPerMm={
-											zoom === "fit"
-												? 520 / draft.badgeW
-												: pxPerMm
-										}
-										artworkUrl={
-											draft.artworkUrl || undefined
-										}
-										artworkKind={draft.artworkKind}
-										mode={draft.mode}
-									/>
-								</div>
-							) : (
-								<p className="text-muted-foreground text-sm">
-									{preview.error ?? "Carregando fontes…"}
-								</p>
-							)}
-						</div>
-						{warnings.length > 0 ? (
-							<ul className="mt-3 flex flex-col gap-1 text-xs text-amber-600 dark:text-amber-400">
-								{warnings.map((w, i) => (
-									<li key={i}>⚠ {w}</li>
-								))}
-							</ul>
-						) : null}
-					</CardContent>
-				</Card>
-
-				<Card>
-					<CardHeader>
-						<CardTitle className="text-base">Impressão</CardTitle>
-					</CardHeader>
-					<CardContent className="flex flex-col gap-3">
-						<div className="flex flex-wrap gap-2">
-							<Button
-								size="sm"
-								disabled={printState.running}
-								onClick={() => void runPrint(null)}
-							>
-								<Printer className="size-4" /> Imprimir tudo
-							</Button>
-							<Button
-								size="sm"
-								variant="outline"
-								disabled={printState.running}
-								onClick={() => void runPrint("single")}
-							>
-								Prova (1 crachá)
-							</Button>
-							<Button
-								size="sm"
-								variant="outline"
-								disabled={printState.running}
-								onClick={() => void runPrint("outlines")}
-							>
-								Folha de alinhamento
-							</Button>
-						</div>
-						{printState.running ? (
-							<p className="text-muted-foreground text-xs">
-								{printState.progress
-									? `Buscados ${printState.progress.fetched} · rendidos ${printState.progress.rendered}${printState.progress.total ? ` de ${printState.progress.total}` : ""} · arquivos ${printState.progress.files}`
-									: "Iniciando…"}
-							</p>
-						) : null}
-						{printState.error ? (
-							<p className="text-destructive text-xs">
-								{printState.error}
-							</p>
-						) : null}
-						{printState.files.map((f) => (
-							<a
-								key={f.filename}
-								href={f.url}
-								download={f.filename}
-								className="text-primary text-sm underline"
-							>
-								Baixar {f.filename} ({f.count} crachás)
-							</a>
-						))}
-					</CardContent>
-				</Card>
 			</div>
 
-			<div className="flex flex-col gap-4">
-				<Card>
-					<CardHeader>
-						<CardTitle className="text-base">
-							Modo e crachá
-						</CardTitle>
-					</CardHeader>
-					<CardContent className="flex flex-col gap-3">
+			<div className="grid items-start gap-6 lg:grid-cols-[1fr_380px]">
+				<div className="flex min-w-0 flex-col gap-4">
+					<div className="grid items-start gap-4 xl:grid-cols-2">
+						<Card className="min-w-0">
+							<CardHeader>
+								<CardTitle className="text-base">
+									Editor (proporção real)
+								</CardTitle>
+							</CardHeader>
+							<CardContent>
+								<BadgeCanvas
+									layout={draft}
+									roles={roles}
+									sample={samples[sampleKey]}
+									primitives={canvasPrimitives}
+									fieldLabels={fieldLabels}
+									selectedId={selectedId}
+									onSelect={setSelectedId}
+									onPatch={patch}
+									snap={snap}
+									showGrid={showGrid}
+								/>
+								<p className="text-muted-foreground mt-2 text-xs">
+									Arraste para mover/redimensionar. Setas
+									movem 1mm (Shift: 5mm). Clique fora para
+									desselecionar.
+								</p>
+							</CardContent>
+						</Card>
+
+						<Card className="min-w-0">
+							<CardHeader>
+								<CardTitle className="flex flex-wrap items-center gap-2 text-base">
+									Prévia em tamanho real
+									<Select
+										value={sampleKey}
+										onValueChange={(v) =>
+											setSampleKey(
+												v as "long" | "missing",
+											)
+										}
+									>
+										<SelectTrigger
+											size="sm"
+											className="w-44"
+										>
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="long">
+												Nome longo
+											</SelectItem>
+											<SelectItem value="missing">
+												Sem secundário
+											</SelectItem>
+										</SelectContent>
+									</Select>
+									<Select
+										value={zoom}
+										onValueChange={(v) =>
+											setZoom(v as typeof zoom)
+										}
+									>
+										<SelectTrigger
+											size="sm"
+											className="w-32"
+										>
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="fit">
+												Ajustar
+											</SelectItem>
+											<SelectItem value="50">
+												50%
+											</SelectItem>
+											<SelectItem value="100">
+												100% (1:1)
+											</SelectItem>
+										</SelectContent>
+									</Select>
+								</CardTitle>
+							</CardHeader>
+							<CardContent>
+								<div className="overflow-auto rounded-md border p-4">
+									{preview.primitives ? (
+										<div
+											className={
+												zoom === "fit"
+													? "[&_svg]:h-auto [&_svg]:max-w-full"
+													: undefined
+											}
+											style={
+												zoom === "fit"
+													? { maxWidth: 520 }
+													: {
+															width:
+																draft.badgeW *
+																pxPerMm,
+														}
+											}
+										>
+											<BadgePreviewSvg
+												primitives={preview.primitives}
+												badgeWMm={draft.badgeW}
+												badgeHMm={draft.badgeH}
+												pxPerMm={
+													zoom === "fit"
+														? 520 / draft.badgeW
+														: pxPerMm
+												}
+												artworkUrl={
+													draft.artworkUrl ||
+													undefined
+												}
+												artworkKind={draft.artworkKind}
+												mode={draft.mode}
+											/>
+										</div>
+									) : (
+										<p className="text-muted-foreground text-sm">
+											{preview.error ??
+												"Carregando fontes…"}
+										</p>
+									)}
+								</div>
+								{warnings.length > 0 ? (
+									<ul className="mt-3 flex flex-col gap-1 text-xs text-amber-600 dark:text-amber-400">
+										{warnings.map((w, i) => (
+											<li key={i}>⚠ {w}</li>
+										))}
+									</ul>
+								) : null}
+							</CardContent>
+						</Card>
+					</div>
+
+					<Card>
+						<CardHeader>
+							<CardTitle className="text-base">
+								Impressão
+							</CardTitle>
+						</CardHeader>
+						<CardContent className="flex flex-col gap-3">
+							<div className="flex flex-wrap gap-2">
+								<Button
+									size="sm"
+									disabled={printState.running}
+									onClick={() => void runPrint(null)}
+								>
+									<Printer className="size-4" /> Imprimir tudo
+								</Button>
+								<Button
+									size="sm"
+									variant="outline"
+									disabled={printState.running}
+									onClick={() => void runPrint("single")}
+								>
+									Prova (1 crachá)
+								</Button>
+								<Button
+									size="sm"
+									variant="outline"
+									disabled={printState.running}
+									onClick={() => void runPrint("outlines")}
+								>
+									Folha de alinhamento
+								</Button>
+							</div>
+							{printState.running ? (
+								<p className="text-muted-foreground text-xs">
+									{printState.progress
+										? `Buscados ${printState.progress.fetched} · rendidos ${printState.progress.rendered}${printState.progress.total ? ` de ${printState.progress.total}` : ""} · arquivos ${printState.progress.files}`
+										: "Iniciando…"}
+								</p>
+							) : null}
+							{printState.error ? (
+								<p className="text-destructive text-xs">
+									{printState.error}
+								</p>
+							) : null}
+							{printState.files.map((f) => (
+								<a
+									key={f.filename}
+									href={f.url}
+									download={f.filename}
+									className="text-primary text-sm underline"
+								>
+									Baixar {f.filename} ({f.count} crachás)
+								</a>
+							))}
+						</CardContent>
+					</Card>
+				</div>
+
+				<aside className="flex flex-col gap-4 lg:sticky lg:top-14 lg:max-h-[calc(100svh-4.5rem)] lg:overflow-y-auto lg:pr-1">
+					{selected?.kind === "text" ? (
+						<TextPanel
+							item={selected}
+							fieldOptions={fieldOptions}
+							weightOptions={allowedWeightsForItem(
+								selected,
+								roles,
+								catalogWeights,
+							)}
+							roleFamilies={{
+								heading: roles.heading.family,
+								subtitle: roles.subtitle.family,
+								body: roles.body.family,
+							}}
+							mm={mmRect(selected)}
+							onMm={(v) => setMmRect(selected, v)}
+							onEdit={(fn) =>
+								patch((d) => {
+									const it = d.items.find(
+										(i) => i.id === selected.id,
+									);
+									if (it && it.kind === "text") fn(it);
+								}, true)
+							}
+						/>
+					) : null}
+					{selected?.kind === "qr" ? (
+						<Card>
+							<CardHeader>
+								<CardTitle className="text-base">QR</CardTitle>
+							</CardHeader>
+							<CardContent className="grid grid-cols-2 gap-2">
+								{(["x", "y", "w", "h"] as const).map((k) => (
+									<Num
+										key={k}
+										label={k.toUpperCase()}
+										value={mmRect(selected)[k]}
+										onChange={(v) => {
+											const m = mmRect(selected);
+											setMmRect(selected, {
+												...m,
+												[k]: v,
+											});
+										}}
+									/>
+								))}
+							</CardContent>
+						</Card>
+					) : null}
+
+					<Card>
+						<CardHeader>
+							<CardTitle className="text-base">Itens</CardTitle>
+						</CardHeader>
+						<CardContent className="flex flex-col gap-2">
+							{draft.items.map((item) => (
+								<div
+									key={item.id}
+									className={`flex items-center gap-2 rounded-md border px-2 py-1.5 text-xs ${selectedId === item.id ? "border-blue-500" : ""}`}
+								>
+									<button
+										aria-label={
+											item.enabled ? "Ocultar" : "Mostrar"
+										}
+										onClick={() =>
+											patch((d) => {
+												const it = d.items.find(
+													(i) => i.id === item.id,
+												);
+												if (it)
+													it.enabled = !it.enabled;
+											}, true)
+										}
+									>
+										{item.enabled ? (
+											<Eye className="size-4" />
+										) : (
+											<EyeOff className="size-4" />
+										)}
+									</button>
+									<button
+										className="flex-1 text-left"
+										onClick={() => setSelectedId(item.id)}
+									>
+										{item.kind === "text"
+											? item.source === "name"
+												? "Nome"
+												: (fieldLabels.get(
+														item.source,
+													) ??
+													item.label ??
+													"Linha")
+											: item.kind === "qr"
+												? "QR"
+												: "Logo"}
+									</button>
+									{item.kind === "text" &&
+									item.source !== "name" ? (
+										<button
+											aria-label="Remover linha"
+											onClick={() =>
+												patch((d) => {
+													d.items = d.items.filter(
+														(i) => i.id !== item.id,
+													);
+												}, true)
+											}
+										>
+											<Trash2 className="size-4" />
+										</button>
+									) : null}
+								</div>
+							))}
+							<Button
+								size="sm"
+								variant="outline"
+								onClick={() =>
+									patch((d) => {
+										d.items.push({
+											kind: "text",
+											id: `secondary-${Date.now()}`,
+											enabled: true,
+											rect: {
+												x: 0.1,
+												y: 0.3,
+												w: 0.8,
+												h: 0.12,
+											},
+											source: "",
+											label: "Linha secundária",
+											align: "center",
+											fontRole: "body",
+											family: "",
+											fontSizePt: 11,
+											minFontSizePt: 7,
+											weight: 400,
+											color: "#333333",
+											maxLines: 2,
+										});
+									}, true)
+								}
+							>
+								<Plus className="size-4" /> Linha secundária
+							</Button>
+						</CardContent>
+					</Card>
+
+					<Card>
+						<CardHeader>
+							<CardTitle className="text-base">
+								Área livre
+							</CardTitle>
+						</CardHeader>
+						<CardContent className="flex flex-col gap-2">
+							<div className="grid grid-cols-2 gap-2">
+								<Num
+									label="X"
+									value={draft.freeArea.x}
+									onChange={(v) =>
+										patch((d) => {
+											d.freeArea.x = Math.max(0, v);
+										}, true)
+									}
+								/>
+								<Num
+									label="Y"
+									value={draft.freeArea.y}
+									onChange={(v) =>
+										patch((d) => {
+											d.freeArea.y = Math.max(0, v);
+										}, true)
+									}
+								/>
+								<Num
+									label="Largura"
+									value={draft.freeArea.w}
+									onChange={(v) =>
+										patch((d) => {
+											d.freeArea.w = Math.max(10, v);
+										}, true)
+									}
+								/>
+								<Num
+									label="Altura"
+									value={draft.freeArea.h}
+									onChange={(v) =>
+										patch((d) => {
+											d.freeArea.h = Math.max(10, v);
+										}, true)
+									}
+								/>
+								<Num
+									label="Raio"
+									value={draft.freeArea.radius}
+									onChange={(v) =>
+										patch((d) => {
+											d.freeArea.radius = Math.max(0, v);
+										}, true)
+									}
+								/>
+								<Num
+									label="Margem int."
+									value={draft.freeArea.padding}
+									onChange={(v) =>
+										patch((d) => {
+											d.freeArea.padding = Math.max(0, v);
+										}, true)
+									}
+								/>
+							</div>
+							<label className="flex flex-col gap-1 text-xs">
+								<span className="text-muted-foreground">
+									Fundo (precisa ser claro p/ o QR)
+								</span>
+								<Input
+									type="color"
+									value={draft.freeAreaBg}
+									onChange={(e) =>
+										patch((d) => {
+											d.freeAreaBg = e.target.value;
+										}, true)
+									}
+									className="h-8 w-20 p-1"
+								/>
+							</label>
+							<label className="flex items-center gap-2 text-xs">
+								<Switch
+									checked={
+										draft.missingFieldBehavior ===
+										"recenter"
+									}
+									onCheckedChange={(v) =>
+										patch((d) => {
+											d.missingFieldBehavior = v
+												? "recenter"
+												: "keep";
+										}, true)
+									}
+								/>
+								Recentralizar quando faltar campo
+							</label>
+						</CardContent>
+					</Card>
+
+					<CollapsibleCard title="Modo e crachá" defaultOpen>
 						<div className="flex flex-col gap-1 text-xs">
 							<span className="text-muted-foreground">
 								Modo de impressão
@@ -944,251 +1235,9 @@ export function BadgeEditor({
 								</Button>
 							) : null}
 						</div>
-					</CardContent>
-				</Card>
+					</CollapsibleCard>
 
-				<Card>
-					<CardHeader>
-						<CardTitle className="text-base">Área livre</CardTitle>
-					</CardHeader>
-					<CardContent className="flex flex-col gap-2">
-						<div className="grid grid-cols-2 gap-2">
-							<Num
-								label="X"
-								value={draft.freeArea.x}
-								onChange={(v) =>
-									patch((d) => {
-										d.freeArea.x = Math.max(0, v);
-									}, true)
-								}
-							/>
-							<Num
-								label="Y"
-								value={draft.freeArea.y}
-								onChange={(v) =>
-									patch((d) => {
-										d.freeArea.y = Math.max(0, v);
-									}, true)
-								}
-							/>
-							<Num
-								label="Largura"
-								value={draft.freeArea.w}
-								onChange={(v) =>
-									patch((d) => {
-										d.freeArea.w = Math.max(10, v);
-									}, true)
-								}
-							/>
-							<Num
-								label="Altura"
-								value={draft.freeArea.h}
-								onChange={(v) =>
-									patch((d) => {
-										d.freeArea.h = Math.max(10, v);
-									}, true)
-								}
-							/>
-							<Num
-								label="Raio"
-								value={draft.freeArea.radius}
-								onChange={(v) =>
-									patch((d) => {
-										d.freeArea.radius = Math.max(0, v);
-									}, true)
-								}
-							/>
-							<Num
-								label="Margem int."
-								value={draft.freeArea.padding}
-								onChange={(v) =>
-									patch((d) => {
-										d.freeArea.padding = Math.max(0, v);
-									}, true)
-								}
-							/>
-						</div>
-						<label className="flex flex-col gap-1 text-xs">
-							<span className="text-muted-foreground">
-								Fundo (precisa ser claro p/ o QR)
-							</span>
-							<Input
-								type="color"
-								value={draft.freeAreaBg}
-								onChange={(e) =>
-									patch((d) => {
-										d.freeAreaBg = e.target.value;
-									}, true)
-								}
-								className="h-8 w-20 p-1"
-							/>
-						</label>
-						<label className="flex items-center gap-2 text-xs">
-							<Switch
-								checked={
-									draft.missingFieldBehavior === "recenter"
-								}
-								onCheckedChange={(v) =>
-									patch((d) => {
-										d.missingFieldBehavior = v
-											? "recenter"
-											: "keep";
-									}, true)
-								}
-							/>
-							Recentralizar quando faltar campo
-						</label>
-					</CardContent>
-				</Card>
-
-				<Card>
-					<CardHeader>
-						<CardTitle className="text-base">Itens</CardTitle>
-					</CardHeader>
-					<CardContent className="flex flex-col gap-2">
-						{draft.items.map((item) => (
-							<div
-								key={item.id}
-								className={`flex items-center gap-2 rounded-md border px-2 py-1.5 text-xs ${selectedId === item.id ? "border-blue-500" : ""}`}
-							>
-								<button
-									aria-label={
-										item.enabled ? "Ocultar" : "Mostrar"
-									}
-									onClick={() =>
-										patch((d) => {
-											const it = d.items.find(
-												(i) => i.id === item.id,
-											);
-											if (it) it.enabled = !it.enabled;
-										}, true)
-									}
-								>
-									{item.enabled ? (
-										<Eye className="size-4" />
-									) : (
-										<EyeOff className="size-4" />
-									)}
-								</button>
-								<button
-									className="flex-1 text-left"
-									onClick={() => setSelectedId(item.id)}
-								>
-									{item.kind === "text"
-										? item.source === "name"
-											? "Nome"
-											: (fieldLabels.get(item.source) ??
-												item.label ??
-												"Linha")
-										: item.kind === "qr"
-											? "QR"
-											: "Logo"}
-								</button>
-								{item.kind === "text" &&
-								item.source !== "name" ? (
-									<button
-										aria-label="Remover linha"
-										onClick={() =>
-											patch((d) => {
-												d.items = d.items.filter(
-													(i) => i.id !== item.id,
-												);
-											}, true)
-										}
-									>
-										<Trash2 className="size-4" />
-									</button>
-								) : null}
-							</div>
-						))}
-						<Button
-							size="sm"
-							variant="outline"
-							onClick={() =>
-								patch((d) => {
-									d.items.push({
-										kind: "text",
-										id: `secondary-${Date.now()}`,
-										enabled: true,
-										rect: {
-											x: 0.1,
-											y: 0.3,
-											w: 0.8,
-											h: 0.12,
-										},
-										source: "",
-										label: "Linha secundária",
-										align: "center",
-										fontRole: "body",
-										family: "",
-										fontSizePt: 11,
-										minFontSizePt: 7,
-										weight: 400,
-										color: "#333333",
-										maxLines: 2,
-									});
-								}, true)
-							}
-						>
-							<Plus className="size-4" /> Linha secundária
-						</Button>
-					</CardContent>
-				</Card>
-
-				{selected?.kind === "text" ? (
-					<TextPanel
-						item={selected}
-						fieldOptions={fieldOptions}
-						weightOptions={allowedWeightsForItem(
-							selected,
-							roles,
-							catalogWeights,
-						)}
-						roleFamilies={{
-							heading: roles.heading.family,
-							subtitle: roles.subtitle.family,
-							body: roles.body.family,
-						}}
-						mm={mmRect(selected)}
-						onMm={(v) => setMmRect(selected, v)}
-						onEdit={(fn) =>
-							patch((d) => {
-								const it = d.items.find(
-									(i) => i.id === selected.id,
-								);
-								if (it && it.kind === "text") fn(it);
-							}, true)
-						}
-					/>
-				) : null}
-				{selected?.kind === "qr" ? (
-					<Card>
-						<CardHeader>
-							<CardTitle className="text-base">QR</CardTitle>
-						</CardHeader>
-						<CardContent className="grid grid-cols-2 gap-2">
-							{(["x", "y", "w", "h"] as const).map((k) => (
-								<Num
-									key={k}
-									label={k.toUpperCase()}
-									value={mmRect(selected)[k]}
-									onChange={(v) => {
-										const m = mmRect(selected);
-										setMmRect(selected, { ...m, [k]: v });
-									}}
-								/>
-							))}
-						</CardContent>
-					</Card>
-				) : null}
-
-				<Card>
-					<CardHeader>
-						<CardTitle className="text-base">
-							Folha e imposição
-						</CardTitle>
-					</CardHeader>
-					<CardContent className="flex flex-col gap-3">
+					<CollapsibleCard title="Folha e imposição">
 						<div className="flex flex-col gap-1 text-xs">
 							<span className="text-muted-foreground">
 								Página
@@ -1410,8 +1459,8 @@ export function BadgeEditor({
 							/>
 							Ajustar à área livre
 						</label>
-					</CardContent>
-				</Card>
+					</CollapsibleCard>
+				</aside>
 			</div>
 		</div>
 	);
