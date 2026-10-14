@@ -23,13 +23,13 @@ import { categorizeByDate, getFirstSessionStart } from "@/lib/date";
 interface AccountWrapperProps {
 	eventUrl: string;
 	activities: Array<any>;
-	participantId: string | null;
+	checkInCode: string | null;
 }
 
 export function AccountWrapper({
 	eventUrl,
 	activities,
-	participantId,
+	checkInCode,
 }: AccountWrapperProps) {
 	const fallbackDate = useState(() => new Date())[0];
 	const { grouped, categories, initialExpanded } = useMemo(() => {
@@ -83,8 +83,8 @@ export function AccountWrapper({
 												>
 													<ActivityTicket
 														activity={activity}
-														participantId={
-															participantId || ""
+														checkInCode={
+															checkInCode || ""
 														}
 														projectUrl={eventUrl}
 													/>

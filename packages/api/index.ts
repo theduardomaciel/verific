@@ -1,4 +1,5 @@
 import { activitiesRouter } from "./routers/activities";
+import { badgesRouter } from "./routers/badges";
 import { formsRouter } from "./routers/forms";
 import { participantOnActivitiesRouter } from "./routers/participantOnActivities";
 import { participantsRouter } from "./routers/participants";
@@ -16,6 +17,7 @@ import type { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
 
 export const appRouter = mergeRouters(
 	activitiesRouter,
+	badgesRouter,
 	usersRouter,
 	projectsRouter,
 	participantsRouter,

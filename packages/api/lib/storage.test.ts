@@ -15,7 +15,13 @@ vi.mock("@verific/env", () => ({
 	},
 }));
 
-import { IMAGE_PURPOSES, storage, validateUploadInput } from "./storage";
+import {
+	IMAGE_PURPOSES,
+	isPassthroughPurpose,
+	passthroughExtension,
+	storage,
+	validateUploadInput,
+} from "./storage";
 
 describe("storage adapter", () => {
 	it("monta chaves por finalidade e projeto", () => {
@@ -50,5 +56,31 @@ describe("storage adapter", () => {
 			"event-logo/abc/x.webp",
 		);
 		expect(storage.extractKey("")).toBeNull();
+	});
+
+	it("arte do crachá passa direto (sem WebP), com extensão do original", () => {
+		expect(isPassthroughPurpose("badge-artwork")).toBe(true);
+		expect(isPassthroughPurpose("event-logo")).toBe(false);
+		const key = storage.buildKey(
+			"badge-artwork",
+			"abc-123",
+			passthroughExtension("application/pdf"),
+		);
+		expect(key.startsWith("badge-artwork/abc-123/")).toBe(true);
+		expect(key.endsWith(".pdf")).toBe(true);
+		expect(() =>
+			validateUploadInput({
+				purpose: "badge-artwork",
+				contentType: "application/pdf",
+				contentLength: 1000,
+			}),
+		).not.toThrow();
+		expect(() =>
+			validateUploadInput({
+				purpose: "badge-artwork",
+				contentType: "image/webp",
+				contentLength: 1000,
+			}),
+		).toThrow();
 	});
 });

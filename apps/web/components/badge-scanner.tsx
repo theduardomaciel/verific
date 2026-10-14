@@ -1,17 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import type { IDetectedBarcode } from "@yudiel/react-qr-scanner";
-import { Scanner } from "@yudiel/react-qr-scanner";
-import { toast } from "sonner";
 
+import { Scanner } from "@yudiel/react-qr-scanner";
 // Icons
 import { BarcodeIcon, Loader2, XIcon } from "lucide-react";
+import { toast } from "sonner";
 
+import { Button } from "@/components/ui/button";
 // Components
 import { FullScreenDrawer } from "@/components/ui/fullscreen-drawer";
-import { Button } from "@/components/ui/button";
+
 import { trpc } from "@/lib/trpc/react";
+
+import type { IDetectedBarcode } from "@yudiel/react-qr-scanner";
 
 interface Props {
 	sessionId: string;
@@ -28,17 +30,18 @@ export function BadgeScanner({ sessionId, buttonLabel }: Props) {
 	async function handleScan(result: IDetectedBarcode[]) {
 		setIsLoading(true);
 
-		const participantId = result[0]?.rawValue;
+		const code = result[0]?.rawValue?.trim();
 
-		if (!participantId) {
+		if (!code) {
 			toast.error("Erro ao escanear o QR Code");
 			setIsLoading(false);
 			return;
 		}
 
 		try {
-			await mutation.mutateAsync({
-				participantId,
+			// Aceita UUID legado, shortId do ingresso e URL do crachá.
+			const checked = await mutation.mutateAsync({
+				code,
 				sessionId,
 			});
 
@@ -48,7 +51,11 @@ export function BadgeScanner({ sessionId, buttonLabel }: Props) {
 			]);
 
 			console.log(result);
-			toast.success("Participante credenciado com sucesso!");
+			toast.success(
+				checked.name
+					? `${checked.name} credenciado com sucesso!`
+					: "Participante credenciado com sucesso!",
+			);
 			setOpen(false);
 		} catch (error) {
 			console.error("Error updating session presence:", error);

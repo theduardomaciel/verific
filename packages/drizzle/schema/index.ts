@@ -1,5 +1,6 @@
 export * from "./account";
 export * from "./activity";
+export * from "./badge-layout";
 export * from "./activity-session";
 export * from "./activity-waitlist";
 export * from "./session-attendance";
