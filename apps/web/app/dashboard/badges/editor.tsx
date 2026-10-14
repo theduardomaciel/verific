@@ -288,6 +288,24 @@ export function BadgeEditor({
 		}
 	}, [ctx, draft, samples, sampleKey, fontsError]);
 
+	// Canvas: posições projetadas (sem recentralizar), para o conteúdo
+	// ficar dentro das próprias caixas durante a edição. O efeito da
+	// recentralização aparece na prévia em tamanho real.
+	const canvasPrimitives = useMemo(() => {
+		if (!ctx) return null;
+		try {
+			return buildRowPrimitives(
+				{
+					...ctx,
+					layout: { ...draft, missingFieldBehavior: "keep" },
+				},
+				samples[sampleKey],
+			);
+		} catch {
+			return null;
+		}
+	}, [ctx, draft, samples, sampleKey]);
+
 	const selected = draft.items.find((i) => i.id === selectedId) ?? null;
 
 	const [fontWarnings, setFontWarnings] = useState<string[]>([]);
@@ -636,7 +654,9 @@ export function BadgeEditor({
 					</Button>
 					<Button
 						size="sm"
-						onClick={() => { void save(); }}
+						onClick={() => {
+							void save();
+						}}
 						disabled={saveMutation.isPending}
 					>
 						<Save className="size-4" />{" "}
@@ -669,7 +689,7 @@ export function BadgeEditor({
 							layout={draft}
 							roles={roles}
 							sample={samples[sampleKey]}
-							primitives={preview.primitives}
+							primitives={canvasPrimitives}
 							fieldLabels={fieldLabels}
 							selectedId={selectedId}
 							onSelect={setSelectedId}
