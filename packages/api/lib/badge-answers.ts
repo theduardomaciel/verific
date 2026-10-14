@@ -19,7 +19,8 @@ export interface BadgeAnswerRow {
  * Casa por fieldId (robusto a renomeações de chave entre versões) OU por
  * chave (robusto a respostas dadas em outra versão do formulário).
  * Ganha a resposta mais recente por participante+campo; vazias são
- * descartadas (a display list omite a linha).
+ * descartadas (a display list omite a linha). Espera só respostas do
+ * formulário do evento: chaves de formulários de atividade colidiriam.
  */
 export function matchBadgeAnswers(args: {
 	answers: BadgeAnswerRow[];

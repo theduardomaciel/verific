@@ -267,9 +267,27 @@ export const badgesRouter = createTRPCRouter({
 			>();
 			if (ensured.length > 0 && boundById.size > 0) {
 				const answers = await db.query.formAnswer.findMany({
-					where: inArray(
-						formAnswer.participantId,
-						ensured.map((p) => p.id),
+					// Só respostas do formulário do evento (não de atividades).
+					where: and(
+						inArray(
+							formAnswer.participantId,
+							ensured.map((p) => p.id),
+						),
+						inArray(
+							formAnswer.formVersionId,
+							db
+								.select({ id: formVersion.id })
+								.from(formVersion)
+								.where(
+									and(
+										eq(
+											formVersion.projectId,
+											input.projectId,
+										),
+										isNull(formVersion.activityId),
+									),
+								),
+						),
 					),
 					columns: {
 						participantId: true,
