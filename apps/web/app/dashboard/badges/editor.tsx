@@ -376,7 +376,7 @@ export function BadgeEditor({
 			}
 		}
 		if (
-			contrastRatio(draft.freeAreaBg, "#ffffff") <
+			contrastRatio(draft.freeAreaBg, "#ffffff") >
 			contrastRatio(draft.freeAreaBg, "#000000")
 		) {
 			list.push(
@@ -656,7 +656,7 @@ export function BadgeEditor({
 
 	return (
 		<div className="flex flex-col gap-4">
-			<div className="bg-background/90 sticky top-0 z-20 -mx-2 flex flex-wrap items-center gap-2 border-b px-2 py-2 backdrop-blur">
+			<div className="bg-background/90 sticky top-0 z-50 -mx-2 flex flex-wrap items-center gap-2 border-b px-2 py-2 backdrop-blur">
 				<Button
 					size="sm"
 					variant="outline"
