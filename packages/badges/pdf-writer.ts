@@ -169,21 +169,26 @@ function drawBadgeContent(target: ContentTarget, o: BadgeContentOptions): void {
 				cornerRadius: mmToPt(p.radiusMm),
 			});
 		} else if (p.kind === "text") {
-			const font = o.res.embedded.get(fontKey(p.family, p.weight));
-			// Caller must supply the exact family@weight bytes.
-			const text = p.lines.join("\n");
-			target.drawText(text, {
-				x: toX(p.xMm + o.calDxMm),
-				y: toY(
-					p.yMm + o.calDyMm,
-					p.lineHeightPt * p.lines.length * 0.3527777778,
-				),
-				size: p.fontSizePt,
-				color: hexToRgb(p.color),
-				font: (font as never) ?? undefined,
-				lineHeight: p.lineHeightPt,
-				maxWidth: mmToPt(p.maxWidthMm),
-				alignment: p.align,
+			const key = fontKey(p.family, p.weight);
+			const font = o.res.embedded.get(key);
+			if (!font) {
+				throw new Error(
+					`Fonte ${p.family} @${p.weight} não embutida no PDF — carregue a fonte ou ajuste o peso no editor.`,
+				);
+			}
+			const sizeMm = p.fontSizePt * 0.3527777778;
+			const lineMm = p.lineHeightPt * 0.3527777778;
+			// Mesma regra da prévia: 1ª linha na baseline yMm + 1em; demais a +entrelinha.
+			p.lines.forEach((line, i) => {
+				target.drawText(line, {
+					x: toX(p.xMm + o.calDxMm),
+					y: toY(p.yMm + o.calDyMm + sizeMm + i * lineMm, 0),
+					size: p.fontSizePt,
+					color: hexToRgb(p.color),
+					font: font as never,
+					maxWidth: mmToPt(p.maxWidthMm),
+					alignment: p.align,
+				});
 			});
 		} else if (p.kind === "qr") {
 			// White backing (quiet-zone box) guarantees dark-on-light
