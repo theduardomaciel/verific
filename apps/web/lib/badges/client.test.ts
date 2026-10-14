@@ -39,6 +39,26 @@ describe("badge font resolution", () => {
 		expect(inter?.resolved).toBe(400);
 	});
 
+	it("lists every requested weight even when several resolve to the same file", async () => {
+		const [name, secondary, qr] = defaultBadgeItems();
+		const layout = {
+			badgeW: 90,
+			badgeH: 55,
+			freeArea: { x: 5, y: 5, w: 80, h: 45, radius: 3, padding: 3 },
+			items: [
+				name,
+				{ ...secondary, fontRole: "heading", weight: 800 },
+				qr,
+			],
+		} as Parameters<typeof collectBadgeFonts>[0];
+		const fonts = await collectBadgeFonts(layout, roles);
+		// 700 e 800 caem no mesmo 400, mas cada peso pedido precisa de chave.
+		expect(fonts).toEqual([
+			{ family: "Press Start 2P", requested: 700, resolved: 400 },
+			{ family: "Press Start 2P", requested: 800, resolved: 400 },
+		]);
+	});
+
 	it("keeps a weight that exists in the catalog even if absent from the theme role", async () => {
 		// Papel "body"/Inter com tema limitado a [400,700], mas o item pede
 		// 900: o catálogo do Inter tem 900, então o impresso usa 900 (sem

@@ -156,32 +156,46 @@ export function allowedWeightsForItem(
 	return [...options].sort((a, b) => a - b);
 }
 
+/** Família e peso (pedido e resolvido) de cada item de texto ativo. */
+async function resolveTextFonts(layout: BadgeLayout, roles: ThemeFontRoles) {
+	const catalog = await loadCatalogWeights();
+	return layout.items
+		.filter(
+			(item): item is TextItem => item.kind === "text" && item.enabled,
+		)
+		.map((item) => {
+			const role = roles[item.fontRole as FontRole];
+			const family = item.family || role.family;
+			const available = weightsForFamily(family, role.weights, catalog);
+			return {
+				item,
+				family,
+				requested: item.weight,
+				resolved: resolveFontWeight(item.weight, available),
+			};
+		});
+}
+
 /**
  * Famílias+pesos exigidos pelos itens de texto. O peso pedido é
  * resolvido para o mais próximo disponível (regra CSS), pois o PDF não
- * sintetiza negrito. Dedup por família@peso-resolvido — o par pedido/
- * resolvido é usado para registrar o arquivo sob ambas as chaves.
+ * sintetiza negrito. Um par por família@peso-pedido: a display list e o
+ * PDF consultam pelo peso pedido.
  */
 export async function collectBadgeFonts(
 	layout: BadgeLayout,
 	roles: ThemeFontRoles,
 ): Promise<{ family: string; requested: number; resolved: number }[]> {
-	const catalog = await loadCatalogWeights();
 	const seen = new Map<
 		string,
 		{ family: string; requested: number; resolved: number }
 	>();
-	for (const item of layout.items) {
-		if (item.kind !== "text" || !item.enabled) continue;
-		const role = roles[item.fontRole as FontRole];
-		const family = item.family || role.family;
-		const available = weightsForFamily(family, role.weights, catalog);
-		const resolved = resolveFontWeight(item.weight, available);
-		// Dedup pelo peso resolvido: dois itens com o mesmo peso pedido
-		// em papéis diferentes podem resolver para arquivos distintos.
-		const key = `${family.toLowerCase()}@${resolved}`;
-		if (!seen.has(key))
-			seen.set(key, { family, requested: item.weight, resolved });
+	for (const { family, requested, resolved } of await resolveTextFonts(
+		layout,
+		roles,
+	)) {
+		const key = fontCacheKey(family, requested);
+		if (!seen.has(key)) seen.set(key, { family, requested, resolved });
 	}
 	return [...seen.values()];
 }
@@ -191,21 +205,12 @@ export async function missingFontWeights(
 	layout: BadgeLayout,
 	roles: ThemeFontRoles,
 ): Promise<string[]> {
-	const catalog = await loadCatalogWeights();
-	const warnings: string[] = [];
-	for (const item of layout.items) {
-		if (item.kind !== "text" || !item.enabled) continue;
-		const role = roles[item.fontRole as FontRole];
-		const family = item.family || role.family;
-		const available = weightsForFamily(family, role.weights, catalog);
-		if (!available.includes(item.weight)) {
-			const resolved = resolveFontWeight(item.weight, available);
-			warnings.push(
-				`"${item.label || item.id}": peso ${item.weight} indisponível em ${family} — usando ${resolved} no impresso.`,
-			);
-		}
-	}
-	return warnings;
+	return (await resolveTextFonts(layout, roles))
+		.filter(({ requested, resolved }) => requested !== resolved)
+		.map(
+			({ item, family, requested, resolved }) =>
+				`"${item.label || item.id}": peso ${requested} indisponível em ${family} — usando ${resolved} no impresso.`,
+		);
 }
 
 export interface BadgePrintContext {
@@ -220,11 +225,6 @@ export interface BadgePrintContext {
 	) => number;
 }
 
-/**
- * Carrega os TTFs (compartilhado: mesma fonte na prévia e no PDF),
- * registra no FontFace para a prévia SVG e monta a medida LibPDF.
- * Falha com erro claro (sem fallback silencioso).
- */
 const registeredFaces = new Set<string>();
 
 async function registerPreviewFace(
@@ -253,24 +253,36 @@ async function registerPreviewFace(
 	}
 }
 
+/**
+ * Carrega os TTFs (compartilhado: mesma fonte na prévia e no PDF),
+ * registra no FontFace para a prévia SVG e monta a medida LibPDF.
+ * Falha com erro claro (sem fallback silencioso).
+ */
 export async function createBadgePrintContext(
 	layout: BadgeLayout,
 	roles: ThemeFontRoles,
 ): Promise<BadgePrintContext> {
 	const needed = await collectBadgeFonts(layout, roles);
+	// Um download (e um FontFace) por arquivo resolvido; o mesmo array é
+	// registrado sob cada peso pedido (embedShared deduplica por bytes).
+	const files = new Map<string, Promise<Uint8Array>>();
+	const loadFile = async (family: string, weight: number) => {
+		const bytes = await getBadgeFontLoader().getFontBytes(family, weight);
+		await registerPreviewFace(family, weight, bytes);
+		return bytes;
+	};
 	const fontBytes = new Map<string, Uint8Array>();
 	await Promise.all(
 		needed.map(async ({ family, requested, resolved }) => {
-			const bytes = await getBadgeFontLoader().getFontBytes(
-				family,
-				resolved,
-			);
-			// Registra sob o peso pedido E o resolvido: a display list e
-			// o PDF consultam pelo peso pedido; arquivos idênticos são
-			// embutidos uma única vez (embedShared deduplica por bytes).
-			fontBytes.set(`${family.toLowerCase()}@${requested}`, bytes);
-			fontBytes.set(`${family.toLowerCase()}@${resolved}`, bytes);
-			await registerPreviewFace(family, resolved, bytes);
+			const fileKey = fontCacheKey(family, resolved);
+			let file = files.get(fileKey);
+			if (!file) {
+				file = loadFile(family, resolved);
+				files.set(fileKey, file);
+			}
+			const bytes = await file;
+			fontBytes.set(fontCacheKey(family, requested), bytes);
+			fontBytes.set(fileKey, bytes);
 		}),
 	);
 	const scratch = PDF.create();
