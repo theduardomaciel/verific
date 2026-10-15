@@ -539,4 +539,94 @@ export const participantsRouter = createTRPCRouter({
 
 			return { success: true };
 		}),
+	removeSelfFromEvent: protectedProcedure
+		.input(
+			z.object({
+				projectId: z.string().uuid(),
+			}),
+		)
+		.mutation(async ({ input, ctx }) => {
+			const { projectId } = input;
+			const requestUserId = ctx.session?.user.id;
+
+			if (!requestUserId) {
+				throw new TRPCError({
+					code: "UNAUTHORIZED",
+					message: "User must be logged in",
+				});
+			}
+
+			// Find the participant for the current user in this project
+			const participantData = await db.query.participant.findFirst({
+				where: and(
+					eq(participant.projectId, projectId),
+					eq(participant.userId, requestUserId),
+				),
+				with: {
+					project: {
+						with: {
+							moderators: {
+								columns: {
+									userId: true,
+								},
+							},
+						},
+					},
+				},
+			});
+
+			if (!participantData) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Participant not found",
+				});
+			}
+
+			const participantId = participantData.id;
+
+			// Atividades em que a pessoa ocupa vaga ou está na fila: a remoção
+			// (em cascata) libera lugar para o próximo de cada fila
+			const [enrolled, queued] = await Promise.all([
+				db
+					.select({ activityId: participantOnActivity.activityId })
+					.from(participantOnActivity)
+					.where(
+						eq(participantOnActivity.participantId, participantId),
+					),
+				db
+					.select({ activityId: activityWaitlist.activityId })
+					.from(activityWaitlist)
+					.where(
+						and(
+							eq(activityWaitlist.participantId, participantId),
+							inArray(activityWaitlist.status, [
+								"waiting",
+								"offered",
+							]),
+						),
+					),
+			]);
+			const activityIds = [
+				...new Set(
+					[...enrolled, ...queued].map((row) => row.activityId),
+				),
+			].sort();
+
+			await db.transaction(async (tx) => {
+				const locked = [];
+				for (const activityId of activityIds) {
+					locked.push(await lockActivity(tx, activityId));
+				}
+
+				await tx
+					.delete(participant)
+					.where(eq(participant.id, participantId));
+
+				for (const lockedActivity of locked) {
+					await settleActivity(tx, lockedActivity);
+				}
+			});
+
+			return { success: true };
+		}),
 });
