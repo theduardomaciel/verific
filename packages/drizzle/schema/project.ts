@@ -8,16 +8,18 @@ import {
 	boolean,
 	jsonb,
 } from "drizzle-orm/pg-core";
+
 import { activity } from "./activity";
+import { formAnswer } from "./form-answer";
+import { formField } from "./form-field";
+import { formVersion } from "./form-version";
 import { participant } from "./participant";
+import { projectModerator } from "./project-moderator";
 import { speaker } from "./speaker";
 import { user } from "./user";
-import { projectModerator } from "./project-moderator";
-import { formVersion } from "./form-version";
-import { formField } from "./form-field";
-import { formAnswer } from "./form-answer";
-import type { EventTheme } from "../theme";
+
 import type { ProfileLayout } from "../profile-layout";
+import type { EventTheme } from "../theme";
 
 export const project = pgTable("projects", {
 	id: uuid("id").primaryKey().defaultRandom(),

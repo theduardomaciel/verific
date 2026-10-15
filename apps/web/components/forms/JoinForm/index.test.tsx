@@ -28,6 +28,7 @@ vi.mock("@/lib/validations", async (importOriginal) => {
 });
 
 import { scrollToNextSection } from "@/lib/validations";
+
 import type * as ValidationsModule from "@/lib/validations";
 
 const mockMutateAsync = vi.fn();

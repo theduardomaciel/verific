@@ -1,7 +1,8 @@
 import Image from "next/image";
-import { Badge } from "../ui/badge";
 
 import Cover from "@/public/images/cover.png";
+
+import { Badge } from "../ui/badge";
 
 export function ProjectDeletePreview() {
 	return (

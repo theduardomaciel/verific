@@ -9,6 +9,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+
 import type { Section } from "../../types";
 
 interface DeleteSectionDialogProps {

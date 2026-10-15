@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "@verific/zod";
-import { PencilIcon, PlusIcon } from "lucide-react";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { PencilIcon, PlusIcon } from "lucide-react";
+import { useForm, useWatch } from "react-hook-form";
+
+import { isConditionalTriggerType } from "@verific/api/schemas";
+import { z } from "@verific/zod";
+
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
 import {
 	Dialog,
 	DialogContent,
@@ -27,6 +29,7 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import {
 	Select,
 	SelectContent,
@@ -34,10 +37,10 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { isConditionalTriggerType } from "@verific/api/schemas";
-import type { Field, Section } from "../../types";
+import { Switch } from "@/components/ui/switch";
+
 import type { SectionMutation } from "../../hooks/use-forms-builder";
+import type { Field, Section } from "../../types";
 
 const sectionFormSchema = z
 	.object({

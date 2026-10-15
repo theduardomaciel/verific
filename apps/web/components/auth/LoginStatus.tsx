@@ -1,18 +1,18 @@
 import type { ReactNode } from "react";
 import { useTransition } from "react";
 
-import { cn } from "@/lib/utils";
+// Icons
+import { LoaderCircle, LogOut } from "lucide-react";
 
 // Components
 import { Panel } from "@/components/forms";
-import GoogleButton, { ContinueRegistrationButton } from "./GoogleButton";
-
-// Icons
-import { LoaderCircle, LogOut } from "lucide-react";
-import { Button } from "../ui/button";
 
 // Actions
 import { signOutAction } from "@/app/actions";
+import { cn } from "@/lib/utils";
+
+import { Button } from "../ui/button";
+import GoogleButton, { ContinueRegistrationButton } from "./GoogleButton";
 
 interface NotLoggedProps {
 	className?: string;

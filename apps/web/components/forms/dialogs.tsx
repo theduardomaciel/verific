@@ -1,10 +1,10 @@
 "use client";
 
-import type React from "react";
 import Link from "next/link";
+import type React from "react";
 
 import { Check, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import Confetti from "react-confetti-boom";
 
 // Components
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import Confetti from "react-confetti-boom";
+
+import { cn } from "@/lib/utils";
 
 // Icons
 

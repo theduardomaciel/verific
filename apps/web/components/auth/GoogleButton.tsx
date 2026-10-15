@@ -1,19 +1,18 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-
-import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 // Icons
 import { Loader2 } from "lucide-react";
-import GoogleLogo from "@/public/icons/google.svg";
 
 // Components
 import { Button } from "@/components/ui/button";
 
 // Actions
 import { loginAction } from "@/app/actions";
+import { cn } from "@/lib/utils";
+import GoogleLogo from "@/public/icons/google.svg";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 	callbackUrl: string;

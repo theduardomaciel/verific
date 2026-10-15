@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
+import { Skeleton } from "@/components/ui/skeleton";
+
 // Components
 import { EditActivityContent } from "./content";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata: Metadata = {
 	title: "Editar Atividade",

@@ -1,16 +1,13 @@
 import "server-only";
-
-import { db } from "@verific/drizzle";
-
-import { z } from "@verific/zod";
-
-import { user } from "@verific/drizzle/schema";
-import { eq } from "@verific/drizzle/orm";
-
-import { createTRPCRouter, protectedProcedure } from "../trpc";
-
 // API
 import { TRPCError } from "@trpc/server";
+
+import { db } from "@verific/drizzle";
+import { eq } from "@verific/drizzle/orm";
+import { user } from "@verific/drizzle/schema";
+import { z } from "@verific/zod";
+
+import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 export const usersRouter = createTRPCRouter({
 	updateUser: protectedProcedure

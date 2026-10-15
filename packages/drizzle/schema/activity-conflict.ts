@@ -1,6 +1,7 @@
-import { pgTable, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
-import { activity } from "./activity";
 import { relations } from "drizzle-orm";
+import { pgTable, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+
+import { activity } from "./activity";
 
 export const activityConflict = pgTable(
 	"activity_conflicts",

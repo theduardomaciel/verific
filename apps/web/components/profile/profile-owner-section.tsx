@@ -1,6 +1,8 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
+
 import { ChevronDown } from "lucide-react";
 
 import {
@@ -9,9 +11,9 @@ import {
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
+
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc/react";
-import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 interface ProfileOwnerSectionProps {

@@ -1,7 +1,9 @@
-import { Suspense } from "react";
 import type { Metadata } from "next";
-import { ActivityFormContent } from "./content";
+import { Suspense } from "react";
+
 import { Skeleton } from "@/components/ui/skeleton";
+
+import { ActivityFormContent } from "./content";
 
 export const metadata: Metadata = {
 	title: "Formulário da atividade",

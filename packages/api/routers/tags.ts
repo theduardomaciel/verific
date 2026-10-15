@@ -1,16 +1,15 @@
-import { z } from "@verific/zod";
-
-import { db } from "@verific/drizzle";
-import { tag } from "@verific/drizzle/schema";
-import { asc, eq } from "@verific/drizzle/orm";
-
 // tRPC
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
+
+import { db } from "@verific/drizzle";
+import { asc, eq } from "@verific/drizzle/orm";
+import { tag } from "@verific/drizzle/schema";
+import { z } from "@verific/zod";
 
 // Utils
 import { isMemberAuthenticated } from "../auth";
 import { tagColorSchema } from "../schemas";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
 export const tagsRouter = createTRPCRouter({
 	getProjectTags: publicProcedure

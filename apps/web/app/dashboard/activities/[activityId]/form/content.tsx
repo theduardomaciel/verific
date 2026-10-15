@@ -1,19 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { toast } from "sonner";
+import { useEffect, useRef, useState } from "react";
+
 import { ArrowLeft, Eye, Pencil } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { trpc } from "@/lib/trpc/react";
+
 import { useDashboard } from "@/components/dashboard/dashboard-context";
-import { useFormsBuilder } from "@/app/dashboard/forms/hooks/use-forms-builder";
+
 import { BuilderCard } from "@/app/dashboard/forms/components/builder-card";
 import { DeleteFieldDialog } from "@/app/dashboard/forms/components/dialog/delete-field-dialog";
 import { DeleteSectionDialog } from "@/app/dashboard/forms/components/dialog/delete-section-dialog";
+import { useFormsBuilder } from "@/app/dashboard/forms/hooks/use-forms-builder";
 import { FormPreview } from "@/app/dashboard/forms/preview";
+import { trpc } from "@/lib/trpc/react";
 
 export function ActivityFormContent({ activityId }: { activityId: string }) {
 	const { projectId } = useDashboard();

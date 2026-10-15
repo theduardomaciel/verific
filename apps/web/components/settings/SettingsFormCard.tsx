@@ -1,15 +1,8 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 // Icons
 import { LoaderCircle } from "lucide-react";
-
-// Components
-import { Button } from "@/components/ui/button";
-import {
-	SettingsCard,
-	type SettingsCardFooterProps,
-} from "@/components/settings/settings-card";
-
 // Forms
 import {
 	FormProvider,
@@ -20,7 +13,14 @@ import {
 
 // Validations
 import type z from "@verific/zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+
+// Components
+import { Button } from "@/components/ui/button";
+
+import {
+	SettingsCard,
+	type SettingsCardFooterProps,
+} from "@/components/settings/settings-card";
 
 interface SettingsFormCardProps<
 	T extends z.ZodType<Record<string, any>, Record<string, any>>,

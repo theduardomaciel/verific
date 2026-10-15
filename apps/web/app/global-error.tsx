@@ -3,12 +3,13 @@
 import type { Metadata } from "next";
 import { useState } from "react";
 
-// Icons
-import Logo from "@/public/logo.svg";
 import { RefreshCcw } from "lucide-react";
 
 // Components
 import { Button } from "@/components/ui/button";
+
+// Icons
+import Logo from "@/public/logo.svg";
 
 export const metadata: Metadata = {
 	title: "Erro",

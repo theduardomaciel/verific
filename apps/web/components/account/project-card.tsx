@@ -1,17 +1,18 @@
 "use client";
 
+import Image from "next/image";
+
 // Icons
 import { ArrowRight, Ticket } from "lucide-react";
+
+// Types
+import type { RouterOutput } from "@verific/api";
 
 // Components
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 // Actions
 import { updateProjectCookies } from "@/app/actions";
-
-// Types
-import type { RouterOutput } from "@verific/api";
-import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 interface EventCardProps {

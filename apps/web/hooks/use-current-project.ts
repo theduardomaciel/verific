@@ -1,8 +1,10 @@
 "use client";
 
-import { trpc } from "@/lib/trpc/react";
-import { useDashboard } from "@/components/dashboard/dashboard-context";
 import type { RouterOutput } from "@verific/api";
+
+import { useDashboard } from "@/components/dashboard/dashboard-context";
+
+import { trpc } from "@/lib/trpc/react";
 
 interface CurrentProjectQuery {
 	data: RouterOutput["getProject"] | undefined;
