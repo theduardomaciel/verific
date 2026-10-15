@@ -72,6 +72,8 @@ interface SuccessDialogProps extends Props {
 	confettiColors?: string[];
 }
 
+const HEX_COLOR = /^#[0-9A-Fa-f]{6}$/;
+
 export function SuccessDialog({
 	isOpen,
 	onClose,
@@ -82,6 +84,10 @@ export function SuccessDialog({
 	className,
 	confettiColors,
 }: SuccessDialogProps) {
+	const validConfettiColors = confettiColors?.filter((color) =>
+		HEX_COLOR.test(color),
+	);
+
 	return (
 		<Dialog open={isOpen}>
 			<DialogContent
@@ -96,7 +102,7 @@ export function SuccessDialog({
 					event.preventDefault();
 				}}
 				additionalChildren={
-					confettiColors &&
+					validConfettiColors?.length &&
 					isOpen && (
 						<>
 							<div className="pointer-events-none fixed inset-0 z-600 h-screen w-screen select-none">
@@ -105,14 +111,14 @@ export function SuccessDialog({
 									particleCount={100}
 									spreadDeg={60}
 									launchSpeed={1.5}
-									colors={confettiColors}
+									colors={validConfettiColors}
 								/>
 							</div>
 							<div className="pointer-events-none fixed inset-0 h-screen w-screen select-none">
 								<Confetti
 									mode="fall"
 									particleCount={50}
-									colors={confettiColors}
+									colors={validConfettiColors}
 								/>
 							</div>
 						</>

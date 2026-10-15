@@ -151,7 +151,6 @@ export function EditMyAnswersForm({
 		unknown
 	>;
 
-	// oxlint-disable-line react-hooks/exhaustive-deps -- watched is a RHF watch() result that changes every render; adding it would defeat the memoization purpose.
 	const grouped = useMemo(() => {
 		if (!sectionsForVisibility.some((s) => s.visibilityRule)) {
 			return groupFieldsBySection(fields, sections);
@@ -159,7 +158,6 @@ export function EditMyAnswersForm({
 		const visible = filterVisibleFields(
 			fields,
 			sectionsForVisibility,
-			// oxlint-disable-line react-hooks/exhaustive-deps -- watched is a RHF watch() result that changes every render; adding it would defeat the memoization purpose.
 			watched,
 		);
 		const ids = getVisibleSectionIds(
@@ -172,9 +170,7 @@ export function EditMyAnswersForm({
 		);
 	}, [fields, sections, sectionsForVisibility, fieldsForValidation, watched]);
 
-	// oxlint-disable-line react-hooks/exhaustive-deps -- sectionsForVisibility/fieldsForValidation/form/watched are stable or intentionally excluded to avoid infinite re-renders; the effect only runs when `watched` changes (via the inline filter).
 	useEffect(() => {
-		// oxlint-disable-line react-hooks/exhaustive-deps -- sectionsForVisibility/fieldsForValidation/form/watched are stable or intentionally excluded to avoid infinite re-renders; the effect only runs when `watched` changes (via the inline filter).
 		const allowed = new Set(
 			filterVisibleFields(
 				fieldsForValidation,
@@ -197,7 +193,7 @@ export function EditMyAnswersForm({
 	});
 
 	if (published.isPending || myAnswers.isPending)
-		return <Skeleton className="h-40 w-full" />;
+		return <Skeleton className="h-200 w-full" />;
 	if (!myAnswers.data?.participant) return null;
 	if (fields.length === 0) return null;
 
