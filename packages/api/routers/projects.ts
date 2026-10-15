@@ -1,6 +1,4 @@
 // API
-import { TRPCError } from "@trpc/server";
-
 import { db } from "@verific/drizzle";
 import { eq } from "@verific/drizzle/orm";
 import {
@@ -11,6 +9,10 @@ import {
 import { eventThemeSchema } from "@verific/drizzle/theme";
 import { z } from "@verific/zod";
 
+import {
+	requireProjectAccess,
+	requireProjectOwner,
+} from "../lib/project-access";
 import { normalizeThemeFonts } from "../lib/theme-fonts";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { generateShortId } from "./profiles";
@@ -38,29 +40,6 @@ export const updateProjectSchema = z.object({
 	startDate: z.coerce.date().optional(),
 	endDate: z.coerce.date().optional(),
 });
-
-async function requireProjectAccess(projectId: string, userId: string) {
-	const data = await db.query.project.findFirst({
-		where: eq(project.id, projectId),
-		with: { moderators: { columns: { userId: true } } },
-	});
-	if (!data) {
-		throw new TRPCError({
-			code: "NOT_FOUND",
-			message: "Evento não encontrado.",
-		});
-	}
-	const allowed =
-		data.ownerId === userId ||
-		data.moderators.some((m) => m.userId === userId);
-	if (!allowed) {
-		throw new TRPCError({
-			code: "FORBIDDEN",
-			message: "Sem permissão neste evento.",
-		});
-	}
-	return data;
-}
 
 export const projectsRouter = createTRPCRouter({
 	createProject: protectedProcedure
@@ -254,16 +233,9 @@ export const projectsRouter = createTRPCRouter({
 	deleteProject: protectedProcedure
 		.input(z.object({ id: z.string().uuid() }))
 		.mutation(async ({ input, ctx }) => {
-			const userId = ctx.session.user.id;
-			const data = await requireProjectAccess(input.id, userId);
 			// Deletion is irreversible: owner-only, unlike updateProject
 			// where moderators are allowed.
-			if (data.ownerId !== userId) {
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message: "Apenas o dono do evento pode excluir.",
-				});
-			}
+			await requireProjectOwner(input.id, ctx.session.user.id);
 			await db.delete(project).where(eq(project.id, input.id));
 			return { success: true };
 		}),

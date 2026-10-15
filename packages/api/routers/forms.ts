@@ -34,6 +34,7 @@ import {
 	isCompatible,
 	readProjectLayout,
 } from "../lib/profile-links";
+import { requireProjectAccess } from "../lib/project-access";
 import { queueEventRegistrationEmail } from "../notifications";
 import {
 	answerValueSchema,
@@ -52,30 +53,6 @@ import {
 } from "../schemas";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { generateShortId } from "./profiles";
-
-export async function requireProjectAccess(projectId: string, userId: string) {
-	const data = await db.query.project.findFirst({
-		where: eq(project.id, projectId),
-		with: {
-			moderators: { columns: { userId: true } },
-		},
-	});
-	if (!data) {
-		throw new TRPCError({
-			code: "NOT_FOUND",
-			message: "Evento não encontrado.",
-		});
-	}
-	const isOwner = data.ownerId === userId;
-	const isModerator = data.moderators.some((m) => m.userId === userId);
-	if (!isOwner && !isModerator) {
-		throw new TRPCError({
-			code: "FORBIDDEN",
-			message: "Sem permissão neste evento.",
-		});
-	}
-	return data;
-}
 
 /** Matches versions of one scope: event form (null) or a specific activity. */
 function versionScope(activityId?: string | null) {

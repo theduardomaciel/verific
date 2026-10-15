@@ -1,6 +1,7 @@
 import "server-only";
 import { TRPCError } from "@trpc/server";
 
+import { requireProjectAccess } from "../lib/project-access";
 import {
 	getEmailUsage,
 	reprocessBatchNotifications,
@@ -14,7 +15,6 @@ import {
 	reprocessOneNotificationInput,
 } from "../schemas";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
-import { requireProjectAccess } from "./forms";
 
 /**
  * Organizer-only admin procedures for the notifications of one event.
