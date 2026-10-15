@@ -2,8 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { cn } from "@/lib/utils";
-
 // Icons
 import { Loader2, MapPin, Search } from "lucide-react";
 
@@ -15,6 +13,8 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+
+import { cn } from "@/lib/utils";
 
 interface PlaceData {
 	address: string;

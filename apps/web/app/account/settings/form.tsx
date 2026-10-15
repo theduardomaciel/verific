@@ -1,23 +1,24 @@
 "use client";
 import { Image } from "lucide-react";
+import { toast } from "sonner";
+
+// API
+import type { RouterOutput } from "@verific/api";
 
 // Components
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { SettingsCard } from "@/components/settings/settings-card";
-import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
 import {
 	FormField,
 	FormItem,
 	FormControl,
 	FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 
-// API
-import type { RouterOutput } from "@verific/api";
+import { SettingsCard } from "@/components/settings/settings-card";
+import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
+
 import { trpc } from "@/lib/trpc/react";
-import { toast } from "sonner";
-
 // Validations
 import { nameSchema } from "@/lib/validations/forms/settings-form/project/general-form";
 

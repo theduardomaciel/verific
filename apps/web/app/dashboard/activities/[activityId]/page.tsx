@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 
-import { ActivityContent } from "./content";
 import { Skeleton } from "@/components/ui/skeleton";
+
+import { ActivityContent } from "./content";
 
 export default function ActivityPage({
 	params,

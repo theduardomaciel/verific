@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState, useTransition, useMemo } from "react";
-import { toast } from "sonner";
 
 // Icons
 import { Loader2, UserPlus, Search } from "lucide-react";
+import { toast } from "sonner";
 
 // Components
 import { Button } from "@/components/ui/button";
@@ -19,16 +19,16 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { ParticipantItem } from "../participant-item";
 
+import { revalidateParticipantActivities } from "@/app/actions";
 // Hooks
 import { useParticipantSearch } from "@/hooks/participant/use-participant-search";
-import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { useParticipantSelection } from "@/hooks/participant/use-participant-selection";
-
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 // Types
 import { trpc } from "@/lib/trpc/react";
-import { revalidateParticipantActivities } from "@/app/actions";
+
+import { ParticipantItem } from "../participant-item";
 
 interface AddMonitorDialogProps {
 	projectId: string;

@@ -2,7 +2,6 @@ import Image from "next/image";
 
 import desktopLight from "@/public/images/dashboard-desktop-light.png";
 import desktopDark from "@/public/images/dashboard-desktop.png";
-
 import mobileLight from "@/public/images/dashboard-mobile-light.png";
 import mobileDark from "@/public/images/dashboard-mobile.png";
 

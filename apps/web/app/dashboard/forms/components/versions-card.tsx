@@ -1,15 +1,18 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 import { FilePlusIcon, CopyIcon, TrashIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	ConfirmDialog,
 	useConfirmDialog,
 } from "@/components/ui/confirm-dialog";
+
 import type { Version } from "../types";
-import type { ReactNode } from "react";
 
 interface VersionsCardProps {
 	versions: Version[];

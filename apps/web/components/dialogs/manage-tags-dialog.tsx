@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { toast } from "sonner";
-import { Pencil, Plus, TagsIcon, Trash2, X } from "lucide-react";
 
-import { trpc } from "@/lib/trpc/react";
+import { Pencil, Plus, TagsIcon, Trash2, X } from "lucide-react";
+import { toast } from "sonner";
+
 import { tagColors } from "@verific/api/schemas";
+
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
 	Dialog,
 	DialogContent,
@@ -16,6 +16,9 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+
+import { trpc } from "@/lib/trpc/react";
 
 interface ManageTagsDialogProps {
 	projectId: string;

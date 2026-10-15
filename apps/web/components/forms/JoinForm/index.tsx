@@ -1,12 +1,24 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Eye } from "lucide-react";
+import { useForm, useWatch } from "react-hook-form";
+
+import type { RouterOutput } from "@verific/api";
+// Validation
+import {
+	buildAnswersSchema,
+	filterVisibleFields,
+	getVisibleSectionIds,
+} from "@verific/api/schemas";
+// Types
+import type { User } from "@verific/auth";
+import { isFieldLinked } from "@verific/drizzle/profile-layout";
 import { z } from "@verific/zod";
 
-// Components
-import { FormSection, SectionFooter } from "@/components/forms";
 import {
 	Form,
 	FormWrapper,
@@ -16,40 +28,30 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
-import { DynamicField } from "@/components/forms/dynamic/DynamicField";
+import { Input } from "@/components/ui/input";
+
+// Components
+import { FormSection, SectionFooter } from "@/components/forms";
 import {
 	ErrorDialog,
 	LoadingDialog,
 	SuccessDialog,
 } from "@/components/forms/dialogs";
+import { DynamicField } from "@/components/forms/dynamic/DynamicField";
 
-import { Input } from "@/components/ui/input";
-import JoinForm0 from "./Section0";
+import { revalidateParticipantEnrollment } from "@/app/actions";
 import {
 	isFilled,
 	groupFieldsBySection,
 	planFormSections,
 } from "@/lib/forms/layout";
-import { Eye } from "lucide-react";
-import { isFieldLinked } from "@verific/drizzle/profile-layout";
-import { scrollToNextSection } from "@/lib/validations";
-
-// Validation
-import {
-	buildAnswersSchema,
-	filterVisibleFields,
-	getVisibleSectionIds,
-} from "@verific/api/schemas";
-import type { GenericForm } from "..";
-
-// Types
-import type { User } from "@verific/auth";
-import type { RouterOutput } from "@verific/api";
-
 // API
 import { trpc } from "@/lib/trpc/react";
-import { useRouter } from "next/navigation";
-import { revalidateParticipantEnrollment } from "@/app/actions";
+import { scrollToNextSection } from "@/lib/validations";
+
+import JoinForm0 from "./Section0";
+
+import type { GenericForm } from "..";
 
 interface JoinFormProps {
 	user?: User;

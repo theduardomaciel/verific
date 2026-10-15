@@ -1,9 +1,10 @@
-import { cn } from "@/lib/utils";
 import { Clock } from "lucide-react";
 
 // Types
 import type { activityCategories } from "@verific/drizzle/enum/category";
 import { activityCategoryLabels } from "@verific/drizzle/enum/category";
+
+import { cn } from "@/lib/utils";
 
 interface CategoryCard {
 	className?: string;

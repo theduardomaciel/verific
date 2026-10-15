@@ -1,7 +1,8 @@
 "use client";
 
-import { Panel, type PanelProps } from "@/components/forms";
 import Link from "next/link";
+
+import { Panel, type PanelProps } from "@/components/forms";
 
 interface Error {
 	type: PanelProps["type"];

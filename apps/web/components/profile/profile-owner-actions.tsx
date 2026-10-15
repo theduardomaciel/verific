@@ -1,13 +1,16 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
+
 import { LogOut } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { LogoutForm } from "@/components/ui/logout-form";
 import { Skeleton } from "@/components/ui/skeleton";
+
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc/react";
-import { useSearchParams } from "next/navigation";
+
 import { EditProfileDialog } from "./edit-profile-dialog";
 
 interface ProfileOwnerActionsProps {

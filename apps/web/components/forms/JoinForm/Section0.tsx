@@ -1,11 +1,5 @@
 "use client";
 
-// Components
-import {
-	FormSection,
-	SectionFooter,
-	type GenericForm,
-} from "@/components/forms";
 import {
 	FormField,
 	FormItem,
@@ -13,9 +7,14 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 
-import { Logged } from "@/components/auth/LoginStatus";
-
 import GoogleButton from "@/components/auth/GoogleButton";
+import { Logged } from "@/components/auth/LoginStatus";
+// Components
+import {
+	FormSection,
+	SectionFooter,
+	type GenericForm,
+} from "@/components/forms";
 
 interface JoinForm0Props {
 	projectUrl: string;

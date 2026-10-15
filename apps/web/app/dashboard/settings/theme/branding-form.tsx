@@ -1,18 +1,19 @@
 "use client";
 import { type UseFormReturn } from "react-hook-form";
-
 // Components
 import { toast } from "sonner";
-import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
+
+import type { RouterOutput } from "@verific/api";
+
 import { FormField } from "@/components/ui/form";
 import { ImageUploader } from "@/components/ui/image-uploader";
 
-// Validations
-import { brandingSchema } from "@/lib/validations/forms/settings-form/project/preferences-form";
+import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
 
 // tRPC
 import { trpc } from "@/lib/trpc/react";
-import type { RouterOutput } from "@verific/api";
+// Validations
+import { brandingSchema } from "@/lib/validations/forms/settings-form/project/preferences-form";
 
 interface Props {
 	project: RouterOutput["getProject"]["project"];

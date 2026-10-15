@@ -1,5 +1,6 @@
-import * as EventContainer from "@/components/landing/event-container";
 import { Skeleton } from "@/components/ui/skeleton";
+
+import * as EventContainer from "@/components/landing/event-container";
 
 /**
  * Esqueleto em tamanho real da página do evento: espelha o Hero

@@ -1,5 +1,13 @@
 "use client";
 
+import { Globe, type LucideIcon, Link2Icon } from "lucide-react";
+
+import {
+	socialServiceById,
+	type SOCIAL_SERVICES,
+	type SocialServiceIcon,
+} from "@verific/drizzle/profile-layout";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -9,18 +17,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	socialServiceById,
-	type SOCIAL_SERVICES,
-	type SocialServiceIcon,
-} from "@verific/drizzle/profile-layout";
-import { Globe, type LucideIcon, Link2Icon } from "lucide-react";
 
 import Github from "@/public/icons/github.svg";
 import Instagram from "@/public/icons/instagram.svg";
+import Lattes from "@/public/icons/lattes.svg";
 import Linkedin from "@/public/icons/linkedin.svg";
 import Twitter from "@/public/icons/twitter.svg";
-import Lattes from "@/public/icons/lattes.svg";
 
 export type SocialEntry = { service: string; value: string };
 

@@ -7,11 +7,11 @@ import {
 	text,
 } from "drizzle-orm/pg-core";
 
-import { participantOnActivity } from "./participant-on-activity";
-import { sessionAttendance } from "./session-attendance";
-import { project } from "./project";
-import { user } from "./user";
 import { formAnswer } from "./form-answer";
+import { participantOnActivity } from "./participant-on-activity";
+import { project } from "./project";
+import { sessionAttendance } from "./session-attendance";
+import { user } from "./user";
 
 export const participant = pgTable(
 	"participants",

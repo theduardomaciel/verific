@@ -1,6 +1,11 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+
+import { Ban } from "lucide-react";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -12,15 +17,13 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { trpc } from "@/lib/trpc/react";
-import { toast } from "sonner";
-import { Ban } from "lucide-react";
-import { useRouter } from "next/navigation";
+
 import {
 	revalidateParticipantActivities,
 	revalidateParticipantEnrollment,
 	revalidateParticipants,
 } from "@/app/actions";
+import { trpc } from "@/lib/trpc/react";
 
 interface RemoveParticipantDialogProps {
 	children: React.ReactNode;

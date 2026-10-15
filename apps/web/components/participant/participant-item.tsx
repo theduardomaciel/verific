@@ -1,7 +1,5 @@
 import Link from "next/link";
 
-import { cn } from "@/lib/utils";
-
 // Icons
 import {
 	Check,
@@ -13,16 +11,17 @@ import {
 	CircleMinus,
 } from "lucide-react";
 
-// Components
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { Button } from "../ui/button";
-
 // API
 import type { RouterOutput } from "@verific/api";
 
 // Utils
 import { getTimeString } from "@/lib/date";
+import { cn } from "@/lib/utils";
+
 import { RemoveParticipantDialog } from "../dialogs/remove-participant";
+// Components
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Button } from "../ui/button";
 
 type ActivityParticipant =
 	RouterOutput["getActivity"]["activity"]["participants"][number];

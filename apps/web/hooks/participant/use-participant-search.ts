@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { trpc } from "@/lib/trpc/react";
+
 import { useDebounce } from "@/hooks/use-debounce";
+import { trpc } from "@/lib/trpc/react";
 
 interface UseParticipantSearchProps {
 	projectId: string;

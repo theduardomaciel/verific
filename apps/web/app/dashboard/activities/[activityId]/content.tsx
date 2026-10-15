@@ -1,10 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { keepPreviousData } from "@tanstack/react-query";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 
+import { keepPreviousData } from "@tanstack/react-query";
 // Icons
 import {
 	Calendar,
@@ -15,20 +13,31 @@ import {
 	Share2,
 	Trash,
 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
-// Components
-import * as ParticipantsList from "@/components/participant/participants-list";
-import { DashboardPagination } from "@/components/dashboard/pagination";
-import { SearchBar } from "@/components/search-bar";
-import { SortBy } from "@/components/sort-by";
+// Validation (client-safe: no db / server env imports)
+import { getActivityParams } from "@verific/api/schemas";
+import { env } from "@verific/env";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CategoryCard } from "@/components/dashboard/category-card";
-import { ActivityDeleteDialog } from "@/components/dialogs/delete-dialog";
-import { ShareDialog } from "@/components/dialogs/share-dialog";
-import { AddMonitorDialog } from "@/components/dialogs/add-monitor-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 
+import { CategoryCard } from "@/components/dashboard/category-card";
+import { useDashboard } from "@/components/dashboard/dashboard-context";
+import { DashboardPagination } from "@/components/dashboard/pagination";
+import { AddMonitorDialog } from "@/components/dialogs/add-monitor-dialog";
+import { ActivityDeleteDialog } from "@/components/dialogs/delete-dialog";
+import { ShareDialog } from "@/components/dialogs/share-dialog";
+import { ExportParticipantsButton } from "@/components/participant/export-button";
+// Components
+import * as ParticipantsList from "@/components/participant/participants-list";
+import { SearchBar } from "@/components/search-bar";
+import { SortBy } from "@/components/sort-by";
+
+// Hooks
+import { useParsedSearchParams } from "@/hooks/use-parsed-search-params";
 // Data
 import {
 	getSessionsDateString,
@@ -36,18 +45,8 @@ import {
 	getSessionsSorted,
 } from "@/lib/date";
 import { listToString } from "@/lib/i18n";
-import { ExportParticipantsButton } from "@/components/participant/export-button";
-
-// Validation (client-safe: no db / server env imports)
-import { getActivityParams } from "@verific/api/schemas";
-
-// Hooks
-import { useParsedSearchParams } from "@/hooks/use-parsed-search-params";
-import { useDashboard } from "@/components/dashboard/dashboard-context";
-
 // API
 import { trpc } from "@/lib/trpc/react";
-import { env } from "@verific/env";
 
 export function ActivityContent({ activityId }: { activityId: string }) {
 	const { projectId } = useDashboard();

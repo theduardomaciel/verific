@@ -1,19 +1,22 @@
 "use client";
-import type { UseFormReturn } from "react-hook-form";
-
 // Components
 import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
-import { MarkdownTextarea } from "@/components/ui/markdown-textarea";
-import { PlacePicker } from "@/components/pickers/place-picker";
-import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
-import { DateRangePicker } from "@/components/pickers/date-range-picker";
+
+// Infer types from schemas
+import type { z } from "@verific/zod";
+
 import {
 	FormField,
 	FormItem,
 	FormControl,
 	FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { MarkdownTextarea } from "@/components/ui/markdown-textarea";
+
+import { DateRangePicker } from "@/components/pickers/date-range-picker";
+import { PlacePicker } from "@/components/pickers/place-picker";
+import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
 
 // Validations
 import {
@@ -24,16 +27,16 @@ import {
 	urlSchema,
 } from "@/lib/validations/forms/settings-form/project/general-form";
 
-// Infer types from schemas
-import type { z } from "@verific/zod";
+import type { UseFormReturn } from "react-hook-form";
 type NameFormValues = z.infer<typeof nameSchema>;
 type UrlFormValues = z.infer<typeof urlSchema>;
 type DateFormValues = z.infer<typeof dateSchema>;
 type AddressFormValues = z.infer<typeof addressSchema>;
 
+import type { RouterOutput } from "@verific/api";
+
 // tRPC
 import { trpc } from "@/lib/trpc/react";
-import type { RouterOutput } from "@verific/api";
 
 interface Props {
 	project: RouterOutput["getProject"]["project"];

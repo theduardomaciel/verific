@@ -1,26 +1,30 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { useForm, useWatch } from "react-hook-form";
+
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Eye } from "lucide-react";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
-import { trpc } from "@/lib/trpc/react";
 import {
 	buildAnswersSchema,
 	filterVisibleFields,
 	getVisibleSectionIds,
 } from "@verific/api/schemas";
-import { groupFieldsBySection } from "@/lib/forms/layout";
-import { DynamicField } from "@/components/forms/dynamic/DynamicField";
+import { slotForField } from "@verific/drizzle/profile-layout";
+
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Eye } from "lucide-react";
-import { slotForField } from "@verific/drizzle/profile-layout";
+import { Switch } from "@/components/ui/switch";
+
+import { DynamicField } from "@/components/forms/dynamic/DynamicField";
+
+import { groupFieldsBySection } from "@/lib/forms/layout";
+import { trpc } from "@/lib/trpc/react";
 
 export function EditMyAnswersForm({
 	projectId,

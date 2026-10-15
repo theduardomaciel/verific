@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+
 import { SettingsIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,9 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+
 import { EditMyAnswersForm } from "@/components/forms/dynamic/EditAnswersForm";
+
 import { revalidateProfile } from "@/lib/profile-actions";
 
 interface EditProfileDialogProps {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
+
 import {
 	ArrowDown,
 	ArrowUp,
@@ -10,6 +10,18 @@ import {
 	Save,
 	Trash2,
 } from "lucide-react";
+import { toast } from "sonner";
+
+import { formFieldTypeLabels } from "@verific/drizzle/enum/form-field-type";
+import {
+	PROFILE_SLOTS,
+	profileLayoutSchema,
+	STAT_ICON_KEYS,
+	STAT_ICON_LABELS,
+	type ProfileLayout,
+	type ProfileSlotKey,
+	type StatIconKey,
+} from "@verific/drizzle/profile-layout";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,19 +36,11 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+
 import { StatIcon } from "@/components/profile/stat-icons";
-import { trpc } from "@/lib/trpc/react";
+
 import { revalidateEventProfiles } from "@/lib/profile-actions";
-import { formFieldTypeLabels } from "@verific/drizzle/enum/form-field-type";
-import {
-	PROFILE_SLOTS,
-	profileLayoutSchema,
-	STAT_ICON_KEYS,
-	STAT_ICON_LABELS,
-	type ProfileLayout,
-	type ProfileSlotKey,
-	type StatIconKey,
-} from "@verific/drizzle/profile-layout";
+import { trpc } from "@/lib/trpc/react";
 
 interface FieldOption {
 	id: string;

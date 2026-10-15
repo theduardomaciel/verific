@@ -8,19 +8,21 @@ import remarkGfm from "remark-gfm";
 // Components
 import { Button } from "@/components/ui/button";
 import {
-	Sheet,
-	SheetContent,
-	SheetHeader,
-	SheetTitle,
-} from "@/components/ui/sheet";
-import {
 	Drawer,
 	DrawerContent,
 	DrawerHeader,
 	DrawerTitle,
 } from "@/components/ui/drawer";
-import { useMediaQuery } from "@/hooks/use-media-query";
+import {
+	Sheet,
+	SheetContent,
+	SheetHeader,
+	SheetTitle,
+} from "@/components/ui/sheet";
+
 import { ActivityDetailsContent } from "@/components/activity/activity-card/content";
+
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 interface ExpandableDescriptionProps {
 	activity: any; // TODO: Use proper type from API

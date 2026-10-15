@@ -1,9 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useForm, type Control, useWatch } from "react-hook-form";
+
 import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "sonner";
 import {
 	PlusIcon,
 	PencilIcon,
@@ -20,13 +19,17 @@ import {
 	ChevronDownIcon,
 	CircleDotIcon,
 } from "lucide-react";
+import { useForm, type Control, useWatch } from "react-hook-form";
+import { toast } from "sonner";
 
-import { trpc } from "@/lib/trpc/react";
+import {
+	formFieldTypeLabels,
+	formFieldTypes,
+} from "@verific/drizzle/enum/form-field-type";
+import { SOCIAL_SERVICES } from "@verific/drizzle/profile-layout";
+
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import {
 	Collapsible,
 	CollapsibleContent,
@@ -49,6 +52,7 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import {
 	Select,
 	SelectContent,
@@ -56,7 +60,11 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import type { Field } from "../../types";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+
+import { trpc } from "@/lib/trpc/react";
+
 import {
 	buildRowHint,
 	defaultFieldValues,
@@ -65,11 +73,8 @@ import {
 	toUpsertFieldInput,
 	type FieldFormValues,
 } from "../../lib/field-form";
-import {
-	formFieldTypeLabels,
-	formFieldTypes,
-} from "@verific/drizzle/enum/form-field-type";
-import { SOCIAL_SERVICES } from "@verific/drizzle/profile-layout";
+
+import type { Field } from "../../types";
 
 interface FieldDialogProps {
 	versionId: string;

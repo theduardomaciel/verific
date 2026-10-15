@@ -1,5 +1,5 @@
-import * as React from "react";
 import { usePathname, useSearchParams } from "next/navigation";
+import * as React from "react";
 
 type Params = Record<string, string | string[] | undefined>;
 

@@ -8,9 +8,9 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 
+import { formField } from "./form-field";
 import { formVersion } from "./form-version";
 import { project } from "./project";
-import { formField } from "./form-field";
 
 export type SectionVisibilityOperator =
 	| "is_checked"

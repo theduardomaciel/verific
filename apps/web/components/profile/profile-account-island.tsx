@@ -1,6 +1,9 @@
 "use client";
 
+import { notFound, useSearchParams } from "next/navigation";
+
 import { LogOut, Pencil } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -12,12 +15,14 @@ import {
 } from "@/components/ui/dialog";
 import { LogoutForm } from "@/components/ui/logout-form";
 import { Skeleton } from "@/components/ui/skeleton";
+
 import { EditMyAnswersForm } from "@/components/forms/dynamic/EditAnswersForm";
-import { ProfileBanner } from "./profile-banner";
-import { ProfileOwnerTickets } from "./profile-owner-tickets";
+
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc/react";
-import { notFound, useSearchParams } from "next/navigation";
+
+import { ProfileBanner } from "./profile-banner";
+import { ProfileOwnerTickets } from "./profile-owner-tickets";
 
 interface ProfileAccountIslandProps {
 	eventUrl: string;

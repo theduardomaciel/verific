@@ -1,8 +1,11 @@
 "use client";
 
-import { Skeleton } from "@/components/ui/skeleton";
-import { useCurrentProject } from "@/hooks/use-current-project";
 import { parseProfileLayout } from "@verific/drizzle/profile-layout";
+
+import { Skeleton } from "@/components/ui/skeleton";
+
+import { useCurrentProject } from "@/hooks/use-current-project";
+
 import { ProfileLayoutEditor } from "./editor";
 
 export default function ProfileLayoutSettingsPage() {

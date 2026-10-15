@@ -1,17 +1,17 @@
 import Link from "next/link";
 
+// Types
+import type { RouterOutput } from "@verific/api";
+
 // Components
 import MainNav, { type MainNavProps } from "@/components/header/main-nav";
-import { ProjectSwitcher } from "./project-switcher";
-import { UserNav } from "./user-nav";
-
-import Logo from "@/public/logo.svg";
 
 // API
 import { getSession } from "@/lib/session";
+import Logo from "@/public/logo.svg";
 
-// Types
-import type { RouterOutput } from "@verific/api";
+import { ProjectSwitcher } from "./project-switcher";
+import { UserNav } from "./user-nav";
 
 interface Props {
 	selectedProjectId?: string;

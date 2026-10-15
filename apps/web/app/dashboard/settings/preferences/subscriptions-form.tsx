@@ -1,23 +1,24 @@
 "use client";
 import { toast } from "sonner";
 
-// Components
-import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import type { RouterOutput } from "@verific/api";
+
 import {
 	FormField,
 	FormItem,
 	FormControl,
 	FormMessage,
 } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
-// Validations
-import { subscriptionManagementSchema } from "@/lib/validations/forms/settings-form/project/subscriptions-form";
+// Components
+import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
 
 // tRPC
 import { trpc } from "@/lib/trpc/react";
-import type { RouterOutput } from "@verific/api";
+// Validations
+import { subscriptionManagementSchema } from "@/lib/validations/forms/settings-form/project/subscriptions-form";
 
 // Types
 import type { UseFormReturn } from "react-hook-form";

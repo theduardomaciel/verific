@@ -1,13 +1,15 @@
 "use client";
 
 import type React from "react";
-
 import { useState, useRef, useEffect } from "react";
+
+import { PopoverClose } from "@radix-ui/react-popover";
+import { Plus } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus } from "lucide-react";
+
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { PopoverClose } from "@radix-ui/react-popover";
 
 const FALLBACK_COLOR = "#3B82F6"; // Cor padrão
 

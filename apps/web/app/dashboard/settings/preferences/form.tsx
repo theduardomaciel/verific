@@ -2,16 +2,18 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import CertificatePlaceholder from "@/public/images/certificate-placeholder.png";
-
 // Icons
 import { ExternalLink, Mail } from "lucide-react";
-
 // Components
 import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+
 import { SettingsCard } from "@/components/settings/settings-card";
+
+import CertificatePlaceholder from "@/public/images/certificate-placeholder.png";
+
 import { ProjectSettingsSubscriptionsForm } from "./subscriptions-form";
 
 interface Props {

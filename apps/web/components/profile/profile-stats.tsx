@@ -1,10 +1,13 @@
 import { EyeOff } from "lucide-react";
 
+import type { StatIconKey } from "@verific/drizzle/profile-layout";
+
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+
 import { PLACEHOLDER_BADGES_COUNT } from "@/lib/profile-placeholders";
+
 import { StatIcon } from "./stat-icons";
-import type { StatIconKey } from "@verific/drizzle/profile-layout";
 
 export interface ProfileConnectionsData {
 	total: number;

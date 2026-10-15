@@ -1,10 +1,13 @@
 "use client";
 
-import { Skeleton } from "@/components/ui/skeleton";
-import { useCurrentProject } from "@/hooks/use-current-project";
 import { parseEventTheme } from "@verific/drizzle/theme";
-import { ThemeEditor } from "./editor";
+
+import { Skeleton } from "@/components/ui/skeleton";
+
+import { useCurrentProject } from "@/hooks/use-current-project";
+
 import { ProjectBrandingForm } from "./branding-form";
+import { ThemeEditor } from "./editor";
 
 export default function ThemeSettingsPage() {
 	const { data, isPending, isError } = useCurrentProject();
