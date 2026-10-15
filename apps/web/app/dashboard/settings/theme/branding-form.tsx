@@ -1,4 +1,6 @@
 "use client";
+import { useState } from "react";
+
 import { type UseFormReturn } from "react-hook-form";
 // Components
 import { toast } from "sonner";
@@ -10,6 +12,12 @@ import { ImageUploader } from "@/components/ui/image-uploader";
 
 import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
 
+// Tamanho medido no upload p/ as colunas de dimensão (cabeçalho sem salto).
+import {
+	logoDimsInput,
+	type ImageDims,
+	type LogoUrlField,
+} from "@/lib/images/logo-dims";
 // tRPC
 import { trpc } from "@/lib/trpc/react";
 // Validations
@@ -27,6 +35,32 @@ export function ProjectBrandingForm({ project }: Props) {
 		},
 	});
 
+	// Dimensões medidas no upload, por campo de logo. Ausente = intocado
+	// (fora da mutação); `null` = logo removido (zera as colunas).
+	const [logoMeta, setLogoMeta] = useState<
+		Partial<Record<LogoUrlField, ImageDims | null>>
+	>({});
+
+	function trackLogo(
+		fieldName: LogoUrlField,
+		onChange: (url: string) => void,
+	) {
+		return (url: string, meta?: ImageDims) => {
+			onChange(url);
+			setLogoMeta((prev) => ({
+				...prev,
+				[fieldName]: url ? (meta ?? null) : null,
+			}));
+		};
+	}
+
+	function dimsFor(fieldName: LogoUrlField) {
+		return logoDimsInput(
+			fieldName,
+			fieldName in logoMeta ? logoMeta[fieldName] : undefined,
+		);
+	}
+
 	const onSubmitBranding = async (form: UseFormReturn<any>) => {
 		const data = form.getValues();
 		try {
@@ -38,6 +72,10 @@ export function ProjectBrandingForm({ project }: Props) {
 				logoDarkUrl: data.logoDarkUrl,
 				largeLogoDarkUrl: data.largeLogoDarkUrl,
 				thumbnailUrl: data.thumbnailUrl,
+				...dimsFor("logoUrl"),
+				...dimsFor("logoDarkUrl"),
+				...dimsFor("largeLogoUrl"),
+				...dimsFor("largeLogoDarkUrl"),
 			});
 			toast.success("Configurações de marca atualizadas!");
 			form.reset(data);
@@ -75,7 +113,7 @@ export function ProjectBrandingForm({ project }: Props) {
 								purpose="event-logo"
 								projectId={project.id}
 								value={field.value}
-								onChange={(url) => field.onChange(url)}
+								onChange={trackLogo("logoUrl", field.onChange)}
 							/>
 						)}
 					/>
@@ -91,7 +129,10 @@ export function ProjectBrandingForm({ project }: Props) {
 								purpose="event-logo-wide"
 								projectId={project.id}
 								value={field.value}
-								onChange={(url) => field.onChange(url)}
+								onChange={trackLogo(
+									"largeLogoUrl",
+									field.onChange,
+								)}
 							/>
 						)}
 					/>
@@ -121,7 +162,10 @@ export function ProjectBrandingForm({ project }: Props) {
 								purpose="event-logo"
 								projectId={project.id}
 								value={field.value}
-								onChange={(url) => field.onChange(url)}
+								onChange={trackLogo(
+									"logoDarkUrl",
+									field.onChange,
+								)}
 							/>
 						)}
 					/>
@@ -137,7 +181,10 @@ export function ProjectBrandingForm({ project }: Props) {
 								purpose="event-logo-wide"
 								projectId={project.id}
 								value={field.value}
-								onChange={(url) => field.onChange(url)}
+								onChange={trackLogo(
+									"largeLogoDarkUrl",
+									field.onChange,
+								)}
 							/>
 						)}
 					/>

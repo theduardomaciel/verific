@@ -154,7 +154,27 @@ function EventLayoutFallback() {
 interface EventLogoProps {
 	light: string | null;
 	dark: string | null;
+	lightDims?: LogoDims;
+	darkDims?: LogoDims;
 	href: string;
+}
+
+interface LogoDims {
+	width: number;
+	height: number;
+}
+
+/** Só vale quando ambas existem (0/nulo = desconhecido). */
+function exactDims(
+	width: number | null | undefined,
+	height: number | null | undefined,
+): LogoDims | undefined {
+	return width && height ? { width, height } : undefined;
+}
+
+/** Logos quadrados guardam só o lado (sempre 1:1). */
+function squareDims(side: number | null | undefined): LogoDims | undefined {
+	return side ? { width: side, height: side } : undefined;
 }
 
 /**
@@ -164,7 +184,7 @@ interface EventLogoProps {
  * existe de fato: antes, a clara sumia no modo escuro e a escura não era
  * renderizada sem URL própria — o logo desaparecia por completo.
  */
-function EventLogo({ light, dark, href }: EventLogoProps) {
+function EventLogo({ light, dark, lightDims, darkDims, href }: EventLogoProps) {
 	if (!light) {
 		return (
 			<Link href={href} className="text-(--ev-header-fg)">
@@ -177,8 +197,8 @@ function EventLogo({ light, dark, href }: EventLogoProps) {
 		<Link href={href} className="text-(--ev-header-fg)">
 			<Image
 				src={light}
-				width={150}
-				height={28}
+				width={lightDims?.width ?? 150}
+				height={lightDims?.height ?? 28}
 				alt="Event logo"
 				className={
 					dark
@@ -190,8 +210,8 @@ function EventLogo({ light, dark, href }: EventLogoProps) {
 			{dark && (
 				<Image
 					src={dark}
-					width={150}
-					height={28}
+					width={darkDims?.width ?? 150}
+					height={darkDims?.height ?? 28}
 					alt="Event logo"
 					className="hidden h-8 w-auto max-w-48 object-contain dark:block"
 					priority
@@ -286,9 +306,31 @@ export default async function EventLayout({
 							<EventLogo
 								href={`/${eventUrl}`}
 								light={project.largeLogoUrl || project.logoUrl}
+								lightDims={
+									project.largeLogoUrl
+										? exactDims(
+												project.largeLogoWidth,
+												project.largeLogoHeight,
+											)
+										: squareDims(project.logoSide)
+								}
 								dark={
 									project.largeLogoDarkUrl ||
 									project.logoDarkUrl
+								}
+								darkDims={
+									(project.largeLogoDarkUrl
+										? exactDims(
+												project.largeLogoDarkWidth,
+												project.largeLogoDarkHeight,
+											)
+										: squareDims(project.logoDarkSide)) ??
+									(project.largeLogoUrl
+										? exactDims(
+												project.largeLogoWidth,
+												project.largeLogoHeight,
+											)
+										: squareDims(project.logoSide))
 								}
 							/>
 						}
