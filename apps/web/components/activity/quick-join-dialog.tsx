@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 // Icons
-import { Calendar, CircleAlert, Loader2 } from "lucide-react";
+import { Calendar, CircleAlert, Loader2, CheckCircle2 } from "lucide-react";
 
 // Types
 import type { RouterOutput } from "@verific/api";
@@ -21,6 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 
+import { useDialogConfetti } from "@/hooks/use-dialog-confetti";
 // Hooks
 import { useJoinActivity, type JoinError } from "@/hooks/use-join-activity";
 // Lib
@@ -43,6 +45,7 @@ interface QuickJoinDialogProps {
 	onOpenChange: (open: boolean) => void;
 	onJoined: (activity: QuickJoinActivity) => void;
 	onBlocked: (activity: QuickJoinActivity, reason: JoinBlockReason) => void;
+	eventUrl: string;
 }
 
 /**
@@ -60,33 +63,56 @@ export function QuickJoinDialog({
 	onOpenChange,
 	onJoined,
 	onBlocked,
+	eventUrl,
 }: QuickJoinDialogProps) {
 	const cancelRef = useRef<HTMLButtonElement>(null);
+	const router = useRouter();
 	const { join, status, reset } = useJoinActivity({
 		activityId: activity?.id ?? "",
 		participantId,
 		userId,
 	});
 	const pending = status === "pending";
+	const submitted = status === "submitted";
+	const [showSuccess, setShowSuccess] = useState(false);
+	const wasOpenRef = useRef(open);
 
+	// Confetti explosion on success dialog open
+	useDialogConfetti(showSuccess);
+
+	// Reset form state when dialog opens (only on transition from closed to open)
 	useEffect(() => {
-		if (open) reset();
+		const wasOpen = wasOpenRef.current;
+		wasOpenRef.current = open;
+		if (open && !wasOpen) {
+			reset();
+			setShowSuccess(false);
+		}
 	}, [open, activity?.id, reset]);
 
 	async function handleConfirm(): Promise<void> {
 		if (!activity || pending) return;
 		const joinError = await join();
 		if (!joinError) {
-			onJoined(activity);
+			setShowSuccess(true);
 		} else if (joinError !== "unknown") {
 			onBlocked(activity, joinError);
 		}
 	}
 
+	function handleSuccessAction(): void {
+		if (!activity) return;
+		onJoined(activity);
+		router.push(`/${eventUrl}/schedule#${activity.id}`);
+	}
+
 	function handleOpenChange(next: boolean): void {
-		if (!next && pending) return;
+		if (!next && (pending || submitted)) return;
+		if (!next && showSuccess) return;
 		onOpenChange(next);
 	}
+
+	const isLoading = pending || submitted;
 
 	return (
 		<AlertDialog open={open} onOpenChange={handleOpenChange}>
@@ -98,89 +124,177 @@ export function QuickJoinDialog({
 						cancelRef.current?.focus();
 					}}
 					onEscapeKeyDown={(event) => {
-						if (pending) event.preventDefault();
+						if (pending || submitted || showSuccess)
+							event.preventDefault();
 					}}
 				>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							Confirmar inscrição?
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							Confirme sua inscrição em{" "}
-							<span className="text-foreground font-semibold">
-								{activity.name}
-							</span>
-							.
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-
-					<ul className="flex flex-col gap-2">
-						{getSessionsSorted(activity.sessions).map(
-							(session, index) => (
-								<li
-									key={`session-${index}`}
-									className="flex items-center gap-2 text-sm"
-								>
-									<Calendar className="text-muted-foreground h-4 w-4 shrink-0" />
-									<span>
-										{getSessionsDateString([session])} (
-										{new Date(
-											session.startsAt,
-										).toLocaleDateString("pt-BR", {
-											weekday: "long",
-										})}
-										) · {getSessionTimeString(session)}
+					{showSuccess ? (
+						<>
+							<AlertDialogHeader>
+								<AlertDialogTitle>
+									<CheckCircle2 className="text-primary mr-2 inline-block h-5 w-5" />
+									Inscrição confirmada!
+								</AlertDialogTitle>
+								<AlertDialogDescription>
+									Você está inscrito em{" "}
+									<span className="text-foreground font-semibold">
+										{activity.name}
 									</span>
-								</li>
-							),
-						)}
-					</ul>
-					{getSessionsSorted(activity.sessions).length > 1 ? (
-						<p className="text-muted-foreground text-sm">
-							Esta inscrição vale para todas as sessões.
-						</p>
-					) : null}
+									.
+								</AlertDialogDescription>
+							</AlertDialogHeader>
 
-					{status === "error" ? (
-						<Alert variant="destructive">
-							<CircleAlert className="h-4 w-4" />
-							<AlertTitle>Não foi possível concluir</AlertTitle>
-							<AlertDescription>
-								Não foi possível concluir a inscrição. Tente
-								novamente.
-							</AlertDescription>
-						</Alert>
-					) : null}
+							<ul className="flex flex-col gap-2">
+								{getSessionsSorted(activity.sessions).map(
+									(session, index) => (
+										<li
+											key={`session-${index}`}
+											className="flex items-center gap-2 text-sm"
+										>
+											<Calendar className="text-muted-foreground h-4 w-4 shrink-0" />
+											<span>
+												{getSessionsDateString([
+													session,
+												])}{" "}
+												(
+												{new Date(
+													session.startsAt,
+												).toLocaleDateString("pt-BR", {
+													weekday: "long",
+												})}
+												) ·{" "}
+												{getSessionTimeString(session)}
+											</span>
+										</li>
+									),
+								)}
+							</ul>
+							{getSessionsSorted(activity.sessions).length > 1 ? (
+								<p className="text-muted-foreground text-sm">
+									Esta inscrição vale para todas as sessões.
+								</p>
+							) : null}
 
-					<AlertDialogFooter>
-						<AlertDialogCancel asChild>
-							<Button
-								ref={cancelRef}
-								type="button"
-								variant="outline"
-								disabled={pending}
-								className="min-h-11 w-full sm:w-auto"
-							>
-								Cancelar
-							</Button>
-						</AlertDialogCancel>
-						<Button
-							type="button"
-							disabled={pending}
-							aria-busy={pending}
-							onClick={() => void handleConfirm()}
-							className="min-h-11 w-full sm:w-auto"
-						>
-							{pending ? (
-								<>
-									<Loader2 className="h-4 w-4 animate-spin" />
-									Inscrevendo...
-								</>
-							) : (
-								"Confirmar inscrição"
-							)}
-						</Button>
-					</AlertDialogFooter>
+							<AlertDialogFooter>
+								<Button
+									type="button"
+									variant="outline"
+									disabled={isLoading}
+									className="min-h-11 w-full sm:w-auto"
+									onClick={() => {
+										onOpenChange(false);
+									}}
+								>
+									Fechar
+								</Button>
+								<Button
+									type="button"
+									disabled={pending}
+									aria-busy={pending}
+									onClick={handleSuccessAction}
+									className="min-h-11 w-full sm:w-auto"
+								>
+									{pending ? (
+										<>
+											<Loader2 className="h-4 w-4 animate-spin" />
+											Redirecionando...
+										</>
+									) : (
+										"Ver programação"
+									)}
+								</Button>
+							</AlertDialogFooter>
+						</>
+					) : (
+						<>
+							<AlertDialogHeader>
+								<AlertDialogTitle>
+									Confirmar inscrição?
+								</AlertDialogTitle>
+								<AlertDialogDescription>
+									Confirme sua inscrição em{" "}
+									<span className="text-foreground font-semibold">
+										{activity.name}
+									</span>
+									.
+								</AlertDialogDescription>
+							</AlertDialogHeader>
+
+							<ul className="flex flex-col gap-2">
+								{getSessionsSorted(activity.sessions).map(
+									(session, index) => (
+										<li
+											key={`session-${index}`}
+											className="flex items-center gap-2 text-sm"
+										>
+											<Calendar className="text-muted-foreground h-4 w-4 shrink-0" />
+											<span>
+												{getSessionsDateString([
+													session,
+												])}{" "}
+												(
+												{new Date(
+													session.startsAt,
+												).toLocaleDateString("pt-BR", {
+													weekday: "long",
+												})}
+												) ·{" "}
+												{getSessionTimeString(session)}
+											</span>
+										</li>
+									),
+								)}
+							</ul>
+							{getSessionsSorted(activity.sessions).length > 1 ? (
+								<p className="text-muted-foreground text-sm">
+									Esta inscrição vale para todas as sessões.
+								</p>
+							) : null}
+
+							{status === "error" ? (
+								<Alert variant="destructive">
+									<CircleAlert className="h-4 w-4" />
+									<AlertTitle>
+										Não foi possível concluir
+									</AlertTitle>
+									<AlertDescription>
+										Não foi possível concluir a inscrição.
+										Tente novamente.
+									</AlertDescription>
+								</Alert>
+							) : null}
+
+							<AlertDialogFooter>
+								<AlertDialogCancel asChild>
+									<Button
+										ref={cancelRef}
+										type="button"
+										variant="outline"
+										disabled={pending}
+										className="min-h-11 w-full sm:w-auto"
+									>
+										Cancelar
+									</Button>
+								</AlertDialogCancel>
+								<Button
+									type="button"
+									disabled={pending}
+									aria-busy={pending}
+									onClick={() => void handleConfirm()}
+									className="min-h-11 w-full sm:w-auto"
+								>
+									{pending ? (
+										<>
+											<Loader2 className="h-4 w-4 animate-spin" />
+											Inscrevendo...
+										</>
+									) : (
+										"Confirmar inscrição"
+									)}
+								</Button>
+							</AlertDialogFooter>
+						</>
+					)}
 				</AlertDialogContent>
 			) : null}
 		</AlertDialog>

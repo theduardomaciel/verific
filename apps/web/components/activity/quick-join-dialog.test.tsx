@@ -44,6 +44,21 @@ vi.mock("@/app/actions", () => ({
 	revalidateParticipantActivities: revalidateActivitiesMock,
 }));
 
+vi.mock("next/navigation", () => ({
+	useRouter: () => ({
+		push: vi.fn(),
+	}),
+}));
+
+vi.mock("canvas-confetti", () => {
+	const mockConfetti = vi.fn();
+	mockConfetti.reset = vi.fn();
+	return {
+		default: mockConfetti,
+		reset: vi.fn(),
+	};
+});
+
 // Fixture parcial: o diálogo só lê `id`, `name` e `sessions`.
 const activity = {
 	id: "act-1",
@@ -81,6 +96,7 @@ function setup(overrides?: {
 			onOpenChange={onOpenChange}
 			onJoined={onJoined}
 			onBlocked={onBlocked}
+			eventUrl="test-event"
 		/>,
 	);
 	return { onJoined, onBlocked, onOpenChange };
@@ -125,9 +141,11 @@ describe("QuickJoinDialog", () => {
 		fireEvent.click(confirm);
 		release();
 
-		await screen.findByText("Oficina de Cerâmica");
+		// Wait for success state to appear
+		await screen.findByRole("button", { name: "Ver programação" });
 		expect(mutateAsyncMock).toHaveBeenCalledTimes(1);
-		expect(onJoined).toHaveBeenCalledWith(activity);
+		// onJoined is now called when user clicks "Ver programação"
+		expect(onJoined).not.toHaveBeenCalled();
 	});
 
 	it("conflito de corrida sobe como bloqueio tipado", async () => {
