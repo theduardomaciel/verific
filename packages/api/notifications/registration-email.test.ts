@@ -69,7 +69,27 @@ describe("buildRegistrationEmailInput", () => {
 			...ARGS,
 			logoUrl: "https://example.com/logo.svg",
 		});
-		expect(input?.payload["logoUrl"]).toBeUndefined();
+		expect(input?.payload["logoUrl"]).toBe(
+			"https://example.com/logo_blue.png",
+		);
+		expect(input?.payload["logoAlt"]).toBe("verifIC");
+	});
+
+	it("falls back to the brand logo without an event logo", () => {
+		const input = buildRegistrationEmailInput({
+			...ARGS,
+			logoUrl: undefined,
+		});
+		expect(input?.payload["logoUrl"]).toBe(
+			"https://example.com/logo_blue.png",
+		);
+		expect(input?.payload["logoAlt"]).toBe("verifIC");
+	});
+
+	it("keeps the event logo and default alt when usable", () => {
+		const input = buildRegistrationEmailInput(ARGS);
+		expect(input?.payload["logoUrl"]).toBe("https://example.com/logo.png");
+		expect(input?.payload).not.toHaveProperty("logoAlt");
 	});
 });
 

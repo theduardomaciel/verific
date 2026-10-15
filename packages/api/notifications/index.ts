@@ -42,6 +42,7 @@ export {
 } from "./service";
 export type { QueueRegistrationEmailArgs } from "./registration-email";
 export {
+	BRAND_LOGO_PATH,
 	buildRegistrationEmailInput,
 	formatEventDateText,
 	queueEventRegistrationEmail,

@@ -80,13 +80,14 @@ Estourou → status `blocked_quota`, sem envio. `getEmailUsage()` expõe
 
 ## Template e preview
 
-Template React Email v1 em
+Template React Email v2 em
 `packages/api/notifications/emails/event-registration-confirmation.tsx`
 (pt-BR, 600px, fundo branco, botão neutro escuro). Texto puro gerado do
-mesmo JSX. Logo: usa a logo clara do evento (`largeLogoUrl ?? logoUrl`)
-só se for `https` absoluta e não-SVG; senão, o nome do evento em texto
-(não existe par PNG claro/escuro da marca no repo — só `logo.svg`, que
-e-mail não renderiza).
+mesmo JSX. Logo (com `alt` sempre preenchido): usa a logo clara do evento
+(`largeLogoUrl ?? logoUrl`) só se for `https` absoluta e não-SVG; senão,
+usa a marca verifIC (`/logo_blue.png`, azul sobre transparente — a variante
+branca em `public/` é só para superfícies escuras); sem nenhuma das duas,
+o nome do evento em texto.
 
 Preview local (porta 3001 para não conflitar com o web):
 
