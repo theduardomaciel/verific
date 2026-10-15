@@ -60,23 +60,19 @@ export async function generateMetadata({
 				"max-snippet": -1,
 			},
 		},
-		// Favicon normalizado e com variantes de esquema: o logo cru não
-		// pode ir direto no `<link rel="icon">` (esticava na aba), e o
-		// `logoDarkUrl` existia mas nunca era usado no ícone.
+		// Favicon direto do arquivo armazenado (quadrado desde o upload)
+		// com variantes de esquema: o `logoDarkUrl` existia mas nunca era
+		// usado no ícone da aba.
 		icons: project.logoUrl
 			? {
 					icon: [
 						{
-							url: `/${eventUrl}/favicon?theme=light`,
+							url: project.logoUrl,
 							media: "(prefers-color-scheme: light)",
-							type: "image/png",
-							sizes: "256x256",
 						},
 						{
-							url: `/${eventUrl}/favicon?theme=dark`,
+							url: project.logoDarkUrl || project.logoUrl,
 							media: "(prefers-color-scheme: dark)",
-							type: "image/png",
-							sizes: "256x256",
 						},
 					],
 				}
