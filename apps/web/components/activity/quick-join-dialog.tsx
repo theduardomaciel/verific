@@ -73,7 +73,7 @@ export function QuickJoinDialog({
 		userId,
 	});
 	const pending = status === "pending";
-	const submitted = status === "submitted";
+	const submitted = status === "success";
 	const [showSuccess, setShowSuccess] = useState(false);
 	const wasOpenRef = useRef(open);
 
