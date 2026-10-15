@@ -253,7 +253,17 @@ export const projectsRouter = createTRPCRouter({
 
 	deleteProject: protectedProcedure
 		.input(z.object({ id: z.string().uuid() }))
-		.mutation(async ({ input }) => {
+		.mutation(async ({ input, ctx }) => {
+			const userId = ctx.session.user.id;
+			const data = await requireProjectAccess(input.id, userId);
+			// Deletion is irreversible: owner-only, unlike updateProject
+			// where moderators are allowed.
+			if (data.ownerId !== userId) {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "Apenas o dono do evento pode excluir.",
+				});
+			}
 			await db.delete(project).where(eq(project.id, input.id));
 			return { success: true };
 		}),

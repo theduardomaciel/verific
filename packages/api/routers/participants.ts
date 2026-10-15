@@ -30,6 +30,7 @@ import { parseCheckInCode } from "../lib/checkin-code";
 import { getParticipantsParams } from "../schemas";
 import { lockActivity } from "../seats";
 import { settleActivity } from "../waitlist";
+import { requireProjectAccess } from "./forms";
 
 // Re-export client-safe schema so existing server imports keep working.
 // Client components must import from `@verific/api/schemas` instead.
@@ -141,7 +142,7 @@ export const participantsRouter = createTRPCRouter({
 				projectId: z.string().uuid(), // ID do projeto
 			}),
 		)
-		.query(async ({ input }) => {
+		.query(async ({ input, ctx }) => {
 			const {
 				projectId,
 				role,
@@ -150,6 +151,8 @@ export const participantsRouter = createTRPCRouter({
 				page: pageIndex,
 				pageSize,
 			} = input;
+
+			await requireProjectAccess(projectId, ctx.session.user.id);
 
 			let roleFilter: SQL | undefined;
 			if (role && role.length > 0) {

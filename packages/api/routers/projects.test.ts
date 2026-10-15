@@ -1,0 +1,87 @@
+import { randomUUID } from "node:crypto";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import type { Session } from "@verific/auth";
+
+const PROJECT_ID = randomUUID();
+
+const { findProject, dbDelete } = vi.hoisted(() => ({
+	findProject: vi.fn(),
+	dbDelete: vi.fn(() => ({ where: async () => [] })),
+}));
+
+vi.mock("@verific/drizzle", () => ({
+	db: {
+		query: { project: { findFirst: findProject } },
+		delete: dbDelete,
+	},
+}));
+vi.mock("@verific/env", () => ({ env: {} }));
+
+import { createCallerFactory } from "../trpc";
+import { projectsRouter } from "./projects";
+
+const createCaller = createCallerFactory(projectsRouter);
+
+const intruder = { user: { id: "intruder" } } as unknown as Session;
+const owner = { user: { id: "owner" } } as unknown as Session;
+
+describe("deleteProject access control", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("rejects a logged-in non-member with FORBIDDEN and deletes nothing", async () => {
+		findProject.mockResolvedValue({
+			id: PROJECT_ID,
+			ownerId: "owner",
+			moderators: [],
+		});
+		const caller = createCaller({ session: intruder });
+
+		await expect(
+			caller.deleteProject({ id: PROJECT_ID }),
+		).rejects.toMatchObject({ code: "FORBIDDEN" });
+		expect(dbDelete).not.toHaveBeenCalled();
+	});
+
+	it("rejects unknown events with NOT_FOUND", async () => {
+		findProject.mockResolvedValue(null);
+		const caller = createCaller({ session: intruder });
+
+		await expect(
+			caller.deleteProject({ id: PROJECT_ID }),
+		).rejects.toMatchObject({ code: "NOT_FOUND" });
+		expect(dbDelete).not.toHaveBeenCalled();
+	});
+
+	it("still lets the owner delete", async () => {
+		findProject.mockResolvedValue({
+			id: PROJECT_ID,
+			ownerId: "owner",
+			moderators: [],
+		});
+		const caller = createCaller({ session: owner });
+
+		await expect(caller.deleteProject({ id: PROJECT_ID })).resolves.toEqual(
+			{ success: true },
+		);
+		expect(dbDelete).toHaveBeenCalledTimes(1);
+	});
+
+	it("rejects moderators: deletion is owner-only", async () => {
+		findProject.mockResolvedValue({
+			id: PROJECT_ID,
+			ownerId: "owner",
+			moderators: [{ userId: "moderator" }],
+		});
+		const caller = createCaller({
+			session: { user: { id: "moderator" } } as unknown as Session,
+		});
+
+		await expect(
+			caller.deleteProject({ id: PROJECT_ID }),
+		).rejects.toMatchObject({ code: "FORBIDDEN" });
+		expect(dbDelete).not.toHaveBeenCalled();
+	});
+});
