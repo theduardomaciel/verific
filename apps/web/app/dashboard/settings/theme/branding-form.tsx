@@ -119,41 +119,6 @@ export function ProjectBrandingForm({ project }: Props) {
 					/>
 					<FormField
 						control={form.control}
-						name="largeLogoUrl"
-						render={({ field }) => (
-							<ImageUploader
-								label="Logo horizontal"
-								hint="PNG/JPG/WebP/SVG até 768px"
-								aspect="aspect-[2/1] max-h-48"
-								fit="contain"
-								purpose="event-logo-wide"
-								projectId={project.id}
-								value={field.value}
-								onChange={trackLogo(
-									"largeLogoUrl",
-									field.onChange,
-								)}
-							/>
-						)}
-					/>
-					<FormField
-						control={form.control}
-						name="bannerUrl"
-						render={({ field }) => (
-							<ImageUploader
-								label="Capa do evento"
-								hint="Fundo do hero, até 1920px"
-								aspect="aspect-video max-h-48"
-								fit="cover"
-								purpose="event-cover"
-								projectId={project.id}
-								value={field.value}
-								onChange={(url) => field.onChange(url)}
-							/>
-						)}
-					/>
-					<FormField
-						control={form.control}
 						name="logoDarkUrl"
 						render={({ field }) => (
 							<ImageUploader
@@ -166,6 +131,25 @@ export function ProjectBrandingForm({ project }: Props) {
 								value={field.value}
 								onChange={trackLogo(
 									"logoDarkUrl",
+									field.onChange,
+								)}
+							/>
+						)}
+					/>
+					<FormField
+						control={form.control}
+						name="largeLogoUrl"
+						render={({ field }) => (
+							<ImageUploader
+								label="Logo horizontal"
+								hint="PNG/JPG/WebP/SVG até 768px"
+								aspect="aspect-[2/1] max-h-48"
+								fit="contain"
+								purpose="event-logo-wide"
+								projectId={project.id}
+								value={field.value}
+								onChange={trackLogo(
+									"largeLogoUrl",
 									field.onChange,
 								)}
 							/>
@@ -187,6 +171,22 @@ export function ProjectBrandingForm({ project }: Props) {
 									"largeLogoDarkUrl",
 									field.onChange,
 								)}
+							/>
+						)}
+					/>
+					<FormField
+						control={form.control}
+						name="bannerUrl"
+						render={({ field }) => (
+							<ImageUploader
+								label="Capa do evento"
+								hint="Fundo do hero, até 1920px"
+								aspect="aspect-video max-h-48"
+								fit="cover"
+								purpose="event-cover"
+								projectId={project.id}
+								value={field.value}
+								onChange={(url) => field.onChange(url)}
 							/>
 						)}
 					/>
