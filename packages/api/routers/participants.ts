@@ -27,10 +27,10 @@ import { z } from "@verific/zod";
 // Utils
 import { isMemberAuthenticated } from "../auth";
 import { parseCheckInCode } from "../lib/checkin-code";
+import { requireProjectAccess } from "../lib/project-access";
 import { getParticipantsParams } from "../schemas";
 import { lockActivity } from "../seats";
 import { settleActivity } from "../waitlist";
-import { requireProjectAccess } from "./forms";
 
 // Re-export client-safe schema so existing server imports keep working.
 // Client components must import from `@verific/api/schemas` instead.

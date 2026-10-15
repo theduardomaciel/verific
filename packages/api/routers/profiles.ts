@@ -42,30 +42,7 @@ import {
 	slotForField,
 	writeProjectLayout,
 } from "../lib/profile-links";
-
-async function requireProjectAccess(projectId: string, userId: string) {
-	const data = await db.query.project.findFirst({
-		where: eq(project.id, projectId),
-		with: {
-			moderators: { columns: { userId: true } },
-		},
-	});
-	if (!data) {
-		throw new TRPCError({
-			code: "NOT_FOUND",
-			message: "Evento não encontrado.",
-		});
-	}
-	const isOwner = data.ownerId === userId;
-	const isModerator = data.moderators.some((m) => m.userId === userId);
-	if (!isOwner && !isModerator) {
-		throw new TRPCError({
-			code: "FORBIDDEN",
-			message: "Sem permissão neste evento.",
-		});
-	}
-	return data;
-}
+import { requireProjectAccess } from "../lib/project-access";
 
 /** Identificador curto por participante/evento (URL + QR). */
 export function generateShortId(length = 10): string {

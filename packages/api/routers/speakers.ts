@@ -6,33 +6,11 @@ import {
 	socialEntrySchema,
 	type SocialLinks,
 } from "@verific/drizzle/profile-layout";
-import { participant, project, speaker, user } from "@verific/drizzle/schema";
+import { participant, speaker, user } from "@verific/drizzle/schema";
 import { z } from "@verific/zod";
 
+import { requireProjectAccess } from "../lib/project-access";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
-
-async function requireProjectAccess(projectId: string, userId: string) {
-	const data = await db.query.project.findFirst({
-		where: eq(project.id, projectId),
-		with: { moderators: { columns: { userId: true } } },
-	});
-	if (!data) {
-		throw new TRPCError({
-			code: "NOT_FOUND",
-			message: "Evento não encontrado.",
-		});
-	}
-	const allowed =
-		data.ownerId === userId ||
-		data.moderators.some((m) => m.userId === userId);
-	if (!allowed) {
-		throw new TRPCError({
-			code: "FORBIDDEN",
-			message: "Sem permissão neste evento.",
-		});
-	}
-	return data;
-}
 
 /** Normalizes organizer-typed email to lowercase, or null when empty. */
 export function normalizeSpeakerEmail(
