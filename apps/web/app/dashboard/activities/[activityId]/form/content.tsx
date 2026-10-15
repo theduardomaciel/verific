@@ -64,10 +64,12 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 		ensureVersion.mutate(
 			{ activityId },
 			{
-				onSuccess: (result) => {
+				onSuccess: async (result) => {
 					if (result.version) {
 						setVersionId(result.version.id);
 						setSelectedId(result.version.id);
+						// Invalidate listVersions so the new version appears in the list
+						await utils.listVersions.invalidate();
 						if (result.cloned) {
 							toast.info(
 								"Nova versão criada. As respostas anteriores foram mantidas e as alterações valem para novas inscrições.",
