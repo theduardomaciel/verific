@@ -14,6 +14,9 @@ export async function loginAction(callbackUrl: string) {
 		body: {
 			provider: "google",
 			callbackURL: safeCallbackUrl,
+			// Reforça o seletor de contas por requisição (o padrão do
+			// provider já define `prompt: "select_account"`).
+			additionalParams: { prompt: "select_account" },
 		},
 		headers: await headers(),
 	});
