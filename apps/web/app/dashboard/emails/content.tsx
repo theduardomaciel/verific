@@ -165,6 +165,20 @@ export function EmailsContent() {
 	}
 
 	const usage = statsQuery.data?.usage;
+	const counts = statsQuery.data?.counts;
+	// Rows the batch run would actually attempt (sent + fresh sending are
+	// skipped server-side, so they don't count here).
+	const reprocessableCount = !counts
+		? 0
+		: filter === "attention" || filter === "all"
+			? counts.pending +
+				counts.failed +
+				counts.blocked_quota +
+				counts.stuck
+			: filter === "sent" || filter === "sending"
+				? 0
+				: (counts[filter] ?? 0);
+	const hasWorkToReprocess = statsQuery.data ? reprocessableCount > 0 : true;
 	const overLimit = usage?.limit != null && usage.sentLast24h >= usage.limit;
 	const usageRatio =
 		usage?.limit != null && usage.limit > 0
@@ -206,24 +220,9 @@ export function EmailsContent() {
 
 	async function handleRunAll() {
 		if (runProgress?.active) return;
-		const counts = statsQuery.data?.counts;
-		const pendingCount = counts
-			? filter === "attention"
-				? counts.pending +
-					counts.failed +
-					counts.blocked_quota +
-					counts.stuck
-				: filter === "all"
-					? counts.pending +
-						counts.failed +
-						counts.blocked_quota +
-						counts.stuck +
-						counts.sending
-					: (counts[filter] ?? 0)
-			: 0;
 		const ok = await confirmRun({
 			title: "Reprocessar todos",
-			description: `Serão tentados até ${pendingCount} e-mails do filtro atual. Uso atual: ${usage?.sentLast24h ?? 0}${usage?.limit != null ? ` de ${usage.limit}` : ""} nas últimas 24h. O processamento para ao atingir o limite.`,
+			description: `Serão tentados até ${reprocessableCount} e-mails do filtro atual. Uso atual: ${usage?.sentLast24h ?? 0}${usage?.limit != null ? ` de ${usage.limit}` : ""} nas últimas 24h. O processamento para ao atingir o limite.`,
 			confirmLabel: "Reprocessar",
 		});
 		if (!ok) return;
@@ -311,17 +310,33 @@ export function EmailsContent() {
 							))}
 						</SelectContent>
 					</Select>
-					<Button
-						onClick={handleRunAll}
-						disabled={runProgress?.active || listQuery.isPending}
-					>
-						{runProgress?.active ? (
-							<Loader2 className="animate-spin" />
-						) : (
-							<RefreshCw />
-						)}
-						Reprocessar todos
-					</Button>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<span className="inline-flex">
+								<Button
+									onClick={handleRunAll}
+									disabled={
+										runProgress?.active ||
+										listQuery.isPending ||
+										statsQuery.isPending ||
+										!hasWorkToReprocess
+									}
+								>
+									{runProgress?.active ? (
+										<Loader2 className="animate-spin" />
+									) : (
+										<RefreshCw />
+									)}
+									Reprocessar todos
+								</Button>
+							</span>
+						</TooltipTrigger>
+						<TooltipContent>
+							{hasWorkToReprocess
+								? "Reprocessa todos os e-mails do filtro atual"
+								: "Nenhum e-mail para reprocessar neste filtro"}
+						</TooltipContent>
+					</Tooltip>
 				</div>
 			</div>
 
