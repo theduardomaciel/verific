@@ -24,6 +24,7 @@ Um sistema de credenciamento para eventos acadêmicos
     - Dashboard de acompanhamento de métricas do evento em tempo real
 - [x] Inscrições
     - Inscrição de participantes em eventos e atividades
+    - Confirmação de inscrição por e-mail (com reprocessamento na página E-mails do dashboard)
     - Credenciamento de participantes
 - [x] Controle de Acesso
     - Controle de acesso e verificação de presença via QR Code (com tempo de tolerância configurável)
@@ -99,6 +100,17 @@ pnpm install
 
 4. Em seguida, crie um arquivo `.env` com as variáveis de ambiente adequadas para todos os pacotes (`/packages`) e aplicações (`/apps`), com base nos arquivos de exemplo `.env.example`.  
    Esse passo é essencial para o correto funcionamento dos pacotes e aplicações do monorepo.
+
+> [!NOTE]
+> Os arquivos de exemplo são `apps/web/.env.example` (app + e-mail) e `packages/drizzle/.env.example` (banco). Variáveis sensíveis nunca vão para o cliente: só `NEXT_PUBLIC_*` sai do servidor.
+>
+> | Grupo                  | Variáveis                                                                                              | Detalhes                                                                                                                            |
+> | ---------------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+> | App/URLs               | `NODE_ENV`, `VERCEL_URL`, `NEXT_PUBLIC_VERCEL_URL`, `PORT`                                             | Base das URLs absolutas (ex.: links do e-mail)                                                                                      |
+> | Banco                  | `DATABASE_URL`                                                                                         | PostgreSQL (Neon); também lida de `packages/drizzle/.env` pelos comandos `db:*`                                                     |
+> | Auth                   | `BETTER_AUTH_SECRET` (≥32 chars), `BETTER_AUTH_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`        | Login social Google                                                                                                                 |
+> | Storage (S3, opcional) | `S3_*`, `NEXT_PUBLIC_STORAGE_BASE_URL`                                                                 | Upload de imagens; sem elas o upload falha com mensagem clara. Ver [docs/image-uploads.md](docs/image-uploads.md)                   |
+> | E-mail                 | `EMAIL_PROVIDER=console\|ses\|resend`, `EMAIL_FROM`, `EMAIL_DAILY_LIMIT?`, `SES_*` ou `RESEND_API_KEY` | `console` é o padrão em dev (só loga); produção exige provedor real. Ver [docs/email-notifications.md](docs/email-notifications.md) |
 
 5. Para dar início ao servidor local de desenvolvimento, utilize
 
