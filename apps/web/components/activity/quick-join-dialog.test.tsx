@@ -51,11 +51,10 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("canvas-confetti", () => {
-	const mockConfetti = vi.fn();
-	mockConfetti.reset = vi.fn();
+	const mockConfetti = Object.assign(vi.fn(), { reset: vi.fn() });
 	return {
 		default: mockConfetti,
-		reset: vi.fn(),
+		reset: mockConfetti.reset,
 	};
 });
 
