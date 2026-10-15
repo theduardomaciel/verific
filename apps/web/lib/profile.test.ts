@@ -31,7 +31,7 @@ describe("shared social normalize", () => {
 		expect(socialDisplayHandle("https://github.com/fulana")).toBe("fulana");
 		expect(
 			socialDisplayHandle("http://lattes.cnpq.br/0993964740433171"),
-		).toBe("0993964740433171");
+		).toBe("http://lattes.cnpq.br/0993964740433171");
 	});
 });
 

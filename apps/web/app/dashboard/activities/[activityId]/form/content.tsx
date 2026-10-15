@@ -19,7 +19,7 @@ import { trpc } from "@/lib/trpc/react";
 export function ActivityFormContent({ activityId }: { activityId: string }) {
 	// Pristine project builder: field/section/order mutations + dialogs state.
 	// Version scoping (list + selection) is managed here for the activity.
-	const builder = useFormsBuilder();
+	const builder = useFormsBuilder({ activityId });
 	const {
 		selectedId,
 		setSelectedId,
