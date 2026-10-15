@@ -77,7 +77,7 @@ export function EditProfileDialog({
 						Editar perfil
 					</Button>
 				</DialogTrigger>
-				<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[640px]">
+				<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-160">
 					<DialogHeader>
 						<DialogTitle>Editar perfil</DialogTitle>
 					</DialogHeader>
@@ -106,7 +106,7 @@ export function EditProfileDialog({
 
 			{/* Confirmation dialog for removing self from event */}
 			<Dialog open={removeOpen} onOpenChange={setRemoveOpen}>
-				<DialogContent className="sm:max-w-[400px]">
+				<DialogContent className="sm:max-w-100">
 					<DialogHeader>
 						<LogOut className="text-destructive mx-auto mb-2 h-8 w-8" />
 						<DialogTitle className="text-center">
