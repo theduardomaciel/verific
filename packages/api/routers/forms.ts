@@ -583,6 +583,26 @@ export const formsRouter = createTRPCRouter({
 					input.projectId,
 				);
 			}
+			if (input.cloneFromVersionId) {
+				const source = await db.query.formVersion.findFirst({
+					where: eq(formVersion.id, input.cloneFromVersionId),
+					columns: {
+						projectId: true,
+						activityId: true,
+					},
+				});
+				if (
+					!source ||
+					source.projectId !== input.projectId ||
+					(source.activityId ?? null) !== (input.activityId ?? null)
+				) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message:
+							"A versão de origem não pertence ao mesmo formulário.",
+					});
+				}
+			}
 			const existing = await db.query.formVersion.findMany({
 				where: eq(formVersion.projectId, input.projectId),
 				orderBy: desc(formVersion.version),

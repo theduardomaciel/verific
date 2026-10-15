@@ -118,10 +118,11 @@ export function normalizeSocialLink(
 	return null;
 }
 
-/** Texto exibido no chip (último segmento da URL ou valor cru). */
+/** Texto exibido no chip (URL completa para Lattes, segmento nos demais). */
 export function socialDisplayHandle(url: string): string {
 	try {
 		const parsed = new URL(url);
+		if (parsed.hostname === "lattes.cnpq.br") return url;
 		const last = parsed.pathname.split("/").filter(Boolean).pop();
 		if (last) return last;
 		return parsed.hostname.replace(/^www\./, "");

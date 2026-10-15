@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye } from "lucide-react";
@@ -85,6 +85,7 @@ export default function JoinForm({
 	>(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [createdShortId, setCreatedShortId] = useState<string | null>(null);
+	const submissionStartedRef = useRef(false);
 
 	const submitMutation = trpc.submitAnswers.useMutation();
 	const layout = profileLayout;
@@ -211,11 +212,15 @@ export default function JoinForm({
 	// Persiste cada alteração: remontagens (troca de aba, login/logout)
 	// recriam o `useForm` e o rascunho é restaurado em `defaultValues`.
 	useEffect(() => {
+		if (submissionStartedRef.current || currentState === "submitted") {
+			clearJoinDraft(project.id);
+			return;
+		}
 		writeJoinDraft(project.id, {
 			name: watchedName,
 			answers: watchedAnswers,
 		});
-	}, [project.id, watchedName, watchedAnswers]);
+	}, [currentState, project.id, watchedName, watchedAnswers]);
 
 	// oxlint-disable-line react-hooks/exhaustive-deps -- watchedAnswers is a RHF watch() result that changes every render; adding it would defeat the memoization purpose.
 	const { visibleFields, groupedSections } = useMemo(() => {
@@ -344,8 +349,10 @@ export default function JoinForm({
 		name: string;
 		answers: Record<string, unknown>;
 	}) {
+		submissionStartedRef.current = true;
 		setCurrentState("submitting");
 		if (!user) {
+			submissionStartedRef.current = false;
 			setErrorMessage("Você precisa estar logado para se inscrever.");
 			setCurrentState("error");
 			return;
@@ -374,6 +381,7 @@ export default function JoinForm({
 			});
 			setCreatedShortId(result.shortId);
 		} catch (error) {
+			submissionStartedRef.current = false;
 			setErrorMessage(
 				error instanceof Error ? error.message : "Erro desconhecido",
 			);
