@@ -4,97 +4,15 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@verific/drizzle", () => ({ db: {} }));
 vi.mock("@verific/env", () => ({ env: {} }));
 
-import { processNotification, sendNotification } from "./service";
+import {
+	getEmailUsage,
+	processNotification,
+	sendNotification,
+} from "./service";
+import { STALE_CLAIM_TIMEOUT_MS } from "./store";
+import { InMemoryNotificationStore } from "./store.memory";
 
-import type {
-	InsertNotificationInput,
-	NotificationRow,
-	NotificationStore,
-} from "./store";
 import type { EmailProvider, SendNotificationInput, SendResult } from "./types";
-
-const CLAIMABLE = ["pending", "failed", "blocked_quota"];
-
-/** Mirrors DrizzleNotificationStore's atomic semantics without a database. */
-class InMemoryNotificationStore implements NotificationStore {
-	rows = new Map<string, NotificationRow>();
-	byKey = new Map<string, string>();
-
-	async insertIgnore(
-		input: InsertNotificationInput,
-	): Promise<{ row: NotificationRow; inserted: boolean }> {
-		// No await between check and set: atomic in single-threaded JS, like
-		// ON CONFLICT DO NOTHING under a UNIQUE constraint.
-		const existingId = this.byKey.get(input.idempotencyKey);
-		if (existingId) {
-			return { row: this.rows.get(existingId)!, inserted: false };
-		}
-		const now = new Date();
-		const row: NotificationRow = {
-			id: randomUUID(),
-			type: input.type,
-			idempotencyKey: input.idempotencyKey,
-			eventId: input.eventId ?? null,
-			recipientEmail: input.to,
-			subject: null,
-			templateVersion: null,
-			status: "pending",
-			attempts: 0,
-			lastError: null,
-			lastErrorRetryable: null,
-			provider: null,
-			providerMessageId: null,
-			payload: input.payload,
-			createdAt: now,
-			updatedAt: now,
-			sentAt: null,
-		};
-		this.rows.set(row.id, row);
-		this.byKey.set(input.idempotencyKey, row.id);
-		return { row, inserted: true };
-	}
-
-	async claim(id: string): Promise<NotificationRow | null> {
-		const row = this.rows.get(id);
-		if (!row || !CLAIMABLE.includes(row.status)) return null;
-		const claimed = {
-			...row,
-			status: "sending" as const,
-			updatedAt: new Date(),
-		};
-		this.rows.set(id, claimed);
-		return claimed;
-	}
-
-	async countActiveLast24h(): Promise<number> {
-		const since = Date.now() - 24 * 60 * 60 * 1000;
-		let count = 0;
-		for (const row of this.rows.values()) {
-			if (
-				(row.status === "sent" || row.status === "sending") &&
-				row.createdAt.getTime() >= since
-			) {
-				count += 1;
-			}
-		}
-		return count;
-	}
-
-	async update(
-		id: string,
-		patch: Partial<NotificationRow>,
-	): Promise<NotificationRow | null> {
-		const row = this.rows.get(id);
-		if (!row) return null;
-		const next = { ...row, ...patch, updatedAt: new Date() };
-		this.rows.set(id, next);
-		return next;
-	}
-
-	async getById(id: string): Promise<NotificationRow | null> {
-		return this.rows.get(id) ?? null;
-	}
-}
 
 function setup(options?: {
 	sendImpl?: (call: number) => SendResult | Promise<SendResult>;
@@ -129,7 +47,11 @@ function setup(options?: {
 		idempotencyKey: `key-${randomUUID()}`,
 		to: "user@example.com",
 		eventId: randomUUID(),
-		payload: { eventName: "UFAL Tech Day" },
+		payload: {
+			participantName: "Maria Silva",
+			eventName: "UFAL Tech Day",
+			accessUrl: "https://example.com/ufal-tech-day/profile/abc123?me=1",
+		},
 	};
 	return { store, send, deps, input, seed: options?.seed };
 }
@@ -255,7 +177,10 @@ describe("sendNotification", () => {
 			eventId: null,
 			payload: {},
 		});
-		await store.update(seeded.row.id, { status: "sent" });
+		await store.update(seeded.row.id, {
+			status: "sent",
+			sentAt: new Date(),
+		});
 
 		const { notification } = await sendNotification(input, deps);
 
@@ -274,5 +199,134 @@ describe("sendNotification", () => {
 
 		expect(send).toHaveBeenCalledTimes(1);
 		expect(again.notification?.status).toBe("sent");
+	});
+
+	it("stores the rendered template version on the row", async () => {
+		const { deps, input } = setup();
+		const { notification } = await sendNotification(input, deps);
+
+		expect(notification?.status).toBe("sent");
+		expect(notification?.templateVersion).toBe("v1");
+		expect(notification?.subject).toBe(
+			"Inscrição confirmada: UFAL Tech Day",
+		);
+	});
+});
+
+describe("stuck claim recovery", () => {
+	it("a fresh sending row is not claimed", async () => {
+		const { store, send, deps, input } = setup();
+		const { row } = await store.insertIgnore({
+			type: input.type,
+			idempotencyKey: input.idempotencyKey,
+			to: input.to,
+			eventId: input.eventId,
+			payload: input.payload,
+		});
+		await store.claim(row.id);
+
+		const result = await processNotification(row.id, deps);
+
+		expect(send).not.toHaveBeenCalled();
+		expect(result.notification?.status).toBe("sending");
+	});
+
+	it("a stale sending row is claimed exactly once even with concurrent callers", async () => {
+		const { store, send, deps, input } = setup();
+		const { row } = await store.insertIgnore({
+			type: input.type,
+			idempotencyKey: input.idempotencyKey,
+			to: input.to,
+			eventId: input.eventId,
+			payload: input.payload,
+		});
+		await store.claim(row.id);
+		const stuck = store.rows.get(row.id)!;
+		stuck.updatedAt = new Date(Date.now() - STALE_CLAIM_TIMEOUT_MS - 1000);
+
+		const results = await Promise.all(
+			Array.from({ length: 3 }, () => processNotification(row.id, deps)),
+		);
+
+		expect(send).toHaveBeenCalledTimes(1);
+		const ids = new Set(results.map((r) => r.notification?.id));
+		expect(ids).toEqual(new Set([row.id]));
+		await expect(store.getById(row.id)).resolves.toMatchObject({
+			status: "sent",
+		});
+	});
+});
+
+describe("getEmailUsage", () => {
+	it("returns the 24h count and the configured limit", async () => {
+		const { store, deps } = setup({ dailyLimit: 100 });
+		const seeded = await store.insertIgnore({
+			type: "event_registration_confirmation",
+			idempotencyKey: `seed-${randomUUID()}`,
+			to: "other@example.com",
+			eventId: null,
+			payload: {},
+		});
+		await store.update(seeded.row.id, {
+			status: "sent",
+			sentAt: new Date(),
+		});
+
+		await expect(getEmailUsage(deps)).resolves.toEqual({
+			sentLast24h: 1,
+			limit: 100,
+		});
+	});
+
+	it("counts a row created earlier but sent just now", async () => {
+		const { store, deps } = setup({ dailyLimit: 100 });
+		const seeded = await store.insertIgnore({
+			type: "event_registration_confirmation",
+			idempotencyKey: `seed-${randomUUID()}`,
+			to: "other@example.com",
+			eventId: null,
+			payload: {},
+		});
+		const old = store.rows.get(seeded.row.id)!;
+		old.createdAt = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+		old.updatedAt = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+		await store.update(seeded.row.id, {
+			status: "sent",
+			sentAt: new Date(),
+		});
+
+		await expect(getEmailUsage(deps)).resolves.toEqual({
+			sentLast24h: 1,
+			limit: 100,
+		});
+	});
+
+	it("ignores rows sent more than 24h ago", async () => {
+		const { store, deps } = setup();
+		const seeded = await store.insertIgnore({
+			type: "event_registration_confirmation",
+			idempotencyKey: `seed-${randomUUID()}`,
+			to: "other@example.com",
+			eventId: null,
+			payload: {},
+		});
+		await store.update(seeded.row.id, {
+			status: "sent",
+			sentAt: new Date(Date.now() - 25 * 60 * 60 * 1000),
+		});
+
+		await expect(getEmailUsage(deps)).resolves.toEqual({
+			sentLast24h: 0,
+			limit: null,
+		});
+	});
+
+	it("returns a null limit when uncapped", async () => {
+		const { deps } = setup();
+
+		await expect(getEmailUsage(deps)).resolves.toEqual({
+			sentLast24h: 0,
+			limit: null,
+		});
 	});
 });
