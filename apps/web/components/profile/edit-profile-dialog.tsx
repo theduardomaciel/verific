@@ -129,7 +129,7 @@ export function EditProfileDialog({
 						</Button>
 						<Button
 							variant="destructive"
-							onClick={handleRemoveSelf}
+							onClick={() => void handleRemoveSelf()}
 							disabled={removeSelfMutation.isPending}
 						>
 							{removeSelfMutation.isPending

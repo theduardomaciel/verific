@@ -1243,24 +1243,21 @@ export function BadgeEditor({
 								<Button
 									size="sm"
 									variant="outline"
-									onClick={async () => {
+									onClick={() => {
 										const urlToDelete = draft.artworkUrl;
 										patch((d) => {
 											d.artworkUrl = "";
 											d.artworkPixels = null;
 										}, true);
 										if (urlToDelete) {
-											try {
-												await deleteImageMutation.mutateAsync(
-													{
-														projectId,
-														publicUrlOrKey:
-															urlToDelete,
-													},
-												);
-											} catch {
-												// Best-effort: limpa o campo mesmo se a exclusão falhar.
-											}
+											deleteImageMutation
+												.mutateAsync({
+													projectId,
+													publicUrlOrKey: urlToDelete,
+												})
+												.catch(() => {
+													// Best-effort: limpa o campo mesmo se a exclusão falhar.
+												});
 										}
 									}}
 								>
