@@ -4,6 +4,7 @@ import {
 	text,
 	timestamp,
 	uuid,
+	integer,
 	doublePrecision,
 	boolean,
 	jsonb,
@@ -45,6 +46,18 @@ export const project = pgTable("projects", {
 	largeLogoDarkUrl: text("large_logo_dark_url"),
 	coverUrl: text("cover_url"),
 	thumbnailUrl: text("thumbnail_url"),
+
+	// Dimensões naturais dos logos (medidas no upload): o cabeçalho
+	// reserva o espaço exato e evita salto de layout. Nulo = desconhecido
+	// (linhas legadas; o fallback 150x28 segue valendo). Os logos
+	// quadrados são sempre 1:1 (padding no upload), então guardam só o
+	// lado; os horizontais preservam a proporção (largura e altura).
+	logoSide: integer("logo_side"),
+	logoDarkSide: integer("logo_dark_side"),
+	largeLogoWidth: integer("large_logo_width"),
+	largeLogoHeight: integer("large_logo_height"),
+	largeLogoDarkWidth: integer("large_logo_dark_width"),
+	largeLogoDarkHeight: integer("large_logo_dark_height"),
 
 	primaryColor: text("primary_color"), // quando nulo, usar a cor padrão do sistema
 	secondaryColor: text("secondary_color"), // quando nulo, usar a cor padrão do sistema
