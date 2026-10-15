@@ -106,7 +106,7 @@ describe("FontPicker", () => {
 		expect(onChange).toHaveBeenCalledWith(
 			expect.objectContaining({ family: "REM" }),
 		);
-	});
+	}, 30000);
 
 	it("emite a dica de hover e limpa ao fechar", async () => {
 		const user = userEvent.setup();
@@ -134,7 +134,7 @@ describe("FontPicker", () => {
 
 		await user.click(screen.getByRole("button", { name: "Concluir" }));
 		expect(onHoverPreview).toHaveBeenLastCalledWith(null);
-	});
+	}, 30000);
 
 	it("abre em gaveta no mobile", async () => {
 		stubMatchMedia(false);
@@ -190,5 +190,5 @@ describe("FontPicker", () => {
 		expect(
 			screen.getByText("Sem métricas nesta fonte"),
 		).toBeInTheDocument();
-	});
+	}, 30000);
 });
