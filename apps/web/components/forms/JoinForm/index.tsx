@@ -41,6 +41,11 @@ import { DynamicField } from "@/components/forms/dynamic/DynamicField";
 
 import { revalidateParticipantEnrollment } from "@/app/actions";
 import {
+	clearJoinDraft,
+	readJoinDraft,
+	writeJoinDraft,
+} from "@/lib/forms/join-draft";
+import {
 	isFilled,
 	groupFieldsBySection,
 	planFormSections,
@@ -86,6 +91,19 @@ export default function JoinForm({
 
 	const fields = useMemo(() => formData?.fields ?? [], [formData]);
 	const sections = useMemo(() => formData?.sections ?? [], [formData]);
+
+	// Rascunho salvo em `localStorage`: o estado do formulário é
+	// descartado a cada remontagem (troca de aba, login no meio do
+	// preenchimento), então o progresso é restaurado daqui.
+	const [initialDraft] = useState(() => {
+		const knownKeys = new Set(
+			(formData?.fields ?? [])
+				.map((f) => (f as { key?: unknown }).key)
+				.filter((k): k is string => typeof k === "string"),
+		);
+		return readJoinDraft(project.id, knownKeys);
+	});
+	const [needsLogin, setNeedsLogin] = useState(false);
 
 	const baseVisibleFields = useMemo(
 		() => fields.filter((f) => f.isVisible),
@@ -180,12 +198,24 @@ export default function JoinForm({
 		answers: Record<string, unknown>;
 	}>({
 		resolver: resolver as never,
-		defaultValues: { name: user?.name || "", answers: {} },
+		defaultValues: {
+			name: initialDraft?.name || user?.name || "",
+			answers: initialDraft?.answers ?? {},
+		},
 	});
 
 	const watchedAnswers =
 		useWatch({ control: form.control, name: "answers" }) ?? {};
 	const watchedName = useWatch({ control: form.control, name: "name" }) ?? "";
+
+	// Persiste cada alteração: remontagens (troca de aba, login/logout)
+	// recriam o `useForm` e o rascunho é restaurado em `defaultValues`.
+	useEffect(() => {
+		writeJoinDraft(project.id, {
+			name: watchedName,
+			answers: watchedAnswers,
+		});
+	}, [project.id, watchedName, watchedAnswers]);
 
 	// oxlint-disable-line react-hooks/exhaustive-deps -- watchedAnswers is a RHF watch() result that changes every render; adding it would defeat the memoization purpose.
 	const { visibleFields, groupedSections } = useMemo(() => {
@@ -270,6 +300,11 @@ export default function JoinForm({
 		if (!user) form.setValue("name", "");
 	}, [user, form]);
 
+	// Com login o aviso perde o sentido (ajuste durante a renderização).
+	if (user && needsLogin) {
+		setNeedsLogin(false);
+	}
+
 	// Wizard: começa na identificação; "Continuar" valida a seção atual
 	// e avança (só a última seção conclui/submete).
 	useEffect(() => {
@@ -279,11 +314,24 @@ export default function JoinForm({
 	}, [form]);
 
 	function advanceTo(sectionNumber: number) {
+		// Sem login não há avanço: as seções seguintes exigem conta.
+		if (sectionNumber > 0 && !user) {
+			setNeedsLogin(true);
+			return;
+		}
 		form.setValue("formType" as never, `section${sectionNumber}` as never);
 		scrollToNextSection(sectionNumber);
 	}
 
 	async function handleContinueSection(p: (typeof planned)[number]) {
+		// Sessão expirada no meio do preenchimento: não avança.
+		if (!user) {
+			setErrorMessage(
+				"Sua sessão expirou. Entre com sua conta Google para continuar.",
+			);
+			setCurrentState("error");
+			return;
+		}
 		const names: string[] = [];
 		if (p.isFirstContent) names.push("name");
 		for (const f of p.group.fields) names.push(`answers.${f.key}`);
@@ -333,6 +381,7 @@ export default function JoinForm({
 			return;
 		}
 		if (user.id) await revalidateParticipantEnrollment(user.id);
+		clearJoinDraft(project.id);
 		setCurrentState("submitted");
 	}
 
@@ -344,6 +393,7 @@ export default function JoinForm({
 						projectUrl={project.url}
 						form={form as unknown as GenericForm}
 						email={user?.email}
+						loginRequired={needsLogin}
 						onContinue={() => advanceTo(1)}
 					/>
 					{planned.length === 0 ? (

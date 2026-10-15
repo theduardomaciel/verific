@@ -12,6 +12,7 @@ import { Logged } from "@/components/auth/LoginStatus";
 // Components
 import {
 	FormSection,
+	Panel,
 	SectionFooter,
 	type GenericForm,
 } from "@/components/forms";
@@ -20,6 +21,8 @@ interface JoinForm0Props {
 	projectUrl: string;
 	form: GenericForm;
 	email?: string | null;
+	/** Exibe o aviso de login obrigatório (avanço bloqueado). */
+	loginRequired?: boolean;
 	/** Avança p/ a próxima seção (sem validar: login é exigido no envio). */
 	onContinue?: () => void;
 }
@@ -28,6 +31,7 @@ export default function JoinForm0({
 	projectUrl,
 	form,
 	email,
+	loginRequired,
 	onContinue,
 }: JoinForm0Props) {
 	return (
@@ -58,6 +62,12 @@ export default function JoinForm0({
 								email={email}
 								callbackUrl={`/${projectUrl}/subscribe`}
 							/>
+						)}
+						{loginRequired && !email && (
+							<Panel type="warning" showIcon>
+								Entre com sua conta Google acima para continuar
+								a inscrição.
+							</Panel>
 						)}
 						<FormMessage type="warning" showIcon />
 					</FormItem>

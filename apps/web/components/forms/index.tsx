@@ -5,6 +5,7 @@ import {
 	InfoIcon,
 	MessageCircleWarningIcon,
 } from "lucide-react";
+import { useWatch } from "react-hook-form";
 
 // Components
 import { Button } from "@/components/ui/button";
@@ -31,7 +32,14 @@ interface FormSectionProps {
 }
 
 function FormSection({ form, children, ...rest }: FormSectionProps) {
-	const formSection = form.watch("formType");
+	// `useWatch` (hook) em vez de `form.watch()` (leitura imperativa):
+	// o React Compiler congela o retorno de `form.watch("formType")`
+	// (objeto do `useForm` é estável) e as seções nunca travavam em
+	// produção — nos testes (sem compilador) o travamento funcionava.
+	const formSection = useWatch({
+		control: form.control,
+		name: "formType",
+	}) as string | undefined;
 	const sectionNumber = Number(formSection?.replace("section", ""));
 
 	// Formulários sem wizard (sem `formType`, ex: formulário dinâmico) exibem todas as seções.
@@ -79,6 +87,9 @@ function FormSection({ form, children, ...rest }: FormSectionProps) {
 					"pointer-events-none": !canSelect && !isSelected,
 				},
 			)}
+			// `pointer-events-none` não bloqueia teclado: `inert`
+			// tira a seção travada do foco e da acessibilidade.
+			inert={!canSelect && !isSelected}
 		>
 			<FormProgress {...rest} />
 			<div
