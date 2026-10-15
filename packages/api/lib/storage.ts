@@ -57,8 +57,8 @@ export const IMAGE_PURPOSES: Record<
 		cacheControl: "public, max-age=31536000, immutable",
 	},
 	"event-logo-wide": {
-		maxWidth: 1024,
-		maxHeight: 512,
+		maxWidth: 768,
+		maxHeight: 384,
 		maxBytes: 512 * 1024,
 		allowedMime: ["image/png", "image/jpeg", "image/webp"],
 		outputMime: "image/webp",
@@ -84,8 +84,8 @@ export const IMAGE_PURPOSES: Record<
 		cacheControl: "public, max-age=31536000, immutable",
 	},
 	speaker: {
-		maxWidth: 800,
-		maxHeight: 800,
+		maxWidth: 512,
+		maxHeight: 512,
 		maxBytes: 512 * 1024,
 		allowedMime: ["image/png", "image/jpeg", "image/webp"],
 		outputMime: "image/webp",

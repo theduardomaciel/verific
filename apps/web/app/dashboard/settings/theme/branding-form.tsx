@@ -71,6 +71,7 @@ export function ProjectBrandingForm({ project }: Props) {
 								label="Logo quadrada"
 								hint="PNG/JPG/WebP/SVG até 512px"
 								aspect="aspect-square max-h-48"
+								fit="contain"
 								purpose="event-logo"
 								projectId={project.id}
 								value={field.value}
@@ -84,7 +85,9 @@ export function ProjectBrandingForm({ project }: Props) {
 						render={({ field }) => (
 							<ImageUploader
 								label="Logo horizontal"
-								hint="PNG/JPG/WebP/SVG até 1024px"
+								hint="PNG/JPG/WebP/SVG até 768px"
+								aspect="aspect-[2/1] max-h-48"
+								fit="contain"
 								purpose="event-logo-wide"
 								projectId={project.id}
 								value={field.value}
@@ -114,6 +117,7 @@ export function ProjectBrandingForm({ project }: Props) {
 								label="Logo quadrada (modo escuro)"
 								hint="Opcional; se vazia, usa o logo padrão"
 								aspect="aspect-square max-h-48"
+								fit="contain"
 								purpose="event-logo"
 								projectId={project.id}
 								value={field.value}
@@ -128,6 +132,8 @@ export function ProjectBrandingForm({ project }: Props) {
 							<ImageUploader
 								label="Logo horizontal (modo escuro)"
 								hint="Opcional; se vazio, usa o logo horizontal padrão"
+								aspect="aspect-[2/1] max-h-48"
+								fit="contain"
 								purpose="event-logo-wide"
 								projectId={project.id}
 								value={field.value}

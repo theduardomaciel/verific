@@ -91,13 +91,37 @@ describe("processImageFile", () => {
 		expect(call!.dy).toBeCloseTo((512 - call!.h) / 2);
 	});
 
+	it("limita o logo horizontal a 768x384 sem padding", async () => {
+		stubBrowser();
+		bitmapSize = { width: 1200, height: 400 };
+		const result = await processImageFile(pngFile(), "event-logo-wide");
+
+		const canvas = canvases[0]!;
+		expect(canvas.width).toBe(768);
+		expect(canvas.height).toBe(256);
+		expect(result.width).toBe(768);
+		expect(result.height).toBe(256);
+	});
+
+	it("limita a foto do palestrante a 512x512 sem padding", async () => {
+		stubBrowser();
+		bitmapSize = { width: 1000, height: 800 };
+		const result = await processImageFile(pngFile(), "speaker");
+
+		const canvas = canvases[0]!;
+		expect(canvas.width).toBe(512);
+		expect(canvas.height).toBe(410);
+		expect(canvas.width).not.toBe(canvas.height);
+		expect(result.width).toBe(512);
+		expect(result.height).toBe(410);
+	});
+
 	it("mantém as demais finalidades sem padding", async () => {
 		stubBrowser();
 		const purposes: ImagePurpose[] = [
 			"event-logo-wide",
 			"event-cover",
 			"event-thumbnail",
-			"speaker",
 			"activity-banner",
 		];
 		for (const purpose of purposes) {
