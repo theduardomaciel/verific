@@ -168,7 +168,7 @@ function EventLogo({ light, dark, href }: EventLogoProps) {
 	if (!light) {
 		return (
 			<Link href={href} className="text-(--ev-header-fg)">
-				<Logo className="h-9" />
+				<Logo className="h-8" />
 			</Link>
 		);
 	}
@@ -180,8 +180,12 @@ function EventLogo({ light, dark, href }: EventLogoProps) {
 				width={150}
 				height={28}
 				alt="Event logo"
-				className={dark ? "h-8 w-auto dark:hidden" : "h-8 w-auto"}
-				loading="eager"
+				className={
+					dark
+						? "h-8 w-auto max-w-48 object-contain dark:hidden"
+						: "h-8 w-auto max-w-48 object-contain"
+				}
+				priority
 			/>
 			{dark && (
 				<Image
@@ -189,8 +193,8 @@ function EventLogo({ light, dark, href }: EventLogoProps) {
 					width={150}
 					height={28}
 					alt="Event logo"
-					className="hidden h-8 w-auto dark:block"
-					loading="eager"
+					className="hidden h-8 w-auto max-w-48 object-contain dark:block"
+					priority
 				/>
 			)}
 		</Link>
