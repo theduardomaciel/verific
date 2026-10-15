@@ -19,6 +19,16 @@ export function proxy(request: NextRequest) {
 	}
 
 	if (pathname === "/auth" && sessionCookie) {
+		// Usuário já logado voltando ao login (ex.: de `/[event]/subscribe`):
+		// respeita o destino original em vez de forçar `/account`.
+		const callbackUrl = request.nextUrl.searchParams.get("callbackUrl");
+		if (
+			callbackUrl?.startsWith("/") &&
+			!callbackUrl.startsWith("//") &&
+			!callbackUrl.startsWith("/auth")
+		) {
+			return NextResponse.redirect(new URL(callbackUrl, request.url));
+		}
 		return NextResponse.redirect(new URL("/account", request.url));
 	}
 
