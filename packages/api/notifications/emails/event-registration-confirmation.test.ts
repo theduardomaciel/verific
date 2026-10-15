@@ -24,7 +24,7 @@ describe("event_registration_confirmation template", () => {
 	it("renders html and text containing name, event and access url", async () => {
 		const rendered = await renderEventRegistrationConfirmation(PROPS);
 
-		expect(rendered.templateVersion).toBe("v1");
+		expect(rendered.templateVersion).toBe("v2");
 		expect(rendered.subject).toBe("Inscrição confirmada: Secomp UFAL 2026");
 		expect(rendered.html).toContain("Maria Silva");
 		expect(rendered.html).toContain("Secomp UFAL 2026");
@@ -44,7 +44,7 @@ describe("event_registration_confirmation template", () => {
 			renderEventRegistrationConfirmation(
 				eventRegistrationConfirmationPreviewProps,
 			),
-		).resolves.toMatchObject({ templateVersion: "v1" });
+		).resolves.toMatchObject({ templateVersion: "v2" });
 	});
 
 	it("omits date and location lines when not provided", async () => {
@@ -69,6 +69,16 @@ describe("event_registration_confirmation template", () => {
 			logoUrl: undefined,
 		});
 		expect(withoutLogo.html).not.toContain("<img");
+	});
+
+	it("uses the logoAlt override when provided", async () => {
+		const rendered = await renderEventRegistrationConfirmation({
+			...PROPS,
+			logoUrl: "https://example.com/logo_blue.png",
+			logoAlt: "verifIC",
+		});
+
+		expect(rendered.html).toContain('alt="verifIC"');
 	});
 
 	it("rejects invalid payloads instead of rendering", async () => {

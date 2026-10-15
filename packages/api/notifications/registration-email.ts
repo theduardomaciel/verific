@@ -21,6 +21,13 @@ export interface QueueRegistrationEmailArgs {
 	logoUrl?: string | null;
 }
 
+/**
+ * Brand mark used when the event has no email-safe logo of its own.
+ * Blue-on-transparent reads well on the email's white background (the
+ * white variant in public/ is for dark surfaces only).
+ */
+export const BRAND_LOGO_PATH = "/logo_blue.png";
+
 const saoPauloDay = new Intl.DateTimeFormat("pt-BR", {
 	timeZone: "America/Sao_Paulo",
 	day: "2-digit",
@@ -59,13 +66,15 @@ export function buildRegistrationEmailInput(
 	const to = args.to?.trim();
 	if (!to) return null;
 	const baseUrl = env.NEXT_PUBLIC_VERCEL_URL.replace(/\/$/, "");
+	const eventLogo = sanitizeLogoUrl(args.logoUrl ?? undefined);
 	const payload: EventRegistrationConfirmationPayload = {
 		participantName: args.participantName,
 		eventName: args.eventName,
 		eventDateText: formatEventDateText(args.startDate, args.endDate),
 		eventLocation: args.eventLocation?.trim() || undefined,
 		accessUrl: `${baseUrl}/${args.eventUrlPath}/profile/${args.shortId}?me=1`,
-		logoUrl: sanitizeLogoUrl(args.logoUrl ?? undefined),
+		logoUrl: eventLogo ?? `${baseUrl}${BRAND_LOGO_PATH}`,
+		...(eventLogo ? {} : { logoAlt: "verifIC" }),
 	};
 	return {
 		type: "event_registration_confirmation",

@@ -16,7 +16,7 @@ import { z } from "@verific/zod";
 
 import type { RenderedTemplate } from "../templates";
 
-export const EVENT_REGISTRATION_CONFIRMATION_VERSION = "v1" as const;
+export const EVENT_REGISTRATION_CONFIRMATION_VERSION = "v2" as const;
 
 export const eventRegistrationConfirmationPayloadSchema = z.object({
 	participantName: z.string().trim().min(1),
@@ -33,6 +33,9 @@ export const eventRegistrationConfirmationPayloadSchema = z.object({
 	// Loose on purpose: an unusable logo must never block the email. The
 	// render step sanitizes it and falls back to the event name as text.
 	logoUrl: z.string().optional(),
+	// Alt text override for when the image is not the event logo (e.g. the
+	// verifIC brand mark). Defaults to the event name.
+	logoAlt: z.string().trim().optional(),
 });
 
 export type EventRegistrationConfirmationPayload = z.infer<
@@ -65,6 +68,7 @@ export function EventRegistrationConfirmationEmail({
 	eventLocation,
 	accessUrl,
 	logoUrl,
+	logoAlt,
 }: EventRegistrationConfirmationProps) {
 	const subject = subjectFor(eventName);
 	const logoSrc = sanitizeLogoUrl(logoUrl);
@@ -78,7 +82,7 @@ export function EventRegistrationConfirmationEmail({
 						{logoSrc ? (
 							<Img
 								src={logoSrc}
-								alt={eventName}
+								alt={logoAlt || eventName}
 								width="160"
 								style={styles.logo}
 							/>
@@ -153,7 +157,8 @@ export const eventRegistrationConfirmationPreviewProps: EventRegistrationConfirm
 		eventDateText: "12 de abril de 2026, 14:00 – 18:00",
 		eventLocation: "Campus A. C. Simões, Maceió – AL",
 		accessUrl: "https://example.com/secomp-2026/profile/abc123?me=1",
-		logoUrl: undefined,
+		logoUrl: "https://example.com/logo_blue.png",
+		logoAlt: "verifIC",
 	};
 
 export default function EventRegistrationConfirmationPreview() {
