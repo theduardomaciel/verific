@@ -2,8 +2,11 @@
 
 import { useSortable } from "@dnd-kit/react/sortable";
 import { GripVertical } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
+
 import { cn } from "@/lib/utils";
+
 import type { Field } from "../types";
 
 interface SortableFieldRowProps {

@@ -463,8 +463,10 @@ function MutateSpeakerForm({
 						<FormControl>
 							<ImageUploader
 								label="Foto do palestrante"
-								hint="PNG/JPG/WebP/SVG até 800px"
+								hint="PNG/JPG/WebP/SVG até 512px"
 								aspect="aspect-square max-h-48"
+								shape="circle"
+								fit="cover"
 								purpose="speaker"
 								projectId={projectId}
 								value={field.value}

@@ -6,11 +6,15 @@ import {
 	screen,
 	waitFor,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import JoinForm from "@/components/forms/JoinForm/index";
 
 afterEach(cleanup);
+beforeEach(() => {
+	vi.clearAllMocks();
+	window.localStorage.clear();
+});
 vi.mock("@/public/icons/google.svg", () => ({
 	default: () => null,
 }));
@@ -28,6 +32,7 @@ vi.mock("@/lib/validations", async (importOriginal) => {
 });
 
 import { scrollToNextSection } from "@/lib/validations";
+
 import type * as ValidationsModule from "@/lib/validations";
 
 const mockMutateAsync = vi.fn();
@@ -141,11 +146,22 @@ const formData = {
 	],
 } as never;
 
-function renderForm() {
+function renderForm(user?: { id: string; name: string; email: string }) {
 	return render(
-		<JoinForm project={project} formData={formData} profileLayout={null} />,
+		<JoinForm
+			project={project}
+			formData={formData}
+			profileLayout={null}
+			user={user as never}
+		/>,
 	);
 }
+
+const mockUser = {
+	id: "u1",
+	name: "Fulano da Silva",
+	email: "fulano@ic.ufal.br",
+};
 
 function sectionContinuars() {
 	// Nome acessível exato exclui o "Continuar com Google" da Seção 0.
@@ -162,7 +178,7 @@ describe("JoinForm wizard", () => {
 	});
 
 	it("bloqueia o avanço com obrigatório vazio e mostra o erro", async () => {
-		renderForm();
+		renderForm(mockUser);
 
 		fireEvent.click(sectionContinuars()[1]!);
 
@@ -174,7 +190,7 @@ describe("JoinForm wizard", () => {
 	});
 
 	it("avança p/ a próxima seção após preencher os obrigatórios", async () => {
-		renderForm();
+		renderForm(mockUser);
 
 		const boxes = screen.getAllByRole("textbox");
 		fireEvent.change(boxes[0]!, { target: { value: "Fulano da Silva" } });
@@ -188,5 +204,49 @@ describe("JoinForm wizard", () => {
 		expect(document.getElementById("section2")).not.toHaveClass(
 			"pointer-events-none",
 		);
+	});
+
+	it("bloqueia a saída da identificação sem login e pede autenticação", () => {
+		renderForm();
+
+		fireEvent.click(sectionContinuars()[0]!);
+
+		expect(
+			screen.getByText(/Entre com sua conta Google/i),
+		).toBeInTheDocument();
+		expect(vi.mocked(scrollToNextSection)).not.toHaveBeenCalled();
+		expect(document.getElementById("section2")).toHaveClass(
+			"pointer-events-none",
+		);
+	});
+
+	it("restaura o rascunho após remontagem", () => {
+		const draftProject = { id: "p-draft", url: "evento" };
+		const { unmount } = render(
+			<JoinForm
+				project={draftProject}
+				formData={formData}
+				profileLayout={null}
+				user={mockUser as never}
+			/>,
+		);
+
+		const boxes = screen.getAllByRole("textbox");
+		fireEvent.change(boxes[0]!, { target: { value: "Fulano da Silva" } });
+		fireEvent.change(boxes[1]!, { target: { value: "fulana" } });
+
+		unmount();
+		render(
+			<JoinForm
+				project={draftProject}
+				formData={formData}
+				profileLayout={null}
+				user={mockUser as never}
+			/>,
+		);
+
+		const restored = screen.getAllByRole("textbox");
+		expect((restored[0] as HTMLInputElement).value).toBe("Fulano da Silva");
+		expect((restored[1] as HTMLInputElement).value).toBe("fulana");
 	});
 });

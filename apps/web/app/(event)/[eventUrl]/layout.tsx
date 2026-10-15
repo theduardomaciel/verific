@@ -60,7 +60,23 @@ export async function generateMetadata({
 				"max-snippet": -1,
 			},
 		},
-		icons: project.logoUrl ? { icon: project.logoUrl } : undefined,
+		// Favicon direto do arquivo armazenado (quadrado desde o upload)
+		// com variantes de esquema: o `logoDarkUrl` existia mas nunca era
+		// usado no ícone da aba.
+		icons: project.logoUrl
+			? {
+					icon: [
+						{
+							url: project.logoUrl,
+							media: "(prefers-color-scheme: light)",
+						},
+						{
+							url: project.logoDarkUrl || project.logoUrl,
+							media: "(prefers-color-scheme: dark)",
+						},
+					],
+				}
+			: undefined,
 		openGraph: {
 			title: project.name,
 			description: project.description || undefined,
@@ -138,7 +154,27 @@ function EventLayoutFallback() {
 interface EventLogoProps {
 	light: string | null;
 	dark: string | null;
+	lightDims?: LogoDims;
+	darkDims?: LogoDims;
 	href: string;
+}
+
+interface LogoDims {
+	width: number;
+	height: number;
+}
+
+/** Só vale quando ambas existem (0/nulo = desconhecido). */
+function exactDims(
+	width: number | null | undefined,
+	height: number | null | undefined,
+): LogoDims | undefined {
+	return width && height ? { width, height } : undefined;
+}
+
+/** Logos quadrados guardam só o lado (sempre 1:1). */
+function squareDims(side: number | null | undefined): LogoDims | undefined {
+	return side ? { width: side, height: side } : undefined;
 }
 
 /**
@@ -148,11 +184,11 @@ interface EventLogoProps {
  * existe de fato: antes, a clara sumia no modo escuro e a escura não era
  * renderizada sem URL própria — o logo desaparecia por completo.
  */
-function EventLogo({ light, dark, href }: EventLogoProps) {
+function EventLogo({ light, dark, lightDims, darkDims, href }: EventLogoProps) {
 	if (!light) {
 		return (
 			<Link href={href} className="text-(--ev-header-fg)">
-				<Logo className="h-9" />
+				<Logo className="h-8" />
 			</Link>
 		);
 	}
@@ -161,20 +197,24 @@ function EventLogo({ light, dark, href }: EventLogoProps) {
 		<Link href={href} className="text-(--ev-header-fg)">
 			<Image
 				src={light}
-				width={150}
-				height={28}
+				width={lightDims?.width ?? 150}
+				height={lightDims?.height ?? 28}
 				alt="Event logo"
-				className={dark ? "h-8 w-auto dark:hidden" : "h-8 w-auto"}
-				loading="eager"
+				className={
+					dark
+						? "h-8 w-auto max-w-48 object-contain dark:hidden"
+						: "h-8 w-auto max-w-48 object-contain"
+				}
+				priority
 			/>
 			{dark && (
 				<Image
 					src={dark}
-					width={150}
-					height={28}
+					width={darkDims?.width ?? 150}
+					height={darkDims?.height ?? 28}
 					alt="Event logo"
-					className="hidden h-8 w-auto dark:block"
-					loading="eager"
+					className="hidden h-8 w-auto max-w-48 object-contain dark:block"
+					priority
 				/>
 			)}
 		</Link>
@@ -266,9 +306,31 @@ export default async function EventLayout({
 							<EventLogo
 								href={`/${eventUrl}`}
 								light={project.largeLogoUrl || project.logoUrl}
+								lightDims={
+									project.largeLogoUrl
+										? exactDims(
+												project.largeLogoWidth,
+												project.largeLogoHeight,
+											)
+										: squareDims(project.logoSide)
+								}
 								dark={
 									project.largeLogoDarkUrl ||
 									project.logoDarkUrl
+								}
+								darkDims={
+									(project.largeLogoDarkUrl
+										? exactDims(
+												project.largeLogoDarkWidth,
+												project.largeLogoDarkHeight,
+											)
+										: squareDims(project.logoDarkSide)) ??
+									(project.largeLogoUrl
+										? exactDims(
+												project.largeLogoWidth,
+												project.largeLogoHeight,
+											)
+										: squareDims(project.logoSide))
 								}
 							/>
 						}

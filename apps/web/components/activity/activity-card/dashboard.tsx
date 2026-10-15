@@ -1,23 +1,24 @@
 import Link from "next/link";
 
-import { cn } from "@/lib/utils";
+// Icons
+import { User, Users } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-// Icons
-import { User, Users } from "lucide-react";
+// Types
+import type { RouterOutput } from "@verific/api";
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 // Components
 import { CategoryLabel } from "@/components/dashboard/category-card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ActivityStatus } from "../activity-status";
-import { TagBadges } from "../tag-badge";
 
 // Lib
 import { listToString } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 
-// Types
-import type { RouterOutput } from "@verific/api";
+import { ActivityStatus } from "../activity-status";
+import { TagBadges } from "../tag-badge";
 
 interface ActivityCardProps {
 	className?: string;

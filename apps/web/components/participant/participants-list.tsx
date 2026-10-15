@@ -1,11 +1,12 @@
+// Types
+import type { RouterOutput } from "@verific/api";
+
+import { Empty } from "@/components/empty";
+
 import { cn } from "@/lib/utils";
 
 // Components
 import { ParticipantListItem } from "./participant-item";
-import { Empty } from "@/components/empty";
-
-// Types
-import type { RouterOutput } from "@verific/api";
 
 interface Props {
 	className?: string;

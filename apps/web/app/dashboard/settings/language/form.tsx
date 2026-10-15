@@ -1,7 +1,7 @@
 "use client";
 
-import { ToDo } from "@/components/to-do";
 import { SettingsCard } from "@/components/settings/settings-card"; // Exemplo, caso queira usar cards
+import { ToDo } from "@/components/to-do";
 
 // tRPC e RouterOutput seriam necessários se houvesse interações com o backend aqui.
 // import { trpc } from "@/lib/trpc/react";

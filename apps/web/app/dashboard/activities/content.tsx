@@ -1,38 +1,37 @@
 "use client";
 
 import Link from "next/link";
-import { keepPreviousData } from "@tanstack/react-query";
 
+import { keepPreviousData } from "@tanstack/react-query";
 // Icons
 import { Plus } from "lucide-react";
 
-// Components
-import { Button } from "@/components/ui/button";
-import { DashboardPagination } from "@/components/dashboard/pagination";
-import { SearchBar } from "@/components/search-bar";
-import { SortBy } from "@/components/sort-by";
-import { FiltersPanel } from "@/components/dashboard/filters-panel";
-import { Filter } from "@/components/dashboard/filter";
-import { Empty } from "@/components/empty";
-import { ActivityCard } from "@/components/activity/activity-card/dashboard";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ReleaseRegistrationsDialog } from "@/components/dialogs/release-registrations-dialog";
-import { ManageTagsDialog } from "@/components/dialogs/manage-tags-dialog";
-
 // Validation (client-safe: no db / server env imports)
 import { getActivitiesParams } from "@verific/api/schemas";
-
+import { sortOptions, sortOptionsLabels } from "@verific/api/utils";
 // Types & Enums
 import {
 	activityCategories,
 	activityCategoryLabels,
 } from "@verific/drizzle/schema";
-import { sortOptions, sortOptionsLabels } from "@verific/api/utils";
+
+// Components
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+
+import { ActivityCard } from "@/components/activity/activity-card/dashboard";
+import { useDashboard } from "@/components/dashboard/dashboard-context";
+import { Filter } from "@/components/dashboard/filter";
+import { FiltersPanel } from "@/components/dashboard/filters-panel";
+import { DashboardPagination } from "@/components/dashboard/pagination";
+import { ManageTagsDialog } from "@/components/dialogs/manage-tags-dialog";
+import { ReleaseRegistrationsDialog } from "@/components/dialogs/release-registrations-dialog";
+import { Empty } from "@/components/empty";
+import { SearchBar } from "@/components/search-bar";
+import { SortBy } from "@/components/sort-by";
 
 // Hooks
 import { useParsedSearchParams } from "@/hooks/use-parsed-search-params";
-import { useDashboard } from "@/components/dashboard/dashboard-context";
-
 // API
 import { trpc } from "@/lib/trpc/react";
 

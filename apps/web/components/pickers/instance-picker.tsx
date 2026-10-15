@@ -2,15 +2,10 @@
 
 import React, { useEffect, useRef, useState } from "react";
 
-import { cn } from "@/lib/utils";
-import { Check, ChevronsUpDown, Loader2, Plus, User } from "lucide-react";
-
-// Hooks
-import { useMediaQuery } from "@/hooks/use-media-query";
-import { useDebounce } from "@/hooks/use-debounce";
-
 // Components
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { Check, ChevronsUpDown, Loader2, Plus, User } from "lucide-react";
+
 import {
 	Command,
 	CommandEmpty,
@@ -30,8 +25,14 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { Button } from "../ui/button";
+
+import { useDebounce } from "@/hooks/use-debounce";
+// Hooks
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { cn } from "@/lib/utils";
+
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Button } from "../ui/button";
 
 // Types
 

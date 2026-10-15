@@ -1,12 +1,24 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Eye } from "lucide-react";
+import { useForm, useWatch } from "react-hook-form";
+
+import type { RouterOutput } from "@verific/api";
+// Validation
+import {
+	buildAnswersSchema,
+	filterVisibleFields,
+	getVisibleSectionIds,
+} from "@verific/api/schemas";
+// Types
+import type { User } from "@verific/auth";
+import { isFieldLinked } from "@verific/drizzle/profile-layout";
 import { z } from "@verific/zod";
 
-// Components
-import { FormSection, SectionFooter } from "@/components/forms";
 import {
 	Form,
 	FormWrapper,
@@ -16,40 +28,35 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
-import { DynamicField } from "@/components/forms/dynamic/DynamicField";
+import { Input } from "@/components/ui/input";
+
+// Components
+import { FormSection, SectionFooter } from "@/components/forms";
 import {
 	ErrorDialog,
 	LoadingDialog,
 	SuccessDialog,
 } from "@/components/forms/dialogs";
+import { DynamicField } from "@/components/forms/dynamic/DynamicField";
 
-import { Input } from "@/components/ui/input";
-import JoinForm0 from "./Section0";
+import { revalidateParticipantEnrollment } from "@/app/actions";
+import {
+	clearJoinDraft,
+	readJoinDraft,
+	writeJoinDraft,
+} from "@/lib/forms/join-draft";
 import {
 	isFilled,
 	groupFieldsBySection,
 	planFormSections,
 } from "@/lib/forms/layout";
-import { Eye } from "lucide-react";
-import { isFieldLinked } from "@verific/drizzle/profile-layout";
-import { scrollToNextSection } from "@/lib/validations";
-
-// Validation
-import {
-	buildAnswersSchema,
-	filterVisibleFields,
-	getVisibleSectionIds,
-} from "@verific/api/schemas";
-import type { GenericForm } from "..";
-
-// Types
-import type { User } from "@verific/auth";
-import type { RouterOutput } from "@verific/api";
-
 // API
 import { trpc } from "@/lib/trpc/react";
-import { useRouter } from "next/navigation";
-import { revalidateParticipantEnrollment } from "@/app/actions";
+import { scrollToNextSection } from "@/lib/validations";
+
+import JoinForm0 from "./Section0";
+
+import type { GenericForm } from "..";
 
 interface JoinFormProps {
 	user?: User;
@@ -78,12 +85,26 @@ export default function JoinForm({
 	>(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [createdShortId, setCreatedShortId] = useState<string | null>(null);
+	const submissionStartedRef = useRef(false);
 
 	const submitMutation = trpc.submitAnswers.useMutation();
 	const layout = profileLayout;
 
 	const fields = useMemo(() => formData?.fields ?? [], [formData]);
 	const sections = useMemo(() => formData?.sections ?? [], [formData]);
+
+	// Rascunho salvo em `localStorage`: o estado do formulário é
+	// descartado a cada remontagem (troca de aba, login no meio do
+	// preenchimento), então o progresso é restaurado daqui.
+	const [initialDraft] = useState(() => {
+		const knownKeys = new Set(
+			(formData?.fields ?? [])
+				.map((f) => (f as { key?: unknown }).key)
+				.filter((k): k is string => typeof k === "string"),
+		);
+		return readJoinDraft(project.id, knownKeys);
+	});
+	const [needsLogin, setNeedsLogin] = useState(false);
 
 	const baseVisibleFields = useMemo(
 		() => fields.filter((f) => f.isVisible),
@@ -178,14 +199,29 @@ export default function JoinForm({
 		answers: Record<string, unknown>;
 	}>({
 		resolver: resolver as never,
-		defaultValues: { name: user?.name || "", answers: {} },
+		defaultValues: {
+			name: initialDraft?.name || user?.name || "",
+			answers: initialDraft?.answers ?? {},
+		},
 	});
 
 	const watchedAnswers =
 		useWatch({ control: form.control, name: "answers" }) ?? {};
 	const watchedName = useWatch({ control: form.control, name: "name" }) ?? "";
 
-	// oxlint-disable-line react-hooks/exhaustive-deps -- watchedAnswers is a RHF watch() result that changes every render; adding it would defeat the memoization purpose.
+	// Persiste cada alteração: remontagens (troca de aba, login/logout)
+	// recriam o `useForm` e o rascunho é restaurado em `defaultValues`.
+	useEffect(() => {
+		if (submissionStartedRef.current || currentState === "submitted") {
+			clearJoinDraft(project.id);
+			return;
+		}
+		writeJoinDraft(project.id, {
+			name: watchedName,
+			answers: watchedAnswers,
+		});
+	}, [currentState, project.id, watchedName, watchedAnswers]);
+
 	const { visibleFields, groupedSections } = useMemo(() => {
 		if (!hasConditional) {
 			return {
@@ -217,7 +253,6 @@ export default function JoinForm({
 		sections,
 		sectionsForVisibility,
 		fieldsForValidation,
-		// oxlint-disable-line react-hooks/exhaustive-deps -- watchedAnswers is a RHF watch() result that changes every render; adding it would defeat the memoization purpose.
 		watchedAnswers,
 	]);
 
@@ -268,6 +303,11 @@ export default function JoinForm({
 		if (!user) form.setValue("name", "");
 	}, [user, form]);
 
+	// Com login o aviso perde o sentido (ajuste durante a renderização).
+	if (user && needsLogin) {
+		setNeedsLogin(false);
+	}
+
 	// Wizard: começa na identificação; "Continuar" valida a seção atual
 	// e avança (só a última seção conclui/submete).
 	useEffect(() => {
@@ -277,11 +317,24 @@ export default function JoinForm({
 	}, [form]);
 
 	function advanceTo(sectionNumber: number) {
+		// Sem login não há avanço: as seções seguintes exigem conta.
+		if (sectionNumber > 0 && !user) {
+			setNeedsLogin(true);
+			return;
+		}
 		form.setValue("formType" as never, `section${sectionNumber}` as never);
 		scrollToNextSection(sectionNumber);
 	}
 
 	async function handleContinueSection(p: (typeof planned)[number]) {
+		// Sessão expirada no meio do preenchimento: não avança.
+		if (!user) {
+			setErrorMessage(
+				"Sua sessão expirou. Entre com sua conta Google para continuar.",
+			);
+			setCurrentState("error");
+			return;
+		}
 		const names: string[] = [];
 		if (p.isFirstContent) names.push("name");
 		for (const f of p.group.fields) names.push(`answers.${f.key}`);
@@ -294,8 +347,10 @@ export default function JoinForm({
 		name: string;
 		answers: Record<string, unknown>;
 	}) {
+		submissionStartedRef.current = true;
 		setCurrentState("submitting");
 		if (!user) {
+			submissionStartedRef.current = false;
 			setErrorMessage("Você precisa estar logado para se inscrever.");
 			setCurrentState("error");
 			return;
@@ -324,6 +379,7 @@ export default function JoinForm({
 			});
 			setCreatedShortId(result.shortId);
 		} catch (error) {
+			submissionStartedRef.current = false;
 			setErrorMessage(
 				error instanceof Error ? error.message : "Erro desconhecido",
 			);
@@ -331,8 +387,13 @@ export default function JoinForm({
 			return;
 		}
 		if (user.id) await revalidateParticipantEnrollment(user.id);
+		clearJoinDraft(project.id);
 		setCurrentState("submitted");
 	}
+
+	const successDescription = `Enviaremos um e-mail de confirmação${
+		user?.email ? ` para ${user.email}` : ""
+	} em até 24 horas. Se não o encontrar na caixa de entrada, confira também as pastas de spam e promoções. Enquanto isso, você já pode acessar sua conta e se inscrever nas atividades do evento.`;
 
 	return (
 		<Form {...form}>
@@ -342,6 +403,7 @@ export default function JoinForm({
 						projectUrl={project.url}
 						form={form as unknown as GenericForm}
 						email={user?.email}
+						loginRequired={needsLogin}
 						onContinue={() => advanceTo(1)}
 					/>
 					{planned.length === 0 ? (
@@ -455,7 +517,7 @@ export default function JoinForm({
 					);
 				}}
 				confettiColors={project.colors}
-				className="py-8 sm:!max-w-[40vw]"
+				className="py-8 sm:max-w-[40vw]!"
 				title={
 					<div className="flex flex-col items-center justify-center gap-4">
 						<span className="flex w-full sm:px-12">
@@ -465,7 +527,7 @@ export default function JoinForm({
 						</span>
 					</div>
 				}
-				description="Você já pode acessar sua conta e se inscrever nas atividades do evento."
+				description={successDescription}
 			/>
 			<ErrorDialog
 				isOpen={currentState === "error"}

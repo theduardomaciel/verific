@@ -1,8 +1,8 @@
 "use server";
 
+import { revalidateTag, updateTag } from "next/cache";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { revalidateTag, updateTag } from "next/cache";
 
 import { auth } from "@verific/auth";
 
@@ -14,6 +14,9 @@ export async function loginAction(callbackUrl: string) {
 		body: {
 			provider: "google",
 			callbackURL: safeCallbackUrl,
+			// Reforça o seletor de contas por requisição (o padrão do
+			// provider já define `prompt: "select_account"`).
+			additionalParams: { prompt: "select_account" },
 		},
 		headers: await headers(),
 	});

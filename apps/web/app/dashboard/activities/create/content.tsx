@@ -1,10 +1,9 @@
 "use client";
 
-// Components
-import MutateActivityForm from "@/components/forms/MutateActivityForm";
-
 // Hooks
 import { useDashboard } from "@/components/dashboard/dashboard-context";
+// Components
+import MutateActivityForm from "@/components/forms/MutateActivityForm";
 
 export function CreateActivityContent() {
 	const { projectId } = useDashboard();

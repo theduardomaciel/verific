@@ -23,6 +23,7 @@ export * from "./form-version";
 export * from "./form-section";
 export * from "./form-field";
 export * from "./form-answer";
+export * from "./notification";
 
 // Enums
 export * from "../enum/audience";

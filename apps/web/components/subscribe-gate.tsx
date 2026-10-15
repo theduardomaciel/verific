@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import { CircleCheckBig } from "lucide-react";
 
@@ -13,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import JoinForm from "@/components/forms/JoinForm";
 
 import { authClient } from "@/lib/auth-client";
+import { clearJoinDraft } from "@/lib/forms/join-draft";
 import { trpc } from "@/lib/trpc/react";
 
 interface SubscribeGateProps {
@@ -59,15 +61,31 @@ export function SubscribeGate({ project }: SubscribeGateProps) {
 		projectUrl: project.url,
 	});
 
-	if (
-		session.isPending ||
-		(user && enrollment.isPending) ||
-		formQuery.isPending ||
-		layoutQuery.isPending
-	) {
+	// Esqueleto só no carregamento inicial: recarregamentos posteriores
+	// (ex.: `useSession` refaz fetch ao trocar de aba, e a query de
+	// matrícula habilita após o login) trocariam o formulário pelo
+	// esqueleto, desmontando o `JoinForm` e apagando o preenchimento.
+	const ready =
+		!session.isPending && !formQuery.isPending && !layoutQuery.isPending;
+	const [gateResolved, setGateResolved] = useState(false);
+	// Ajuste durante a renderização (padrão recomendado no lugar de
+	// `setState` em efeito): a transição `ready` já re-renderiza.
+	if (ready && !gateResolved) {
+		setGateResolved(true);
+	}
+
+	// Já inscrito: não há mais rascunho a preservar.
+	useEffect(() => {
+		if (enrollment.data) clearJoinDraft(project.id);
+	}, [enrollment.data, project.id]);
+
+	if (!gateResolved) {
 		return <SubscribeSkeleton />;
 	}
 
+	// Após a primeira resolução o formulário nunca é desmontado por
+	// recarregamentos: `enrollment.data` retém o valor anterior durante
+	// refetch, e pendente sem dados apenas exibe o formulário.
 	if (user && enrollment.data) {
 		const { shortId } = enrollment.data;
 		return (

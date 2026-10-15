@@ -1,7 +1,9 @@
-import { Suspense } from "react";
 import type { Metadata } from "next";
-import { FormsContent } from "./content";
+import { Suspense } from "react";
+
 import { Skeleton } from "@/components/ui/skeleton";
+
+import { FormsContent } from "./content";
 
 export const metadata: Metadata = {
 	title: "Formulários",

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import Logo from "@/public/logo.svg";
 import { ErrorDisplay } from "@/components/auth/ErrorDisplay";
+
+import Logo from "@/public/logo.svg";
 
 export const metadata: Metadata = {
 	title: "Acesso negado",

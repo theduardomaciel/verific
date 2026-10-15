@@ -22,41 +22,17 @@ import {
 	formVersion,
 	participant,
 	participantOnActivity,
-	project,
 } from "@verific/drizzle/schema";
 import { env } from "@verific/env";
 import { z } from "@verific/zod";
 
 import { matchBadgeAnswers } from "../lib/badge-answers";
+import { requireProjectAccess } from "../lib/project-access";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { ensureShortId } from "./profiles";
 
 /** Tipos de campo do formulário que podem virar linha secundária. */
 export const BADGE_COMPATIBLE_FIELD_TYPES = ["text", "select_single"] as const;
-
-async function requireProjectAccess(projectId: string, userId: string) {
-	const data = await db.query.project.findFirst({
-		where: eq(project.id, projectId),
-		columns: { id: true, ownerId: true, url: true, profilesEnabled: true },
-		with: { moderators: { columns: { userId: true } } },
-	});
-	if (!data) {
-		throw new TRPCError({
-			code: "NOT_FOUND",
-			message: "Evento não encontrado.",
-		});
-	}
-	const allowed =
-		data.ownerId === userId ||
-		data.moderators.some((m) => m.userId === userId);
-	if (!allowed) {
-		throw new TRPCError({
-			code: "FORBIDDEN",
-			message: "Sem permissão neste evento.",
-		});
-	}
-	return data;
-}
 
 async function readStoredLayout(
 	projectId: string,

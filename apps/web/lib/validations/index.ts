@@ -1,5 +1,6 @@
 // Types
 import type { GenericForm } from "@/components/forms";
+
 import type { FieldError } from "react-hook-form";
 
 export function isValid(key: string, section: number, form: GenericForm) {

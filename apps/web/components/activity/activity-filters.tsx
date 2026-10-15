@@ -1,15 +1,18 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+
+import { ChevronDown, ChevronUp, X } from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronUp, X } from "lucide-react";
+
 import { useMediaQuery } from "@/hooks/use-media-query";
 
 interface Category {

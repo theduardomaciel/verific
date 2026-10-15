@@ -464,6 +464,7 @@ export function ScheduleContent({
 					}}
 					onJoined={handleJoined}
 					onBlocked={handleBlocked}
+					eventUrl={eventUrl}
 				/>
 			) : null}
 		</>

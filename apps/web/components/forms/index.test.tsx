@@ -1,6 +1,9 @@
+import { useEffect } from "react";
+
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useForm, type UseFormReturn } from "react-hook-form";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { FormSection } from "@/components/forms";
@@ -12,14 +15,30 @@ vi.mock("@/lib/validations", () => ({
 afterEach(cleanup);
 
 function renderSection(formType?: string, section = 0) {
-	const setValue = vi.fn();
-	const form = { watch: () => formType, setValue } as never;
-	render(
-		<FormSection title="Dados" section={section} form={form} fields={[]}>
-			<input placeholder="Nome" />
-		</FormSection>,
-	);
-	return { setValue };
+	const formRef: { current: UseFormReturn | null } = { current: null };
+	function Wrapper() {
+		const form = useForm({
+			defaultValues: formType === undefined ? {} : { formType },
+		});
+		useEffect(() => {
+			formRef.current = form;
+		}, [form]);
+		return (
+			<FormSection
+				title="Dados"
+				section={section}
+				form={form as never}
+				fields={[]}
+			>
+				<input placeholder="Nome" />
+			</FormSection>
+		);
+	}
+	render(<Wrapper />);
+	return {
+		getFormType: () =>
+			formRef.current?.getValues("formType") as string | undefined,
+	};
 }
 
 describe("FormSection", () => {
@@ -42,9 +61,9 @@ describe("FormSection", () => {
 
 	it("still selects the section on space when the section itself is focused", () => {
 		// Wizard em `section1`: a seção 0 está liberada mas não selecionada.
-		const { setValue } = renderSection("section1", 0);
+		const { getFormType } = renderSection("section1", 0);
 		const section = screen.getByRole("button");
 		fireEvent.keyDown(section, { key: " " });
-		expect(setValue).toHaveBeenCalledWith("formType", "section0");
+		expect(getFormType()).toBe("section0");
 	});
 });

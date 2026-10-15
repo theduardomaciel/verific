@@ -1,11 +1,13 @@
 "use client";
 
 import { useMemo } from "react";
+
 import {
 	filterVisibleFields,
 	getVisibleSectionIds,
 	type SectionForVisibility,
 } from "@verific/api/schemas";
+
 import { groupFieldsBySection } from "./layout";
 
 interface VisibleField {

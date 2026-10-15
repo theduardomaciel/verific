@@ -1,11 +1,13 @@
-import { z } from "@verific/zod";
 import {
 	formFieldTypes,
 	hasOutroOption,
 	OTHER_LABEL,
 } from "@verific/api/schemas";
 import { SOCIAL_SERVICES } from "@verific/drizzle/profile-layout";
+import { z } from "@verific/zod";
+
 import { groupFieldsIntoRows } from "@/lib/forms/layout";
+
 import type { Field } from "../types";
 
 const validServiceIds: Set<string> = new Set(SOCIAL_SERVICES.map((s) => s.id));

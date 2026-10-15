@@ -1,11 +1,12 @@
+import { REM } from "next/font/google";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
-import { DashboardHeader } from "@/components/header/dashboard-header";
-import { Footer } from "@/components/footer";
 import { AccountHeaderSkeleton } from "@/components/account/project-skeleton";
+import { Footer } from "@/components/footer";
+import { DashboardHeader } from "@/components/header/dashboard-header";
+
 import { getCachedAccountProjects } from "@/lib/trpc/server";
-import { REM } from "next/font/google";
 
 const rem = REM({
 	variable: "--font-rem",

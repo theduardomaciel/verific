@@ -1,12 +1,8 @@
 "use client";
 
 import { useCallback } from "react";
+
 import { Check, ChevronsUpDown } from "lucide-react";
-
-import { cn } from "@/lib/utils";
-
-// Hooks
-import { useControlledParam } from "@/hooks/use-controlled-param";
 
 // Components
 import { Button } from "@/components/ui/button";
@@ -24,7 +20,10 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 
+// Hooks
+import { useControlledParam } from "@/hooks/use-controlled-param";
 import { listToString } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 
 interface FilterByProps {
 	prefix?: string;

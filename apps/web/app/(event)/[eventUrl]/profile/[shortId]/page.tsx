@@ -1,18 +1,21 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
-import * as EventContainer from "@/components/landing/event-container";
 import { Skeleton } from "@/components/ui/skeleton";
+
+import * as EventContainer from "@/components/landing/event-container";
+import { ProfileAccountIsland } from "@/components/profile/profile-account-island";
 import { ProfileBanner } from "@/components/profile/profile-banner";
-import { ProfileStats } from "@/components/profile/profile-stats";
 import { ProfileOwnerActions } from "@/components/profile/profile-owner-actions";
 import { ProfileOwnerHidden } from "@/components/profile/profile-owner-hidden";
 import { ProfileOwnerSection } from "@/components/profile/profile-owner-section";
 import { ProfileOwnerTickets } from "@/components/profile/profile-owner-tickets";
-import { ProfileAccountIsland } from "@/components/profile/profile-account-island";
+import { ProfileStats } from "@/components/profile/profile-stats";
 import { ProfileVisitRecorder } from "@/components/profile/profile-visit-recorder";
-import { ProfilePageSkeleton } from "./skeleton";
+
 import { getProject, getProfilePageData } from "@/lib/data";
+
+import { ProfilePageSkeleton } from "./skeleton";
 
 interface ProfilePageProps {
 	params: Promise<{ eventUrl: string; shortId: string }>;

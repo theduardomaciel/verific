@@ -1,5 +1,6 @@
-import { drizzle_env as env } from "@verific/env/drizzle_env";
 import { defineConfig } from "drizzle-kit";
+
+import { drizzle_env as env } from "@verific/env/drizzle_env";
 
 export default defineConfig({
 	out: "./migrations",

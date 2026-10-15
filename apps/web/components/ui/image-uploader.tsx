@@ -6,8 +6,9 @@ import { useRef, useState } from "react";
 import { ImagePlus, Loader2, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { trpc } from "@/lib/trpc/react";
+
 import { processImageFile, type ImagePurpose } from "@/lib/images/optimization";
+import { trpc } from "@/lib/trpc/react";
 
 interface ImageUploaderProps {
 	value?: string;
@@ -17,6 +18,10 @@ interface ImageUploaderProps {
 	label: string;
 	hint?: string;
 	aspect?: string;
+	/** Como a imagem é exibida no produto (`cover` recorta, `contain` encaixa). */
+	fit?: "cover" | "contain";
+	/** Formato da prévia — `circle` espelha os avatares do produto. */
+	shape?: "rect" | "circle";
 }
 
 type Status = "idle" | "processing" | "uploading" | "error";
@@ -33,6 +38,8 @@ export function ImageUploader({
 	label,
 	hint,
 	aspect = "aspect-video",
+	fit = "cover",
+	shape = "rect",
 }: ImageUploaderProps) {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [status, setStatus] = useState<Status>("idle");
@@ -103,14 +110,20 @@ export function ImageUploader({
 		<div className="flex flex-col gap-2">
 			<span className="text-sm font-medium">{label}</span>
 			<div
-				className={`relative w-full overflow-hidden rounded-xl border ${aspect} bg-muted`}
+				className={`relative w-full overflow-hidden border ${aspect} bg-muted ${
+					shape === "circle" ? "rounded-full" : "rounded-xl"
+				}`}
 			>
 				{value ? (
 					<Image
 						src={value}
 						alt={label}
 						fill
-						className="object-cover"
+						className={
+							fit === "contain"
+								? "object-contain"
+								: "object-cover"
+						}
 						sizes="(max-width: 768px) 100vw, 50vw"
 					/>
 				) : (

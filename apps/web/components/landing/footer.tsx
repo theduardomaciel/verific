@@ -2,9 +2,10 @@ import Link from "next/link";
 
 import { ArrowRight } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+
 // Components
 import { Footer } from "@/components/footer";
-import { Button } from "@/components/ui/button";
 
 export function LandingFooter() {
 	return (

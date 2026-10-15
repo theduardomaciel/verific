@@ -94,10 +94,7 @@ export default async function EventSubscribePage({
 								url: project.url,
 								name: project.name,
 								logo: project.logoUrl || undefined,
-								colors: [
-									project.primaryColor,
-									project.secondaryColor,
-								].filter(Boolean) as string[],
+								colors: [theme.primary, theme.secondary],
 							}}
 						/>
 					</div>

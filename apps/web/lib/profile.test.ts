@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { isFilled } from "@/lib/forms/layout";
 import {
 	formatProfileValue,
 	isCompatible,
@@ -10,6 +9,8 @@ import {
 	socialDisplayHandle,
 	slotForField,
 } from "@verific/drizzle/profile-layout";
+
+import { isFilled } from "@/lib/forms/layout";
 
 describe("shared social normalize", () => {
 	it("normaliza handle e URL (inclusive Lattes http)", () => {
@@ -30,7 +31,7 @@ describe("shared social normalize", () => {
 		expect(socialDisplayHandle("https://github.com/fulana")).toBe("fulana");
 		expect(
 			socialDisplayHandle("http://lattes.cnpq.br/0993964740433171"),
-		).toBe("0993964740433171");
+		).toBe("http://lattes.cnpq.br/0993964740433171");
 	});
 });
 

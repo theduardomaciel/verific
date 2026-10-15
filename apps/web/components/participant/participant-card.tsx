@@ -1,11 +1,9 @@
 import { Suspense } from "react";
 
-// Utils
-import { getInitials, pluralize } from "@/lib/i18n";
-
 // Icons
 import { CircleMinus, Hash, Hourglass, LogOut, Mail } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 // Components
 import { Button } from "@/components/ui/button";
 import {
@@ -14,14 +12,16 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { LogoutForm } from "@/components/ui/logout-form";
+import { Skeleton } from "@/components/ui/skeleton";
 
+// Utils
+import { getInitials, pluralize } from "@/lib/i18n";
 // API
 import { serverClient } from "@/lib/trpc/server";
+
 import { RemoveParticipantDialog } from "../dialogs/remove-participant";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 interface Props {
 	id: string;

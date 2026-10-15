@@ -8,28 +8,32 @@ import {
 	type ReactNode,
 	type RefObject,
 } from "react";
+
 import { CollisionPriority } from "@dnd-kit/abstract";
 import { move } from "@dnd-kit/helpers";
 import { DragDropProvider, useDroppable } from "@dnd-kit/react";
 import { isSortable, useSortable } from "@dnd-kit/react/sortable";
 import { GripVertical, Lock, TrashIcon } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+
 import { cn } from "@/lib/utils";
+
 import { animateFlip } from "../lib/animate-flip";
-import type { Field, Section, Version } from "../types";
-import type { SectionMutation } from "../hooks/use-forms-builder";
 import { FieldDialog } from "./dialog/field-dialog";
 import { SectionDialog } from "./dialog/section-dialog";
 import { SortableFieldRow } from "./field-row";
+
+import type { SectionMutation } from "../hooks/use-forms-builder";
+import type { Field, Section, Version } from "../types";
 
 const SECTIONS_GROUP = "__sections";
 const UNGROUPED = "__ungrouped";

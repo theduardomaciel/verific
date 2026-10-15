@@ -1,4 +1,5 @@
 import { useState } from "react";
+
 import { Calendar, Timer } from "lucide-react";
 
 // Components
@@ -12,7 +13,6 @@ import {
 	type ActivitySessionLike,
 	type FriendlyDateOptions,
 } from "@/lib/date";
-
 import { cn } from "@/lib/utils";
 
 interface Props {

@@ -1,25 +1,25 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { toast } from "sonner";
+import { useEffect, useRef, useState } from "react";
+
 import { ArrowLeft, Eye, Pencil } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { trpc } from "@/lib/trpc/react";
-import { useDashboard } from "@/components/dashboard/dashboard-context";
-import { useFormsBuilder } from "@/app/dashboard/forms/hooks/use-forms-builder";
+
 import { BuilderCard } from "@/app/dashboard/forms/components/builder-card";
 import { DeleteFieldDialog } from "@/app/dashboard/forms/components/dialog/delete-field-dialog";
 import { DeleteSectionDialog } from "@/app/dashboard/forms/components/dialog/delete-section-dialog";
+import { useFormsBuilder } from "@/app/dashboard/forms/hooks/use-forms-builder";
 import { FormPreview } from "@/app/dashboard/forms/preview";
+import { trpc } from "@/lib/trpc/react";
 
 export function ActivityFormContent({ activityId }: { activityId: string }) {
-	const { projectId } = useDashboard();
 	// Pristine project builder: field/section/order mutations + dialogs state.
 	// Version scoping (list + selection) is managed here for the activity.
-	const builder = useFormsBuilder();
+	const builder = useFormsBuilder({ activityId });
 	const {
 		selectedId,
 		setSelectedId,
@@ -42,6 +42,7 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 		move,
 		moveSection,
 		persistSectionOrder,
+		versionQuery,
 	} = builder;
 
 	const utils = trpc.useUtils();
@@ -50,11 +51,9 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 	const ensureRef = useRef(false);
 	const ensureVersion = trpc.getOrCreateEditableActivityForm.useMutation();
 
-	const { data: activityVersions } = trpc.listVersions.useQuery({
-		projectId,
-		activityId,
-	});
-	const selected = activityVersions?.find((v) => v.id === versionId) ?? null;
+	// Use versionQuery from builder (getVersion) instead of listVersions for selected version.
+	// This avoids React Compiler memoization issues with listVersions invalidation timing.
+	const selected = versionQuery.data?.version ?? null;
 	const isPublished = !!selected?.isPublished;
 
 	const runEnsure = () => {
@@ -65,6 +64,8 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 					if (result.version) {
 						setVersionId(result.version.id);
 						setSelectedId(result.version.id);
+						// Invalidate listVersions so the new version appears in the list
+						void utils.listVersions.invalidate();
 						if (result.cloned) {
 							toast.info(
 								"Nova versão criada. As respostas anteriores foram mantidas e as alterações valem para novas inscrições.",
@@ -77,11 +78,9 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 		);
 	};
 
-	// oxlint-disable-line react-hooks/exhaustive-deps -- runEnsure is stable (ref-captured); adding it would cause the effect to re-run on every render, defeating the once-per-mount guarantee.
 	useEffect(() => {
 		if (ensureRef.current) return;
 		ensureRef.current = true;
-		// oxlint-disable-line react-hooks/exhaustive-deps -- runEnsure is stable (ref-captured); adding it would cause the effect to re-run on every render, defeating the once-per-mount guarantee.
 		runEnsure();
 	}, [activityId]);
 
@@ -89,7 +88,8 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 		versionId !== null &&
 		selectedId === versionId &&
 		selected !== null &&
-		!isLoadingFields;
+		!isLoadingFields &&
+		!versionQuery.isPending;
 
 	if (!ready && !ensureVersion.isError) {
 		return (

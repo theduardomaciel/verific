@@ -1,8 +1,8 @@
 import { relations } from "drizzle-orm";
 import { boolean, pgTable, primaryKey, uuid } from "drizzle-orm/pg-core";
 
-import { participant } from "./participant";
 import { formField } from "./form-field";
+import { participant } from "./participant";
 
 /**
  * Visibilidade por campo no perfil público. Linhas existem SOMENTE p/

@@ -155,6 +155,7 @@ organization({
 ```ts
 import { betterAuth } from "better-auth";
 import { organization } from "better-auth/plugins";
+
 import { sendEmail } from "./email";
 
 export const auth = betterAuth({
@@ -279,8 +280,8 @@ organization({
 ### Enabling Dynamic Access Control
 
 ```ts
-import { organization } from "better-auth/plugins";
 import { dynamicAccessControl } from "@better-auth/organization/addons";
+import { organization } from "better-auth/plugins";
 
 export const auth = betterAuth({
 	plugins: [
@@ -439,6 +440,7 @@ organization({
 ```ts
 import { betterAuth } from "better-auth";
 import { organization } from "better-auth/plugins";
+
 import { sendEmail } from "./email";
 
 export const auth = betterAuth({

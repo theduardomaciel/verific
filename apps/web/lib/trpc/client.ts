@@ -1,6 +1,7 @@
-import type { AppRouter } from "@verific/api";
 import { createTRPCClient, httpBatchLink, type TRPCLink } from "@trpc/client";
 import SuperJSON from "superjson";
+
+import type { AppRouter } from "@verific/api";
 
 function getBaseUrl() {
 	if (typeof window !== "undefined") return "";

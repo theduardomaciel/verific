@@ -2,14 +2,12 @@
 
 import { type Dispatch, type SetStateAction, useState } from "react";
 
-import { cn } from "@/lib/utils";
-
 // Icons
 import { ChevronUp, CircleOff } from "lucide-react";
 
+import { Checkbox } from "@/components/ui/checkbox";
 // Components
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Select,
 	SelectContent,
@@ -22,6 +20,7 @@ import {
 
 // Utils
 import { useControlledParam } from "@/hooks/use-controlled-param";
+import { cn } from "@/lib/utils";
 
 interface FilterProps {
 	title?: string;
