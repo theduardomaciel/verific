@@ -9,8 +9,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { useDashboard } from "@/components/dashboard/dashboard-context";
-
 import { BuilderCard } from "@/app/dashboard/forms/components/builder-card";
 import { DeleteFieldDialog } from "@/app/dashboard/forms/components/dialog/delete-field-dialog";
 import { DeleteSectionDialog } from "@/app/dashboard/forms/components/dialog/delete-section-dialog";
@@ -19,7 +17,6 @@ import { FormPreview } from "@/app/dashboard/forms/preview";
 import { trpc } from "@/lib/trpc/react";
 
 export function ActivityFormContent({ activityId }: { activityId: string }) {
-	const { projectId } = useDashboard();
 	// Pristine project builder: field/section/order mutations + dialogs state.
 	// Version scoping (list + selection) is managed here for the activity.
 	const builder = useFormsBuilder();
@@ -45,6 +42,7 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 		move,
 		moveSection,
 		persistSectionOrder,
+		versionQuery,
 	} = builder;
 
 	const utils = trpc.useUtils();
@@ -53,11 +51,9 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 	const ensureRef = useRef(false);
 	const ensureVersion = trpc.getOrCreateEditableActivityForm.useMutation();
 
-	const { data: activityVersions } = trpc.listVersions.useQuery({
-		projectId,
-		activityId,
-	});
-	const selected = activityVersions?.find((v) => v.id === versionId) ?? null;
+	// Use versionQuery from builder (getVersion) instead of listVersions for selected version.
+	// This avoids React Compiler memoization issues with listVersions invalidation timing.
+	const selected = versionQuery.data?.version ?? null;
 	const isPublished = !!selected?.isPublished;
 
 	const runEnsure = () => {
@@ -94,7 +90,8 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 		versionId !== null &&
 		selectedId === versionId &&
 		selected !== null &&
-		!isLoadingFields;
+		!isLoadingFields &&
+		!versionQuery.isPending;
 
 	if (!ready && !ensureVersion.isError) {
 		return (

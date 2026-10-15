@@ -538,15 +538,33 @@ export const formsRouter = createTRPCRouter({
 					message: "Versão não encontrada.",
 				});
 			await requireProjectAccess(version.projectId, ctx.session.user.id);
-			const fields = await db.query.formField.findMany({
-				where: eq(formField.formVersionId, version.id),
-				orderBy: asc(formField.order),
-			});
-			const sections = await db.query.formSection.findMany({
-				where: eq(formSection.formVersionId, version.id),
-				orderBy: asc(formSection.order),
-			});
-			return { version, fields, sections };
+			const [fields, sections, fieldsCount] = await Promise.all([
+				db.query.formField.findMany({
+					where: eq(formField.formVersionId, version.id),
+					orderBy: asc(formField.order),
+				}),
+				db.query.formSection.findMany({
+					where: eq(formSection.formVersionId, version.id),
+					orderBy: asc(formSection.order),
+				}),
+				db
+					.select({ amount: count() })
+					.from(formField)
+					.where(
+						and(
+							eq(formField.formVersionId, version.id),
+							eq(formField.isActive, true),
+						),
+					),
+			]);
+			return {
+				version: {
+					...version,
+					fieldsCount: fieldsCount[0]?.amount ?? 0,
+				},
+				fields,
+				sections,
+			};
 		}),
 
 	createVersion: protectedProcedure
