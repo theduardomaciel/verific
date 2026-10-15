@@ -42,7 +42,7 @@ export function useDialogConfetti(
 		};
 
 		// Initial explosion burst
-		confetti({
+		void confetti({
 			...baseOptions,
 			particleCount: explosionCount,
 			spread: 80,
@@ -53,7 +53,7 @@ export function useDialogConfetti(
 		// Continuous rain while dialog is open
 		let raf = 0;
 		const rain = () => {
-			confetti({
+			void confetti({
 				...baseOptions,
 				particleCount: rainCount,
 				angle: 270,

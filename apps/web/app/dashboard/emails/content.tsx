@@ -314,7 +314,7 @@ export function EmailsContent() {
 						<TooltipTrigger asChild>
 							<span className="inline-flex">
 								<Button
-									onClick={handleRunAll}
+									onClick={() => void handleRunAll()}
 									disabled={
 										runProgress?.active ||
 										listQuery.isPending ||
@@ -353,7 +353,9 @@ export function EmailsContent() {
 								variant="outline"
 								size="sm"
 								className="mt-2"
-								onClick={() => statsQuery.refetch()}
+								onClick={() => {
+									void statsQuery.refetch();
+								}}
 							>
 								Tentar novamente
 							</Button>
@@ -451,7 +453,9 @@ export function EmailsContent() {
 								variant="outline"
 								size="sm"
 								className="mt-2"
-								onClick={() => listQuery.refetch()}
+								onClick={() => {
+									void listQuery.refetch();
+								}}
 							>
 								Tentar novamente
 							</Button>
@@ -543,7 +547,7 @@ export function EmailsContent() {
 															item.id
 														}
 														onClick={() =>
-															handleReprocess(
+															void handleReprocess(
 																item,
 															)
 														}
