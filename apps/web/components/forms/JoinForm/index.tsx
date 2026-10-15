@@ -222,7 +222,6 @@ export default function JoinForm({
 		});
 	}, [currentState, project.id, watchedName, watchedAnswers]);
 
-	// oxlint-disable-line react-hooks/exhaustive-deps -- watchedAnswers is a RHF watch() result that changes every render; adding it would defeat the memoization purpose.
 	const { visibleFields, groupedSections } = useMemo(() => {
 		if (!hasConditional) {
 			return {
@@ -254,7 +253,6 @@ export default function JoinForm({
 		sections,
 		sectionsForVisibility,
 		fieldsForValidation,
-		// oxlint-disable-line react-hooks/exhaustive-deps -- watchedAnswers is a RHF watch() result that changes every render; adding it would defeat the memoization purpose.
 		watchedAnswers,
 	]);
 
@@ -393,6 +391,10 @@ export default function JoinForm({
 		setCurrentState("submitted");
 	}
 
+	const successDescription = `Enviaremos um e-mail de confirmação${
+		user?.email ? ` para ${user.email}` : ""
+	} em até 24 horas. Se não o encontrar na caixa de entrada, confira também as pastas de spam e promoções. Enquanto isso, você já pode acessar sua conta e se inscrever nas atividades do evento.`;
+
 	return (
 		<Form {...form}>
 			<FormWrapper>
@@ -515,7 +517,7 @@ export default function JoinForm({
 					);
 				}}
 				confettiColors={project.colors}
-				className="py-8 sm:!max-w-[40vw]"
+				className="py-8 sm:max-w-[40vw]!"
 				title={
 					<div className="flex flex-col items-center justify-center gap-4">
 						<span className="flex w-full sm:px-12">
@@ -525,7 +527,7 @@ export default function JoinForm({
 						</span>
 					</div>
 				}
-				description="Você já pode acessar sua conta e se inscrever nas atividades do evento."
+				description={successDescription}
 			/>
 			<ErrorDialog
 				isOpen={currentState === "error"}
