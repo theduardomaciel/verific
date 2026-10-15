@@ -173,13 +173,13 @@ importers:
         specifier: ^17.6.0
         version: 17.6.0
       oxfmt:
-        specifier: ^0.72.0
+        specifier: 0.72.0
         version: 0.72.0
       oxlint:
-        specifier: ^1.87.0
+        specifier: 1.87.0
         version: 1.87.0(oxlint-tsgolint@7.0.2003)
       oxlint-tsgolint:
-        specifier: ^7.0.2003
+        specifier: 7.0.2003
         version: 7.0.2003
       turbo:
         specifier: 2.11.7
