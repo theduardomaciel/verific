@@ -1473,7 +1473,10 @@ export const formsRouter = createTRPCRouter({
 
 			if (!latest) {
 				const existing = await db.query.formVersion.findMany({
-					where: eq(formVersion.projectId, foundActivity.projectId),
+					where: and(
+						eq(formVersion.projectId, foundActivity.projectId),
+						eq(formVersion.activityId, input.activityId),
+					),
 					orderBy: desc(formVersion.version),
 				});
 				const next = (existing[0]?.version ?? 0) + 1;
@@ -1511,7 +1514,10 @@ export const formsRouter = createTRPCRouter({
 
 			if (latest.isPublished && hasAnswers) {
 				const existing = await db.query.formVersion.findMany({
-					where: eq(formVersion.projectId, foundActivity.projectId),
+					where: and(
+						eq(formVersion.projectId, foundActivity.projectId),
+						eq(formVersion.activityId, input.activityId),
+					),
 					orderBy: desc(formVersion.version),
 				});
 				const next = (existing[0]?.version ?? 0) + 1;
