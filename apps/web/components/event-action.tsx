@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+
 import { getEventRegistration } from "@/lib/data";
 
 interface EventActionProps {

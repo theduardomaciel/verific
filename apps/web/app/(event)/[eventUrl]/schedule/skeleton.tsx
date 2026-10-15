@@ -1,5 +1,7 @@
-import * as EventContainer from "@/components/landing/event-container";
 import { Skeleton } from "@/components/ui/skeleton";
+
+import * as EventContainer from "@/components/landing/event-container";
+
 import { ScheduleLoading } from "./content-skeleton";
 
 /**

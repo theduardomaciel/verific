@@ -1,10 +1,12 @@
+import { useState } from "react";
+
 // @vitest-environment jsdom
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { SOCIAL_SERVICES } from "@verific/drizzle/profile-layout";
+
 import { SocialLinksEditor, type SocialEntry } from "./SocialLinksEditor";
 
 vi.mock("@/public/icons/github.svg", () => ({ default: () => null }));

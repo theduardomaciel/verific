@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from "react";
 
-import { cn } from "@/lib/utils";
 import {
 	Command,
 	CommandEmpty,
@@ -15,6 +14,8 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+
+import { cn } from "@/lib/utils";
 
 const times = [
 	"00:00",

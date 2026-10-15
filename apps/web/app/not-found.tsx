@@ -1,10 +1,12 @@
-import Link from "next/link";
 import type { Metadata } from "next";
+import Link from "next/link";
+
+import { ArrowLeftIcon } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 
 // Icons
 import Logo from "@/public/logo.svg";
-import { Button } from "@/components/ui/button";
-import { ArrowLeftIcon } from "lucide-react";
 
 // Components
 

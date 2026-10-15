@@ -6,6 +6,7 @@ import {
 	MOBILE_CTA_CLASS,
 	MOBILE_NAV_CLASS,
 } from "@/components/landing/event-nav";
+
 import { getEventRegistration } from "@/lib/data";
 
 interface EventHeaderProps {

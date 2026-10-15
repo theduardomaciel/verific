@@ -3,6 +3,9 @@ import Link from "next/link";
 // Icons
 import { Cloud, LifeBuoy, LogOut, Settings } from "lucide-react";
 
+// Types
+import type { User } from "@verific/auth";
+
 // Components
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -16,13 +19,9 @@ import {
 	DropdownMenuShortcut,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogoutForm } from "@/components/ui/logout-form";
-
 // Actions
 // import { signOutAction } from "@/app/actions";
-
-// Types
-import type { User } from "@verific/auth";
+import { LogoutForm } from "@/components/ui/logout-form";
 
 // Lib
 import { getInitials } from "@/lib/i18n";

@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
+import GoogleButton from "@/components/auth/GoogleButton";
+
 import Logo from "@/public/logo.svg";
 import Ticket from "@/public/ticket.svg";
-import GoogleButton from "@/components/auth/GoogleButton";
 
 export const metadata: Metadata = {
 	title: "Autenticação",

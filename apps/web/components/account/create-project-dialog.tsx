@@ -2,9 +2,15 @@
 
 import { useState } from "react";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 // Icons
 import { Plus } from "lucide-react";
+import { useForm, type UseFormReturn } from "react-hook-form";
 
+// Form
+import { z } from "@verific/zod";
+
+import { Button } from "@/components/ui/button";
 // Components
 import {
 	Dialog,
@@ -15,7 +21,6 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import {
 	Drawer,
 	DrawerClose,
@@ -34,24 +39,21 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PlacePicker } from "@/components/pickers/place-picker";
-import { DateRangePicker } from "@/components/pickers/date-range-picker";
-import { ErrorDialog, LoadingDialog } from "../forms/dialogs";
+import { Textarea } from "@/components/ui/textarea";
 
+import { DateRangePicker } from "@/components/pickers/date-range-picker";
+import { PlacePicker } from "@/components/pickers/place-picker";
+
+import { revalidateProjects, updateProjectCookies } from "@/app/actions";
 // Hooks
 import { useMediaQuery } from "@/hooks/use-media-query";
-
-// Form
-import { z } from "@verific/zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, type UseFormReturn } from "react-hook-form";
-import type { FormState } from "@/lib/types/forms";
-
 // API
 import { trpc } from "@/lib/trpc/react";
-import { revalidateProjects, updateProjectCookies } from "@/app/actions";
+
+import { ErrorDialog, LoadingDialog } from "../forms/dialogs";
+
+import type { FormState } from "@/lib/types/forms";
 
 const formSchema = z.object({
 	name: z.string().min(2, {

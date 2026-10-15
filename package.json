@@ -28,9 +28,9 @@
 	"devDependencies": {
 		"husky": "^9.1.7",
 		"lint-staged": "^17.6.0",
-		"oxfmt": "^0.72.0",
-		"oxlint": "^1.87.0",
-		"oxlint-tsgolint": "^7.0.2003",
+		"oxfmt": "0.72.0",
+		"oxlint": "1.87.0",
+		"oxlint-tsgolint": "7.0.2003",
 		"turbo": "2.11.7",
 		"typescript": "^7.0.2"
 	},

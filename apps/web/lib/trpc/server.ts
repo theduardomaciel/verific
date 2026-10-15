@@ -1,10 +1,10 @@
 import "server-only";
-
 import { cache } from "react";
 
-import { getSession } from "@/lib/session";
-import type { Session } from "@verific/auth";
 import { appRouter, createCallerFactory } from "@verific/api";
+import type { Session } from "@verific/auth";
+
+import { getSession } from "@/lib/session";
 
 const createClient = createCallerFactory(appRouter);
 type Client = ReturnType<typeof createClient>;

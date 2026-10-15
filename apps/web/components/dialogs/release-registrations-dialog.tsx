@@ -1,16 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
-import { ChevronDownIcon, LockOpenIcon } from "lucide-react";
 
-import { trpc } from "@/lib/trpc/react";
+import { ChevronDownIcon, LockOpenIcon } from "lucide-react";
+import { toast } from "sonner";
+
 import type { RouterOutput } from "@verific/api";
-import { Button } from "@/components/ui/button";
+import { activityCategoryLabels } from "@verific/drizzle/enum/category";
+
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
 	Collapsible,
 	CollapsibleContent,
@@ -25,8 +25,11 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { activityCategoryLabels } from "@verific/drizzle/enum/category";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { getFirstSessionStart } from "@/lib/date";
+import { trpc } from "@/lib/trpc/react";
 
 type ReleasableActivity = RouterOutput["getReleasableActivities"][number];
 type GroupBy = "day" | "category" | "tag";

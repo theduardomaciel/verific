@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import * as React from "react";
-import { Check, ChevronsUpDown, FolderCog } from "lucide-react";
 
-import { cn } from "@/lib/utils";
+import { Check, ChevronsUpDown, FolderCog } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -22,7 +21,9 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+
 import { updateProjectCookies } from "@/app/actions";
+import { cn } from "@/lib/utils";
 
 type Project = {
 	id: string;

@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+
 import { Flag } from "lucide-react";
+
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
 	Dialog,
@@ -13,15 +15,17 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
-import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
+
 import {
 	ErrorDialog,
 	LoadingDialog,
 	SuccessDialog,
 } from "@/components/forms/dialogs";
+
+import { cn } from "@/lib/utils";
 
 interface ReportEventDialogProps {
 	className?: string;

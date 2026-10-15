@@ -41,7 +41,11 @@ export interface MutationResult<Input> {
 	isPending: boolean;
 }
 
-export function useFormsBuilder() {
+export function useFormsBuilder({
+	activityId,
+}: {
+	activityId?: string;
+} = {}) {
 	const { projectId } = useDashboard();
 	const utils = trpc.useUtils();
 	const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -56,7 +60,7 @@ export function useFormsBuilder() {
 	const listRef = useRef<HTMLDivElement>(null);
 
 	const versionsQuery: QueryResult<RouterOutput["listVersions"]> =
-		trpc.listVersions.useQuery({ projectId });
+		trpc.listVersions.useQuery({ projectId, activityId });
 	const versions: Version[] = useMemo(
 		() => versionsQuery.data ?? [],
 		[versionsQuery.data],

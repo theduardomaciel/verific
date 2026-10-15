@@ -4,15 +4,17 @@ import Link from "next/link";
 
 // Icons
 import { Activity, BarChart3, Clock, Globe, Users } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 
-import { GraphSelector } from "@/components/dashboard/overview/graph-selector";
-import { ActivitiesList } from "@/components/dashboard/overview/activities-list";
-import { MetricCard } from "@/components/dashboard/overview/metric-card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { useDashboard } from "@/components/dashboard/dashboard-context";
+import { ActivitiesList } from "@/components/dashboard/overview/activities-list";
+import { GraphSelector } from "@/components/dashboard/overview/graph-selector";
+import { MetricCard } from "@/components/dashboard/overview/metric-card";
+
 import { trpc } from "@/lib/trpc/react";
 
 function DashboardSkeleton() {

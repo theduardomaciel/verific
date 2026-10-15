@@ -1,8 +1,9 @@
 import { MailIcon } from "lucide-react";
 
 import { getInitials } from "@/lib/i18n";
-import { SocialServiceIcon } from "./social-icons";
 import { cn } from "@/lib/utils";
+
+import { SocialServiceIcon } from "./social-icons";
 
 export interface BannerSocial {
 	service: string;

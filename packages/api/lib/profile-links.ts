@@ -1,16 +1,16 @@
 import { db } from "@verific/drizzle";
-import {
-	formField,
-	profileFieldVisibility,
-	project,
-} from "@verific/drizzle/schema";
+import { eq, inArray } from "@verific/drizzle/orm";
 import {
 	isCompatible,
 	parseProfileLayout,
 	slotForField,
 	type ProfileLayout,
 } from "@verific/drizzle/profile-layout";
-import { eq, inArray } from "@verific/drizzle/orm";
+import {
+	formField,
+	profileFieldVisibility,
+	project,
+} from "@verific/drizzle/schema";
 
 export { isCompatible, slotForField };
 

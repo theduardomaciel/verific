@@ -34,6 +34,8 @@ import {
 	isCompatible,
 	readProjectLayout,
 } from "../lib/profile-links";
+import { requireProjectAccess } from "../lib/project-access";
+import { queueEventRegistrationEmail } from "../notifications";
 import {
 	answerValueSchema,
 	filterVisibleFields,
@@ -51,30 +53,6 @@ import {
 } from "../schemas";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { generateShortId } from "./profiles";
-
-export async function requireProjectAccess(projectId: string, userId: string) {
-	const data = await db.query.project.findFirst({
-		where: eq(project.id, projectId),
-		with: {
-			moderators: { columns: { userId: true } },
-		},
-	});
-	if (!data) {
-		throw new TRPCError({
-			code: "NOT_FOUND",
-			message: "Evento não encontrado.",
-		});
-	}
-	const isOwner = data.ownerId === userId;
-	const isModerator = data.moderators.some((m) => m.userId === userId);
-	if (!isOwner && !isModerator) {
-		throw new TRPCError({
-			code: "FORBIDDEN",
-			message: "Sem permissão neste evento.",
-		});
-	}
-	return data;
-}
 
 /** Matches versions of one scope: event form (null) or a specific activity. */
 function versionScope(activityId?: string | null) {
@@ -560,15 +538,33 @@ export const formsRouter = createTRPCRouter({
 					message: "Versão não encontrada.",
 				});
 			await requireProjectAccess(version.projectId, ctx.session.user.id);
-			const fields = await db.query.formField.findMany({
-				where: eq(formField.formVersionId, version.id),
-				orderBy: asc(formField.order),
-			});
-			const sections = await db.query.formSection.findMany({
-				where: eq(formSection.formVersionId, version.id),
-				orderBy: asc(formSection.order),
-			});
-			return { version, fields, sections };
+			const [fields, sections, fieldsCount] = await Promise.all([
+				db.query.formField.findMany({
+					where: eq(formField.formVersionId, version.id),
+					orderBy: asc(formField.order),
+				}),
+				db.query.formSection.findMany({
+					where: eq(formSection.formVersionId, version.id),
+					orderBy: asc(formSection.order),
+				}),
+				db
+					.select({ amount: count() })
+					.from(formField)
+					.where(
+						and(
+							eq(formField.formVersionId, version.id),
+							eq(formField.isActive, true),
+						),
+					),
+			]);
+			return {
+				version: {
+					...version,
+					fieldsCount: fieldsCount[0]?.amount ?? 0,
+				},
+				fields,
+				sections,
+			};
 		}),
 
 	createVersion: protectedProcedure
@@ -586,6 +582,26 @@ export const formsRouter = createTRPCRouter({
 					input.activityId,
 					input.projectId,
 				);
+			}
+			if (input.cloneFromVersionId) {
+				const source = await db.query.formVersion.findFirst({
+					where: eq(formVersion.id, input.cloneFromVersionId),
+					columns: {
+						projectId: true,
+						activityId: true,
+					},
+				});
+				if (
+					!source ||
+					source.projectId !== input.projectId ||
+					(source.activityId ?? null) !== (input.activityId ?? null)
+				) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message:
+							"A versão de origem não pertence ao mesmo formulário.",
+					});
+				}
 			}
 			const existing = await db.query.formVersion.findMany({
 				where: eq(formVersion.projectId, input.projectId),
@@ -1495,7 +1511,10 @@ export const formsRouter = createTRPCRouter({
 
 			if (!latest) {
 				const existing = await db.query.formVersion.findMany({
-					where: eq(formVersion.projectId, foundActivity.projectId),
+					where: and(
+						eq(formVersion.projectId, foundActivity.projectId),
+						eq(formVersion.activityId, input.activityId),
+					),
 					orderBy: desc(formVersion.version),
 				});
 				const next = (existing[0]?.version ?? 0) + 1;
@@ -1533,7 +1552,10 @@ export const formsRouter = createTRPCRouter({
 
 			if (latest.isPublished && hasAnswers) {
 				const existing = await db.query.formVersion.findMany({
-					where: eq(formVersion.projectId, foundActivity.projectId),
+					where: and(
+						eq(formVersion.projectId, foundActivity.projectId),
+						eq(formVersion.activityId, input.activityId),
+					),
 					orderBy: desc(formVersion.version),
 				});
 				const next = (existing[0]?.version ?? 0) + 1;
@@ -1686,6 +1708,21 @@ export const formsRouter = createTRPCRouter({
 					}
 				}
 			}
+			// Confirmation email, after everything is committed. Fire-and-forget:
+			// it can never fail or roll back the registration.
+			queueEventRegistrationEmail({
+				registrationId: participantId,
+				to: subscriberEmail,
+				eventId: input.projectId,
+				participantName: input.name,
+				eventName: projectData.name,
+				eventUrlPath: projectData.url,
+				shortId,
+				startDate: projectData.startDate,
+				endDate: projectData.endDate,
+				eventLocation: projectData.address,
+				logoUrl: projectData.largeLogoUrl ?? projectData.logoUrl,
+			});
 			return { participantId, shortId };
 		}),
 

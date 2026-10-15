@@ -1,9 +1,10 @@
 import Link from "next/link";
 
 import { ArrowRight } from "lucide-react";
-import Ticket from "@/public/ticket.svg";
 
 import { Button } from "@/components/ui/button";
+
+import Ticket from "@/public/ticket.svg";
 
 export function Hero() {
 	return (

@@ -1,6 +1,7 @@
 import { activitiesRouter } from "./routers/activities";
 import { badgesRouter } from "./routers/badges";
 import { formsRouter } from "./routers/forms";
+import { notificationsRouter } from "./routers/notifications";
 import { participantOnActivitiesRouter } from "./routers/participantOnActivities";
 import { participantsRouter } from "./routers/participants";
 import { profilesRouter } from "./routers/profiles";
@@ -28,9 +29,12 @@ export const appRouter = mergeRouters(
 	uploadsRouter,
 	profilesRouter,
 	waitlistRouter,
+	notificationsRouter,
 );
 
 export { createCallerFactory };
+
+export * from "./notifications";
 
 export type AppRouter = typeof appRouter;
 export type RouterInputs = inferRouterInputs<AppRouter>;

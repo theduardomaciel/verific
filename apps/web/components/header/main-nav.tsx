@@ -4,8 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+
+import { cn } from "@/lib/utils";
 
 /** Links podem forjar o próprio `Button` quando o header tem estilo próprio. */
 export interface MainNavLink {

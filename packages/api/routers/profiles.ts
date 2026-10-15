@@ -1,18 +1,16 @@
-import { randomBytes } from "node:crypto";
-
 import { TRPCError } from "@trpc/server";
-import { z } from "@verific/zod";
+import { randomBytes } from "node:crypto";
 
 import { db } from "@verific/drizzle";
 import {
-	formAnswer,
-	formField,
-	formVersion,
-	participant,
-	profileConnection,
-	profileFieldVisibility,
-	project,
-} from "@verific/drizzle/schema";
+	and,
+	asc,
+	count,
+	desc,
+	eq,
+	inArray,
+	isNull,
+} from "@verific/drizzle/orm";
 import {
 	formatProfileValue,
 	normalizeSocialLink,
@@ -25,16 +23,16 @@ import {
 	type StatIconKey,
 } from "@verific/drizzle/profile-layout";
 import {
-	and,
-	asc,
-	count,
-	desc,
-	eq,
-	inArray,
-	isNull,
-} from "@verific/drizzle/orm";
+	formAnswer,
+	formField,
+	formVersion,
+	participant,
+	profileConnection,
+	profileFieldVisibility,
+	project,
+} from "@verific/drizzle/schema";
+import { z } from "@verific/zod";
 
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import {
 	dropVisibilityForFields,
 	isCompatible,
@@ -42,30 +40,8 @@ import {
 	slotForField,
 	writeProjectLayout,
 } from "../lib/profile-links";
-
-async function requireProjectAccess(projectId: string, userId: string) {
-	const data = await db.query.project.findFirst({
-		where: eq(project.id, projectId),
-		with: {
-			moderators: { columns: { userId: true } },
-		},
-	});
-	if (!data) {
-		throw new TRPCError({
-			code: "NOT_FOUND",
-			message: "Evento não encontrado.",
-		});
-	}
-	const isOwner = data.ownerId === userId;
-	const isModerator = data.moderators.some((m) => m.userId === userId);
-	if (!isOwner && !isModerator) {
-		throw new TRPCError({
-			code: "FORBIDDEN",
-			message: "Sem permissão neste evento.",
-		});
-	}
-	return data;
-}
+import { requireProjectAccess } from "../lib/project-access";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
 /** Identificador curto por participante/evento (URL + QR). */
 export function generateShortId(length = 10): string {

@@ -9,10 +9,10 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { account } from "./account";
-import { session } from "./session";
 import { participant } from "./participant";
 import { project } from "./project";
 import { projectModerator } from "./project-moderator";
+import { session } from "./session";
 
 export const user = pgTable(
 	"users",

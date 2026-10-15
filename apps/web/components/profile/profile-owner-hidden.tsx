@@ -1,12 +1,15 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
+
 import { EyeOff } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc/react";
-import { useSearchParams } from "next/navigation";
+
 import { StatIcon } from "./stat-icons";
 
 /**

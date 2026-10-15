@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { toast } from "sonner";
+
 import { ArrowRight, UserRound } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+
 import { trpc } from "@/lib/trpc/react";
 
 interface ProfileSectionCardProps {

@@ -1,11 +1,11 @@
 "use client";
 
+// API
+import { useCurrentProject } from "@/hooks/use-current-project";
+
 // Components
 import { ProjectSettingsGeneral } from "./form";
 import { SettingsFormSkeleton } from "./skeleton";
-
-// API
-import { useCurrentProject } from "@/hooks/use-current-project";
 
 export default function ProjectSettings() {
 	const { data, isPending, isError } = useCurrentProject();

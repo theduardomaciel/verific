@@ -1,11 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+
 import {
 	Bold,
 	Italic,
@@ -22,6 +18,13 @@ import {
 	Eye,
 	Edit,
 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+
+import { cn } from "@/lib/utils";
 
 interface MarkdownTextareaProps extends Omit<
 	React.ComponentProps<"textarea">,

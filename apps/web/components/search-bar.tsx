@@ -1,7 +1,5 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-
 // Icons
 import { Search, Loader2, X } from "lucide-react";
 
@@ -10,6 +8,7 @@ import { Input } from "@/components/ui/input";
 
 // Hooks
 import { useControlledParam } from "@/hooks/use-controlled-param";
+import { cn } from "@/lib/utils";
 
 interface SearchBarProps extends Omit<
 	React.InputHTMLAttributes<HTMLInputElement>,

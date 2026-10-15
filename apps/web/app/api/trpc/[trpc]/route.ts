@@ -1,7 +1,10 @@
-import { getSession } from "@/lib/session";
-import { appRouter } from "@verific/api";
-import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { type NextRequest } from "next/server";
+
+import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
+
+import { appRouter } from "@verific/api";
+
+import { getSession } from "@/lib/session";
 
 const setCorsHeaders = (res: Response) => {
 	res.headers.set("Access-Control-Allow-Origin", "*");

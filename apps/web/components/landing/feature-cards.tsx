@@ -1,4 +1,5 @@
 import type React from "react";
+
 import { Settings, Users, Ticket, FileCheck } from "lucide-react";
 
 export function FeatureCards() {

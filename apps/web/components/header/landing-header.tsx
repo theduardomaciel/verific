@@ -1,18 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
 import Link from "next/link";
-
-import { cn } from "@/lib/utils";
+import React, { useState } from "react";
 
 import { Menu, X } from "lucide-react";
-import Logo from "@/public/logo.svg";
 
 // Components
 import { Button } from "@/components/ui/button";
-import { MobileMenu } from "../landing/mobile-menu";
+
 import type { MainNavProps } from "@/components/header/main-nav";
 import MainNav from "@/components/header/main-nav";
+
+import { cn } from "@/lib/utils";
+import Logo from "@/public/logo.svg";
+
+import { MobileMenu } from "../landing/mobile-menu";
 
 interface Props {
 	prefix?: string;

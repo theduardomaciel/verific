@@ -10,11 +10,27 @@ export type ImagePurpose =
 
 const PURPOSE_MAX: Record<ImagePurpose, { w: number; h: number }> = {
 	"event-logo": { w: 512, h: 512 },
-	"event-logo-wide": { w: 1024, h: 512 },
+	"event-logo-wide": { w: 768, h: 384 },
 	"event-cover": { w: 1920, h: 1080 },
 	"event-thumbnail": { w: 1200, h: 630 },
-	speaker: { w: 800, h: 800 },
+	speaker: { w: 512, h: 512 },
 	"activity-banner": { w: 1600, h: 900 },
+};
+
+/**
+ * Finalidades cujo arquivo armazenado deve ser quadrado: o canvas é
+ * estendido com fundo transparente (`contain` centralizado) em vez de
+ * apenas limitado ao máximo. Vale para o logo do evento — o slot é
+ * "Logo quadrada" e o favicon/ícones consomem o arquivo cru, então um
+ * envio horizontal ficava esticado na aba do navegador.
+ */
+const PURPOSE_SQUARE: Record<ImagePurpose, boolean> = {
+	"event-logo": true,
+	"event-logo-wide": false,
+	"event-cover": false,
+	"event-thumbnail": false,
+	speaker: false,
+	"activity-banner": false,
 };
 
 export interface ProcessedImage {
@@ -73,6 +89,8 @@ function canvasToWebp(
  * Otimização client-side: redimensiona para o máximo da finalidade,
  * rasteriza SVG (decisão Fase 0: vetores viram WebP, sem risco XSS),
  * remove metadados (canvas não preserva EXIF) e converte para WebP.
+ * Finalidades quadradas (`event-logo`) são centralizadas num canvas
+ * 1:1 transparente.
  */
 export async function processImageFile(
 	file: File,
@@ -84,12 +102,24 @@ export async function processImageFile(
 	const max = PURPOSE_MAX[purpose]!;
 	const bitmap = await fileToBitmap(file);
 	const { w, h } = fit(bitmap.width, bitmap.height, max.w, max.h);
+	const side = Math.max(w, h);
 	const canvas = document.createElement("canvas");
-	canvas.width = w;
-	canvas.height = h;
+	canvas.width = PURPOSE_SQUARE[purpose] ? side : w;
+	canvas.height = PURPOSE_SQUARE[purpose] ? side : h;
 	const ctx = canvas.getContext("2d")!;
-	ctx.drawImage(bitmap, 0, 0, w, h);
+	ctx.drawImage(
+		bitmap,
+		(canvas.width - w) / 2,
+		(canvas.height - h) / 2,
+		w,
+		h,
+	);
 	bitmap.close?.();
 	const blob = await canvasToWebp(canvas);
-	return { blob, width: w, height: h, contentType: "image/webp" };
+	return {
+		blob,
+		width: canvas.width,
+		height: canvas.height,
+		contentType: "image/webp",
+	};
 }

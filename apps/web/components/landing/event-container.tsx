@@ -1,5 +1,6 @@
-import { cn } from "@/lib/utils";
 import Image from "next/image";
+
+import { cn } from "@/lib/utils";
 
 interface HolderProps {
 	className?: string;
@@ -95,7 +96,7 @@ function HeroRoot({ children, coverUrl, showImage = true }: HeroProps) {
 						aria-hidden
 						fill
 						loading="eager"
-						sizes="100vw"
+						sizes="(max-width: 768px) 100vw, 80vw"
 					/>
 					{/* Camada 1: véu base fixo (piso de contraste). */}
 					<div
