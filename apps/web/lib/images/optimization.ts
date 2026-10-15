@@ -10,10 +10,10 @@ export type ImagePurpose =
 
 const PURPOSE_MAX: Record<ImagePurpose, { w: number; h: number }> = {
 	"event-logo": { w: 512, h: 512 },
-	"event-logo-wide": { w: 1024, h: 512 },
+	"event-logo-wide": { w: 768, h: 384 },
 	"event-cover": { w: 1920, h: 1080 },
 	"event-thumbnail": { w: 1200, h: 630 },
-	speaker: { w: 800, h: 800 },
+	speaker: { w: 512, h: 512 },
 	"activity-banner": { w: 1600, h: 900 },
 };
 
