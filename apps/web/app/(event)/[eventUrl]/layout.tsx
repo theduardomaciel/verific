@@ -60,7 +60,27 @@ export async function generateMetadata({
 				"max-snippet": -1,
 			},
 		},
-		icons: project.logoUrl ? { icon: project.logoUrl } : undefined,
+		// Favicon normalizado e com variantes de esquema: o logo cru não
+		// pode ir direto no `<link rel="icon">` (esticava na aba), e o
+		// `logoDarkUrl` existia mas nunca era usado no ícone.
+		icons: project.logoUrl
+			? {
+					icon: [
+						{
+							url: `/${eventUrl}/favicon?theme=light`,
+							media: "(prefers-color-scheme: light)",
+							type: "image/png",
+							sizes: "256x256",
+						},
+						{
+							url: `/${eventUrl}/favicon?theme=dark`,
+							media: "(prefers-color-scheme: dark)",
+							type: "image/png",
+							sizes: "256x256",
+						},
+					],
+				}
+			: undefined,
 		openGraph: {
 			title: project.name,
 			description: project.description || undefined,
