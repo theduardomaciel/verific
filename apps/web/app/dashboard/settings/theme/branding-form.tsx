@@ -143,6 +143,8 @@ export function ProjectBrandingForm({ project }: Props) {
 							<ImageUploader
 								label="Capa do evento"
 								hint="Fundo do hero, até 1920px"
+								aspect="aspect-video max-h-48"
+								fit="cover"
 								purpose="event-cover"
 								projectId={project.id}
 								value={field.value}
@@ -195,6 +197,8 @@ export function ProjectBrandingForm({ project }: Props) {
 							<ImageUploader
 								label="Miniatura"
 								hint="Cartões e prévia social, até 1200px"
+								aspect="aspect-[2/1] max-h-48"
+								fit="contain"
 								purpose="event-thumbnail"
 								projectId={project.id}
 								value={field.value}
