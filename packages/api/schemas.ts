@@ -14,6 +14,10 @@ import {
 } from "@verific/drizzle/profile-layout";
 import { z } from "@verific/zod";
 
+import {
+	NOTIFICATION_LIST_FILTERS,
+	NOTIFICATION_TYPE_LABELS,
+} from "./notifications/types";
 import { createEnumArraySchema, sortOptions } from "./utils";
 
 /**
@@ -88,6 +92,48 @@ export const getParticipantsParams = z.object({
 	page: z.coerce.number().default(0),
 	pageSize: z.coerce.number().default(10),
 	role: z.array(z.enum(participantRoles)).optional(),
+});
+
+/**
+ * Admin notification listing (event-scoped, organizer-only). Keyset cursor
+ * on (createdAt, id), newest first. Client-safe: only zod + pure consts.
+ */
+export const notificationListFilterSchema = z.enum(NOTIFICATION_LIST_FILTERS);
+
+// Re-exported so client components can stay on `@verific/api/schemas`
+// (notifications/types is dependency-free, so this pulls no server code).
+export { NOTIFICATION_TYPE_LABELS };
+
+export type NotificationListFilterInput = z.infer<
+	typeof notificationListFilterSchema
+>;
+
+export const notificationCursorSchema = z.object({
+	createdAt: z.coerce.date(),
+	id: z.string().uuid(),
+});
+
+export const listNotificationsInput = z.object({
+	projectId: z.string().uuid(),
+	filter: notificationListFilterSchema.default("attention"),
+	cursor: notificationCursorSchema.nullish(),
+	limit: z.coerce.number().int().min(1).max(100).default(20),
+});
+
+export const notificationStatsInput = z.object({
+	projectId: z.string().uuid(),
+});
+
+export const reprocessOneNotificationInput = z.object({
+	projectId: z.string().uuid(),
+	id: z.string().uuid(),
+});
+
+export const reprocessBatchNotificationsInput = z.object({
+	projectId: z.string().uuid(),
+	filter: notificationListFilterSchema.default("attention"),
+	cursor: notificationCursorSchema.nullish(),
+	limit: z.coerce.number().int().min(1).max(20).default(20),
 });
 
 /** Fixed palette for activity tags (trails). Stored as hex in `tags.color`. */

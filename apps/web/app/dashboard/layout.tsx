@@ -1,13 +1,14 @@
-import { notFound, redirect } from "next/navigation";
+import type { Metadata } from "next";
+import { REM } from "next/font/google";
 import { cookies } from "next/headers";
+import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 
-import { DashboardHeader } from "@/components/header/dashboard-header";
 import { DashboardProvider } from "@/components/dashboard/dashboard-context";
 import { Footer } from "@/components/footer";
-import { REM } from "next/font/google";
+import { DashboardHeader } from "@/components/header/dashboard-header";
+
 import { getCachedAccountProjects } from "@/lib/trpc/server";
-import type { Metadata } from "next";
 
 const rem = REM({
 	variable: "--font-rem",
@@ -18,6 +19,7 @@ const DASHBOARD_LINKS = [
 	{ href: "", label: "Visão Geral" },
 	{ href: "/activities", label: "Atividades" },
 	{ href: "/participants", label: "Participantes" },
+	{ href: "/emails", label: "E-mails" },
 	{ href: "/forms", label: "Formulários" },
 	{ href: "/settings", label: "Configurações" },
 ];

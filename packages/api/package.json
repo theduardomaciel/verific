@@ -8,6 +8,7 @@
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"test:coverage": "vitest run --coverage",
+		"email:dev": "email dev --dir ./notifications/emails --port 3001",
 		"lint": "oxlint --type-aware",
 		"fmt": "oxfmt",
 		"fmt:check": "oxfmt --check",
@@ -26,14 +27,21 @@
 		"@verific/fonts": "workspace:*",
 		"@verific/zod": "workspace:*",
 		"libphonenumber-js": "^1.13.14",
+		"react": "^19.3.0",
+		"react-dom": "^19.3.0",
+		"react-email": "^6.11.1",
 		"resend": "^6.32.1",
 		"server-only": "^0.0.1",
 		"superjson": "^2.2.2"
 	},
 	"devDependencies": {
+		"@react-email/ui": "^6.11.1",
 		"@types/node": "^24.9.1",
+		"@types/react": "^19.3.0",
+		"@types/react-dom": "^19.3.0",
 		"@verific/typescript-config": "workspace:*",
 		"@vitest/coverage-v8": "^5.0.3",
+		"next": "16.4.0",
 		"vitest": "^5.0.3"
 	}
 }

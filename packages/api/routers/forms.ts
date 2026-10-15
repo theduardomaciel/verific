@@ -34,6 +34,7 @@ import {
 	isCompatible,
 	readProjectLayout,
 } from "../lib/profile-links";
+import { queueEventRegistrationEmail } from "../notifications";
 import {
 	answerValueSchema,
 	filterVisibleFields,
@@ -1686,6 +1687,21 @@ export const formsRouter = createTRPCRouter({
 					}
 				}
 			}
+			// Confirmation email, after everything is committed. Fire-and-forget:
+			// it can never fail or roll back the registration.
+			queueEventRegistrationEmail({
+				registrationId: participantId,
+				to: subscriberEmail,
+				eventId: input.projectId,
+				participantName: input.name,
+				eventName: projectData.name,
+				eventUrlPath: projectData.url,
+				shortId,
+				startDate: projectData.startDate,
+				endDate: projectData.endDate,
+				eventLocation: projectData.address,
+				logoUrl: projectData.largeLogoUrl ?? projectData.logoUrl,
+			});
 			return { participantId, shortId };
 		}),
 

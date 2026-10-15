@@ -9,6 +9,12 @@ export default defineConfig({
 			"server-only": fileURLToPath(
 				new URL("./vitest.server-only-stub.ts", import.meta.url),
 			),
+			// `next/server` is provided by the Next.js runtime, not installed
+			// as a dependency of this package. Tests map it to a stub whose
+			// `after()` runs the task inline (no request scope under vitest).
+			"next/server": fileURLToPath(
+				new URL("./vitest.next-server-stub.ts", import.meta.url),
+			),
 		},
 	},
 	test: {
