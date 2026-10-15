@@ -199,6 +199,7 @@ export function BadgeEditor({
 	const utils = trpc.useUtils();
 	const saveMutation = trpc.saveLayout.useMutation();
 	const uploadMutation = trpc.requestImageUpload.useMutation();
+	const deleteImageMutation = trpc.deleteImage.useMutation();
 
 	const draftRef = useRef(draft);
 	const commit = (next: BadgeLayout) => {
@@ -570,11 +571,25 @@ export function BadgeEditor({
 			});
 			const put = await fetch(uploadUrl, { method: "PUT", body: blob });
 			if (!put.ok) throw new Error(`Upload falhou (HTTP ${put.status}).`);
+
+			// Delete previous artwork from storage if it exists
+			const previousUrl = draft.artworkUrl;
 			patch((d) => {
 				d.artworkUrl = publicUrl;
 				d.artworkKind = kind;
 				d.artworkPixels = null;
 			});
+			if (previousUrl && previousUrl !== publicUrl) {
+				try {
+					await deleteImageMutation.mutateAsync({
+						projectId,
+						publicUrlOrKey: previousUrl,
+					});
+				} catch {
+					// Best-effort: orphaned object may be collected later.
+				}
+			}
+
 			if (kind !== "pdf") {
 				const probe = new Image();
 				probe.src = publicUrl;
@@ -1224,25 +1239,30 @@ export function BadgeEditor({
 									e.target.value = "";
 								}}
 							/>
-							<Input
-								placeholder="ou cole a URL da arte"
-								value={draft.artworkUrl}
-								onChange={(e) =>
-									patch((d) => {
-										d.artworkUrl = e.target.value;
-									})
-								}
-							/>
 							{draft.artworkUrl ? (
 								<Button
 									size="sm"
 									variant="outline"
-									onClick={() =>
+									onClick={async () => {
+										const urlToDelete = draft.artworkUrl;
 										patch((d) => {
 											d.artworkUrl = "";
 											d.artworkPixels = null;
-										}, true)
-									}
+										}, true);
+										if (urlToDelete) {
+											try {
+												await deleteImageMutation.mutateAsync(
+													{
+														projectId,
+														publicUrlOrKey:
+															urlToDelete,
+													},
+												);
+											} catch {
+												// Best-effort: limpa o campo mesmo se a exclusão falhar.
+											}
+										}
+									}}
 								>
 									Remover arte
 								</Button>
