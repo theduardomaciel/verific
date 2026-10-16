@@ -110,44 +110,28 @@ export async function generateStaticParams() {
 export const instant = false;
 
 /**
- * Fallback visível do layout: o HTML estático pinta este esqueleto
- * (header + conteúdo) antes do JS — em vez da tela em branco anterior —
- * e some quando a árvore do header (que lê `usePathname()`) completa a
- * fronteira. Vale para a carga inicial e para navegações do cliente.
+ * Fallback **só do header**. O esqueleto de layout inteiro (hero `h-56` +
+ * três cards) saiu: ele não tinha relação com a página real e era a primeira
+ * pintura de toda carga direta, porque `{children}` e o rodapé ficavam dentro
+ * da mesma fronteira. Agora só o header transmite (é a única árvore que lê
+ * `usePathname()`), então este bloco reproduz a geometria dele — `h-21`
+ * (84px), com `py-0` e `items-center` como no `EventHeader` real — para a
+ * troca não deslocar o conteúdo abaixo. Logo (`h-8`) e botão de menu mobile
+ * (`md:hidden`) seguem o mesmo recorte responsivo do header.
  */
-function EventLayoutFallback() {
+function EventHeaderFallback() {
 	return (
-		<div className="bg-background min-h-screen">
-			<header className="container-p flex items-center justify-between py-4">
-				<Skeleton className="h-9 w-36" />
-				<div className="flex items-center gap-3">
-					<Skeleton className="h-9 w-24 rounded-full" />
-					<Skeleton className="h-9 w-24 rounded-full" />
-					<Skeleton className="h-9 w-9 rounded-full" />
-				</div>
-			</header>
-			<main className="container-p flex flex-col gap-8 py-10">
-				<Skeleton className="h-56 w-full rounded-xl" />
-				<div className="flex flex-col gap-4">
-					<Skeleton className="h-8 w-72" />
-					<Skeleton className="h-5 w-full max-w-2xl" />
-					<Skeleton className="h-5 w-2/3 max-w-xl" />
-				</div>
-				<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-					{Array.from({ length: 3 }).map((_, index) => (
-						<div
-							key={index}
-							className="border-border flex flex-col gap-3 rounded-md border p-6"
-						>
-							<Skeleton className="h-6 w-3/4" />
-							<Skeleton className="h-4 w-1/2" />
-							<Skeleton className="h-4 w-full" />
-							<Skeleton className="h-4 w-5/6" />
-						</div>
-					))}
-				</div>
-			</main>
-		</div>
+		<header
+			className="container-p relative z-50 flex h-21 items-center justify-between"
+			style={{ background: "var(--ev-header-bg)" }}
+		>
+			<Skeleton className="h-8 w-48" />
+			<div className="hidden items-center gap-3 md:flex">
+				<Skeleton className="h-9 w-24 rounded-md" />
+				<Skeleton className="h-9 w-24 rounded-md" />
+			</div>
+			<Skeleton className="h-9 w-9 rounded-md md:hidden" />
+		</header>
 	);
 }
 
@@ -224,9 +208,12 @@ function EventLogo({ light, dark, lightDims, darkDims, href }: EventLogoProps) {
 /**
  * Checks (`getProject` + `notFound`) run before the `<Suspense>`
  * boundary below is even created — so an unknown `eventUrl` produces a
- * real 404 instead of a streamed soft-404. The boundary itself stays:
- * the header tree (`EventHeader` → `MainNav`) reads `usePathname()`,
- * which is runtime-only and must stream inside a boundary.
+ * real 404 instead of a streamed soft-404. A fronteira cobre só o header:
+ * `EventHeader` → `MainNav` lê `usePathname()` e é a única árvore que
+ * transmite (`usePathname` só suspende quando o param não vem do
+ * `generateStaticParams`). `{children}` e o rodapé ficam fora, cada um com
+ * o próprio esqueleto / `use cache`, para o esqueleto do layout não pintar
+ * por cima do esqueleto da página em cada carga direta.
  */
 export default async function EventLayout({
 	children,
@@ -287,18 +274,18 @@ export default async function EventLayout({
 					<link rel="stylesheet" href={fontDelivery.googleFontsUrl} />
 				</>
 			) : null}
-			<Suspense fallback={<EventLayoutFallback />}>
-				<EventThemeSync cssVars={cssVars} />
-				<div
-					className={`event-public ${fontVariables} relative flex w-full flex-1 flex-col`}
-					style={
-						{
-							...cssVars,
-							"--font-sans": "var(--ev-font-body)",
-						} as React.CSSProperties
-					}
-				>
-					<EventBackgroundEffects />
+			<EventThemeSync cssVars={cssVars} />
+			<EventBackgroundEffects />
+			<div
+				className={`event-public ${fontVariables} relative flex w-full flex-1 flex-col`}
+				style={
+					{
+						...cssVars,
+						"--font-sans": "var(--ev-font-body)",
+					} as React.CSSProperties
+				}
+			>
+				<Suspense fallback={<EventHeaderFallback />}>
 					<EventHeader
 						eventUrl={eventUrl}
 						className="relative h-21 border-none py-0"
@@ -335,20 +322,20 @@ export default async function EventLayout({
 							/>
 						}
 					/>
-					{children}
-					<div className="container-p relative z-10 flex w-full items-center justify-center py-6">
-						<div
-							className="w-full rounded-xl md:rounded-full"
-							style={{ background: "var(--ev-footer-bg)" }}
-						>
-							<Footer
-								className="border-none px-4 py-4 text-(--ev-footer-fg) md:px-12"
-								showWatermark
-							/>
-						</div>
+				</Suspense>
+				{children}
+				<div className="container-p relative z-10 flex w-full items-center justify-center py-6">
+					<div
+						className="w-full rounded-xl md:rounded-full"
+						style={{ background: "var(--ev-footer-bg)" }}
+					>
+						<Footer
+							className="border-none px-4 py-4 text-(--ev-footer-fg) md:px-12"
+							showWatermark
+						/>
 					</div>
 				</div>
-			</Suspense>
+			</div>
 		</>
 	);
 }

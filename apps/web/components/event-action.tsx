@@ -28,7 +28,14 @@ export async function EventAction({ eventUrl }: EventActionProps) {
 	}
 
 	if (disabled) {
-		return <Button disabled>{buttonText}</Button>;
+		// `size="xl"` também no estado desabilitado: sem isso o CTA encolhe
+		// de `h-12` (48px) para `h-9` (36px) quando as inscrições fecham,
+		// deslocando o conteúdo abaixo em 12px.
+		return (
+			<Button disabled size="xl">
+				{buttonText}
+			</Button>
+		);
 	}
 
 	return (

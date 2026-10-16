@@ -113,7 +113,7 @@ function EventPageBody({ project }: { project: EventPageProject }) {
 							<span>Emite certificado</span>
 						</Badge>
 					</div>
-					<Suspense fallback={<Skeleton className="h-12 w-44" />}>
+					<Suspense fallback={<Skeleton className="h-12 w-45.5" />}>
 						<EventAction eventUrl={eventUrl} />
 					</Suspense>
 				</div>
