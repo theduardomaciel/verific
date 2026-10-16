@@ -56,6 +56,7 @@ const {
 vi.mock("@verific/drizzle", () => ({ db: dbMock }));
 vi.mock("@verific/env", () => ({
 	env: { NEXT_PUBLIC_VERCEL_URL: "https://example.com" },
+	appUrl: "https://example.com",
 }));
 vi.mock("../notifications", async (importOriginal) => ({
 	...(await importOriginal<object>()),

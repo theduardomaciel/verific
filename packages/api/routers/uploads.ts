@@ -4,9 +4,7 @@ import { z } from "@verific/zod";
 
 import { requireProjectAccess } from "../lib/project-access";
 import {
-	IMAGE_PURPOSES,
-	isPassthroughPurpose,
-	passthroughExtension,
+	extensionForContentType,
 	storage,
 	validateUploadInput,
 	type ImagePurpose,
@@ -47,19 +45,14 @@ export const uploadsRouter = createTRPCRouter({
 					message: "Armazenamento de imagens não configurado.",
 				});
 			}
-			const key = isPassthroughPurpose(purpose)
-				? storage.buildKey(
-						purpose,
-						input.projectId,
-						passthroughExtension(input.contentType),
-					)
-				: storage.buildKey(purpose, input.projectId);
-			const config = IMAGE_PURPOSES[purpose];
+			const key = storage.buildKey(
+				purpose,
+				input.projectId,
+				extensionForContentType(input.contentType),
+			);
 			const { uploadUrl, publicUrl } = await storage.createPresignedPut({
 				key,
-				contentType: isPassthroughPurpose(purpose)
-					? input.contentType
-					: (config as { outputMime: string }).outputMime,
+				contentType: input.contentType,
 				contentLength: input.contentLength,
 			});
 			return { key, uploadUrl, publicUrl };

@@ -16,9 +16,9 @@ vi.mock("@verific/env", () => ({
 }));
 
 import {
+	extensionForContentType,
 	IMAGE_PURPOSES,
 	isPassthroughPurpose,
-	passthroughExtension,
 	storage,
 	validateUploadInput,
 } from "./storage";
@@ -30,10 +30,45 @@ describe("storage adapter", () => {
 		expect(key.endsWith(".webp")).toBe(true);
 	});
 
-	it("rejeita tipo fora do padrão WebP", () => {
+	it("usa .png como extensão padrão das finalidades de logo", () => {
+		expect(storage.buildKey("event-logo", "abc-123").endsWith(".png")).toBe(
+			true,
+		);
+		expect(
+			storage.buildKey("event-logo-wide", "abc-123").endsWith(".png"),
+		).toBe(true);
+	});
+
+	it("aceita PNG e WebP nas finalidades de logo", () => {
+		for (const contentType of ["image/png", "image/webp"]) {
+			expect(() =>
+				validateUploadInput({
+					purpose: "event-logo",
+					contentType,
+					contentLength: 1000,
+				}),
+			).not.toThrow();
+			expect(() =>
+				validateUploadInput({
+					purpose: "event-logo-wide",
+					contentType,
+					contentLength: 1000,
+				}),
+			).not.toThrow();
+		}
+	});
+
+	it("rejeita tipo fora do padrão WebP nas demais finalidades", () => {
 		expect(() =>
 			validateUploadInput({
 				purpose: "speaker",
+				contentType: "image/png",
+				contentLength: 1000,
+			}),
+		).toThrow();
+		expect(() =>
+			validateUploadInput({
+				purpose: "event-cover",
 				contentType: "image/png",
 				contentLength: 1000,
 			}),
@@ -58,13 +93,21 @@ describe("storage adapter", () => {
 		expect(storage.extractKey("")).toBeNull();
 	});
 
+	it("mapeia content-type para extensão", () => {
+		expect(extensionForContentType("image/png")).toBe("png");
+		expect(extensionForContentType("image/webp")).toBe("webp");
+		expect(extensionForContentType("image/jpeg")).toBe("jpg");
+		expect(extensionForContentType("application/pdf")).toBe("pdf");
+		expect(() => extensionForContentType("image/gif")).toThrow();
+	});
+
 	it("arte do crachá passa direto (sem WebP), com extensão do original", () => {
 		expect(isPassthroughPurpose("badge-artwork")).toBe(true);
 		expect(isPassthroughPurpose("event-logo")).toBe(false);
 		const key = storage.buildKey(
 			"badge-artwork",
 			"abc-123",
-			passthroughExtension("application/pdf"),
+			extensionForContentType("application/pdf"),
 		);
 		expect(key.startsWith("badge-artwork/abc-123/")).toBe(true);
 		expect(key.endsWith(".pdf")).toBe(true);

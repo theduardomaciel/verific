@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@verific/drizzle", () => ({ db: {} }));
 vi.mock("@verific/env", () => ({
@@ -35,8 +35,12 @@ const ARGS = {
 	startDate: new Date("2026-04-12T14:00:00Z"),
 	endDate: new Date("2026-04-12T18:00:00Z"),
 	eventLocation: "Campus A. C. Simões",
-	logoUrl: "https://example.com/logo.png",
+	logoDarkUrl: "https://example.com/dark-logo.png",
 };
+
+beforeEach(() => {
+	vi.restoreAllMocks();
+});
 
 describe("buildRegistrationEmailInput", () => {
 	it("builds the expected key, recipient and payload", () => {
@@ -52,8 +56,9 @@ describe("buildRegistrationEmailInput", () => {
 			participantName: "Maria Silva",
 			eventName: "Secomp UFAL 2026",
 			accessUrl: "https://verific.app.br/secomp-2026/profile/abc123?me=1",
-			logoUrl: "https://example.com/logo.png",
+			logoUrl: "https://example.com/dark-logo.png",
 		});
+		expect(input?.payload).not.toHaveProperty("bannerUrl");
 		expect(typeof input?.payload["eventDateText"]).toBe("string");
 	});
 
@@ -64,32 +69,46 @@ describe("buildRegistrationEmailInput", () => {
 		expect(buildRegistrationEmailInput({ ...ARGS, to: "  " })).toBeNull();
 	});
 
-	it("drops unsafe logos instead of failing", () => {
-		const input = buildRegistrationEmailInput({
-			...ARGS,
-			logoUrl: "https://example.com/logo.svg",
-		});
-		expect(input?.payload["logoUrl"]).toBe(
-			"https://verific.app.br/logo_blue.png",
-		);
-		expect(input?.payload["logoAlt"]).toBe("verifIC");
-	});
-
-	it("falls back to the brand logo without an event logo", () => {
-		const input = buildRegistrationEmailInput({
-			...ARGS,
-			logoUrl: undefined,
-		});
-		expect(input?.payload["logoUrl"]).toBe(
-			"https://verific.app.br/logo_blue.png",
-		);
-		expect(input?.payload["logoAlt"]).toBe("verifIC");
-	});
-
-	it("keeps the event logo and default alt when usable", () => {
+	it("uses a PNG dark wide logo directly", () => {
 		const input = buildRegistrationEmailInput(ARGS);
-		expect(input?.payload["logoUrl"]).toBe("https://example.com/logo.png");
-		expect(input?.payload).not.toHaveProperty("logoAlt");
+		expect(input?.payload["logoUrl"]).toBe(
+			"https://example.com/dark-logo.png",
+		);
+	});
+
+	it("uses the text header for a WebP dark wide logo and warns", () => {
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+		const input = buildRegistrationEmailInput({
+			...ARGS,
+			logoDarkUrl: "https://example.com/dark-logo.webp",
+		});
+
+		expect(input?.payload).not.toHaveProperty("logoUrl");
+		expect(warn).toHaveBeenCalledTimes(1);
+		expect(warn.mock.calls[0]?.[0]).toContain("event-1");
+	});
+
+	it("uses the text header without a dark wide logo", () => {
+		const input = buildRegistrationEmailInput({
+			...ARGS,
+			logoDarkUrl: undefined,
+		});
+		expect(input?.payload).not.toHaveProperty("logoUrl");
+	});
+
+	it("drops non-https and SVG logos, and only warns for WebP", () => {
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+		for (const logoDarkUrl of [
+			"https://example.com/dark-logo.svg",
+			"http://example.com/dark-logo.png",
+			"https://example.com/dark-logo.svg?x=1",
+		]) {
+			const input = buildRegistrationEmailInput({ ...ARGS, logoDarkUrl });
+			expect(input?.payload).not.toHaveProperty("logoUrl");
+		}
+		expect(warn).not.toHaveBeenCalled();
 	});
 });
 

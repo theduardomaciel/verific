@@ -23,7 +23,8 @@ NEXT_PUBLIC_STORAGE_BASE_URL=<mesmo que S3_PUBLIC_BASE_URL>
 ## Fluxo
 
 1. `ImageUploader` (client) → `processImageFile` (canvas: resize por finalidade,
-   rasteriza SVG → WebP, remove EXIF) → `trpc.requestImageUpload`
+   rasteriza SVG, remove EXIF; logo em PNG, demais em WebP) →
+   `trpc.requestImageUpload`
    (protegido; confere dono/moderador do evento; valida tipo/tamanho).
 2. Server retorna presigned PUT (300s) + URL pública.
 3. Client faz `PUT` direto no storage (não passa pelo Next).
@@ -36,14 +37,18 @@ NEXT_PUBLIC_STORAGE_BASE_URL=<mesmo que S3_PUBLIC_BASE_URL>
 | purpose         | máx       | teto  |
 | --------------- | --------- | ----- |
 | event-logo      | 512×512   | 512KB |
-| event-logo-wide | 1024×512  | 512KB |
+| event-logo-wide | 768×384   | 512KB |
 | event-cover     | 1920×1080 | 1MB   |
 | event-thumbnail | 1200×630  | 512KB |
-| speaker         | 800×800   | 512KB |
+| speaker         | 512×512   | 512KB |
 | activity-banner | 1600×900  | 1MB   |
 
-Saída sempre `image/webp`, `Cache-Control: public, max-age=31536000, immutable`.
-SVG de entrada é rasterizado (decisão Fase 0: sem SVG hospedado, sem XSS).
+`event-logo` e `event-logo-wide` saem em **PNG lossless** (alpha preservado,
+e-mail-safe: o Gmail recomprime WebP com perdas e achata o alpha; o Outlook
+desktop não renderiza WebP). Se o PNG passar de ~400KB, cai para WebP com
+aviso no console. As demais finalidades saem em `image/webp`.
+`Cache-Control: public, max-age=31536000, immutable`. SVG de entrada é
+rasterizado (decisão Fase 0: sem SVG hospedado, sem XSS).
 
 ## Campos migrados
 

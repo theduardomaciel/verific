@@ -8,6 +8,14 @@ export type ImagePurpose =
 	| "speaker"
 	| "activity-banner";
 
+/** Estrutura do arquivo otimizado entregue ao upload. */
+export interface ProcessedImage {
+	blob: Blob;
+	width: number;
+	height: number;
+	contentType: "image/png" | "image/webp";
+}
+
 const PURPOSE_MAX: Record<ImagePurpose, { w: number; h: number }> = {
 	"event-logo": { w: 512, h: 512 },
 	"event-logo-wide": { w: 768, h: 384 },
@@ -33,12 +41,29 @@ const PURPOSE_SQUARE: Record<ImagePurpose, boolean> = {
 	"activity-banner": false,
 };
 
-export interface ProcessedImage {
-	blob: Blob;
-	width: number;
-	height: number;
-	contentType: "image/webp";
-}
+/**
+ * Finalidades codificadas como PNG (lossless, alpha preservado). O e-mail de
+ * confirmação usa o arquivo armazenado direto: o proxy do Gmail recomprime
+ * WebP com perdas e achata o alpha (caixa preta, pixelização) e o Outlook
+ * desktop não renderiza WebP. As demais finalidades continuam em WebP.
+ */
+const PURPOSE_PNG: Record<ImagePurpose, boolean> = {
+	"event-logo": true,
+	"event-logo-wide": true,
+	"event-cover": false,
+	"event-thumbnail": false,
+	speaker: false,
+	"activity-banner": false,
+};
+
+const WEBP_QUALITY = 0.82;
+
+/**
+ * Acima deste tamanho o PNG do logo deixa de valer a pena: cai para WebP
+ * (com aviso no console). Os logos são arte chapada pequena, então 400KB
+ * cobre a esmagadora maioria dos casos.
+ */
+const PNG_MAX_BYTES = 400 * 1024;
 
 function fit(w: number, h: number, maxW: number, maxH: number) {
 	const scale = Math.min(1, maxW / w, maxH / h);
@@ -69,9 +94,10 @@ async function fileToBitmap(file: File | Blob): Promise<ImageBitmap> {
 	}
 }
 
-function canvasToWebp(
+function canvasToBlob(
 	canvas: HTMLCanvasElement,
-	quality = 0.82,
+	type: "image/png" | "image/webp",
+	quality?: number,
 ): Promise<Blob> {
 	return new Promise((resolve, reject) => {
 		canvas.toBlob(
@@ -79,18 +105,37 @@ function canvasToWebp(
 				blob
 					? resolve(blob)
 					: reject(new Error("Falha ao converter imagem.")),
-			"image/webp",
+			type,
 			quality,
 		);
 	});
 }
 
 /**
+ * Codifica o canvas como PNG. Se o arquivo passar do teto (raro, típico de
+ * arte com degradê/foto), cai para WebP e avisa — o logo perde a garantia de
+ * e-mail, mas mantém o upload possível.
+ */
+async function encodePngOrFallback(
+	canvas: HTMLCanvasElement,
+): Promise<{ blob: Blob; contentType: ProcessedImage["contentType"] }> {
+	const png = await canvasToBlob(canvas, "image/png");
+	if (png.size <= PNG_MAX_BYTES) {
+		return { blob: png, contentType: "image/png" };
+	}
+	console.warn(
+		`[images] PNG excedeu ${Math.round(PNG_MAX_BYTES / 1024)}KB (${Math.round(png.size / 1024)}KB); usando WebP.`,
+	);
+	const webp = await canvasToBlob(canvas, "image/webp", WEBP_QUALITY);
+	return { blob: webp, contentType: "image/webp" };
+}
+
+/**
  * Otimização client-side: redimensiona para o máximo da finalidade,
- * rasteriza SVG (decisão Fase 0: vetores viram WebP, sem risco XSS),
- * remove metadados (canvas não preserva EXIF) e converte para WebP.
- * Finalidades quadradas (`event-logo`) são centralizadas num canvas
- * 1:1 transparente.
+ * rasteriza SVG (decisão Fase 0: vetores viram bitmap, sem risco XSS),
+ * remove metadados (canvas não preserva EXIF) e codifica. As finalidades de
+ * logo saem em PNG; as demais em WebP. Finalidades quadradas
+ * (`event-logo`) são centralizadas num canvas 1:1 transparente.
  */
 export async function processImageFile(
 	file: File,
@@ -107,6 +152,7 @@ export async function processImageFile(
 	canvas.width = PURPOSE_SQUARE[purpose] ? side : w;
 	canvas.height = PURPOSE_SQUARE[purpose] ? side : h;
 	const ctx = canvas.getContext("2d")!;
+	ctx.imageSmoothingQuality = "high";
 	ctx.drawImage(
 		bitmap,
 		(canvas.width - w) / 2,
@@ -115,11 +161,16 @@ export async function processImageFile(
 		h,
 	);
 	bitmap.close?.();
-	const blob = await canvasToWebp(canvas);
+	const encoded = PURPOSE_PNG[purpose]
+		? await encodePngOrFallback(canvas)
+		: {
+				blob: await canvasToBlob(canvas, "image/webp", WEBP_QUALITY),
+				contentType: "image/webp" as const,
+			};
 	return {
-		blob,
+		blob: encoded.blob,
 		width: canvas.width,
 		height: canvas.height,
-		contentType: "image/webp",
+		contentType: encoded.contentType,
 	};
 }

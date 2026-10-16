@@ -13,13 +13,25 @@ export type ImagePurpose =
 	| "activity-banner"
 	| "badge-artwork";
 
+/** Tipos que o otimizador client-side entrega ao upload. */
+export type UploadContentType = "image/png" | "image/webp";
+
+// PNG preserva alpha e é renderizado por Gmail/Outlook; WebP é o padrão
+// enxuto para as finalidades que não vão para e-mail.
+const PNG_MIME = "image/png";
+const WEBP_MIME = "image/webp";
+
+const OPTIMIZED_CACHE_CONTROL = "public, max-age=31536000, immutable";
+
 interface PurposeConfig {
 	maxWidth: number;
 	maxHeight: number;
 	maxBytes: number;
-	allowedMime: readonly string[];
-	outputMime: "image/webp";
-	extension: "webp";
+	/**
+	 * Tipos de saída aceitos do otimizador, em ordem de preferência. Os logos
+	 * de evento são PNG (e-mail-safe); o restante continua em WebP.
+	 */
+	outputMime: readonly UploadContentType[];
 	cacheControl: string;
 }
 
@@ -35,10 +47,11 @@ export function isPassthroughPurpose(purpose: ImagePurpose): boolean {
 	return purpose === "badge-artwork";
 }
 
-/** Extension for a passthrough upload content type. */
-export function passthroughExtension(contentType: string): string {
+/** Extensão de arquivo para um content-type aceito no upload. */
+export function extensionForContentType(contentType: string): string {
 	if (contentType === "image/png") return "png";
 	if (contentType === "image/jpeg") return "jpg";
+	if (contentType === "image/webp") return "webp";
 	if (contentType === "application/pdf") return "pdf";
 	throw new Error(`Tipo de arquivo inválido: ${contentType}.`);
 }
@@ -51,55 +64,43 @@ export const IMAGE_PURPOSES: Record<
 		maxWidth: 512,
 		maxHeight: 512,
 		maxBytes: 512 * 1024,
-		allowedMime: ["image/png", "image/jpeg", "image/webp"],
-		outputMime: "image/webp",
-		extension: "webp",
-		cacheControl: "public, max-age=31536000, immutable",
+		outputMime: [PNG_MIME, WEBP_MIME],
+		cacheControl: OPTIMIZED_CACHE_CONTROL,
 	},
 	"event-logo-wide": {
 		maxWidth: 768,
 		maxHeight: 384,
 		maxBytes: 512 * 1024,
-		allowedMime: ["image/png", "image/jpeg", "image/webp"],
-		outputMime: "image/webp",
-		extension: "webp",
-		cacheControl: "public, max-age=31536000, immutable",
+		outputMime: [PNG_MIME, WEBP_MIME],
+		cacheControl: OPTIMIZED_CACHE_CONTROL,
 	},
 	"event-cover": {
 		maxWidth: 1920,
 		maxHeight: 1080,
 		maxBytes: 1024 * 1024,
-		allowedMime: ["image/png", "image/jpeg", "image/webp"],
-		outputMime: "image/webp",
-		extension: "webp",
-		cacheControl: "public, max-age=31536000, immutable",
+		outputMime: [WEBP_MIME],
+		cacheControl: OPTIMIZED_CACHE_CONTROL,
 	},
 	"event-thumbnail": {
 		maxWidth: 1200,
 		maxHeight: 630,
 		maxBytes: 512 * 1024,
-		allowedMime: ["image/png", "image/jpeg", "image/webp"],
-		outputMime: "image/webp",
-		extension: "webp",
-		cacheControl: "public, max-age=31536000, immutable",
+		outputMime: [WEBP_MIME],
+		cacheControl: OPTIMIZED_CACHE_CONTROL,
 	},
 	speaker: {
 		maxWidth: 512,
 		maxHeight: 512,
 		maxBytes: 512 * 1024,
-		allowedMime: ["image/png", "image/jpeg", "image/webp"],
-		outputMime: "image/webp",
-		extension: "webp",
-		cacheControl: "public, max-age=31536000, immutable",
+		outputMime: [WEBP_MIME],
+		cacheControl: OPTIMIZED_CACHE_CONTROL,
 	},
 	"activity-banner": {
 		maxWidth: 1600,
 		maxHeight: 900,
 		maxBytes: 1024 * 1024,
-		allowedMime: ["image/png", "image/jpeg", "image/webp"],
-		outputMime: "image/webp",
-		extension: "webp",
-		cacheControl: "public, max-age=31536000, immutable",
+		outputMime: [WEBP_MIME],
+		cacheControl: OPTIMIZED_CACHE_CONTROL,
 	},
 	// Arte do crachá: enviada como está (PNG/JPEG/PDF), sem conversão
 	// para WebP nem redimensionamento — nitidez máxima na impressão.
@@ -107,7 +108,7 @@ export const IMAGE_PURPOSES: Record<
 	"badge-artwork": {
 		maxBytes: 5 * 1024 * 1024,
 		allowedMime: ["image/png", "image/jpeg", "application/pdf"],
-		cacheControl: "public, max-age=31536000, immutable",
+		cacheControl: OPTIMIZED_CACHE_CONTROL,
 		passthrough: true,
 	},
 };
@@ -157,6 +158,34 @@ function createS3Client() {
 	});
 }
 
+/** Extensão padrão de uma finalidade quando o caller não informa uma. */
+function defaultExtension(purpose: ImagePurpose): string {
+	const config = IMAGE_PURPOSES[purpose];
+	if (!config || "passthrough" in config) return "bin";
+	return config.outputMime[0] === PNG_MIME ? "png" : "webp";
+}
+
+function assertAllowedContentType(
+	purpose: ImagePurpose,
+	contentType: string,
+): void {
+	const config = IMAGE_PURPOSES[purpose];
+	if (!config) throw new Error("Finalidade de imagem inválida.");
+	if ("passthrough" in config) {
+		if (!config.allowedMime.includes(contentType)) {
+			throw new Error(
+				`Tipo de arquivo inválido. Envie ${config.allowedMime.join(", ")}.`,
+			);
+		}
+		return;
+	}
+	if (!config.outputMime.includes(contentType as UploadContentType)) {
+		throw new Error(
+			`Tipo inválido. O otimizador deve converter para ${config.outputMime.join(" ou ")}.`,
+		);
+	}
+}
+
 export const storage: StorageAdapter = {
 	isConfigured() {
 		const {
@@ -177,11 +206,7 @@ export const storage: StorageAdapter = {
 
 	buildKey(purpose, projectId, extension?: string) {
 		const safeProject = projectId.replace(/[^a-zA-Z0-9-_]/g, "");
-		const config = IMAGE_PURPOSES[purpose];
-		const ext =
-			config && "passthrough" in config
-				? (extension ?? "bin")
-				: (config as PurposeConfig).extension;
+		const ext = extension ?? defaultExtension(purpose);
 		return `${purpose}/${safeProject}/${randomUUID()}.${ext}`;
 	},
 
@@ -216,19 +241,7 @@ export const storage: StorageAdapter = {
 		}
 		const purpose = key.split("/")[0] as ImagePurpose;
 		const config = IMAGE_PURPOSES[purpose];
-		if (config && "passthrough" in config) {
-			if (!config.allowedMime.includes(contentType)) {
-				throw new Error(
-					`Tipo de arquivo inválido. Envie ${config.allowedMime.join(", ")}.`,
-				);
-			}
-		} else if (
-			contentType !== (config as PurposeConfig | undefined)?.outputMime
-		) {
-			throw new Error(
-				`Tipo de arquivo inválido. Envie ${(config as PurposeConfig)?.outputMime}.`,
-			);
-		}
+		assertAllowedContentType(purpose, contentType);
 		if (contentLength > (config?.maxBytes ?? 0)) {
 			throw new Error("Arquivo excede o tamanho máximo permitido.");
 		}
@@ -264,17 +277,7 @@ export function validateUploadInput(input: {
 }) {
 	const config = IMAGE_PURPOSES[input.purpose];
 	if (!config) throw new Error("Finalidade de imagem inválida.");
-	if ("passthrough" in config) {
-		if (!config.allowedMime.includes(input.contentType)) {
-			throw new Error(
-				`Tipo inválido. Envie ${config.allowedMime.join(", ")}.`,
-			);
-		}
-	} else if (input.contentType !== config.outputMime) {
-		throw new Error(
-			`Tipo inválido. O otimizador deve converter para ${config.outputMime}.`,
-		);
-	}
+	assertAllowedContentType(input.purpose, input.contentType);
 	if (input.contentLength <= 0 || input.contentLength > config.maxBytes) {
 		throw new Error("Tamanho de arquivo inválido.");
 	}

@@ -317,7 +317,7 @@ describe("reprocessOneNotification", () => {
 				deps,
 			);
 			expect(notification?.status).toBe("sent");
-			expect(notification?.templateVersion).toBe("v2");
+			expect(notification?.templateVersion).toBe("v3");
 		}
 		expect(send).toHaveBeenCalledTimes(2);
 	});

@@ -17,14 +17,16 @@ const PROPS: EventRegistrationConfirmationProps = {
 	eventDateText: "12 de abril de 2026, 14:00 – 18:00",
 	eventLocation: "Campus A. C. Simões, Maceió – AL",
 	accessUrl: "https://example.com/secomp-2026/profile/abc123?me=1",
-	logoUrl: "https://example.com/logo.png",
+	logoUrl: "https://example.com/dark-logo.png",
+	logoWidth: 768,
+	logoHeight: 125,
 };
 
 describe("event_registration_confirmation template", () => {
 	it("renders html and text containing name, event and access url", async () => {
 		const rendered = await renderEventRegistrationConfirmation(PROPS);
 
-		expect(rendered.templateVersion).toBe("v2");
+		expect(rendered.templateVersion).toBe("v3");
 		expect(rendered.subject).toBe("Inscrição confirmada: Secomp UFAL 2026");
 		expect(rendered.html).toContain("Maria Silva");
 		expect(rendered.html).toContain("Secomp UFAL 2026");
@@ -44,7 +46,7 @@ describe("event_registration_confirmation template", () => {
 			renderEventRegistrationConfirmation(
 				eventRegistrationConfirmationPreviewProps,
 			),
-		).resolves.toMatchObject({ templateVersion: "v2" });
+		).resolves.toMatchObject({ templateVersion: "v3" });
 	});
 
 	it("omits date and location lines when not provided", async () => {
@@ -59,26 +61,34 @@ describe("event_registration_confirmation template", () => {
 		expect(rendered.html).toContain("Sua inscrição em");
 	});
 
-	it("shows the logo image when the url is email-safe, else the event name", async () => {
+	it("renders the logo centered at 280px wide with height auto", async () => {
 		const withLogo = await renderEventRegistrationConfirmation(PROPS);
-		expect(withLogo.html).toContain('src="https://example.com/logo.png"');
-		expect(withLogo.html).toContain('alt="Secomp UFAL 2026"');
 
-		const withoutLogo = await renderEventRegistrationConfirmation({
-			...PROPS,
-			logoUrl: undefined,
-		});
-		expect(withoutLogo.html).not.toContain("<img");
+		expect(withLogo.html).toContain(
+			'src="https://example.com/dark-logo.png"',
+		);
+		expect(withLogo.html).toContain('alt="Secomp UFAL 2026"');
+		expect(withLogo.html).toContain('width="280"');
+		expect(withLogo.html).toContain("height:auto");
 	});
 
 	it("uses the logoAlt override when provided", async () => {
 		const rendered = await renderEventRegistrationConfirmation({
 			...PROPS,
-			logoUrl: "https://example.com/logo_blue.png",
-			logoAlt: "verifIC",
+			logoAlt: "SECOMP 26",
 		});
 
-		expect(rendered.html).toContain('alt="verifIC"');
+		expect(rendered.html).toContain('alt="SECOMP 26"');
+	});
+
+	it("shows the event name when the logo is not email-safe", async () => {
+		const rendered = await renderEventRegistrationConfirmation({
+			...PROPS,
+			logoUrl: "https://example.com/dark-logo.webp",
+		});
+
+		expect(rendered.html).not.toContain("<img");
+		expect(rendered.html).toContain("Secomp UFAL 2026");
 	});
 
 	it("rejects invalid payloads instead of rendering", async () => {
@@ -105,6 +115,10 @@ describe("sanitizeLogoUrl", () => {
 		["http://example.com/logo.png", undefined],
 		["https://example.com/logo.svg", undefined],
 		["https://example.com/logo.svg?x=1", undefined],
+		["https://example.com/logo.webp", undefined],
+		["https://example.com/logo.WEBP", undefined],
+		["https://example.com/logo.webp?x=1", undefined],
+		["https://example.com/logo.webp#frag", undefined],
 		["/relative/logo.png", undefined],
 		[undefined, undefined],
 	])("sanitizes %s", (input, expected) => {

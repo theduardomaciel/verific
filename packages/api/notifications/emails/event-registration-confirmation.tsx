@@ -29,15 +29,15 @@ export const eventRegistrationConfirmationPayloadSchema = z.object({
 			(url) => url.startsWith("http://") || url.startsWith("https://"),
 			"accessUrl must be an absolute http(s) URL",
 		),
-	// Full-width header image (rendered at 600px, the email container width).
-	// Loose on purpose: an unusable image must never block the email. The
-	// render step sanitizes it and falls back to logoUrl, then to the event
-	// name as text.
-	bannerUrl: z.string().optional(),
-	// Small logo, used only when there is no usable banner. Same fallback
-	// rules as above. This template is dark: pass a logo that works on dark.
+	// Logo. Only the dark-mode wide logo is ever passed (the template is
+	// dark-only); the PNG is produced by the client upload pipeline, so no
+	// server-side conversion is needed. When absent, the event name shows.
 	logoUrl: z.string().optional(),
-	// Alt text override for the banner/logo. Defaults to the event name.
+	// Optional intrinsic size. Unused for layout (the logo keeps `height:
+	// auto`), kept optional so payloads that carry it keep rendering.
+	logoWidth: z.number().int().positive().optional(),
+	logoHeight: z.number().int().positive().optional(),
+	// Alt text override. Defaults to the event name.
 	logoAlt: z.string().trim().optional(),
 });
 
@@ -46,15 +46,17 @@ export type EventRegistrationConfirmationPayload = z.infer<
 >;
 
 /**
- * Only absolute https, non-SVG images are email-safe (most clients refuse
- * SVG and mixed content). Anything else falls back to the next option.
+ * Only absolute https, non-SVG, non-WebP images are email-safe: most clients
+ * refuse SVG and mixed content, and Gmail's proxy recompresses WebP while
+ * flattening its alpha channel (Outlook desktop does not render it at all).
+ * Anything else falls back to the event name as text.
  */
 export function sanitizeLogoUrl(
 	logoUrl: string | undefined,
 ): string | undefined {
 	if (!logoUrl) return undefined;
 	if (!logoUrl.startsWith("https://")) return undefined;
-	if (/\.svg([?#]|$)/i.test(logoUrl)) return undefined;
+	if (/\.(svg|webp)([?#]|$)/i.test(logoUrl)) return undefined;
 	return logoUrl;
 }
 
@@ -93,12 +95,10 @@ export function EventRegistrationConfirmationEmail({
 	eventDateText,
 	eventLocation,
 	accessUrl,
-	bannerUrl,
 	logoUrl,
 	logoAlt,
 }: EventRegistrationConfirmationProps) {
 	const subject = subjectFor(eventName);
-	const bannerSrc = sanitizeLogoUrl(bannerUrl);
 	const logoSrc = sanitizeLogoUrl(logoUrl);
 	const hasDetails = Boolean(eventDateText || eventLocation);
 	return (
@@ -111,18 +111,11 @@ export function EventRegistrationConfirmationEmail({
 			<Body style={styles.body}>
 				<Container style={styles.container}>
 					<Section style={styles.header}>
-						{bannerSrc ? (
-							<Img
-								src={bannerSrc}
-								alt={logoAlt || eventName}
-								width="600"
-								style={styles.banner}
-							/>
-						) : logoSrc ? (
+						{logoSrc ? (
 							<Img
 								src={logoSrc}
 								alt={logoAlt || eventName}
-								width="200"
+								width="280"
 								style={styles.logo}
 							/>
 						) : (
@@ -216,6 +209,11 @@ export async function renderEventRegistrationConfirmation(
 	};
 }
 
+/**
+ * Preview props for `react-email dev`: shows the logo case (a dark-mode wide
+ * logo PNG, as the upload pipeline stores). Remove `logoUrl` to preview the
+ * event-name fallback.
+ */
 export const eventRegistrationConfirmationPreviewProps: EventRegistrationConfirmationProps =
 	{
 		participantName: "Maria Silva",
@@ -223,7 +221,9 @@ export const eventRegistrationConfirmationPreviewProps: EventRegistrationConfirm
 		eventDateText: "12 de abril de 2026, 14:00 – 18:00",
 		eventLocation: "Campus A. C. Simões, Maceió – AL",
 		accessUrl: "https://example.com/secomp-2026/profile/abc123?me=1",
-		bannerUrl: "https://example.com/secomp-banner.png",
+		logoUrl: "https://example.com/secomp-logo-dark.png",
+		logoWidth: 768,
+		logoHeight: 125,
 		logoAlt: "SECOMP 26",
 	};
 
@@ -255,15 +255,12 @@ const styles = {
 		borderBottom: `4px solid ${palette.teal}`,
 		textAlign: "center" as const,
 	},
-	banner: {
-		display: "block",
-		width: "100%",
-		maxWidth: "100%",
-		height: "auto",
-	},
 	logo: {
+		display: "block",
 		margin: "0 auto",
 		padding: "28px 0",
+		maxWidth: "100%",
+		height: "auto",
 	},
 	brand: {
 		fontFamily: MONO,

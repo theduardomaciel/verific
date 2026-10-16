@@ -1721,7 +1721,7 @@ export const formsRouter = createTRPCRouter({
 				startDate: projectData.startDate,
 				endDate: projectData.endDate,
 				eventLocation: projectData.address,
-				logoUrl: projectData.largeLogoUrl ?? projectData.logoUrl,
+				logoDarkUrl: projectData.largeLogoDarkUrl,
 			});
 			return { participantId, shortId };
 		}),
