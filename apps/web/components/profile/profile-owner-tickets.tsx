@@ -57,7 +57,7 @@ export function ProfileOwnerTickets({
 
 	return (
 		<div className="flex w-full flex-col gap-4">
-			<h2 className="font-heading text-xl font-semibold">Seus eventos</h2>
+			<h2 className="font-subtitle text-xl font-bold">Seus eventos</h2>
 			<AccountWrapper
 				eventUrl={eventUrl}
 				activities={activities.data?.activities ?? []}

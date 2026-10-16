@@ -60,7 +60,7 @@ export function ProfileOwnerSection({
 					onOpenChange={setOpen}
 					className="w-full"
 				>
-					<CollapsibleTrigger className="flex items-center gap-3 text-xl font-semibold">
+					<CollapsibleTrigger className="font-subtitle flex items-center gap-3 text-xl font-bold">
 						Seu perfil
 						<ChevronDown
 							className={cn(

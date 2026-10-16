@@ -65,7 +65,7 @@ export function AccountWrapper({
 				>
 					{categories.map((category) => (
 						<AccordionItem key={category} value={category}>
-							<AccordionTrigger className="text-foreground font-dashboard text-xl font-semibold">
+							<AccordionTrigger className="text-foreground font-subtitle text-xl font-bold">
 								{category}
 							</AccordionTrigger>
 							<AccordionContent>
