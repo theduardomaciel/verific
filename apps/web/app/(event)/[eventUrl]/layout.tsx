@@ -240,9 +240,6 @@ export default async function EventLayout({
 	const fontVariables = [
 		headingPreset ? FONT_PRESETS[headingPreset].variable : null,
 		bodyPreset ? FONT_PRESETS[bodyPreset].variable : null,
-		// TODO(Fase 3): remover; `font-dashboard` ainda é usado em páginas
-		// de evento e migra para `font-heading`.
-		FONT_PRESETS.rem.variable,
 	]
 		.filter(Boolean)
 		.join(" ");

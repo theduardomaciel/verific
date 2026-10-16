@@ -68,7 +68,7 @@ export function DeleteDialog({
 						hasCloseButton={false}
 					>
 						<Trash width={56} height={56} />
-						<DialogTitle className="font-dashboard px-8 text-center text-2xl font-extrabold">
+						<DialogTitle className="font-heading px-8 text-center text-2xl font-extrabold">
 							{title || "Você tem certeza?"}
 						</DialogTitle>
 					</DialogHeader>
