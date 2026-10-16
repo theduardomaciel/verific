@@ -14,7 +14,7 @@ import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import { parseEventTheme } from "@verific/drizzle/theme";
-import { env } from "@verific/env";
+import { appUrl } from "@verific/env";
 
 // Components
 import { Badge } from "@/components/ui/badge";
@@ -128,7 +128,7 @@ function EventPageBody({ project }: { project: EventPageProject }) {
 						loading="eager"
 					/>
 					<ShareDialog
-						url={`${env.NEXT_PUBLIC_VERCEL_URL}/${project.url}`}
+						url={`${appUrl}/${project.url}`}
 						title={project.name}
 						description={
 							"Use o QR code ou copie o link para compartilhar o evento!"

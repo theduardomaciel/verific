@@ -23,7 +23,7 @@ import {
 	participant,
 	participantOnActivity,
 } from "@verific/drizzle/schema";
-import { env } from "@verific/env";
+import { appUrl } from "@verific/env";
 import { z } from "@verific/zod";
 
 import { matchBadgeAnswers } from "../lib/badge-answers";
@@ -299,7 +299,7 @@ export const badgesRouter = createTRPCRouter({
 
 			// Campos por id de campo (o display list resolve por source).
 			const keyById = new Map(fields.map((f) => [f.id, f.key]));
-			const base = env.NEXT_PUBLIC_VERCEL_URL.replace(/\/$/, "");
+			const base = appUrl;
 			const rows = ensured.map((p) => {
 				const byKey = fieldsByParticipant.get(p.id) ?? {};
 				const byFieldId: Record<string, string> = {};

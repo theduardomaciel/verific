@@ -1,5 +1,5 @@
 import "server-only";
-import { env } from "@verific/env";
+import { appUrl } from "@verific/env";
 
 import { sanitizeLogoUrl } from "./emails/event-registration-confirmation";
 import { sendNotification } from "./service";
@@ -27,22 +27,6 @@ export interface QueueRegistrationEmailArgs {
  * white variant in public/ is for dark surfaces only).
  */
 export const BRAND_LOGO_PATH = "/logo_blue.png";
-
-/**
- * Vercel URL variables may contain either an absolute URL or only a hostname.
- * Email links must always be absolute, so normalize the latter to HTTPS.
- */
-export function normalizePublicBaseUrl(value: string): string {
-	const candidate = value.trim();
-	const withProtocol = /^https?:\/\//i.test(candidate)
-		? candidate
-		: `https://${candidate}`;
-	const url = new URL(withProtocol);
-	if (url.protocol !== "http:" && url.protocol !== "https:") {
-		throw new Error("Public base URL must use http or https");
-	}
-	return url.toString().replace(/\/$/, "");
-}
 
 const saoPauloDay = new Intl.DateTimeFormat("pt-BR", {
 	timeZone: "America/Sao_Paulo",
@@ -81,15 +65,14 @@ export function buildRegistrationEmailInput(
 ): SendNotificationInput | null {
 	const to = args.to?.trim();
 	if (!to) return null;
-	const baseUrl = normalizePublicBaseUrl(env.NEXT_PUBLIC_VERCEL_URL);
 	const eventLogo = sanitizeLogoUrl(args.logoUrl ?? undefined);
 	const payload: EventRegistrationConfirmationPayload = {
 		participantName: args.participantName,
 		eventName: args.eventName,
 		eventDateText: formatEventDateText(args.startDate, args.endDate),
 		eventLocation: args.eventLocation?.trim() || undefined,
-		accessUrl: `${baseUrl}/${args.eventUrlPath}/profile/${args.shortId}?me=1`,
-		logoUrl: eventLogo ?? `${baseUrl}${BRAND_LOGO_PATH}`,
+		accessUrl: `${appUrl}/${args.eventUrlPath}/profile/${args.shortId}?me=1`,
+		logoUrl: eventLogo ?? `${appUrl}${BRAND_LOGO_PATH}`,
 		...(eventLogo ? {} : { logoAlt: "verifIC" }),
 	};
 	return {

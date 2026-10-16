@@ -18,7 +18,7 @@ import remarkGfm from "remark-gfm";
 
 // Validation (client-safe: no db / server env imports)
 import { getActivityParams } from "@verific/api/schemas";
-import { env } from "@verific/env";
+import { appUrl } from "@verific/env";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -179,7 +179,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 							</Button>
 						</ActivityDeleteDialog>
 						<ShareDialog
-							url={`${env.NEXT_PUBLIC_VERCEL_URL}/${activity.project.url}/schedule/${activity.id}`}
+							url={`${appUrl}/${activity.project.url}/schedule/${activity.id}`}
 							title="Compartilhar atividade"
 							description="O link abaixo permite que os participantes inscritos em seu evento se inscrevam na atividade"
 						>

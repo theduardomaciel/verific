@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { presetOfFamily } from "@verific/drizzle/theme";
-import { env } from "@verific/env";
+import { appUrl } from "@verific/env";
 
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -38,7 +38,7 @@ export async function generateMetadata({
 	}
 
 	const { project } = result;
-	const baseUrl = env.NEXT_PUBLIC_VERCEL_URL.replace(/\/$/, "");
+	const baseUrl = appUrl;
 	const imageUrl =
 		project.thumbnailUrl ||
 		project.coverUrl ||

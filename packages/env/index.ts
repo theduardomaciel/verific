@@ -31,10 +31,12 @@ export const env = createEnv({
 		RESEND_API_KEY: z.string().min(1).optional(),
 	},
 	client: {
+		NEXT_PUBLIC_APP_URL: z.url(),
 		NEXT_PUBLIC_VERCEL_URL: z.string(),
 		NEXT_PUBLIC_STORAGE_BASE_URL: z.string().url().optional(),
 	},
 	runtimeEnv: {
+		NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
 		NEXT_PUBLIC_VERCEL_URL: process.env.NEXT_PUBLIC_VERCEL_URL,
 		NEXT_PUBLIC_STORAGE_BASE_URL: process.env.NEXT_PUBLIC_STORAGE_BASE_URL,
 		NODE_ENV: process.env.NODE_ENV,
@@ -61,3 +63,5 @@ export const env = createEnv({
 	},
 	emptyStringAsUndefined: true,
 });
+
+export const appUrl = env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "");
