@@ -1466,12 +1466,27 @@ export const formsRouter = createTRPCRouter({
 	/**
 	 * Hybrid editing entry point for activity forms (versioning hidden).
 	 * Returns the version the organizer should edit:
-	 * - latest version when it is still a draft, or published without answers;
-	 * - a fresh clone when the published version already has answers
-	 *   (old answers stay linked to the old version).
+	 * - the latest version when it is still a draft;
+	 * - a fresh clone when the latest version is published and either it
+	 *   already has answers (so the live form keeps serving and old answers
+	 *   stay linked to the version they were collected on) or the caller
+	 *   explicitly asked to edit (`cloneIfPublished`);
+	 * - otherwise the latest (published) version, so the UI can offer the
+	 *   "editar cria uma nova versão" action instead of a dead end.
+	 *
+	 * Version numbers are unique per project
+	 * (`form_versions_project_id_version_index`), so a new version must be
+	 * allocated from the project-wide maximum. Allocating from an
+	 * activity-scoped maximum would collide with the event form (or another
+	 * activity's form) that happens to share the same number.
 	 */
 	getOrCreateEditableActivityForm: protectedProcedure
-		.input(z.object({ activityId: z.uuid() }))
+		.input(
+			z.object({
+				activityId: z.uuid(),
+				cloneIfPublished: z.boolean().optional(),
+			}),
+		)
 		.mutation(async ({ input, ctx }) => {
 			const foundActivity = await db.query.activity.findFirst({
 				where: eq(activity.id, input.activityId),
@@ -1511,10 +1526,7 @@ export const formsRouter = createTRPCRouter({
 
 			if (!latest) {
 				const existing = await db.query.formVersion.findMany({
-					where: and(
-						eq(formVersion.projectId, foundActivity.projectId),
-						eq(formVersion.activityId, input.activityId),
-					),
+					where: eq(formVersion.projectId, foundActivity.projectId),
 					orderBy: desc(formVersion.version),
 				});
 				const next = (existing[0]?.version ?? 0) + 1;
@@ -1550,12 +1562,9 @@ export const formsRouter = createTRPCRouter({
 				.where(eq(formAnswer.formVersionId, latest.id));
 			const hasAnswers = (answersCount[0]?.amount ?? 0) > 0;
 
-			if (latest.isPublished && hasAnswers) {
+			if (latest.isPublished && (hasAnswers || input.cloneIfPublished)) {
 				const existing = await db.query.formVersion.findMany({
-					where: and(
-						eq(formVersion.projectId, foundActivity.projectId),
-						eq(formVersion.activityId, input.activityId),
-					),
+					where: eq(formVersion.projectId, foundActivity.projectId),
 					orderBy: desc(formVersion.version),
 				});
 				const next = (existing[0]?.version ?? 0) + 1;
@@ -1779,6 +1788,7 @@ export const formsRouter = createTRPCRouter({
 			const version = await db.query.formVersion.findFirst({
 				where: and(
 					eq(formVersion.projectId, input.projectId),
+					isNull(formVersion.activityId),
 					eq(formVersion.isPublished, true),
 				),
 				orderBy: desc(formVersion.version),
@@ -1939,6 +1949,7 @@ export const formsRouter = createTRPCRouter({
 			const version = await db.query.formVersion.findFirst({
 				where: and(
 					eq(formVersion.projectId, input.projectId),
+					isNull(formVersion.activityId),
 					eq(formVersion.isPublished, true),
 				),
 				orderBy: desc(formVersion.version),
@@ -2019,6 +2030,7 @@ export const formsRouter = createTRPCRouter({
 			const version = await db.query.formVersion.findFirst({
 				where: and(
 					eq(formVersion.projectId, input.projectId),
+					isNull(formVersion.activityId),
 					eq(formVersion.isPublished, true),
 				),
 				orderBy: desc(formVersion.version),

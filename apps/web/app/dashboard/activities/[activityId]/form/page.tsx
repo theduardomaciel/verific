@@ -34,5 +34,5 @@ async function ActivityFormLoader({
 }) {
 	const { activityId } = await params;
 
-	return <ActivityFormContent activityId={activityId} />;
+	return <ActivityFormContent key={activityId} activityId={activityId} />;
 }

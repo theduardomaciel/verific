@@ -56,9 +56,9 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 	const selected = versionQuery.data?.version ?? null;
 	const isPublished = !!selected?.isPublished;
 
-	const runEnsure = () => {
+	const runEnsure = (cloneIfPublished = false) => {
 		ensureVersion.mutate(
-			{ activityId },
+			{ activityId, cloneIfPublished },
 			{
 				onSuccess: (result) => {
 					if (result.version) {
@@ -147,7 +147,7 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 								mantidas.
 							</p>
 							<Button
-								onClick={runEnsure}
+								onClick={() => runEnsure(true)}
 								disabled={ensureVersion.isPending}
 							>
 								<Pencil className="mr-2 h-4 w-4" />
