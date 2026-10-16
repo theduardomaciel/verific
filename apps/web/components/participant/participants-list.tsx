@@ -28,12 +28,7 @@ function Holder({ children, className }: Props) {
 
 function Title({ children, className }: Props) {
 	return (
-		<h2
-			className={cn(
-				"font-title text-foreground text-lg font-extrabold",
-				className,
-			)}
-		>
+		<h2 className={cn("text-foreground text-lg font-extrabold", className)}>
 			{children}
 		</h2>
 	);

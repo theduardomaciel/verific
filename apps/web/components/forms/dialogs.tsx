@@ -53,7 +53,7 @@ export function LoadingDialog({
 				}}
 			>
 				<DialogHeader hasCloseButton={false}>
-					<DialogTitle className="font-title text-center text-2xl font-extrabold break-words">
+					<DialogTitle className="text-center text-2xl font-extrabold break-words">
 						{title || "Estamos quase lá!"}
 					</DialogTitle>
 				</DialogHeader>
@@ -130,7 +130,7 @@ export function SuccessDialog({
 					hasCloseButton={false}
 				>
 					<Check />
-					<DialogTitle className="font-title text-center text-2xl font-extrabold">
+					<DialogTitle className="text-center text-2xl font-extrabold">
 						{title || "Eba! Deu tudo certo!"}
 					</DialogTitle>
 				</DialogHeader>
@@ -180,7 +180,7 @@ export function ErrorDialog({ isOpen, onClose, title, description }: Props) {
 					hasCloseButton={false}
 				>
 					<X width={56} height={56} />
-					<DialogTitle className="font-title text-center text-2xl font-extrabold">
+					<DialogTitle className="text-center text-2xl font-extrabold">
 						{title || "Ops! Algo deu errado!"}
 					</DialogTitle>
 				</DialogHeader>

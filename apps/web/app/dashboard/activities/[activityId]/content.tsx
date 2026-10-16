@@ -102,7 +102,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 		<main className="py-container-v container-p flex min-h-screen flex-col items-center justify-start gap-9">
 			<div className="flex w-full flex-col items-start justify-start gap-4">
 				<div className="flex w-full flex-row flex-wrap items-start justify-between gap-4">
-					<h1 className="font-title text-foreground max-w-full text-4xl font-extrabold first-letter:capitalize md:text-5xl lg:max-w-[60%]">
+					<h1 className="text-foreground max-w-full text-4xl font-extrabold first-letter:capitalize md:text-5xl lg:max-w-[60%]">
 						{activity.name}
 					</h1>
 					<span className="text-foreground text-base font-semibold opacity-50">

@@ -34,7 +34,7 @@ export function NotLogged({
 				className,
 			)}
 		>
-			<span className="font-title font-bold">Eita!</span>
+			<span className="font-bold">Eita!</span>
 			<span className="flex-1 text-left">
 				{children ||
 					"Você precisa estar logado para ver os eventos internos."}
