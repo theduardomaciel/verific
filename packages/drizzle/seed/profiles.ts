@@ -32,6 +32,24 @@ export const STRESS_EVENT = {
 } as const;
 
 export const profiles = {
+	minimal: {
+		users: 5,
+		events: [
+			{
+				startsInDays: 14,
+				durationDays: 3,
+				participants: 3,
+				monitors: 1,
+				moderators: 1,
+				speakers: 1,
+				activities: [
+					{
+						participantsLimit: 10,
+					},
+				],
+			},
+		],
+	},
 	light: {
 		users: 30,
 		events: [

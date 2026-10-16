@@ -1,1 +1,0 @@
-ALTER TABLE "activities" ADD COLUMN "waitlist_enabled" boolean DEFAULT true NOT NULL;

@@ -132,6 +132,32 @@ Para a migração de uma nova versão do esquema para o banco de dados, utilize 
 >
 > Para a migração de um novo esquema para o banco de dados, utilize `pnpm db:generate` para criar o arquivo `.sql` com a migração, e em seguida `pnpm db:migrate` para enviar os dados para a rede.
 
+### 🌱 Seed do banco (primeiro deploy)
+
+O build do Next.js usa **Cache Components** (`cacheComponents: true`), que exige que `generateStaticParams` retorne pelo menos um resultado. **Em banco vazio, o build falha na Vercel.**
+
+Antes do primeiro deploy (ou após `db:push`/`db:migrate` que limpa o banco), rode o seed localmente:
+
+```bash
+# Perfil mínimo: 5 usuários, 1 evento, 1 atividade (mais rápido, ~2s) — ideal para CI/deploy
+pnpm db:seed --profile=minimal
+
+# Perfil leve: 30 usuários, 2 eventos, ~40 atividades (rápido, ~5s)
+pnpm db:seed --profile=light
+
+# Perfil padrão: 400 usuários, 2 eventos, ~120 atividades
+pnpm db:seed --profile=default
+
+# Perfil de estresse: 3000+ usuários, 1 evento, ~60 atividades (para testes de carga)
+pnpm db:seed --profile=stress
+```
+
+> [!NOTE]
+>
+> - O seed usa o `DATABASE_URL` do arquivo `packages/drizzle/.env`.
+> - Use um banco **persistente** (Neon/PostgreSQL) — os dados ficam salvos entre deploys.
+> - Adicione `DATABASE_URL` nas **Environment Variables da Vercel** (ambiente _Build_) para que o build encontre os dados.
+
 Para a visualização do banco de dados, utilize `pnpm db:studio`
 
 > [!NOTE]
