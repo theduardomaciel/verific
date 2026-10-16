@@ -1,4 +1,3 @@
-import { REM } from "next/font/google";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
@@ -7,11 +6,6 @@ import { Footer } from "@/components/footer";
 import { DashboardHeader } from "@/components/header/dashboard-header";
 
 import { getCachedAccountProjects } from "@/lib/trpc/server";
-
-const rem = REM({
-	variable: "--font-rem",
-	subsets: ["latin"],
-});
 
 const ACCOUNT_LINKS = [
 	{ href: "", label: "Projetos" },
@@ -30,7 +24,7 @@ async function AccountLayoutContent({ children }: Props) {
 	}
 
 	return (
-		<div className={`${rem.variable} flex w-full flex-1 flex-col`}>
+		<div className="flex w-full flex-1 flex-col">
 			<DashboardHeader
 				prefix="/account"
 				links={ACCOUNT_LINKS}
