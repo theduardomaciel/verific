@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@verific/drizzle", () => ({ db: {} }));
 vi.mock("@verific/env", () => ({
-	env: { NEXT_PUBLIC_VERCEL_URL: "https://example.com/" },
+	env: { NEXT_PUBLIC_VERCEL_URL: "example.com/" },
 }));
 vi.mock("./service", async (importOriginal) => {
 	const original = (await importOriginal()) as unknown as Record<
@@ -18,6 +18,7 @@ vi.mock("./service", async (importOriginal) => {
 import {
 	buildRegistrationEmailInput,
 	formatEventDateText,
+	normalizePublicBaseUrl,
 	queueEventRegistrationEmail,
 } from "./registration-email";
 import { sendNotification } from "./service";
@@ -55,6 +56,15 @@ describe("buildRegistrationEmailInput", () => {
 			logoUrl: "https://example.com/logo.png",
 		});
 		expect(typeof input?.payload["eventDateText"]).toBe("string");
+	});
+
+	it("normalizes a host-only deployment URL for email links", () => {
+		expect(normalizePublicBaseUrl("verific.vercel.app")).toBe(
+			"https://verific.vercel.app",
+		);
+		expect(normalizePublicBaseUrl("https://verific.vercel.app/")).toBe(
+			"https://verific.vercel.app",
+		);
 	});
 
 	it("returns null without a recipient email", () => {
