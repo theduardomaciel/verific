@@ -20,6 +20,7 @@
 		"db:push": "turbo run db:push",
 		"db:generate": "turbo run db:generate",
 		"db:migrate": "turbo run db:migrate",
+		"db:migrate:prod": "turbo run db:migrate:prod",
 		"db:studio": "turbo run db:studio",
 		"db:drop": "turbo run db:drop",
 		"db:seed": "turbo run db:seed",

@@ -53,7 +53,12 @@
 		"db:generate": {},
 		"db:drop": {},
 		"db:push": {},
-		"db:migrate": {},
+		"db:migrate": {
+			"cache": false
+		},
+		"db:migrate:prod": {
+			"cache": false
+		},
 		"db:studio": {},
 		"db:seed": {}
 	}
