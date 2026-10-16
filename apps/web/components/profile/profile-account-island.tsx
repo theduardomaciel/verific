@@ -88,7 +88,7 @@ export function ProfileAccountIsland({
 				publicEmail={null}
 				showBioAndSocials={false}
 				actions={
-					<div className="absolute top-8 right-8 z-20 flex gap-2">
+					<div className="absolute top-8 right-8 z-20 flex flex-col items-end gap-2 md:flex-row md:items-center">
 						<Dialog>
 							<DialogTrigger asChild>
 								<Button

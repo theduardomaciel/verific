@@ -59,53 +59,57 @@ export function ProfileStats({ data }: { data: ProfileStatsData }) {
 		return null;
 	}
 
+	const hasGrid = visibleStats.length > 0 || data.showBadges;
+
 	return (
 		<div className="flex flex-col items-start justify-center gap-6">
-			<div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2">
-				{visibleStats.length > 0 && (
-					<Card className="rounded-3xl p-6 font-medium md:p-9">
-						<ul className="flex flex-col gap-4">
-							{visibleStats.map((row, i) => (
-								<li
-									key={`${row.label}-${i}`}
-									className="flex flex-row items-center justify-start gap-3"
-								>
-									<StatIcon icon={row.icon} />
-									<span>
-										<span className="text-muted-foreground mr-2 text-sm">
-											{row.label}
+			{hasGrid && (
+				<div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2">
+					{visibleStats.length > 0 && (
+						<Card className="rounded-3xl p-6 font-medium md:p-9">
+							<ul className="flex flex-col gap-4">
+								{visibleStats.map((row, i) => (
+									<li
+										key={`${row.label}-${i}`}
+										className="flex flex-row items-center justify-start gap-3"
+									>
+										<StatIcon icon={row.icon} />
+										<span>
+											<span className="text-muted-foreground mr-2 text-sm">
+												{row.label}
+											</span>
+											{row.value}
 										</span>
-										{row.value}
-									</span>
-									{row.hidden && data.ownerView && (
-										<Badge
-											variant="outline"
-											className="ml-auto"
-										>
-											<EyeOff className="mr-1 h-3 w-3" />
-											Oculto
-										</Badge>
-									)}
-								</li>
-							))}
-						</ul>
-					</Card>
-				)}
-				{data.showBadges && (
-					<div className="from-secondary/60 to-primary/50 flex flex-row items-center justify-between gap-6 rounded-3xl bg-linear-to-l p-6 md:p-9">
-						<span className="text-foreground text-xl font-medium">
-							<span className="text-3xl font-semibold">
-								Adesivos
-							</span>{" "}
-							<br />
-							Coletados
-						</span>
-						<span className="text-foreground mx-auto text-5xl font-bold md:pl-24">
-							{PLACEHOLDER_BADGES_COUNT}
-						</span>
-					</div>
-				)}
-			</div>
+										{row.hidden && data.ownerView && (
+											<Badge
+												variant="outline"
+												className="ml-auto"
+											>
+												<EyeOff className="mr-1 h-3 w-3" />
+												Oculto
+											</Badge>
+										)}
+									</li>
+								))}
+							</ul>
+						</Card>
+					)}
+					{data.showBadges && (
+						<div className="from-secondary/60 to-primary/50 flex flex-row items-center justify-between gap-6 rounded-3xl bg-linear-to-l p-6 md:p-9">
+							<span className="text-foreground text-xl font-medium">
+								<span className="text-3xl font-semibold">
+									Adesivos
+								</span>{" "}
+								<br />
+								Coletados
+							</span>
+							<span className="text-foreground mx-auto text-5xl font-bold md:pl-24">
+								{PLACEHOLDER_BADGES_COUNT}
+							</span>
+						</div>
+					)}
+				</div>
+			)}
 			{data.showConnections && (
 				<ConnectionsCard
 					name={data.name}

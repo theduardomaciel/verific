@@ -22,7 +22,9 @@ interface ProfileOwnerActionsProps {
 /**
  * Ações do dono no banner (slot absoluto, sem shift): "Editar perfil"
  * (diálogo com respostas da inscrição + privacidade) e "Sair".
- * Invisível para visitantes e sem hint (nenhum fetch de sessão).
+ * No mobile empilham no canto superior direito para não sobrepor o avatar;
+ * do `md` para cima ficam em linha. Invisível para visitantes e sem hint
+ * (nenhum fetch de sessão).
  */
 export function ProfileOwnerActions({
 	eventUrl,
@@ -40,9 +42,11 @@ export function ProfileOwnerActions({
 
 	if (!hasHint) return null;
 	if (session.isPending || (userId && myProfile.isPending)) {
+		// Dois botões `size="lg"` (h-10): o esqueleto reserva a mesma altura.
 		return (
-			<div className="absolute top-8 right-8 z-20 flex gap-2">
-				<Skeleton className="h-11 w-36 rounded-full" />
+			<div className="absolute top-8 right-8 z-20 flex flex-col items-end gap-2 md:flex-row md:items-center">
+				<Skeleton className="h-10 w-32 rounded-full" />
+				<Skeleton className="h-10 w-20 rounded-full" />
 			</div>
 		);
 	}
@@ -51,7 +55,7 @@ export function ProfileOwnerActions({
 	if (!data || data.shortId !== shortId) return null;
 
 	return (
-		<div className="absolute top-8 right-8 z-20 flex gap-2">
+		<div className="absolute top-8 right-8 z-20 flex flex-col items-end gap-2 md:flex-row md:items-center">
 			<EditProfileDialog
 				eventUrl={eventUrl}
 				projectId={projectId}

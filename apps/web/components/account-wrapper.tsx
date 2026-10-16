@@ -57,45 +57,36 @@ export function AccountWrapper({
 	return (
 		<div className="flex w-full flex-col gap-4 md:gap-12">
 			{activities.length > 0 ? (
-				<>
-					<h2 className="text-foreground font-dashboard text-3xl font-semibold">
-						Seus eventos
-					</h2>
-					<Accordion
-						type="multiple"
-						value={expandedCategories}
-						onValueChange={setExpandedCategories}
-						className="w-full"
-					>
-						{categories.map((category) => (
-							<AccordionItem key={category} value={category}>
-								<AccordionTrigger className="text-foreground font-dashboard text-xl font-semibold">
-									{category}
-								</AccordionTrigger>
-								<AccordionContent>
-									<ul className="flex w-full flex-col gap-4">
-										{grouped
-											.get(category)!
-											.map((activity) => (
-												<li
-													key={activity.id}
-													className="w-full"
-												>
-													<ActivityTicket
-														activity={activity}
-														checkInCode={
-															checkInCode || ""
-														}
-														projectUrl={eventUrl}
-													/>
-												</li>
-											))}
-									</ul>
-								</AccordionContent>
-							</AccordionItem>
-						))}
-					</Accordion>
-				</>
+				<Accordion
+					type="multiple"
+					value={expandedCategories}
+					onValueChange={setExpandedCategories}
+					className="w-full"
+				>
+					{categories.map((category) => (
+						<AccordionItem key={category} value={category}>
+							<AccordionTrigger className="text-foreground font-dashboard text-xl font-semibold">
+								{category}
+							</AccordionTrigger>
+							<AccordionContent>
+								<ul className="flex w-full flex-col gap-4">
+									{grouped.get(category)!.map((activity) => (
+										<li
+											key={activity.id}
+											className="w-full"
+										>
+											<ActivityTicket
+												activity={activity}
+												checkInCode={checkInCode || ""}
+												projectUrl={eventUrl}
+											/>
+										</li>
+									))}
+								</ul>
+							</AccordionContent>
+						</AccordionItem>
+					))}
+				</Accordion>
 			) : (
 				<Empty
 					title="Nenhuma atividade encontrada"
