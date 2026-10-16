@@ -604,7 +604,10 @@ export const formsRouter = createTRPCRouter({
 				}
 			}
 			const existing = await db.query.formVersion.findMany({
-				where: eq(formVersion.projectId, input.projectId),
+				where: and(
+					eq(formVersion.projectId, input.projectId),
+					versionScope(input.activityId),
+				),
 				orderBy: desc(formVersion.version),
 			});
 			const next = (existing[0]?.version ?? 0) + 1;
@@ -716,7 +719,10 @@ export const formsRouter = createTRPCRouter({
 			}
 
 			const existing = await db.query.formVersion.findMany({
-				where: eq(formVersion.projectId, input.projectId),
+				where: and(
+					eq(formVersion.projectId, input.projectId),
+					versionScope(input.activityId),
+				),
 				orderBy: desc(formVersion.version),
 			});
 			const next = (existing[0]?.version ?? 0) + 1;
@@ -1474,11 +1480,9 @@ export const formsRouter = createTRPCRouter({
 	 * - otherwise the latest (published) version, so the UI can offer the
 	 *   "editar cria uma nova versão" action instead of a dead end.
 	 *
-	 * Version numbers are unique per project
-	 * (`form_versions_project_id_version_index`), so a new version must be
-	 * allocated from the project-wide maximum. Allocating from an
-	 * activity-scoped maximum would collide with the event form (or another
-	 * activity's form) that happens to share the same number.
+	 * Version numbers are unique per scope (the event form or an individual
+	 * activity) via the partial unique indexes on `form_versions`, so the
+	 * next number is allocated from the same scope's maximum.
 	 */
 	getOrCreateEditableActivityForm: protectedProcedure
 		.input(
@@ -1526,7 +1530,10 @@ export const formsRouter = createTRPCRouter({
 
 			if (!latest) {
 				const existing = await db.query.formVersion.findMany({
-					where: eq(formVersion.projectId, foundActivity.projectId),
+					where: and(
+						eq(formVersion.projectId, foundActivity.projectId),
+						eq(formVersion.activityId, input.activityId),
+					),
 					orderBy: desc(formVersion.version),
 				});
 				const next = (existing[0]?.version ?? 0) + 1;
@@ -1564,7 +1571,10 @@ export const formsRouter = createTRPCRouter({
 
 			if (latest.isPublished && (hasAnswers || input.cloneIfPublished)) {
 				const existing = await db.query.formVersion.findMany({
-					where: eq(formVersion.projectId, foundActivity.projectId),
+					where: and(
+						eq(formVersion.projectId, foundActivity.projectId),
+						eq(formVersion.activityId, input.activityId),
+					),
 					orderBy: desc(formVersion.version),
 				});
 				const next = (existing[0]?.version ?? 0) + 1;

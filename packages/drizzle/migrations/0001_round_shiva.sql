@@ -1,0 +1,3 @@
+DROP INDEX "form_versions_project_id_version_index";--> statement-breakpoint
+CREATE UNIQUE INDEX "form_versions_event_project_version_unique" ON "form_versions" USING btree ("project_id","version") WHERE "form_versions"."activity_id" is null;--> statement-breakpoint
+CREATE UNIQUE INDEX "form_versions_activity_project_version_unique" ON "form_versions" USING btree ("project_id","activity_id","version") WHERE "form_versions"."activity_id" is not null;

@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
 	boolean,
 	pgTable,
@@ -39,7 +39,19 @@ export const formVersion = pgTable(
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		publishedAt: timestamp("published_at"),
 	},
-	(table) => [uniqueIndex().on(table.projectId, table.version)],
+	(table) => [
+		// The event form (activity_id IS NULL) and each activity keep their own
+		// version sequence, so uniqueness is scoped. Two partial indexes keep
+		// NULL handling correct on Postgres: a plain (project_id, activity_id,
+		// version) index would treat every NULL activity_id as distinct and let
+		// the event form reuse version numbers.
+		uniqueIndex("form_versions_event_project_version_unique")
+			.on(table.projectId, table.version)
+			.where(sql`${table.activityId} is null`),
+		uniqueIndex("form_versions_activity_project_version_unique")
+			.on(table.projectId, table.activityId, table.version)
+			.where(sql`${table.activityId} is not null`),
+	],
 );
 
 export const formVersionRelations = relations(formVersion, ({ one, many }) => ({
