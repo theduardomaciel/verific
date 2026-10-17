@@ -5,15 +5,25 @@ import type { Session } from "@verific/auth";
 
 const PROJECT_ID = randomUUID();
 
-const { findProject, dbDelete } = vi.hoisted(() => ({
+const { findProject, findModerators, dbDelete, dbSelect } = vi.hoisted(() => ({
 	findProject: vi.fn(),
+	findModerators: vi.fn(async () => []),
 	dbDelete: vi.fn(() => ({ where: async () => [] })),
+	dbSelect: vi.fn(() => ({
+		from: vi.fn(() => ({
+			where: vi.fn(async () => []),
+		})),
+	})),
 }));
 
 vi.mock("@verific/drizzle", () => ({
 	db: {
-		query: { project: { findFirst: findProject } },
+		query: {
+			project: { findFirst: findProject },
+			projectModerator: { findMany: findModerators },
+		},
 		delete: dbDelete,
+		select: dbSelect,
 	},
 }));
 vi.mock("@verific/env", () => ({ env: {} }));

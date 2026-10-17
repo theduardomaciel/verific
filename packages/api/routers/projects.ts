@@ -1,10 +1,13 @@
 // API
+import { TRPCError } from "@trpc/server";
+
 import { db } from "@verific/drizzle";
-import { eq } from "@verific/drizzle/orm";
+import { and, eq } from "@verific/drizzle/orm";
 import {
 	participant,
 	project,
 	projectModerator,
+	user,
 } from "@verific/drizzle/schema";
 import { eventThemeSchema } from "@verific/drizzle/theme";
 import { z } from "@verific/zod";
@@ -14,6 +17,10 @@ import {
 	requireProjectOwner,
 } from "../lib/project-access";
 import { normalizeThemeFonts } from "../lib/theme-fonts";
+import {
+	notifyProjectContributorAdded,
+	notifyProjectDeleted,
+} from "../notifications/triggers";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { generateShortId } from "./profiles";
 
@@ -241,8 +248,142 @@ export const projectsRouter = createTRPCRouter({
 		.mutation(async ({ input, ctx }) => {
 			// Deletion is irreversible: owner-only, unlike updateProject
 			// where moderators are allowed.
-			await requireProjectOwner(input.id, ctx.session.user.id);
+			const projectRow = await requireProjectOwner(
+				input.id,
+				ctx.session.user.id,
+			);
+
+			// Capture contributors before deletion so we can notify them.
+			const contributorRows = await db.query.projectModerator.findMany({
+				where: eq(projectModerator.projectId, input.id),
+				with: { user: true },
+			});
+
+			const ownerRows = await db
+				.select({ name: user.name })
+				.from(user)
+				.where(eq(user.id, ctx.session.user.id));
+			const deletedByName = ownerRows[0]?.name?.trim() || undefined;
+
 			await db.delete(project).where(eq(project.id, input.id));
+
+			void notifyProjectDeleted({
+				projectId: input.id,
+				projectName: projectRow.name,
+				contributors: contributorRows
+					.map((row) => ({
+						userId: row.userId,
+						name: row.user?.name ?? null,
+						email: row.user?.email ?? "",
+					}))
+					.filter((c) => c.email.trim() !== ""),
+				deletedByName,
+			});
+
 			return { success: true };
+		}),
+
+	listProjectContributors: protectedProcedure
+		.input(z.object({ projectId: z.string().uuid() }))
+		.query(async ({ input, ctx }) => {
+			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			const rows = await db.query.projectModerator.findMany({
+				where: eq(projectModerator.projectId, input.projectId),
+				with: { user: true },
+			});
+			return rows.map((row) => ({
+				userId: row.userId,
+				name: row.user?.name ?? null,
+				email: row.user?.email ?? null,
+				assignedAt: row.assignedAt,
+			}));
+		}),
+
+	addProjectContributor: protectedProcedure
+		.input(
+			z.object({
+				projectId: z.string().uuid(),
+				email: z.string().email(),
+			}),
+		)
+		.mutation(async ({ input, ctx }) => {
+			await requireProjectOwner(input.projectId, ctx.session.user.id);
+
+			const userRows = await db
+				.select({
+					id: user.id,
+					email: user.email,
+					name: user.name,
+				})
+				.from(user)
+				.where(eq(user.email, input.email));
+			const contributor = userRows[0];
+			if (!contributor) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Usuário não encontrado para este e-mail.",
+				});
+			}
+
+			// Don't add the owner as a contributor.
+			const projectRow = await db.query.project.findFirst({
+				where: eq(project.id, input.projectId),
+			});
+			if (projectRow?.ownerId === contributor.id) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "O dono do projeto já tem acesso.",
+				});
+			}
+
+			const existing = await db.query.projectModerator.findFirst({
+				where: and(
+					eq(projectModerator.projectId, input.projectId),
+					eq(projectModerator.userId, contributor.id),
+				),
+			});
+			if (existing) {
+				throw new TRPCError({
+					code: "CONFLICT",
+					message: "Este usuário já é contribuidor do projeto.",
+				});
+			}
+
+			await db.insert(projectModerator).values({
+				projectId: input.projectId,
+				userId: contributor.id,
+			});
+
+			const contributorEmail = contributor.email?.trim();
+			if (contributorEmail) {
+				void notifyProjectContributorAdded({
+					projectId: input.projectId,
+					contributorUserId: contributor.id,
+					to: contributorEmail,
+					addedByUserId: ctx.session.user.id,
+				});
+			}
+
+			return { added: true, userId: contributor.id };
+		}),
+
+	removeProjectContributor: protectedProcedure
+		.input(
+			z.object({
+				projectId: z.string().uuid(),
+				userId: z.string().uuid(),
+			}),
+		)
+		.mutation(async ({ input, ctx }) => {
+			await requireProjectOwner(input.projectId, ctx.session.user.id);
+			await db
+				.delete(projectModerator)
+				.where(
+					and(
+						eq(projectModerator.projectId, input.projectId),
+						eq(projectModerator.userId, input.userId),
+					),
+				);
+			return { removed: true };
 		}),
 });

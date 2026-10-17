@@ -65,8 +65,8 @@ export function EventsList({ projects }: Props) {
 								<CircleSlash size={24} />
 								<p className="max-w-1/2 text-center text-sm">
 									{" "}
-									Nenhum evento foi compartilhado com você até
-									o momento.
+									Nenhum projeto foi compartilhado com você
+									até o momento.
 								</p>
 							</div>
 						)}

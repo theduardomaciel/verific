@@ -65,11 +65,29 @@ import {
 	renderEventRegistrationRemoved,
 } from "./emails/participant-emails";
 import {
+	PROJECT_CONTRIBUTOR_ADDED_VERSION,
+	projectContributorAddedPreviewProps,
+	projectContributorAddedSubject,
+	renderProjectContributorAdded,
+} from "./emails/project-contributor-added";
+import {
+	PROJECT_DELETED_VERSION,
+	projectDeletedPreviewProps,
+	projectDeletedSubject,
+	renderProjectDeleted,
+} from "./emails/project-deleted";
+import {
 	formatActivitySessionsText,
 	formatDeadlineText,
 	formatEventDateText,
 } from "./format";
-import { activityUrl, adminEmailsUrl, eventUrl, profileUrl } from "./urls";
+import {
+	activityUrl,
+	adminEmailsUrl,
+	emailUrl,
+	eventUrl,
+	profileUrl,
+} from "./urls";
 
 import type { RenderedTemplate } from "./templates";
 import type { EntityRefs, NotificationType, SkipReason } from "./types";
@@ -1013,6 +1031,142 @@ export const notificationRegistry = {
 		render: (props) => renderEmailQuotaWarning(props),
 		previewProps: emailQuotaWarningPreviewProps,
 		templateVersion: EMAIL_QUOTA_WARNING_VERSION,
+	} satisfies NotificationTypeDefinition,
+
+	project_contributor_added: {
+		key: "project_contributor_added",
+		audience: "organizer",
+		category: "transactional",
+		scope: "event",
+		defaultEnabled: true,
+		description:
+			"Aviso ao usuário quando ele é adicionado como contribuidor de um projeto.",
+		entityRefs: ["projectId", "contributorUserId", "addedByUserId?"],
+		idempotencyKeyFormat:
+			"project_contributor_added:{projectId}:{contributorUserId}",
+		buildIdempotencyKey: (refs) =>
+			`project_contributor_added:${requiredString(refs, "projectId")}:${requiredString(refs, "contributorUserId")}`,
+		async validate(refs) {
+			const projectId = requiredString(refs, "projectId");
+			const contributorUserId = requiredString(refs, "contributorUserId");
+			const projectRows = await db
+				.select({ id: project.id })
+				.from(project)
+				.where(eq(project.id, projectId));
+			if (projectRows.length === 0)
+				return { ok: false, reason: "entity_gone" };
+			const userRows = await db
+				.select({ id: user.id })
+				.from(user)
+				.where(eq(user.id, contributorUserId));
+			return userRows.length > 0
+				? { ok: true }
+				: { ok: false, reason: "entity_gone" };
+		},
+		async buildProps(refs, ctx) {
+			const projectId = requiredString(refs, "projectId");
+			const contributorUserId = requiredString(refs, "contributorUserId");
+			const addedByUserId = optionalString(refs, "addedByUserId");
+
+			let shared = ctx?.projects.get(projectId);
+			if (!shared) {
+				const rows = await db
+					.select({
+						id: project.id,
+						name: project.name,
+						url: project.url,
+						address: project.address,
+						startDate: project.startDate,
+						endDate: project.endDate,
+						largeLogoDarkUrl: project.largeLogoDarkUrl,
+						ownerId: project.ownerId,
+					})
+					.from(project)
+					.where(eq(project.id, projectId));
+				const row = rows[0];
+				if (!row) {
+					throw new Error(
+						`[notifications] project ${projectId} not found.`,
+					);
+				}
+				shared = projectToShared(row);
+				ctx?.projects.set(projectId, shared);
+			}
+
+			const contributorRows = await db
+				.select({ name: user.name })
+				.from(user)
+				.where(eq(user.id, contributorUserId));
+			const contributorName =
+				contributorRows[0]?.name?.trim() || "contribuidor";
+
+			let addedByName: string | undefined;
+			if (addedByUserId) {
+				const addedByRows = await db
+					.select({ name: user.name })
+					.from(user)
+					.where(eq(user.id, addedByUserId));
+				addedByName = addedByRows[0]?.name?.trim() || undefined;
+			}
+
+			return {
+				recipientName: contributorName,
+				projectName: shared.name,
+				...(addedByName ? { addedByName } : {}),
+				accessUrl: emailUrl("/account"),
+				...logoRef(shared.largeLogoDarkUrl, shared.id),
+			};
+		},
+		subject: (props) =>
+			projectContributorAddedSubject({
+				projectName: String(props["projectName"]),
+			}),
+		render: (props) => renderProjectContributorAdded(props),
+		previewProps: projectContributorAddedPreviewProps,
+		templateVersion: PROJECT_CONTRIBUTOR_ADDED_VERSION,
+	} satisfies NotificationTypeDefinition,
+
+	project_deleted: {
+		key: "project_deleted",
+		audience: "organizer",
+		category: "transactional",
+		scope: "event",
+		defaultEnabled: true,
+		description: "Aviso a contribuidores quando um projeto é excluído.",
+		entityRefs: [
+			"projectId",
+			"contributorUserId",
+			"projectName",
+			"recipientName",
+			"deletedByName?",
+			"reason?",
+		],
+		idempotencyKeyFormat: "project_deleted:{projectId}:{contributorUserId}",
+		buildIdempotencyKey: (refs) =>
+			`project_deleted:${requiredString(refs, "projectId")}:${requiredString(refs, "contributorUserId")}`,
+		async validate() {
+			return { ok: true };
+		},
+		async buildProps(refs) {
+			const projectName = requiredString(refs, "projectName");
+			const recipientName = requiredString(refs, "recipientName");
+			const deletedByName = optionalString(refs, "deletedByName");
+			const reason = optionalString(refs, "reason");
+			return {
+				recipientName,
+				projectName,
+				...(deletedByName ? { deletedByName } : {}),
+				...(reason ? { reason } : {}),
+				accessUrl: emailUrl("/account"),
+			};
+		},
+		subject: (props) =>
+			projectDeletedSubject({
+				projectName: String(props["projectName"]),
+			}),
+		render: (props) => renderProjectDeleted(props),
+		previewProps: projectDeletedPreviewProps,
+		templateVersion: PROJECT_DELETED_VERSION,
 	} satisfies NotificationTypeDefinition,
 } as const satisfies Record<NotificationType, NotificationTypeDefinition>;
 

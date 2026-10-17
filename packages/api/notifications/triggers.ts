@@ -367,6 +367,63 @@ export function notifyActivityEnrollmentRemoved(args: {
 	return dispatchAfterResponse(input ? [input] : []);
 }
 
+/** A user was added as a contributor (moderator) of a project. */
+export function notifyProjectContributorAdded(args: {
+	projectId: string;
+	contributorUserId: string;
+	to: string;
+	addedByUserId?: string;
+}): Promise<void> {
+	const input = makeInput({
+		type: "project_contributor_added",
+		eventId: args.projectId,
+		to: args.to,
+		entityRefs: {
+			projectId: args.projectId,
+			contributorUserId: args.contributorUserId,
+			...(args.addedByUserId
+				? { addedByUserId: args.addedByUserId }
+				: {}),
+		},
+	});
+	return dispatchAfterResponse(input ? [input] : []);
+}
+
+/** A project was deleted: notify its former contributors. */
+export function notifyProjectDeleted(args: {
+	projectId: string;
+	projectName: string;
+	contributors: Array<{
+		userId: string;
+		name?: string | null;
+		email: string;
+	}>;
+	deletedByName?: string;
+	reason?: string;
+}): Promise<void> {
+	const inputs = args.contributors.flatMap((contributor) => {
+		const to = contributor.email?.trim();
+		if (!to) return [];
+		const input = makeInput({
+			type: "project_deleted",
+			eventId: args.projectId,
+			to,
+			entityRefs: {
+				projectId: args.projectId,
+				contributorUserId: contributor.userId,
+				projectName: args.projectName,
+				recipientName: contributor.name?.trim() || "contribuidor",
+				...(args.deletedByName
+					? { deletedByName: args.deletedByName }
+					: {}),
+				...(args.reason ? { reason: args.reason } : {}),
+			},
+		});
+		return input ? [input] : [];
+	});
+	return dispatchAfterResponse(inputs);
+}
+
 /** Date/time/location change, sent to everyone currently enrolled. */
 export async function notifyActivityUpdated(args: {
 	eventId: string;

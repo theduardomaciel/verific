@@ -14,6 +14,8 @@ import ActivityWaitlistPromotedPreview from "./previews/activity-waitlist-promot
 import ActivityWaitlistedPreview from "./previews/activity-waitlisted";
 import EmailQuotaWarningPreview from "./previews/email-quota-warning";
 import EventRegistrationRemovedPreview from "./previews/event-registration-removed";
+import ProjectContributorAddedPreview from "./previews/project-contributor-added";
+import ProjectDeletedPreview from "./previews/project-deleted";
 
 /**
  * `react-email dev` only lists files in the e-mails directory that default-export
@@ -99,6 +101,16 @@ const CASES: Array<{
 			"Uso diário de e-mails",
 			"do limite diário de envio de e-mails",
 		],
+	},
+	{
+		name: "project-contributor-added",
+		Preview: ProjectContributorAddedPreview,
+		expectedText: ["Maria Silva", "Novo acesso", "SECOMP 2026"],
+	},
+	{
+		name: "project-deleted",
+		Preview: ProjectDeletedPreview,
+		expectedText: ["Maria Silva", "Acesso encerrado", "SECOMP 2026"],
 	},
 ];
 

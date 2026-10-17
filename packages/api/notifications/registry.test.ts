@@ -165,6 +165,16 @@ const IDEMPOTENCY_CASES: Array<{
 		refs: { day: "2026-04-12" },
 		expected: "email_quota_warning:2026-04-12",
 	},
+	{
+		type: "project_contributor_added",
+		refs: { projectId: "p1", contributorUserId: "u1" },
+		expected: "project_contributor_added:p1:u1",
+	},
+	{
+		type: "project_deleted",
+		refs: { projectId: "p1", contributorUserId: "u1" },
+		expected: "project_deleted:p1:u1",
+	},
 ];
 
 describe("idempotency keys", () => {
@@ -235,23 +245,34 @@ const VALIDATE_REFS: Record<
 		limit: 10,
 		day: "2026-04-12",
 	},
+	project_contributor_added: {
+		projectId: "event-1",
+		contributorUserId: "user-1",
+	},
+	project_deleted: {
+		projectId: "event-1",
+		contributorUserId: "user-1",
+		projectName: "SECOMP 2026",
+		recipientName: "Maria Silva",
+	},
 };
 
 describe("validate", () => {
-	it.each([...NOTIFICATION_TYPE_KEYS])(
-		"%s returns entity_gone when nothing is found",
-		async (type) => {
-			queue.length = 0;
-			const definition = notificationRegistry[type];
+	it.each(
+		[...NOTIFICATION_TYPE_KEYS].filter(
+			(type) => type !== "project_deleted",
+		),
+	)("%s returns entity_gone when nothing is found", async (type) => {
+		queue.length = 0;
+		const definition = notificationRegistry[type];
 
-			await expect(
-				definition.validate(VALIDATE_REFS[type]),
-			).resolves.toEqual({
+		await expect(definition.validate(VALIDATE_REFS[type])).resolves.toEqual(
+			{
 				ok: false,
 				reason: "entity_gone",
-			});
-		},
-	);
+			},
+		);
+	});
 
 	it("returns state_changed when the enrollment is already gone", async () => {
 		queue.push([{ id: "a1" }], []);

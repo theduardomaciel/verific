@@ -103,6 +103,8 @@ export {
 	notifyActivityWaitlistOffered,
 	notifyActivityWaitlistPromoted,
 	notifyEventRegistrationRemoved,
+	notifyProjectContributorAdded,
+	notifyProjectDeleted,
 } from "./triggers";
 export {
 	activityUrl,
@@ -123,6 +125,29 @@ export type {
 	EventRegistrationConfirmationPayload,
 	EventRegistrationConfirmationProps,
 } from "./emails/event-registration-confirmation";
+export {
+	PROJECT_CONTRIBUTOR_ADDED_VERSION,
+	ProjectContributorAddedEmail,
+	projectContributorAddedPreviewProps,
+	projectContributorAddedSubject,
+	renderProjectContributorAdded,
+} from "./emails/project-contributor-added";
+export type { ProjectContributorAddedProps } from "./emails/project-contributor-added";
+export {
+	PROJECT_DELETED_VERSION,
+	ProjectDeletedEmail,
+	projectDeletedPreviewProps,
+	projectDeletedSubject,
+	renderProjectDeleted,
+} from "./emails/project-deleted";
+export type { ProjectDeletedProps } from "./emails/project-deleted";
+export {
+	sanitizeVerificLogoUrl,
+	VerificEmailCta,
+	VerificTransactionalLayout,
+	verificEmailStyles,
+	verificPalette,
+} from "./emails/verific-transactional-layout";
 export { getProvider } from "./providers";
 export { createConsoleProvider } from "./providers/console";
 export type { ConsoleProviderOptions } from "./providers/console";
