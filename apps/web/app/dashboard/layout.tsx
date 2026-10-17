@@ -8,6 +8,7 @@ import { DashboardProvider } from "@/components/dashboard/dashboard-context";
 import { Footer } from "@/components/footer";
 import { DashboardHeader } from "@/components/header/dashboard-header";
 
+import { isAuthError, redirectToSignIn } from "@/lib/auth-redirect";
 import { getCachedAccountProjects } from "@/lib/trpc/server";
 
 const rem = REM({
@@ -44,7 +45,10 @@ async function DashboardLayoutContent({
 
 	try {
 		projects = await getCachedAccountProjects();
-	} catch {
+	} catch (error) {
+		if (isAuthError(error)) {
+			await redirectToSignIn();
+		}
 		notFound();
 	}
 

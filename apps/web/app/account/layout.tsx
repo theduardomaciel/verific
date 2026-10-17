@@ -5,6 +5,7 @@ import { AccountHeaderSkeleton } from "@/components/account/project-skeleton";
 import { Footer } from "@/components/footer";
 import { DashboardHeader } from "@/components/header/dashboard-header";
 
+import { isAuthError, redirectToSignIn } from "@/lib/auth-redirect";
 import { getCachedAccountProjects } from "@/lib/trpc/server";
 
 const ACCOUNT_LINKS = [
@@ -17,7 +18,16 @@ interface Props {
 }
 
 async function AccountLayoutContent({ children }: Props) {
-	const projects = await getCachedAccountProjects();
+	let projects;
+
+	try {
+		projects = await getCachedAccountProjects();
+	} catch (error) {
+		if (isAuthError(error)) {
+			await redirectToSignIn();
+		}
+		notFound();
+	}
 
 	if (!projects) {
 		notFound();
