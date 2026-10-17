@@ -22,5 +22,10 @@ export default function ProjectSettingsTeam() {
 		);
 	}
 
-	return <ProjectContributors projectId={data.project.id} />;
+	return (
+		<ProjectContributors
+			projectId={data.project.id}
+			ownerId={data.project.ownerId}
+		/>
+	);
 }

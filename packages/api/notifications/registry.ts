@@ -71,6 +71,12 @@ import {
 	renderProjectContributorAdded,
 } from "./emails/project-contributor-added";
 import {
+	PROJECT_CONTRIBUTOR_REMOVED_VERSION,
+	projectContributorRemovedPreviewProps,
+	projectContributorRemovedSubject,
+	renderProjectContributorRemoved,
+} from "./emails/project-contributor-removed";
+import {
 	PROJECT_DELETED_VERSION,
 	projectDeletedPreviewProps,
 	projectDeletedSubject,
@@ -1031,6 +1037,51 @@ export const notificationRegistry = {
 		render: (props) => renderEmailQuotaWarning(props),
 		previewProps: emailQuotaWarningPreviewProps,
 		templateVersion: EMAIL_QUOTA_WARNING_VERSION,
+	} satisfies NotificationTypeDefinition,
+
+	project_contributor_removed: {
+		key: "project_contributor_removed",
+		audience: "organizer",
+		category: "transactional",
+		scope: "event",
+		defaultEnabled: true,
+		description:
+			"Aviso ao usuário quando seu acesso como contribuidor de um projeto é removido.",
+		entityRefs: [
+			"projectId",
+			"contributorUserId",
+			"projectName",
+			"recipientName",
+			"removedByName?",
+			"reason?",
+		],
+		idempotencyKeyFormat:
+			"project_contributor_removed:{projectId}:{contributorUserId}",
+		buildIdempotencyKey: (refs) =>
+			`project_contributor_removed:${requiredString(refs, "projectId")}:${requiredString(refs, "contributorUserId")}`,
+		async validate() {
+			return { ok: true };
+		},
+		async buildProps(refs) {
+			const projectName = requiredString(refs, "projectName");
+			const recipientName = requiredString(refs, "recipientName");
+			const removedByName = optionalString(refs, "removedByName");
+			const reason = optionalString(refs, "reason");
+			return {
+				recipientName,
+				projectName,
+				...(removedByName ? { removedByName } : {}),
+				...(reason ? { reason } : {}),
+				accessUrl: emailUrl("/account"),
+			};
+		},
+		subject: (props) =>
+			projectContributorRemovedSubject({
+				projectName: String(props["projectName"]),
+			}),
+		render: (props) => renderProjectContributorRemoved(props),
+		previewProps: projectContributorRemovedPreviewProps,
+		templateVersion: PROJECT_CONTRIBUTOR_REMOVED_VERSION,
 	} satisfies NotificationTypeDefinition,
 
 	project_contributor_added: {

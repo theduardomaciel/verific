@@ -104,6 +104,7 @@ export {
 	notifyActivityWaitlistPromoted,
 	notifyEventRegistrationRemoved,
 	notifyProjectContributorAdded,
+	notifyProjectContributorRemoved,
 	notifyProjectDeleted,
 } from "./triggers";
 export {
@@ -133,6 +134,14 @@ export {
 	renderProjectContributorAdded,
 } from "./emails/project-contributor-added";
 export type { ProjectContributorAddedProps } from "./emails/project-contributor-added";
+export {
+	PROJECT_CONTRIBUTOR_REMOVED_VERSION,
+	ProjectContributorRemovedEmail,
+	projectContributorRemovedPreviewProps,
+	projectContributorRemovedSubject,
+	renderProjectContributorRemoved,
+} from "./emails/project-contributor-removed";
+export type { ProjectContributorRemovedProps } from "./emails/project-contributor-removed";
 export {
 	PROJECT_DELETED_VERSION,
 	ProjectDeletedEmail,

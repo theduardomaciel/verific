@@ -389,6 +389,34 @@ export function notifyProjectContributorAdded(args: {
 	return dispatchAfterResponse(input ? [input] : []);
 }
 
+/** A contributor's access to a project was removed. */
+export function notifyProjectContributorRemoved(args: {
+	projectId: string;
+	projectName: string;
+	contributorUserId: string;
+	contributorName?: string | null;
+	to: string;
+	removedByName?: string;
+	reason?: string;
+}): Promise<void> {
+	const input = makeInput({
+		type: "project_contributor_removed",
+		eventId: args.projectId,
+		to: args.to,
+		entityRefs: {
+			projectId: args.projectId,
+			contributorUserId: args.contributorUserId,
+			projectName: args.projectName,
+			recipientName: args.contributorName?.trim() || "contribuidor",
+			...(args.removedByName
+				? { removedByName: args.removedByName }
+				: {}),
+			...(args.reason ? { reason: args.reason } : {}),
+		},
+	});
+	return dispatchAfterResponse(input ? [input] : []);
+}
+
 /** A project was deleted: notify its former contributors. */
 export function notifyProjectDeleted(args: {
 	projectId: string;

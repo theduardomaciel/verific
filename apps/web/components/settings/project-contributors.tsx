@@ -10,13 +10,17 @@ import { Label } from "@/components/ui/label";
 
 import { SettingsCard } from "@/components/settings/settings-card";
 
+import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc/react";
 
 interface Props {
 	projectId: string;
+	ownerId: string;
 }
 
-export function ProjectContributors({ projectId }: Props) {
+export function ProjectContributors({ projectId, ownerId }: Props) {
+	const session = authClient.useSession();
+	const isOwner = session.data?.user?.id === ownerId;
 	const utils = trpc.useUtils();
 	const contributorsQuery = trpc.listProjectContributors.useQuery(
 		{ projectId },
@@ -52,26 +56,32 @@ export function ProjectContributors({ projectId }: Props) {
 			description="Compartilhe o projeto com outros usuários. Eles terão acesso ao painel e poderão colaborar."
 		>
 			<div className="flex flex-col gap-4">
-				<div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-					<div className="flex flex-col gap-3 sm:flex-1">
-						<Label htmlFor="contributor-email">
-							E-mail do usuário
-						</Label>
-						<Input
-							id="contributor-email"
-							type="email"
-							value={email}
-							onChange={(e) => setEmail(e.target.value)}
-							placeholder="usuario@exemplo.com"
-						/>
+				{isOwner ? (
+					<div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+						<div className="flex flex-col gap-3 sm:flex-1">
+							<Label htmlFor="contributor-email">
+								E-mail do usuário
+							</Label>
+							<Input
+								id="contributor-email"
+								type="email"
+								value={email}
+								onChange={(e) => setEmail(e.target.value)}
+								placeholder="usuario@exemplo.com"
+							/>
+						</div>
+						<Button
+							onClick={() =>
+								addMutation.mutate({ projectId, email })
+							}
+							disabled={addMutation.isPending || !email}
+						>
+							{addMutation.isPending
+								? "Adicionando..."
+								: "Adicionar"}
+						</Button>
 					</div>
-					<Button
-						onClick={() => addMutation.mutate({ projectId, email })}
-						disabled={addMutation.isPending || !email}
-					>
-						{addMutation.isPending ? "Adicionando..." : "Adicionar"}
-					</Button>
-				</div>
+				) : null}
 
 				{contributorsQuery.isPending ? (
 					<p className="text-muted-foreground text-sm">
@@ -96,19 +106,21 @@ export function ProjectContributors({ projectId }: Props) {
 										{contributor.email}
 									</span>
 								</div>
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={() =>
-										removeMutation.mutate({
-											projectId,
-											userId: contributor.userId,
-										})
-									}
-									disabled={removeMutation.isPending}
-								>
-									Remover
-								</Button>
+								{isOwner ? (
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() =>
+											removeMutation.mutate({
+												projectId,
+												userId: contributor.userId,
+											})
+										}
+										disabled={removeMutation.isPending}
+									>
+										Remover
+									</Button>
+								) : null}
 							</li>
 						))}
 					</ul>

@@ -171,6 +171,11 @@ const IDEMPOTENCY_CASES: Array<{
 		expected: "project_contributor_added:p1:u1",
 	},
 	{
+		type: "project_contributor_removed",
+		refs: { projectId: "p1", contributorUserId: "u1" },
+		expected: "project_contributor_removed:p1:u1",
+	},
+	{
 		type: "project_deleted",
 		refs: { projectId: "p1", contributorUserId: "u1" },
 		expected: "project_deleted:p1:u1",
@@ -249,6 +254,12 @@ const VALIDATE_REFS: Record<
 		projectId: "event-1",
 		contributorUserId: "user-1",
 	},
+	project_contributor_removed: {
+		projectId: "event-1",
+		contributorUserId: "user-1",
+		projectName: "SECOMP 2026",
+		recipientName: "Maria Silva",
+	},
 	project_deleted: {
 		projectId: "event-1",
 		contributorUserId: "user-1",
@@ -260,7 +271,9 @@ const VALIDATE_REFS: Record<
 describe("validate", () => {
 	it.each(
 		[...NOTIFICATION_TYPE_KEYS].filter(
-			(type) => type !== "project_deleted",
+			(type) =>
+				type !== "project_deleted" &&
+				type !== "project_contributor_removed",
 		),
 	)("%s returns entity_gone when nothing is found", async (type) => {
 		queue.length = 0;

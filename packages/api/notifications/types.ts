@@ -39,6 +39,7 @@ export const NOTIFICATION_TYPE_KEYS = [
 	"activity_cancelled",
 	"email_quota_warning",
 	"project_contributor_added",
+	"project_contributor_removed",
 	"project_deleted",
 ] as const;
 
@@ -98,6 +99,7 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
 	activity_cancelled: "Atividade cancelada",
 	email_quota_warning: "Alerta de cota de e-mails",
 	project_contributor_added: "Adicionado como contribuidor",
+	project_contributor_removed: "Removido como contribuidor",
 	project_deleted: "Projeto excluído",
 };
 

@@ -15,6 +15,7 @@ import ActivityWaitlistedPreview from "./previews/activity-waitlisted";
 import EmailQuotaWarningPreview from "./previews/email-quota-warning";
 import EventRegistrationRemovedPreview from "./previews/event-registration-removed";
 import ProjectContributorAddedPreview from "./previews/project-contributor-added";
+import ProjectContributorRemovedPreview from "./previews/project-contributor-removed";
 import ProjectDeletedPreview from "./previews/project-deleted";
 
 /**
@@ -106,6 +107,11 @@ const CASES: Array<{
 		name: "project-contributor-added",
 		Preview: ProjectContributorAddedPreview,
 		expectedText: ["Maria Silva", "Novo acesso", "SECOMP 2026"],
+	},
+	{
+		name: "project-contributor-removed",
+		Preview: ProjectContributorRemovedPreview,
+		expectedText: ["Maria Silva", "Acesso removido", "SECOMP 2026"],
 	},
 	{
 		name: "project-deleted",

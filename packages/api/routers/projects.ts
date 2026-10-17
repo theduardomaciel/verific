@@ -19,6 +19,7 @@ import {
 import { normalizeThemeFonts } from "../lib/theme-fonts";
 import {
 	notifyProjectContributorAdded,
+	notifyProjectContributorRemoved,
 	notifyProjectDeleted,
 } from "../notifications/triggers";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
@@ -375,7 +376,23 @@ export const projectsRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			await requireProjectOwner(input.projectId, ctx.session.user.id);
+			const projectRow = await requireProjectOwner(
+				input.projectId,
+				ctx.session.user.id,
+			);
+
+			const contributorRows = await db
+				.select({ name: user.name, email: user.email })
+				.from(user)
+				.where(eq(user.id, input.userId));
+			const contributor = contributorRows[0];
+
+			const ownerRows = await db
+				.select({ name: user.name })
+				.from(user)
+				.where(eq(user.id, ctx.session.user.id));
+			const removedByName = ownerRows[0]?.name?.trim() || undefined;
+
 			await db
 				.delete(projectModerator)
 				.where(
@@ -384,6 +401,19 @@ export const projectsRouter = createTRPCRouter({
 						eq(projectModerator.userId, input.userId),
 					),
 				);
+
+			const contributorEmail = contributor?.email?.trim();
+			if (contributorEmail) {
+				void notifyProjectContributorRemoved({
+					projectId: input.projectId,
+					projectName: projectRow.name,
+					contributorUserId: input.userId,
+					contributorName: contributor?.name ?? null,
+					to: contributorEmail,
+					removedByName,
+				});
+			}
+
 			return { removed: true };
 		}),
 });
