@@ -1,0 +1,110 @@
+import type { ComponentType } from "react";
+import { createElement } from "react";
+
+import { render } from "react-email";
+import { describe, expect, it } from "vitest";
+
+import ActivityCancelledPreview from "./previews/activity-cancelled";
+import ActivityEnrollmentCancelledPreview from "./previews/activity-enrollment-cancelled";
+import ActivityEnrollmentConfirmedPreview from "./previews/activity-enrollment-confirmed";
+import ActivityEnrollmentRemovedPreview from "./previews/activity-enrollment-removed";
+import ActivityUpdatedPreview from "./previews/activity-updated";
+import ActivityWaitlistPromotedPreview from "./previews/activity-waitlist-promoted";
+import ActivityWaitlistedPreview from "./previews/activity-waitlisted";
+import EmailQuotaWarningPreview from "./previews/email-quota-warning";
+import EventRegistrationRemovedPreview from "./previews/event-registration-removed";
+
+/**
+ * `react-email dev` only lists files in the e-mails directory that default-export
+ * a component. These are the dev-only entry points for the generalized
+ * templates; assert each one renders its sample props so the preview sidebar
+ * never silently breaks.
+ */
+const CASES: Array<{
+	name: string;
+	Preview: ComponentType;
+	expectedText: readonly string[];
+}> = [
+	{
+		name: "event-registration-removed",
+		Preview: EventRegistrationRemovedPreview,
+		expectedText: [
+			"Maria Silva",
+			"Inscrição removida",
+			"Inscrição duplicada.",
+		],
+	},
+	{
+		name: "activity-enrollment-confirmed",
+		Preview: ActivityEnrollmentConfirmedPreview,
+		expectedText: [
+			"Maria Silva",
+			"Inscrição confirmada",
+			"Oficina de React",
+		],
+	},
+	{
+		name: "activity-waitlisted",
+		Preview: ActivityWaitlistedPreview,
+		expectedText: ["Maria Silva", "Fila de espera", "3ª"],
+	},
+	{
+		name: "activity-waitlist-promoted",
+		Preview: ActivityWaitlistPromotedPreview,
+		expectedText: ["Maria Silva", "Vaga conquistada"],
+	},
+	{
+		name: "activity-enrollment-cancelled",
+		Preview: ActivityEnrollmentCancelledPreview,
+		expectedText: ["Maria Silva", "Inscrição cancelada"],
+	},
+	{
+		name: "activity-enrollment-removed",
+		Preview: ActivityEnrollmentRemovedPreview,
+		expectedText: [
+			"Maria Silva",
+			"Inscrição removida",
+			"Conflito de horário com outra atividade.",
+		],
+	},
+	{
+		name: "activity-updated",
+		Preview: ActivityUpdatedPreview,
+		expectedText: ["Maria Silva", "Atividade atualizada", "Data e local"],
+	},
+	{
+		name: "activity-cancelled",
+		Preview: ActivityCancelledPreview,
+		expectedText: [
+			"Maria Silva",
+			"Atividade cancelada",
+			"Palestrante indisponível.",
+		],
+	},
+	{
+		name: "email-quota-warning",
+		Preview: EmailQuotaWarningPreview,
+		expectedText: [
+			"João Organizador",
+			"Uso diário de e-mails",
+			"do limite diário de envio de e-mails",
+		],
+	},
+];
+
+describe("react-email dev previews", () => {
+	it.each(CASES)(
+		"$name default-exports a component that renders its sample props",
+		async ({ Preview, expectedText }) => {
+			const html = await render(createElement(Preview));
+			expect(html.length).toBeGreaterThan(0);
+			for (const text of expectedText) {
+				expect(html).toContain(text);
+			}
+		},
+	);
+
+	it.each(CASES)("$name exports a component", ({ Preview }) => {
+		expect(typeof Preview).toBe("function");
+	});
+});

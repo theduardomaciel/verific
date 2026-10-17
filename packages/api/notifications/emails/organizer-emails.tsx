@@ -94,3 +94,13 @@ export async function renderEmailQuotaWarning(
 		templateVersion: EMAIL_QUOTA_WARNING_VERSION,
 	};
 }
+
+/** Sample props for `react-email dev` and registry previews. */
+export const emailQuotaWarningPreviewProps: EmailQuotaWarningProps = {
+	organizerName: "João Organizador",
+	eventName: "SECOMP 2026",
+	used: 80,
+	limit: 100,
+	day: "2026-04-12",
+	accessUrl: "https://example.com/dashboard/emails",
+};

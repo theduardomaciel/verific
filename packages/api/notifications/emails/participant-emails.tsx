@@ -149,6 +149,17 @@ export async function renderActivityEnrollmentConfirmed(
 	);
 }
 
+/** Sample props for `react-email dev` and registry previews. */
+export const activityEnrollmentConfirmedPreviewProps: ActivityEnrollmentConfirmedProps =
+	{
+		participantName: "Maria Silva",
+		eventName: "SECOMP 2026",
+		activityName: "Oficina de React",
+		activityDateText: "12 de abril de 2026, 14:00 – 18:00",
+		activityLocation: "Laboratório 4",
+		accessUrl: "https://example.com/secomp-2026/schedule/activity-1",
+	};
+
 /* ------------------------------------------------------------------ */
 /* activity_waitlisted                                                 */
 /* ------------------------------------------------------------------ */
@@ -206,6 +217,17 @@ export async function renderActivityWaitlisted(
 	);
 }
 
+/** Sample props for `react-email dev` and registry previews. */
+export const activityWaitlistedPreviewProps: ActivityWaitlistedProps = {
+	participantName: "Maria Silva",
+	eventName: "SECOMP 2026",
+	activityName: "Oficina de React",
+	activityDateText: "12 de abril de 2026, 14:00 – 18:00",
+	activityLocation: "Laboratório 4",
+	accessUrl: "https://example.com/secomp-2026/schedule/activity-1",
+	position: 3,
+};
+
 /* ------------------------------------------------------------------ */
 /* activity_waitlist_promoted                                          */
 /* ------------------------------------------------------------------ */
@@ -255,6 +277,17 @@ export async function renderActivityWaitlistPromoted(
 	);
 }
 
+/** Sample props for `react-email dev` and registry previews. */
+export const activityWaitlistPromotedPreviewProps: ActivityWaitlistPromotedProps =
+	{
+		participantName: "Maria Silva",
+		eventName: "SECOMP 2026",
+		activityName: "Oficina de React",
+		activityDateText: "12 de abril de 2026, 14:00 – 18:00",
+		activityLocation: "Laboratório 4",
+		accessUrl: "https://example.com/secomp-2026/schedule/activity-1",
+	};
+
 /* ------------------------------------------------------------------ */
 /* activity_enrollment_cancelled                                       */
 /* ------------------------------------------------------------------ */
@@ -303,6 +336,17 @@ export async function renderActivityEnrollmentCancelled(
 		ACTIVITY_ENROLLMENT_CANCELLED_VERSION,
 	);
 }
+
+/** Sample props for `react-email dev` and registry previews. */
+export const activityEnrollmentCancelledPreviewProps: ActivityEnrollmentCancelledProps =
+	{
+		participantName: "Maria Silva",
+		eventName: "SECOMP 2026",
+		activityName: "Oficina de React",
+		activityDateText: "12 de abril de 2026, 14:00 – 18:00",
+		activityLocation: "Laboratório 4",
+		accessUrl: "https://example.com/secomp-2026/schedule/activity-1",
+	};
 
 /* ------------------------------------------------------------------ */
 /* activity_enrollment_removed                                         */
@@ -359,6 +403,18 @@ export async function renderActivityEnrollmentRemoved(
 	);
 }
 
+/** Sample props for `react-email dev` and registry previews. */
+export const activityEnrollmentRemovedPreviewProps: ActivityEnrollmentRemovedProps =
+	{
+		participantName: "Maria Silva",
+		eventName: "SECOMP 2026",
+		activityName: "Oficina de React",
+		activityDateText: "12 de abril de 2026, 14:00 – 18:00",
+		activityLocation: "Laboratório 4",
+		accessUrl: "https://example.com/secomp-2026/schedule/activity-1",
+		reason: "Conflito de horário com outra atividade.",
+	};
+
 /* ------------------------------------------------------------------ */
 /* activity_updated                                                    */
 /* ------------------------------------------------------------------ */
@@ -409,6 +465,17 @@ export async function renderActivityUpdated(
 		ACTIVITY_UPDATED_VERSION,
 	);
 }
+
+/** Sample props for `react-email dev` and registry previews. */
+export const activityUpdatedPreviewProps: ActivityUpdatedProps = {
+	participantName: "Maria Silva",
+	eventName: "SECOMP 2026",
+	activityName: "Oficina de React",
+	activityDateText: "13 de abril de 2026, 09:00 – 12:00",
+	activityLocation: "Laboratório 7",
+	changeSummary: "Data e local",
+	accessUrl: "https://example.com/secomp-2026/schedule/activity-1",
+};
 
 /* ------------------------------------------------------------------ */
 /* activity_cancelled                                                  */
@@ -462,6 +529,17 @@ export async function renderActivityCancelled(
 		ACTIVITY_CANCELLED_VERSION,
 	);
 }
+
+/** Sample props for `react-email dev` and registry previews. */
+export const activityCancelledPreviewProps: ActivityCancelledProps = {
+	participantName: "Maria Silva",
+	eventName: "SECOMP 2026",
+	activityName: "Oficina de React",
+	activityDateText: "12 de abril de 2026, 14:00 – 18:00",
+	activityLocation: "Laboratório 4",
+	accessUrl: "https://example.com/secomp-2026/schedule",
+	reason: "Palestrante indisponível.",
+};
 
 /* ------------------------------------------------------------------ */
 /* event_registration_removed                                          */
@@ -525,6 +603,15 @@ export async function renderEventRegistrationRemoved(
 		EVENT_REGISTRATION_REMOVED_VERSION,
 	);
 }
+
+/** Sample props for `react-email dev` and registry previews. */
+export const eventRegistrationRemovedPreviewProps: EventRegistrationRemovedProps =
+	{
+		participantName: "Maria Silva",
+		eventName: "SECOMP 2026",
+		accessUrl: "https://example.com/secomp-2026",
+		reason: "Inscrição duplicada.",
+	};
 
 /* ------------------------------------------------------------------ */
 
