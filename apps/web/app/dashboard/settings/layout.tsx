@@ -6,6 +6,10 @@ const settingsLinks = [
 		label: "Geral",
 	},
 	{
+		href: "/settings/team",
+		label: "Equipe",
+	},
+	{
 		href: "/settings/preferences",
 		label: "Preferências",
 	},

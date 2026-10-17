@@ -1,7 +1,5 @@
 "use client";
 
-import { ProjectContributors } from "@/components/settings/project-contributors";
-
 // API
 import { useCurrentProject } from "@/hooks/use-current-project";
 
@@ -25,10 +23,5 @@ export default function ProjectSettings() {
 		);
 	}
 
-	return (
-		<>
-			<ProjectSettingsGeneral project={data.project} />
-			<ProjectContributors projectId={data.project.id} />
-		</>
-	);
+	return <ProjectSettingsGeneral project={data.project} />;
 }
