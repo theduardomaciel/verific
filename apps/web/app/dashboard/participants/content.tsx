@@ -79,7 +79,14 @@ export function ParticipantsContent() {
 		);
 	}
 
-	const { participants, pageCount, emailDomains } = data;
+	const { participants, pageCount, amount, emailDomains } = data;
+	const currentPage = parsedParams.page || 1;
+	const pageSize = parsedParams.pageSize || 10;
+	const showingStart = amount > 0 ? (currentPage - 1) * pageSize + 1 : 0;
+	const showingEnd =
+		amount > 0
+			? Math.min(showingStart + (participants?.length ?? 0) - 1, amount)
+			: 0;
 	const project = projectData?.project as
 		| {
 				logoUrl?: string | null;
@@ -136,11 +143,20 @@ export function ParticipantsContent() {
 						)}
 					</div>
 
-					<DashboardPagination
-						currentPage={parsedParams.page || 1}
-						totalPages={pageCount}
-						prefix="participants"
-					/>
+					<div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
+						<p className="text-muted-foreground text-sm">
+							{amount > 0
+								? amount <= pageSize
+									? `Mostrando ${amount} resultado${amount !== 1 ? "s" : ""}`
+									: `Mostrando ${showingStart}–${showingEnd} de ${amount} resultados`
+								: "Nenhum resultado"}
+						</p>
+						<DashboardPagination
+							currentPage={parsedParams.page || 1}
+							totalPages={pageCount}
+							prefix="participants"
+						/>
+					</div>
 				</div>
 
 				<div className="order-first space-y-4 md:order-last md:col-span-1">

@@ -994,6 +994,7 @@ export const activitiesRouter = createTRPCRouter({
 			return {
 				activities: formattedActivities,
 				pageCount,
+				amount,
 			};
 		}),
 

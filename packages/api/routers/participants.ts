@@ -255,6 +255,7 @@ export const participantsRouter = createTRPCRouter({
 			return {
 				participants,
 				pageCount,
+				amount,
 				emailDomains: emailDomains.map(
 					(ed) => ed.emailDomain,
 				) as string[],

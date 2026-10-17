@@ -86,6 +86,7 @@ describe("getParticipants access control", () => {
 		).resolves.toEqual({
 			participants: [],
 			pageCount: 0,
+			amount: 0,
 			emailDomains: [],
 		});
 	});
