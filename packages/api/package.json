@@ -9,6 +9,7 @@
 		"test:watch": "vitest",
 		"test:coverage": "vitest run --coverage",
 		"email:dev": "email dev --dir ./notifications/emails --port 3001",
+		"email:preview": "tsx ./notifications/preview.ts",
 		"lint": "oxlint --type-aware",
 		"fmt": "oxfmt",
 		"fmt:check": "oxfmt --check",
@@ -42,6 +43,7 @@
 		"@verific/typescript-config": "workspace:*",
 		"@vitest/coverage-v8": "^5.0.3",
 		"next": "16.4.0",
+		"tsx": "^4.20.6",
 		"vitest": "^5.0.3"
 	}
 }

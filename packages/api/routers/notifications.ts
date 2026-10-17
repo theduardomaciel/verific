@@ -3,6 +3,10 @@ import { TRPCError } from "@trpc/server";
 
 import { requireProjectAccess } from "../lib/project-access";
 import {
+	getEventNotificationSettings,
+	updateEventNotificationSettings,
+} from "../notifications";
+import {
 	getEmailUsage,
 	reprocessBatchNotifications,
 	reprocessOneNotification,
@@ -13,6 +17,7 @@ import {
 	notificationStatsInput,
 	reprocessBatchNotificationsInput,
 	reprocessOneNotificationInput,
+	updateNotificationSettingsInput,
 } from "../schemas";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
@@ -74,5 +79,27 @@ export const notificationsRouter = createTRPCRouter({
 				cursor: input.cursor ?? null,
 				limit: input.limit,
 			});
+		}),
+
+	/** Event notification toggles (missing row = registry default). */
+	getNotificationSettings: protectedProcedure
+		.input(notificationStatsInput)
+		.query(async ({ input, ctx }) => {
+			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			return {
+				settings: await getEventNotificationSettings(input.projectId),
+			};
+		}),
+
+	updateNotificationSettings: protectedProcedure
+		.input(updateNotificationSettingsInput)
+		.mutation(async ({ input, ctx }) => {
+			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			return {
+				settings: await updateEventNotificationSettings(
+					input.projectId,
+					input.settings,
+				),
+			};
 		}),
 });

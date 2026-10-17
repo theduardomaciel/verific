@@ -1,27 +1,141 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@verific/drizzle", () => ({ db: {} }));
-vi.mock("@verific/env", () => ({ env: {} }));
+import type { NotificationTypeDefinition, ValidationResult } from "./registry";
 
+vi.mock("@verific/drizzle", () => ({
+	db: {
+		select: () => ({
+			from: () => ({
+				innerJoin: () => ({
+					where: async () => [{ email: "owner@example.com" }],
+				}),
+			}),
+		}),
+	},
+}));
+vi.mock("@verific/env", () => ({
+	env: {},
+	appUrl: "https://example.com",
+}));
+vi.mock("./settings", () => ({
+	isNotificationEnabled: vi.fn(async () => true),
+	getNotificationEnabledMap: vi.fn(async () => new Map<string, boolean>()),
+}));
+
+const { stubDefinition, stubMocks, quotaStubDefinition } = vi.hoisted(() => {
+	const validate = vi.fn(async (): Promise<ValidationResult> => ({
+		ok: true,
+	}));
+	const buildProps = vi.fn(async (): Promise<Record<string, unknown>> => ({
+		participantName: "Maria Silva",
+		eventName: "UFAL Tech Day",
+		accessUrl: "https://example.com/ufal-tech-day/profile/abc123?me=1",
+	}));
+	const stubDefinition: NotificationTypeDefinition = {
+		key: "event_registration_confirmation" as const,
+		audience: "participant" as const,
+		category: "transactional" as const,
+		scope: "event" as const,
+		defaultEnabled: true,
+		description: "stub",
+		entityRefs: ["registrationId"],
+		idempotencyKeyFormat: "stub:{registrationId}",
+		buildIdempotencyKey: vi.fn(() => "stub-key"),
+		validate,
+		buildProps,
+		subject: vi.fn(() => "Inscrição confirmada: UFAL Tech Day"),
+		render: vi.fn(async (props: Record<string, unknown>) => ({
+			subject: "Inscrição confirmada: UFAL Tech Day",
+			html: `<html>${JSON.stringify(props)}</html>`,
+			text: JSON.stringify(props),
+			templateVersion: "v3",
+		})),
+		templateVersion: "v3",
+		previewProps: {},
+	};
+	const quotaStubDefinition: NotificationTypeDefinition = {
+		key: "email_quota_warning" as const,
+		audience: "organizer" as const,
+		category: "transactional" as const,
+		scope: "event" as const,
+		defaultEnabled: true,
+		description: "stub",
+		entityRefs: ["projectId", "used", "limit", "day"],
+		idempotencyKeyFormat: "email_quota_warning:{day}",
+		buildIdempotencyKey: (refs) =>
+			`email_quota_warning:${String(refs["day"])}`,
+		validate: vi.fn(async () => ({ ok: true as const })),
+		buildProps: vi.fn(async () => ({
+			organizerName: "João",
+			eventName: "UFAL Tech Day",
+			used: 4,
+			limit: 5,
+			day: "2025-12-31",
+			accessUrl: "https://example.com/dashboard/emails",
+		})),
+		subject: vi.fn(() => "Atenção: 80% da cota"),
+		render: vi.fn(async () => ({
+			subject: "Atenção: 80% da cota",
+			html: "<html>quota</html>",
+			text: "quota",
+			templateVersion: "v1",
+		})),
+		templateVersion: "v1",
+		previewProps: {},
+	};
+	return {
+		stubDefinition,
+		stubMocks: { validate, buildProps },
+		quotaStubDefinition,
+	};
+});
+
+vi.mock("./registry", async (importOriginal) => {
+	const original = (await importOriginal()) as unknown as Record<
+		string,
+		unknown
+	>;
+	return {
+		...original,
+		getNotificationDefinition: vi.fn(
+			(type: string) =>
+				(type === "email_quota_warning"
+					? quotaStubDefinition
+					: stubDefinition) as never,
+		),
+	};
+});
+
+import { hashProps } from "./registry";
 import {
 	getEmailUsage,
 	processNotification,
+	processQueuedNotifications,
+	enqueueNotifications,
 	sendNotification,
 } from "./service";
+import { isNotificationEnabled, getNotificationEnabledMap } from "./settings";
 import { STALE_CLAIM_TIMEOUT_MS } from "./store";
 import { InMemoryNotificationStore } from "./store.memory";
 
-import type { EmailProvider, SendNotificationInput, SendResult } from "./types";
+import type {
+	EmailMessage,
+	EmailProvider,
+	SendNotificationInput,
+	SendResult,
+} from "./types";
+
+const isNotificationEnabledMock = vi.mocked(isNotificationEnabled);
+const getNotificationEnabledMapMock = vi.mocked(getNotificationEnabledMap);
 
 function setup(options?: {
 	sendImpl?: (call: number) => SendResult | Promise<SendResult>;
 	dailyLimit?: number;
-	seed?: (store: InMemoryNotificationStore) => Promise<void> | void;
 }) {
 	const store = new InMemoryNotificationStore();
 	let call = 0;
-	const send = vi.fn(async () => {
+	const send = vi.fn(async (_msg: EmailMessage) => {
 		call += 1;
 		return (
 			options?.sendImpl?.(call) ?? {
@@ -39,7 +153,6 @@ function setup(options?: {
 			from: "Verific <nao-responder@example.com>",
 			dailyLimit: options?.dailyLimit,
 		},
-		now: () => new Date("2026-01-01T00:00:00Z"),
 		sleep: vi.fn(async () => {}),
 	};
 	const input: SendNotificationInput = {
@@ -47,13 +160,29 @@ function setup(options?: {
 		idempotencyKey: `key-${randomUUID()}`,
 		to: "user@example.com",
 		eventId: randomUUID(),
-		payload: {
-			participantName: "Maria Silva",
-			eventName: "UFAL Tech Day",
-			accessUrl: "https://example.com/ufal-tech-day/profile/abc123?me=1",
-		},
+		entityRefs: { registrationId: randomUUID() },
 	};
-	return { store, send, deps, input, seed: options?.seed };
+	return { store, send, deps, input };
+}
+
+/** Seeds a `sent` row so the 24h usage reaches a given value. */
+async function seedSent(
+	store: InMemoryNotificationStore,
+	count: number,
+): Promise<void> {
+	for (let i = 0; i < count; i += 1) {
+		const seeded = await store.insertIgnore({
+			type: "event_registration_confirmation",
+			idempotencyKey: `seed-${randomUUID()}`,
+			to: "other@example.com",
+			eventId: null,
+			entityRefs: {},
+		});
+		await store.update(seeded.row.id, {
+			status: "sent",
+			sentAt: new Date(),
+		});
+	}
 }
 
 describe("sendNotification", () => {
@@ -170,17 +299,7 @@ describe("sendNotification", () => {
 
 	it("daily cap reached results in blocked_quota and no send", async () => {
 		const { store, send, deps, input } = setup({ dailyLimit: 1 });
-		const seeded = await store.insertIgnore({
-			type: "event_registration_confirmation",
-			idempotencyKey: `seed-${randomUUID()}`,
-			to: "other@example.com",
-			eventId: null,
-			payload: {},
-		});
-		await store.update(seeded.row.id, {
-			status: "sent",
-			sentAt: new Date(),
-		});
+		await seedSent(store, 1);
 
 		const { notification } = await sendNotification(input, deps);
 
@@ -201,7 +320,7 @@ describe("sendNotification", () => {
 		expect(again.notification?.status).toBe("sent");
 	});
 
-	it("stores the rendered template version on the row", async () => {
+	it("stores the rendered template version and props hash on the row", async () => {
 		const { deps, input } = setup();
 		const { notification } = await sendNotification(input, deps);
 
@@ -210,6 +329,232 @@ describe("sendNotification", () => {
 		expect(notification?.subject).toBe(
 			"Inscrição confirmada: UFAL Tech Day",
 		);
+		expect(notification?.propsHash).toMatch(/^[0-9a-f]{64}$/);
+		// Template output is never stored.
+		expect(notification?.payload).toBeNull();
+		expect(JSON.stringify(notification)).not.toContain("<html>");
+	});
+});
+
+describe("gating", () => {
+	it("records a disabled type as skipped without sending", async () => {
+		isNotificationEnabledMock.mockResolvedValueOnce(false);
+		const { send, deps, input } = setup();
+
+		const { notification } = await sendNotification(input, deps);
+
+		expect(send).not.toHaveBeenCalled();
+		expect(notification?.status).toBe("skipped");
+		expect(notification?.skipReason).toBe("disabled_by_event");
+		expect(notification?.entityRefs).toEqual(input.entityRefs);
+	});
+
+	it("processNotification re-checks the gate and skips", async () => {
+		const { store, send, deps, input } = setup();
+		const { row } = await store.insertIgnore({
+			type: input.type,
+			idempotencyKey: input.idempotencyKey,
+			to: input.to,
+			eventId: input.eventId,
+			entityRefs: input.entityRefs,
+		});
+		isNotificationEnabledMock.mockResolvedValueOnce(false);
+
+		const { notification } = await processNotification(row.id, deps);
+
+		expect(send).not.toHaveBeenCalled();
+		expect(notification?.status).toBe("skipped");
+		expect(notification?.skipReason).toBe("disabled_by_event");
+	});
+
+	it("skipped rows never count toward the daily usage", async () => {
+		const { store, deps } = setup();
+		const { row } = await store.insertIgnore({
+			type: "event_registration_confirmation",
+			idempotencyKey: "skipped-row",
+			to: "user@example.com",
+			eventId: null,
+			entityRefs: {},
+			status: "skipped",
+			skipReason: "disabled_by_event",
+		});
+		expect(row.status).toBe("skipped");
+
+		await expect(getEmailUsage(deps)).resolves.toEqual({
+			sentLast24h: 0,
+			limit: null,
+		});
+	});
+});
+
+describe("validate skip paths", () => {
+	it.each(["entity_gone", "state_changed"] as const)(
+		"records %s as skipped, not failed",
+		async (reason) => {
+			const { store, send, deps, input } = setup();
+			const { row } = await store.insertIgnore({
+				type: input.type,
+				idempotencyKey: input.idempotencyKey,
+				to: input.to,
+				eventId: input.eventId,
+				entityRefs: input.entityRefs,
+			});
+			stubMocks.validate.mockResolvedValueOnce({
+				ok: false,
+				reason,
+			});
+
+			const { notification } = await processNotification(row.id, deps);
+
+			expect(send).not.toHaveBeenCalled();
+			expect(notification?.status).toBe("skipped");
+			expect(notification?.skipReason).toBe(reason);
+			expect(notification?.lastError).toBe(`skip: ${reason}`);
+		},
+	);
+
+	it("records an unknown type as skipped with unsupported_type", async () => {
+		const { getNotificationDefinition } = await import("./registry");
+		const { store, send, deps } = setup();
+		const { row } = await store.insertIgnore({
+			type: "activity_reminder",
+			idempotencyKey: "unsupported",
+			to: "user@example.com",
+			eventId: null,
+			entityRefs: {},
+		});
+		vi.mocked(getNotificationDefinition).mockReturnValueOnce(null);
+
+		const { notification } = await processNotification(row.id, deps);
+
+		expect(send).not.toHaveBeenCalled();
+		expect(notification?.status).toBe("skipped");
+		expect(notification?.skipReason).toBe("unsupported_type");
+	});
+});
+
+describe("reprocess rebuilds props", () => {
+	it("rebuilds from entityRefs on every attempt and stores only the hash", async () => {
+		const { store, send, deps, input } = setup({
+			sendImpl: (call) =>
+				call === 1
+					? {
+							ok: false,
+							retryable: false,
+							code: "validation_error",
+							message: "bad address",
+						}
+					: { ok: true, providerMessageId: "msg-ok" },
+		});
+		const { row } = await store.insertIgnore({
+			type: input.type,
+			idempotencyKey: input.idempotencyKey,
+			to: input.to,
+			eventId: input.eventId,
+			entityRefs: input.entityRefs,
+		});
+
+		const first = await processNotification(row.id, deps);
+		expect(first.notification?.status).toBe("failed");
+
+		const updatedProps = {
+			participantName: "Maria Silva",
+			eventName: "UFAL Tech Day",
+			activityName: "Oficina de React",
+			accessUrl: "https://example.com/ufal-tech-day/profile/abc123?me=1",
+		};
+		stubMocks.buildProps.mockResolvedValueOnce(updatedProps);
+
+		const second = await processNotification(row.id, deps);
+
+		expect(second.notification?.status).toBe("sent");
+		expect(send.mock.calls[1]?.[0]?.html).toContain("Oficina de React");
+		expect(second.notification?.propsHash).toBe(hashProps(updatedProps));
+		expect(second.notification?.entityRefs).toEqual(input.entityRefs);
+		expect(second.notification?.payload).toBeNull();
+		expect(stubMocks.validate).toHaveBeenCalledTimes(2);
+		expect(stubMocks.buildProps).toHaveBeenCalledTimes(2);
+	});
+});
+
+describe("bulk enqueue and processing", () => {
+	it("enqueues gated rows as skipped in one batch", async () => {
+		const { store, deps } = setup();
+		getNotificationEnabledMapMock.mockResolvedValueOnce(
+			new Map([["event_registration_confirmation", false]]),
+		);
+		const input: SendNotificationInput = {
+			type: "event_registration_confirmation",
+			idempotencyKey: "bulk-1",
+			to: "user@example.com",
+			eventId: randomUUID(),
+			entityRefs: { registrationId: randomUUID() },
+		};
+
+		const [result] = await enqueueNotifications([input], deps);
+
+		expect(result?.notification?.status).toBe("skipped");
+		expect(result?.notification?.skipReason).toBe("disabled_by_event");
+		expect(store.rows.size).toBe(1);
+	});
+
+	it("respects EMAIL_DAILY_LIMIT and leaves the rest pending", async () => {
+		const { store, send, deps } = setup({ dailyLimit: 2 });
+		const inputs: SendNotificationInput[] = Array.from(
+			{ length: 3 },
+			(_, index) => ({
+				type: "event_registration_confirmation" as const,
+				idempotencyKey: `bulk-${index}`,
+				to: "user@example.com",
+				eventId: randomUUID(),
+				entityRefs: { registrationId: randomUUID() },
+			}),
+		);
+		const enqueued = await enqueueNotifications(inputs, deps);
+		const ids = enqueued.map((result) => result.notification!.id);
+
+		const result = await processQueuedNotifications(ids, deps);
+
+		expect(send).toHaveBeenCalledTimes(2);
+		expect(result).toEqual({
+			processed: 2,
+			sent: 2,
+			skipped: 0,
+			failed: 0,
+			remaining: 1,
+			capReached: true,
+		});
+		expect(store.rows.get(ids[2]!)?.status).toBe("pending");
+		// The leftover stays reprocessable from the admin page.
+		expect(store.rows.get(ids[0]!)?.status).toBe("sent");
+	});
+});
+
+describe("quota warning", () => {
+	it("sends one warning per day when usage crosses 80% of the limit", async () => {
+		const { store, send, deps, input } = setup({ dailyLimit: 5 });
+		await seedSent(store, 3);
+
+		const { notification } = await sendNotification(input, deps);
+
+		expect(notification?.status).toBe("sent");
+		expect(send).toHaveBeenCalledTimes(2);
+		const warning = [...store.rows.values()].find(
+			(row) => row.type === "email_quota_warning",
+		);
+		const day = new Intl.DateTimeFormat("en-CA", {
+			timeZone: "America/Sao_Paulo",
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+		}).format(new Date());
+		expect(warning?.idempotencyKey).toBe(`email_quota_warning:${day}`);
+		expect(warning?.recipientEmail).toBe("owner@example.com");
+		expect(warning?.status).toBe("sent");
+
+		// Replaying the same day never sends again.
+		await sendNotification(input, deps);
+		expect(send).toHaveBeenCalledTimes(2);
 	});
 });
 
@@ -221,7 +566,7 @@ describe("stuck claim recovery", () => {
 			idempotencyKey: input.idempotencyKey,
 			to: input.to,
 			eventId: input.eventId,
-			payload: input.payload,
+			entityRefs: input.entityRefs,
 		});
 		await store.claim(row.id);
 
@@ -238,7 +583,7 @@ describe("stuck claim recovery", () => {
 			idempotencyKey: input.idempotencyKey,
 			to: input.to,
 			eventId: input.eventId,
-			payload: input.payload,
+			entityRefs: input.entityRefs,
 		});
 		await store.claim(row.id);
 		const stuck = store.rows.get(row.id)!;
@@ -260,17 +605,7 @@ describe("stuck claim recovery", () => {
 describe("getEmailUsage", () => {
 	it("returns the 24h count and the configured limit", async () => {
 		const { store, deps } = setup({ dailyLimit: 100 });
-		const seeded = await store.insertIgnore({
-			type: "event_registration_confirmation",
-			idempotencyKey: `seed-${randomUUID()}`,
-			to: "other@example.com",
-			eventId: null,
-			payload: {},
-		});
-		await store.update(seeded.row.id, {
-			status: "sent",
-			sentAt: new Date(),
-		});
+		await seedSent(store, 1);
 
 		await expect(getEmailUsage(deps)).resolves.toEqual({
 			sentLast24h: 1,
@@ -285,7 +620,7 @@ describe("getEmailUsage", () => {
 			idempotencyKey: `seed-${randomUUID()}`,
 			to: "other@example.com",
 			eventId: null,
-			payload: {},
+			entityRefs: {},
 		});
 		const old = store.rows.get(seeded.row.id)!;
 		old.createdAt = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
@@ -308,7 +643,7 @@ describe("getEmailUsage", () => {
 			idempotencyKey: `seed-${randomUUID()}`,
 			to: "other@example.com",
 			eventId: null,
-			payload: {},
+			entityRefs: {},
 		});
 		await store.update(seeded.row.id, {
 			status: "sent",

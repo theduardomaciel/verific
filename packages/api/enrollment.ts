@@ -181,7 +181,9 @@ export async function saveActivityAnswers(
 /**
  * Persiste a inscrição (vínculos + respostas) dentro da transação que
  * travou a atividade.
- * Só insere; nunca remove nada.
+ * Só insere; nunca remove nada. Devolve apenas os vínculos novos (com o
+ * `subscribedAt` gravado), para o trigger de e-mail não notificar quem já
+ * estava inscrito.
  */
 export async function persistEnrollment(
 	tx: Tx,
@@ -190,10 +192,10 @@ export async function persistEnrollment(
 		participantIds: string[];
 		answerRows: Awaited<ReturnType<typeof prepareActivityAnswers>>;
 	},
-) {
+): Promise<Array<{ participantId: string; subscribedAt: Date }>> {
 	const { activityId, participantIds, answerRows } = args;
 
-	await tx
+	const inserted = await tx
 		.insert(participantOnActivity)
 		.values(
 			participantIds.map((participantId) => ({
@@ -201,9 +203,14 @@ export async function persistEnrollment(
 				participantId,
 			})),
 		)
-		.onConflictDoNothing();
+		.onConflictDoNothing()
+		.returning({
+			participantId: participantOnActivity.participantId,
+			subscribedAt: participantOnActivity.subscribedAt,
+		});
 
 	await saveActivityAnswers(tx, answerRows);
+	return inserted;
 }
 
 export async function deleteActivityAnswers(

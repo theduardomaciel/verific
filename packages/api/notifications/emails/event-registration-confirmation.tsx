@@ -1,22 +1,15 @@
-import {
-	Body,
-	Button,
-	Container,
-	Head,
-	Html,
-	Img,
-	Link,
-	Preview,
-	Section,
-	Text,
-	render,
-} from "react-email";
+import { render, Section, Text } from "react-email";
 
 import { z } from "@verific/zod";
+
+import { EmailCta, EmailLayout, emailStyles } from "./layout";
 
 import type { RenderedTemplate } from "../templates";
 
 export const EVENT_REGISTRATION_CONFIRMATION_VERSION = "v3" as const;
+
+// Re-exported for backwards compatibility (moved to `./layout`).
+export { sanitizeLogoUrl } from "./layout";
 
 export const eventRegistrationConfirmationPayloadSchema = z.object({
 	participantName: z.string().trim().min(1),
@@ -45,49 +38,12 @@ export type EventRegistrationConfirmationPayload = z.infer<
 	typeof eventRegistrationConfirmationPayloadSchema
 >;
 
-/**
- * Only absolute https, non-SVG, non-WebP images are email-safe: most clients
- * refuse SVG and mixed content, and Gmail's proxy recompresses WebP while
- * flattening its alpha channel (Outlook desktop does not render it at all).
- * Anything else falls back to the event name as text.
- */
-export function sanitizeLogoUrl(
-	logoUrl: string | undefined,
-): string | undefined {
-	if (!logoUrl) return undefined;
-	if (!logoUrl.startsWith("https://")) return undefined;
-	if (/\.(svg|webp)([?#]|$)/i.test(logoUrl)) return undefined;
-	return logoUrl;
-}
-
 export type EventRegistrationConfirmationProps =
 	EventRegistrationConfirmationPayload;
 
-const subjectFor = (eventName: string): string =>
-	`Inscrição confirmada: ${eventName}`;
-
-/**
- * Temporary hardcoded palette (SECOMP 26 identity) until organizers get an
- * editor. Mirrors the event theme: primary #5B21B6, secondary #22BFA3.
- */
-const palette = {
-	pageBg: "#0B0714",
-	cardBg: "#150D26",
-	headerBg: "#12081F",
-	panelBg: "#1D1235",
-	border: "#2E1B52",
-	primary: "#5B21B6",
-	primarySoft: "#A78BFA",
-	teal: "#22BFA3",
-	tealInk: "#04251E",
-	text: "#F4F1FA",
-	muted: "#B6AACB",
-	subtle: "#7D7094",
-} as const;
-
-const MONO = "'Courier New', Courier, 'Lucida Console', monospace";
-const SANS =
-	"-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+export const eventRegistrationConfirmationSubject = (props: {
+	eventName: string;
+}) => `Inscrição confirmada: ${props.eventName}`;
 
 export function EventRegistrationConfirmationEmail({
 	participantName,
@@ -98,97 +54,53 @@ export function EventRegistrationConfirmationEmail({
 	logoUrl,
 	logoAlt,
 }: EventRegistrationConfirmationProps) {
-	const subject = subjectFor(eventName);
-	const logoSrc = sanitizeLogoUrl(logoUrl);
+	const subject = eventRegistrationConfirmationSubject({ eventName });
 	const hasDetails = Boolean(eventDateText || eventLocation);
 	return (
-		<Html lang="pt-BR">
-			<Head>
-				<meta name="color-scheme" content="dark" />
-				<meta name="supported-color-schemes" content="dark" />
-			</Head>
-			<Preview>{subject}</Preview>
-			<Body style={styles.body}>
-				<Container style={styles.container}>
-					<Section style={styles.header}>
-						{logoSrc ? (
-							<Img
-								src={logoSrc}
-								alt={logoAlt || eventName}
-								width="280"
-								style={styles.logo}
-							/>
-						) : (
-							<Text style={styles.brand}>{eventName}</Text>
-						)}
-					</Section>
-					<Section style={styles.content}>
-						<Text style={styles.badge}>
-							// Inscrição confirmada
-						</Text>
-						<Text style={styles.title}>{eventName}</Text>
-						<Text style={styles.greeting}>
-							Olá, {participantName}!
-						</Text>
-						<Text style={styles.paragraph}>
-							Sua inscrição em <strong>{eventName}</strong> foi
-							confirmada. Use o botão abaixo para acessar sua
-							inscrição quando precisar.
-						</Text>
-						{hasDetails ? (
-							<Section style={styles.panel}>
-								{eventDateText ? (
-									<>
-										<Text style={styles.metaLabel}>
-											Data
-										</Text>
-										<Text style={styles.metaValue}>
-											{eventDateText}
-										</Text>
-									</>
-								) : null}
-								{eventLocation ? (
-									<>
-										<Text
-											style={{
-												...styles.metaLabel,
-												...(eventDateText
-													? styles.metaLabelSpaced
-													: null),
-											}}
-										>
-											Local
-										</Text>
-										<Text style={styles.metaValue}>
-											{eventLocation}
-										</Text>
-									</>
-								) : null}
-							</Section>
-						) : null}
-						<Section style={styles.cta}>
-							<Button href={accessUrl} style={styles.button}>
-								Acessar minha inscrição
-							</Button>
-						</Section>
-						<Text style={styles.fallback}>
-							Se o botão não funcionar, acesse este link:
-							<br />
-							<Link href={accessUrl} style={styles.link}>
-								{accessUrl}
-							</Link>
-						</Text>
-					</Section>
-					<Section style={styles.footer}>
-						<Text style={styles.footerText}>
-							Se você não fez esta inscrição, pode ignorar esta
-							mensagem.
-						</Text>
-						<Text style={styles.footerBrand}>verifIC</Text>
-					</Section>
-				</Container>
-			</Body>
-		</Html>
+		<EmailLayout
+			eventName={eventName}
+			preview={subject}
+			logoUrl={logoUrl}
+			logoAlt={logoAlt}
+		>
+			<Text style={emailStyles.badge}>Inscrição confirmada</Text>
+			<Text style={emailStyles.title}>{eventName}</Text>
+			<Text style={emailStyles.greeting}>Olá, {participantName}!</Text>
+			<Text style={emailStyles.paragraph}>
+				Sua inscrição em <strong>{eventName}</strong> foi confirmada.
+				Use o botão abaixo para acessar sua inscrição quando precisar.
+			</Text>
+			{hasDetails ? (
+				<Section style={emailStyles.panel}>
+					{eventDateText ? (
+						<>
+							<Text style={emailStyles.metaLabel}>Data</Text>
+							<Text style={emailStyles.metaValue}>
+								{eventDateText}
+							</Text>
+						</>
+					) : null}
+					{eventLocation ? (
+						<>
+							<Text
+								style={{
+									...emailStyles.metaLabel,
+									...(eventDateText
+										? emailStyles.metaLabelSpaced
+										: null),
+								}}
+							>
+								Local
+							</Text>
+							<Text style={emailStyles.metaValue}>
+								{eventLocation}
+							</Text>
+						</>
+					) : null}
+				</Section>
+			) : null}
+			<EmailCta href={accessUrl} label="Acessar minha inscrição" />
+		</EmailLayout>
 	);
 }
 
@@ -202,7 +114,7 @@ export async function renderEventRegistrationConfirmation(
 		render(element, { plainText: true }),
 	]);
 	return {
-		subject: subjectFor(parsed.eventName),
+		subject: eventRegistrationConfirmationSubject(parsed),
 		html,
 		text,
 		templateVersion: EVENT_REGISTRATION_CONFIRMATION_VERSION,
@@ -234,151 +146,3 @@ export default function EventRegistrationConfirmationPreview() {
 		/>
 	);
 }
-
-const styles = {
-	body: {
-		backgroundColor: palette.pageBg,
-		fontFamily: SANS,
-		margin: "0",
-		padding: "24px 0",
-	},
-	container: {
-		backgroundColor: palette.cardBg,
-		margin: "0 auto",
-		maxWidth: "600px",
-		border: `1px solid ${palette.border}`,
-		borderRadius: "12px",
-		overflow: "hidden",
-	},
-	header: {
-		backgroundColor: palette.headerBg,
-		borderBottom: `4px solid ${palette.teal}`,
-		textAlign: "center" as const,
-	},
-	logo: {
-		display: "block",
-		margin: "0 auto",
-		padding: "28px 0",
-		maxWidth: "100%",
-		height: "auto",
-	},
-	brand: {
-		fontFamily: MONO,
-		fontSize: "22px",
-		fontWeight: "700",
-		letterSpacing: "3px",
-		textTransform: "uppercase" as const,
-		color: palette.text,
-		padding: "28px 32px",
-		margin: "0",
-	},
-	content: {
-		padding: "32px 32px 8px",
-	},
-	badge: {
-		fontFamily: MONO,
-		fontSize: "12px",
-		fontWeight: "700",
-		letterSpacing: "2px",
-		textTransform: "uppercase" as const,
-		color: palette.teal,
-		margin: "0 0 12px",
-	},
-	title: {
-		fontFamily: MONO,
-		fontSize: "30px",
-		lineHeight: "36px",
-		fontWeight: "700",
-		letterSpacing: "2px",
-		textTransform: "uppercase" as const,
-		color: palette.text,
-		margin: "0 0 24px",
-	},
-	greeting: {
-		fontSize: "18px",
-		fontWeight: "700",
-		color: palette.text,
-		margin: "0 0 8px",
-	},
-	paragraph: {
-		fontSize: "15px",
-		lineHeight: "24px",
-		color: palette.muted,
-		margin: "0 0 20px",
-	},
-	panel: {
-		backgroundColor: palette.panelBg,
-		borderLeft: `4px solid ${palette.primary}`,
-		border: `1px solid ${palette.border}`,
-		borderLeftWidth: "4px",
-		borderLeftColor: palette.teal,
-		borderRadius: "8px",
-		padding: "16px 20px",
-		margin: "0 0 8px",
-	},
-	metaLabel: {
-		fontFamily: MONO,
-		fontSize: "11px",
-		fontWeight: "700",
-		letterSpacing: "2px",
-		textTransform: "uppercase" as const,
-		color: palette.primarySoft,
-		margin: "0 0 4px",
-	},
-	metaLabelSpaced: {
-		marginTop: "16px",
-	},
-	metaValue: {
-		fontSize: "15px",
-		lineHeight: "22px",
-		fontWeight: "600",
-		color: palette.text,
-		margin: "0",
-	},
-	cta: {
-		textAlign: "center" as const,
-		padding: "24px 0 8px",
-	},
-	button: {
-		backgroundColor: palette.teal,
-		color: palette.tealInk,
-		fontFamily: MONO,
-		fontSize: "14px",
-		fontWeight: "700",
-		letterSpacing: "1.5px",
-		textTransform: "uppercase" as const,
-		padding: "14px 28px",
-		borderRadius: "6px",
-		textDecoration: "none",
-	},
-	fallback: {
-		fontSize: "13px",
-		lineHeight: "20px",
-		color: palette.subtle,
-		wordBreak: "break-all" as const,
-		textAlign: "center" as const,
-		margin: "16px 0 8px",
-	},
-	link: {
-		color: palette.primarySoft,
-		textDecoration: "underline",
-	},
-	footer: {
-		padding: "16px 32px 24px",
-		borderTop: `1px solid ${palette.border}`,
-	},
-	footerText: {
-		fontSize: "12px",
-		lineHeight: "18px",
-		color: palette.subtle,
-		margin: "4px 0",
-	},
-	footerBrand: {
-		fontFamily: MONO,
-		fontSize: "12px",
-		fontWeight: "700",
-		letterSpacing: "2px",
-		color: palette.subtle,
-		margin: "4px 0",
-	},
-} as const;

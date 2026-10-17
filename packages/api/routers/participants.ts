@@ -28,6 +28,10 @@ import { z } from "@verific/zod";
 import { isMemberAuthenticated } from "../auth";
 import { parseCheckInCode } from "../lib/checkin-code";
 import { requireProjectAccess } from "../lib/project-access";
+import {
+	loadNotificationRecipients,
+	notifyEventRegistrationRemoved,
+} from "../notifications";
 import { getParticipantsParams } from "../schemas";
 import { lockActivity } from "../seats";
 import { settleActivity } from "../waitlist";
@@ -446,10 +450,12 @@ export const participantsRouter = createTRPCRouter({
 		.input(
 			z.object({
 				participantId: z.string().uuid(),
+				/** Optional reason shown in the removal e-mail. */
+				reason: z.string().trim().max(500).optional(),
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			const { participantId } = input;
+			const { participantId, reason } = input;
 			const requestUserId = ctx.session?.user.id;
 
 			if (!requestUserId) {
@@ -494,6 +500,11 @@ export const participantsRouter = createTRPCRouter({
 				});
 			}
 
+			// Capturado antes do delete: a linha de participante some na
+			// transação e o e-mail de aviso precisa de um destinatário.
+			const contacts = await loadNotificationRecipients([participantId]);
+			const recipientEmail = contacts.get(participantId);
+
 			// Atividades em que a pessoa ocupa vaga ou está na fila: a remoção
 			// (em cascata) libera lugar para o próximo de cada fila
 			const [enrolled, queued] = await Promise.all([
@@ -536,6 +547,15 @@ export const participantsRouter = createTRPCRouter({
 					await settleActivity(tx, lockedActivity);
 				}
 			});
+
+			if (recipientEmail) {
+				void notifyEventRegistrationRemoved({
+					eventId: participantData.project.id,
+					registrationId: participantId,
+					to: recipientEmail,
+					...(reason ? { reason } : {}),
+				});
+			}
 
 			return { success: true };
 		}),

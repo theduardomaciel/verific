@@ -46,6 +46,11 @@ export const activity = pgTable("activities", {
 	latitude: doublePrecision("latitude"),
 	longitude: doublePrecision("longitude"),
 
+	// Cancelamento suave: a atividade continua existindo (histórico, inscrições
+	// e respostas preservadas), mas some das listas e dispara o e-mail
+	// `activity_cancelled` para inscritos e fila de espera.
+	cancelledAt: timestamp("cancelled_at"),
+
 	projectId: uuid("project_id")
 		.notNull()
 		.references(() => project.id, {

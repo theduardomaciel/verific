@@ -160,26 +160,42 @@ export async function addToWaitlist(
 	tx: Tx,
 	activityId: string,
 	participantId: string,
-) {
-	await tx.insert(activityWaitlist).values({ activityId, participantId });
+): Promise<{ id: string }> {
+	const [entry] = await tx
+		.insert(activityWaitlist)
+		.values({ activityId, participantId })
+		.returning({ id: activityWaitlist.id });
+	if (!entry) {
+		throw new Error("Falha ao entrar na fila de espera.");
+	}
 	await recordEvents(tx, activityId, [participantId], "joined", null);
+	return entry;
 }
+
+export type ResolvedWaitlistEntry = {
+	id: string;
+	participantId: string;
+	resolvedAt: Date;
+};
 
 /**
  * Encerra a entrada de quem acabou de ganhar vaga. `confirmed` quando a
  * própria pessoa confirma; `promoted` quando o organizador inscreve.
+ * Devolve apenas as entradas realmente encerradas (uma por pessoa), com o
+ * `resolvedAt` usado como escalar de idempotência do e-mail de promoção.
  */
 export async function resolveEnrolledEntries(
 	tx: Tx,
 	activityId: string,
 	participantIds: string[],
 	event: { type: "confirmed" | "promoted"; actorUserId: string | null },
-) {
-	if (participantIds.length === 0) return;
+): Promise<ResolvedWaitlistEntry[]> {
+	if (participantIds.length === 0) return [];
 
+	const resolvedAt = new Date();
 	const resolved = await tx
 		.update(activityWaitlist)
-		.set({ status: "enrolled", resolvedAt: new Date() })
+		.set({ status: "enrolled", resolvedAt })
 		.where(
 			and(
 				eq(activityWaitlist.activityId, activityId),
@@ -187,7 +203,10 @@ export async function resolveEnrolledEntries(
 				inArray(activityWaitlist.status, [...ACTIVE]),
 			),
 		)
-		.returning({ participantId: activityWaitlist.participantId });
+		.returning({
+			id: activityWaitlist.id,
+			participantId: activityWaitlist.participantId,
+		});
 
 	await recordEvents(
 		tx,
@@ -196,6 +215,12 @@ export async function resolveEnrolledEntries(
 		event.type,
 		event.actorUserId,
 	);
+
+	return resolved.map((row) => ({
+		id: row.id,
+		participantId: row.participantId,
+		resolvedAt,
+	}));
 }
 
 /**

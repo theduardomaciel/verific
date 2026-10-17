@@ -9,6 +9,7 @@ import {
 	count,
 	countDistinct,
 	inArray,
+	isNull,
 } from "@verific/drizzle/orm";
 import {
 	activity,
@@ -22,6 +23,11 @@ import {
 import { z } from "@verific/zod";
 
 import { deleteActivityAnswers } from "../enrollment";
+import {
+	loadNotificationRecipients,
+	notifyActivityEnrollmentCancelled,
+	notifyActivityEnrollmentRemoved,
+} from "../notifications";
 import { lockActivity } from "../seats";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { settleActivity } from "../waitlist";
@@ -73,36 +79,38 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 				projectRow?.shortId ?? null,
 			);
 
-			const activities = await db.query.participantOnActivity.findMany({
-				where: (participantOnActivity, { eq }) =>
-					eq(participantOnActivity.participantId, participantId),
-				with: {
-					activity: {
-						with: {
-							sessions: {
-								orderBy: asc(activitySession.startsAt),
-								with: {
-									attendances: {
-										where: eq(
-											sessionAttendance.participantId,
-											participantId,
-										),
+			const activities = (
+				await db.query.participantOnActivity.findMany({
+					where: (participantOnActivity, { eq }) =>
+						eq(participantOnActivity.participantId, participantId),
+					with: {
+						activity: {
+							with: {
+								sessions: {
+									orderBy: asc(activitySession.startsAt),
+									with: {
+										attendances: {
+											where: eq(
+												sessionAttendance.participantId,
+												participantId,
+											),
+										},
 									},
 								},
-							},
-							tagOnActivity: {
-								with: {
-									tag: true,
+								tagOnActivity: {
+									with: {
+										tag: true,
+									},
 								},
-							},
-							speakerOnActivity: {
-								with: {
-									speaker: {
-										with: {
-											linkedParticipant: {
-												columns: {
-													id: true,
-													shortId: true,
+								speakerOnActivity: {
+									with: {
+										speaker: {
+											with: {
+												linkedParticipant: {
+													columns: {
+														id: true,
+														shortId: true,
+													},
 												},
 											},
 										},
@@ -111,8 +119,8 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 							},
 						},
 					},
-				},
-			});
+				})
+			).filter((onActivity) => onActivity.activity.cancelledAt === null);
 
 			// Retornamos a atividade com os palestrantes e o papel do participante na atividade
 			// Não retornamos outros dados como os outros participantes inscritos
@@ -232,10 +240,12 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 				projectUrl: z.string(),
 				activityId: z.string().uuid(),
 				participantId: z.string().uuid(),
+				/** Optional reason shown in the removal e-mail. */
+				reason: z.string().trim().max(500).optional(),
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			const { projectUrl, activityId, participantId } = input;
+			const { projectUrl, activityId, participantId, reason } = input;
 
 			const userId = ctx.session?.user.id;
 
@@ -301,6 +311,14 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 				});
 			}
 
+			// Quem sai por conta própria recebe "cancelada"; quem é removido
+			// pela organização recebe "removida" (com motivo opcional).
+			const isSelfCancellation =
+				isParticipant && !isOwner && !isModerator;
+			const contacts = await loadNotificationRecipients([participantId]);
+			const recipientEmail = contacts.get(participantId);
+			const eventId = activityData.project.id;
+
 			await db.transaction(async (tx) => {
 				const locked = await lockActivity(tx, activityId);
 
@@ -339,6 +357,27 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 				// A vaga liberada vai para o próximo da fila
 				await settleActivity(tx, locked);
 			});
+
+			if (recipientEmail) {
+				if (isSelfCancellation) {
+					void notifyActivityEnrollmentCancelled({
+						eventId,
+						activityId,
+						participantId,
+						to: recipientEmail,
+						cancelledAt: new Date(),
+					});
+				} else {
+					void notifyActivityEnrollmentRemoved({
+						eventId,
+						activityId,
+						participantId,
+						to: recipientEmail,
+						removedAt: new Date(),
+						...(reason ? { reason } : {}),
+					});
+				}
+			}
 
 			return { success: true };
 		}),
@@ -391,6 +430,7 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 					and(
 						eq(participantOnActivity.participantId, participantId),
 						eq(activity.projectId, projectRow.projectId),
+						isNull(activity.cancelledAt),
 					),
 				);
 

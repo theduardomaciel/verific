@@ -15,6 +15,13 @@
 			"when": 1792169700617,
 			"tag": "0001_round_shiva",
 			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "7",
+			"when": 1792210082110,
+			"tag": "0002_notifications_generalized",
+			"breakpoints": true
 		}
 	]
 }

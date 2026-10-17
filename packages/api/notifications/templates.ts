@@ -1,9 +1,4 @@
-import {
-	EVENT_REGISTRATION_CONFIRMATION_VERSION,
-	renderEventRegistrationConfirmation,
-} from "./emails/event-registration-confirmation";
-
-import type { NotificationType } from "./types";
+import { getNotificationDefinition } from "./registry";
 
 export interface RenderedTemplate {
 	subject: string;
@@ -20,25 +15,15 @@ export interface TemplateDefinition {
 }
 
 /**
- * Template registry keyed by notification type. To add a type: extend
- * `NotificationType`, type its payload, and add an entry here.
+ * Renders a notification type from its rebuilt props. Kept as a thin
+ * compatibility wrapper over the registry; new code should read from
+ * `notifications/registry` (single source of truth).
  */
-const eventRegistrationConfirmation: TemplateDefinition = {
-	version: EVENT_REGISTRATION_CONFIRMATION_VERSION,
-	render: (payload) => renderEventRegistrationConfirmation(payload),
-};
-
-export const templateRegistry: Record<NotificationType, TemplateDefinition> = {
-	event_registration_confirmation: eventRegistrationConfirmation,
-};
-
 export async function renderTemplate(
 	type: string,
 	payload: Record<string, unknown>,
 ): Promise<RenderedTemplate> {
-	const definition = (
-		templateRegistry as Record<string, TemplateDefinition | undefined>
-	)[type];
+	const definition = getNotificationDefinition(type);
 	if (!definition) {
 		throw new Error(
 			`No template registered for notification type "${type}".`,

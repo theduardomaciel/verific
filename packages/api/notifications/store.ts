@@ -30,7 +30,10 @@ export interface InsertNotificationInput {
 	idempotencyKey: string;
 	to: string;
 	eventId?: string | null;
-	payload: Record<string, unknown>;
+	entityRefs: Record<string, string | number | boolean | null>;
+	/** Defaults to `pending`. `skipped` is used for gated notifications. */
+	status?: "pending" | "skipped";
+	skipReason?: string | null;
 }
 
 export type NotificationPatch = Partial<
@@ -45,6 +48,8 @@ export type NotificationPatch = Partial<
 		| "provider"
 		| "providerMessageId"
 		| "sentAt"
+		| "propsHash"
+		| "skipReason"
 	>
 >;
 
@@ -62,6 +67,14 @@ export interface NotificationStore {
 	insertIgnore(
 		input: InsertNotificationInput,
 	): Promise<{ row: NotificationRow; inserted: boolean }>;
+	/**
+	 * Bulk variant of `insertIgnore`: one multi-values insert + one select
+	 * for the conflicting keys (two round trips per batch, neon-http safe).
+	 * The result preserves the input order and `inserted` flags.
+	 */
+	insertIgnoreMany(
+		inputs: InsertNotificationInput[],
+	): Promise<Array<{ row: NotificationRow; inserted: boolean }>>;
 	/**
 	 * Atomically transitions the row to `sending` from
 	 * `pending`/`failed`/`blocked_quota`, or from a stale `sending` (claimed
@@ -103,6 +116,14 @@ const CLAIMABLE_STATUSES: NotificationStatus[] = [
 	"pending",
 	"failed",
 	"blocked_quota",
+	"skipped",
+];
+
+/** Statuses that surface in the default "needs attention" admin filter. */
+const ATTENTION_STATUSES: NotificationStatus[] = [
+	"pending",
+	"failed",
+	"blocked_quota",
 ];
 
 /**
@@ -123,7 +144,11 @@ export class DrizzleNotificationStore implements NotificationStore {
 				idempotencyKey: input.idempotencyKey,
 				eventId: input.eventId ?? null,
 				recipientEmail: input.to,
-				payload: input.payload,
+				entityRefs: input.entityRefs,
+				...(input.status ? { status: input.status } : {}),
+				...(input.skipReason !== undefined
+					? { skipReason: input.skipReason }
+					: {}),
 			})
 			.onConflictDoNothing({ target: notificationTable.idempotencyKey })
 			.returning();
@@ -139,6 +164,69 @@ export class DrizzleNotificationStore implements NotificationStore {
 				"Notification row vanished after idempotent insert.",
 			);
 		return { row, inserted: false };
+	}
+
+	async insertIgnoreMany(
+		inputs: InsertNotificationInput[],
+	): Promise<Array<{ row: NotificationRow; inserted: boolean }>> {
+		if (inputs.length === 0) return [];
+		const inserted = await db
+			.insert(notificationTable)
+			.values(
+				inputs.map((input) => ({
+					type: input.type,
+					idempotencyKey: input.idempotencyKey,
+					eventId: input.eventId ?? null,
+					recipientEmail: input.to,
+					entityRefs: input.entityRefs,
+					...(input.status ? { status: input.status } : {}),
+					...(input.skipReason !== undefined
+						? { skipReason: input.skipReason }
+						: {}),
+				})),
+			)
+			.onConflictDoNothing({ target: notificationTable.idempotencyKey })
+			.returning();
+		const insertedByKey = new Map(
+			inserted.map((row) => [row.idempotencyKey, row]),
+		);
+		const missing = [
+			...new Set(
+				inputs
+					.map((input) => input.idempotencyKey)
+					.filter((key) => !insertedByKey.has(key)),
+			),
+		];
+		const existing =
+			missing.length > 0
+				? await db
+						.select()
+						.from(notificationTable)
+						.where(
+							inArray(notificationTable.idempotencyKey, missing),
+						)
+				: [];
+		const existingByKey = new Map(
+			existing.map((row) => [row.idempotencyKey, row]),
+		);
+		const seen = new Set<string>();
+		return inputs.map((input) => {
+			const row =
+				insertedByKey.get(input.idempotencyKey) ??
+				existingByKey.get(input.idempotencyKey);
+			if (!row) {
+				throw new Error(
+					`Notification row vanished after idempotent batch insert (${input.idempotencyKey}).`,
+				);
+			}
+			const firstOccurrence = !seen.has(input.idempotencyKey);
+			seen.add(input.idempotencyKey);
+			return {
+				row,
+				inserted:
+					firstOccurrence && insertedByKey.has(input.idempotencyKey),
+			};
+		});
 	}
 
 	async claim(id: string): Promise<NotificationRow | null> {
@@ -219,6 +307,8 @@ export class DrizzleNotificationStore implements NotificationStore {
 				subject: notificationTable.subject,
 				templateVersion: notificationTable.templateVersion,
 				status: notificationTable.status,
+				skipReason: notificationTable.skipReason,
+				propsHash: notificationTable.propsHash,
 				stuck: stuckExpression(staleBefore),
 				attempts: notificationTable.attempts,
 				lastError: notificationTable.lastError,
@@ -257,6 +347,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 				sent: sql<number>`count(*) filter (where ${notificationTable.status} = 'sent')::int`,
 				failed: sql<number>`count(*) filter (where ${notificationTable.status} = 'failed')::int`,
 				blocked_quota: sql<number>`count(*) filter (where ${notificationTable.status} = 'blocked_quota')::int`,
+				skipped: sql<number>`count(*) filter (where ${notificationTable.status} = 'skipped')::int`,
 			})
 			.from(notificationTable)
 			.where(eq(notificationTable.eventId, eventId));
@@ -267,6 +358,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 			sent: row?.sent ?? 0,
 			failed: row?.failed ?? 0,
 			blocked_quota: row?.blocked_quota ?? 0,
+			skipped: row?.skipped ?? 0,
 		};
 	}
 
@@ -310,7 +402,7 @@ function filterConditions(
 		case "attention":
 			return [
 				or(
-					inArray(notificationTable.status, CLAIMABLE_STATUSES),
+					inArray(notificationTable.status, ATTENTION_STATUSES),
 					stuckExpression(staleBefore),
 				),
 			];

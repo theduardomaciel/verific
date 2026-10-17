@@ -1,8 +1,60 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@verific/drizzle", () => ({ db: {} }));
-vi.mock("@verific/env", () => ({ env: {} }));
+import type { NotificationTypeDefinition } from "./registry";
+
+vi.mock("@verific/drizzle", () => ({
+	db: {
+		select: () => ({
+			from: () => ({
+				innerJoin: () => ({ where: async () => [] }),
+			}),
+		}),
+	},
+}));
+vi.mock("@verific/env", () => ({
+	env: {},
+	appUrl: "https://example.com",
+}));
+vi.mock("./settings", () => ({
+	isNotificationEnabled: vi.fn(async () => true),
+	getNotificationEnabledMap: vi.fn(async () => new Map<string, boolean>()),
+}));
+
+const { stubDefinition } = vi.hoisted(() => {
+	const stubDefinition: NotificationTypeDefinition = {
+		key: "event_registration_confirmation",
+		audience: "participant",
+		category: "transactional",
+		scope: "event",
+		defaultEnabled: true,
+		description: "stub",
+		entityRefs: ["registrationId"],
+		idempotencyKeyFormat: "stub:{registrationId}",
+		buildIdempotencyKey: () => "stub-key",
+		validate: async () => ({ ok: true as const }),
+		buildProps: async () => ({
+			participantName: "Maria Silva",
+			eventName: "UFAL Tech Day",
+			accessUrl: "https://example.com/ufal-tech-day/profile/abc123?me=1",
+		}),
+		subject: () => "Inscrição confirmada: UFAL Tech Day",
+		render: async () => ({
+			subject: "Inscrição confirmada: UFAL Tech Day",
+			html: "<html>ok</html>",
+			text: "ok",
+			templateVersion: "v3",
+		}),
+		templateVersion: "v3",
+		previewProps: {},
+	};
+	return { stubDefinition };
+});
+
+vi.mock("./registry", async (importOriginal) => ({
+	...(await importOriginal<object>()),
+	getNotificationDefinition: vi.fn(() => stubDefinition),
+}));
 
 import {
 	reprocessBatchNotifications,
@@ -16,14 +68,6 @@ import type { EmailProvider, SendResult } from "./types";
 
 const EVENT_A = randomUUID();
 const EVENT_B = randomUUID();
-
-function validPayload() {
-	return {
-		participantName: "Maria Silva",
-		eventName: "UFAL Tech Day",
-		accessUrl: "https://example.com/e/profile/abc?me=1",
-	};
-}
 
 function setup(options?: {
 	sendImpl?: (call: number) => SendResult | Promise<SendResult>;
@@ -64,7 +108,7 @@ async function seed(
 		idempotencyKey: overrides.idempotencyKey,
 		to: "user@example.com",
 		eventId: EVENT_A,
-		payload: validPayload(),
+		entityRefs: { registrationId: "participant-1" },
 	});
 	const full = store.rows.get(row.id)!;
 	Object.assign(full, overrides, { id: row.id });
@@ -82,7 +126,7 @@ const stuckSending = () => ({
 });
 
 describe("store.listPage", () => {
-	it("scopes by event and never returns payload", async () => {
+	it("scopes by event and never returns payload or entityRefs", async () => {
 		const { store } = setup();
 		await seed(store, { idempotencyKey: "a1" });
 		await seed(store, { idempotencyKey: "a2" });
@@ -102,6 +146,7 @@ describe("store.listPage", () => {
 		for (const item of items) {
 			expect(item.eventId).toBe(EVENT_A);
 			expect(item).not.toHaveProperty("payload");
+			expect(item).not.toHaveProperty("entityRefs");
 		}
 	});
 
@@ -120,6 +165,11 @@ describe("store.listPage", () => {
 			status: "sent",
 			sentAt: new Date(),
 		});
+		await seed(store, {
+			idempotencyKey: "skip",
+			status: "skipped",
+			skipReason: "disabled_by_event",
+		});
 
 		const { items } = await store.listPage({
 			eventId: EVENT_A,
@@ -134,6 +184,25 @@ describe("store.listPage", () => {
 			"s",
 		]);
 		expect(items.find((i) => i.idempotencyKey === "s")?.stuck).toBe(true);
+	});
+
+	it("skipped filter returns skipped rows with their reason", async () => {
+		const { store } = setup();
+		await seed(store, {
+			idempotencyKey: "skip",
+			status: "skipped",
+			skipReason: "disabled_by_event",
+		});
+		await seed(store, { idempotencyKey: "p", status: "pending" });
+
+		const { items } = await store.listPage({
+			eventId: EVENT_A,
+			filter: "skipped",
+			limit: 10,
+		});
+
+		expect(items.map((i) => i.idempotencyKey)).toEqual(["skip"]);
+		expect(items[0]?.skipReason).toBe("disabled_by_event");
 	});
 
 	it("sending filter returns fresh rows, stuck filter returns stuck rows", async () => {
@@ -225,7 +294,7 @@ describe("store.listPage", () => {
 });
 
 describe("store.statusCounts", () => {
-	it("counts per event with stuck split out", async () => {
+	it("counts per event with stuck split out and skipped included", async () => {
 		const { store } = setup();
 		await seed(store, { idempotencyKey: "p", status: "pending" });
 		await seed(store, { idempotencyKey: "f", status: "failed" });
@@ -235,6 +304,11 @@ describe("store.statusCounts", () => {
 			idempotencyKey: "sent",
 			status: "sent",
 			sentAt: new Date(),
+		});
+		await seed(store, {
+			idempotencyKey: "skip",
+			status: "skipped",
+			skipReason: "state_changed",
 		});
 		await seed(store, {
 			idempotencyKey: "other",
@@ -249,6 +323,7 @@ describe("store.statusCounts", () => {
 			sent: 1,
 			failed: 1,
 			blocked_quota: 0,
+			skipped: 1,
 		});
 	});
 });
@@ -296,11 +371,12 @@ describe("reprocessOneNotification", () => {
 			);
 			expect(notification?.status).toBe(row.status);
 			expect(notification).not.toHaveProperty("payload");
+			expect(notification).not.toHaveProperty("entityRefs");
 		}
 		expect(send).not.toHaveBeenCalled();
 	});
 
-	it("sends failed and stale rows", async () => {
+	it("sends failed, stale and skipped rows", async () => {
 		const { store, send, deps } = setup();
 		const failed = await seed(store, {
 			idempotencyKey: "failed",
@@ -310,16 +386,22 @@ describe("reprocessOneNotification", () => {
 			idempotencyKey: "stuck",
 			...stuckSending(),
 		});
+		const skipped = await seed(store, {
+			idempotencyKey: "skipped",
+			status: "skipped",
+			skipReason: "disabled_by_event",
+		});
 
-		for (const row of [failed, stuck]) {
+		for (const row of [failed, stuck, skipped]) {
 			const { notification } = await reprocessOneNotification(
 				{ eventId: EVENT_A, id: row.id },
 				deps,
 			);
 			expect(notification?.status).toBe("sent");
 			expect(notification?.templateVersion).toBe("v3");
+			expect(notification?.skipReason).toBeNull();
 		}
-		expect(send).toHaveBeenCalledTimes(2);
+		expect(send).toHaveBeenCalledTimes(3);
 	});
 });
 

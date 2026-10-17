@@ -1,10 +1,16 @@
 import "server-only";
+import { db } from "@verific/drizzle";
+import { eq } from "@verific/drizzle/orm";
+import { project, user } from "@verific/drizzle/schema";
+
 import { loadEmailConfig } from "./config";
 import { getProvider } from "./providers";
+import { getNotificationDefinition, hashProps } from "./registry";
+import { getNotificationEnabledMap, isNotificationEnabled } from "./settings";
 import { DrizzleNotificationStore, STALE_CLAIM_TIMEOUT_MS } from "./store";
-import { renderTemplate } from "./templates";
 
 import type { EmailConfig } from "./config";
+import type { BuildContext } from "./registry";
 import type {
 	ListNotificationsOptions,
 	NotificationRow,
@@ -21,6 +27,8 @@ import type {
 export const MAX_SEND_ATTEMPTS = 3;
 /** Short exponential backoff between retries (after attempt 1, then 2). */
 export const RETRY_BACKOFF_MS = [100, 400];
+/** `email_quota_warning` fires once usage reaches this fraction of the cap. */
+export const QUOTA_WARNING_THRESHOLD = 0.8;
 
 export interface ServiceDeps {
 	store?: NotificationStore;
@@ -28,6 +36,8 @@ export interface ServiceDeps {
 	config?: Pick<EmailConfig, "provider" | "from" | "dailyLimit">;
 	now?: () => Date;
 	sleep?: (ms: number) => Promise<void>;
+	/** Optional per-batch cache (activity/project) for bulk sends. */
+	shared?: BuildContext;
 }
 
 interface ResolvedDeps {
@@ -36,6 +46,7 @@ interface ResolvedDeps {
 	config?: Pick<EmailConfig, "provider" | "from" | "dailyLimit">;
 	now: () => Date;
 	sleep: (ms: number) => Promise<void>;
+	shared?: BuildContext;
 }
 
 export interface SendNotificationResult {
@@ -46,7 +57,7 @@ export interface SendNotificationResult {
 export interface EmailUsage {
 	/**
 	 * Same counting as the daily cap: rows `sent` by sentAt within the last
-	 * 24h, plus non-stale `sending` rows.
+	 * 24h, plus non-stale `sending` rows. `skipped` never counts.
 	 */
 	sentLast24h: number;
 	/** Configured EMAIL_DAILY_LIMIT, or null when uncapped. */
@@ -63,6 +74,7 @@ function resolveDeps(deps?: ServiceDeps): ResolvedDeps {
 			deps?.sleep ??
 			((ms: number) =>
 				new Promise<void>((resolve) => setTimeout(resolve, ms))),
+		shared: deps?.shared,
 	};
 }
 
@@ -94,11 +106,11 @@ export async function getEmailUsage(deps?: ServiceDeps): Promise<EmailUsage> {
 }
 
 /**
- * Central entry point. Inserts the notification idempotently and sends it.
- * Replays of the same idempotencyKey return the existing row without
- * sending again — including concurrent calls, which serialize on the UNIQUE
- * constraint plus the atomic claim. Never throws: every failure is recorded
- * on the row instead.
+ * Central single-notification entry point. Checks the per-event setting
+ * first: a disabled type is still recorded (status `skipped`,
+ * `skipReason: disabled_by_event`) so the admin log explains why no e-mail
+ * went out. Enabled rows are inserted idempotently and sent immediately.
+ * Never throws: every failure is recorded on the row instead.
  */
 export async function sendNotification(
 	input: SendNotificationInput,
@@ -109,15 +121,24 @@ export async function sendNotification(
 	let rowId: string | null = null;
 	try {
 		const config = resolveConfig(resolved);
+		const disabled =
+			input.eventId != null &&
+			!(await isNotificationEnabled(input.eventId, input.type));
 		const { row, inserted } = await store.insertIgnore({
 			type: input.type,
 			idempotencyKey: input.idempotencyKey,
 			to: input.to,
 			eventId: input.eventId ?? null,
-			payload: input.payload,
+			entityRefs: input.entityRefs,
+			...(disabled
+				? {
+						status: "skipped" as const,
+						skipReason: "disabled_by_event",
+					}
+				: {}),
 		});
 		rowId = row.id;
-		if (!inserted) return { notification: row };
+		if (!inserted || disabled) return { notification: row };
 
 		if (config.dailyLimit !== undefined) {
 			const used = await store.countUsageLast24h();
@@ -149,11 +170,129 @@ export async function sendNotification(
 }
 
 /**
- * Claims a notification and runs render + send + record. Used by
- * `sendNotification` and exposed so an admin can reprocess a
- * failed/blocked row later (the admin path intentionally bypasses the daily
- * cap — it is an explicit human retry). Claiming is atomic, so two processes
- * can never send the same notification. Never throws.
+ * Enqueues many notifications at once (bulk cases). Gating is resolved in
+ * one query per event; rows are inserted in a single round trip and NOT sent
+ * here — call `processQueuedNotifications` with the returned ids, in the
+ * order they should be sent (transactional first, informational later).
+ */
+export async function enqueueNotifications(
+	inputs: SendNotificationInput[],
+	deps?: ServiceDeps,
+): Promise<Array<SendNotificationResult>> {
+	const resolved = resolveDeps(deps);
+	const store = resolved.store;
+	if (inputs.length === 0) return [];
+	try {
+		const byEvent = new Map<string, Set<string>>();
+		for (const input of inputs) {
+			if (!input.eventId) continue;
+			const types = byEvent.get(input.eventId) ?? new Set<string>();
+			types.add(input.type);
+			byEvent.set(input.eventId, types);
+		}
+		const enabledByEvent = new Map<string, Map<string, boolean>>();
+		await Promise.all(
+			[...byEvent.entries()].map(async ([eventId, types]) => {
+				enabledByEvent.set(
+					eventId,
+					await getNotificationEnabledMap(eventId, [
+						...types,
+					] as never),
+				);
+			}),
+		);
+
+		const inserts = inputs.map((input) => {
+			const enabled =
+				input.eventId == null
+					? true
+					: (enabledByEvent.get(input.eventId)?.get(input.type) ??
+						true);
+			return {
+				type: input.type,
+				idempotencyKey: input.idempotencyKey,
+				to: input.to,
+				eventId: input.eventId ?? null,
+				entityRefs: input.entityRefs,
+				...(enabled
+					? {}
+					: {
+							status: "skipped" as const,
+							skipReason: "disabled_by_event",
+						}),
+			};
+		});
+		const rows = await store.insertIgnoreMany(inserts);
+		return rows.map(({ row }) => ({ notification: row }));
+	} catch (err) {
+		console.error(
+			"[notifications] enqueueNotifications failed:",
+			messageOf(err),
+		);
+		return inputs.map(() => ({ notification: null }));
+	}
+}
+
+export interface ProcessQueuedResult {
+	processed: number;
+	sent: number;
+	skipped: number;
+	failed: number;
+	remaining: number;
+	capReached: boolean;
+}
+
+/**
+ * Bounded send loop over already-enqueued rows. Respects EMAIL_DAILY_LIMIT:
+ * when the cap is reached the remaining rows stay `pending` and are
+ * reprocessable from the admin page.
+ */
+export async function processQueuedNotifications(
+	ids: string[],
+	deps?: ServiceDeps,
+): Promise<ProcessQueuedResult> {
+	const resolved = resolveDeps(deps);
+	const config = resolveConfig(resolved);
+	const result: ProcessQueuedResult = {
+		processed: 0,
+		sent: 0,
+		skipped: 0,
+		failed: 0,
+		remaining: 0,
+		capReached: false,
+	};
+	for (let index = 0; index < ids.length; index += 1) {
+		if (config.dailyLimit !== undefined) {
+			const used = await resolved.store.countUsageLast24h();
+			if (used >= config.dailyLimit) {
+				result.remaining = ids.length - index;
+				result.capReached = true;
+				break;
+			}
+		}
+		const { notification } = await processNotification(
+			ids[index]!,
+			resolved,
+		);
+		result.processed += 1;
+		if (!notification) result.failed += 1;
+		else if (notification.status === "sent") result.sent += 1;
+		else if (notification.status === "skipped") result.skipped += 1;
+		else if (
+			notification.status === "sending" ||
+			notification.status === "pending"
+		)
+			result.skipped += 1;
+		else result.failed += 1;
+	}
+	return result;
+}
+
+/**
+ * Claims a notification, rebuilds props from `entityRefs`, renders and
+ * sends. The same path serves the first send and admin reprocessing — there
+ * is no logic that depends on the previous error. Rows already `sent` are
+ * never rebuilt. Never throws.
  */
 export async function processNotification(
 	id: string,
@@ -167,12 +306,55 @@ export async function processNotification(
 			return { notification: await store.getById(id) };
 		}
 
+		const definition = getNotificationDefinition(claimed.type);
+		if (!definition) {
+			const skipped = await store.update(id, {
+				status: "skipped",
+				skipReason: "unsupported_type",
+				lastError: `unsupported_type: sem template registrado para "${claimed.type}"`,
+				lastErrorRetryable: false,
+			});
+			return { notification: skipped ?? claimed };
+		}
+
+		if (claimed.eventId) {
+			const enabled = await isNotificationEnabled(
+				claimed.eventId,
+				claimed.type,
+			);
+			if (!enabled) {
+				const skipped = await store.update(id, {
+					status: "skipped",
+					skipReason: "disabled_by_event",
+					lastError: null,
+					lastErrorRetryable: null,
+				});
+				return { notification: skipped ?? claimed };
+			}
+		}
+
+		const validation = await definition.validate(claimed.entityRefs);
+		if (!validation.ok) {
+			const skipped = await store.update(id, {
+				status: "skipped",
+				skipReason: validation.reason,
+				lastError: `skip: ${validation.reason}`,
+				lastErrorRetryable: false,
+			});
+			return { notification: skipped ?? claimed };
+		}
+
 		const config = resolveConfig(resolved);
 		const provider = await resolveProvider(resolved);
 
+		let props: Record<string, unknown>;
 		let rendered;
 		try {
-			rendered = await renderTemplate(claimed.type, claimed.payload);
+			props = await definition.buildProps(
+				claimed.entityRefs,
+				resolved.shared,
+			);
+			rendered = await definition.render(props);
 		} catch (err) {
 			const failed = await store.update(id, {
 				status: "failed",
@@ -181,9 +363,12 @@ export async function processNotification(
 			});
 			return { notification: failed ?? claimed };
 		}
+		const subject = definition.subject(props) || rendered.subject;
 		await store.update(id, {
-			subject: rendered.subject,
+			subject,
 			templateVersion: rendered.templateVersion,
+			propsHash: hashProps(props),
+			skipReason: null,
 		});
 
 		for (let attempt = 1; attempt <= MAX_SEND_ATTEMPTS; attempt += 1) {
@@ -192,7 +377,7 @@ export async function processNotification(
 				result = await provider.send({
 					to: claimed.recipientEmail,
 					from: config.from,
-					subject: rendered.subject,
+					subject,
 					html: rendered.html,
 					text: rendered.text,
 					headers: {
@@ -221,6 +406,7 @@ export async function processNotification(
 					providerMessageId: result.providerMessageId,
 					sentAt: resolved.now(),
 				});
+				await maybeSendQuotaWarning(claimed, resolved);
 				return { notification: sent ?? claimed };
 			}
 
@@ -272,6 +458,68 @@ function messageOf(err: unknown): string {
 	return err instanceof Error ? err.message : String(err);
 }
 
+const saoPauloDayKey = new Intl.DateTimeFormat("en-CA", {
+	timeZone: "America/Sao_Paulo",
+	year: "numeric",
+	month: "2-digit",
+	day: "2-digit",
+});
+
+/** Owner e-mail for the event that crossed the quota threshold. */
+async function loadOwnerEmail(projectId: string): Promise<string | null> {
+	const rows = await db
+		.select({ email: user.email })
+		.from(project)
+		.innerJoin(user, eq(user.id, project.ownerId))
+		.where(eq(project.id, projectId));
+	return rows[0]?.email?.trim() || null;
+}
+
+/**
+ * Fires `email_quota_warning` once per São Paulo day when usage reaches 80%
+ * of `EMAIL_DAILY_LIMIT`, after a successful send. The once-a-day guarantee
+ * comes from the deterministic idempotency key
+ * `email_quota_warning:{YYYY-MM-DD}`: replays find the existing row and are
+ * never sent again (including when the type is disabled for the event — the
+ * `skipped` row still blocks the next attempt that day). Never throws.
+ */
+export async function maybeSendQuotaWarning(
+	row: NotificationRow,
+	deps?: ServiceDeps,
+): Promise<void> {
+	if (!row.eventId || row.type === "email_quota_warning") return;
+	const resolved = resolveDeps(deps);
+	try {
+		const config = resolveConfig(resolved);
+		const limit = config.dailyLimit;
+		if (limit === undefined || limit <= 0) return;
+		const used = await resolved.store.countUsageLast24h();
+		if (used < Math.ceil(limit * QUOTA_WARNING_THRESHOLD)) return;
+		const ownerEmail = await loadOwnerEmail(row.eventId);
+		if (!ownerEmail) return;
+		const definition = getNotificationDefinition("email_quota_warning");
+		if (!definition) return;
+		const entityRefs = {
+			projectId: row.eventId,
+			used,
+			limit,
+			day: saoPauloDayKey.format(resolved.now()),
+		};
+		await sendNotification(
+			{
+				type: "email_quota_warning",
+				idempotencyKey: definition.buildIdempotencyKey(entityRefs),
+				to: ownerEmail,
+				eventId: row.eventId,
+				entityRefs,
+			},
+			resolved,
+		);
+	} catch (err) {
+		console.error("[notifications] quota warning failed:", messageOf(err));
+	}
+}
+
 export interface ReprocessOneOptions {
 	eventId: string;
 	id: string;
@@ -293,9 +541,9 @@ export interface ReprocessBatchResult {
 	capReached: boolean;
 }
 
-/** Row without `payload`, for admin responses. */
+/** Row without `payload`/`entityRefs`, for admin responses. */
 export function toPublicNotification(row: NotificationRow): PublicNotification {
-	const { payload: _payload, ...rest } = row;
+	const { payload: _payload, entityRefs: _entityRefs, ...rest } = row;
 	return {
 		...rest,
 		stuck:
@@ -307,8 +555,9 @@ export function toPublicNotification(row: NotificationRow): PublicNotification {
 /**
  * Admin reprocess of a single notification within an event. Goes through
  * processNotification, so the atomic claim keeps every guarantee (a `sent`
- * or freshly `sending` row is returned untouched, never resent). Returns
- * null when the row does not exist or belongs to another event.
+ * or freshly `sending` row is returned untouched, never resent) and the
+ * props are rebuilt from the stored entityRefs. Returns null when the row
+ * does not exist or belongs to another event.
  */
 export async function reprocessOneNotification(
 	options: ReprocessOneOptions,
@@ -374,6 +623,8 @@ export async function reprocessBatchNotifications(
 			result.failed += 1;
 		} else if (notification.status === "sent") {
 			result.succeeded += 1;
+		} else if (notification.status === "skipped") {
+			result.skipped += 1;
 		} else if (
 			notification.status === "sending" &&
 			item.status === "sending"

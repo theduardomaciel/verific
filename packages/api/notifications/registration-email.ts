@@ -1,91 +1,42 @@
 import "server-only";
-import { appUrl } from "@verific/env";
-
-import { sanitizeLogoUrl } from "./emails/event-registration-confirmation";
+import { getNotificationDefinition } from "./registry";
 import { sendNotification } from "./service";
 
-import type { EventRegistrationConfirmationPayload } from "./emails/event-registration-confirmation";
 import type { SendNotificationInput } from "./types";
 
 export interface QueueRegistrationEmailArgs {
+	/** `participant.id`. The only ref stored; everything else is rebuilt. */
 	registrationId: string;
 	to: string | null | undefined;
 	eventId: string;
-	participantName: string;
-	eventName: string;
-	eventUrlPath: string;
-	shortId: string;
-	startDate: Date;
-	endDate: Date;
-	eventLocation?: string | null;
-	/**
-	 * Wide, dark-mode logo (`projects.largeLogoDarkUrl`). The email is
-	 * dark-only, so this is the only image it may use; the light/squared
-	 * logos and the cover are intentionally ignored.
-	 */
-	logoDarkUrl?: string | null;
-}
-
-const saoPauloDay = new Intl.DateTimeFormat("pt-BR", {
-	timeZone: "America/Sao_Paulo",
-	day: "2-digit",
-	month: "long",
-	year: "numeric",
-});
-
-const saoPauloTime = new Intl.DateTimeFormat("pt-BR", {
-	timeZone: "America/Sao_Paulo",
-	hour: "2-digit",
-	minute: "2-digit",
-});
-
-/**
- * Formats an already-known event range in pt-BR (America/Sao_Paulo, the
- * repo-wide convention for event display). Same-day ranges include the time
- * window; multi-day ranges show both dates.
- */
-export function formatEventDateText(startDate: Date, endDate: Date): string {
-	const start = new Date(startDate);
-	const end = new Date(endDate);
-	if (saoPauloDay.format(start) === saoPauloDay.format(end)) {
-		return `${saoPauloDay.format(start)}, ${saoPauloTime.format(start)} – ${saoPauloTime.format(end)}`;
-	}
-	return `${saoPauloDay.format(start)} – ${saoPauloDay.format(end)}`;
 }
 
 /**
  * Pure builder so the email input is unit-testable without a database.
- * The access URL points at the participant's profile page (with `?me=1`,
- * the same owner view the app redirects to after subscribing).
+ * Display data (name, dates, location, logo, profile URL) is intentionally
+ * NOT stored: `event_registration_confirmation` rebuilds all of it from
+ * `entityRefs.registrationId` on every attempt.
  */
 export function buildRegistrationEmailInput(
 	args: QueueRegistrationEmailArgs,
 ): SendNotificationInput | null {
 	const to = args.to?.trim();
 	if (!to) return null;
-	const darkLogoUrl = args.logoDarkUrl?.trim() || undefined;
-	const logoUrl = sanitizeLogoUrl(darkLogoUrl);
-	// Existing projects may still hold a WebP logo (the old upload format).
-	// Flag them so organizers know to re-upload as PNG; no backfill.
-	if (darkLogoUrl && !logoUrl && /\.webp([?#]|$)/i.test(darkLogoUrl)) {
-		console.warn(
-			`[notifications] logo horizontal escuro é WebP e não pode ir no e-mail; reenvie como PNG (evento ${args.eventId}).`,
+	const definition = getNotificationDefinition(
+		"event_registration_confirmation",
+	);
+	if (!definition) {
+		throw new Error(
+			"[notifications] event_registration_confirmation missing from the registry.",
 		);
 	}
-	const payload: EventRegistrationConfirmationPayload = {
-		participantName: args.participantName,
-		eventName: args.eventName,
-		eventDateText: formatEventDateText(args.startDate, args.endDate),
-		eventLocation: args.eventLocation?.trim() || undefined,
-		accessUrl: `${appUrl}/${args.eventUrlPath}/profile/${args.shortId}?me=1`,
-		...(logoUrl ? { logoUrl } : {}),
-	};
+	const entityRefs = { registrationId: args.registrationId };
 	return {
 		type: "event_registration_confirmation",
-		idempotencyKey: `event_registration_confirmation:${args.registrationId}`,
+		idempotencyKey: definition.buildIdempotencyKey(entityRefs),
 		to,
 		eventId: args.eventId,
-		payload: payload as unknown as Record<string, unknown>,
+		entityRefs,
 	};
 }
 

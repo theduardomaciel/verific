@@ -30,7 +30,6 @@ const settingsLinks = [
 	{
 		href: "/settings/notifications",
 		label: "Notificações",
-		disabled: true,
 	},
 ];
 

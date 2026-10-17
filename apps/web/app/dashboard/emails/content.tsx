@@ -72,10 +72,24 @@ const FILTER_OPTIONS: Array<{
 	{ value: "sent", label: "Enviadas" },
 	{ value: "failed", label: "Falhas" },
 	{ value: "blocked_quota", label: "Bloqueadas (cota)" },
+	{ value: "skipped", label: "Ignoradas" },
 ];
+
+const SKIP_REASON_LABELS: Record<string, string> = {
+	disabled_by_event: "Desativado nas configurações do evento",
+	entity_gone: "Registro não existe mais",
+	state_changed: "Estado mudou antes do envio",
+	unsupported_type: "Tipo de notificação não suportado",
+};
+
+function skipReasonLabel(reason: string): string {
+	return SKIP_REASON_LABELS[reason] ?? reason;
+}
 
 function statusBadge(item: ListItem) {
 	if (item.status === "sent") return <Badge variant="success">Enviada</Badge>;
+	if (item.status === "skipped")
+		return <Badge variant="outline">Ignorada</Badge>;
 	if (item.status === "failed")
 		return <Badge variant="destructive">Falhou</Badge>;
 	if (item.status === "blocked_quota")
@@ -170,14 +184,20 @@ export function EmailsContent() {
 	// skipped server-side, so they don't count here).
 	const reprocessableCount = !counts
 		? 0
-		: filter === "attention" || filter === "all"
+		: filter === "attention"
 			? counts.pending +
 				counts.failed +
 				counts.blocked_quota +
 				counts.stuck
-			: filter === "sent" || filter === "sending"
-				? 0
-				: (counts[filter] ?? 0);
+			: filter === "all"
+				? counts.pending +
+					counts.failed +
+					counts.blocked_quota +
+					counts.stuck +
+					counts.skipped
+				: filter === "sent" || filter === "sending"
+					? 0
+					: (counts[filter] ?? 0);
 	const hasWorkToReprocess = statsQuery.data ? reprocessableCount > 0 : true;
 	const overLimit = usage?.limit != null && usage.sentLast24h >= usage.limit;
 	const usageRatio =
@@ -419,6 +439,9 @@ export function EmailsContent() {
 							<Badge variant="outline">
 								Cota: {statsQuery.data.counts.blocked_quota}
 							</Badge>
+							<Badge variant="outline">
+								Ignoradas: {statsQuery.data.counts.skipped}
+							</Badge>
 						</div>
 					</div>
 				)}
@@ -478,7 +501,7 @@ export function EmailsContent() {
 										<TableHead className="text-right">
 											Tentativas
 										</TableHead>
-										<TableHead>Último erro</TableHead>
+										<TableHead>Erro / motivo</TableHead>
 										<TableHead className="hidden md:table-cell">
 											Provedor
 										</TableHead>
@@ -520,6 +543,21 @@ export function EmailsContent() {
 														</TooltipTrigger>
 														<TooltipContent className="max-w-80 break-words">
 															{item.lastError}
+														</TooltipContent>
+													</Tooltip>
+												) : item.status === "skipped" &&
+												  item.skipReason ? (
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<span className="text-muted-foreground cursor-help underline decoration-dotted underline-offset-2">
+																{skipReasonLabel(
+																	item.skipReason,
+																)}
+															</span>
+														</TooltipTrigger>
+														<TooltipContent className="max-w-80 break-words">
+															Motivo:{" "}
+															{item.skipReason}
 														</TooltipContent>
 													</Tooltip>
 												) : (

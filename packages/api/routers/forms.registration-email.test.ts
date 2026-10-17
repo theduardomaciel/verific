@@ -120,14 +120,16 @@ describe("submitAnswers registration email", () => {
 				idempotencyKey: `event_registration_confirmation:${PARTICIPANT_ID}`,
 				to: "user@example.com",
 				eventId: PROJECT_ID,
+				entityRefs: { registrationId: PARTICIPANT_ID },
 			}),
 		);
-		const payload = (sendNotificationMock.mock.calls[0]?.[0]?.payload ??
-			{}) as Record<string, unknown>;
-		expect(payload["accessUrl"]).toBe(
-			"https://example.com/secomp-2026/profile/abc123?me=1",
+		const input = sendNotificationMock.mock.calls[0]?.[0];
+		// Display data is never part of the queued input; it is rebuilt from
+		// the registration id at send time.
+		expect(input).not.toHaveProperty("payload");
+		expect(JSON.stringify(input)).not.toContain(
+			"https://example.com/secomp-2026",
 		);
-		expect(payload["participantName"]).toBe("Maria Silva");
 	});
 
 	it("still succeeds when the provider fails", async () => {

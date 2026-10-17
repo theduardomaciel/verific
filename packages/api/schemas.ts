@@ -16,6 +16,7 @@ import { z } from "@verific/zod";
 
 import {
 	NOTIFICATION_LIST_FILTERS,
+	NOTIFICATION_TYPE_KEYS,
 	NOTIFICATION_TYPE_LABELS,
 } from "./notifications/types";
 import { createEnumArraySchema, sortOptions } from "./utils";
@@ -134,6 +135,23 @@ export const reprocessBatchNotificationsInput = z.object({
 	filter: notificationListFilterSchema.default("attention"),
 	cursor: notificationCursorSchema.nullish(),
 	limit: z.coerce.number().int().min(1).max(20).default(20),
+});
+
+/**
+ * Per-event notification toggles (`project_notification_settings`). Unknown
+ * types are rejected at the edge; the server also ignores them defensively.
+ */
+export const updateNotificationSettingsInput = z.object({
+	projectId: z.string().uuid(),
+	settings: z
+		.array(
+			z.object({
+				type: z.enum(NOTIFICATION_TYPE_KEYS),
+				enabled: z.boolean(),
+			}),
+		)
+		.min(1)
+		.max(NOTIFICATION_TYPE_KEYS.length),
 });
 
 /** Fixed palette for activity tags (trails). Stored as hex in `tags.color`. */

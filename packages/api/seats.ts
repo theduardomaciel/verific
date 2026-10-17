@@ -18,6 +18,7 @@ export async function lockActivity(tx: Tx, activityId: string) {
 	const [locked] = await tx
 		.select({
 			id: activity.id,
+			projectId: activity.projectId,
 			participantsLimit: activity.participantsLimit,
 			waitlistEnabled: activity.waitlistEnabled,
 			waitlistOfferHours: activity.waitlistOfferHours,

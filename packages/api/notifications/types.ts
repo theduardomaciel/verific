@@ -22,30 +22,77 @@ export interface EmailProvider {
 	send(msg: EmailMessage): Promise<SendResult>;
 }
 
-/** Notification types supported by the template registry. */
-export type NotificationType = "event_registration_confirmation";
+/**
+ * Notification types supported by the registry. Adding a key here without a
+ * registry entry fails typecheck (see `notifications/registry.ts`).
+ */
+export const NOTIFICATION_TYPE_KEYS = [
+	"event_registration_confirmation",
+	"event_registration_removed",
+	"activity_enrollment_confirmed",
+	"activity_waitlisted",
+	"activity_waitlist_promoted",
+	"activity_enrollment_cancelled",
+	"activity_enrollment_removed",
+	"activity_updated",
+	"activity_cancelled",
+	"email_quota_warning",
+] as const;
+
+export type NotificationType = (typeof NOTIFICATION_TYPE_KEYS)[number];
+
+/**
+ * Value stored in `notifications.entity_refs`. Ids and small scalars only —
+ * never template props. `buildProps` turns these back into DB state.
+ */
+export type EntityRefValue = string | number | boolean | null;
+export type EntityRefs = Record<string, EntityRefValue>;
 
 export type NotificationStatus =
 	| "pending"
 	| "sending"
 	| "sent"
 	| "failed"
-	| "blocked_quota";
+	| "blocked_quota"
+	| "skipped";
+
+/**
+ * Why a notification was recorded as `skipped` instead of sent. The admin
+ * log shows these verbatim so an organizer understands why no e-mail went out.
+ */
+export type SkipReason =
+	| "disabled_by_event"
+	| "entity_gone"
+	| "state_changed"
+	| "unsupported_type";
 
 export interface SendNotificationInput {
-	type: NotificationType;
+	/** Registry type when known; arbitrary strings go through `unsupported_type`. */
+	type: NotificationType | (string & {});
 	/** Unique per notification. Replays return the existing row unsent. */
 	idempotencyKey: string;
 	to: string;
 	/** Project ("event") id. Nullable by design. */
 	eventId?: string | null;
-	/** Template props, stored as-is so failures can be re-rendered. */
-	payload: Record<string, unknown>;
+	/**
+	 * Ids (and small scalars) needed by `validate`/`buildProps`. This is the
+	 * only stored input for a send; template props are always rebuilt.
+	 */
+	entityRefs: EntityRefs;
 }
 
 /** Human-readable pt-BR label per type. Adding a NotificationType without a label here fails typecheck. */
 export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
 	event_registration_confirmation: "Confirmação de inscrição",
+	event_registration_removed: "Removido do evento",
+	activity_enrollment_confirmed: "Inscrição em atividade",
+	activity_waitlisted: "Entrou na fila de espera",
+	activity_waitlist_promoted: "Vaga conquistada na fila",
+	activity_enrollment_cancelled: "Inscrição cancelada",
+	activity_enrollment_removed: "Removido de atividade",
+	activity_updated: "Atividade atualizada",
+	activity_cancelled: "Atividade cancelada",
+	email_quota_warning: "Alerta de cota de e-mails",
 };
 
 export const NOTIFICATION_LIST_FILTERS = [
@@ -57,6 +104,7 @@ export const NOTIFICATION_LIST_FILTERS = [
 	"sent",
 	"failed",
 	"blocked_quota",
+	"skipped",
 ] as const;
 
 export type NotificationListFilter = (typeof NOTIFICATION_LIST_FILTERS)[number];
@@ -68,8 +116,8 @@ export interface NotificationCursor {
 }
 
 /**
- * Admin-facing row. Never contains `payload` (template props stay
- * server-side). `stuck` is derived server-side: status `sending` with
+ * Admin-facing row. Never contains `payload`/`entityRefs` (template input
+ * stays server-side). `stuck` is derived server-side: status `sending` with
  * `updatedAt` older than STALE_CLAIM_TIMEOUT_MS.
  */
 export interface PublicNotification {
@@ -81,6 +129,10 @@ export interface PublicNotification {
 	subject: string | null;
 	templateVersion: string | null;
 	status: NotificationStatus;
+	/** Why the row was skipped (disabled_by_event, entity_gone, ...). */
+	skipReason: string | null;
+	/** sha256 of the props used in the last attempt. Audit only. */
+	propsHash: string | null;
 	stuck: boolean;
 	attempts: number;
 	lastError: string | null;
@@ -100,4 +152,5 @@ export interface NotificationStatusCounts {
 	sent: number;
 	failed: number;
 	blocked_quota: number;
+	skipped: number;
 }

@@ -1,6 +1,8 @@
 export type {
 	EmailMessage,
 	EmailProvider,
+	EntityRefs,
+	EntityRefValue,
 	NotificationCursor,
 	NotificationListFilter,
 	NotificationStatus,
@@ -9,8 +11,13 @@ export type {
 	PublicNotification,
 	SendNotificationInput,
 	SendResult,
+	SkipReason,
 } from "./types";
-export { NOTIFICATION_LIST_FILTERS, NOTIFICATION_TYPE_LABELS } from "./types";
+export {
+	NOTIFICATION_LIST_FILTERS,
+	NOTIFICATION_TYPE_KEYS,
+	NOTIFICATION_TYPE_LABELS,
+} from "./types";
 export type { EmailConfig, EmailProviderName } from "./config";
 export { loadEmailConfig, resolveEmailConfig } from "./config";
 export type {
@@ -21,9 +28,40 @@ export type {
 export { DrizzleNotificationStore, STALE_CLAIM_TIMEOUT_MS } from "./store";
 export type { ListNotificationsOptions } from "./store";
 export type { RenderedTemplate, TemplateDefinition } from "./templates";
-export { renderTemplate, templateRegistry } from "./templates";
+export { renderTemplate } from "./templates";
+export type {
+	BuildContext,
+	NotificationAudience,
+	NotificationCategory,
+	NotificationScope,
+	NotificationTypeDefinition,
+	SharedActivity,
+	SharedProject,
+	ValidationResult,
+} from "./registry";
+export {
+	createBuildContext,
+	DEFERRED_NOTIFICATION_TYPES,
+	getNotificationDefinition,
+	hashProps,
+	isNotificationTypeKey,
+	loadSharedActivity,
+	notificationRegistry,
+	stableStringify,
+} from "./registry";
+export type {
+	NotificationSettingItem,
+	NotificationSettingUpdate,
+} from "./settings";
+export {
+	getEventNotificationSettings,
+	getNotificationEnabledMap,
+	isNotificationEnabled,
+	updateEventNotificationSettings,
+} from "./settings";
 export type {
 	EmailUsage,
+	ProcessQueuedResult,
 	ReprocessBatchOptions,
 	ReprocessBatchResult,
 	ReprocessOneOptions,
@@ -31,9 +69,13 @@ export type {
 	ServiceDeps,
 } from "./service";
 export {
+	enqueueNotifications,
 	getEmailUsage,
 	MAX_SEND_ATTEMPTS,
+	maybeSendQuotaWarning,
 	processNotification,
+	processQueuedNotifications,
+	QUOTA_WARNING_THRESHOLD,
 	reprocessBatchNotifications,
 	reprocessOneNotification,
 	RETRY_BACKOFF_MS,
@@ -43,10 +85,32 @@ export {
 export type { QueueRegistrationEmailArgs } from "./registration-email";
 export {
 	buildRegistrationEmailInput,
-	formatEventDateText,
 	queueEventRegistrationEmail,
 	scheduleAfterResponse,
 } from "./registration-email";
+export { formatActivitySessionsText, formatEventDateText } from "./format";
+export {
+	dispatchNotifications,
+	loadActivityAudience,
+	loadEnrolledAudience,
+	loadNotificationRecipients,
+	notifyActivityCancelled,
+	notifyActivityEnrollmentCancelled,
+	notifyActivityEnrollmentConfirmed,
+	notifyActivityEnrollmentRemoved,
+	notifyActivityUpdated,
+	notifyActivityWaitlisted,
+	notifyActivityWaitlistPromoted,
+	notifyEventRegistrationRemoved,
+} from "./triggers";
+export {
+	activityUrl,
+	adminEmailsUrl,
+	emailUrl,
+	eventScheduleUrl,
+	eventUrl,
+	profileUrl,
+} from "./urls";
 export {
 	EVENT_REGISTRATION_CONFIRMATION_VERSION,
 	EventRegistrationConfirmationEmail,

@@ -15,6 +15,7 @@ import {
 	sum,
 	gte,
 	isNotNull,
+	isNull,
 	sql,
 	exists,
 	min,
@@ -24,6 +25,7 @@ import {
 	activity,
 	activitySession,
 	activityWaitlist,
+	activityWaitlistEvent,
 	formField,
 	formVersion,
 	sessionAttendance,
@@ -45,6 +47,14 @@ import {
 	persistEnrollment,
 	prepareActivityAnswers,
 } from "../enrollment";
+import {
+	loadActivityAudience,
+	loadNotificationRecipients,
+	notifyActivityCancelled,
+	notifyActivityEnrollmentConfirmed,
+	notifyActivityUpdated,
+	notifyActivityWaitlistPromoted,
+} from "../notifications";
 import {
 	activitySort,
 	getActivitiesParams,
@@ -121,7 +131,13 @@ type ActivityTable = typeof activity;
 type ActivityRef = Pick<ActivityTable, "id">;
 type ActivityFilterColumns = Pick<
 	ActivityTable,
-	"id" | "projectId" | "category" | "audience" | "name" | "description"
+	| "id"
+	| "projectId"
+	| "category"
+	| "audience"
+	| "name"
+	| "description"
+	| "cancelledAt"
 >;
 
 /**
@@ -188,6 +204,8 @@ function buildActivitiesWhere(
 ) {
 	return and(
 		eq(table.projectId, opts.projectId),
+		// Canceladas somem das listas (soft-cancel mantém os registros).
+		isNull(table.cancelledAt),
 		opts.categories ? inArray(table.category, opts.categories) : undefined,
 		opts.audiences ? inArray(table.audience, opts.audiences) : undefined,
 		opts.tagIds && opts.tagIds.length > 0
@@ -200,6 +218,66 @@ function buildActivitiesWhere(
 				)
 			: undefined,
 	);
+}
+
+interface SessionSnapshot {
+	startsAt: Date | string;
+	endsAt: Date | string;
+	address?: string | null;
+}
+
+function sessionsEquivalent(
+	before: SessionSnapshot[],
+	next: SessionSnapshot[],
+): boolean {
+	const normalize = (sessions: SessionSnapshot[]) =>
+		sessions
+			.map((session) => ({
+				start: new Date(session.startsAt).getTime(),
+				end: new Date(session.endsAt).getTime(),
+				address: session.address?.trim() ?? "",
+			}))
+			.sort(
+				(a, b) =>
+					a.start - b.start ||
+					a.end - b.end ||
+					a.address.localeCompare(b.address),
+			);
+	const a = normalize(before);
+	const b = normalize(next);
+	return (
+		a.length === b.length &&
+		a.every(
+			(entry, index) =>
+				entry.start === b[index]!.start &&
+				entry.end === b[index]!.end &&
+				entry.address === b[index]!.address,
+		)
+	);
+}
+
+/**
+ * Pure change detector for `updateActivity`: the e-mail only goes out when
+ * date/time (sessions) or location (address) actually change. Returns the
+ * pt-BR summary shown in the e-mail, or null when nothing relevant changed.
+ */
+export function describeActivityChanges(args: {
+	beforeSessions: SessionSnapshot[];
+	beforeAddress: string | null;
+	nextSessions?: SessionSnapshot[] | undefined;
+	/** `undefined` = address not sent; `""`/null = cleared. */
+	nextAddress?: string | null | undefined;
+}): string | null {
+	const dateChanged =
+		args.nextSessions !== undefined &&
+		!sessionsEquivalent(args.beforeSessions, args.nextSessions);
+	const locationChanged =
+		args.nextAddress !== undefined &&
+		(args.nextAddress?.trim() ?? "") !== (args.beforeAddress?.trim() ?? "");
+	if (dateChanged && locationChanged) return "Data, horário e local";
+	if (dateChanged) return "Data e horário";
+	if (locationChanged) return "Local";
+	return null;
 }
 
 const mutateActivityParams = z.object({
@@ -1071,7 +1149,16 @@ export const activitiesRouter = createTRPCRouter({
 
 			const existing = await db.query.activity.findFirst({
 				where: eq(activity.id, activityId),
-				columns: { projectId: true },
+				columns: { projectId: true, address: true },
+				with: {
+					sessions: {
+						columns: {
+							startsAt: true,
+							endsAt: true,
+							address: true,
+						},
+					},
+				},
 			});
 
 			if (!existing) {
@@ -1149,6 +1236,23 @@ export const activitiesRouter = createTRPCRouter({
 				// Limite ou horários novos podem abrir vagas na fila
 				await settleActivity(tx, await lockActivity(tx, activityId));
 			});
+
+			// E-mail de atualização só quando data/horário ou local mudam de
+			// fato, e só para os inscritos no momento do commit.
+			const changeSummary = describeActivityChanges({
+				beforeSessions: existing.sessions,
+				beforeAddress: existing.address,
+				nextSessions: sessions,
+				nextAddress: address,
+			});
+			if (changeSummary) {
+				void notifyActivityUpdated({
+					eventId: existing.projectId,
+					activityId,
+					changedAt: new Date(),
+					changeSummary,
+				});
+			}
 			return { success: true };
 		}),
 
@@ -1176,29 +1280,64 @@ export const activitiesRouter = createTRPCRouter({
 			});
 			if (error) throw new TRPCError(error);
 
-			await db.transaction(async (tx) => {
-				const locked = await lockActivity(tx, activityId);
-				const queue = await settleActivity(tx, locked);
-				const queued = await assertSeatsAvailable(
-					tx,
-					locked,
-					queue,
-					participantsIdsToMutate,
-				);
+			const { inserted, resolved, projectId } = await db.transaction(
+				async (tx) => {
+					const locked = await lockActivity(tx, activityId);
+					const queue = await settleActivity(tx, locked);
+					const queued = await assertSeatsAvailable(
+						tx,
+						locked,
+						queue,
+						participantsIdsToMutate,
+					);
 
-				await tx
-					.insert(participantOnActivity)
-					.values(
-						participantsIdsToMutate.map((participantId) => ({
-							activityId,
-							participantId,
-						})),
-					)
-					.onConflictDoNothing();
-				await resolveEnrolledEntries(tx, activityId, queued, {
-					type: "promoted",
-					actorUserId: ctx.session.user.id,
-				});
+					const inserted = await tx
+						.insert(participantOnActivity)
+						.values(
+							participantsIdsToMutate.map((participantId) => ({
+								activityId,
+								participantId,
+							})),
+						)
+						.onConflictDoNothing()
+						.returning({
+							participantId: participantOnActivity.participantId,
+							subscribedAt: participantOnActivity.subscribedAt,
+						});
+					const resolved = await resolveEnrolledEntries(
+						tx,
+						activityId,
+						queued,
+						{
+							type: "promoted",
+							actorUserId: ctx.session.user.id,
+						},
+					);
+					return { inserted, resolved, projectId: locked.projectId };
+				},
+			);
+
+			const resolvedIds = new Set(
+				resolved.map((entry) => entry.participantId),
+			);
+			const confirmed = inserted.filter(
+				(entry) => !resolvedIds.has(entry.participantId),
+			);
+			const contacts = await loadNotificationRecipients([
+				...confirmed.map((entry) => entry.participantId),
+				...resolved.map((entry) => entry.participantId),
+			]);
+			void notifyActivityEnrollmentConfirmed({
+				eventId: projectId,
+				activityId,
+				contacts,
+				enrolled: confirmed,
+			});
+			void notifyActivityWaitlistPromoted({
+				eventId: projectId,
+				activityId,
+				contacts,
+				resolved,
 			});
 
 			return { success: true };
@@ -1303,7 +1442,7 @@ export const activitiesRouter = createTRPCRouter({
 					participantsIdsToAdd.includes(requesterParticipantId),
 			});
 
-			await db.transaction(async (tx) => {
+			const { inserted, resolved } = await db.transaction(async (tx) => {
 				if (isSelfServiceJoin && requesterParticipantId) {
 					// Checagem de conflito + inserção atômicas: dois joins
 					// concorrentes do mesmo participante serializam e no
@@ -1328,15 +1467,48 @@ export const activitiesRouter = createTRPCRouter({
 					{ queueFirst: isSelfServiceJoin },
 				);
 
-				await persistEnrollment(tx, {
+				const inserted = await persistEnrollment(tx, {
 					activityId,
 					participantIds: participantsIdsToAdd,
 					answerRows,
 				});
-				await resolveEnrolledEntries(tx, activityId, queued, {
-					type: isSelfServiceJoin ? "confirmed" : "promoted",
-					actorUserId: isSelfServiceJoin ? null : ctx.session.user.id,
-				});
+				const resolved = await resolveEnrolledEntries(
+					tx,
+					activityId,
+					queued,
+					{
+						type: isSelfServiceJoin ? "confirmed" : "promoted",
+						actorUserId: isSelfServiceJoin
+							? null
+							: ctx.session.user.id,
+					},
+				);
+				return { inserted, resolved };
+			});
+
+			// Só quem realmente ganhou vínculo novo recebe confirmação; quem
+			// saiu da fila recebe a promoção (nunca os dois).
+			const resolvedIds = new Set(
+				resolved.map((entry) => entry.participantId),
+			);
+			const confirmed = inserted.filter(
+				(entry) => !resolvedIds.has(entry.participantId),
+			);
+			const contacts = await loadNotificationRecipients([
+				...confirmed.map((entry) => entry.participantId),
+				...resolved.map((entry) => entry.participantId),
+			]);
+			void notifyActivityEnrollmentConfirmed({
+				eventId: foundActivity.projectId,
+				activityId,
+				contacts,
+				enrolled: confirmed,
+			});
+			void notifyActivityWaitlistPromoted({
+				eventId: foundActivity.projectId,
+				activityId,
+				contacts,
+				resolved,
 			});
 
 			return { success: true };
@@ -1413,31 +1585,77 @@ export const activitiesRouter = createTRPCRouter({
 				});
 			}
 
-			// Verifica se o usuário é o dono do projeto
-			const project = await db.query.project
-				.findFirst({
-					where(fields) {
-						return eq(fields.ownerId, userId);
-					},
-				})
-				.then((project) => !!project);
+			// Só o dono do evento pode cancelar a atividade.
+			const found = await db.query.activity.findFirst({
+				where: eq(activity.id, activityId),
+				columns: { id: true, projectId: true, cancelledAt: true },
+				with: { project: { columns: { ownerId: true } } },
+			});
 
-			if (!project) {
+			if (!found) {
+				throw new TRPCError({
+					message: "Activity not found.",
+					code: "NOT_FOUND",
+				});
+			}
+
+			if (found.project.ownerId !== userId) {
 				throw new TRPCError({
 					message: "User not authorized to delete this activity.",
 					code: "FORBIDDEN",
 				});
 			}
 
-			try {
-				await db.delete(activity).where(eq(activity.id, activityId));
-			} catch (error) {
-				console.error("Error deleting activity:", error);
-				throw new TRPCError({
-					message: "Activity not found.",
-					code: "BAD_REQUEST",
-				});
-			}
+			// Idempotente: cancelar duas vezes não reenvia e-mails.
+			if (found.cancelledAt) return { success: true };
+
+			// Público capturado ANTES da transação: fechar a fila apagaria
+			// a evidência de quem estava esperando (e precisa do aviso).
+			const audience = await loadActivityAudience(activityId);
+
+			await db.transaction(async (tx) => {
+				await lockActivity(tx, activityId);
+				await tx
+					.update(activity)
+					.set({ cancelledAt: new Date() })
+					.where(eq(activity.id, activityId));
+
+				// Fila ativa deixa de existir (status final `removed`); os
+				// vínculos de inscrição ficam preservados para histórico.
+				const closed = await tx
+					.update(activityWaitlist)
+					.set({ status: "removed", resolvedAt: new Date() })
+					.where(
+						and(
+							eq(activityWaitlist.activityId, activityId),
+							inArray(activityWaitlist.status, [
+								"waiting",
+								"offered",
+							]),
+						),
+					)
+					.returning({
+						participantId: activityWaitlist.participantId,
+					});
+				if (closed.length > 0) {
+					await tx.insert(activityWaitlistEvent).values(
+						closed.map((row) => ({
+							activityId,
+							participantId: row.participantId,
+							type: "removed" as const,
+							actorUserId: userId,
+						})),
+					);
+				}
+			});
+
+			void notifyActivityCancelled({
+				eventId: found.projectId,
+				activityId,
+				participantIds: audience,
+			});
+
+			return { success: true };
 		}),
 	getDashboardStats: publicProcedure
 		.input(z.object({ projectId: z.string().uuid() }))
@@ -1462,6 +1680,7 @@ export const activitiesRouter = createTRPCRouter({
 					and(
 						eq(activity.projectId, projectId),
 						eq(participantOnActivity.role, "participant"),
+						isNull(activity.cancelledAt),
 					),
 				);
 
@@ -1486,6 +1705,7 @@ export const activitiesRouter = createTRPCRouter({
 						eq(activity.projectId, projectId),
 						eq(participantOnActivity.role, "participant"),
 						gte(participant.joinedAt, lastHour),
+						isNull(activity.cancelledAt),
 					),
 				);
 
@@ -1496,7 +1716,12 @@ export const activitiesRouter = createTRPCRouter({
 			const totalWorkloadResult = await db
 				.select({ sum: sum(activity.workload) })
 				.from(activity)
-				.where(eq(activity.projectId, projectId));
+				.where(
+					and(
+						eq(activity.projectId, projectId),
+						isNull(activity.cancelledAt),
+					),
+				);
 
 			const totalWorkload = totalWorkloadResult[0]?.sum ?? 0;
 
@@ -1519,6 +1744,7 @@ export const activitiesRouter = createTRPCRouter({
 						eq(activity.projectId, projectId),
 						eq(participantOnActivity.role, "participant"),
 						gte(participant.joinedAt, lastDay),
+						isNull(activity.cancelledAt),
 					),
 				);
 
@@ -1532,6 +1758,7 @@ export const activitiesRouter = createTRPCRouter({
 					and(
 						eq(activity.projectId, projectId),
 						isNotNull(activity.participantsLimit),
+						isNull(activity.cancelledAt),
 					),
 				);
 
@@ -1554,6 +1781,7 @@ export const activitiesRouter = createTRPCRouter({
 						eq(activity.projectId, projectId),
 						eq(participantOnActivity.role, "participant"),
 						isNotNull(activity.participantsLimit),
+						isNull(activity.cancelledAt),
 					),
 				);
 
@@ -1604,6 +1832,7 @@ export const activitiesRouter = createTRPCRouter({
 						eq(activity.projectId, projectId),
 						eq(participantOnActivity.role, "participant"),
 						gte(participant.joinedAt, sevenDaysAgo),
+						isNull(activity.cancelledAt),
 					),
 				)
 				.groupBy(sql`date(${participant.joinedAt})`)
@@ -1653,6 +1882,7 @@ export const activitiesRouter = createTRPCRouter({
 							eq(activity.projectId, projectId),
 							eq(participantOnActivity.role, "participant"),
 							gte(participant.joinedAt, twentyFourHoursAgo),
+							isNull(activity.cancelledAt),
 						),
 					)
 					.groupBy(sql`date_trunc('hour', ${participant.joinedAt})`)

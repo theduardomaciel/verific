@@ -15,7 +15,8 @@ import type {
 	PublicNotification,
 } from "./types";
 
-const CLAIMABLE = ["pending", "failed", "blocked_quota"];
+const CLAIMABLE = ["pending", "failed", "blocked_quota", "skipped"];
+const ATTENTION = ["pending", "failed", "blocked_quota"];
 
 /**
  * Test-only fake mirroring DrizzleNotificationStore's semantics (atomic
@@ -43,13 +44,16 @@ export class InMemoryNotificationStore implements NotificationStore {
 			recipientEmail: input.to,
 			subject: null,
 			templateVersion: null,
-			status: "pending",
+			status: input.status ?? "pending",
 			attempts: 0,
 			lastError: null,
 			lastErrorRetryable: null,
 			provider: null,
 			providerMessageId: null,
-			payload: input.payload,
+			payload: null,
+			entityRefs: input.entityRefs,
+			propsHash: null,
+			skipReason: input.skipReason ?? null,
 			createdAt: now,
 			updatedAt: now,
 			sentAt: null,
@@ -57,6 +61,16 @@ export class InMemoryNotificationStore implements NotificationStore {
 		this.rows.set(row.id, row);
 		this.byKey.set(input.idempotencyKey, row.id);
 		return { row, inserted: true };
+	}
+
+	async insertIgnoreMany(
+		inputs: InsertNotificationInput[],
+	): Promise<Array<{ row: NotificationRow; inserted: boolean }>> {
+		const results: Array<{ row: NotificationRow; inserted: boolean }> = [];
+		for (const input of inputs) {
+			results.push(await this.insertIgnore(input));
+		}
+		return results;
 	}
 
 	async claim(id: string): Promise<NotificationRow | null> {
@@ -132,6 +146,7 @@ export class InMemoryNotificationStore implements NotificationStore {
 			sent: 0,
 			failed: 0,
 			blocked_quota: 0,
+			skipped: 0,
 		};
 		for (const row of this.rows.values()) {
 			if (row.eventId !== eventId) continue;
@@ -177,7 +192,7 @@ function matchesFilter(
 		case "all":
 			return true;
 		case "attention":
-			return CLAIMABLE.includes(row.status) || isStuck(row, now);
+			return ATTENTION.includes(row.status) || isStuck(row, now);
 		case "stuck":
 			return isStuck(row, now);
 		case "sending":
@@ -188,6 +203,6 @@ function matchesFilter(
 }
 
 function toPublic(row: NotificationRow, now: number): PublicNotification {
-	const { payload: _payload, ...rest } = row;
+	const { payload: _payload, entityRefs: _entityRefs, ...rest } = row;
 	return { ...rest, stuck: isStuck(row, now) };
 }

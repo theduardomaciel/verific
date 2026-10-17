@@ -20,6 +20,12 @@ import {
 	prepareActivityAnswers,
 	saveActivityAnswers,
 } from "../enrollment";
+import {
+	loadNotificationRecipients,
+	notifyActivityEnrollmentConfirmed,
+	notifyActivityWaitlisted,
+	notifyActivityWaitlistPromoted,
+} from "../notifications";
 import { answerValueSchema, type WaitlistErrorCode } from "../schemas";
 import {
 	assertSeatsAvailable,
@@ -173,7 +179,7 @@ export const waitlistRouter = createTRPCRouter({
 				subscribesSelf: true,
 			});
 
-			return db.transaction(async (tx) => {
+			const result = await db.transaction(async (tx) => {
 				await lockParticipant(tx, participantId);
 				await assertNoScheduleConflict(tx, activityId, participantId);
 
@@ -188,7 +194,8 @@ export const waitlistRouter = createTRPCRouter({
 
 				const queue = await settleActivity(tx, locked);
 				const current = describeEntry(queue, participantId);
-				if (current) return current;
+				if (current)
+					return { kind: "existing" as const, entry: current };
 
 				const seats = await checkSeats(
 					tx,
@@ -200,12 +207,12 @@ export const waitlistRouter = createTRPCRouter({
 					},
 				);
 				if (seats.ok) {
-					await persistEnrollment(tx, {
+					const enrolled = await persistEnrollment(tx, {
 						activityId,
 						participantIds: [participantId],
 						answerRows,
 					});
-					return { status: "enrolled" as const };
+					return { kind: "enrolled" as const, enrolled };
 				}
 
 				// Desligar a fila bloqueia novas entradas, sem apagar as
@@ -217,12 +224,55 @@ export const waitlistRouter = createTRPCRouter({
 					);
 				}
 
-				await addToWaitlist(tx, activityId, participantId);
+				const waitlistEntry = await addToWaitlist(
+					tx,
+					activityId,
+					participantId,
+				);
 				await saveActivityAnswers(tx, answerRows);
 
 				const entries = await getActiveEntries(tx, activityId);
-				return describeEntry(entries, participantId)!;
+				const described = describeEntry(entries, participantId)!;
+				return {
+					kind: "waitlisted" as const,
+					enrollmentId: waitlistEntry.id,
+					position: described.position ?? undefined,
+					entry: described,
+				};
 			});
+
+			// Depois do commit: nada aqui pode reverter a inscrição/fila.
+			if (result.kind === "enrolled") {
+				const contacts = await loadNotificationRecipients([
+					participantId,
+				]);
+				void notifyActivityEnrollmentConfirmed({
+					eventId: found.projectId,
+					activityId,
+					contacts,
+					enrolled: result.enrolled,
+				});
+				return { status: "enrolled" as const };
+			}
+			if (result.kind === "waitlisted") {
+				const contacts = await loadNotificationRecipients([
+					participantId,
+				]);
+				const to = contacts.get(participantId);
+				if (to) {
+					void notifyActivityWaitlisted({
+						eventId: found.projectId,
+						activityId,
+						participantId,
+						to,
+						enrollmentId: result.enrollmentId,
+						...(result.position
+							? { position: result.position }
+							: {}),
+					});
+				}
+			}
+			return result.entry;
 		}),
 
 	/** Sai da fila; vale também para recusar uma vaga oferecida. */
@@ -267,7 +317,7 @@ export const waitlistRouter = createTRPCRouter({
 				ctx.session.user.id,
 			);
 
-			await db.transaction(async (tx) => {
+			const promoted = await db.transaction(async (tx) => {
 				await lockParticipant(tx, participantId);
 				await assertNoScheduleConflict(tx, activityId, participantId);
 
@@ -292,10 +342,20 @@ export const waitlistRouter = createTRPCRouter({
 					participantIds: [participantId],
 					answerRows: [],
 				});
-				await resolveEnrolledEntries(tx, activityId, queued, {
+				return resolveEnrolledEntries(tx, activityId, queued, {
 					type: "confirmed",
 					actorUserId: ctx.session.user.id,
 				});
+			});
+
+			const contacts = await loadNotificationRecipients(
+				promoted.map((entry) => entry.participantId),
+			);
+			void notifyActivityWaitlistPromoted({
+				eventId: found.projectId,
+				activityId,
+				contacts,
+				resolved: promoted,
 			});
 
 			return { success: true };
@@ -460,8 +520,9 @@ export const waitlistRouter = createTRPCRouter({
 			const { activityId } = input;
 			const participantIds = [...new Set(input.participantIds)].sort();
 			await assertCanManageActivity(activityId, ctx.session.user.id);
+			const found = await findActivity(activityId);
 
-			await db.transaction(async (tx) => {
+			const promoted = await db.transaction(async (tx) => {
 				for (const participantId of participantIds) {
 					await lockParticipant(tx, participantId);
 				}
@@ -497,10 +558,20 @@ export const waitlistRouter = createTRPCRouter({
 					participantIds,
 					answerRows: [],
 				});
-				await resolveEnrolledEntries(tx, activityId, queued, {
+				return resolveEnrolledEntries(tx, activityId, queued, {
 					type: "promoted",
 					actorUserId: ctx.session.user.id,
 				});
+			});
+
+			const contacts = await loadNotificationRecipients(
+				promoted.map((entry) => entry.participantId),
+			);
+			void notifyActivityWaitlistPromoted({
+				eventId: found.projectId,
+				activityId,
+				contacts,
+				resolved: promoted,
 			});
 
 			return { success: true };
