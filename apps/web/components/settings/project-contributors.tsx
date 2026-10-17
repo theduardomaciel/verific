@@ -53,7 +53,7 @@ export function ProjectContributors({ projectId }: Props) {
 		>
 			<div className="flex flex-col gap-4">
 				<div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-					<div className="flex flex-1 flex-col gap-2">
+					<div className="flex flex-col gap-3 sm:flex-1">
 						<Label htmlFor="contributor-email">
 							E-mail do usuário
 						</Label>
