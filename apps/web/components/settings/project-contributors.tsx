@@ -45,6 +45,15 @@ export function ProjectContributors({ projectId, ownerId }: Props) {
 			toast.error(error.message || "Não foi possível remover.");
 		},
 	});
+	const leaveMutation = trpc.leaveProjectContributor.useMutation({
+		onSuccess: () => {
+			void utils.listProjectContributors.invalidate({ projectId });
+			toast.success("Você saiu do projeto.");
+		},
+		onError: (error) => {
+			toast.error(error.message || "Não foi possível sair.");
+		},
+	});
 
 	const [email, setEmail] = useState("");
 
@@ -53,7 +62,11 @@ export function ProjectContributors({ projectId, ownerId }: Props) {
 	return (
 		<SettingsCard
 			title="Contribuidores"
-			description="Compartilhe o projeto com outros usuários. Eles terão acesso ao painel e poderão colaborar."
+			description={
+				isOwner
+					? "Compartilhe o projeto com outros usuários. Eles terão acesso ao painel e poderão colaborar."
+					: "Somente o proprietário do projeto pode adicionar ou remover contribuidores."
+			}
 		>
 			<div className="flex flex-col gap-4">
 				{isOwner ? (
@@ -119,6 +132,18 @@ export function ProjectContributors({ projectId, ownerId }: Props) {
 										disabled={removeMutation.isPending}
 									>
 										Remover
+									</Button>
+								) : contributor.userId ===
+								  session.data?.user?.id ? (
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() =>
+											leaveMutation.mutate({ projectId })
+										}
+										disabled={leaveMutation.isPending}
+									>
+										Sair
 									</Button>
 								) : null}
 							</li>

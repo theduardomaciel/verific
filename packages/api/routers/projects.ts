@@ -368,6 +368,20 @@ export const projectsRouter = createTRPCRouter({
 			return { added: true, userId: contributor.id };
 		}),
 
+	leaveProjectContributor: protectedProcedure
+		.input(z.object({ projectId: z.string().uuid() }))
+		.mutation(async ({ input, ctx }) => {
+			await db
+				.delete(projectModerator)
+				.where(
+					and(
+						eq(projectModerator.projectId, input.projectId),
+						eq(projectModerator.userId, ctx.session.user.id),
+					),
+				);
+			return { removed: true };
+		}),
+
 	removeProjectContributor: protectedProcedure
 		.input(
 			z.object({
