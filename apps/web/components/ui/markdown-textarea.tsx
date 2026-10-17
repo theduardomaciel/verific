@@ -206,13 +206,17 @@ const MarkdownTextarea = React.forwardRef<
 		{
 			icon: Edit,
 			label: "Editar",
-			className: "hidden md:inline-flex ml-auto",
+			active: mode === "edit",
+			className:
+				"hidden md:inline-flex ml-auto data-[state=active]:bg-accent data-[state=active]:text-accent-foreground dark:data-[state=active]:bg-accent/50",
 			action: () => setMode("edit"),
 		},
 		{
 			icon: Eye,
 			label: "Visualizar",
-			className: "hidden md:inline-flex",
+			active: mode === "preview",
+			className:
+				"hidden md:inline-flex data-[state=active]:bg-accent data-[state=active]:text-accent-foreground dark:data-[state=active]:bg-accent/50",
 			action: () => setMode("preview"),
 		},
 	];
@@ -227,6 +231,7 @@ const MarkdownTextarea = React.forwardRef<
 						type="button"
 						variant="ghost"
 						size="sm"
+						data-state={button.active ? "active" : undefined}
 						className={cn("h-8 w-8 p-0", button.className)}
 						onClick={button.action}
 						title={button.label}
@@ -246,14 +251,14 @@ const MarkdownTextarea = React.forwardRef<
 						{...props}
 					/>
 				) : (
-					<div className="prose prose-sm dark:prose-invert min-h-32 max-w-none rounded-md border p-3">
+					<div className="prose prose-sm dark:prose-invert min-h-36 max-w-none rounded-md border px-3 py-1.5">
 						<ReactMarkdown remarkPlugins={[remarkGfm]}>
 							{value || ""}
 						</ReactMarkdown>
 					</div>
 				)}
 				<Button
-					className="absolute bottom-0 left-0 flex rounded-t-none rounded-l-none p-6 md:hidden"
+					className="absolute bottom-0 left-0 flex rounded-tl-none rounded-br-none p-6 md:hidden"
 					size="icon"
 					type="button"
 					variant="ghost"
