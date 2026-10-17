@@ -34,6 +34,7 @@ import {
 	ACTIVITY_UPDATED_VERSION,
 	ACTIVITY_WAITLIST_PROMOTED_VERSION,
 	ACTIVITY_WAITLISTED_VERSION,
+	ACTIVITY_WAITLIST_OFFERED_VERSION,
 	activityCancelledPreviewProps,
 	activityCancelledSubject,
 	activityEnrollmentCancelledPreviewProps,
@@ -44,6 +45,8 @@ import {
 	activityEnrollmentRemovedSubject,
 	activityUpdatedPreviewProps,
 	activityUpdatedSubject,
+	activityWaitlistOfferedPreviewProps,
+	activityWaitlistOfferedSubject,
 	activityWaitlistPromotedPreviewProps,
 	activityWaitlistPromotedSubject,
 	activityWaitlistedPreviewProps,
@@ -53,6 +56,7 @@ import {
 	renderActivityEnrollmentConfirmed,
 	renderActivityEnrollmentRemoved,
 	renderActivityUpdated,
+	renderActivityWaitlistOffered,
 	renderActivityWaitlistPromoted,
 	renderActivityWaitlisted,
 	EVENT_REGISTRATION_REMOVED_VERSION,
@@ -60,7 +64,11 @@ import {
 	eventRegistrationRemovedSubject,
 	renderEventRegistrationRemoved,
 } from "./emails/participant-emails";
-import { formatActivitySessionsText, formatEventDateText } from "./format";
+import {
+	formatActivitySessionsText,
+	formatDeadlineText,
+	formatEventDateText,
+} from "./format";
 import { activityUrl, adminEmailsUrl, eventUrl, profileUrl } from "./urls";
 
 import type { RenderedTemplate } from "./templates";
@@ -693,6 +701,64 @@ export const notificationRegistry = {
 		render: (props) => renderActivityWaitlisted(props),
 		previewProps: activityWaitlistedPreviewProps,
 		templateVersion: ACTIVITY_WAITLISTED_VERSION,
+	} satisfies NotificationTypeDefinition,
+
+	activity_waitlist_offered: {
+		key: "activity_waitlist_offered",
+		audience: "participant",
+		category: "transactional",
+		scope: "activity",
+		defaultEnabled: true,
+		description:
+			"Aviso de que uma vaga abriu e está reservada por tempo limitado: o participante precisa confirmar dentro do prazo antes de ser inscrito.",
+		entityRefs: [
+			"activityId",
+			"participantId",
+			"enrollmentId",
+			"offeredAt",
+			"offerExpiresAt",
+		],
+		idempotencyKeyFormat:
+			"activity_waitlist_offered:{enrollmentId}:{offeredAt}",
+		buildIdempotencyKey: (refs) =>
+			`activity_waitlist_offered:${requiredString(refs, "enrollmentId")}:${requiredString(refs, "offeredAt")}`,
+		async validate(refs) {
+			const activityId = requiredString(refs, "activityId");
+			if (!(await activityExists(activityId)))
+				return { ok: false, reason: "entity_gone" };
+			const status = await waitlistStatus(
+				optionalString(refs, "enrollmentId"),
+				activityId,
+				requiredString(refs, "participantId"),
+			);
+			if (status === null) return { ok: false, reason: "entity_gone" };
+			// Only worth sending while the spot is still reserved for them.
+			return status === "offered"
+				? { ok: true }
+				: { ok: false, reason: "state_changed" };
+		},
+		async buildProps(refs, ctx) {
+			const base = await buildActivityProps(refs, ctx);
+			const expires = optionalString(refs, "offerExpiresAt");
+			return {
+				...base,
+				...(expires
+					? {
+							offerExpiresAtText: formatDeadlineText(
+								new Date(expires),
+							),
+						}
+					: {}),
+			};
+		},
+		subject: (props) =>
+			activityWaitlistOfferedSubject({
+				activityName: String(props["activityName"]),
+				eventName: String(props["eventName"]),
+			}),
+		render: (props) => renderActivityWaitlistOffered(props),
+		previewProps: activityWaitlistOfferedPreviewProps,
+		templateVersion: ACTIVITY_WAITLIST_OFFERED_VERSION,
 	} satisfies NotificationTypeDefinition,
 
 	activity_waitlist_promoted: {

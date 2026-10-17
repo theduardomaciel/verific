@@ -35,6 +35,7 @@ const TYPE_PRIORITY: Record<string, number> = {
 	event_registration_removed: 0,
 	activity_enrollment_confirmed: 1,
 	activity_waitlisted: 1,
+	activity_waitlist_offered: 1,
 	activity_updated: 2,
 };
 
@@ -249,6 +250,47 @@ export function notifyActivityWaitlisted(args: {
 		},
 	});
 	return dispatchAfterResponse(input ? [input] : []);
+}
+
+/**
+ * Waitlist entries that were just offered a spot. Recipients are loaded inside
+ * the deferred work (after the response), so no query runs in the caller's
+ * transaction; a rolled-back settlement is later skipped by `validate`.
+ */
+export function notifyActivityWaitlistOffered(args: {
+	eventId: string;
+	activityId: string;
+	offers: Array<{
+		participantId: string;
+		enrollmentId: string;
+		offeredAt: Date;
+		expiresAt: Date;
+	}>;
+}): Promise<void> {
+	if (args.offers.length === 0) return Promise.resolve();
+	return scheduleAfterResponse(async () => {
+		const contacts = await loadNotificationRecipients(
+			args.offers.map((offer) => offer.participantId),
+		);
+		const inputs = args.offers.flatMap((offer) => {
+			const to = contacts.get(offer.participantId);
+			if (!to) return [];
+			const input = makeInput({
+				type: "activity_waitlist_offered",
+				eventId: args.eventId,
+				to,
+				entityRefs: {
+					activityId: args.activityId,
+					participantId: offer.participantId,
+					enrollmentId: offer.enrollmentId,
+					offeredAt: offer.offeredAt.toISOString(),
+					offerExpiresAt: offer.expiresAt.toISOString(),
+				},
+			});
+			return input ? [input] : [];
+		});
+		await dispatchNotifications(inputs);
+	});
 }
 
 /** Only the entries actually flipped to `enrolled` by the transaction. */

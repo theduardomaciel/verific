@@ -229,6 +229,75 @@ export const activityWaitlistedPreviewProps: ActivityWaitlistedProps = {
 };
 
 /* ------------------------------------------------------------------ */
+/* activity_waitlist_offered                                           */
+/* ------------------------------------------------------------------ */
+
+export const ACTIVITY_WAITLIST_OFFERED_VERSION = "v1" as const;
+
+export const activityWaitlistOfferedPayloadSchema = baseSchema.extend({
+	/** Confirm-by deadline, already formatted (America/Sao_Paulo). */
+	offerExpiresAtText: z.string().trim().min(1),
+});
+export type ActivityWaitlistOfferedProps = z.infer<
+	typeof activityWaitlistOfferedPayloadSchema
+>;
+
+export const activityWaitlistOfferedSubject = (props: {
+	activityName: string;
+	eventName: string;
+}) => `Vaga aberta: ${props.activityName} – ${props.eventName}`;
+
+export function ActivityWaitlistOfferedEmail(
+	props: ActivityWaitlistOfferedProps,
+) {
+	return (
+		<ActivityEmailShell
+			badge="Vaga oferecida"
+			title={props.activityName}
+			preview={activityWaitlistOfferedSubject(props)}
+			props={props}
+			ctaLabel="Confirmar minha vaga"
+		>
+			<Text style={emailStyles.paragraph}>
+				Uma vaga abriu em <strong>{props.activityName}</strong>.
+				Confirme sua presença até{" "}
+				<strong>{props.offerExpiresAtText}</strong> para garantir o
+				lugar — se o prazo passar, a vaga vai para a próxima pessoa da
+				fila.
+			</Text>
+			<ActivityDetails
+				dateText={props.activityDateText}
+				location={props.activityLocation}
+			/>
+		</ActivityEmailShell>
+	);
+}
+
+export async function renderActivityWaitlistOffered(
+	props: unknown,
+): Promise<RenderedTemplate> {
+	const parsed = activityWaitlistOfferedPayloadSchema.parse(props);
+	const element = <ActivityWaitlistOfferedEmail {...parsed} />;
+	return renderBoth(
+		element,
+		activityWaitlistOfferedSubject(parsed),
+		ACTIVITY_WAITLIST_OFFERED_VERSION,
+	);
+}
+
+/** Sample props for `react-email dev` and registry previews. */
+export const activityWaitlistOfferedPreviewProps: ActivityWaitlistOfferedProps =
+	{
+		participantName: "Maria Silva",
+		eventName: "SECOMP 2026",
+		activityName: "Oficina de React",
+		activityDateText: "12 de abril de 2026, 14:00 – 18:00",
+		activityLocation: "Laboratório 4",
+		accessUrl: "https://example.com/secomp-2026/schedule/activity-1",
+		offerExpiresAtText: "11 de abril de 2026 às 20:00",
+	};
+
+/* ------------------------------------------------------------------ */
 /* activity_waitlist_promoted                                          */
 /* ------------------------------------------------------------------ */
 

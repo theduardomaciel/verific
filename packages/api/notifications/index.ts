@@ -100,6 +100,7 @@ export {
 	notifyActivityEnrollmentRemoved,
 	notifyActivityUpdated,
 	notifyActivityWaitlisted,
+	notifyActivityWaitlistOffered,
 	notifyActivityWaitlistPromoted,
 	notifyEventRegistrationRemoved,
 } from "./triggers";

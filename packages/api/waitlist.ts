@@ -7,6 +7,7 @@ import {
 } from "@verific/drizzle/schema";
 
 import { deleteActivityAnswers } from "./enrollment";
+import { notifyActivityWaitlistOffered } from "./notifications";
 import { countEnrolled, type LockedActivity, type Tx } from "./seats";
 import { byQueueOrder, planSettlement } from "./waitlist-plan";
 
@@ -139,6 +140,26 @@ export async function settleActivity(
 			"offered",
 			null,
 		);
+
+		// Offers are created lazily by any settle (including reads), so this is
+		// the only place that sees every new offer. Fire-and-forget: the e-mail
+		// is built and validated after the transaction commits, and a rolled
+		// back settlement is later skipped by `validate`.
+		const expiresById = new Map(
+			plan.offer.map((offer) => [offer.id, offer.expiresAt]),
+		);
+		void notifyActivityWaitlistOffered({
+			eventId: locked.projectId,
+			activityId: locked.id,
+			offers: entries
+				.filter((entry) => expiresById.has(entry.id))
+				.map((entry) => ({
+					participantId: entry.participantId,
+					enrollmentId: entry.id,
+					offeredAt: now,
+					expiresAt: expiresById.get(entry.id)!,
+				})),
+		});
 	}
 
 	const expired = new Set(plan.expire);

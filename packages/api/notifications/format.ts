@@ -49,6 +49,23 @@ export function formatActivitySessionsText(
 	return extra > 0 ? `${text} e mais ${extra}` : text;
 }
 
+const saoPauloDeadline = new Intl.DateTimeFormat("pt-BR", {
+	timeZone: "America/Sao_Paulo",
+	day: "2-digit",
+	month: "long",
+	year: "numeric",
+	hour: "2-digit",
+	minute: "2-digit",
+});
+
+/**
+ * Deadline text (America/Sao_Paulo) for waitlist offers, e.g.
+ * "11 de abril de 2026 às 20:00".
+ */
+export function formatDeadlineText(date: Date): string {
+	return saoPauloDeadline.format(new Date(date));
+}
+
 /** Location text for an activity: its own address, else the event address. */
 export function formatLocationText(
 	activityAddress: string | null | undefined,

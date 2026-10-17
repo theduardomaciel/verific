@@ -123,6 +123,11 @@ const IDEMPOTENCY_CASES: Array<{
 		expected: "activity_waitlist_promoted:e1:2026-01-02T00:00:00.000Z",
 	},
 	{
+		type: "activity_waitlist_offered",
+		refs: { enrollmentId: "e1", offeredAt: "2026-01-02T12:00:00.000Z" },
+		expected: "activity_waitlist_offered:e1:2026-01-02T12:00:00.000Z",
+	},
+	{
 		type: "activity_enrollment_cancelled",
 		refs: {
 			activityId: "a1",
@@ -215,6 +220,11 @@ const VALIDATE_REFS: Record<
 		participantId: "p1",
 		enrollmentId: "e1",
 	},
+	activity_waitlist_offered: {
+		activityId: "a1",
+		participantId: "p1",
+		enrollmentId: "e1",
+	},
 	activity_enrollment_cancelled: { activityId: "a1", participantId: "p1" },
 	activity_enrollment_removed: { activityId: "a1", participantId: "p1" },
 	activity_updated: { activityId: "a1", participantId: "p1" },
@@ -270,6 +280,30 @@ describe("validate", () => {
 
 		await expect(
 			notificationRegistry.activity_waitlisted.validate({
+				activityId: "a1",
+				participantId: "p1",
+				enrollmentId: "e1",
+			}),
+		).resolves.toEqual({ ok: false, reason: "state_changed" });
+	});
+
+	it("returns ok while a waitlist offer is still open", async () => {
+		queue.push([{ id: "a1" }], [{ status: "offered" }]);
+
+		await expect(
+			notificationRegistry.activity_waitlist_offered.validate({
+				activityId: "a1",
+				participantId: "p1",
+				enrollmentId: "e1",
+			}),
+		).resolves.toEqual({ ok: true });
+	});
+
+	it("returns state_changed once a waitlist offer is no longer open", async () => {
+		queue.push([{ id: "a1" }], [{ status: "expired" }]);
+
+		await expect(
+			notificationRegistry.activity_waitlist_offered.validate({
 				activityId: "a1",
 				participantId: "p1",
 				enrollmentId: "e1",
