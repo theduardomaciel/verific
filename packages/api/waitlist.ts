@@ -87,6 +87,11 @@ export function queuePositions(entries: ActiveEntry[]) {
  * as vagas livres aos próximos. Não há tarefa agendada; toda operação que
  * mexe na fila ou nas vagas, e toda leitura do estado da fila, chama isto.
  * Devolve a fila já acertada.
+ *
+ * Sem agendador, uma oferta vencida só é liberada quando algo acerta a fila
+ * de novo (inclusive uma leitura): se ninguém acertar, o próximo da fila não
+ * é convocado e a corrente trava até alguém abrir a página. Um acerto
+ * periódico das atividades com oferta em aberto fecharia essa lacuna.
  */
 export async function settleActivity(
 	tx: Tx,
