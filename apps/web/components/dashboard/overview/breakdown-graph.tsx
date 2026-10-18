@@ -195,7 +195,6 @@ export function BreakdownGraph({
 						innerRadius="55%"
 						outerRadius="85%"
 						paddingAngle={2}
-						isAnimationActive={false}
 					>
 						{pieData.map((entry) => (
 							<Cell
