@@ -1,7 +1,7 @@
 "use client";
 
 import Autoplay from "embla-carousel-autoplay";
-import { Info, SquareUser, User } from "lucide-react";
+import { SquareUser, User } from "lucide-react";
 
 // Types
 import type { RouterOutput } from "@verific/api";

@@ -6,7 +6,6 @@ import { keepPreviousData } from "@tanstack/react-query";
 
 // Validation (client-safe: no db / server env imports)
 import { getParticipantsParams } from "@verific/api/schemas";
-import { parseEventTheme } from "@verific/drizzle/theme";
 
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -155,7 +154,6 @@ export function ParticipantsContent() {
 						/>
 					</FiltersPanel>
 					<BadgesGeneratorCallout
-						name="Fulano da Silva"
 						onGenerate={() => {
 							router.push("/dashboard/badges");
 						}}

@@ -299,7 +299,10 @@ export function BadgeEditor({
 		return JSON.stringify({
 			families: [...families].sort(),
 			weights: Object.fromEntries(
-				[...weights.entries()].map(([f, w]) => [f, [...w].sort()]),
+				[...weights.entries()].map(([f, w]) => [
+					f,
+					[...w].sort((a, b) => a - b),
+				]),
 			),
 		});
 	}, [draft.items, roles]);

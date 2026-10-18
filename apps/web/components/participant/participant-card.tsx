@@ -1,5 +1,3 @@
-import { Suspense } from "react";
-
 // Icons
 import { CircleMinus, Hash, Hourglass, LogOut, Mail } from "lucide-react";
 
@@ -55,7 +53,8 @@ export async function ParticipantCard({ id: participantId, eventUrl }: Props) {
 			else if (raw instanceof Date)
 				display = raw.toISOString().slice(0, 10);
 			else if (typeof raw === "boolean") display = raw ? "Sim" : "Não";
-			else if (raw !== null && raw !== undefined) display = String(raw);
+			else if (raw !== null && raw !== undefined)
+				display = String(raw as any);
 			return { label, display };
 		});
 	} catch {

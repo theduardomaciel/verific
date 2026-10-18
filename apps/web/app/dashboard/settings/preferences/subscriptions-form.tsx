@@ -22,6 +22,12 @@ import { trpc } from "@/lib/trpc/react";
 // Validations
 import { subscriptionManagementSchema } from "@/lib/validations/forms/settings-form/project/subscriptions-form";
 
+import type { UseFormReturn } from "react-hook-form";
+
+interface Props {
+	project: RouterOutput["getProject"]["project"];
+}
+
 function ProfilesSwitch({
 	control,
 	checked,

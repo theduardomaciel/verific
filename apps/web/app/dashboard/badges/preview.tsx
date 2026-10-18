@@ -42,7 +42,6 @@ export function PrimitiveLayer({
 				}
 				if (p.kind === "text") {
 					const sizeMm = p.fontSizePt * 0.3527777778;
-					const lineMm = p.lineHeightPt * 0.3527777778;
 					const anchor =
 						p.align === "center"
 							? "middle"

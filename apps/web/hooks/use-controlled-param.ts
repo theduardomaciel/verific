@@ -30,7 +30,7 @@ export function useControlledParam<T extends string | string[]>({
 	value?: T;
 	onChange?: (value: T) => void;
 	debounce?: number;
-	type: ParamType;
+	type?: ParamType;
 	defaultValue?: T;
 }) {
 	const router = useRouter();

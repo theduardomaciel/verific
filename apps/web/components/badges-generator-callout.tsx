@@ -7,14 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface Props {
-	name?: string;
-	qrValue?: string;
-	logoSrc: {
-		light?: string | null;
-		dark?: string | null;
-	};
-	primaryColor?: string;
-	secondaryColor?: string;
 	onGenerate?: () => void;
 }
 
@@ -29,17 +21,9 @@ const DATA = {
 	secondaryColor: "#458AFF",
 };
 
-export default function BadgesGeneratorCallout({
-	name = "Fulano da Silva",
-	qrValue = "verifIC",
-	logoSrc = {
-		light: "/logo_blue.png",
-		dark: "/logo_white.png",
-	},
-	primaryColor = "#1C63B7",
-	secondaryColor = "#458AFF",
-	onGenerate,
-}: Props) {
+const { name, qrValue, logoSrc, primaryColor, secondaryColor } = DATA;
+
+export default function BadgesGeneratorCallout({ onGenerate }: Props) {
 	const nameStyle =
 		primaryColor && secondaryColor
 			? {
