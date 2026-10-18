@@ -389,7 +389,23 @@ function SessionsEditor({
 									<FormItem className="w-full">
 										<TimePicker
 											value={field.value}
-											onChange={field.onChange}
+											onChange={(value) => {
+												field.onChange(value);
+												const currentTo =
+													form.getValues(
+														`sessions.${index}.timeTo`,
+													);
+												if (!currentTo) {
+													form.setValue(
+														`sessions.${index}.timeTo`,
+														value,
+														{
+															shouldValidate: true,
+															shouldDirty: true,
+														},
+													);
+												}
+											}}
 											placeholder="HH:MM"
 										/>
 										<FormMessage />
@@ -406,6 +422,11 @@ function SessionsEditor({
 											value={field.value}
 											onChange={field.onChange}
 											placeholder="HH:MM"
+											disabled={
+												!form.getValues(
+													`sessions.${index}.timeFrom`,
+												)
+											}
 										/>
 										<FormMessage />
 									</FormItem>

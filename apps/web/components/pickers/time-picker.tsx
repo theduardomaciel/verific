@@ -8,6 +8,7 @@ import {
 	CommandGroup,
 	CommandItem,
 	CommandInput,
+	CommandList,
 } from "@/components/ui/command";
 import {
 	Popover,
@@ -135,6 +136,7 @@ interface TimePickerProps {
 	onChange?: (value: string) => void;
 	placeholder?: string;
 	className?: string;
+	disabled?: boolean;
 }
 
 export function TimePicker({
@@ -142,6 +144,7 @@ export function TimePicker({
 	onChange,
 	placeholder,
 	className,
+	disabled,
 }: TimePickerProps) {
 	const [open, setOpen] = useState(false);
 	const [search, setSearch] = useState("");
@@ -217,6 +220,7 @@ export function TimePicker({
 			<PopoverTrigger asChild>
 				<button
 					type="button"
+					disabled={disabled}
 					className={cn(
 						"file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
 						"focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
@@ -229,11 +233,11 @@ export function TimePicker({
 				</button>
 			</PopoverTrigger>
 			<PopoverContent
-				className="no-scrollbar max-h-56 w-(--radix-popover-trigger-width) overflow-y-scroll p-0"
+				className="w-(--radix-popover-trigger-width) p-0"
 				onOpenAutoFocus={(e) => e.preventDefault()}
 				onCloseAutoFocus={(e) => e.preventDefault()}
 			>
-				<Command loop defaultValue={targetTime}>
+				<Command loop defaultValue={targetTime} className="max-h-56">
 					<CommandInput
 						placeholder="Buscar horário..."
 						value={search}
@@ -242,35 +246,50 @@ export function TimePicker({
 						autoFocus
 					/>
 					<CommandEmpty>Nenhum horário encontrado.</CommandEmpty>
-					<CommandGroup>
-						{customTime && (
-							<CommandItem
-								value={customTime}
-								key={customTime}
-								className="lg:py-3"
-								onSelect={() => {
-									onChange?.(customTime);
-									setOpen(false);
-								}}
-							>
-								{customTime} (personalizado)
-							</CommandItem>
-						)}
-						{filteredTimes.map((time) => (
-							<CommandItem
-								value={time}
-								key={time}
-								ref={time === targetTime ? itemRef : undefined}
-								className="lg:py-3"
-								onSelect={() => {
-									onChange?.(time);
-									setOpen(false);
-								}}
-							>
-								{time}
-							</CommandItem>
-						))}
-					</CommandGroup>
+					<CommandList className="max-h-56 overflow-y-auto">
+						<CommandGroup>
+							{customTime && (
+								<CommandItem
+									value={customTime}
+									key={customTime}
+									className="lg:py-3"
+									onSelect={() => {
+										onChange?.(customTime);
+										setOpen(false);
+									}}
+								>
+									{customTime} (personalizado)
+								</CommandItem>
+							)}
+							{filteredTimes.map((time) => (
+								<CommandItem
+									value={time}
+									key={time}
+									ref={
+										time === targetTime
+											? itemRef
+											: undefined
+									}
+									className={cn(
+										"lg:py-3",
+										time === value &&
+											"bg-accent text-accent-foreground font-semibold",
+									)}
+									onSelect={() => {
+										onChange?.(time);
+										setOpen(false);
+									}}
+								>
+									{time}
+									{time === value && (
+										<span className="ml-auto text-xs">
+											✓
+										</span>
+									)}
+								</CommandItem>
+							))}
+						</CommandGroup>
+					</CommandList>
 				</Command>
 			</PopoverContent>
 		</Popover>
