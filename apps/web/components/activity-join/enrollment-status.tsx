@@ -95,6 +95,7 @@ export function SignedOutStatus({ returnUrl }: { returnUrl: string }) {
 				<Button asChild size="lg" className="w-full">
 					<Link
 						href={`/auth?callbackUrl=${encodeURIComponent(returnUrl)}`}
+						prefetch={false}
 					>
 						Entrar
 					</Link>

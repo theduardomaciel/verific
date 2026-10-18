@@ -22,6 +22,17 @@ const storagePattern = storageRemotePattern();
 
 const nextConfig: NextConfig = {
 	cacheComponents: true,
+	// Perfil custom das leituras públicas quentes (projeto, atividades,
+	// formulário, perfis): vida longa + invalidação on-demand por tag.
+	// `revalidate` fica como rede de segurança (24h); mudanças entram por
+	// `revalidateTag(..., "max")`/`updateTag` nas mutations.
+	cacheLife: {
+		static: {
+			stale: 3600, // 1h de cache no roteador do cliente
+			revalidate: 86400, // regeneração de fundo a cada 1 dia
+			expire: 604800, // teto de 7 dias sem nenhum acesso
+		},
+	},
 	partialPrefetching: true,
 	reactCompiler: true,
 	experimental: {

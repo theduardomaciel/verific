@@ -51,7 +51,6 @@ interface FieldOption {
 
 interface ProfileLayoutEditorProps {
 	projectId: string;
-	projectUrl: string;
 	initial: ProfileLayout;
 }
 
@@ -100,7 +99,6 @@ function neededTypesLabel(slot: ProfileSlotKey): string {
 
 export function ProfileLayoutEditor({
 	projectId,
-	projectUrl,
 	initial,
 }: ProfileLayoutEditorProps) {
 	const [draft, setDraft] = useState<ProfileLayout>(initial);
@@ -177,7 +175,7 @@ export function ProfileLayoutEditor({
 		}
 		try {
 			await saveMutation.mutateAsync({ projectId, layout: parsed.data });
-			await revalidateEventProfiles(projectUrl);
+			await revalidateEventProfiles(projectId);
 			void utils.getProject.invalidate();
 			toast.success("Layout do perfil aplicado!");
 		} catch (e) {

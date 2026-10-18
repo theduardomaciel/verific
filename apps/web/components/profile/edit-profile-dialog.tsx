@@ -47,7 +47,7 @@ export function EditProfileDialog({
 	async function handleOpenChange(next: boolean) {
 		setOpen(next);
 		if (!next) {
-			await revalidateProfile(eventUrl, shortId);
+			await revalidateProfile(projectId, shortId);
 			router.refresh();
 		}
 	}

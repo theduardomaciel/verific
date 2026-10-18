@@ -4,33 +4,18 @@ import {
 } from "@tanstack/react-query";
 import SuperJSON from "superjson";
 
-// tRPC errors carry the HTTP status at `error.data.httpStatus`
-// (TRPCClientError shape). Deterministic failures (bad input, auth,
-// permission, not found, validation) always fail the same way, so fail
-// fast instead of tripling the error noise. Anything else
-// (network/CORS, 5xx) is transient: retry twice with the default backoff.
-function getHttpStatus(error: unknown): number | undefined {
-	if (typeof error !== "object" || error === null) return undefined;
-	const data = (error as { data?: unknown }).data;
-	if (typeof data !== "object" || data === null) return undefined;
-	const status = (data as { httpStatus?: unknown }).httpStatus;
-	return typeof status === "number" ? status : undefined;
-}
-
-function shouldRetry(failureCount: number, error: unknown) {
-	const status = getHttpStatus(error);
-	if (
-		status === 400 ||
-		status === 401 ||
-		status === 403 ||
-		status === 404 ||
-		status === 422
-	) {
-		return false;
-	}
-	return failureCount < 2;
-}
-
+/**
+ * Defaults de cache do cliente (React Query).
+ *
+ * O servidor já entrega dado fresco por cache de tag + `refresh()`
+ * pós-mutation; então o cliente pode segurar as respostas por mais tempo:
+ * menos refetch = menos invocações de função tRPC (cada refetch é um
+ * request novo no handler HTTP).
+ *
+ * `retry: 1`: um único retry cobre blips de rede sem multiplicar
+ * tentativas em erro determinístico (validação/autorização) — erros são
+ * renderizados como dado (`isError`), nunca como exceção.
+ */
 export const createQueryClient = () =>
 	new QueryClient({
 		defaultOptions: {
@@ -38,13 +23,18 @@ export const createQueryClient = () =>
 				// Errors are data: screens render them inline via the
 				// `isError` field, never as thrown exceptions.
 				throwOnError: false,
-				retry: shouldRetry,
+				retry: 1,
 				// With SSR, we usually want to set some default staleTime
-				// above 0 to avoid refetching immediately on the client
-				staleTime: 30 * 1000,
-				// Refetching every list on window focus causes error-toast
-				// storms after a backend blip; refetch explicitly instead.
+				// above 0 to avoid refetching immediately on the client.
+				staleTime: 5 * 60 * 1000, // 5 min
+				// Mantém dado inativo por mais tempo para navegação de ida
+				// e volta não refazer queries já resolvidas.
+				gcTime: 15 * 60 * 1000, // 15 min
+				// Refetch em foco/reconexão refaz todo o quadro visível —
+				// depois de um blip de backend vira tempestade de erros e
+				// de invocações; refazer explicitamente é mais barato.
 				refetchOnWindowFocus: false,
+				refetchOnReconnect: false,
 			},
 			dehydrate: {
 				serializeData: SuperJSON.serialize,

@@ -78,7 +78,7 @@ async function ActivityPageLoader({
 	// `getActivity` sem sessão não retorna contagem, e tudo aqui precisa
 	// continuar estático — nada específico do usuário no servidor.
 	const participantsCount = await getCachedActivities({
-		projectUrl: eventUrl,
+		projectId: data.activity.project.id,
 		pageSize: 1000,
 	})
 		.then(

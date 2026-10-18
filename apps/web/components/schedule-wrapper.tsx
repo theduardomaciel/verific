@@ -1,5 +1,3 @@
-import { cacheLife, cacheTag } from "next/cache";
-
 // Data
 import { getCachedActivities } from "@/lib/data";
 
@@ -13,11 +11,13 @@ interface Props {
 	};
 }
 
+/**
+ * Sem `"use cache"` próprio: a lista vem de `getCachedActivities`, que já
+ * tem cache com tag `project-activities:<id>` e vida longa. Um cache
+ * externo aqui criaria uma segunda entrada (com vida/tag próprias,
+ * podendo mascarar a invalidação) sem nenhum ganho.
+ */
 export async function ScheduleWrapper({ project }: Props) {
-	"use cache";
-	cacheLife("hours");
-	cacheTag("activities", `activities:${project.id}`);
-
 	const { activities } = await getCachedActivities({
 		projectId: project.id,
 		pageSize: 1000, // Fetch all activities for the schedule

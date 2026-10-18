@@ -9,6 +9,8 @@ import * as EventContainer from "@/components/landing/event-container";
 import { SubscribeGate } from "@/components/subscribe-gate";
 
 import {
+	getCachedProfileLayout,
+	getCachedPublishedForm,
 	getEventRegistration,
 	getEventStaticParams,
 	getProject,
@@ -63,6 +65,14 @@ export default async function EventSubscribePage({
 		secondaryColor: project.secondaryColor,
 	});
 
+	// Formulário publicado + layout do perfil vêm do cache por tag
+	// (`getCachedPublishedForm`/`getCachedProfileLayout`): a ilha de
+	// inscrição nasce pronta e não dispara query própria no cliente.
+	const [formData, profileLayout] = await Promise.all([
+		getCachedPublishedForm(project.id),
+		getCachedProfileLayout(project.url),
+	]);
+
 	return (
 		<Suspense fallback={<SubscribePageSkeleton />}>
 			<EventContainer.Holder>
@@ -96,6 +106,8 @@ export default async function EventSubscribePage({
 								logo: project.logoUrl || undefined,
 								colors: [theme.primary, theme.secondary],
 							}}
+							formData={formData}
+							profileLayout={profileLayout}
 						/>
 					</div>
 				</EventContainer.Content>

@@ -22,20 +22,18 @@ const footerVariants = cva(
 );
 
 /**
- * Ano corrente com `"use cache"`: o valor é congelado pela entrada do
- * cache em vez de mudar a cada requisição (o que invalidaria o cache de
- * toda a página). Server component por isso — precisa ser aguardado, não
- * renderizado como filho.
+ * Ano do copyright como constante estática — atualizada manualmente.
+ *
+ * Antes vinha de `new Date().getFullYear()` dentro de um `"use cache"`
+ * só para congelar o valor: uma entrada de cache (com `cacheLife`) em
+ * toda página que renderiza o rodapé, e a virada do ano invalidava a
+ * entrada de todas elas. Estático: nenhuma leitura de dado, nenhuma
+ * entrada de cache, nenhuma surpresa.
  */
-async function getRenderedYear() {
-	"use cache";
-	return new Date().getFullYear();
-}
+const COPYRIGHT_YEAR = 2026;
 
 /**
- * Rodapé. Server component (async) porque o ano vem de uma função cacheada:
- * num componente síncrono, `getRenderedYear()` era Interpolada no JSX como
- * uma promise não resolvida, e o React a rejeitava como objeto inválido.
+ * Rodapé.
  *
  * Cores: o `text-foreground` base e o `text-(--ev-footer-fg)` passado
  * pela página do evento são resolvidos corretamente pelo `tailwind-merge`
@@ -44,7 +42,7 @@ async function getRenderedYear() {
  * O copyright usa `--ev-footer-fg-soft`, derivado para passar AA sobre o
  * fundo do rodapé — o antigo `opacity-50` sobre `text-xs` reprovava.
  */
-async function Footer({
+function Footer({
 	className,
 	variant,
 	showWatermark = false,
@@ -53,8 +51,6 @@ async function Footer({
 	VariantProps<typeof footerVariants> & {
 		showWatermark?: boolean;
 	}) {
-	const year = await getRenderedYear();
-
 	return (
 		<footer
 			className={cn(
@@ -102,7 +98,8 @@ async function Footer({
 					</nav>
 				</div>
 				<p className="text-xs text-(--ev-footer-fg-soft,var(--muted-foreground))">
-					Copyright {year} verifIC. Todos os direitos reservados
+					Copyright {COPYRIGHT_YEAR} verifIC. Todos os direitos
+					reservados
 				</p>
 			</div>
 		</footer>

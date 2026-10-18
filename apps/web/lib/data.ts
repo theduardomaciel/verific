@@ -1,24 +1,73 @@
 import { cacheLife, cacheTag } from "next/cache";
 
+import {
+	activityCacheTag,
+	GLOBAL_CACHE_TAGS,
+	participantProfileCacheTag,
+	profileLayoutCacheTag,
+	projectActivitiesCacheTag,
+	projectCacheTag,
+	projectFormCacheTag,
+	projectProfilesCacheTag,
+	projectUrlCacheTag,
+} from "@verific/api";
+
 import { isAfterEnd } from "@/lib/date";
-import { createClientForUser, publicClient } from "@/lib/trpc/server";
+import { publicClient } from "@/lib/trpc/server";
+
+/**
+ * Leituras públicas cacheadas ("use cache") do app.
+ *
+ * Perfil `static` (next.config.ts): `stale` 1h no roteador do cliente,
+ * `revalidate` 24h como rede de segurança e `expire` de 7 dias. A
+ * atualização normal vem de invalidação on-demand: as mutations do tRPC
+ * chamam `revalidateTag(tag, "max")` (registro em `@verific/api`), e as
+ * tags abaixo dizem exatamente qual entrada cada mutation derruba.
+ *
+ * Entradas cujas chaves não existem (slug varrido por bots, projeto
+ * removido) usam um perfil curto inline: cachear o `null` por dias
+ * prenderia o 404 mesmo após a criação do evento.
+ */
+
+/**
+ * Diagnóstico opt-in: corpo de função `"use cache"` só executa em
+ * cache miss/regeneração, então qualquer log aqui É um miss.
+ * Ative com `LOG_CACHE_MISSES=1` (por instância do servidor).
+ */
+const LOG_CACHE_MISSES = process.env.LOG_CACHE_MISSES === "1";
+
+function logCacheMiss(name: string, key?: string) {
+	if (!LOG_CACHE_MISSES) return;
+	console.log(`[cache-miss] ${name}${key ? ` ${key}` : ""}`);
+}
 
 export async function getProject(projectUrl: string) {
 	"use cache";
-	cacheLife("hours");
-	cacheTag("projects", `project:${projectUrl}`);
+	cacheTag(GLOBAL_CACHE_TAGS.events, projectUrlCacheTag(projectUrl));
 
 	try {
-		return await publicClient.getProject({ url: projectUrl });
+		const result = await publicClient.getProject({ url: projectUrl });
+
+		// Tag por id além da URL: mutações de dados do evento (nome, tema,
+		// dono) invalidam `project:<id>` sem depender do slug atual.
+		if (result.project.id) cacheTag(projectCacheTag(result.project.id));
+		cacheLife("static");
+		logCacheMiss("getProject", projectUrl);
+		return result;
 	} catch {
+		// Slug inexistente: `null` barato, mas com vida curta — uma varredura
+		// de bots não pode prender o 404 depois que o evento for criado.
+		cacheLife({ stale: 300, revalidate: 14400, expire: 28800 });
+		logCacheMiss("getProject:null", projectUrl);
 		return null;
 	}
 }
 
 export async function getProjects() {
 	"use cache";
-	cacheLife("hours");
-	cacheTag("projects");
+	cacheLife("static");
+	cacheTag(GLOBAL_CACHE_TAGS.projects);
+	logCacheMiss("getProjects");
 	return publicClient.getAllProjects();
 }
 
@@ -39,21 +88,21 @@ export async function getEventStaticParams() {
  * rotas seguem on-demand, como hoje.
  */
 export async function getActivityStaticParams() {
-	const events = await getEventStaticParams();
+	const projects = await getProjects();
 
-	if (events.length === 1 && events[0]?.eventUrl === "__no-events__") {
+	if (projects.length === 0) {
 		return [];
 	}
 
 	const perEvent = await Promise.all(
-		events.map(async ({ eventUrl }) => {
+		projects.map(async ({ id, url }) => {
 			const { activities } = await getCachedActivities({
-				projectUrl: eventUrl,
+				projectId: id,
 				pageSize: 1000,
 			});
 
 			return activities.map((activity) => ({
-				eventUrl,
+				eventUrl: url,
 				activityId: activity.id,
 			}));
 		}),
@@ -64,117 +113,129 @@ export async function getActivityStaticParams() {
 
 /**
  * Decisão "inscrições abertas?" a partir dos dados do evento.
- * A leitura do relógio (`isAfterEnd`) vive dentro de "use cache":
- * o valor é congelado pelo tempo do cache (revalidado em minutos)
- * em vez de quebrar o prerender estático.
+ * A leitura do relógio (`isAfterEnd`) vive dentro de "use cache": o valor
+ * é congelado no cache e a invalidação normal vem das tags do projeto.
+ *
+ * Como o fim do evento é uma transição por *tempo*, a entrada aberta usa
+ * `revalidate` calculado até `endDate` (teto de 6 dias): a regeneração de
+ * fundo acontece logo depois do encerramento, em vez de polling por
+ * minuto — sem prender "inscrições abertas" por 24h.
  */
 export async function getEventRegistration(projectUrl: string) {
 	"use cache";
-	cacheLife("minutes");
-	cacheTag("projects", `project:${projectUrl}`);
+	cacheTag(projectUrlCacheTag(projectUrl));
 
 	const result = await getProject(projectUrl);
 	const project = result?.project;
-	if (!project) return null;
+	if (!project) {
+		cacheLife({ stale: 300, revalidate: 14400, expire: 28800 });
+		logCacheMiss("getEventRegistration:null", projectUrl);
+		return null;
+	}
 
-	const isOpen =
-		Boolean(project.isRegistrationEnabled) &&
-		!project.isArchived &&
-		!isAfterEnd(new Date(project.endDate));
+	cacheTag(projectCacheTag(project.id));
+
+	const endDate = new Date(project.endDate);
+	const secondsUntilEnd = Math.ceil((endDate.getTime() - Date.now()) / 1000);
+
+	if (isAfterEnd(endDate)) {
+		// Encerrado permanece encerrado até uma edição (tag do projeto).
+		cacheLife("static");
+	} else {
+		cacheLife({
+			stale: 300,
+			revalidate: Math.min(Math.max(secondsUntilEnd, 60), 6 * 86400),
+			expire: 604800,
+		});
+	}
+
+	logCacheMiss("getEventRegistration", projectUrl);
 
 	return {
-		isOpen,
+		isOpen:
+			Boolean(project.isRegistrationEnabled) &&
+			!project.isArchived &&
+			!isAfterEnd(endDate),
 		isRegistrationEnabled: Boolean(project.isRegistrationEnabled),
 		isArchived: Boolean(project.isArchived),
 	};
 }
 
-export async function getCachedActivities(
-	params: Parameters<typeof publicClient.getActivities>[0],
-) {
+export async function getCachedActivities(params: {
+	projectId: string;
+	pageSize?: number;
+}) {
 	"use cache";
-	cacheLife("minutes");
-	cacheTag(
-		"activities",
-		`activities:${params.projectId ?? params.projectUrl ?? "all"}`,
+	cacheLife("static");
+	cacheTag(projectActivitiesCacheTag(params.projectId));
+	logCacheMiss(
+		"getCachedActivities",
+		`${params.projectId}:${params.pageSize ?? "default"}`,
 	);
 	return await publicClient.getActivities(params);
 }
 
-export async function getCachedActivity(
-	params: Parameters<typeof publicClient.getActivity>[0],
-) {
+export async function getCachedActivity(params: { activityId: string }) {
 	"use cache";
-	cacheLife("minutes");
-	cacheTag("activities", `activity:${params.activityId}`);
-	return publicClient.getActivity(params);
-}
+	cacheTag(activityCacheTag(params.activityId));
 
-export async function getCachedActivitiesFromParticipant(
-	projectUrl: string,
-	userId: string,
-) {
-	"use cache";
-	cacheLife({ stale: 30, revalidate: 30, expire: 60 });
-	cacheTag(
-		`activities-from-participant-${userId}`,
-		`activities-from-participant-${userId}-${projectUrl}`,
-	);
-	return createClientForUser(userId).getActivitiesFromParticipant({
-		projectUrl,
-	});
-}
+	const data = await publicClient.getActivity(params);
 
-export async function getCachedParticipants(
-	userId: string,
-	params: Parameters<typeof publicClient.getParticipants>[0],
-) {
-	"use cache";
-	cacheLife("hours");
-	cacheTag("participants", `participants:${params.projectId ?? "all"}`);
-	return createClientForUser(userId).getParticipants(params);
-}
+	// O detalhe é renderizado dentro do evento: a tag de lista cobre
+	// mutações que derrubam a programação inteira (criação/exclusão de
+	// atividade e mudanças de palestrante/tag) sem exigir o projectId
+	// de quem muta.
+	cacheTag(projectActivitiesCacheTag(data.activity.project.id));
+	cacheLife("static");
+	logCacheMiss("getCachedActivity", params.activityId);
 
-export async function getCachedCheckParticipantEnrollment(
-	projectUrl: string,
-	userId: string,
-) {
-	"use cache";
-	cacheLife({ stale: 30, revalidate: 30, expire: 60 });
-	cacheTag(
-		`participant-enrollment-${userId}`,
-		`participant-enrollment-${userId}-${projectUrl}`,
-	);
-	return createClientForUser(userId).checkParticipant({ projectUrl });
-}
-
-export async function getCachedSubscribedActivitiesIdsFromParticipant(
-	projectUrl: string,
-	userId: string,
-) {
-	"use cache";
-	cacheLife({ stale: 30, revalidate: 30, expire: 60 });
-	cacheTag(
-		`subscribed-activities-ids-from-participant-${userId}`,
-		`subscribed-activities-ids-from-participant-${userId}-${projectUrl}`,
-	);
-	return createClientForUser(
-		userId,
-	).getSubscribedActivitiesIdsFromParticipant({
-		projectUrl,
-	});
-}
-
-export async function getCachedUser(userId: string) {
-	"use cache";
-	cacheLife("minutes");
-	cacheTag("users", `user:${userId}`);
-	return createClientForUser(userId).getUser();
+	return data;
 }
 
 export async function getProfilePageData(projectUrl: string, shortId: string) {
 	"use cache";
-	cacheLife("minutes");
-	cacheTag(`profiles-${projectUrl}`, `profile-${projectUrl}-${shortId}`);
+	cacheTag(GLOBAL_CACHE_TAGS.profiles, projectUrlCacheTag(projectUrl));
+
+	const result = await getProject(projectUrl);
+	if (!result?.project) {
+		// Projeto inexistente: deixa o procedimento lançar NOT_FOUND (a
+		// página converte em 404 e o erro não é cacheado), como antes.
+		return publicClient.getProfilePageData({ projectUrl, shortId });
+	}
+
+	cacheTag(
+		projectProfilesCacheTag(result.project.id),
+		participantProfileCacheTag(result.project.id, shortId),
+	);
+	cacheLife("static");
+	logCacheMiss("getProfilePageData", `${projectUrl}/${shortId}`);
+
 	return publicClient.getProfilePageData({ projectUrl, shortId });
+}
+
+/** Formulário publicado do evento (escopo do evento, sem `activityId`). */
+export async function getCachedPublishedForm(projectId: string) {
+	"use cache";
+	cacheLife("static");
+	cacheTag(projectFormCacheTag(projectId));
+	logCacheMiss("getCachedPublishedForm", projectId);
+	return publicClient.getPublishedForm({ projectId });
+}
+
+export async function getCachedProfileLayout(projectUrl: string) {
+	"use cache";
+	cacheTag(projectUrlCacheTag(projectUrl));
+
+	const result = await getProject(projectUrl);
+	if (!result?.project) {
+		cacheLife({ stale: 300, revalidate: 14400, expire: 28800 });
+		logCacheMiss("getCachedProfileLayout:null", projectUrl);
+		return null;
+	}
+
+	cacheTag(profileLayoutCacheTag(result.project.id));
+	cacheLife("static");
+	logCacheMiss("getCachedProfileLayout", projectUrl);
+
+	return publicClient.getProfileLayout({ projectUrl });
 }

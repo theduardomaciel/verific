@@ -5,6 +5,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
+import {
+	GLOBAL_CACHE_TAGS,
+	projectCacheTag,
+	projectUrlCacheTag,
+} from "@verific/api";
 import { presetOfFamily } from "@verific/drizzle/theme";
 import { appUrl } from "@verific/env";
 
@@ -27,15 +32,20 @@ export async function generateMetadata({
 	params: Promise<{ eventUrl: string }>;
 }): Promise<Metadata> {
 	"use cache";
-	cacheLife("hours");
 
 	const { eventUrl } = await params;
-	cacheTag("projects", `project:${eventUrl}`);
+	cacheTag(GLOBAL_CACHE_TAGS.events, projectUrlCacheTag(eventUrl));
 	const result = await getProject(eventUrl);
 
 	if (!result?.project) {
+		// Slug inexistente: metadados neutros com vida curta, como o
+		// `null` de `getProject` — o 404 não fica preso por dias.
+		cacheLife({ stale: 300, revalidate: 14400, expire: 28800 });
 		return { title: "Evento" };
 	}
+
+	cacheTag(projectCacheTag(result.project.id));
+	cacheLife("static");
 
 	const { project } = result;
 	const baseUrl = appUrl;

@@ -1,9 +1,10 @@
 "use server";
 
-import { revalidateTag, updateTag } from "next/cache";
+import { refresh, updateTag } from "next/cache";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { projectUrlCacheTag } from "@verific/api";
 import { auth } from "@verific/auth";
 
 export async function loginAction(callbackUrl: string) {
@@ -50,36 +51,48 @@ export async function updateProjectCookies(projectId: string) {
 	redirect("/dashboard");
 }
 
+/**
+ * Ações chamadas por componentes de cliente DEPOIS de mutations tRPC.
+ *
+ * O cache do servidor já é invalidado no middleware do tRPC (registro
+ * declarativo em `@verific/api/cache-invalidation`), que roda no handler
+ * HTTP de todas as mutations. O que faltava era o roteador do cliente:
+ * `refresh()` marca o cache de router como stale para a próxima
+ * renderização buscar o RSC novo — sem `revalidateTag` (que apagaria o
+ * cache de router inteiro, de graça, a cada chamada).
+ *
+ * Os nomes antigos seguem exportados porque os componentes (e seus
+ * testes) os importam; o corpo virou no-op de servidor.
+ */
 export async function revalidateActivities() {
-	revalidateTag("activities", "max");
+	refresh();
 }
 
 export async function revalidateParticipants() {
-	revalidateTag("participants", "max");
+	refresh();
 }
 
-/**
- * Invalida o cache do evento recém-criado (entradas de `getProject` /
- * `getEventRegistration` para aquela URL, incluindo `null`s cacheados de
- * visitas anteriores à criação). Tag por projeto: os demais eventos
- * mantêm o cache intacto. A lista de `generateStaticParams` (tag
- * "projects") expira por tempo — sem papel em runtime pós-build, já que
- * caminhos novos renderizam on-demand.
- */
-export async function revalidateProjects(projectUrl: string) {
-	updateTag(`project:${projectUrl}`);
+export async function revalidateParticipantActivities(_userId: string) {
+	refresh();
 }
 
-export async function revalidateParticipantActivities(userId: string) {
-	updateTag(`activities-from-participant-${userId}`);
-}
-
-export async function revalidateParticipantEnrollment(userId: string) {
-	updateTag(`participant-enrollment-${userId}`);
+export async function revalidateParticipantEnrollment(_userId: string) {
+	refresh();
 }
 
 export async function revalidateSubscribedActivitiesIdsFromParticipant(
-	userId: string,
+	_userId: string,
 ) {
-	updateTag(`subscribed-activities-ids-from-participant-${userId}`);
+	refresh();
+}
+
+/**
+ * Invalida o cache do evento recém-criado (inclui o `null` cacheado de
+ * visitas anteriores à criação). `updateTag` (imediato, só em Server
+ * Action) garante que o próprio criador não leve o 404 defasado ao abrir
+ * a página nova; as demais leituras do evento seguem a invalidação por
+ * tag do middleware tRPC.
+ */
+export async function revalidateProjects(projectUrl: string) {
+	updateTag(projectUrlCacheTag(projectUrl));
 }

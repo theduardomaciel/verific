@@ -19,6 +19,25 @@ export default defineConfig({
 	},
 	test: {
 		environment: "node",
+		// Os testes de contrato importam o `appRouter` completo, e a cadeia
+		// (`trpc.ts` → registro de invalidação → `@verific/drizzle` /
+		// notificações → `@verific/env`) valida o ambiente já no import.
+		// Os testes deste pacote são unitários e nunca abrem conexão nem
+		// chamam serviços: estes placeholders (os mesmos do CI) só
+		// satisfazem a validação de import (o `Pool` do Neon é preguiçoso,
+		// não conecta sem query).
+		env: {
+			VERCEL_URL: "ci.example.com",
+			DATABASE_URL:
+				process.env.DATABASE_URL ??
+				"postgresql://user:password@localhost:5432/verific_test",
+			BETTER_AUTH_SECRET: "ci-placeholder-secret-that-is-long-enough",
+			BETTER_AUTH_URL: "http://localhost:3000",
+			GOOGLE_CLIENT_ID: "ci-placeholder-client-id",
+			GOOGLE_CLIENT_SECRET: "ci-placeholder-client-secret",
+			NEXT_PUBLIC_APP_URL: "http://localhost:3000",
+			NEXT_PUBLIC_VERCEL_URL: "http://localhost:3000",
+		},
 		include: ["**/*.test.{ts,tsx}"],
 		exclude: ["node_modules"],
 		coverage: {

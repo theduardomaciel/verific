@@ -37,7 +37,6 @@ export default function ProfileLayoutSettingsPage() {
 		<ProfileLayoutEditor
 			key={project.id}
 			projectId={project.id}
-			projectUrl={project.url}
 			initial={initial}
 		/>
 	);

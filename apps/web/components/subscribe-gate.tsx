@@ -25,6 +25,13 @@ interface SubscribeGateProps {
 		logo?: string;
 		colors?: string[];
 	};
+	/**
+	 * Formulário/layout buscados no servidor (`getCachedPublishedForm` +
+	 * `getCachedProfileLayout`, ambos com cache por tag): a ilha nasce com
+	 * os dados e só espera a sessão — uma query a menos por visitante.
+	 */
+	formData: RouterOutput["getPublishedForm"];
+	profileLayout: RouterOutput["getProfileLayout"] | null;
 }
 
 function SubscribeSkeleton() {
@@ -41,32 +48,23 @@ function SubscribeSkeleton() {
  * tamanho reservado até a sessão resolver, sem layout shift.
  * - Anônimo ou inscrito em nada: formulário (o login acontece nele).
  * - Já inscrito: aviso com link da conta em vez do formulário.
- *
- * As queries do formulário (`getPublishedForm` + `getProfileLayout`) vivem
- * aqui — e não dentro do JoinForm — para que o esqueleto cubra o
- * carregamento inteiro: sem elas, o gate resolvia (sessão pronta) e o
- * formulário exibia um segundo estado de "Carregando...".
  */
-export function SubscribeGate({ project }: SubscribeGateProps) {
+export function SubscribeGate({
+	project,
+	formData,
+	profileLayout,
+}: SubscribeGateProps) {
 	const session = authClient.useSession();
 	const user = session.data?.user;
 	const enrollment = trpc.getMyParticipant.useQuery(
 		{ projectUrl: project.url },
 		{ enabled: Boolean(user?.id) },
 	);
-	const formQuery = trpc.getPublishedForm.useQuery({
-		projectId: project.id,
-	});
-	const layoutQuery = trpc.getProfileLayout.useQuery({
-		projectUrl: project.url,
-	});
 
-	// Esqueleto só no carregamento inicial: recarregamentos posteriores
-	// (ex.: `useSession` refaz fetch ao trocar de aba, e a query de
-	// matrícula habilita após o login) trocariam o formulário pelo
-	// esqueleto, desmontando o `JoinForm` e apagando o preenchimento.
-	const ready =
-		!session.isPending && !formQuery.isPending && !layoutQuery.isPending;
+	// Esqueleto só no primeiro carregamento: revalidações da sessão não
+	// trocam o formulário pelo esqueleto (desmontaria o `JoinForm` e
+	// apagaria o preenchimento).
+	const ready = !session.isPending;
 	const [gateResolved, setGateResolved] = useState(false);
 	// Ajuste durante a renderização (padrão recomendado no lugar de
 	// `setState` em efeito): a transição `ready` já re-renderiza.
@@ -99,7 +97,10 @@ export function SubscribeGate({ project }: SubscribeGateProps) {
 					perfil para ver suas atividades e seu QR Code.
 				</p>
 				<Button className="ev-button font-semibold uppercase" asChild>
-					<Link href={`/${project.url}/profile/${shortId}?me=1`}>
+					<Link
+						href={`/${project.url}/profile/${shortId}?me=1`}
+						prefetch={false}
+					>
 						Acessar meu perfil
 					</Link>
 				</Button>
@@ -111,8 +112,8 @@ export function SubscribeGate({ project }: SubscribeGateProps) {
 		<JoinForm
 			user={user ?? undefined}
 			project={project}
-			formData={formQuery.data as RouterOutput["getPublishedForm"]}
-			profileLayout={layoutQuery.data ?? null}
+			formData={formData}
+			profileLayout={profileLayout}
 		/>
 	);
 }

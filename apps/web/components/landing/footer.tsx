@@ -15,7 +15,7 @@ export function LandingFooter() {
 					<h6 className="!max-w-[60%] text-3xl font-bold">
 						Organização fácil, prática e descomplicada.
 					</h6>
-					<Link href="/auth">
+					<Link href="/auth" prefetch={false}>
 						<Button
 							className="group text-foreground hover:bg-accent bg-input h-fit rounded-full !px-6 py-3"
 							size={"lg"}
