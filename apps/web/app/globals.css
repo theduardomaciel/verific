@@ -31,7 +31,7 @@
 
 	/* Spacing */
 	--breakpoint-xs: 20rem;
-	--spacing-container-h: 1.5rem;
+	--spacing-container-h: var(--spacing-container-h, 1rem);
 	--spacing-container-v: 2.5rem;
 
 	/* Shadows */
@@ -64,17 +64,19 @@
 }
 
 :root {
-	@media (width >= 64rem) {
+	--spacing-container-h: 1.5rem;
+
+	@media (min-width: 64rem) {
 		/* 1024px */
 		--spacing-container-h: calc((100% - 60rem) / 2);
 	}
 
-	@media (width >= 80rem) {
+	@media (min-width: 80rem) {
 		/* 1280px */
 		--spacing-container-h: calc((100% - 72rem) / 2);
 	}
 
-	@media (width >= 96rem) {
+	@media (min-width: 96rem) {
 		/* 1536px */
 		--spacing-container-h: calc((100% - 92rem) / 2);
 	}

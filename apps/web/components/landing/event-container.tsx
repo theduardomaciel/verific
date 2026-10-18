@@ -138,7 +138,7 @@ function HeroTitle({
 	return (
 		<h1
 			className={cn(
-				"font-heading mb-4 text-5xl font-bold text-(--ev-hero-fg) max-w-full",
+				"font-heading mb-4 text-5xl wrap-break-word font-bold text-(--ev-hero-fg) max-w-full",
 				className,
 			)}
 		>

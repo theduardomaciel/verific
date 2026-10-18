@@ -65,11 +65,11 @@ export function UserNav({ user, showAccountActions }: Props) {
 				<DropdownMenuSeparator />
 				{showAccountActions && (
 					<>
-						<Link href="/account/settings">
+						<Link href="/account">
 							<DropdownMenuItem>
 								<UserIcon className="mr-2 h-4 w-4" />
-								Meu Perfil
-								<DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
+								Minha Conta
+								{/* <DropdownMenuShortcut>⌘S</DropdownMenuShortcut> */}
 							</DropdownMenuItem>
 						</Link>
 						<DropdownMenuGroup></DropdownMenuGroup>
@@ -91,11 +91,11 @@ export function UserNav({ user, showAccountActions }: Props) {
 					<DropdownMenuItem asChild>
 						<button
 							type="submit"
-							className="flex w-full items-center justify-between"
+							className="flex w-full items-center justify-start"
 						>
 							<LogOut className="mr-2 h-4 w-4" />
 							<span>Log out</span>
-							<DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
+							{/* <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut> */}
 						</button>
 					</DropdownMenuItem>
 				</LogoutForm>

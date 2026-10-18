@@ -66,7 +66,7 @@ export function ProjectSwitcher({
 					variant="outline"
 					aria-expanded={open}
 					aria-label="Selecione um projeto"
-					className={cn("w-[200px] justify-between", className)}
+					className={cn("w-42 justify-between", className)}
 				>
 					<Avatar className="mr-1 h-5 w-5">
 						<AvatarImage
@@ -84,7 +84,7 @@ export function ProjectSwitcher({
 					<ChevronsUpDown className="ml-auto opacity-50" />
 				</Button>
 			</PopoverTrigger>
-			<PopoverContent className="w-[200px] p-0">
+			<PopoverContent className="w-42 p-0">
 				<Command>
 					<CommandInput placeholder="Procurar projeto..." />
 					<CommandList>

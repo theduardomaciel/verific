@@ -112,7 +112,7 @@ export async function ParticipantCard({ id: participantId, eventUrl }: Props) {
 									<span className="font-semibold">
 										{a.label}:{" "}
 									</span>
-									<span className="text-muted-foreground break-words">
+									<span className="text-muted-foreground wrap-break-word">
 										{a.display || "—"}
 									</span>
 								</li>

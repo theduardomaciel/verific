@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import Logo from "@/public/logo.svg";
 
 const footerVariants = cva(
-	"flex items-center justify-center w-full py-6 px-12",
+	"flex items-center justify-center w-full py-6 px-container-h",
 	{
 		variants: {
 			variant: {
@@ -73,7 +73,7 @@ function Footer({
 						</Link>
 					</div>
 					{showWatermark && (
-						<div className="hidden h-3 w-[1px] rounded-full bg-[currentColor] md:flex" />
+						<div className="hidden h-3 w-px rounded-full bg-[currentColor] md:flex" />
 					)}
 					{/* Links */}
 					<nav className="flex flex-row flex-wrap gap-2 space-x-2 md:space-x-4">

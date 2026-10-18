@@ -64,19 +64,13 @@ export default function MainNav({
 	return (
 		// Wrapper fixo: não rola, então os gradientes ficam parados.
 		// min-w-0 + flex-1 deixam ele ocupar só o espaço restante no desktop.
-		<div
-			className={cn(
-				"relative w-full min-w-0 md:w-auto md:flex-1",
-				className,
-			)}
-			{...props}
-		>
+		<div className={cn("relative w-full min-w-0", className)} {...props}>
 			{/* Container rolável: apenas o conteúdo rola aqui dentro */}
 			<div
 				ref={scrollContainerRef}
-				className="px-container-h relative w-full scrollbar-none overflow-x-auto scroll-smooth"
+				className="relative w-full scrollbar-none overflow-x-auto scroll-smooth"
 			>
-				<nav className="flex min-w-fit items-center justify-start gap-4">
+				<nav className="px-container-h flex min-w-fit items-center justify-start gap-2 md:gap-3 md:px-6">
 					{links.map((link) => {
 						const href = prefix + link.href;
 						const isActive = isLinkActive(href);
@@ -109,7 +103,7 @@ export default function MainNav({
 
 			{/* Gradientes sobrepostos ao wrapper, fora da área de scroll */}
 			<div className="from-background pointer-events-none absolute top-0 left-0 h-full w-8 bg-linear-to-r to-transparent" />
-			<div className="from-background pointer-events-none absolute top-0 right-0 h-full w-8 bg-linear-to-l to-transparent" />
+			<div className="from-background pointer-events-none absolute top-0 right-0 h-full w-24 bg-linear-to-l to-transparent md:w-8" />
 		</div>
 	);
 }
