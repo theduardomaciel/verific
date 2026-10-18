@@ -11,9 +11,9 @@ import {
 	Mail,
 	OctagonX,
 	RefreshCw,
+	RotateCw,
 	Search,
 	TriangleAlert,
-	X,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -30,13 +30,6 @@ import {
 	useConfirmDialog,
 } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Table,
@@ -78,30 +71,22 @@ const PAGE_SIZE = 20;
 /** Espera mínima entre recarregamentos manuais (evita spam no backend). */
 const RELOAD_DEBOUNCE_MS = 3000;
 
-const FILTER_OPTIONS: Array<{
-	value: NotificationListFilterInput;
-	label: string;
-}> = [
-	{ value: "attention", label: "Precisam de atenção" },
-	{ value: "all", label: "Todas" },
-	{ value: "pending", label: "Pendentes" },
-	{ value: "sending", label: "Enviando" },
-	{ value: "stuck", label: "Travadas" },
-	{ value: "sent", label: "Enviadas" },
-	{ value: "failed", label: "Falhas" },
-	{ value: "blocked_quota", label: "Bloqueadas (cota)" },
-	{ value: "skipped", label: "Ignoradas" },
-];
-
-/** Cor semântica de cada contador (ponto discreto no chip). */
+/** Cor de cada status (ponto do chip), só com cores da paleta do app. */
 const COUNTER_DOT: Record<string, string> = {
-	pending: "bg-muted-foreground",
-	sending: "bg-sky-500",
-	stuck: "bg-amber-500",
-	sent: "bg-emerald-500",
-	failed: "bg-red-500",
-	blocked_quota: "bg-orange-500",
-	skipped: "bg-zinc-400",
+	pending: "bg-neutral-400",
+	sending: "bg-brand-400",
+	stuck: "bg-warning",
+	sent: "bg-success",
+	failed: "bg-destructive",
+	blocked_quota: "bg-yellow-700",
+	skipped: "bg-gray-500",
+};
+
+/** Cor do preenchimento da barra de uso por tom. */
+const USAGE_BAR: Record<"neutral" | "warning" | "error", string> = {
+	neutral: "bg-brand-500",
+	warning: "bg-yellow-400",
+	error: "bg-red-500",
 };
 
 const DEFAULT_FILTER: NotificationListFilterInput = "attention";
@@ -133,6 +118,103 @@ function Timestamp({ value }: { value: string | Date }) {
 		>
 			{formatDateTime(value)}
 		</span>
+	);
+}
+
+interface StatusChipProps {
+	label: string;
+	help: string;
+	active: boolean;
+	count?: number;
+	dotClass: string;
+	onClick: () => void;
+}
+
+/**
+ * Pílula de status: leve, com ponto de cor e contagem.
+ * Selecionada = fundo neutro + borda/anel de contraste (sem azul).
+ */
+function StatusChip({
+	label,
+	help,
+	active,
+	count,
+	dotClass,
+	onClick,
+}: StatusChipProps) {
+	return (
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<button
+					type="button"
+					aria-pressed={active}
+					aria-label={`${label}${count != null ? `: ${count}` : ""}. ${help}`}
+					onClick={onClick}
+					className={`focus-visible:ring-ring inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:outline-none ${
+						active
+							? "bg-muted text-foreground border-foreground/50 ring-foreground/10 ring-2"
+							: "text-muted-foreground hover:bg-muted hover:text-foreground border-border"
+					} ${count === 0 && !active ? "opacity-60" : ""}`}
+				>
+					<span
+						aria-hidden
+						className={`size-1.5 shrink-0 rounded-full ${dotClass}`}
+					/>
+					{label}
+					{count != null ? (
+						<span className="tabular-nums opacity-80">{count}</span>
+					) : null}
+				</button>
+			</TooltipTrigger>
+			<TooltipContent side="bottom" className="max-w-64">
+				{help}
+			</TooltipContent>
+		</Tooltip>
+	);
+}
+
+interface SegmentButtonProps {
+	label: string;
+	help: string;
+	active: boolean;
+	count?: number;
+	onClick: () => void;
+}
+
+/** Botão do controle segmentado de visões agregadas. */
+function SegmentButton({
+	label,
+	help,
+	active,
+	count,
+	onClick,
+}: SegmentButtonProps) {
+	return (
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<button
+					type="button"
+					aria-pressed={active}
+					aria-label={`${label}${count != null ? `: ${count}` : ""}. ${help}`}
+					onClick={onClick}
+					className={`focus-visible:ring-ring inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:outline-none ${
+						active
+							? "bg-background text-foreground shadow-sm"
+							: "text-muted-foreground hover:text-foreground"
+					}`}
+				>
+					{label}
+					{count != null ? (
+						<span className="text-muted-foreground text-xs tabular-nums">
+							{count}
+						</span>
+					) : null}
+				</button>
+			</TooltipTrigger>
+			<TooltipContent side="bottom" className="max-w-64">
+				{help}
+			</TooltipContent>
+		</Tooltip>
 	);
 }
 
@@ -255,21 +337,18 @@ export function EmailsContent() {
 
 	const usage = statsQuery.data?.usage;
 	const counts = statsQuery.data?.counts;
+	// Linhas que "Precisam de atenção" (mesma soma usada pelo reprocessamento).
+	const attentionCount = counts
+		? counts.pending + counts.failed + counts.blocked_quota + counts.stuck
+		: undefined;
 	// Rows the batch run would actually attempt (sent + fresh sending are
 	// skipped server-side, so they don't count here).
 	const reprocessableCount = !counts
 		? 0
 		: filter === "attention"
-			? counts.pending +
-				counts.failed +
-				counts.blocked_quota +
-				counts.stuck
+			? (attentionCount ?? 0)
 			: filter === "all"
-				? counts.pending +
-					counts.failed +
-					counts.blocked_quota +
-					counts.stuck +
-					counts.skipped
+				? (attentionCount ?? 0) + counts.skipped
 				: filter === "sent" || filter === "sending"
 					? 0
 					: (counts[filter] ?? 0);
@@ -279,7 +358,7 @@ export function EmailsContent() {
 		usage?.limit != null && usage.limit > 0
 			? usage.sentLast24h / usage.limit
 			: 0;
-	const usageTone =
+	const usageTone: "neutral" | "warning" | "error" =
 		usage?.limit == null
 			? "neutral"
 			: usageRatio >= 1
@@ -444,11 +523,6 @@ export function EmailsContent() {
 	const detailItem = detailId
 		? (items.find((item) => item.id === detailId) ?? null)
 		: null;
-	// O filtro está em um status de contador (não no padrão "attention"
-	// nem no agregador "all")? Mostra a forma de limpar.
-	const counterFilterActive =
-		filter !== DEFAULT_FILTER &&
-		COUNTERS.some((counter) => counter.key === filter);
 
 	const selectableItems = items.filter(canReprocess);
 	const allSelected =
@@ -486,8 +560,8 @@ export function EmailsContent() {
 
 	return (
 		<TooltipProvider delayDuration={200}>
-			<div className="container-d py-container-v min-h-screen">
-				{/* Cabeçalho: título + ação primária */}
+			<div className="container-d py-container-v flex min-h-screen flex-col gap-6">
+				{/* Linha 1 — Cabeçalho: título à esquerda, ações à direita */}
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 					<div className="min-w-0">
 						<h1 className="text-foreground text-2xl font-bold tracking-tight">
@@ -498,83 +572,13 @@ export function EmailsContent() {
 							evento.
 						</p>
 					</div>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<span className="inline-flex shrink-0">
-								<Button
-									onClick={() => void handleRunAll()}
-									disabled={
-										runProgress?.active ||
-										listQuery.isPending ||
-										statsQuery.isPending ||
-										!hasWorkToReprocess
-									}
-								>
-									{runProgress?.active &&
-									runProgress.mode === "all" ? (
-										<Loader2
-											className="animate-spin"
-											aria-hidden
-										/>
-									) : (
-										<RefreshCw />
-									)}
-									Reprocessar todos
-								</Button>
-							</span>
-						</TooltipTrigger>
-						<TooltipContent side="bottom" align="end">
-							{hasWorkToReprocess
-								? "Reprocessa todos os e-mails do filtro atual"
-								: "Nenhum e-mail para reprocessar neste filtro"}
-						</TooltipContent>
-					</Tooltip>
-				</div>
-
-				{/* Barra de ferramentas: busca, filtro, recarregar */}
-				<div className="mt-6 flex flex-wrap items-center gap-2">
-					<div className="relative min-w-56 flex-1 sm:max-w-md">
-						<Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-						<Input
-							className="w-full pl-9"
-							type="search"
-							placeholder="Buscar por destinatário"
-							aria-label="Buscar por e-mail do destinatário"
-							value={searchInput}
-							onChange={(event) => {
-								setSearchInput(event.target.value);
-								setCursorStack([null]);
-								setSelectedIds(new Set());
-							}}
-						/>
-					</div>
-					<Select
-						value={filter}
-						onValueChange={(value) =>
-							changeFilter(value as NotificationListFilterInput)
-						}
-					>
-						<SelectTrigger className="w-full sm:w-52">
-							<SelectValue placeholder="Filtrar por status" />
-						</SelectTrigger>
-						<SelectContent>
-							{FILTER_OPTIONS.map((option) => (
-								<SelectItem
-									key={option.value}
-									value={option.value}
-								>
-									{option.label}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-					<div className="flex items-center sm:ml-auto">
+					<div className="flex shrink-0 items-center gap-2">
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<span className="inline-flex">
 									<Button
 										variant="outline"
-										size="icon-sm"
+										size="icon"
 										aria-label="Recarregar lista e contagens"
 										disabled={
 											reloadCoolingDown ||
@@ -583,7 +587,7 @@ export function EmailsContent() {
 										}
 										onClick={() => void handleReload()}
 									>
-										<RefreshCw
+										<RotateCw
 											className={
 												listQuery.isFetching
 													? "animate-spin"
@@ -603,12 +607,44 @@ export function EmailsContent() {
 									: "Atualiza lista e contagens"}
 							</TooltipContent>
 						</Tooltip>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<span className="inline-flex">
+									<Button
+										onClick={() => void handleRunAll()}
+										disabled={
+											runProgress?.active ||
+											listQuery.isPending ||
+											statsQuery.isPending ||
+											!hasWorkToReprocess
+										}
+									>
+										{runProgress?.active &&
+										runProgress.mode === "all" ? (
+											<Loader2
+												className="animate-spin"
+												aria-hidden
+											/>
+										) : (
+											<RefreshCw />
+										)}
+										Reprocessar todos
+									</Button>
+								</span>
+							</TooltipTrigger>
+							<TooltipContent side="bottom" align="end">
+								{hasWorkToReprocess
+									? "Reprocessa todos os e-mails do filtro atual"
+									: "Nenhum e-mail para reprocessar neste filtro"}
+							</TooltipContent>
+						</Tooltip>
 					</div>
 				</div>
 
-				<div className="mt-6">
+				{/* Linha 2 — Caixa de uso da cota: sempre visível, com barra de progresso */}
+				<div>
 					{statsQuery.isPending ? (
-						<Skeleton className="h-20 w-full" />
+						<Skeleton className="h-24 w-full" />
 					) : statsQuery.isError || !statsQuery.data ? (
 						<Alert variant="destructive">
 							<OctagonX />
@@ -628,149 +664,163 @@ export function EmailsContent() {
 							</AlertDescription>
 						</Alert>
 					) : (
-						<div className="flex flex-col gap-4">
-							<div
-								className="flex flex-wrap items-center gap-2"
-								role="group"
-								aria-label="Contadores por status; clique para filtrar"
-							>
-								{COUNTERS.map((counter) => {
-									const active = filter === counter.key;
-									const count =
-										statsQuery.data.counts[counter.key];
-									return (
-										<Tooltip key={counter.key}>
-											<TooltipTrigger asChild>
-												<Button
-													variant={
-														active
-															? "default"
-															: "outline"
-													}
-													size="sm"
-													className={`gap-2 whitespace-nowrap ${
-														count === 0 && !active
-															? "opacity-60"
-															: ""
-													}`}
-													aria-pressed={active}
-													aria-label={`${counter.label}: ${count}. ${counter.help}`}
-													onClick={() =>
-														changeFilter(
-															active
-																? DEFAULT_FILTER
-																: counter.key,
-														)
-													}
-												>
-													<span
-														aria-hidden
-														className={`size-1.5 shrink-0 rounded-full ${
-															COUNTER_DOT[
-																counter.key as string
-															] ??
-															"bg-muted-foreground"
-														}`}
-													/>
-													{counter.label}
-													<span
-														className={`tabular-nums ${
-															active
-																? "text-primary-foreground/80"
-																: "text-muted-foreground"
-														}`}
-													>
-														{count}
-													</span>
-												</Button>
-											</TooltipTrigger>
-											<TooltipContent
-												side="bottom"
-												className="max-w-64"
-											>
-												{counter.help}
-											</TooltipContent>
-										</Tooltip>
-									);
-								})}
-								{counterFilterActive ? (
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={() =>
-											changeFilter(DEFAULT_FILTER)
-										}
-									>
-										<X />
-										Limpar filtro
-									</Button>
-								) : null}
-							</div>
-							<Alert
-								variant={
-									usageTone === "error"
-										? "destructive"
-										: "default"
-								}
-								className={
-									usageTone === "warning"
-										? "border-warning/30 bg-warning/5 [&>svg]:text-warning"
-										: undefined
-								}
-							>
-								{usageTone === "error" ? (
-									<OctagonX />
-								) : usageTone === "warning" ? (
-									<TriangleAlert />
-								) : (
-									<Mail />
-								)}
-								<AlertTitle className="flex items-center gap-1.5">
-									<span>
-										Enviados nas últimas 24h:{" "}
+						<Alert
+							variant={
+								usageTone === "error"
+									? "destructive"
+									: "default"
+							}
+							className={`${
+								usage?.limit != null ? "sm:pr-80" : ""
+							} ${
+								usageTone === "warning"
+									? "border-warning/30 bg-warning/5 [&>svg]:text-warning"
+									: ""
+							}`}
+						>
+							{usageTone === "error" ? (
+								<OctagonX />
+							) : usageTone === "warning" ? (
+								<TriangleAlert />
+							) : (
+								<Mail />
+							)}
+							<AlertTitle className="flex items-center gap-1.5">
+								<span>
+									Enviados nas últimas 24h:{" "}
+									<span className="tabular-nums">
 										{usage?.sentLast24h ?? 0}
-										{usage?.limit != null
-											? ` de ${usage.limit}`
-											: ""}
 									</span>
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<button
-												type="button"
-												className="text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex size-4 shrink-0 items-center justify-center rounded-full focus-visible:ring-2 focus-visible:outline-none"
-												aria-label="Sobre a cota diária de envios"
-											>
-												<Info className="size-3.5" />
-											</button>
-										</TooltipTrigger>
-										<TooltipContent
-											side="bottom"
-											align="start"
-											className="max-w-72"
+									{usage?.limit != null
+										? ` de ${usage.limit}`
+										: ""}
+								</span>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<button
+											type="button"
+											className="text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex size-4 shrink-0 items-center justify-center rounded-full focus-visible:ring-2 focus-visible:outline-none"
+											aria-label="Sobre a cota diária de envios"
 										>
-											Envios confirmados nas últimas 24
-											horas contra o teto diário do
-											provedor; ao atingir o limite, novos
-											envios aguardam o próximo período.
-										</TooltipContent>
-									</Tooltip>
-								</AlertTitle>
-								<AlertDescription>
-									{usage?.limit == null
-										? "Nenhum limite diário configurado."
-										: usageTone === "error"
-											? "Limite diário atingido. Novos reprocessamentos manuais pedem confirmação."
-											: usageTone === "warning"
-												? "Uso acima de 80% do limite diário."
-												: "Dentro do limite diário."}
-								</AlertDescription>
-							</Alert>
-						</div>
+											<Info className="size-3.5" />
+										</button>
+									</TooltipTrigger>
+									<TooltipContent
+										side="bottom"
+										align="start"
+										className="max-w-72"
+									>
+										Envios confirmados nas últimas 24 horas
+										contra o teto diário do provedor; ao
+										atingir o limite, novos envios aguardam
+										o próximo período.
+									</TooltipContent>
+								</Tooltip>
+							</AlertTitle>
+							<AlertDescription>
+								{usage?.limit == null
+									? "Nenhum limite diário configurado."
+									: usageTone === "error"
+										? "Limite diário atingido. Novos reprocessamentos manuais pedem confirmação."
+										: usageTone === "warning"
+											? "Uso acima de 80% do limite diário."
+											: "Dentro do limite diário."}
+							</AlertDescription>
+							{usage?.limit != null ? (
+								<div
+									role="progressbar"
+									aria-label="Uso da cota diária"
+									aria-valuemin={0}
+									aria-valuemax={usage.limit}
+									aria-valuenow={usage.sentLast24h}
+									className="bg-border col-start-2 mt-3 h-1.5 w-full overflow-hidden rounded-full sm:absolute sm:top-1/2 sm:right-4 sm:mt-0 sm:w-64 sm:-translate-y-1/2"
+								>
+									<div
+										className={`h-full rounded-full ${USAGE_BAR[usageTone]}`}
+										style={{
+											width: `${Math.min(100, usageRatio * 100)}%`,
+										}}
+									/>
+								</div>
+							) : null}
+						</Alert>
 					)}
 				</div>
 
+				{/* Linhas 3 e 4 — Filtros: busca + visões; depois status */}
+				<div className="flex flex-col gap-3">
+					<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+						<div className="relative w-full sm:max-w-xs">
+							<Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+							<Input
+								className="w-full pl-9"
+								type="search"
+								placeholder="Buscar por destinatário"
+								aria-label="Buscar por e-mail do destinatário"
+								value={searchInput}
+								onChange={(event) => {
+									setSearchInput(event.target.value);
+									setCursorStack([null]);
+									setSelectedIds(new Set());
+								}}
+							/>
+						</div>
+						<div
+							role="group"
+							aria-label="Visão da lista"
+							className="bg-muted inline-flex w-fit shrink-0 rounded-lg border p-0.5"
+						>
+							<SegmentButton
+								label="Precisam de atenção"
+								help="Pendentes, falhas, bloqueadas por cota e travadas."
+								active={filter === "attention"}
+								count={attentionCount}
+								onClick={() => changeFilter("attention")}
+							/>
+							<SegmentButton
+								label="Todas"
+								help="Todas as notificações, de qualquer status."
+								active={filter === "all"}
+								onClick={() => changeFilter("all")}
+							/>
+						</div>
+					</div>
+					<div
+						className="flex flex-wrap items-center gap-2"
+						role="group"
+						aria-label="Filtrar por status"
+					>
+						<span className="text-muted-foreground mr-1 text-xs font-medium">
+							Status
+						</span>
+						{COUNTERS.map((counter) => {
+							const active = filter === counter.key;
+							return (
+								<StatusChip
+									key={counter.key}
+									label={counter.label}
+									help={counter.help}
+									active={active}
+									count={counts?.[counter.key]}
+									dotClass={
+										COUNTER_DOT[counter.key as string] ??
+										"bg-neutral-400"
+									}
+									onClick={() =>
+										changeFilter(
+											active
+												? DEFAULT_FILTER
+												: counter.key,
+										)
+									}
+								/>
+							);
+						})}
+					</div>
+				</div>
+
 				{runProgress?.active ? (
-					<Alert className="mt-4">
+					<Alert>
 						<Loader2 className="animate-spin" />
 						<AlertTitle>
 							{runProgress.mode === "selected"
@@ -786,7 +836,7 @@ export function EmailsContent() {
 					</Alert>
 				) : null}
 
-				<div className="mt-6">
+				<div>
 					{listQuery.isPending ? (
 						<div className="space-y-2">
 							<Skeleton className="h-10 w-full" />

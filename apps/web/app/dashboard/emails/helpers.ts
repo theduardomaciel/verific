@@ -145,15 +145,14 @@ export async function copyText(text: string): Promise<boolean> {
 
 /** Ajuda de uma frase por status: o que significa e o que fazer. */
 export const STATUS_HELP = {
-	pending:
-		"Na fila aguardando envio (ou o limite diário parou o lote). Use Reprocessar para tentar agora.",
+	pending: "Na fila aguardando envio (ou o limite diário parou o lote)",
 	sending:
-		"Em processamento neste momento. Aguarde; não é possível reprocessar.",
-	stuck: "O envio iniciou há mais de 10 min e não terminou (processo morto). Use Reprocessar para retomar.",
+		"Em processamento neste momento. Aguarde; não é possível reprocessar",
+	stuck: "O envio iniciou há mais de 10 min e não terminou (processo morto)",
 	sent: "Confirmado pelo provedor de e-mail. Nunca é reenviado.",
 	failed: "Erro permanente após as tentativas. Copie o erro, corrija a causa e use Reprocessar.",
 	blocked_quota:
-		"Parado pelo limite diário de envios. Volta sozinho em até 24h ou use Reprocessar quando houver cota.",
+		"Parado pelo limite diário de envios. Volta sozinho em até 24h",
 	skipped:
 		"Registrado, mas sem envio previsto (desativado ou estado mudou). Veja o motivo na linha.",
 } as const satisfies Record<string, string>;
