@@ -108,12 +108,14 @@ function ProfileBody({
 		<EventContainer.Holder>
 			<EventContainer.Content>
 				<div className="container-p mb-8 flex w-full flex-col gap-4 md:gap-12">
-					<Suspense fallback={null}>
-						<ProfileVisitRecorder
-							eventUrl={eventUrl}
-							shortId={shortId}
-						/>
-					</Suspense>
+					{modules.connectionsEnabled && (
+						<Suspense fallback={null}>
+							<ProfileVisitRecorder
+								eventUrl={eventUrl}
+								shortId={shortId}
+							/>
+						</Suspense>
+					)}
 					<ProfileBanner
 						name={pageData.name}
 						avatarUrl={pageData.avatarUrl}
