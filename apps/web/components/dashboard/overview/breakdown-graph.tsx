@@ -199,13 +199,13 @@ export function BreakdownGraph({
 		return (
 			<div
 				className={cn(
-					"flex w-full flex-col items-center gap-3",
+					"flex h-full min-h-0 w-full flex-col items-center justify-center gap-3",
 					className,
 				)}
 			>
 				<ChartContainer
 					config={chartConfig}
-					className="mx-auto aspect-square w-full max-w-[280px]"
+					className="aspect-square w-full max-w-[280px]"
 				>
 					<PieChart>
 						<ChartTooltip
@@ -289,10 +289,15 @@ export function BreakdownGraph({
 		);
 
 	return (
-		<div className={cn("flex w-full flex-col gap-2", className)}>
+		<div
+			className={cn(
+				"flex h-full min-h-0 w-full flex-col gap-2",
+				className,
+			)}
+		>
 			<ChartContainer
 				config={chartConfig}
-				className="h-full min-h-[200px] w-full"
+				className="min-h-[260px] w-full flex-1 sm:min-h-[200px]"
 			>
 				{chart}
 			</ChartContainer>
