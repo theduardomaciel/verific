@@ -33,7 +33,7 @@ export function useWaitlist({ activityId, userId }: UseWaitlistArgs) {
 			revalidateSubscribedActivitiesIdsFromParticipant(userId),
 			revalidateParticipantActivities(userId),
 			utils.getMyWaitlistEntries.invalidate(),
-			utils.getSubscribedActivitiesIdsFromParticipant.invalidate(),
+			utils.getMyEnrollmentState.invalidate(),
 			utils.getActivitiesFromParticipant.invalidate(),
 		]);
 		for (const result of settled) {

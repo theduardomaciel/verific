@@ -113,7 +113,7 @@ export function useJoinActivity({
 					// — atualiza as leituras para card e painel refletirem.
 					if (joinError === "conflict") {
 						await Promise.allSettled([
-							utils.getSubscribedActivitiesIdsFromParticipant.invalidate(),
+							utils.getMyEnrollmentState.invalidate(),
 							utils.getActivitiesFromParticipant.invalidate(),
 						]);
 					}
@@ -125,7 +125,7 @@ export function useJoinActivity({
 				const settled = await Promise.allSettled([
 					revalidateSubscribedActivitiesIdsFromParticipant(userId),
 					revalidateParticipantActivities(userId),
-					utils.getSubscribedActivitiesIdsFromParticipant.invalidate(),
+					utils.getMyEnrollmentState.invalidate(),
 					utils.getActivitiesFromParticipant.invalidate(),
 				]);
 				for (const result of settled) {

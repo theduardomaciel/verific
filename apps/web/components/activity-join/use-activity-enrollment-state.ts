@@ -102,7 +102,11 @@ export function useActivityEnrollmentState({
 
 	const waitlistQuery = trpc.getMyWaitlistEntries.useQuery(
 		{ projectUrl: eventUrl },
-		{ enabled: Boolean(participantId), refetchOnWindowFocus: true },
+		{
+			enabled: Boolean(participantId),
+			staleTime: 2 * 60 * 1000,
+			refetchOnWindowFocus: false,
+		},
 	);
 	const waitlistEntry =
 		waitlistQuery.data?.find((entry) => entry.activityId === activity.id) ??

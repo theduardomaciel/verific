@@ -56,15 +56,20 @@ export function SubscribeGate({
 }: SubscribeGateProps) {
 	const session = authClient.useSession();
 	const user = session.data?.user;
-	const enrollment = trpc.getMyParticipant.useQuery(
-		{ projectUrl: project.url },
-		{ enabled: Boolean(user?.id) },
+	const enrollment = trpc.getMyEnrollmentState.useQuery(
+		{ projectUrl: project.url, clientSessionId: user?.id },
+		{
+			enabled: Boolean(user?.id),
+			staleTime: 5 * 60 * 1000,
+			gcTime: 10 * 60 * 1000,
+			refetchOnWindowFocus: false,
+		},
 	);
 
 	// Esqueleto só no primeiro carregamento: revalidações da sessão não
 	// trocam o formulário pelo esqueleto (desmontaria o `JoinForm` e
 	// apagaria o preenchimento).
-	const ready = !session.isPending;
+	const ready = !session.isPending && (!user || !enrollment.isPending);
 	const [gateResolved, setGateResolved] = useState(false);
 	// Ajuste durante a renderização (padrão recomendado no lugar de
 	// `setState` em efeito): a transição `ready` já re-renderiza.
@@ -77,7 +82,7 @@ export function SubscribeGate({
 		if (enrollment.data) clearJoinDraft(project.id);
 	}, [enrollment.data, project.id]);
 
-	if (!gateResolved) {
+	if (!gateResolved || (user && enrollment.isPending && !enrollment.data)) {
 		return <SubscribeSkeleton />;
 	}
 

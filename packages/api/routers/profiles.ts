@@ -30,6 +30,8 @@ import {
 	profileConnection,
 	profileFieldVisibility,
 	project,
+	activity,
+	participantOnActivity,
 } from "@verific/drizzle/schema";
 import { z } from "@verific/zod";
 
@@ -318,6 +320,66 @@ export const profilesRouter = createTRPCRouter({
 			if (!row) return null;
 			const shortId = await ensureShortId(row.id, row.shortId);
 			return { participantId: row.id, shortId };
+		}),
+
+	/** Estado autenticado do participante e atividades inscritas no evento. */
+	getMyEnrollmentState: protectedProcedure
+		.input(
+			z.object({
+				projectUrl: z.string(),
+				// Only separates client cache entries between users. The
+				// authenticated session remains the source of truth.
+				clientSessionId: z.string().optional(),
+			}),
+		)
+		.query(async ({ input, ctx }) => {
+			const row = await db
+				.select({
+					projectId: project.id,
+					participantId: participant.id,
+					shortId: participant.shortId,
+				})
+				.from(project)
+				.leftJoin(
+					participant,
+					and(
+						eq(participant.projectId, project.id),
+						eq(participant.userId, ctx.session.user.id),
+					),
+				)
+				.where(eq(project.url, input.projectUrl))
+				.limit(1);
+
+			const current = row[0];
+			if (!current?.participantId) return null;
+
+			const shortId = await ensureShortId(
+				current.participantId,
+				current.shortId,
+			);
+			const activities = await db
+				.select({ activityId: participantOnActivity.activityId })
+				.from(participantOnActivity)
+				.innerJoin(
+					activity,
+					eq(activity.id, participantOnActivity.activityId),
+				)
+				.where(
+					and(
+						eq(
+							participantOnActivity.participantId,
+							current.participantId,
+						),
+						eq(activity.projectId, current.projectId),
+						isNull(activity.cancelledAt),
+					),
+				);
+
+			return {
+				participantId: current.participantId,
+				shortId,
+				activityIds: activities.map((item) => item.activityId),
+			};
 		}),
 
 	/** Layout do perfil do evento (público: sem PII). */

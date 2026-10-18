@@ -23,7 +23,7 @@ const {
 vi.mock("@/lib/trpc/react", () => ({
 	trpc: {
 		useUtils: () => ({
-			getSubscribedActivitiesIdsFromParticipant: {
+			getMyEnrollmentState: {
 				invalidate: invalidateSubscribedMock,
 			},
 			getActivitiesFromParticipant: {
