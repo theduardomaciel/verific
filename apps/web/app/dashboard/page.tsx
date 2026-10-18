@@ -71,6 +71,8 @@ export default function Overview() {
 					<h2 className="text-3xl font-bold tracking-tight">
 						Dashboard
 					</h2>
+					{/* TODO: Não podemos adicionar w-full pois o flex-wrap quebra.
+						Bom o suficiente por enquanto, mas o botão não ocupa 100% da largura em todos os casos */}
 					<div className="flex flex-wrap items-center gap-4">
 						<TabsList>
 							<TabsTrigger value="overview">
@@ -83,7 +85,7 @@ export default function Overview() {
 								Logs
 							</TabsTrigger>
 						</TabsList>
-						<Button disabled asChild>
+						<Button className="max-sm:w-full" disabled asChild>
 							<Link target="_blank" href={`/${projectUrl}`}>
 								<Globe className="mr-2" size={24} />
 								Acessar página do evento
