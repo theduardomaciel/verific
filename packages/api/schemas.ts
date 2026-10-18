@@ -204,6 +204,31 @@ export const OTHER_TEXT_MAX_LENGTH = 200;
  */
 export const OTHER_SENTINEL = "__other__";
 
+/** Field types with a finite set of declared options — usable as dashboard graph breakdowns. */
+export const BREAKDOWN_FIELD_TYPES = [
+	"select_single",
+	"select_multiple",
+	"radio_group",
+] as const;
+
+/** Fallback bucket for breakdown graphs: answers that aren't one of the field's declared options (e.g. custom "Outro" text). */
+export const BREAKDOWN_OTHER_SERIES = "Outros";
+
+/** Maximum number of series rendered in a breakdown graph; least-answered options fold into the fallback bucket. */
+export const BREAKDOWN_MAX_SERIES = 12;
+
+/** Label of the single series in the default (no breakdown field) registrations view. */
+export const BREAKDOWN_REGISTRATIONS_SERIES = "Inscrições";
+
+/** Preset time windows for dashboard series. `hour` granularity for "24h", otherwise per-day buckets. */
+export const BREAKDOWN_TIME_WINDOWS = [
+	"24h",
+	"7d",
+	"30d",
+	"event",
+	"all",
+] as const;
+
 /** True when `options` already contain an "Outro" entry (case-insensitive). */
 export function hasOutroOption(options: string[] | null | undefined): boolean {
 	return (options ?? []).some(

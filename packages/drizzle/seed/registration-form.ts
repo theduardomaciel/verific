@@ -100,6 +100,8 @@ export function buildAnswerRows(params: {
 	projectId: string;
 	form: ReturnType<typeof buildRegistrationForm>;
 	answers: RegistrationAnswers;
+	// Quando omitido, fica no instante do seed (default do banco)
+	answeredAt?: Date;
 }): AnswerInsert[] {
 	return params.form.fields.map((field) => ({
 		participantId: params.participantId,
@@ -115,5 +117,11 @@ export function buildAnswerRows(params: {
 			options: field.options,
 			allowOther: false,
 		},
+		...(params.answeredAt
+			? {
+					answeredAt: params.answeredAt,
+					updatedAt: params.answeredAt,
+				}
+			: {}),
 	}));
 }
