@@ -177,7 +177,7 @@ export function BreakdownGraph({
 		return (
 			<ChartContainer
 				config={chartConfig}
-				className={cn("mx-auto aspect-square max-h-[240px]", className)}
+				className={cn("h-full min-h-[240px] w-full", className)}
 			>
 				<PieChart>
 					<ChartTooltip
@@ -190,9 +190,12 @@ export function BreakdownGraph({
 						data={pieData}
 						dataKey="value"
 						nameKey="name"
-						innerRadius={50}
-						outerRadius={80}
+						cx="50%"
+						cy="50%"
+						innerRadius="55%"
+						outerRadius="85%"
 						paddingAngle={2}
+						isAnimationActive={false}
 					>
 						{pieData.map((entry) => (
 							<Cell
