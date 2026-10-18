@@ -7,6 +7,7 @@ import { CircleOff } from "lucide-react";
 
 import { BREAKDOWN_REGISTRATIONS_SERIES } from "@verific/api/schemas";
 
+import { CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Select,
 	SelectContent,
@@ -46,7 +47,7 @@ type TimeWindow = (typeof TIME_WINDOW_OPTIONS)[number]["value"];
 
 function EmptyState() {
 	return (
-		<div className="flex h-full min-h-[200px] items-center justify-center gap-3">
+		<div className="flex h-full min-h-50 items-center justify-center gap-3">
 			<CircleOff size={16} className="text-muted-foreground" />
 			<p className="text-muted-foreground">
 				Dados insuficientes para gerar o gráfico
@@ -130,45 +131,48 @@ export function GraphSelector() {
 
 	return (
 		<div className="flex w-full flex-col gap-4">
-			<div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-				{fields.length > 0 && (
+			<div className="flex flex-row flex-wrap items-center gap-4 md:justify-between">
+				<CardTitle>Participantes</CardTitle>
+				<div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+					{fields.length > 0 && (
+						<SelectorControl
+							label="Agrupar por"
+							value={groupBy}
+							onChange={setGroupBy}
+							items={[
+								{
+									value: REGISTRATIONS_VALUE,
+									label: "Inscrições",
+								},
+								...fields.map((field) => ({
+									value: field.id,
+									label: field.activityTitle
+										? `${field.label} · ${field.activityTitle}`
+										: field.label,
+								})),
+							]}
+						/>
+					)}
 					<SelectorControl
-						label="Agrupar por"
-						value={groupBy}
-						onChange={setGroupBy}
-						items={[
-							{
-								value: REGISTRATIONS_VALUE,
-								label: "Inscrições",
-							},
-							...fields.map((field) => ({
-								value: field.id,
-								label: field.activityTitle
-									? `${field.label} · ${field.activityTitle}`
-									: field.label,
-							})),
-						]}
+						label="Período"
+						value={timeWindow}
+						onChange={(value) => setTimeWindow(value as TimeWindow)}
+						items={TIME_WINDOW_OPTIONS}
 					/>
-				)}
-				<SelectorControl
-					label="Período"
-					value={timeWindow}
-					onChange={(value) => setTimeWindow(value as TimeWindow)}
-					items={TIME_WINDOW_OPTIONS}
-				/>
-				{isBreakdown && (
-					<SelectorControl
-						label="Tipo de gráfico"
-						value={graphType}
-						onChange={(value) =>
-							setGraphType(value as BreakdownGraphType)
-						}
-						items={BREAKDOWN_GRAPH_TYPES}
-					/>
-				)}
+					{isBreakdown && (
+						<SelectorControl
+							label="Tipo de gráfico"
+							value={graphType}
+							onChange={(value) =>
+								setGraphType(value as BreakdownGraphType)
+							}
+							items={BREAKDOWN_GRAPH_TYPES}
+						/>
+					)}
+				</div>
 			</div>
 			{seriesQuery.isPending ? (
-				<Skeleton className="h-full min-h-[200px] w-full" />
+				<Skeleton className="h-full min-h-50 w-full" />
 			) : isBreakdown ? (
 				isChartDataEmpty ? (
 					<EmptyState />

@@ -166,7 +166,7 @@ export function BreakdownGraph({
 
 		if (pieData.length === 0) {
 			return (
-				<div className="flex h-full min-h-[200px] items-center justify-center">
+				<div className="flex h-full min-h-50 items-center justify-center">
 					<p className="text-muted-foreground">
 						Dados insuficientes para gerar o gráfico
 					</p>
@@ -177,7 +177,7 @@ export function BreakdownGraph({
 		return (
 			<ChartContainer
 				config={chartConfig}
-				className={cn("h-full min-h-[240px] w-full", className)}
+				className={cn("h-full min-h-60 w-full", className)}
 			>
 				<PieChart>
 					<ChartTooltip
@@ -221,7 +221,7 @@ export function BreakdownGraph({
 		return (
 			<ChartContainer
 				config={chartConfig}
-				className={cn("h-full min-h-[200px] w-full", className)}
+				className={cn("h-full min-h-50 w-full", className)}
 			>
 				<BarChart
 					accessibilityLayer
@@ -251,7 +251,7 @@ export function BreakdownGraph({
 	return (
 		<ChartContainer
 			config={chartConfig}
-			className={cn("h-full min-h-[200px] w-full", className)}
+			className={cn("h-full min-h-50 w-full", className)}
 		>
 			<AreaChart
 				accessibilityLayer
