@@ -126,7 +126,7 @@ const stuckSending = () => ({
 });
 
 describe("store.listPage", () => {
-	it("scopes by event and never returns payload or entityRefs", async () => {
+	it("scopes by event and exposes entityRefs but no template data", async () => {
 		const { store } = setup();
 		await seed(store, { idempotencyKey: "a1" });
 		await seed(store, { idempotencyKey: "a2" });
@@ -146,8 +146,32 @@ describe("store.listPage", () => {
 		for (const item of items) {
 			expect(item.eventId).toBe(EVENT_A);
 			expect(item).not.toHaveProperty("payload");
-			expect(item).not.toHaveProperty("entityRefs");
+			// Diagnóstico do admin usa as refs (ids e escalares).
+			expect(item.entityRefs).toEqual({
+				registrationId: "participant-1",
+			});
 		}
+	});
+
+	it("narrows by recipient e-mail when asked", async () => {
+		const { store } = setup();
+		await seed(store, { idempotencyKey: "a1" });
+		await store.insertIgnore({
+			type: "event_registration_confirmation",
+			idempotencyKey: "a2",
+			to: "maria@ic.ufal.br",
+			eventId: EVENT_A,
+			entityRefs: { registrationId: "participant-2" },
+		});
+
+		const { items } = await store.listPage({
+			eventId: EVENT_A,
+			filter: "all",
+			email: "MARIA",
+			limit: 10,
+		});
+
+		expect(items.map((i) => i.idempotencyKey)).toEqual(["a2"]);
 	});
 
 	it("attention covers pending, failed, blocked_quota and stuck only", async () => {
@@ -371,7 +395,9 @@ describe("reprocessOneNotification", () => {
 			);
 			expect(notification?.status).toBe(row.status);
 			expect(notification).not.toHaveProperty("payload");
-			expect(notification).not.toHaveProperty("entityRefs");
+			expect(notification?.entityRefs).toEqual({
+				registrationId: "participant-1",
+			});
 		}
 		expect(send).not.toHaveBeenCalled();
 	});

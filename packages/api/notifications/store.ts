@@ -97,7 +97,8 @@ export interface NotificationStore {
 	/**
 	 * Event-scoped admin listing, newest first, keyset-paginated on
 	 * (createdAt, id). Never selects rendered template data. `stuck` is
-	 * derived in SQL.
+	 * derived in SQL. `email` optionally narrows by recipient (case
+	 * insensitive contains).
 	 */
 	listPage(options: ListNotificationsOptions): Promise<{
 		items: PublicNotification[];
@@ -115,6 +116,8 @@ export interface NotificationStore {
 export interface ListNotificationsOptions {
 	eventId: string;
 	filter: NotificationListFilter;
+	/** Optional recipient filter (case-insensitive substring). */
+	email?: string | null;
 	cursor?: { createdAt: Date | string; id: string } | null;
 	limit: number;
 }
@@ -307,6 +310,12 @@ export class DrizzleNotificationStore implements NotificationStore {
 			eq(notificationTable.eventId, options.eventId),
 			...filterConditions(options.filter, staleBefore),
 		];
+		const email = options.email?.trim();
+		if (email) {
+			conditions.push(
+				sql`${notificationTable.recipientEmail} ilike ${`%${email}%`}`,
+			);
+		}
 		if (options.cursor) {
 			const cursorDate = new Date(options.cursor.createdAt);
 			conditions.push(
@@ -331,6 +340,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 				status: notificationTable.status,
 				skipReason: notificationTable.skipReason,
 				propsHash: notificationTable.propsHash,
+				entityRefs: notificationTable.entityRefs,
 				stuck: stuckExpression(staleBefore),
 				attempts: notificationTable.attempts,
 				lastError: notificationTable.lastError,

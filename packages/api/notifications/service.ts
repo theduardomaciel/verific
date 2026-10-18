@@ -579,11 +579,12 @@ export interface ReprocessBatchResult {
 	capReached: boolean;
 }
 
-/** Row without `entityRefs`, for admin responses. */
+/** Row without rendered template data, for admin responses. */
 export function toPublicNotification(row: NotificationRow): PublicNotification {
-	const { entityRefs: _entityRefs, ...rest } = row;
+	// entityRefs (ids e escalares) segue na resposta: o admin usa no bloco
+	// de diagnóstico; conteúdo de template nunca é exposto.
 	return {
-		...rest,
+		...row,
 		stuck:
 			row.status === "sending" &&
 			Date.now() - row.updatedAt.getTime() > STALE_CLAIM_TIMEOUT_MS,

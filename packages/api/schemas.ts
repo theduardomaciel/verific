@@ -117,6 +117,8 @@ export const notificationCursorSchema = z.object({
 export const listNotificationsInput = z.object({
 	projectId: z.string().uuid(),
 	filter: notificationListFilterSchema.default("attention"),
+	/** Optional recipient e-mail filter (case-insensitive substring). */
+	email: z.string().trim().max(254).optional(),
 	cursor: notificationCursorSchema.nullish(),
 	limit: z.coerce.number().int().min(1).max(100).default(20),
 });

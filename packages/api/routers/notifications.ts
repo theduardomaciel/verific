@@ -35,6 +35,7 @@ export const notificationsRouter = createTRPCRouter({
 			return store.listPage({
 				eventId: input.projectId,
 				filter: input.filter,
+				email: input.email ?? null,
 				cursor: input.cursor ?? null,
 				limit: input.limit,
 			});

@@ -106,8 +106,13 @@ export class InMemoryNotificationStore implements NotificationStore {
 		nextCursor: NotificationCursor | null;
 	}> {
 		const now = Date.now();
+		const email = options.email?.trim().toLowerCase() ?? "";
 		const ranked = [...this.rows.values()]
 			.filter((row) => row.eventId === options.eventId)
+			.filter(
+				(row) =>
+					!email || row.recipientEmail.toLowerCase().includes(email),
+			)
 			.filter((row) => matchesFilter(row, options.filter, now))
 			.filter((row) => {
 				if (!options.cursor) return true;
@@ -203,6 +208,7 @@ function matchesFilter(
 	row: NotificationRow,
 	filter: NotificationListFilter,
 	now: number,
+	email?: string | null,
 ): boolean {
 	switch (filter) {
 		case "all":
@@ -219,6 +225,5 @@ function matchesFilter(
 }
 
 function toPublic(row: NotificationRow, now: number): PublicNotification {
-	const { entityRefs: _entityRefs, ...rest } = row;
-	return { ...rest, stuck: isStuck(row, now) };
+	return { ...row, stuck: isStuck(row, now) };
 }

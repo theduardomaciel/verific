@@ -124,9 +124,9 @@ export interface NotificationCursor {
 }
 
 /**
- * Admin-facing row. Contains `entityRefs` (ids + small scalars the
- * organizer needs for the diagnostics copy); never rendered template data.
- * `stuck` is derived server-side: status `sending` with
+ * Admin-facing row. Contains `entityRefs` (ids and small scalars; the
+ * organizer needs them for the diagnostics copy) but never rendered
+ * template data. `stuck` is derived server-side: status `sending` with
  * `updatedAt` older than STALE_CLAIM_TIMEOUT_MS.
  */
 export interface PublicNotification {
@@ -142,6 +142,11 @@ export interface PublicNotification {
 	skipReason: string | null;
 	/** sha256 of the props used in the last attempt. Audit only. */
 	propsHash: string | null;
+	/**
+	 * Ids + small scalars the send was built from. For the admin
+	 * diagnostics copy; never contains secrets.
+	 */
+	entityRefs: Record<string, string | number | boolean | null>;
 	stuck: boolean;
 	attempts: number;
 	lastError: string | null;
