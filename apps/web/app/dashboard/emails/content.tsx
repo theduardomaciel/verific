@@ -118,7 +118,7 @@ function formatDateTime(value: string | Date): string {
 function Timestamp({ value }: { value: string | Date }) {
 	return (
 		<span
-			className="cursor-help underline decoration-dotted underline-offset-2"
+			className="cursor-help whitespace-nowrap underline decoration-dotted underline-offset-2"
 			title={`${toIsoUtc(value)} (UTC)`}
 			// oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- horário só é acessível por teclado se o span puder receber foco para revelar o título.
 			tabIndex={0}
@@ -481,108 +481,22 @@ export function EmailsContent() {
 	}
 
 	return (
-		<div className="container-d py-container-v min-h-screen">
-			<div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-				<div>
-					<h1 className="text-foreground text-2xl font-bold">
-						E-mails
-					</h1>
-					<p className="text-muted-foreground text-sm">
-						Notificações enviadas para os inscritos deste evento.
-					</p>
-				</div>
-				<div className="flex flex-wrap items-center gap-2">
-					<div className="relative w-64 max-w-full">
-						<Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-						<Input
-							className="pl-9"
-							type="search"
-							placeholder="Buscar por e-mail do destinatário"
-							aria-label="Buscar por e-mail do destinatário"
-							value={searchInput}
-							onChange={(event) => {
-								setSearchInput(event.target.value);
-								setCursorStack([null]);
-								setSelectedIds(new Set());
-							}}
-						/>
+		<TooltipProvider delayDuration={200}>
+			<div className="container-d py-container-v min-h-screen">
+				{/* Cabeçalho: título + ação primária */}
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+					<div className="min-w-0">
+						<h1 className="text-foreground text-2xl font-bold tracking-tight">
+							E-mails
+						</h1>
+						<p className="text-muted-foreground text-sm">
+							Notificações enviadas para os inscritos deste
+							evento.
+						</p>
 					</div>
-					<Select
-						value={filter}
-						onValueChange={(value) =>
-							changeFilter(value as NotificationListFilterInput)
-						}
-					>
-						<SelectTrigger className="w-52">
-							<SelectValue placeholder="Filtrar por status" />
-						</SelectTrigger>
-						<SelectContent>
-							{FILTER_OPTIONS.map((option) => (
-								<SelectItem
-									key={option.value}
-									value={option.value}
-								>
-									{option.label}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
 					<Tooltip>
 						<TooltipTrigger asChild>
-							<span className="inline-flex items-center gap-2">
-								<Switch
-									id="emails-auto-refresh"
-									checked={autoRefresh}
-									onCheckedChange={setAutoRefresh}
-									aria-label="Atualização automática"
-								/>
-								<Label
-									htmlFor="emails-auto-refresh"
-									className="cursor-pointer text-sm font-normal"
-								>
-									Auto
-								</Label>
-							</span>
-						</TooltipTrigger>
-						<TooltipContent className="max-w-72">
-							{autoRefresh
-								? `Atualizando automaticamente a cada ${AUTO_REFRESH_MS / 1000}s`
-								: `Liga a atualização automática a cada ${AUTO_REFRESH_MS / 1000}s`}
-						</TooltipContent>
-					</Tooltip>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<span className="inline-flex">
-								<Button
-									variant="outline"
-									size="icon-sm"
-									aria-label="Recarregar lista e contagens"
-									disabled={
-										reloadCoolingDown ||
-										listQuery.isFetching ||
-										statsQuery.isPending
-									}
-									onClick={() => void handleReload()}
-								>
-									<RefreshCw
-										className={
-											listQuery.isFetching
-												? "animate-spin"
-												: undefined
-										}
-									/>
-								</Button>
-							</span>
-						</TooltipTrigger>
-						<TooltipContent>
-							{reloadCoolingDown
-								? "Aguarde um instante antes de recarregar de novo"
-								: "Atualiza lista e contagens"}
-						</TooltipContent>
-					</Tooltip>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<span className="inline-flex">
+							<span className="inline-flex shrink-0">
 								<Button
 									onClick={() => void handleRunAll()}
 									disabled={
@@ -605,39 +519,139 @@ export function EmailsContent() {
 								</Button>
 							</span>
 						</TooltipTrigger>
-						<TooltipContent>
+						<TooltipContent side="bottom" align="end">
 							{hasWorkToReprocess
 								? "Reprocessa todos os e-mails do filtro atual"
 								: "Nenhum e-mail para reprocessar neste filtro"}
 						</TooltipContent>
 					</Tooltip>
 				</div>
-			</div>
 
-			<div className="mt-6">
-				{statsQuery.isPending ? (
-					<Skeleton className="h-20 w-full" />
-				) : statsQuery.isError || !statsQuery.data ? (
-					<Alert variant="destructive">
-						<OctagonX />
-						<AlertTitle>Erro ao carregar</AlertTitle>
-						<AlertDescription>
-							Não foi possível carregar o uso e as contagens.
-							<Button
-								variant="outline"
-								size="sm"
-								className="mt-2"
-								onClick={() => {
-									void statsQuery.refetch();
-								}}
+				{/* Barra de ferramentas: busca, filtro, auto-refresh, recarregar */}
+				<div className="mt-6 flex flex-wrap items-center gap-2">
+					<div className="relative min-w-56 flex-1 sm:max-w-md">
+						<Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+						<Input
+							className="w-full pl-9"
+							type="search"
+							placeholder="Buscar por destinatário"
+							aria-label="Buscar por e-mail do destinatário"
+							value={searchInput}
+							onChange={(event) => {
+								setSearchInput(event.target.value);
+								setCursorStack([null]);
+								setSelectedIds(new Set());
+							}}
+						/>
+					</div>
+					<Select
+						value={filter}
+						onValueChange={(value) =>
+							changeFilter(value as NotificationListFilterInput)
+						}
+					>
+						<SelectTrigger className="w-full sm:w-52">
+							<SelectValue placeholder="Filtrar por status" />
+						</SelectTrigger>
+						<SelectContent>
+							{FILTER_OPTIONS.map((option) => (
+								<SelectItem
+									key={option.value}
+									value={option.value}
+								>
+									{option.label}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+					<div className="flex items-center gap-3 sm:ml-auto">
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<span className="inline-flex items-center gap-2">
+									<Switch
+										id="emails-auto-refresh"
+										checked={autoRefresh}
+										onCheckedChange={setAutoRefresh}
+										aria-label="Atualização automática"
+									/>
+									<Label
+										htmlFor="emails-auto-refresh"
+										className="cursor-pointer text-sm font-normal"
+									>
+										Auto
+									</Label>
+								</span>
+							</TooltipTrigger>
+							<TooltipContent
+								side="bottom"
+								align="end"
+								className="max-w-64"
 							>
-								Tentar novamente
-							</Button>
-						</AlertDescription>
-					</Alert>
-				) : (
-					<div className="flex flex-col gap-4">
-						<TooltipProvider>
+								{autoRefresh
+									? `Atualizando automaticamente a cada ${AUTO_REFRESH_MS / 1000}s`
+									: `Liga a atualização automática a cada ${AUTO_REFRESH_MS / 1000}s`}
+							</TooltipContent>
+						</Tooltip>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<span className="inline-flex">
+									<Button
+										variant="outline"
+										size="icon-sm"
+										aria-label="Recarregar lista e contagens"
+										disabled={
+											reloadCoolingDown ||
+											listQuery.isFetching ||
+											statsQuery.isPending
+										}
+										onClick={() => void handleReload()}
+									>
+										<RefreshCw
+											className={
+												listQuery.isFetching
+													? "animate-spin"
+													: undefined
+											}
+										/>
+									</Button>
+								</span>
+							</TooltipTrigger>
+							<TooltipContent
+								side="bottom"
+								align="end"
+								className="max-w-64"
+							>
+								{reloadCoolingDown
+									? "Aguarde um instante antes de recarregar de novo"
+									: "Atualiza lista e contagens"}
+							</TooltipContent>
+						</Tooltip>
+					</div>
+				</div>
+
+				<div className="mt-6">
+					{statsQuery.isPending ? (
+						<Skeleton className="h-20 w-full" />
+					) : statsQuery.isError || !statsQuery.data ? (
+						<Alert variant="destructive">
+							<OctagonX />
+							<AlertTitle>Erro ao carregar</AlertTitle>
+							<AlertDescription>
+								Não foi possível carregar o uso e as contagens.
+								<Button
+									variant="outline"
+									size="sm"
+									className="mt-2"
+									onClick={() => {
+										void statsQuery.refetch();
+									}}
+								>
+									Tentar novamente
+								</Button>
+							</AlertDescription>
+						</Alert>
+					) : (
+						<div className="flex flex-col gap-4">
 							<div
 								className="flex flex-wrap items-center gap-2"
 								role="group"
@@ -655,6 +669,7 @@ export function EmailsContent() {
 															: "outline"
 													}
 													size="sm"
+													className="whitespace-nowrap"
 													aria-pressed={active}
 													aria-label={`${counter.label}: ${statsQuery.data.counts[counter.key]}. ${counter.help}`}
 													onClick={() =>
@@ -665,26 +680,27 @@ export function EmailsContent() {
 														)
 													}
 												>
-													{active ? (
-														<X
-															data-icon="inline-start"
-															aria-hidden
-														/>
-													) : null}
 													{counter.label}
-													{active ? null : (
-														<span className="text-muted-foreground ml-1 tabular-nums">
-															{
-																statsQuery.data
-																	.counts[
-																	counter.key
-																]
-															}
-														</span>
-													)}
+													<span
+														className={
+															active
+																? "text-primary-foreground/80 ml-1 tabular-nums"
+																: "text-muted-foreground ml-1 tabular-nums"
+														}
+													>
+														{
+															statsQuery.data
+																.counts[
+																counter.key
+															]
+														}
+													</span>
 												</Button>
 											</TooltipTrigger>
-											<TooltipContent className="max-w-72">
+											<TooltipContent
+												side="bottom"
+												className="max-w-64"
+											>
 												{counter.help}
 											</TooltipContent>
 										</Tooltip>
@@ -703,152 +719,125 @@ export function EmailsContent() {
 									</Button>
 								) : null}
 							</div>
-						</TooltipProvider>
-						<Alert
-							variant={
-								usageTone === "error"
-									? "destructive"
-									: "default"
-							}
-							className={
-								usageTone === "warning"
-									? "border-warning/30 bg-warning/5 [&>svg]:text-warning"
-									: undefined
-							}
-						>
-							{usageTone === "error" ? (
-								<OctagonX />
-							) : usageTone === "warning" ? (
-								<TriangleAlert />
-							) : (
-								<Mail />
-							)}
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<span
-										className="cursor-help underline decoration-dotted underline-offset-2"
-										aria-label="Cota diária de envios"
-									>
-										<AlertTitle>
-											Enviados nas últimas 24h:{" "}
-											{usage?.sentLast24h ?? 0}
-											{usage?.limit != null
-												? ` de ${usage.limit}`
-												: ""}
-										</AlertTitle>
-									</span>
-								</TooltipTrigger>
-								<TooltipContent>
-									Envios confirmados nas últimas 24 horas
-									contra o teto diário do provedor; ao atingir
-									o limite, novos envios aguardam o próximo
-									período.
-								</TooltipContent>
-							</Tooltip>
-							<AlertDescription>
-								{usage?.limit == null
-									? "Nenhum limite diário configurado."
-									: usageTone === "error"
-										? "Limite diário atingido. Novos reprocessamentos manuais pedem confirmação."
-										: usageTone === "warning"
-											? "Uso acima de 80% do limite diário."
-											: "Dentro do limite diário."}
-							</AlertDescription>
-						</Alert>
-					</div>
-				)}
-			</div>
-
-			{runProgress?.active ? (
-				<Alert className="mt-4">
-					<Loader2 className="animate-spin" />
-					<AlertTitle>
-						{runProgress.mode === "selected"
-							? "Reprocessando selecionados…"
-							: "Reprocessando e-mails…"}
-					</AlertTitle>
-					<AlertDescription>
-						{runProgress.processed} processados ·{" "}
-						{runProgress.succeeded} enviados · {runProgress.failed}{" "}
-						falhas · {runProgress.skipped} ignorados
-					</AlertDescription>
-				</Alert>
-			) : null}
-
-			<div className="mt-6">
-				{listQuery.isPending ? (
-					<div className="space-y-2">
-						<Skeleton className="h-10 w-full" />
-						<Skeleton className="h-64 w-full" />
-					</div>
-				) : listQuery.isError || !listQuery.data ? (
-					<Alert variant="destructive">
-						<OctagonX />
-						<AlertTitle>Erro ao carregar</AlertTitle>
-						<AlertDescription>
-							Não foi possível carregar os e-mails. Tente
-							recarregar a página.
-							<Button
-								variant="outline"
-								size="sm"
-								className="mt-2"
-								onClick={() => {
-									void listQuery.refetch();
-								}}
+							<Alert
+								variant={
+									usageTone === "error"
+										? "destructive"
+										: "default"
+								}
+								className={
+									usageTone === "warning"
+										? "border-warning/30 bg-warning/5 [&>svg]:text-warning"
+										: undefined
+								}
 							>
-								Tentar novamente
-							</Button>
+								{usageTone === "error" ? (
+									<OctagonX />
+								) : usageTone === "warning" ? (
+									<TriangleAlert />
+								) : (
+									<Mail />
+								)}
+								<AlertTitle className="flex items-center gap-1.5">
+									<span>
+										Enviados nas últimas 24h:{" "}
+										{usage?.sentLast24h ?? 0}
+										{usage?.limit != null
+											? ` de ${usage.limit}`
+											: ""}
+									</span>
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<button
+												type="button"
+												className="text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex size-4 shrink-0 items-center justify-center rounded-full focus-visible:ring-2 focus-visible:outline-none"
+												aria-label="Sobre a cota diária de envios"
+											>
+												<Info className="size-3.5" />
+											</button>
+										</TooltipTrigger>
+										<TooltipContent
+											side="bottom"
+											align="start"
+											className="max-w-72"
+										>
+											Envios confirmados nas últimas 24
+											horas contra o teto diário do
+											provedor; ao atingir o limite, novos
+											envios aguardam o próximo período.
+										</TooltipContent>
+									</Tooltip>
+								</AlertTitle>
+								<AlertDescription>
+									{usage?.limit == null
+										? "Nenhum limite diário configurado."
+										: usageTone === "error"
+											? "Limite diário atingido. Novos reprocessamentos manuais pedem confirmação."
+											: usageTone === "warning"
+												? "Uso acima de 80% do limite diário."
+												: "Dentro do limite diário."}
+								</AlertDescription>
+							</Alert>
+						</div>
+					)}
+				</div>
+
+				{runProgress?.active ? (
+					<Alert className="mt-4">
+						<Loader2 className="animate-spin" />
+						<AlertTitle>
+							{runProgress.mode === "selected"
+								? "Reprocessando selecionados…"
+								: "Reprocessando e-mails…"}
+						</AlertTitle>
+						<AlertDescription>
+							{runProgress.processed} processados ·{" "}
+							{runProgress.succeeded} enviados ·{" "}
+							{runProgress.failed} falhas · {runProgress.skipped}{" "}
+							ignorados
 						</AlertDescription>
 					</Alert>
-				) : items.length === 0 ? (
-					<Empty
-						title="Nenhum e-mail por aqui"
-						description={
-							emailFilter
-								? `Nenhuma notificação para "${emailFilter}" neste filtro. Ajuste a busca ou limpe o filtro de status.`
-								: "Nenhuma notificação encontrada para este filtro. Limpe a busca ou troque o filtro de status."
-						}
-					/>
-				) : (
-					<div className="flex flex-col gap-3">
-						{selectedIds.size > 0 ? (
-							<div className="bg-muted/40 flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2">
-								<p className="text-sm">
-									{selectedIds.size} selecionado
-									{selectedIds.size > 1 ? "s" : ""}
-								</p>
-								<div className="flex flex-wrap gap-2">
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={() =>
-											setSelectedIds(new Set())
-										}
-									>
-										Limpar seleção
-									</Button>
-									<Button
-										size="sm"
-										disabled={runProgress?.active}
-										onClick={() =>
-											void handleReprocessSelected()
-										}
-									>
-										{runProgress?.active &&
-										runProgress.mode === "selected" ? (
-											<Loader2 className="animate-spin" />
-										) : (
-											<RefreshCw />
-										)}
-										Reprocessar selecionados
-									</Button>
-								</div>
-							</div>
-						) : null}
-						<div className="max-h-[70vh] overflow-auto rounded-2xl border">
-							<TooltipProvider>
+				) : null}
+
+				<div className="mt-6">
+					{listQuery.isPending ? (
+						<div className="space-y-2">
+							<Skeleton className="h-10 w-full" />
+							<Skeleton className="h-64 w-full" />
+						</div>
+					) : listQuery.isError || !listQuery.data ? (
+						<Alert variant="destructive">
+							<OctagonX />
+							<AlertTitle>Erro ao carregar</AlertTitle>
+							<AlertDescription>
+								Não foi possível carregar os e-mails. Tente
+								recarregar a página.
+								<Button
+									variant="outline"
+									size="sm"
+									className="mt-2"
+									onClick={() => {
+										void listQuery.refetch();
+									}}
+								>
+									Tentar novamente
+								</Button>
+							</AlertDescription>
+						</Alert>
+					) : items.length === 0 ? (
+						<Empty
+							title="Nenhum e-mail por aqui"
+							description={
+								emailFilter
+									? `Nenhuma notificação para "${emailFilter}" neste filtro. Ajuste a busca ou limpe o filtro de status.`
+									: "Nenhuma notificação encontrada para este filtro. Limpe a busca ou troque o filtro de status."
+							}
+						/>
+					) : (
+						<div className="flex flex-col gap-3">
+							<div className="max-h-[70vh] overflow-auto rounded-lg border">
 								<Table>
-									<TableHeader className="bg-card [&_th]:bg-card sticky top-0 z-10">
+									<TableHeader className="bg-card [&_th]:bg-card sticky top-0 z-10 [&_th]:whitespace-nowrap">
 										<TableRow>
 											<TableHead className="w-10">
 												<Checkbox
@@ -903,24 +892,33 @@ export function EmailsContent() {
 														}
 													/>
 												</TableCell>
-												<TableCell className="max-w-44 truncate font-medium">
-													{item.recipientEmail}
+												<TableCell className="max-w-56 min-w-40 truncate font-medium">
+													<span
+														title={
+															item.recipientEmail
+														}
+													>
+														{item.recipientEmail}
+													</span>
 												</TableCell>
-												<TableCell>
+												<TableCell className="whitespace-nowrap">
 													{NOTIFICATION_TYPE_LABELS[
 														item.type as keyof typeof NOTIFICATION_TYPE_LABELS
 													] ?? item.type}
 												</TableCell>
-												<TableCell>
+												<TableCell className="whitespace-nowrap">
 													<Tooltip>
 														<TooltipTrigger asChild>
-															<span className="cursor-help">
+															<span className="inline-flex cursor-help">
 																<StatusBadge
 																	item={item}
 																/>
 															</span>
 														</TooltipTrigger>
-														<TooltipContent className="max-w-72">
+														<TooltipContent
+															side="top"
+															className="max-w-72"
+														>
 															{statusHelpOf(item)}
 														</TooltipContent>
 													</Tooltip>
@@ -928,7 +926,7 @@ export function EmailsContent() {
 												<TableCell className="text-right tabular-nums">
 													{item.attempts}
 												</TableCell>
-												<TableCell>
+												<TableCell className="max-w-64 min-w-40 whitespace-normal">
 													{item.status ===
 														"skipped" &&
 													item.skipReason &&
@@ -937,13 +935,16 @@ export function EmailsContent() {
 															<TooltipTrigger
 																asChild
 															>
-																<span className="text-muted-foreground cursor-help underline decoration-dotted underline-offset-2">
+																<span className="text-muted-foreground block cursor-help truncate underline decoration-dotted underline-offset-2">
 																	{skipReasonLabel(
 																		item.skipReason,
 																	)}
 																</span>
 															</TooltipTrigger>
-															<TooltipContent className="max-w-80 break-words">
+															<TooltipContent
+																side="top"
+																className="max-w-80 break-words"
+															>
 																Motivo:{" "}
 																{
 																	item.skipReason
@@ -951,12 +952,14 @@ export function EmailsContent() {
 															</TooltipContent>
 														</Tooltip>
 													) : (
-														<ErrorCell
-															item={item}
-														/>
+														<div className="[overflow-wrap:anywhere] break-words">
+															<ErrorCell
+																item={item}
+															/>
+														</div>
 													)}
 												</TableCell>
-												<TableCell className="hidden md:table-cell">
+												<TableCell className="hidden whitespace-nowrap md:table-cell">
 													{item.provider ?? "—"}
 												</TableCell>
 												<TableCell className="hidden lg:table-cell">
@@ -969,7 +972,7 @@ export function EmailsContent() {
 														value={item.updatedAt}
 													/>
 												</TableCell>
-												<TableCell className="text-right">
+												<TableCell className="text-right whitespace-nowrap">
 													<div className="flex items-center justify-end gap-1">
 														<Button
 															variant="ghost"
@@ -1023,7 +1026,10 @@ export function EmailsContent() {
 																		</Button>
 																	</span>
 																</TooltipTrigger>
-																<TooltipContent>
+																<TooltipContent
+																	side="left"
+																	className="max-w-64"
+																>
 																	{reprocessDisabledReason(
 																		item,
 																	)}
@@ -1036,71 +1042,109 @@ export function EmailsContent() {
 										))}
 									</TableBody>
 								</Table>
-							</TooltipProvider>
+							</div>
+
+							{selectedIds.size > 0 ? (
+								<div className="bg-muted/40 flex flex-col gap-2 rounded-lg border px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+									<p className="text-sm">
+										{selectedIds.size} selecionado
+										{selectedIds.size > 1 ? "s" : ""}
+									</p>
+									<div className="flex flex-wrap gap-2">
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() =>
+												setSelectedIds(new Set())
+											}
+										>
+											Limpar seleção
+										</Button>
+										<Button
+											size="sm"
+											disabled={runProgress?.active}
+											onClick={() =>
+												void handleReprocessSelected()
+											}
+										>
+											{runProgress?.active &&
+											runProgress.mode === "selected" ? (
+												<Loader2 className="animate-spin" />
+											) : (
+												<RefreshCw />
+											)}
+											Reprocessar selecionados
+										</Button>
+									</div>
+								</div>
+							) : null}
+						</div>
+					)}
+
+					<div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+						<p className="text-muted-foreground min-w-0 text-xs break-words">
+							Página {cursorStack.length} · {items.length} e-mails
+							{emailFilter ? ` · busca: ${emailFilter}` : ""}
+						</p>
+						<div className="flex shrink-0 gap-2">
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={
+									cursorStack.length <= 1 ||
+									listQuery.isFetching
+								}
+								onClick={() => {
+									setSelectedIds(new Set());
+									setCursorStack((stack) =>
+										stack.slice(0, -1),
+									);
+								}}
+							>
+								<ChevronLeft />
+								Anterior
+							</Button>
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={!nextCursor || listQuery.isFetching}
+								onClick={() => {
+									if (nextCursor)
+										setCursorStack((stack) => [
+											...stack,
+											nextCursor,
+										]);
+									setSelectedIds(new Set());
+								}}
+							>
+								Próxima
+								<ChevronRight />
+							</Button>
 						</div>
 					</div>
-				)}
-
-				<div className="mt-4 flex items-center justify-between">
-					<p className="text-muted-foreground text-xs">
-						Página {cursorStack.length} · {items.length} e-mails
-						{emailFilter ? ` · busca: ${emailFilter}` : ""}
-					</p>
-					<div className="flex gap-2">
-						<Button
-							variant="outline"
-							size="sm"
-							disabled={
-								cursorStack.length <= 1 || listQuery.isFetching
-							}
-							onClick={() => {
-								setSelectedIds(new Set());
-								setCursorStack((stack) => stack.slice(0, -1));
-							}}
-						>
-							<ChevronLeft />
-							Anterior
-						</Button>
-						<Button
-							variant="outline"
-							size="sm"
-							disabled={!nextCursor || listQuery.isFetching}
-							onClick={() => {
-								if (nextCursor)
-									setCursorStack((stack) => [
-										...stack,
-										nextCursor,
-									]);
-								setSelectedIds(new Set());
-							}}
-						>
-							Próxima
-							<ChevronRight />
-						</Button>
-					</div>
 				</div>
+
+				<NotificationDetailSheet
+					item={detailItem}
+					onOpenChange={(open) => {
+						if (!open) setDetailId(null);
+					}}
+					onReprocess={(item) => {
+						setDetailId(null);
+						void handleReprocess(item);
+					}}
+					canReprocess={detailItem ? canReprocess(detailItem) : false}
+					disabledReason={
+						detailItem ? reprocessDisabledReason(detailItem) : ""
+					}
+					reprocessing={
+						detailItem != null && reprocessingId === detailItem.id
+					}
+				/>
+
+				<ConfirmDialog {...rowDialogProps} />
+				<ConfirmDialog {...runDialogProps} />
 			</div>
-
-			<NotificationDetailSheet
-				item={detailItem}
-				onOpenChange={(open) => {
-					if (!open) setDetailId(null);
-				}}
-				onReprocess={(item) => {
-					setDetailId(null);
-					void handleReprocess(item);
-				}}
-				canReprocess={detailItem ? canReprocess(detailItem) : false}
-				disabledReason={
-					detailItem ? reprocessDisabledReason(detailItem) : ""
-				}
-				reprocessing={
-					detailItem != null && reprocessingId === detailItem.id
-				}
-			/>
-
-			<ConfirmDialog {...rowDialogProps} />
-			<ConfirmDialog {...runDialogProps} />
-		</div>
+		</TooltipProvider>
 	);
 }
