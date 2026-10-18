@@ -1,3 +1,5 @@
+import { eq } from "drizzle-orm";
+
 import * as schema from "../schema";
 import {
 	buildActivity,
@@ -126,6 +128,34 @@ export async function seedEvent(
 		}));
 	if (moderators.length > 0) {
 		await db.insert(schema.projectModerator).values(moderators);
+	}
+
+	// Ensure ema2@ic.ufal.br is a contributor (moderator) of this seeded project.
+	let contributorUser = await db.query.user.findFirst({
+		where: eq(schema.user.email, "ema2@ic.ufal.br"),
+		columns: { id: true },
+	});
+	if (!contributorUser) {
+		const [created] = await db
+			.insert(schema.user)
+			.values({
+				name: "Ema 2",
+				email: "ema2@ic.ufal.br",
+				emailVerified: true,
+				publicEmail: "ema2@ic.ufal.br",
+			})
+			.returning({ id: schema.user.id });
+		contributorUser = created;
+	}
+	if (contributorUser && contributorUser.id !== params.ownerId) {
+		await db
+			.insert(schema.projectModerator)
+			.values({
+				id: faker.string.uuid(),
+				projectId: project.id,
+				userId: contributorUser.id,
+			})
+			.onConflictDoNothing();
 	}
 
 	const speakers =

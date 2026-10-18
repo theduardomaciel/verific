@@ -24,6 +24,8 @@
 		"db:studio": "turbo run db:studio",
 		"db:drop": "turbo run db:drop",
 		"db:seed": "turbo run db:seed",
+		"db:seed:prod": "turbo run db:seed:prod",
+		"db:seed:minimal:prod": "turbo run db:seed:minimal:prod",
 		"prepare": "husky"
 	},
 	"devDependencies": {

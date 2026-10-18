@@ -19,10 +19,11 @@ import { trpc } from "@/lib/trpc/react";
 
 function DashboardSkeleton() {
 	return (
-		<main className="container-d py-container-v flex min-h-screen w-full flex-1 flex-col items-center justify-start gap-8">
+		<main className="container-d py-container-v flex min-h-screen w-full flex-1 flex-col items-center justify-start gap-4">
+			<Skeleton className="mb-2 h-11 w-full" />
 			<div className="grid w-full gap-4 md:grid-cols-2 lg:grid-cols-4">
 				{Array.from({ length: 4 }).map((_, i) => (
-					<Skeleton key={i} className="h-32 w-full" />
+					<Skeleton key={i} className="h-35.5 w-full" />
 				))}
 			</div>
 			<div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-3">
@@ -65,11 +66,8 @@ export default function Overview() {
 
 	return (
 		<main className="container-d py-container-v flex min-h-screen w-full flex-1 flex-col items-center justify-start gap-8">
-			<Tabs
-				defaultValue="overview"
-				className="flex w-full flex-1 space-y-4"
-			>
-				<div className="flex w-full flex-wrap items-center justify-between space-y-2">
+			<Tabs defaultValue="overview" className="flex w-full flex-1">
+				<div className="mb-4 flex w-full flex-wrap items-center justify-between space-y-2">
 					<h2 className="text-3xl font-bold tracking-tight">
 						Dashboard
 					</h2>

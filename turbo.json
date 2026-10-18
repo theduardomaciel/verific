@@ -60,6 +60,12 @@
 			"cache": false
 		},
 		"db:studio": {},
-		"db:seed": {}
+		"db:seed": {},
+		"db:seed:prod": {
+			"cache": false
+		},
+		"db:seed:minimal:prod": {
+			"cache": false
+		}
 	}
 }
