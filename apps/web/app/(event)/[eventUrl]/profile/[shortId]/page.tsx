@@ -18,6 +18,7 @@ import {
 	getProject,
 	getProfilePageData,
 } from "@/lib/data";
+import { resolveProfilePageData } from "@/lib/profile-page-data";
 
 import { ProfilePageSkeleton } from "./skeleton";
 
@@ -210,12 +211,14 @@ export default async function EventProfilePage({ params }: ProfilePageProps) {
 	const { project } = result;
 	const profilesEnabled = Boolean(project.profilesEnabled);
 
-	// `.catch(() => null)` + `notFound()` no corpo (e não dentro do `catch`):
-	// é o padrão da página de atividade e o único que o prerender do build
-	// aceita — um `notFound()` disparado de dentro do `catch` deixa o erro
-	// original escapar e derruba o build.
+	// Apenas o NOT_FOUND do procedimento vira `null` (e então 404); qualquer
+	// outro erro propaga. Com a rota em ISR, transformar falha transitória
+	// (timeout, bug) em 404 prenderia o perfil válido no cache. O `notFound()`
+	// fica no corpo, e não dentro do `catch`: é o único formato que o
+	// prerender do build aceita — o `notFound()` lançado de dentro do `catch`
+	// deixa o erro original escapar e derruba o build.
 	const pageData = profilesEnabled
-		? await getProfilePageData(eventUrl, shortId).catch(() => null)
+		? await resolveProfilePageData(getProfilePageData(eventUrl, shortId))
 		: null;
 
 	if (profilesEnabled && !pageData) {
