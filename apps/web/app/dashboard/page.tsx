@@ -15,6 +15,7 @@ import { ActivitiesList } from "@/components/dashboard/overview/activities-list"
 import { GraphSelector } from "@/components/dashboard/overview/graph-selector";
 import { MetricCard } from "@/components/dashboard/overview/metric-card";
 
+import { formatWorkload } from "@/lib/date";
 import { trpc } from "@/lib/trpc/react";
 
 function DashboardSkeleton() {
@@ -109,7 +110,7 @@ export default function Overview() {
 						/>
 						<MetricCard
 							title="Horas por participante"
-							value={`~${stats.meanWorkloadPerParticipant.toFixed(0)}h`}
+							value={`~${formatWorkload(stats.meanWorkloadPerParticipant)}`}
 							change={`~${stats.meanPercentageFromTotalWorkload.toFixed(
 								1,
 							)}% do total possível`}

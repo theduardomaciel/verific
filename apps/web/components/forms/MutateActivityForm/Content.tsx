@@ -677,6 +677,7 @@ export function MutateActivityFormContent({
 						className="hidden"
 					/>
 					<SplitButton
+						key={isEditing ? "edit" : "create"}
 						size="lg"
 						variant="default"
 						options={[
@@ -702,9 +703,9 @@ export function MutateActivityFormContent({
 									</>
 								),
 								icon: isEditing ? (
-									<Edit className="h-5 w-5" />
+									<Edit className="size-5" />
 								) : (
-									<CloudUpload className="h-5 w-5" />
+									<CloudUpload className="size-5" />
 								),
 							},
 							...(onSecondarySubmit && !isEditing
@@ -723,7 +724,7 @@ export function MutateActivityFormContent({
 												</>
 											),
 											icon: (
-												<ClipboardList className="h-5 w-5" />
+												<ClipboardList className="size-5" />
 											),
 										},
 									]
@@ -733,9 +734,11 @@ export function MutateActivityFormContent({
 							if (value === "configure") {
 								onSecondarySubmit?.();
 							} else {
-								document
-									.getElementById("mutate-activity-submit")
-									?.click();
+								(
+									document.getElementById(
+										"mutate-activity-form",
+									) as HTMLFormElement | null
+								)?.requestSubmit();
 							}
 						}}
 					/>

@@ -4,6 +4,7 @@ import { Clock } from "lucide-react";
 import type { activityCategories } from "@verific/drizzle/enum/category";
 import { activityCategoryLabels } from "@verific/drizzle/enum/category";
 
+import { formatWorkload } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
 interface CategoryCard {
@@ -36,7 +37,7 @@ export function CategoryCard({
 				<div className="inline-flex items-center justify-end gap-2">
 					<Clock className="h-3.5 w-3.5" />
 					<p className="text-foreground text-left text-sm font-medium">
-						{hours}h
+						{formatWorkload(hours ?? 0)}
 					</p>
 				</div>
 			) : null}

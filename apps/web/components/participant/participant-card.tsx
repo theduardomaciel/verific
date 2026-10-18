@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { LogoutForm } from "@/components/ui/logout-form";
 import { Skeleton } from "@/components/ui/skeleton";
 
+import { formatWorkload } from "@/lib/date";
 // Utils
 import { getInitials, pluralize } from "@/lib/i18n";
 // API
@@ -98,7 +99,7 @@ export async function ParticipantCard({ id: participantId, eventUrl }: Props) {
 					</Badge>
 					<Badge variant={"secondary"}>
 						<Hourglass />
-						{hours} horas
+						{formatWorkload(hours)}
 					</Badge>
 				</ul>
 				{answers.length > 0 && (
