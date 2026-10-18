@@ -30,7 +30,6 @@ import {
 	useConfirmDialog,
 } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -39,7 +38,6 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
 import {
 	Table,
 	TableBody,
@@ -79,8 +77,6 @@ type PageCursor = { createdAt: string; id: string };
 const PAGE_SIZE = 20;
 /** Espera mínima entre recarregamentos manuais (evita spam no backend). */
 const RELOAD_DEBOUNCE_MS = 3000;
-/** Intervalo da atualização automática quando ligada. */
-const AUTO_REFRESH_MS = 15_000;
 
 const FILTER_OPTIONS: Array<{
 	value: NotificationListFilterInput;
@@ -96,6 +92,17 @@ const FILTER_OPTIONS: Array<{
 	{ value: "blocked_quota", label: "Bloqueadas (cota)" },
 	{ value: "skipped", label: "Ignoradas" },
 ];
+
+/** Cor semântica de cada contador (ponto discreto no chip). */
+const COUNTER_DOT: Record<string, string> = {
+	pending: "bg-muted-foreground",
+	sending: "bg-sky-500",
+	stuck: "bg-amber-500",
+	sent: "bg-emerald-500",
+	failed: "bg-red-500",
+	blocked_quota: "bg-orange-500",
+	skipped: "bg-zinc-400",
+};
 
 const DEFAULT_FILTER: NotificationListFilterInput = "attention";
 
@@ -164,7 +171,6 @@ export function EmailsContent() {
 	const [runProgress, setRunProgress] = useState<RunProgress | null>(null);
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [detailId, setDetailId] = useState<string | null>(null);
-	const [autoRefresh, setAutoRefresh] = useState(false);
 	const [reloadCoolingDown, setReloadCoolingDown] = useState(false);
 	const reloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const { confirm: confirmRow, dialogProps: rowDialogProps } =
@@ -193,7 +199,6 @@ export function EmailsContent() {
 		{
 			staleTime: 30 * 1000,
 			refetchOnWindowFocus: false,
-			refetchInterval: autoRefresh ? AUTO_REFRESH_MS : false,
 		},
 	);
 	const listQuery = trpc.listNotifications.useQuery(
@@ -208,7 +213,6 @@ export function EmailsContent() {
 			placeholderData: keepPreviousData,
 			staleTime: 30 * 1000,
 			refetchOnWindowFocus: false,
-			refetchInterval: autoRefresh ? AUTO_REFRESH_MS : false,
 		},
 	);
 
@@ -527,7 +531,7 @@ export function EmailsContent() {
 					</Tooltip>
 				</div>
 
-				{/* Barra de ferramentas: busca, filtro, auto-refresh, recarregar */}
+				{/* Barra de ferramentas: busca, filtro, recarregar */}
 				<div className="mt-6 flex flex-wrap items-center gap-2">
 					<div className="relative min-w-56 flex-1 sm:max-w-md">
 						<Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
@@ -564,34 +568,7 @@ export function EmailsContent() {
 							))}
 						</SelectContent>
 					</Select>
-					<div className="flex items-center gap-3 sm:ml-auto">
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<span className="inline-flex items-center gap-2">
-									<Switch
-										id="emails-auto-refresh"
-										checked={autoRefresh}
-										onCheckedChange={setAutoRefresh}
-										aria-label="Atualização automática"
-									/>
-									<Label
-										htmlFor="emails-auto-refresh"
-										className="cursor-pointer text-sm font-normal"
-									>
-										Auto
-									</Label>
-								</span>
-							</TooltipTrigger>
-							<TooltipContent
-								side="bottom"
-								align="end"
-								className="max-w-64"
-							>
-								{autoRefresh
-									? `Atualizando automaticamente a cada ${AUTO_REFRESH_MS / 1000}s`
-									: `Liga a atualização automática a cada ${AUTO_REFRESH_MS / 1000}s`}
-							</TooltipContent>
-						</Tooltip>
+					<div className="flex items-center sm:ml-auto">
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<span className="inline-flex">
@@ -659,6 +636,8 @@ export function EmailsContent() {
 							>
 								{COUNTERS.map((counter) => {
 									const active = filter === counter.key;
+									const count =
+										statsQuery.data.counts[counter.key];
 									return (
 										<Tooltip key={counter.key}>
 											<TooltipTrigger asChild>
@@ -669,9 +648,13 @@ export function EmailsContent() {
 															: "outline"
 													}
 													size="sm"
-													className="whitespace-nowrap"
+													className={`gap-2 whitespace-nowrap ${
+														count === 0 && !active
+															? "opacity-60"
+															: ""
+													}`}
 													aria-pressed={active}
-													aria-label={`${counter.label}: ${statsQuery.data.counts[counter.key]}. ${counter.help}`}
+													aria-label={`${counter.label}: ${count}. ${counter.help}`}
 													onClick={() =>
 														changeFilter(
 															active
@@ -680,20 +663,24 @@ export function EmailsContent() {
 														)
 													}
 												>
+													<span
+														aria-hidden
+														className={`size-1.5 shrink-0 rounded-full ${
+															COUNTER_DOT[
+																counter.key as string
+															] ??
+															"bg-muted-foreground"
+														}`}
+													/>
 													{counter.label}
 													<span
-														className={
+														className={`tabular-nums ${
 															active
-																? "text-primary-foreground/80 ml-1 tabular-nums"
-																: "text-muted-foreground ml-1 tabular-nums"
-														}
+																? "text-primary-foreground/80"
+																: "text-muted-foreground"
+														}`}
 													>
-														{
-															statsQuery.data
-																.counts[
-																counter.key
-															]
-														}
+														{count}
 													</span>
 												</Button>
 											</TooltipTrigger>
@@ -836,7 +823,7 @@ export function EmailsContent() {
 					) : (
 						<div className="flex flex-col gap-3">
 							<div className="max-h-[70vh] overflow-auto rounded-lg border">
-								<Table>
+								<Table className="min-w-[880px] [&_td]:px-3 [&_td]:py-3 [&_td]:align-middle [&_th]:px-3">
 									<TableHeader className="bg-card [&_th]:bg-card sticky top-0 z-10 [&_th]:whitespace-nowrap">
 										<TableRow>
 											<TableHead className="w-10">
@@ -853,10 +840,12 @@ export function EmailsContent() {
 											<TableHead>Destinatário</TableHead>
 											<TableHead>Tipo</TableHead>
 											<TableHead>Status</TableHead>
-											<TableHead className="text-right">
+											<TableHead className="text-center">
 												Tentativas
 											</TableHead>
-											<TableHead>Erro / motivo</TableHead>
+											<TableHead className="w-full min-w-64">
+												Erro / motivo
+											</TableHead>
 											<TableHead className="hidden md:table-cell">
 												Provedor
 											</TableHead>
@@ -892,14 +881,11 @@ export function EmailsContent() {
 														}
 													/>
 												</TableCell>
-												<TableCell className="max-w-56 min-w-40 truncate font-medium">
-													<span
-														title={
-															item.recipientEmail
-														}
-													>
-														{item.recipientEmail}
-													</span>
+												<TableCell
+													className="max-w-64 truncate font-medium"
+													title={item.recipientEmail}
+												>
+													{item.recipientEmail}
 												</TableCell>
 												<TableCell className="whitespace-nowrap">
 													{NOTIFICATION_TYPE_LABELS[
@@ -923,10 +909,10 @@ export function EmailsContent() {
 														</TooltipContent>
 													</Tooltip>
 												</TableCell>
-												<TableCell className="text-right tabular-nums">
+												<TableCell className="text-center tabular-nums">
 													{item.attempts}
 												</TableCell>
-												<TableCell className="max-w-64 min-w-40 whitespace-normal">
+												<TableCell className="w-full max-w-0 min-w-64">
 													{item.status ===
 														"skipped" &&
 													item.skipReason &&
@@ -943,6 +929,7 @@ export function EmailsContent() {
 															</TooltipTrigger>
 															<TooltipContent
 																side="top"
+																align="start"
 																className="max-w-80 break-words"
 															>
 																Motivo:{" "}
@@ -952,22 +939,20 @@ export function EmailsContent() {
 															</TooltipContent>
 														</Tooltip>
 													) : (
-														<div className="[overflow-wrap:anywhere] break-words">
-															<ErrorCell
-																item={item}
-															/>
-														</div>
+														<ErrorCell
+															item={item}
+														/>
 													)}
 												</TableCell>
 												<TableCell className="hidden whitespace-nowrap md:table-cell">
 													{item.provider ?? "—"}
 												</TableCell>
-												<TableCell className="hidden lg:table-cell">
+												<TableCell className="hidden whitespace-nowrap lg:table-cell">
 													<Timestamp
 														value={item.createdAt}
 													/>
 												</TableCell>
-												<TableCell className="hidden lg:table-cell">
+												<TableCell className="hidden whitespace-nowrap lg:table-cell">
 													<Timestamp
 														value={item.updatedAt}
 													/>
