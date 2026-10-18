@@ -41,3 +41,16 @@ export function addDays(date: Date, days: number) {
 export function addMinutes(date: Date, minutes: number) {
 	return new Date(date.getTime() + minutes * 60 * 1000);
 }
+
+// Meia-noite de hoje no horário de Brasília (UTC-3)
+export function todayInBrasilia(now = new Date()) {
+	const brasilia = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+	return new Date(
+		Date.UTC(
+			brasilia.getUTCFullYear(),
+			brasilia.getUTCMonth(),
+			brasilia.getUTCDate(),
+			3,
+		),
+	);
+}

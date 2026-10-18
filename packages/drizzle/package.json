@@ -19,6 +19,7 @@
 		"db:drop": "drizzle-kit drop",
 		"db:studio": "drizzle-kit studio",
 		"db:seed": "pnpm tsx ./seed/cli.ts",
+		"db:seed:notifications": "pnpm tsx ./seed/notifications-cli.ts",
 		"db:seed:prod": "pnpm tsx ./seed/cli.ts --profile=minimal --prod",
 		"db:seed:minimal:prod": "pnpm tsx ./seed/cli.ts --profile=minimal --prod"
 	},

@@ -12,6 +12,7 @@ export { profiles, STRESS_EVENT, type ProfileName } from "./profiles";
 export { hasSeedData, resetSeedData } from "./reset";
 export * from "./factories";
 export * from "./seed-event";
+export * from "./notification-fixtures";
 export * from "./utils";
 
 export interface SeedOptions {
@@ -22,6 +23,8 @@ export interface SeedOptions {
 	reset?: boolean;
 	// Base para as datas; com a mesma semente e data, os dados se repetem
 	refDate: Date;
+	// Linhas fictícias de notificação (dev). Default: true.
+	notifications?: boolean;
 }
 
 export async function seed(db: SeedDb, options: SeedOptions) {
@@ -58,6 +61,7 @@ export async function seed(db: SeedDb, options: SeedOptions) {
 					users,
 					ownerId,
 					refDate: options.refDate,
+					notifications: options.notifications ?? true,
 				}),
 			);
 		}
@@ -89,17 +93,4 @@ async function createSeedOwner(db: SeedDb) {
 		})
 		.returning({ id: schema.user.id });
 	return owner!.id;
-}
-
-// Meia-noite de hoje no horário de Brasília (UTC-3)
-export function todayInBrasilia(now = new Date()) {
-	const brasilia = new Date(now.getTime() - 3 * 60 * 60 * 1000);
-	return new Date(
-		Date.UTC(
-			brasilia.getUTCFullYear(),
-			brasilia.getUTCMonth(),
-			brasilia.getUTCDate(),
-			3,
-		),
-	);
 }

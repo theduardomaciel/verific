@@ -25,7 +25,7 @@ const isProduction = process.argv
 	.slice(2)
 	.some((arg) => productionFlags.has(arg.toLowerCase()));
 
-const usage = `Uso: pnpm db:seed [--profile=minimal|light|default|stress] [--seed=N] [--ownerId=ID] [--reset] [--prod]`;
+const usage = `Uso: pnpm db:seed [--profile=minimal|light|default|stress] [--seed=N] [--ownerId=ID] [--reset] [--notifications] [--prod]`;
 
 async function main() {
 	const { values } = parseArgs({
@@ -34,6 +34,7 @@ async function main() {
 			seed: { type: "string", default: "1" },
 			ownerId: { type: "string" },
 			reset: { type: "boolean", default: false },
+			notifications: { type: "boolean" },
 			prod: { type: "boolean", default: false },
 			production: { type: "boolean", default: false },
 			target: { type: "string" },
@@ -79,13 +80,16 @@ async function main() {
 			seed: seedNumber,
 			ownerId: values.ownerId,
 			reset: values.reset,
+			// Linhas fictícias de notificação só por padrão em dev; em prod
+			// exigem `--notifications` explícito.
+			notifications: values.notifications ?? !targetProduction,
 			refDate: todayInBrasilia(),
 		});
 
 		console.log(`✅ ${result.users} usuários`);
 		for (const event of result.events) {
 			console.log(
-				`✅ /${event.project.url}: ${event.participants} participantes, ${event.activities} atividades (${event.sessions} sessões), ${event.enrollments} inscrições em atividades, ${event.waitlist} na fila, ${event.attendances} presenças`,
+				`✅ /${event.project.url}: ${event.participants} participantes, ${event.activities} atividades (${event.sessions} sessões), ${event.enrollments} inscrições em atividades, ${event.waitlist} na fila, ${event.attendances} presenças, ${event.notifications} notificações`,
 			);
 		}
 	} finally {

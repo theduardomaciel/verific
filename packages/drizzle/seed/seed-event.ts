@@ -9,6 +9,7 @@ import {
 	buildSpeaker,
 	TAGS,
 } from "./factories";
+import { insertNotificationFixtures } from "./notification-fixtures";
 import {
 	buildAnswerRows,
 	buildRegistrationAnswers,
@@ -61,9 +62,11 @@ export async function seedEvent(
 	params: {
 		index: number;
 		spec: EventSpec;
-		users: { id: string }[];
+		users: { id: string; email: string }[];
 		ownerId: string;
 		refDate: Date;
+		/** Cria linhas fictícias de notificação (dev). Default: false. */
+		notifications?: boolean;
 	},
 ) {
 	const { spec, users, refDate } = params;
@@ -331,6 +334,28 @@ export async function seedEvent(
 	});
 	await insertInChunks(db, schema.sessionAttendance, attendances);
 
+	let notifications = 0;
+	if (params.notifications) {
+		const [owner] = await db
+			.select({ email: schema.user.email })
+			.from(schema.user)
+			.where(eq(schema.user.id, params.ownerId));
+		notifications = await insertNotificationFixtures(db, {
+			projectId: project.id,
+			participants: participants.map((participant, index) => ({
+				id: participant.id,
+				email: eventUsers[index]!.email,
+			})),
+			enrollments: enrollments.map((enrollment) => ({
+				activityId: enrollment.activityId,
+				participantId: enrollment.participantId,
+				subscribedAt: enrollment.subscribedAt,
+			})),
+			ownerEmail: owner?.email ?? null,
+			refDate,
+		});
+	}
+
 	return {
 		project,
 		participants: participants.length,
@@ -339,6 +364,7 @@ export async function seedEvent(
 		enrollments: enrollments.length,
 		waitlist: waitlist.length,
 		attendances: attendances.length,
+		notifications,
 	};
 }
 
