@@ -29,6 +29,13 @@ export const env = createEnv({
 		AWS_ACCESS_KEY_ID: z.string().min(1).optional(),
 		AWS_SECRET_ACCESS_KEY: z.string().min(1).optional(),
 		RESEND_API_KEY: z.string().min(1).optional(),
+		// Scheduler for waitlist offer expiry (exact deadlines via QStash).
+		QSTASH_TOKEN: z.string().min(1).optional(),
+		QSTASH_CURRENT_SIGNING_KEY: z.string().min(1).optional(),
+		QSTASH_NEXT_SIGNING_KEY: z.string().min(1).optional(),
+		QSTASH_URL: z.string().url().optional(),
+		CRON_SECRET: z.string().min(32).optional(),
+		SCHEDULER_PROVIDER: z.enum(["console", "qstash"]).optional(),
 	},
 	client: {
 		NEXT_PUBLIC_APP_URL: z.url(),
@@ -60,6 +67,12 @@ export const env = createEnv({
 		AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
 		AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
 		RESEND_API_KEY: process.env.RESEND_API_KEY,
+		QSTASH_TOKEN: process.env.QSTASH_TOKEN,
+		QSTASH_CURRENT_SIGNING_KEY: process.env.QSTASH_CURRENT_SIGNING_KEY,
+		QSTASH_NEXT_SIGNING_KEY: process.env.QSTASH_NEXT_SIGNING_KEY,
+		QSTASH_URL: process.env.QSTASH_URL,
+		CRON_SECRET: process.env.CRON_SECRET,
+		SCHEDULER_PROVIDER: process.env.SCHEDULER_PROVIDER,
 	},
 	emptyStringAsUndefined: true,
 });

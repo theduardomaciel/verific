@@ -45,6 +45,7 @@ export {
 export * from "./cache-tags";
 
 export * from "./notifications";
+export * from "./scheduler";
 
 export type AppRouter = typeof appRouter;
 export type RouterInputs = inferRouterInputs<AppRouter>;

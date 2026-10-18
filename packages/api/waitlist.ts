@@ -39,6 +39,14 @@ export type ActiveEntry = {
 	offerExpiresAt: Date | null;
 };
 
+export type EffectiveEntry = {
+	id: string;
+	participantId: string;
+	status: "waiting" | "offered" | "expired";
+	joinedAt: Date;
+	offerExpiresAt: Date | null;
+};
+
 export async function getActiveEntries(tx: Tx, activityId: string) {
 	return tx
 		.select({
@@ -57,6 +65,31 @@ export async function getActiveEntries(tx: Tx, activityId: string) {
 		) as Promise<ActiveEntry[]>;
 }
 
+/**
+ * Reads active waitlist entries and computes their EFFECTIVE status
+ * based on offerExpiresAt vs. now, WITHOUT modifying the database.
+ * This is for read-only handlers (UI, API) that need the current state
+ * without the side effects of settleActivity.
+ */
+export async function getEffectiveEntries(
+	tx: Tx,
+	activityId: string,
+	now = new Date(),
+): Promise<EffectiveEntry[]> {
+	const entries = await getActiveEntries(tx, activityId);
+	return entries.map((entry) => {
+		// If offered but expired, treat as expired for display purposes
+		if (
+			entry.status === "offered" &&
+			entry.offerExpiresAt &&
+			entry.offerExpiresAt <= now
+		) {
+			return { ...entry, status: "expired" as const };
+		}
+		return entry;
+	});
+}
+
 /** Início da primeira sessão e fim da última (`null` sem sessões). */
 export async function getActivityRange(tx: Tx, activityId: string) {
 	const [range] = await tx
@@ -73,7 +106,7 @@ export async function getActivityRange(tx: Tx, activityId: string) {
 }
 
 /** Posição de cada pessoa que espera (1 = próxima), pela ordem da fila. */
-export function queuePositions(entries: ActiveEntry[]) {
+export function queuePositions(entries: (ActiveEntry | EffectiveEntry)[]) {
 	return new Map(
 		entries
 			.filter((entry) => entry.status === "waiting")
@@ -84,14 +117,9 @@ export function queuePositions(entries: ActiveEntry[]) {
 
 /**
  * Acerta a fila da atividade já travada: expira ofertas vencidas e oferece
- * as vagas livres aos próximos. Não há tarefa agendada; toda operação que
- * mexe na fila ou nas vagas, e toda leitura do estado da fila, chama isto.
+ * as vagas livres aos próximos. Chamado por mutações (saída, remoção, promoção,
+ * mudança de limite, cancelamento) e pelo handler de expiração agendado.
  * Devolve a fila já acertada.
- *
- * Sem agendador, uma oferta vencida só é liberada quando algo acerta a fila
- * de novo (inclusive uma leitura): se ninguém acertar, o próximo da fila não
- * é convocado e a corrente trava até alguém abrir a página. Um acerto
- * periódico das atividades com oferta em aberto fecharia essa lacuna.
  */
 export async function settleActivity(
 	tx: Tx,

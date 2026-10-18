@@ -269,6 +269,27 @@ export function notifyActivityWaitlistOffered(args: {
 }): Promise<void> {
 	if (args.offers.length === 0) return Promise.resolve();
 	return scheduleAfterResponse(async () => {
+		// Schedule expiry timers for each offer (best-effort; failure doesn't break offer creation)
+		for (const offer of args.offers) {
+			try {
+				const scheduler = await (
+					await import("@verific/api/scheduler")
+				).getOfferExpiryScheduler();
+				await scheduler.schedule({
+					enrollmentId: offer.enrollmentId,
+					activityId: args.activityId,
+					offeredAt: offer.offeredAt.toISOString(),
+					expiresAt: offer.expiresAt.toISOString(),
+				});
+			} catch (err) {
+				console.error(
+					`[scheduler] Failed to schedule expiry for enrollment ${offer.enrollmentId}:`,
+					err instanceof Error ? err.message : String(err),
+				);
+				// Continue: daily sweep will recover
+			}
+		}
+
 		const contacts = await loadNotificationRecipients(
 			args.offers.map((offer) => offer.participantId),
 		);

@@ -39,10 +39,12 @@ import {
 	closeEntry,
 	getActiveEntries,
 	getActivityRange,
+	getEffectiveEntries,
 	queuePositions,
 	resolveEnrolledEntries,
 	settleActivity,
 	type ActiveEntry,
+	type EffectiveEntry,
 } from "../waitlist";
 import { byQueueOrder } from "../waitlist-plan";
 
@@ -121,7 +123,10 @@ async function findRequester(projectId: string, userId: string) {
 }
 
 /** Estado de uma pessoa na fila, como o cliente o mostra. */
-function describeEntry(queue: ActiveEntry[], participantId: string) {
+function describeEntry(
+	queue: (ActiveEntry | EffectiveEntry)[],
+	participantId: string,
+) {
 	const entry = queue.find((e) => e.participantId === participantId);
 	if (!entry) return null;
 	return {
@@ -394,14 +399,14 @@ export const waitlistRouter = createTRPCRouter({
 				);
 			if (active.length === 0) return [];
 
-			// Acerta cada fila antes de ler, em ordem de id para não travar
+			// Read effective state without settling (no side effects, no e-mails).
+			// Expired offers are computed from offerExpiresAt vs. now.
 			return db.transaction(async (tx) => {
 				const entries = [];
 				for (const { activityId } of active.sort((a, b) =>
 					a.activityId.localeCompare(b.activityId),
 				)) {
-					const locked = await lockActivity(tx, activityId);
-					const queue = await settleActivity(tx, locked);
+					const queue = await getEffectiveEntries(tx, activityId);
 					const entry = describeEntry(queue, me.id);
 					if (entry) entries.push({ activityId, ...entry });
 				}
@@ -421,7 +426,7 @@ export const waitlistRouter = createTRPCRouter({
 			const { locked, queue, enrolled } = await db.transaction(
 				async (tx) => {
 					const locked = await lockActivity(tx, activityId);
-					const queue = await settleActivity(tx, locked);
+					const queue = await getEffectiveEntries(tx, activityId);
 					return {
 						locked,
 						queue,

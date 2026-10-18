@@ -83,6 +83,12 @@ export interface NotificationStore {
 	 */
 	claim(id: string): Promise<NotificationRow | null>;
 	/**
+	 * Recovers stuck `sending` rows (older than STALE_CLAIM_TIMEOUT_MS) by
+	 * transitioning them back to `pending` so they can be reprocessed.
+	 * Returns the number of rows recovered.
+	 */
+	recoverStuckClaims(): Promise<number>;
+	/**
 	 * Shared usage counting for the daily cap and getEmailUsage: rows `sent`
 	 * by sentAt within the last 24h, plus `sending` rows that are not stale
 	 * (a reprocessed row created earlier but sent now counts via sentAt).
@@ -248,6 +254,21 @@ export class DrizzleNotificationStore implements NotificationStore {
 			)
 			.returning();
 		return claimed[0] ?? null;
+	}
+
+	async recoverStuckClaims(): Promise<number> {
+		const staleBefore = new Date(Date.now() - STALE_CLAIM_TIMEOUT_MS);
+		const updated = await db
+			.update(notificationTable)
+			.set({ status: "pending", updatedAt: new Date() })
+			.where(
+				and(
+					eq(notificationTable.status, "sending"),
+					lt(notificationTable.updatedAt, staleBefore),
+				),
+			)
+			.returning();
+		return updated.length ?? 0;
 	}
 
 	async countUsageLast24h(): Promise<number> {

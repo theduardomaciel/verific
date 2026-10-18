@@ -174,6 +174,23 @@ export class InMemoryNotificationStore implements NotificationStore {
 	async getById(id: string): Promise<NotificationRow | null> {
 		return this.rows.get(id) ?? null;
 	}
+
+	async recoverStuckClaims(): Promise<number> {
+		const now = Date.now();
+		let count = 0;
+		for (const [id, row] of this.rows.entries()) {
+			if (row.status === "sending" && isStuck(row, now)) {
+				const updated = {
+					...row,
+					status: "pending" as const,
+					updatedAt: new Date(),
+				};
+				this.rows.set(id, updated);
+				count += 1;
+			}
+		}
+		return count;
+	}
 }
 
 function isStuck(row: NotificationRow, now: number = Date.now()): boolean {

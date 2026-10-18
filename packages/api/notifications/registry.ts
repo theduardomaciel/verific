@@ -1240,13 +1240,14 @@ export function isNotificationTypeKey(
 }
 
 /**
- * Types explicitly deferred (no cron in this task). Kept here so the
- * registry documents what is missing and the settings UI never shows them.
+ * Types explicitly deferred. Kept here so the registry documents what is
+ * missing and the settings UI never shows them.
  *
  * TODO(activity_reminder): send a reminder before an enrolled activity
- * starts. Requires a scheduler/cron; the registry shape already supports it
- * (activityId + participantId refs, deterministic per-event key). When it
- * lands, add the type to NOTIFICATION_TYPE_KEYS, an entry here and a trigger
- * enqueued from a job — no service changes needed.
+ * starts. Now that the scheduler (QStash delayed messages + daily sweep) is
+ * available, this can be implemented by adding the type to
+ * NOTIFICATION_TYPE_KEYS, an entry here, and a trigger enqueued from a job
+ * (e.g. a scheduled sweep that finds activities starting soon). No service
+ * changes needed.
  */
 export const DEFERRED_NOTIFICATION_TYPES = ["activity_reminder"] as const;

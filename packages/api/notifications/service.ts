@@ -1,8 +1,10 @@
 import "server-only";
 import { db } from "@verific/drizzle";
-import { eq } from "@verific/drizzle/orm";
-import { project, user } from "@verific/drizzle/schema";
+import { and, eq, sql } from "@verific/drizzle/orm";
+import { project, user, activityWaitlist } from "@verific/drizzle/schema";
 
+import { lockActivity } from "../seats";
+import { settleActivity } from "../waitlist";
 import { loadEmailConfig } from "./config";
 import { getProvider } from "./providers";
 import { getNotificationDefinition, hashProps } from "./registry";
@@ -645,4 +647,114 @@ export async function reprocessBatchNotifications(
 		result.capReached = after >= usage.limit;
 	}
 	return result;
+}
+
+/**
+ * Sweep result for cron/manual runs.
+ */
+export interface SweepResult {
+	recovered: number; // stuck claims recovered
+	settled: number; // activities settled (offers expired, next person offered)
+	durationMs: number;
+	timedOut: boolean;
+	lastSweepAt: string; // ISO string
+}
+
+/**
+ * Runs the daily maintenance sweep:
+ * 1. Recovers stuck claims (existing 10-minute logic).
+ * 2. Finds offers still `offered` whose `offerExpiresAt` passed more than a small grace period ago
+ *    and settles those activities so the next person in line gets offered.
+ *
+ * Idempotent and overlap-safe (existing atomic claim and idempotency keys).
+ * A missed run is fully recovered by the next one or by the manual button.
+ *
+ * Note: Notification reprocessing is handled by the existing admin "Reprocessar todos"
+ * button and the per-event `reprocessBatchNotifications` procedure. The sweep focuses
+ * on the time-sensitive waitlist offer expiry that cannot wait for manual intervention.
+ */
+export async function runSweep(
+	options: {
+		timeBudgetMs?: number;
+	} = {},
+): Promise<SweepResult> {
+	const startedAt = Date.now();
+	const timeBudgetMs = options.timeBudgetMs ?? 25_000; // leave margin for Vercel 30s limit
+
+	const resolved = resolveDeps();
+	const store = resolved.store;
+
+	let recovered = 0;
+	let settled = 0;
+	let timedOut = false;
+
+	// 1. Recover stuck claims (10-minute timeout)
+	try {
+		recovered = await store.recoverStuckClaims();
+	} catch (err) {
+		console.error("[sweep] recoverStuckClaims failed:", messageOf(err));
+	}
+
+	// Check time budget
+	if (Date.now() - startedAt > timeBudgetMs) {
+		timedOut = true;
+	}
+
+	// 2. Settle activities with overdue offers (expired > 2 min ago)
+	if (!timedOut) {
+		try {
+			const graceMs = 2 * 60 * 1000; // 2 minutes grace
+			const now = new Date();
+			const cutoff = new Date(now.getTime() - graceMs);
+
+			// Find activities that have offered entries with expired offerExpiresAt
+			const overdueActivities = await db
+				.selectDistinct({ activityId: activityWaitlist.activityId })
+				.from(activityWaitlist)
+				.where(
+					and(
+						eq(activityWaitlist.status, "offered"),
+						sql`${activityWaitlist.offerExpiresAt} < ${cutoff.toISOString()}`,
+					),
+				);
+
+			for (const { activityId } of overdueActivities) {
+				if (Date.now() - startedAt > timeBudgetMs) {
+					timedOut = true;
+					break;
+				}
+				try {
+					await db.transaction(async (tx) => {
+						const locked = await lockActivity(tx, activityId);
+						await settleActivity(tx, locked, now);
+					});
+					settled += 1;
+				} catch (err) {
+					console.error(
+						`[sweep] settleActivity failed for ${activityId}:`,
+						messageOf(err),
+					);
+				}
+			}
+		} catch (err) {
+			console.error(
+				"[sweep] overdue offers query failed:",
+				messageOf(err),
+			);
+		}
+	}
+
+	const lastSweepAt = new Date().toISOString();
+	const durationMs = Date.now() - startedAt;
+
+	// TODO: Persist lastSweepAt to a settings/state table for admin UI display
+	// For now, return it so the caller can store it if needed.
+
+	return {
+		recovered,
+		settled,
+		durationMs,
+		timedOut,
+		lastSweepAt,
+	};
 }
