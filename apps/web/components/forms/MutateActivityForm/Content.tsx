@@ -775,6 +775,7 @@ export function MutateActivityFormContent({
 												containerClassName="flex-1"
 												className="w-full flex-1"
 												type="number"
+												step="0.05"
 												placeholder="Sem carga horária"
 												{...field}
 												// TODO: Por enquanto, setamos diretamente o value para "" pois o valor "undefined"

@@ -32,7 +32,7 @@ export const activity = pgTable("activities", {
 
 	participantsLimit: integer("participants_limit"),
 	tolerance: integer("tolerance"),
-	workload: integer("workload"),
+	workload: doublePrecision("workload"),
 	allowOverlap: boolean("allow_overlap").notNull().default(false),
 	// Fila de espera: quando as vagas acabarem, participantes podem entrar
 	// em uma fila e receber a vaga caso alguém desista. Desligar bloqueia

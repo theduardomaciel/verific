@@ -1,0 +1,1 @@
+ALTER TABLE "activities" ALTER COLUMN "workload" SET DATA TYPE double precision;
