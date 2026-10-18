@@ -139,7 +139,7 @@ export function GraphSelector() {
 						items={[
 							{
 								value: REGISTRATIONS_VALUE,
-								label: "Inscrições por dia",
+								label: "Inscrições",
 							},
 							...fields.map((field) => ({
 								value: field.id,

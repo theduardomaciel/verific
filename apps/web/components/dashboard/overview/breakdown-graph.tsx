@@ -96,39 +96,37 @@ function useChartConfig(aliasedSeries: AliasedSeries[]) {
 	);
 }
 
-const Axis = () => (
-	<>
-		<CartesianGrid vertical={false} />
-		<XAxis
-			dataKey="date"
-			tickLine={false}
-			axisLine={false}
-			tickMargin={8}
-			tickFormatter={(value) => value}
-		/>
-		<YAxis
-			width={30}
-			stroke="#888888"
-			fontSize={12}
-			tickLine={false}
-			axisLine={false}
-			allowDecimals={false}
-			tickFormatter={(value) => value}
-		/>
-	</>
+// Shared chart elements. They must be rendered as direct children of the
+// recharts chart (wrapped components are ignored — recharts only scans
+// its own element types among children for axis/tooltip/legend wiring).
+const GridElement = <CartesianGrid vertical={false} />;
+const XAxisElement = (
+	<XAxis
+		dataKey="date"
+		tickLine={false}
+		axisLine={false}
+		tickMargin={8}
+		tickFormatter={(value) => value}
+	/>
 );
-
-const Tooltip = () => (
+const YAxisElement = (
+	<YAxis
+		width={30}
+		stroke="#888888"
+		fontSize={12}
+		tickLine={false}
+		axisLine={false}
+		allowDecimals={false}
+		tickFormatter={(value) => value}
+	/>
+);
+const TooltipElement = (
 	<ChartTooltip cursor={false} content={<ChartTooltipContent />} />
 );
-
-const Legend = ({ nameKey }: { nameKey?: string }) => (
+const LegendElement = (
 	<ChartLegend
 		content={
-			<ChartLegendContent
-				className="flex-wrap justify-start gap-x-4 gap-y-1"
-				nameKey={nameKey}
-			/>
+			<ChartLegendContent className="flex-wrap justify-start gap-x-4 gap-y-1" />
 		}
 	/>
 );
@@ -203,7 +201,14 @@ export function BreakdownGraph({
 							/>
 						))}
 					</Pie>
-					<Legend nameKey="name" />
+					<ChartLegend
+						content={
+							<ChartLegendContent
+								nameKey="name"
+								className="flex-wrap justify-start gap-x-4 gap-y-1"
+							/>
+						}
+					/>
 				</PieChart>
 			</ChartContainer>
 		);
@@ -221,9 +226,11 @@ export function BreakdownGraph({
 					data={aliasedData}
 					margin={{ left: 12, right: 12 }}
 				>
-					<Axis />
-					<Tooltip />
-					<Legend />
+					{GridElement}
+					{XAxisElement}
+					{YAxisElement}
+					{TooltipElement}
+					{LegendElement}
 					{aliasedSeries.map((item) => (
 						<Bar
 							key={item.key}
@@ -249,9 +256,11 @@ export function BreakdownGraph({
 				data={aliasedData}
 				margin={{ left: 12, right: 12 }}
 			>
-				<Axis />
-				<Tooltip />
-				<Legend />
+				{GridElement}
+				{XAxisElement}
+				{YAxisElement}
+				{TooltipElement}
+				{LegendElement}
 				{aliasedSeries.map((item) => (
 					<Area
 						key={item.key}
