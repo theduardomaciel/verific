@@ -241,7 +241,12 @@ export const projectsRouter = createTRPCRouter({
 	}),
 
 	getAllProjects: publicProcedure.query(async () => {
-		return db.query.project.findMany();
+		// Só alimenta `generateStaticParams` (id + slug) — devolver a linha
+		// inteira de cada evento (tema, urls de imagem, datas) só inflava o
+		// payload e a memória da entrada `use cache` "projects".
+		return db.query.project.findMany({
+			columns: { id: true, url: true },
+		});
 	}),
 
 	deleteProject: protectedProcedure

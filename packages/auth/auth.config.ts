@@ -6,6 +6,14 @@ import { db } from "@verific/drizzle";
 import { account, session, user, verification } from "@verific/drizzle/schema";
 import { env } from "@verific/env";
 
+import { emitAuthUserChanged, isAuthIdentityEndpoint } from "./cache-hooks";
+
+function readUserId(value: unknown): string | null {
+	if (typeof value !== "object" || value === null) return null;
+	const id = (value as { id?: unknown }).id;
+	return typeof id === "string" && id.length > 0 ? id : null;
+}
+
 const baseURL = env.BETTER_AUTH_URL.replace(/\/$/, "");
 const secret = env.BETTER_AUTH_SECRET;
 
@@ -69,6 +77,32 @@ export const auth = betterAuth({
 						publicEmail: userData.email,
 					},
 				}),
+			},
+			// Escritas de identidade fora do tRPC (update-user/change-email/
+			// exclusão de conta) mudam `user.name`/`user.image_url`, que
+			// aparecem em páginas públicas cacheadas. O ouvinte (registrado
+			// pelo app em `@/lib/server-cache-invalidation`) derruba as tags
+			// `events`/`profiles`. Sem ouvinte registrado, é no-op silencioso.
+			//
+			// O filtro por endpoint descarta atualizações internas do login
+			// (emailVerified / avatar do provedor no vínculo de conta): só
+			// edições do próprio usuário justificam derrubar o cache público.
+			update: {
+				after: async (userData, context) => {
+					if (!isAuthIdentityEndpoint(context?.path)) return;
+					emitAuthUserChanged({
+						reason: "update",
+						userId: readUserId(userData),
+					});
+				},
+			},
+			delete: {
+				after: async (userData) => {
+					emitAuthUserChanged({
+						reason: "delete",
+						userId: readUserId(userData),
+					});
+				},
 			},
 		},
 	},

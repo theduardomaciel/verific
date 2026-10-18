@@ -16,6 +16,7 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 
+import { useDashboard } from "@/components/dashboard/dashboard-context";
 import {
 	ErrorDialog,
 	LoadingDialog,
@@ -132,8 +133,34 @@ export function ActivityDeleteDialog({
 	activityId,
 }: ActivityDeleteDialogProps) {
 	const utils = trpc.useUtils();
+	const { projectId } = useDashboard();
 	const mutation = trpc.deleteActivity.useMutation({
 		onSuccess: () => {
+			// Some da lista imediatamente (todas as páginas/filtros do
+			// evento já em cache) — o organizador que volta do diálogo não
+			// vê a atividade recém-excluída. O `invalidate` reconcilia com o
+			// servidor em seguida.
+			utils.getActivities.setQueriesData(
+				{ projectId },
+				{},
+				(previous) => {
+					if (
+						!previous ||
+						!previous.activities.some(
+							(activity) => activity.id === activityId,
+						)
+					) {
+						return previous;
+					}
+					return {
+						...previous,
+						activities: previous.activities.filter(
+							(activity) => activity.id !== activityId,
+						),
+						amount: Math.max(0, previous.amount - 1),
+					};
+				},
+			);
 			void utils.getActivities.invalidate();
 			void utils.getDashboardStats.invalidate();
 		},

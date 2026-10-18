@@ -5,6 +5,9 @@ import { appRouter, createCallerFactory } from "@verific/api";
 import type { Session } from "@verific/auth";
 
 import { getSession } from "@/lib/session";
+// Rede de segurança: qualquer mutation chamada pelo caller de servidor
+// (fora do handler HTTP do tRPC) também encontra o revalidator registrado.
+import "@/lib/server-cache-invalidation";
 
 const createClient = createCallerFactory(appRouter);
 type Client = ReturnType<typeof createClient>;

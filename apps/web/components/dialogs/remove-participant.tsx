@@ -18,6 +18,8 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 
+import { useDashboard } from "@/components/dashboard/dashboard-context";
+
 import {
 	revalidateParticipantActivities,
 	revalidateParticipantEnrollment,
@@ -42,6 +44,8 @@ export function RemoveParticipantDialog({
 }: RemoveParticipantDialogProps) {
 	const [open, setOpen] = useState(false);
 	const userRouter = useRouter();
+	const utils = trpc.useUtils();
+	const { projectId } = useDashboard();
 
 	const removeFromActivityMutation =
 		trpc.deleteParticipantFromActivity.useMutation();
@@ -69,6 +73,31 @@ export function RemoveParticipantDialog({
 			await removeFromProjectMutation.mutateAsync({
 				participantId,
 			});
+			// Expulsar do evento some com a linha da lista de participantes
+			// (todas as páginas/filtros já em cache) antes do `back()` — a
+			// lista remontada não mostra mais o participante removido.
+			utils.getParticipants.setQueriesData(
+				{ projectId },
+				{},
+				(previous) => {
+					if (
+						!previous ||
+						!previous.participants.some(
+							(participant) => participant.id === participantId,
+						)
+					) {
+						return previous;
+					}
+					return {
+						...previous,
+						participants: previous.participants.filter(
+							(participant) => participant.id !== participantId,
+						),
+						amount: Math.max(0, previous.amount - 1),
+					};
+				},
+			);
+			void utils.getParticipants.invalidate();
 			await revalidateParticipants();
 			await revalidateParticipantEnrollment(participantId);
 			toast.success("Participante removido do evento");

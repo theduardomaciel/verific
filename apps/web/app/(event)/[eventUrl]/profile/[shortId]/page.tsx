@@ -13,7 +13,11 @@ import { ProfileOwnerTickets } from "@/components/profile/profile-owner-tickets"
 import { ProfileStats } from "@/components/profile/profile-stats";
 import { ProfileVisitRecorder } from "@/components/profile/profile-visit-recorder";
 
-import { getProject, getProfilePageData } from "@/lib/data";
+import {
+	getEventStaticParams,
+	getProject,
+	getProfilePageData,
+} from "@/lib/data";
 
 import { ProfilePageSkeleton } from "./skeleton";
 
@@ -21,11 +25,34 @@ interface ProfilePageProps {
 	params: Promise<{ eventUrl: string; shortId: string }>;
 }
 
-// Rota inerentemente dinâmica (`shortId` ilimitado + ilhas do dono via
-// `?me=1`): nunca será pré-renderizada, então opta por navegação com
-// bloqueio em vez de "instant". Isso preserva o gate `notFound` real
-// antes do `<Suspense>` abaixo.
+// `shortId` é ilimitado e as ilhas do dono chegam por `?me=1`: a navegação
+// pode bloquear, então opta por "instant = false". O gate `notFound` roda
+// antes do `<Suspense>` abaixo e não pode ser adiado.
 export const instant = false;
+
+/**
+ * Com `cacheComponents`, uma rota só vira ISR (grava o HTML na primeira
+ * visita e serve as seguintes do cache) se declarar `generateStaticParams`.
+ * Sem isso, `params` é dado de runtime: **toda** visita republica o App
+ * Shell e a resposta sai `Cache-Control: no-store`, mesmo com todo o dado
+ * em `"use cache"`.
+ *
+ * O universo de `shortId` é ilimitado (um por participante) — não há como
+ * enumerá-lo no build. A amostra abaixo existe só para registrar a rota
+ * como ISR-ável; é reconhecida por `BUILD_SAMPLE_SHORT_ID` e cai em
+ * `notFound()`. As URLs reais são gravadas em disco na primeira visita e
+ * servidas do cache nas seguintes.
+ */
+const BUILD_SAMPLE_SHORT_ID = "__placeholder__";
+
+export async function generateStaticParams() {
+	const events = await getEventStaticParams();
+
+	return events.map(({ eventUrl }) => ({
+		eventUrl,
+		shortId: BUILD_SAMPLE_SHORT_ID,
+	}));
+}
 
 type ProfileServerData = {
 	eventUrl: string;
@@ -165,6 +192,15 @@ function ProfileBody({
  */
 export default async function EventProfilePage({ params }: ProfilePageProps) {
 	const { eventUrl, shortId } = await params;
+
+	// Amostra do build (ver `generateStaticParams`): nunca é um perfil real.
+	// Tratada ANTES de qualquer leitura cacheada — um erro lançado de dentro
+	// de um corpo `"use cache"` no prerender do build derruba o export, e não
+	// dá para converter em 404 depois.
+	if (shortId === BUILD_SAMPLE_SHORT_ID) {
+		notFound();
+	}
+
 	const result = await getProject(eventUrl);
 
 	if (!result?.project) {
@@ -174,13 +210,16 @@ export default async function EventProfilePage({ params }: ProfilePageProps) {
 	const { project } = result;
 	const profilesEnabled = Boolean(project.profilesEnabled);
 
-	let pageData: ProfileServerData["pageData"] = null;
-	if (profilesEnabled) {
-		try {
-			pageData = await getProfilePageData(eventUrl, shortId);
-		} catch {
-			notFound();
-		}
+	// `.catch(() => null)` + `notFound()` no corpo (e não dentro do `catch`):
+	// é o padrão da página de atividade e o único que o prerender do build
+	// aceita — um `notFound()` disparado de dentro do `catch` deixa o erro
+	// original escapar e derruba o build.
+	const pageData = profilesEnabled
+		? await getProfilePageData(eventUrl, shortId).catch(() => null)
+		: null;
+
+	if (profilesEnabled && !pageData) {
+		notFound();
 	}
 
 	return (

@@ -1020,26 +1020,88 @@ type CacheRevalidator = (tag: string) => void;
 let revalidator: CacheRevalidator | null = null;
 
 /**
- * O app (Next) registra `revalidateTag(tag, "max")` aqui no boot do handler
- * HTTP. O import de `next/cache` fica FORA de `packages/api`: o pacote tem
- * um `next` próprio (devDependency) e a instância de `next/cache` precisa
- * ser a que está executando o servidor (stores em AsyncLocalStorage).
+ * O app (Next) registra `revalidateTag(tag, "max")` aqui. O import de
+ * `next/cache` fica FORA de `packages/api`: o pacote tem um `next` próprio
+ * (devDependency) e a instância de `next/cache` precisa ser a que está
+ * executando o servidor (stores em AsyncLocalStorage).
+ *
+ * O registro vive em `apps/web/lib/server-cache-invalidation.ts` (módulo
+ * server-only com efeito de import), importado por **todo** runtime que
+ * executa mutations: handler tRPC, handler `/api/auth/*` e o caller de
+ * servidor. Assim a invalidação não depende de um único route module.
  */
 export function registerCacheRevalidator(next: CacheRevalidator) {
 	revalidator = next;
+}
+
+/** Só para testes: volta o registro ao estado "sem revalidator". */
+export function __unregisterCacheRevalidator() {
+	revalidator = null;
+}
+
+let warnedMissingRevalidator = false;
+
+/**
+ * Falha alto quando uma mutation COM regra roda sem revalidator: em dev é
+ * um `console.error` (uma vez por processo); com
+ * `CACHE_INVALIDATION_STRICT=1` é `throw` (diagnóstico/CI). Em teste o
+ * aviso é silencioso para não poluir a suíte — os testes registram o seu
+ * próprio revalidator quando querem observar as tags.
+ */
+function reportMissingRevalidator(tags: readonly string[]) {
+	const detail = tags.join(", ");
+
+	if (process.env.CACHE_INVALIDATION_STRICT === "1") {
+		throw new Error(
+			`[cache] mutation pediu invalidação sem revalidator registrado: ${detail}. ` +
+				`Importe "@/lib/server-cache-invalidation" no runtime que executa a mutation.`,
+		);
+	}
+
+	if (process.env.NODE_ENV === "production" || warnedMissingRevalidator) {
+		return;
+	}
+	if (process.env.NODE_ENV === "test") return;
+
+	warnedMissingRevalidator = true;
+	console.error(
+		`[cache] invalidação pedida sem revalidator registrado (${tags.length} tag(s)): ${detail}. ` +
+			`Importe "@/lib/server-cache-invalidation" no runtime que executa a mutation.`,
+	);
 }
 
 /** Deduplica e dispara a invalidação; nunca deve derrubar a mutation. */
 export function invalidateCacheTags(
 	tags: readonly (string | undefined | false)[],
 ) {
-	if (!revalidator) return;
-	for (const tag of new Set(tags)) {
-		if (!tag) continue;
+	const list = [...new Set(tags)].filter((tag): tag is string =>
+		Boolean(tag),
+	);
+
+	if (list.length === 0) return;
+
+	if (!revalidator) {
+		reportMissingRevalidator(list);
+		return;
+	}
+
+	for (const tag of list) {
 		try {
 			revalidator(tag);
 		} catch {
 			// Contexto sem cache (ex.: vitest/CLI) — segue sem invalidar.
 		}
 	}
+}
+
+/**
+ * Escrita de identidade do usuário fora do tRPC (better-auth:
+ * `update-user`/`change-email`/exclusão). Mesmas tags da regra `updateUser`:
+ * o nome/avatar aparece no evento (dono) e nos perfis públicos.
+ *
+ * Chamado pelo ouvinte registrado em `@/lib/server-cache-invalidation`
+ * (ver `onAuthUserChanged` em `@verific/auth`).
+ */
+export function invalidateAuthUserChange() {
+	invalidateCacheTags([GLOBAL_CACHE_TAGS.events, GLOBAL_CACHE_TAGS.profiles]);
 }

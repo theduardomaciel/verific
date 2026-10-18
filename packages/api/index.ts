@@ -37,7 +37,10 @@ export { createCallerFactory };
 // Cache pública (Next `cacheComponents`): vocabulário de tags + ponte de
 // revalidação usada pelo handler HTTP do app (o import de `next/cache` fica
 // fora deste pacote de propósito — ver `cache-invalidation.ts`).
-export { registerCacheRevalidator } from "./cache-invalidation";
+export {
+	invalidateAuthUserChange,
+	registerCacheRevalidator,
+} from "./cache-invalidation";
 
 export * from "./cache-tags";
 

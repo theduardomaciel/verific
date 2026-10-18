@@ -1,22 +1,15 @@
-import { revalidateTag } from "next/cache";
 import { type NextRequest } from "next/server";
 
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { getSessionCookie } from "better-auth/cookies";
 
-import {
-	appRouter,
-	PUBLIC_CACHEABLE_QUERY_PATHS,
-	registerCacheRevalidator,
-} from "@verific/api";
+import { appRouter, PUBLIC_CACHEABLE_QUERY_PATHS } from "@verific/api";
 
 import { getSession } from "@/lib/session";
-
-// Boot do módulo: as mutations passam por este handler e disparam
-// `revalidateTag(tag, "max")` no servidor Next, onde os stores de cache
-// existem (o `next/cache` fica fora de `packages/api` — ver
-// `cache-invalidation.ts`).
-registerCacheRevalidator((tag) => revalidateTag(tag, "max"));
+// Boot da invalidação pública (registra `revalidateTag` em `@verific/api`).
+// Fica num módulo compartilhado, e não aqui, para que os outros runtimes
+// que executam mutations (better-auth, caller de servidor) também o tenham.
+import "@/lib/server-cache-invalidation";
 
 const setCorsHeaders = (res: Response) => {
 	res.headers.set("Access-Control-Allow-Origin", "*");
