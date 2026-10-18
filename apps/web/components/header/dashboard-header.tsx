@@ -32,7 +32,7 @@ export async function DashboardHeader({
 
 	return (
 		<div className="md:px-container-h flex w-full flex-col items-center gap-4 border-b py-4 md:flex-row-reverse md:gap-0">
-			<div className="px-container-h flex shrink-0 items-center justify-between gap-6 max-md:w-full md:ml-auto">
+			<div className="px-container-h flex shrink-0 items-center justify-between gap-6 max-md:w-full md:ml-auto md:pl-0">
 				{!!selectedProjectId && (
 					<ProjectSwitcher
 						selectedProjectId={selectedProjectId}
@@ -52,7 +52,7 @@ export async function DashboardHeader({
 					/>
 				) : null}
 			</div>
-			<MainNav prefix={prefix} links={links} />
+			<MainNav prefix={prefix} links={links} showGradients />
 			<Link href="/dashboard" className="hidden shrink-0 md:flex">
 				<Logo className="h-5" />
 			</Link>

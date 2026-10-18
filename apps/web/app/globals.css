@@ -171,6 +171,45 @@
 	padding-inline: var(--spacing-container-h);
 }
 
+@keyframes nav-fade-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+@keyframes nav-fade-out {
+	from {
+		opacity: 1;
+	}
+	to {
+		opacity: 0;
+	}
+}
+
+/* Aparece nos primeiros 2rem de scroll */
+@utility scroll-fade-start {
+	@supports (animation-timeline: scroll()) {
+		animation-name: nav-fade-in;
+		animation-timing-function: linear;
+		animation-fill-mode: both;
+		animation-timeline: --nav-x;
+		animation-range: 0 2rem;
+	}
+}
+
+/* Some nos últimos 2rem antes do fim */
+@utility scroll-fade-end {
+	@supports (animation-timeline: scroll()) {
+		animation-name: nav-fade-out;
+		animation-timing-function: linear;
+		animation-fill-mode: both;
+		animation-timeline: --nav-x;
+		animation-range: calc(100% - 2rem) 100%;
+	}
+}
+
 @layer base {
 	* {
 		@apply border-border outline-ring/50;

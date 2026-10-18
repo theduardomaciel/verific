@@ -26,16 +26,15 @@ export function AccountEventCard({ project }: EventCardProps) {
 			onClick={() => void updateProjectCookies(project.id)}
 			className="bg-card border-border hover:bg-foreground/5 relative flex w-full cursor-pointer items-center justify-between overflow-hidden rounded-lg border p-4 transition-colors"
 		>
-			{project.coverUrl ||
-				(project.thumbnailUrl && (
-					<Image
-						src={project.coverUrl || project.thumbnailUrl}
-						alt=""
-						className="object-cover opacity-5"
-						fill
-						sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-					/>
-				))}
+			{(project.coverUrl || project.thumbnailUrl) && (
+				<Image
+					src={project.coverUrl ?? project.thumbnailUrl ?? ""}
+					alt=""
+					className="object-cover opacity-5"
+					fill
+					sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+				/>
+			)}
 			<div className="flex items-center gap-6">
 				<Avatar
 					className={cn(
@@ -57,7 +56,7 @@ export function AccountEventCard({ project }: EventCardProps) {
 					</AvatarFallback>
 				</Avatar>
 				<div className="flex flex-col items-start gap-0.5">
-					<h3 className="text-foreground font-semibold">
+					<h3 className="text-foreground text-left font-semibold">
 						{project.name}
 					</h3>
 					<p className="text-foreground text-sm">

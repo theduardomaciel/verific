@@ -22,12 +22,14 @@ export interface MainNavLink {
 export interface MainNavProps {
 	prefix?: string; // Prefixo para as rotas
 	links: MainNavLink[];
+	showGradients?: boolean; // Se deve mostrar os gradientes laterais
 }
 
 export default function MainNav({
 	className,
 	prefix = "",
 	links,
+	showGradients,
 	...props
 }: React.HTMLAttributes<HTMLElement> & MainNavProps) {
 	const pathname = usePathname();
@@ -64,11 +66,18 @@ export default function MainNav({
 	return (
 		// Wrapper fixo: não rola, então os gradientes ficam parados.
 		// min-w-0 + flex-1 deixam ele ocupar só o espaço restante no desktop.
-		<div className={cn("relative w-full min-w-0", className)} {...props}>
+		// timeline-scope: expõe a timeline do scroller para os gradientes (irmãos)
+		<div
+			className={cn(
+				"relative w-full min-w-0 [timeline-scope:--nav-x]",
+				className,
+			)}
+			{...props}
+		>
 			{/* Container rolável: apenas o conteúdo rola aqui dentro */}
 			<div
 				ref={scrollContainerRef}
-				className="relative w-full scrollbar-none overflow-x-auto scroll-smooth"
+				className="relative w-full scrollbar-none overflow-x-auto scroll-smooth [scroll-timeline:--nav-x_inline]"
 			>
 				<nav className="px-container-h flex min-w-fit items-center justify-start gap-2 md:gap-3 md:px-6">
 					{links.map((link) => {
@@ -101,9 +110,15 @@ export default function MainNav({
 				</nav>
 			</div>
 
-			{/* Gradientes sobrepostos ao wrapper, fora da área de scroll */}
-			<div className="from-background pointer-events-none absolute top-0 left-0 h-full w-8 bg-linear-to-r to-transparent" />
-			<div className="from-background pointer-events-none absolute top-0 right-0 h-full w-24 bg-linear-to-l to-transparent md:w-8" />
+			{/* opacity-0 é o estado base: sem overflow, a animação não roda e continuam invisíveis */}
+			{/* <div className="scroll-fade-start from-background pointer-events-none absolute top-0 left-0 h-full w-8 bg-linear-to-r to-transparent opacity-0" />
+			<div className="scroll-fade-end from-background pointer-events-none absolute top-0 right-0 h-full w-24 bg-linear-to-l to-transparent opacity-0 md:w-8" /> */}
+			{showGradients && (
+				<>
+					<div className="from-background pointer-events-none absolute top-0 left-0 h-full w-8 bg-linear-to-r to-transparent" />
+					<div className="from-background pointer-events-none absolute top-0 right-0 h-full w-24 bg-linear-to-l to-transparent md:w-8" />
+				</>
+			)}
 		</div>
 	);
 }
