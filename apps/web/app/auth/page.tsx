@@ -30,7 +30,7 @@ async function LoginContent({
 				<div className="relative z-10 flex flex-col gap-3 max-md:py-6 md:items-start">
 					<Logo className="h-10 md:h-8" />
 					<p className="hidden text-xs leading-none font-normal tracking-normal text-white/90 opacity-80 md:flex">
-						Copyright 2025 verifIC. Todos os direitos reservados
+						Copyright 2026 verifIC. Todos os direitos reservados
 					</p>
 				</div>
 			</div>
@@ -56,7 +56,7 @@ async function LoginContent({
 					</p>
 					<footer className="absolute bottom-0 left-1/2 flex w-full max-w-[50%] -translate-x-1/2 items-center justify-center pb-8 md:hidden">
 						<p className="text-center text-xs opacity-20">
-							Copyright 2025 verifIC. Todos os direitos reservados
+							Copyright 2026 verifIC. Todos os direitos reservados
 						</p>
 					</footer>
 				</div>

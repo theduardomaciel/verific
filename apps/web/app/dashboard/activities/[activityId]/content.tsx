@@ -239,7 +239,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 							<SearchBar
 								prefix={"search"}
 								placeholder="Pesquisar participantes"
-								className="w-full sm:flex-1"
+								className="w-full pl-10 sm:flex-1"
 							/>
 							<div className="flex w-full items-center gap-2 sm:w-auto">
 								<SortBy
