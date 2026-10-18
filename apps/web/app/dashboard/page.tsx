@@ -71,15 +71,27 @@ export default function Overview() {
 					<h2 className="text-3xl font-bold tracking-tight">
 						Dashboard
 					</h2>
-					<TabsList>
-						<TabsTrigger value="overview">Visão Geral</TabsTrigger>
-						<TabsTrigger value="analytics" disabled>
-							Relatórios
-						</TabsTrigger>
-						<TabsTrigger value="reports" disabled>
-							Logs
-						</TabsTrigger>
-					</TabsList>
+					{/* TODO: Não podemos adicionar w-full pois o flex-wrap quebra.
+						Bom o suficiente por enquanto, mas o botão não ocupa 100% da largura em todos os casos */}
+					<div className="flex flex-wrap items-center gap-4">
+						<TabsList>
+							<TabsTrigger value="overview">
+								Visão Geral
+							</TabsTrigger>
+							<TabsTrigger value="analytics" disabled>
+								Relatórios
+							</TabsTrigger>
+							<TabsTrigger value="reports" disabled>
+								Logs
+							</TabsTrigger>
+						</TabsList>
+						<Button className="max-sm:w-full" disabled asChild>
+							<Link target="_blank" href={`/${projectUrl}`}>
+								<Globe className="mr-2" size={24} />
+								Acessar página do evento
+							</Link>
+						</Button>
+					</div>
 				</div>
 
 				<TabsContent value="overview" className="space-y-4">
@@ -128,22 +140,8 @@ export default function Overview() {
 					{/* TODO: Não escala pra 100% do espaço disponível */}
 					<div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
 						<Card className="flex flex-col gap-8 overflow-hidden lg:col-span-2">
-							<CardHeader className="flex flex-row items-center justify-between">
-								<CardTitle>Participantes</CardTitle>
-								<div className="hidden items-center space-x-2 md:flex">
-									<Button disabled asChild>
-										<Link
-											target="_blank"
-											href={`/${projectUrl}`}
-										>
-											<Globe className="mr-2" size={24} />
-											Acessar página do evento
-										</Link>
-									</Button>
-								</div>
-							</CardHeader>
 							<CardContent className="relative flex flex-1">
-								<GraphSelector graphData={stats.graphData} />
+								<GraphSelector />
 							</CardContent>
 						</Card>
 						<ActivitiesList

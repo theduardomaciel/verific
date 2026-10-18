@@ -97,8 +97,45 @@ export async function seedEvent(
 	await db.insert(schema.formField).values(form.fields);
 
 	const eventUsers = faker.helpers.arrayElements(users, spec.participants);
+
+	// Inscrições espalhadas pela janela do formulário publicado (até 30
+	// dias antes do evento), com horários variados dentro do dia: curva de
+	// crescimento no dashboard, em vez de tudo no instante do seed. Termina
+	// na data de referência (meia-noite) ou no fim do evento, o que vier
+	// primeiro — depois de encerrado, não há inscrição.
+	const publishedAt = addDays(startDate, -30);
+	const registrationsUntil = new Date(
+		Math.min(refDate.getTime(), endDate.getTime()),
+	);
+	const registrationsFrom = new Date(
+		Math.min(
+			Math.max(
+				publishedAt.getTime(),
+				registrationsUntil.getTime() - 30 * 24 * 60 * 60 * 1000,
+			),
+			registrationsUntil.getTime() - 60 * 60 * 1000,
+		),
+	);
+
+	// Densidade crescente: 1 - u² empurra as inscrições para perto do
+	// refDate (rampa de crescimento), mantendo horários aleatórios no dia
+	const registrationAt = () => {
+		const u = faker.number.float({ min: 0, max: 1 });
+		const position = 1 - u * u;
+		return new Date(
+			registrationsFrom.getTime() +
+				position *
+					(registrationsUntil.getTime() -
+						registrationsFrom.getTime()),
+		);
+	};
+
 	const participants = eventUsers.map((user) =>
-		buildParticipant(faker, { userId: user.id, projectId: project.id }),
+		buildParticipant(
+			faker,
+			{ userId: user.id, projectId: project.id },
+			{ joinedAt: registrationAt() },
+		),
 	);
 	await insertInChunks(db, schema.participant, participants);
 	await insertInChunks(
@@ -110,6 +147,8 @@ export async function seedEvent(
 				projectId: project.id,
 				form,
 				answers: buildRegistrationAnswers(faker, i),
+				// Respostas no instante da própria inscrição
+				answeredAt: participant.joinedAt,
 			}),
 		),
 	);

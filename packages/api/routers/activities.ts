@@ -14,6 +14,7 @@ import {
 	count,
 	sum,
 	gte,
+	lte,
 	isNotNull,
 	isNull,
 	sql,
@@ -26,6 +27,7 @@ import {
 	activitySession,
 	activityWaitlist,
 	activityWaitlistEvent,
+	formAnswer,
 	formField,
 	formVersion,
 	sessionAttendance,
@@ -60,6 +62,11 @@ import {
 	getActivitiesParams,
 	getActivityParams,
 	answerValueSchema,
+	BREAKDOWN_FIELD_TYPES,
+	BREAKDOWN_MAX_SERIES,
+	BREAKDOWN_OTHER_SERIES,
+	BREAKDOWN_REGISTRATIONS_SERIES,
+	BREAKDOWN_TIME_WINDOWS,
 } from "../schemas";
 import { assertSeatsAvailable, lockActivity } from "../seats";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
@@ -1914,6 +1921,366 @@ export const activitiesRouter = createTRPCRouter({
 				occupancyRate,
 				graphData,
 				coursesData: [] as Array<{ course: string; count: number }>,
+			};
+		}),
+	getBreakdownFields: publicProcedure
+		.input(z.object({ projectId: z.string().uuid() }))
+		.query(async ({ input }) => {
+			// Latest published version of every scope: the event-wide form and
+			// each activity's form.
+			const versions = await db.query.formVersion.findMany({
+				where: and(
+					eq(formVersion.projectId, input.projectId),
+					eq(formVersion.isPublished, true),
+				),
+				columns: { id: true, activityId: true },
+			});
+			if (versions.length === 0) return [];
+
+			const versionIds = versions.map((v) => v.id);
+
+			const [fields, activities] = await Promise.all([
+				db.query.formField.findMany({
+					where: and(
+						inArray(formField.formVersionId, versionIds),
+						inArray(formField.type, [...BREAKDOWN_FIELD_TYPES]),
+						eq(formField.isActive, true),
+					),
+					columns: {
+						id: true,
+						key: true,
+						label: true,
+						type: true,
+						options: true,
+						allowOther: true,
+						formVersionId: true,
+					},
+					orderBy: [asc(formField.order)],
+				}),
+				db
+					.select({ id: activity.id, name: activity.name })
+					.from(activity)
+					.where(eq(activity.projectId, input.projectId)),
+			]);
+
+			const activityNameById = new Map(
+				activities.map((a) => [a.id, a.name]),
+			);
+			let scopeTitleByFieldVersionId: Map<string, string> | null = null;
+			for (const version of versions) {
+				if (!version.activityId) continue;
+				const name = activityNameById.get(version.activityId);
+				if (!name) continue;
+				scopeTitleByFieldVersionId ??= new Map();
+				scopeTitleByFieldVersionId.set(version.id, name);
+			}
+
+			return fields.map((field) => ({
+				id: field.id,
+				key: field.key,
+				label: field.label,
+				type: field.type,
+				options: field.options ?? [],
+				allowOther: field.allowOther ?? false,
+				// `null` = the event-wide form; otherwise the owning activity's name
+				activityTitle:
+					scopeTitleByFieldVersionId?.get(field.formVersionId) ??
+					null,
+			}));
+		}),
+	getBreakdownSeries: publicProcedure
+		.input(
+			z.object({
+				projectId: z.string().uuid(),
+				// Omitted selects the default registrations series (no breakdown)
+				fieldId: z.string().uuid().optional(),
+				window: z.enum(BREAKDOWN_TIME_WINDOWS).default("7d"),
+			}),
+		)
+		.query(async ({ input }) => {
+			const { projectId, window } = input;
+
+			// Bucket granularity: hours for the 24h window, days otherwise.
+			const granularity = window === "24h" ? "hour" : "day";
+			const truncate = (column: unknown) =>
+				granularity === "hour"
+					? sql<string>`date_trunc('hour', ${column})`
+					: sql<string>`date_trunc('day', ${column})`;
+
+			// Window bounds. "event" anchors on the project dates; "all" is unbounded.
+			const now = new Date();
+			let from: Date | null = null;
+			let to: Date | null = null;
+			switch (window) {
+				case "24h": {
+					from = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+					break;
+				}
+				case "7d": {
+					from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+					break;
+				}
+				case "30d": {
+					from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+					break;
+				}
+				case "event": {
+					const foundProject = await db.query.project.findFirst({
+						where: eq(project.id, projectId),
+						columns: { startDate: true, endDate: true },
+					});
+					if (foundProject) {
+						from = foundProject.startDate;
+						to = foundProject.endDate;
+					}
+					break;
+				}
+			}
+
+			type BreakdownFieldRow = typeof formField.$inferSelect & {
+				version: { isPublished: boolean; projectId: string };
+			};
+			let field: BreakdownFieldRow | null = null;
+			if (input.fieldId) {
+				field =
+					(await db.query.formField.findFirst({
+						where: and(
+							eq(formField.id, input.fieldId),
+							eq(formField.projectId, projectId),
+						),
+						with: {
+							version: {
+								columns: { isPublished: true, projectId: true },
+							},
+						},
+					})) ?? null;
+				if (
+					!field ||
+					!field.version.isPublished ||
+					field.version.projectId !== projectId
+				) {
+					throw new TRPCError({
+						code: "NOT_FOUND",
+						message: "Campo de formulário não encontrado.",
+					});
+				}
+				if (
+					!BREAKDOWN_FIELD_TYPES.includes(
+						field.type as (typeof BREAKDOWN_FIELD_TYPES)[number],
+					)
+				) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: "Campo não possui opções predefinidas.",
+					});
+				}
+			}
+
+			// Counts per bucket per series key. Aggregation happens server-side:
+			// raw answers only feed the counters, never leave the server.
+			const perBucket = new Map<string, Map<string, number>>();
+			const addCount = (date: string, key: string, amount: number) => {
+				let point = perBucket.get(date);
+				if (!point) {
+					point = new Map();
+					perBucket.set(date, point);
+				}
+				point.set(key, (point.get(key) ?? 0) + amount);
+			};
+			// Timestamp bounds for the joined-at column of the current query path.
+			const timeFilters = [
+				from ? gte(participant.joinedAt, from) : undefined,
+				to ? lte(participant.joinedAt, to) : undefined,
+			];
+
+			if (field) {
+				const declaredOptions = new Set(field.options ?? []);
+				const toKey = (raw: string) =>
+					declaredOptions.has(raw) ? raw : BREAKDOWN_OTHER_SERIES;
+
+				if (field.type === "select_multiple") {
+					// A participant selecting several options counts once per
+					// option on the day their event registration happened.
+					const rows = await db
+						.select({
+							bucket: truncate(participant.joinedAt),
+							value: formAnswer.valueJson,
+						})
+						.from(formAnswer)
+						.innerJoin(
+							participant,
+							eq(formAnswer.participantId, participant.id),
+						)
+						.where(
+							and(
+								eq(formAnswer.fieldId, field.id),
+								eq(formAnswer.projectId, projectId),
+								...timeFilters,
+							),
+						);
+
+					for (const row of rows) {
+						if (!Array.isArray(row.value)) continue;
+						for (const raw of row.value) {
+							if (typeof raw !== "string") continue;
+							addCount(row.bucket, toKey(raw), 1);
+						}
+					}
+				} else {
+					const trunc = truncate(participant.joinedAt);
+					const rows = await db
+						.select({
+							bucket: trunc,
+							value: formAnswer.valueText,
+							count: countDistinct(formAnswer.participantId),
+						})
+						.from(formAnswer)
+						.innerJoin(
+							participant,
+							eq(formAnswer.participantId, participant.id),
+						)
+						.where(
+							and(
+								eq(formAnswer.fieldId, field.id),
+								eq(formAnswer.projectId, projectId),
+								...timeFilters,
+							),
+						)
+						.groupBy(trunc, formAnswer.valueText)
+						.orderBy(trunc);
+
+					for (const row of rows) {
+						if (!row.value) continue;
+						addCount(row.bucket, toKey(row.value), row.count);
+					}
+				}
+			} else {
+				// Default: event registrations per bucket, mirroring the
+				// getDashboardStats graph (activity-enrolled participants only).
+				const trunc = truncate(participant.joinedAt);
+				const rows = await db
+					.select({
+						bucket: trunc,
+						count: countDistinct(
+							participantOnActivity.participantId,
+						),
+					})
+					.from(participantOnActivity)
+					.innerJoin(
+						activity,
+						eq(participantOnActivity.activityId, activity.id),
+					)
+					.innerJoin(
+						participant,
+						eq(participantOnActivity.participantId, participant.id),
+					)
+					.where(
+						and(
+							eq(activity.projectId, projectId),
+							eq(participantOnActivity.role, "participant"),
+							isNull(activity.cancelledAt),
+							...timeFilters,
+						),
+					)
+					.groupBy(trunc)
+					.orderBy(trunc);
+
+				for (const row of rows) {
+					addCount(
+						row.bucket,
+						BREAKDOWN_REGISTRATIONS_SERIES,
+						row.count,
+					);
+				}
+			}
+
+			const totals: Record<string, number> = {};
+			for (const point of perBucket.values()) {
+				for (const [key, amount] of point) {
+					totals[key] = (totals[key] ?? 0) + amount;
+				}
+			}
+
+			let series: string[];
+			if (field) {
+				// Series follow the field's declared option order, then the
+				// fallback bucket. Too many options make the chart unreadable,
+				// so least-answered ones fold into "Outros".
+				series = (field.options ?? []).filter(
+					(option) => totals[option] !== undefined,
+				);
+				if (series.length > BREAKDOWN_MAX_SERIES - 1) {
+					const top = [...series]
+						.sort(
+							(a, b) =>
+								(totals[b] ?? 0) - (totals[a] ?? 0) ||
+								a.localeCompare(b),
+						)
+						.slice(0, BREAKDOWN_MAX_SERIES - 1);
+					const folded = series.filter(
+						(option) => !top.includes(option),
+					);
+					for (const point of perBucket.values()) {
+						const merged =
+							(point.get(BREAKDOWN_OTHER_SERIES) ?? 0) +
+							folded.reduce(
+								(sum_, key) => sum_ + (point.get(key) ?? 0),
+								0,
+							);
+						for (const key of folded) point.delete(key);
+						if (merged > 0)
+							point.set(BREAKDOWN_OTHER_SERIES, merged);
+					}
+					for (const key of folded) delete totals[key];
+					series = top;
+				}
+				if ((totals[BREAKDOWN_OTHER_SERIES] ?? 0) > 0) {
+					series = [...series, BREAKDOWN_OTHER_SERIES];
+				}
+			} else {
+				series = [BREAKDOWN_REGISTRATIONS_SERIES];
+			}
+
+			const formatBucket = (raw: string) => {
+				const date = new Date(raw);
+				return granularity === "hour"
+					? date.toLocaleTimeString("pt-BR", {
+							hour: "2-digit",
+							minute: "2-digit",
+						})
+					: date.toLocaleDateString("pt-BR", {
+							month: "short",
+							day: "numeric",
+						});
+			};
+
+			const data = [...perBucket.entries()]
+				.sort(([a], [b]) => a.localeCompare(b))
+				.map(([bucketDate, point]) => {
+					const row: {
+						date: string;
+						counts: Record<string, number>;
+					} = { date: formatBucket(bucketDate), counts: {} };
+					for (const key of series) {
+						row.counts[key] = point.get(key) ?? 0;
+					}
+					return row;
+				});
+
+			return {
+				field: field
+					? {
+							id: field.id,
+							key: field.key,
+							label: field.label,
+							type: field.type,
+							options: field.options ?? [],
+							allowOther: field.allowOther ?? false,
+						}
+					: null,
+				series,
+				totals,
+				data,
 			};
 		}),
 	getReleasableActivities: protectedProcedure

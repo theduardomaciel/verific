@@ -1,0 +1,307 @@
+"use client";
+
+import { useMemo } from "react";
+
+import {
+	Area,
+	AreaChart,
+	Bar,
+	BarChart,
+	CartesianGrid,
+	Cell,
+	Pie,
+	PieChart,
+	XAxis,
+	YAxis,
+} from "recharts";
+
+import { BREAKDOWN_OTHER_SERIES, tagColors } from "@verific/api/schemas";
+
+import {
+	type ChartConfig,
+	ChartContainer,
+	ChartTooltip,
+	ChartTooltipContent,
+} from "@/components/ui/chart";
+
+import { cn } from "@/lib/utils";
+
+export type BreakdownGraphType =
+	| "area"
+	| "bar_stacked"
+	| "bar_grouped"
+	| "donut";
+
+export const BREAKDOWN_GRAPH_TYPES: Array<{
+	value: BreakdownGraphType;
+	label: string;
+}> = [
+	{ value: "area", label: "Área empilhada" },
+	{ value: "bar_stacked", label: "Barras empilhadas" },
+	{ value: "bar_grouped", label: "Barras agrupadas" },
+	{ value: "donut", label: "Proporção (rosca)" },
+];
+
+interface AliasedSeries {
+	label: string;
+	key: string;
+	color: string;
+}
+
+interface BreakdownPoint {
+	date: string;
+	counts: Record<string, number>;
+}
+
+interface BreakdownGraphProps {
+	className?: string;
+	type?: BreakdownGraphType;
+	data: BreakdownPoint[];
+	series: string[];
+	totals?: Record<string, number>;
+}
+
+/**
+ * Options are human-readable labels ("Ciência da Computação"), but the
+ * shadcn chart config only injects valid CSS custom property names — so each
+ * rendered series gets an `s0`, `s1`… alias used as the recharts dataKey /
+ * config key, and the label lives in the config (tooltip resolves it back).
+ */
+function useAliasedSeries(series: string[]) {
+	return useMemo<AliasedSeries[]>(
+		() =>
+			series.map((label, index) => ({
+				label,
+				key: `s${index}`,
+				color:
+					label === BREAKDOWN_OTHER_SERIES
+						? "var(--muted-foreground)"
+						: (tagColors[index % tagColors.length] ?? "#888888"),
+			})),
+		[series],
+	);
+}
+
+function useChartConfig(aliasedSeries: AliasedSeries[]) {
+	return useMemo(
+		() =>
+			aliasedSeries.reduce<ChartConfig>((config, item) => {
+				config[item.key] = { label: item.label, color: item.color };
+				return config;
+			}, {}),
+		[aliasedSeries],
+	);
+}
+
+// Shared chart elements. They must be rendered as direct children of the
+// recharts chart (wrapped components are ignored — recharts only scans
+// its own element types among children for axis/tooltip wiring).
+const GridElement = <CartesianGrid vertical={false} />;
+const XAxisElement = (
+	<XAxis
+		dataKey="date"
+		tickLine={false}
+		axisLine={false}
+		tickMargin={8}
+		tickFormatter={(value) => value}
+	/>
+);
+const YAxisElement = (
+	<YAxis
+		width={30}
+		stroke="#888888"
+		fontSize={12}
+		tickLine={false}
+		axisLine={false}
+		allowDecimals={false}
+		tickFormatter={(value) => value}
+	/>
+);
+const TooltipElement = (
+	<ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+);
+
+/**
+ * HTML legend rendered *below* the chart. A recharts <Legend /> would live
+ * inside the SVG and its height is subtracted from the plot area, which
+ * crushed the chart on narrow screens — here the plot always keeps the full
+ * container height.
+ */
+function SeriesLegend({ items }: { items: AliasedSeries[] }) {
+	return (
+		<ul className="flex flex-wrap items-center justify-start gap-x-4 gap-y-1">
+			{items.map((item) => (
+				<li
+					key={item.key}
+					className="text-muted-foreground flex items-center gap-1.5 text-xs"
+				>
+					<span
+						className="h-2 w-2 shrink-0 rounded-[2px]"
+						style={{ backgroundColor: item.color }}
+					/>
+					{item.label}
+				</li>
+			))}
+		</ul>
+	);
+}
+
+export function BreakdownGraph({
+	className,
+	type = "area",
+	data,
+	series,
+	totals,
+}: BreakdownGraphProps) {
+	const aliasedSeries = useAliasedSeries(series);
+	const chartConfig = useChartConfig(aliasedSeries);
+
+	const aliasedData = useMemo(
+		() =>
+			data.map((point) => {
+				const row: Record<string, string | number> = {
+					date: point.date,
+				};
+				for (const item of aliasedSeries) {
+					row[item.key] = point.counts[item.label] ?? 0;
+				}
+				return row;
+			}),
+		[aliasedSeries, data],
+	);
+
+	// The donut shows the distribution of totals; its legend matches the
+	// rendered slices (> 0).
+	const legendItems =
+		type === "donut"
+			? aliasedSeries.filter((item) => (totals?.[item.label] ?? 0) > 0)
+			: aliasedSeries;
+
+	if (type === "donut") {
+		// Totals across the whole window: the distribution of answers.
+		const pieData = aliasedSeries
+			.map((item) => ({
+				name: item.key,
+				value: totals?.[item.label] ?? 0,
+			}))
+			.filter((entry) => entry.value > 0);
+
+		if (pieData.length === 0) {
+			return (
+				<div className="flex h-full min-h-[200px] items-center justify-center">
+					<p className="text-muted-foreground">
+						Dados insuficientes para gerar o gráfico
+					</p>
+				</div>
+			);
+		}
+
+		return (
+			<div
+				className={cn(
+					"flex h-full min-h-0 w-full flex-col items-center justify-center gap-3",
+					className,
+				)}
+			>
+				<ChartContainer
+					config={chartConfig}
+					className="aspect-square w-full max-w-[280px]"
+				>
+					<PieChart>
+						<ChartTooltip
+							cursor={false}
+							content={
+								<ChartTooltipContent hideLabel nameKey="name" />
+							}
+						/>
+						<Pie
+							data={pieData}
+							dataKey="value"
+							nameKey="name"
+							cx="50%"
+							cy="50%"
+							innerRadius="55%"
+							outerRadius="85%"
+							paddingAngle={2}
+							isAnimationActive={false}
+						>
+							{pieData.map((entry) => (
+								<Cell
+									key={entry.name}
+									fill={`var(--color-${entry.name})`}
+								/>
+							))}
+						</Pie>
+					</PieChart>
+				</ChartContainer>
+				{legendItems.length > 1 && <SeriesLegend items={legendItems} />}
+			</div>
+		);
+	}
+
+	const chart =
+		type === "bar_stacked" || type === "bar_grouped" ? (
+			<BarChart
+				accessibilityLayer
+				data={aliasedData}
+				margin={{ left: 12, right: 12 }}
+			>
+				{GridElement}
+				{XAxisElement}
+				{YAxisElement}
+				{TooltipElement}
+				{aliasedSeries.map((item) => {
+					const stacked = type === "bar_stacked";
+					return (
+						<Bar
+							key={item.key}
+							dataKey={item.key}
+							stackId={stacked ? "breakdown" : undefined}
+							fill={`var(--color-${item.key})`}
+							fillOpacity={0.85}
+							radius={stacked ? undefined : [3, 3, 0, 0]}
+						/>
+					);
+				})}
+			</BarChart>
+		) : (
+			<AreaChart
+				accessibilityLayer
+				data={aliasedData}
+				margin={{ left: 12, right: 12 }}
+			>
+				{GridElement}
+				{XAxisElement}
+				{YAxisElement}
+				{TooltipElement}
+				{aliasedSeries.map((item) => (
+					<Area
+						key={item.key}
+						dataKey={item.key}
+						stackId="breakdown"
+						type="linear"
+						fill={`var(--color-${item.key})`}
+						fillOpacity={0.6}
+						stroke={`var(--color-${item.key})`}
+					/>
+				))}
+			</AreaChart>
+		);
+
+	return (
+		<div
+			className={cn(
+				"flex h-full min-h-0 w-full flex-col gap-2",
+				className,
+			)}
+		>
+			<ChartContainer
+				config={chartConfig}
+				className="min-h-[260px] w-full flex-1 sm:min-h-[200px]"
+			>
+				{chart}
+			</ChartContainer>
+			{legendItems.length > 1 && <SeriesLegend items={legendItems} />}
+		</div>
+	);
+}
