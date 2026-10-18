@@ -675,7 +675,6 @@ export function MutateActivityFormContent({
 						type="submit"
 						id="mutate-activity-submit"
 						className="hidden"
-						aria-hidden="true"
 					/>
 					<SplitButton
 						size="lg"
@@ -683,9 +682,25 @@ export function MutateActivityFormContent({
 						options={[
 							{
 								value: "save",
-								label: isEditing
-									? "Editar atividade"
-									: "Cadastrar atividade",
+								label: isEditing ? (
+									<>
+										<span className="hidden sm:inline">
+											Editar atividade
+										</span>
+										<span className="sm:hidden">
+											Editar
+										</span>
+									</>
+								) : (
+									<>
+										<span className="hidden sm:inline">
+											Cadastrar atividade
+										</span>
+										<span className="sm:hidden">
+											Cadastrar
+										</span>
+									</>
+								),
 								icon: isEditing ? (
 									<Edit className="h-5 w-5" />
 								) : (
@@ -696,7 +711,17 @@ export function MutateActivityFormContent({
 								? [
 										{
 											value: "configure",
-											label: "Cadastrar e configurar formulário",
+											label: (
+												<>
+													<span className="hidden sm:inline">
+														Salvar e configurar
+														formulário
+													</span>
+													<span className="sm:hidden">
+														+ Formulário
+													</span>
+												</>
+											),
 											icon: (
 												<ClipboardList className="h-5 w-5" />
 											),
@@ -704,7 +729,6 @@ export function MutateActivityFormContent({
 									]
 								: []),
 						]}
-						persistSelection={false}
 						onAction={(value) => {
 							if (value === "configure") {
 								onSecondarySubmit?.();

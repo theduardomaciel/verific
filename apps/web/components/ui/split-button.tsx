@@ -2,13 +2,12 @@
 
 import * as React from "react";
 
-import { CheckIcon, ChevronDownIcon } from "lucide-react";
+import { ChevronDownIcon } from "lucide-react";
 
 import { Button, type buttonVariants } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
-	DropdownMenuItem,
 	DropdownMenuRadioGroup,
 	DropdownMenuRadioItem,
 	DropdownMenuTrigger,
@@ -32,14 +31,10 @@ type SplitButtonProps = VariantProps<typeof buttonVariants> & {
 	value?: string;
 	/** Uncontrolled initial value (defaults to the first option). */
 	defaultValue?: string;
+	/** Fired when the user picks a different option. Does not run the action. */
 	onValueChange?: (value: string) => void;
 	/** Fired when the main part is clicked, with the current value. */
 	onAction?: (value: string) => void;
-	/**
-	 * true  → picking an option only changes the current value (Windows-style).
-	 * false → picking an option runs `onAction` immediately and doesn't persist.
-	 */
-	persistSelection?: boolean;
 	disabled?: boolean;
 	className?: string;
 	menuClassName?: string;
@@ -53,7 +48,6 @@ function SplitButton({
 	defaultValue,
 	onValueChange,
 	onAction,
-	persistSelection = true,
 	variant = "default",
 	size = "default",
 	disabled,
@@ -68,6 +62,7 @@ function SplitButton({
 	const isControlled = valueProp !== undefined;
 	const value = isControlled ? valueProp : internal;
 	const current = options.find((o) => o.value === value) ?? options[0];
+	const hasMultiple = options.length > 1;
 
 	const select = (next: string) => {
 		if (!isControlled) setInternal(next);
@@ -86,35 +81,38 @@ function SplitButton({
 				size={size}
 				disabled={disabled}
 				onClick={() => current && onAction?.(current.value)}
-				className="relative rounded-r-none focus-visible:z-10"
+				className={cn(
+					"relative focus-visible:z-10",
+					hasMultiple && "rounded-r-none",
+				)}
 			>
 				{current?.icon}
 				{current?.label}
 			</Button>
 
-			<DropdownMenu>
-				<DropdownMenuTrigger asChild>
-					<Button
-						variant={variant}
-						size={size}
-						disabled={disabled}
-						aria-label={ariaLabel}
-						className={cn(
-							"relative rounded-l-none px-2 has-[>svg]:px-2 focus-visible:z-10",
-							bordered
-								? "-ml-px"
-								: "border-l border-l-current/25",
-						)}
-					>
-						<ChevronDownIcon />
-					</Button>
-				</DropdownMenuTrigger>
+			{hasMultiple && (
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<Button
+							variant={variant}
+							size={size}
+							disabled={disabled}
+							aria-label={ariaLabel}
+							className={cn(
+								"relative rounded-l-none px-2 has-[>svg]:px-2 focus-visible:z-10",
+								bordered
+									? "-ml-px"
+									: "border-l border-l-current/25",
+							)}
+						>
+							<ChevronDownIcon />
+						</Button>
+					</DropdownMenuTrigger>
 
-				<DropdownMenuContent
-					align={menuAlign}
-					className={cn("min-w-48", menuClassName)}
-				>
-					{persistSelection ? (
+					<DropdownMenuContent
+						align={menuAlign}
+						className={cn("min-w-48", menuClassName)}
+					>
 						<DropdownMenuRadioGroup
 							value={value}
 							onValueChange={select}
@@ -129,22 +127,9 @@ function SplitButton({
 								</DropdownMenuRadioItem>
 							))}
 						</DropdownMenuRadioGroup>
-					) : (
-						options.map((o) => (
-							<DropdownMenuItem
-								key={o.value}
-								disabled={o.disabled}
-								onSelect={() => onAction?.(o.value)}
-							>
-								<OptionContent option={o} />
-								{o.value === value && (
-									<CheckIcon className="ml-auto" />
-								)}
-							</DropdownMenuItem>
-						))
-					)}
-				</DropdownMenuContent>
-			</DropdownMenu>
+					</DropdownMenuContent>
+				</DropdownMenu>
+			)}
 		</div>
 	);
 }
