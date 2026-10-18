@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 
 import {
 	Command,
@@ -116,6 +116,20 @@ const times = [
 	"23:45",
 ] as const;
 
+function nearestTime(minutes: number): string {
+	let best: string = times[0];
+	let bestDiff = Infinity;
+	for (const t of times) {
+		const [h, m] = t.split(":").map(Number);
+		const diff = Math.abs(h! * 60 + m! - minutes);
+		if (diff < bestDiff) {
+			bestDiff = diff;
+			best = t;
+		}
+	}
+	return best;
+}
+
 interface TimePickerProps {
 	value?: string;
 	onChange?: (value: string) => void;
@@ -131,6 +145,14 @@ export function TimePicker({
 }: TimePickerProps) {
 	const [open, setOpen] = useState(false);
 	const [search, setSearch] = useState("");
+	const [resolvedTarget, setResolvedTarget] = useState<string | null>(null);
+	const itemRef = useRef<HTMLDivElement>(null);
+
+	const targetTime =
+		resolvedTarget ??
+		(value && times.includes(value as (typeof times)[number])
+			? value
+			: times[0]);
 
 	const filteredTimes = useMemo(() => {
 		let results: readonly string[] = times;
@@ -154,8 +176,44 @@ export function TimePicker({
 	const customTime =
 		isValidTime && !filteredTimes.includes(search) ? search : null;
 
+	useEffect(() => {
+		if (open) {
+			const frame = requestAnimationFrame(() => {
+				itemRef.current?.scrollIntoView({ block: "nearest" });
+			});
+			return () => cancelAnimationFrame(frame);
+		}
+	}, [open, resolvedTarget]);
+
 	return (
-		<Popover open={open} onOpenChange={setOpen}>
+		<Popover
+			open={open}
+			onOpenChange={(next) => {
+				setOpen(next);
+				if (next) {
+					setSearch("");
+					let target: string;
+					if (
+						value &&
+						times.includes(value as (typeof times)[number])
+					) {
+						target = value;
+					} else if (value) {
+						const [h, m] = value.split(":").map(Number);
+						target =
+							!Number.isNaN(h) && !Number.isNaN(m)
+								? nearestTime(h! * 60 + m!)
+								: times[0];
+					} else {
+						const now = new Date();
+						target = nearestTime(
+							now.getHours() * 60 + now.getMinutes(),
+						);
+					}
+					setResolvedTarget(target);
+				}
+			}}
+		>
 			<PopoverTrigger asChild>
 				<button
 					type="button"
@@ -175,7 +233,7 @@ export function TimePicker({
 				onOpenAutoFocus={(e) => e.preventDefault()}
 				onCloseAutoFocus={(e) => e.preventDefault()}
 			>
-				<Command loop>
+				<Command loop defaultValue={targetTime}>
 					<CommandInput
 						placeholder="Buscar horário..."
 						value={search}
@@ -202,6 +260,7 @@ export function TimePicker({
 							<CommandItem
 								value={time}
 								key={time}
+								ref={time === targetTime ? itemRef : undefined}
 								className="lg:py-3"
 								onSelect={() => {
 									onChange?.(time);
