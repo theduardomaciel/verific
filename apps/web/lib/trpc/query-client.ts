@@ -26,10 +26,10 @@ export const createQueryClient = () =>
 				retry: 1,
 				// With SSR, we usually want to set some default staleTime
 				// above 0 to avoid refetching immediately on the client.
-				staleTime: 5 * 60 * 1000, // 5 min
+				staleTime: 10 * 60 * 1000, // 10 min (aggressive)
 				// Mantém dado inativo por mais tempo para navegação de ida
 				// e volta não refazer queries já resolvidas.
-				gcTime: 15 * 60 * 1000, // 15 min
+				gcTime: 30 * 60 * 1000, // 30 min (aggressive)
 				// Refetch em foco/reconexão refaz todo o quadro visível —
 				// depois de um blip de backend vira tempestade de erros e
 				// de invocações; refazer explicitamente é mais barato.

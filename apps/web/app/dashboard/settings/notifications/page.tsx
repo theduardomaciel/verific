@@ -100,7 +100,7 @@ export default function NotificationSettingsPage() {
 	const utils = trpc.useUtils();
 	const settingsQuery = trpc.getNotificationSettings.useQuery(
 		{ projectId },
-		{ staleTime: 30 * 1000, refetchOnWindowFocus: false },
+		{ staleTime: 2 * 60 * 1000, refetchOnWindowFocus: false },
 	);
 	const updateMutation = trpc.updateNotificationSettings.useMutation();
 

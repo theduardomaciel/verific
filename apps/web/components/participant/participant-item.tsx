@@ -208,7 +208,10 @@ export const ParticipantListItem = {
 							size={"icon"}
 							asChild
 						>
-							<Link href={`${url}/${participant.id}`}>
+							<Link
+								href={`${url}/${participant.id}`}
+								prefetch={false}
+							>
 								<BookUser className="text-foreground h-4 w-4" />
 								<span className="sr-only">Ver detalhes</span>
 							</Link>
@@ -218,7 +221,10 @@ export const ParticipantListItem = {
 							variant={"default"}
 							asChild
 						>
-							<Link href={`${url}/${participant.id}`}>
+							<Link
+								href={`${url}/${participant.id}`}
+								prefetch={false}
+							>
 								<BookUser className="text-foreground h-4 w-4" />
 								<span>Ver detalhes</span>
 							</Link>

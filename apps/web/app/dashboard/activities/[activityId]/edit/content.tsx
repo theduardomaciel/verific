@@ -16,7 +16,7 @@ export function EditActivityContent({ activityId }: { activityId: string }) {
 
 	const { data, isPending, isError } = trpc.getActivity.useQuery(
 		{ activityId },
-		{ staleTime: 30 * 1000, refetchOnWindowFocus: false },
+		{ staleTime: 2 * 60 * 1000, refetchOnWindowFocus: false },
 	);
 
 	if (isPending) {

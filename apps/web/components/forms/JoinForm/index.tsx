@@ -422,7 +422,13 @@ export default function JoinForm({
 							<p className="text-muted-foreground text-sm">
 								Este evento não exige informações adicionais.
 							</p>
-							<SectionFooter isFinalSection />
+							<SectionFooter
+								isFinalSection
+								disabled={
+									currentState === "submitting" ||
+									submitMutation.isPending
+								}
+							/>
 						</FormSection>
 					) : (
 						planned.map((p) => (
@@ -479,6 +485,10 @@ export default function JoinForm({
 									))}
 								</div>
 								<SectionFooter
+									disabled={
+										currentState === "submitting" ||
+										submitMutation.isPending
+									}
 									isFinalSection={
 										p.displayNumber ===
 										planned[planned.length - 1]

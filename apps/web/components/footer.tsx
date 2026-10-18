@@ -68,34 +68,13 @@ function Footer({
 								Feito com tecnologia
 							</span>
 						)}
-						<Link href={`/`}>
+						<Link href="/" prefetch={false}>
 							<Logo className="h-5" />
 						</Link>
 					</div>
 					{showWatermark && (
 						<div className="hidden h-3 w-px rounded-full bg-[currentColor] md:flex" />
 					)}
-					{/* Links */}
-					<nav className="flex flex-row flex-wrap gap-2 space-x-2 md:space-x-4">
-						<Link
-							href="/help"
-							className="text-xs transition-opacity hover:opacity-80"
-						>
-							Ajuda
-						</Link>
-						<Link
-							href="/privacy"
-							className="text-xs transition-opacity hover:opacity-80"
-						>
-							Política de Privacidade
-						</Link>
-						<Link
-							href="/terms"
-							className="text-xs transition-opacity hover:opacity-80"
-						>
-							Termos de Uso
-						</Link>
-					</nav>
 				</div>
 				<p className="text-xs text-(--ev-footer-fg-soft,var(--muted-foreground))">
 					Copyright {COPYRIGHT_YEAR} verifIC. Todos os direitos

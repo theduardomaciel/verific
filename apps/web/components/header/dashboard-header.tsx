@@ -53,7 +53,11 @@ export async function DashboardHeader({
 				) : null}
 			</div>
 			<MainNav prefix={prefix} links={links} showGradients />
-			<Link href="/dashboard" className="hidden shrink-0 md:flex">
+			<Link
+				href="/dashboard"
+				prefetch={false}
+				className="hidden shrink-0 md:flex"
+			>
 				<Logo className="h-5" />
 			</Link>
 		</div>

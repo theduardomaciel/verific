@@ -18,11 +18,11 @@ export function BadgesContent() {
 	const project = useCurrentProject();
 	const layoutQuery = trpc.getLayout.useQuery(
 		{ projectId },
-		{ staleTime: 30 * 1000, refetchOnWindowFocus: false },
+		{ staleTime: 2 * 60 * 1000, refetchOnWindowFocus: false },
 	);
 	const fieldsQuery = trpc.getBadgeFieldOptions.useQuery(
 		{ projectId },
-		{ staleTime: 30 * 1000, refetchOnWindowFocus: false },
+		{ staleTime: 2 * 60 * 1000, refetchOnWindowFocus: false },
 	);
 
 	if (project.isPending || layoutQuery.isPending || fieldsQuery.isPending) {

@@ -39,11 +39,11 @@ export default function Overview() {
 
 	const activitiesQuery = trpc.getActivities.useQuery(
 		{ projectId, sort: "asc", pageSize: 5 },
-		{ staleTime: 30 * 1000, refetchOnWindowFocus: false },
+		{ staleTime: 2 * 60 * 1000, refetchOnWindowFocus: false },
 	);
 	const statsQuery = trpc.getDashboardStats.useQuery(
 		{ projectId },
-		{ staleTime: 30 * 1000, refetchOnWindowFocus: false },
+		{ staleTime: 2 * 60 * 1000, refetchOnWindowFocus: false },
 	);
 
 	if (activitiesQuery.isPending || statsQuery.isPending) {

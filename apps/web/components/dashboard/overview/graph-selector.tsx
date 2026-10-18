@@ -107,7 +107,7 @@ export function GraphSelector() {
 			fieldId: selected ? groupBy : undefined,
 			window: timeWindow,
 		},
-		{ staleTime: 30 * 1000, refetchOnWindowFocus: false },
+		{ staleTime: 2 * 60 * 1000, refetchOnWindowFocus: false },
 	);
 	const breakdown = seriesQuery.data;
 	const isBreakdown = !!selected;

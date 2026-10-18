@@ -24,7 +24,7 @@ export function ProjectContributors({ projectId, ownerId }: Props) {
 	const utils = trpc.useUtils();
 	const contributorsQuery = trpc.listProjectContributors.useQuery(
 		{ projectId },
-		{ staleTime: 30 * 1000 },
+		{ staleTime: 2 * 60 * 1000 },
 	);
 	const addMutation = trpc.addProjectContributor.useMutation({
 		onSuccess: () => {

@@ -99,6 +99,7 @@ export default function MainNav({
 										link.className,
 									)}
 									href={href}
+									prefetch={false}
 									ref={isActive ? activeButtonRef : null}
 									aria-current={isActive ? "page" : undefined}
 								>

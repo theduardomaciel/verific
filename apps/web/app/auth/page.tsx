@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Suspense } from "react";
 
 import GoogleButton from "@/components/auth/GoogleButton";
@@ -53,21 +52,7 @@ async function LoginContent({
 
 					<p className="text-muted-foreground text-center text-sm">
 						Ao continuar, você concorda com nossos
-						<br />
-						<Link
-							href="/terms"
-							className="text-muted-foreground hover:text-foreground text-sm hover:underline"
-						>
-							Termos de Serviço
-						</Link>{" "}
-						e{" "}
-						<Link
-							href="/privacy"
-							className="text-muted-foreground hover:text-foreground text-sm hover:underline"
-						>
-							Política de Privacidade
-						</Link>
-						.
+						<br /> termos de uso e política de privacidade.
 					</p>
 					<footer className="absolute bottom-0 left-1/2 flex w-full max-w-[50%] -translate-x-1/2 items-center justify-center pb-8 md:hidden">
 						<p className="text-center text-xs opacity-20">
