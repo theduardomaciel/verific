@@ -235,38 +235,41 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 										: null}
 							</span>
 						</ParticipantsList.Title>
-						<div className="flex w-full flex-col items-start justify-start gap-2 sm:flex-row sm:gap-4">
+						<div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
 							<SearchBar
 								prefix={"search"}
 								placeholder="Pesquisar participantes"
+								className="w-full sm:flex-1"
 							/>
-							<SortBy
-								items={[
-									{
-										label: "Mais recentes",
-										value: "desc",
-									},
-									{
-										label: "Mais antigos",
-										value: "asc",
-									},
-									{
-										label: "Nome A-Z",
-										value: "name_asc",
-									},
-									{
-										label: "Nome Z-A",
-										value: "name_desc",
-									},
-								]}
-							/>
-							<ExportParticipantsButton
-								participants={participants.map((p) => ({
-									name: p.user.name,
-									email: p.user.email,
-									createdAt: p.subscribedAt,
-								}))}
-							/>
+							<div className="flex w-full items-center gap-2 sm:w-auto">
+								<SortBy
+									items={[
+										{
+											label: "Mais recentes",
+											value: "desc",
+										},
+										{
+											label: "Mais antigos",
+											value: "asc",
+										},
+										{
+											label: "Nome A-Z",
+											value: "name_asc",
+										},
+										{
+											label: "Nome Z-A",
+											value: "name_desc",
+										},
+									]}
+								/>
+								<ExportParticipantsButton
+									participants={participants.map((p) => ({
+										name: p.user.name,
+										email: p.user.email,
+										createdAt: p.subscribedAt,
+									}))}
+								/>
+							</div>
 						</div>
 						<ParticipantsList.List
 							hasActivity

@@ -47,6 +47,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { SplitButton } from "@/components/ui/split-button";
 import { Switch } from "@/components/ui/switch";
 import {
 	Tooltip,
@@ -670,40 +671,50 @@ export function MutateActivityFormContent({
 					</h1>
 				</div>
 				<div className="flex shrink-0 items-center gap-2">
-					{onSecondarySubmit && !isEditing ? (
-						<Button
-							type="button"
-							size="lg"
-							variant="outline"
-							className="shrink-0"
-							onClick={onSecondarySubmit}
-						>
-							<ClipboardList className="h-5 w-5" />
-							<span className="hidden sm:inline">
-								Cadastrar e configurar formulário
-							</span>
-							<span className="sm:hidden">+ Formulário</span>
-						</Button>
-					) : null}
-					<Button type="submit" size="lg" className="shrink-0 px-5!">
-						{isEditing ? (
-							<>
-								<Edit className="h-5 w-5" />
-								<span className="hidden sm:inline">
-									Editar atividade
-								</span>
-								<span className="sm:hidden">Editar</span>
-							</>
-						) : (
-							<>
-								<CloudUpload className="h-5 w-5" />
-								<span className="hidden sm:inline">
-									Cadastrar atividade
-								</span>
-								<span className="sm:hidden">Cadastrar</span>
-							</>
-						)}
-					</Button>
+					<button
+						type="submit"
+						id="mutate-activity-submit"
+						className="hidden"
+						aria-hidden="true"
+					/>
+					<SplitButton
+						size="lg"
+						variant="default"
+						options={[
+							{
+								value: "save",
+								label: isEditing
+									? "Editar atividade"
+									: "Cadastrar atividade",
+								icon: isEditing ? (
+									<Edit className="h-5 w-5" />
+								) : (
+									<CloudUpload className="h-5 w-5" />
+								),
+							},
+							...(onSecondarySubmit && !isEditing
+								? [
+										{
+											value: "configure",
+											label: "Cadastrar e configurar formulário",
+											icon: (
+												<ClipboardList className="h-5 w-5" />
+											),
+										},
+									]
+								: []),
+						]}
+						persistSelection={false}
+						onAction={(value) => {
+							if (value === "configure") {
+								onSecondarySubmit?.();
+							} else {
+								document
+									.getElementById("mutate-activity-submit")
+									?.click();
+							}
+						}}
+					/>
 				</div>
 			</header>
 
@@ -1082,15 +1093,27 @@ export function MutateActivityFormContent({
 						form={form}
 						formAction={
 							registrationFormAction ?? (
-								<Button
-									type="button"
-									variant="outline"
-									disabled
-									className="shrink-0"
-								>
-									<Plus size={16} />
-									Adicionar formulário
-								</Button>
+								<TooltipProvider>
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<span className="inline-block">
+												<Button
+													type="button"
+													variant="outline"
+													disabled
+													className="shrink-0"
+												>
+													<Plus size={16} />
+													Adicionar formulário
+												</Button>
+											</span>
+										</TooltipTrigger>
+										<TooltipContent>
+											Primeiro crie a atividade para
+											adicionar um formulário.
+										</TooltipContent>
+									</Tooltip>
+								</TooltipProvider>
 							)
 						}
 					/>
