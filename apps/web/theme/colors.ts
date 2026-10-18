@@ -151,7 +151,7 @@ const allColors = {
 	},
 	$success: {
 		light: baseColors.green[700],
-		dark: baseColors.green[900],
+		dark: baseColors.green[800],
 	},
 	$successForeground: {
 		light: baseColors.white,

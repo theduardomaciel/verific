@@ -62,6 +62,7 @@ import {
 	toIsoUtc,
 } from "./helpers";
 import { StatusBadge } from "./status-badge";
+import { StatusChip, COUNTER_VARIANT } from "./status-chip";
 
 import type { EmailsListItem } from "./helpers";
 
@@ -70,17 +71,6 @@ type PageCursor = { createdAt: string; id: string };
 const PAGE_SIZE = 20;
 /** Espera mínima entre recarregamentos manuais (evita spam no backend). */
 const RELOAD_DEBOUNCE_MS = 3000;
-
-/** Cor de cada status (ponto do chip), só com cores da paleta do app. */
-const COUNTER_DOT: Record<string, string> = {
-	pending: "bg-neutral-400",
-	sending: "bg-brand-400",
-	stuck: "bg-warning",
-	sent: "bg-success",
-	failed: "bg-destructive",
-	blocked_quota: "bg-yellow-700",
-	skipped: "bg-gray-500",
-};
 
 /** Cor do preenchimento da barra de uso por tom. */
 const USAGE_BAR: Record<"neutral" | "warning" | "error", string> = {
@@ -118,58 +108,6 @@ function Timestamp({ value }: { value: string | Date }) {
 		>
 			{formatDateTime(value)}
 		</span>
-	);
-}
-
-interface StatusChipProps {
-	label: string;
-	help: string;
-	active: boolean;
-	count?: number;
-	dotClass: string;
-	onClick: () => void;
-}
-
-/**
- * Pílula de status: leve, com ponto de cor e contagem.
- * Selecionada = fundo neutro + borda/anel de contraste (sem azul).
- */
-function StatusChip({
-	label,
-	help,
-	active,
-	count,
-	dotClass,
-	onClick,
-}: StatusChipProps) {
-	return (
-		<Tooltip>
-			<TooltipTrigger asChild>
-				<button
-					type="button"
-					aria-pressed={active}
-					aria-label={`${label}${count != null ? `: ${count}` : ""}. ${help}`}
-					onClick={onClick}
-					className={`focus-visible:ring-ring inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:outline-none ${
-						active
-							? "bg-muted text-foreground border-foreground/50 ring-foreground/10 ring-2"
-							: "text-muted-foreground hover:bg-muted hover:text-foreground border-border"
-					} ${count === 0 && !active ? "opacity-60" : ""}`}
-				>
-					<span
-						aria-hidden
-						className={`size-1.5 shrink-0 rounded-full ${dotClass}`}
-					/>
-					{label}
-					{count != null ? (
-						<span className="tabular-nums opacity-80">{count}</span>
-					) : null}
-				</button>
-			</TooltipTrigger>
-			<TooltipContent side="bottom" className="max-w-64">
-				{help}
-			</TooltipContent>
-		</Tooltip>
 	);
 }
 
@@ -750,7 +688,7 @@ export function EmailsContent() {
 				{/* Linhas 3 e 4 — Filtros: busca + visões; depois status */}
 				<div className="flex flex-col gap-3">
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-						<div className="relative w-full sm:max-w-xs">
+						<div className="relative w-full sm:max-w-sm">
 							<Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
 							<Input
 								className="w-full pl-9"
@@ -802,9 +740,10 @@ export function EmailsContent() {
 									help={counter.help}
 									active={active}
 									count={counts?.[counter.key]}
-									dotClass={
-										COUNTER_DOT[counter.key as string] ??
-										"bg-neutral-400"
+									variant={
+										COUNTER_VARIANT[
+											counter.key as string
+										] ?? "secondary"
 									}
 									onClick={() =>
 										changeFilter(
