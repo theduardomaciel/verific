@@ -3,10 +3,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
 	buildDiagnostic,
+	canReprocess,
 	copyText,
 	errorTextOf,
 	maskEmail,
+	reprocessDisabledReason,
+	statusHelpOf,
 	statusLabelOf,
+	STATUS_HELP,
 } from "./helpers";
 
 import type { EmailsListItem } from "./helpers";
@@ -158,5 +162,53 @@ describe("copyText", () => {
 		});
 
 		await expect(copyText("x")).resolves.toBe(false);
+	});
+});
+
+describe("canReprocess", () => {
+	it("accepts pending, failed, blocked_quota and stuck rows", () => {
+		expect(canReprocess({ status: "pending", stuck: false })).toBe(true);
+		expect(canReprocess({ status: "failed", stuck: false })).toBe(true);
+		expect(canReprocess({ status: "blocked_quota", stuck: false })).toBe(
+			true,
+		);
+		expect(canReprocess({ status: "skipped", stuck: false })).toBe(true);
+		expect(canReprocess({ status: "sending", stuck: true })).toBe(true);
+	});
+
+	it("refuses sent and fresh sending rows", () => {
+		expect(canReprocess({ status: "sent", stuck: false })).toBe(false);
+		expect(canReprocess({ status: "sending", stuck: false })).toBe(false);
+	});
+});
+
+describe("reprocessDisabledReason", () => {
+	it("explains why sent and fresh sending rows cannot be reprocessed", () => {
+		expect(
+			reprocessDisabledReason({ status: "sent", stuck: false }),
+		).toContain("Já enviada");
+		expect(
+			reprocessDisabledReason({ status: "sending", stuck: false }),
+		).toContain("Já está sendo enviada");
+	});
+});
+
+describe("statusHelpOf", () => {
+	it("splits sending into fresh vs stuck help", () => {
+		expect(statusHelpOf({ status: "sending", stuck: false })).toBe(
+			STATUS_HELP.sending,
+		);
+		expect(statusHelpOf({ status: "sending", stuck: true })).toBe(
+			STATUS_HELP.stuck,
+		);
+	});
+
+	it("returns the matching help for the other statuses", () => {
+		expect(statusHelpOf({ status: "failed", stuck: false })).toBe(
+			STATUS_HELP.failed,
+		);
+		expect(statusHelpOf({ status: "blocked_quota", stuck: false })).toBe(
+			STATUS_HELP.blocked_quota,
+		);
 	});
 });

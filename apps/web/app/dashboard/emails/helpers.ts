@@ -38,6 +38,40 @@ export function statusLabelOf(item: {
 }
 
 /**
+ * Reprocessar só faz sentido para pendentes, falhas, cota e travadas.
+ * `sent` e `sending` recentes são recusados pelo claim no servidor.
+ */
+export function canReprocess(item: {
+	status: string;
+	stuck: boolean;
+}): boolean {
+	if (item.status === "sent") return false;
+	if (item.status === "sending" && !item.stuck) return false;
+	return true;
+}
+
+export function reprocessDisabledReason(item: {
+	status: string;
+	stuck: boolean;
+}): string {
+	if (item.status === "sent") {
+		return "Já enviada: este e-mail não é reenviado.";
+	}
+	return "Já está sendo enviada agora: aguarde o resultado.";
+}
+
+/** Ajuda de uma frase para o status da linha (travada tem a própria). */
+export function statusHelpOf(item: { status: string; stuck: boolean }): string {
+	const key =
+		item.status === "sending"
+			? item.stuck
+				? "stuck"
+				: "sending"
+			: item.status;
+	return (STATUS_HELP as Record<string, string>)[key] ?? "";
+}
+
+/**
  * Texto de erro copiável: o erro armazenado, ou o motivo do skip quando
  * não houve erro.
  */

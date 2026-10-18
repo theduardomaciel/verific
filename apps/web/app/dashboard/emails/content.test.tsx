@@ -5,6 +5,7 @@ import {
 	render,
 	screen,
 	waitFor,
+	within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -273,5 +274,109 @@ describe("EmailsContent reprocess button", () => {
 				expect.stringContaining("reprocessado"),
 			);
 		});
+	});
+});
+
+describe("EmailsContent reload and auto-refresh", () => {
+	it("reloads the list and the counters and debounces repeat clicks", async () => {
+		state.items = [row()];
+		render(<EmailsContent />);
+
+		const reload = screen.getByLabelText("Recarregar lista e contagens");
+		fireEvent.click(reload);
+
+		await waitFor(() => {
+			expect(state.invalidate).toHaveBeenCalledTimes(2);
+		});
+		expect(reload).toBeDisabled();
+
+		fireEvent.click(reload);
+		expect(state.invalidate).toHaveBeenCalledTimes(2);
+	});
+
+	it("enables the automatic refresh interval when the switch is toggled", () => {
+		state.items = [row()];
+		render(<EmailsContent />);
+
+		expect(
+			(
+				listQueryMock.mock.calls.at(-1)?.[1] as {
+					refetchInterval?: unknown;
+				}
+			)?.refetchInterval,
+		).toBe(false);
+
+		fireEvent.click(screen.getByLabelText("Atualização automática"));
+
+		expect(
+			(
+				listQueryMock.mock.calls.at(-1)?.[1] as {
+					refetchInterval?: unknown;
+				}
+			)?.refetchInterval,
+		).toBe(15_000);
+	});
+});
+
+describe("EmailsContent bulk selection", () => {
+	it("selects every reprocessable row and reprocesses them after confirmation", async () => {
+		state.items = [
+			row({ id: "11111111-1111-4111-8111-111111111111" }),
+			row({ id: "33333333-3333-4333-8333-333333333333" }),
+		];
+		state.mutateAsync = vi.fn(async () => ({
+			notification: { status: "sent" },
+		}));
+		render(<EmailsContent />);
+
+		fireEvent.click(
+			screen.getByLabelText(
+				"Selecionar e-mails reprocessáveis desta página",
+			),
+		);
+		expect(screen.getByText(/2 selecionados/)).toBeTruthy();
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Reprocessar selecionados" }),
+		);
+		fireEvent.click(
+			await screen.findByRole("button", { name: "Reprocessar" }),
+		);
+
+		await waitFor(() => {
+			expect(state.mutateAsync).toHaveBeenCalledTimes(2);
+		});
+		expect(state.mutateAsync).toHaveBeenCalledWith({
+			projectId: "22222222-2222-4222-8222-222222222222",
+			id: "11111111-1111-4111-8111-111111111111",
+		});
+		expect(state.mutateAsync).toHaveBeenCalledWith({
+			projectId: "22222222-2222-4222-8222-222222222222",
+			id: "33333333-3333-4333-8333-333333333333",
+		});
+	});
+
+	it("disables the checkbox of a non-reprocessable row", () => {
+		state.items = [row({ status: "sent", sentAt: new Date() })];
+		render(<EmailsContent />);
+
+		expect(
+			screen.getByLabelText(/Não selecionável: Já enviada/),
+		).toBeDisabled();
+	});
+});
+
+describe("EmailsContent detail sheet", () => {
+	it("opens the sheet with entityRefs and the stored error", async () => {
+		state.items = [row()];
+		render(<EmailsContent />);
+
+		fireEvent.click(screen.getByLabelText("Ver detalhes"));
+
+		expect(await screen.findByText("Detalhes da notificação")).toBeTruthy();
+		const dialog = screen.getByRole("dialog");
+		expect(within(dialog).getByText("entityRefs")).toBeTruthy();
+		expect(within(dialog).getByText(/registrationId/)).toBeTruthy();
+		expect(within(dialog).getByText(/validation_error/)).toBeTruthy();
 	});
 });

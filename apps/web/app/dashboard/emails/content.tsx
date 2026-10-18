@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { keepPreviousData } from "@tanstack/react-query";
 import {
 	ChevronLeft,
 	ChevronRight,
+	Info,
 	Loader2,
 	Mail,
 	OctagonX,
@@ -22,13 +23,14 @@ import {
 } from "@verific/api/schemas";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	ConfirmDialog,
 	useConfirmDialog,
 } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -37,6 +39,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import {
 	Table,
 	TableBody,
@@ -57,14 +60,27 @@ import { Empty } from "@/components/empty";
 
 import { trpc } from "@/lib/trpc/react";
 
+import { NotificationDetailSheet } from "./detail-sheet";
 import { ErrorCell } from "./error-cell";
-import { COUNTERS, SKIP_REASON_LABELS, STATUS_HELP, toIsoUtc } from "./helpers";
+import {
+	COUNTERS,
+	SKIP_REASON_LABELS,
+	canReprocess,
+	reprocessDisabledReason,
+	statusHelpOf,
+	toIsoUtc,
+} from "./helpers";
+import { StatusBadge } from "./status-badge";
 
 import type { EmailsListItem } from "./helpers";
 
 type PageCursor = { createdAt: string; id: string };
 
 const PAGE_SIZE = 20;
+/** Espera mínima entre recarregamentos manuais (evita spam no backend). */
+const RELOAD_DEBOUNCE_MS = 3000;
+/** Intervalo da atualização automática quando ligada. */
+const AUTO_REFRESH_MS = 15_000;
 
 const FILTER_OPTIONS: Array<{
 	value: NotificationListFilterInput;
@@ -85,38 +101,6 @@ const DEFAULT_FILTER: NotificationListFilterInput = "attention";
 
 function skipReasonLabel(reason: string): string {
 	return SKIP_REASON_LABELS[reason] ?? reason;
-}
-
-function statusBadge(item: EmailsListItem) {
-	if (item.status === "skipped")
-		return <Badge variant="outline">Ignorada</Badge>;
-	if (item.status === "failed")
-		return <Badge variant="destructive">Falhou</Badge>;
-	if (item.status === "blocked_quota")
-		return <Badge variant="warning">Cota excedida</Badge>;
-	if (item.status === "sending" && item.stuck)
-		return <Badge variant="warning">Travada</Badge>;
-	if (item.status === "sending")
-		return <Badge variant="info">Enviando</Badge>;
-	if (item.status === "sent") return <Badge variant="success">Enviada</Badge>;
-	return <Badge variant="secondary">Pendente</Badge>;
-}
-
-/**
- * Reprocessar só faz sentido para pendentes, falhas, cota e travadas.
- * Para os demais, a linha mostra um botão desabilitado com o motivo.
- */
-function canReprocess(item: EmailsListItem): boolean {
-	if (item.status === "sent") return false;
-	if (item.status === "sending" && !item.stuck) return false;
-	return true;
-}
-
-function reprocessDisabledReason(item: EmailsListItem): string {
-	if (item.status === "sent") {
-		return "Já enviada: este e-mail não é reenviado.";
-	}
-	return "Já está sendo enviada agora: aguarde o resultado.";
 }
 
 /** Timestamp no fuso do app (America/Sao_Paulo) + absoluto UTC no hover. */
@@ -147,10 +131,21 @@ function Timestamp({ value }: { value: string | Date }) {
 
 interface RunProgress {
 	active: boolean;
+	mode: "all" | "selected";
 	processed: number;
 	succeeded: number;
 	failed: number;
 	skipped: number;
+}
+
+/** Classifica o resultado de um reprocessamento individual para o resumo. */
+function classifyOutcome(
+	status: string | undefined,
+): keyof Pick<RunProgress, "succeeded" | "failed" | "skipped"> {
+	if (status === "sent") return "succeeded";
+	if (status === "pending" || status === "sending" || status === "skipped")
+		return "skipped";
+	return "failed";
 }
 
 export function EmailsContent() {
@@ -167,6 +162,11 @@ export function EmailsContent() {
 	const [emailFilter, setEmailFilter] = useState("");
 	const [reprocessingId, setReprocessingId] = useState<string | null>(null);
 	const [runProgress, setRunProgress] = useState<RunProgress | null>(null);
+	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+	const [detailId, setDetailId] = useState<string | null>(null);
+	const [autoRefresh, setAutoRefresh] = useState(false);
+	const [reloadCoolingDown, setReloadCoolingDown] = useState(false);
+	const reloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const { confirm: confirmRow, dialogProps: rowDialogProps } =
 		useConfirmDialog();
 	const { confirm: confirmRun, dialogProps: runDialogProps } =
@@ -181,9 +181,20 @@ export function EmailsContent() {
 		return () => clearTimeout(timeout);
 	}, [searchInput]);
 
+	useEffect(
+		() => () => {
+			if (reloadTimer.current) clearTimeout(reloadTimer.current);
+		},
+		[],
+	);
+
 	const statsQuery = trpc.statsNotifications.useQuery(
 		{ projectId },
-		{ staleTime: 30 * 1000, refetchOnWindowFocus: false },
+		{
+			staleTime: 30 * 1000,
+			refetchOnWindowFocus: false,
+			refetchInterval: autoRefresh ? AUTO_REFRESH_MS : false,
+		},
 	);
 	const listQuery = trpc.listNotifications.useQuery(
 		{
@@ -197,12 +208,15 @@ export function EmailsContent() {
 			placeholderData: keepPreviousData,
 			staleTime: 30 * 1000,
 			refetchOnWindowFocus: false,
+			refetchInterval: autoRefresh ? AUTO_REFRESH_MS : false,
 		},
 	);
 
 	const reprocessOneMutation = trpc.reprocessOneNotification.useMutation({
 		onError: (error) => toast.error(error.message),
 	});
+	// Variante silenciosa para o lote: um toast por linha viraria ruído.
+	const reprocessOneSilent = trpc.reprocessOneNotification.useMutation();
 	const reprocessBatchMutation =
 		trpc.reprocessBatchNotifications.useMutation();
 
@@ -213,9 +227,26 @@ export function EmailsContent() {
 		]);
 	}
 
+	/** Recarrega com espera embutida, para cliques repetidos não irem ao ar. */
+	async function handleReload() {
+		if (reloadCoolingDown) return;
+		setReloadCoolingDown(true);
+		try {
+			await refresh();
+		} finally {
+			if (reloadTimer.current) clearTimeout(reloadTimer.current);
+			reloadTimer.current = setTimeout(
+				() => setReloadCoolingDown(false),
+				RELOAD_DEBOUNCE_MS,
+			);
+		}
+	}
+
 	function changeFilter(next: NotificationListFilterInput) {
 		setFilter(next);
 		setCursorStack([null]);
+		// Trocar filtro/busca/página invalida a seleção (as linhas somem).
+		setSelectedIds(new Set());
 	}
 
 	const usage = statsQuery.data?.usage;
@@ -311,6 +342,7 @@ export function EmailsContent() {
 
 		const progress: RunProgress = {
 			active: true,
+			mode: "all",
 			processed: 0,
 			succeeded: 0,
 			failed: 0,
@@ -357,13 +389,96 @@ export function EmailsContent() {
 		}
 	}
 
+	/** Reprocessa exatamente as linhas marcadas, uma a uma (sem spam). */
+	async function handleReprocessSelected() {
+		const ids = [...selectedIds];
+		if (ids.length === 0 || runProgress?.active) return;
+		const ok = await confirmRun({
+			title: "Reprocessar selecionados",
+			description: `Serão tentados ${ids.length} e-mail(is) selecionado(s). Uso atual: ${usage?.sentLast24h ?? 0}${usage?.limit != null ? ` de ${usage.limit}` : ""} nas últimas 24h. O processamento para ao atingir o limite.`,
+			confirmLabel: "Reprocessar",
+		});
+		if (!ok) return;
+
+		const progress: RunProgress = {
+			active: true,
+			mode: "selected",
+			processed: 0,
+			succeeded: 0,
+			failed: 0,
+			skipped: 0,
+		};
+		setRunProgress({ ...progress });
+		for (const id of ids) {
+			try {
+				const { notification } = await reprocessOneSilent.mutateAsync({
+					projectId,
+					id,
+				});
+				progress.processed += 1;
+				const outcome = classifyOutcome(notification?.status);
+				if (outcome === "succeeded") progress.succeeded += 1;
+				else if (outcome === "skipped") progress.skipped += 1;
+				else progress.failed += 1;
+			} catch {
+				progress.processed += 1;
+				progress.failed += 1;
+			}
+			setRunProgress({ ...progress });
+		}
+		setRunProgress({ ...progress, active: false });
+		setSelectedIds(new Set());
+		await refresh();
+		toast.success(
+			`Reprocessamento concluído: ${progress.succeeded} enviados, ${progress.failed} falhas, ${progress.skipped} ignorados.`,
+		);
+	}
+
 	const items = listQuery.data?.items ?? [];
 	const nextCursor = listQuery.data?.nextCursor ?? null;
+	// Deriva o item da lista atual para a gaveta refletir recarregamentos.
+	const detailItem = detailId
+		? (items.find((item) => item.id === detailId) ?? null)
+		: null;
 	// O filtro está em um status de contador (não no padrão "attention"
 	// nem no agregador "all")? Mostra a forma de limpar.
 	const counterFilterActive =
 		filter !== DEFAULT_FILTER &&
 		COUNTERS.some((counter) => counter.key === filter);
+
+	const selectableItems = items.filter(canReprocess);
+	const allSelected =
+		selectableItems.length > 0 &&
+		selectableItems.every((item) => selectedIds.has(item.id));
+	const someSelected = selectableItems.some((item) =>
+		selectedIds.has(item.id),
+	);
+	const headerChecked: boolean | "indeterminate" = allSelected
+		? true
+		: someSelected
+			? "indeterminate"
+			: false;
+
+	function toggleOne(id: string) {
+		setSelectedIds((prev) => {
+			const next = new Set(prev);
+			if (next.has(id)) next.delete(id);
+			else next.add(id);
+			return next;
+		});
+	}
+
+	function toggleAll() {
+		setSelectedIds((prev) => {
+			const next = new Set(prev);
+			if (allSelected) {
+				for (const item of selectableItems) next.delete(item.id);
+			} else {
+				for (const item of selectableItems) next.add(item.id);
+			}
+			return next;
+		});
+	}
 
 	return (
 		<div className="container-d py-container-v min-h-screen">
@@ -388,6 +503,7 @@ export function EmailsContent() {
 							onChange={(event) => {
 								setSearchInput(event.target.value);
 								setCursorStack([null]);
+								setSelectedIds(new Set());
 							}}
 						/>
 					</div>
@@ -413,6 +529,59 @@ export function EmailsContent() {
 					</Select>
 					<Tooltip>
 						<TooltipTrigger asChild>
+							<span className="inline-flex items-center gap-2">
+								<Switch
+									id="emails-auto-refresh"
+									checked={autoRefresh}
+									onCheckedChange={setAutoRefresh}
+									aria-label="Atualização automática"
+								/>
+								<Label
+									htmlFor="emails-auto-refresh"
+									className="cursor-pointer text-sm font-normal"
+								>
+									Auto
+								</Label>
+							</span>
+						</TooltipTrigger>
+						<TooltipContent className="max-w-72">
+							{autoRefresh
+								? `Atualizando automaticamente a cada ${AUTO_REFRESH_MS / 1000}s`
+								: `Liga a atualização automática a cada ${AUTO_REFRESH_MS / 1000}s`}
+						</TooltipContent>
+					</Tooltip>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<span className="inline-flex">
+								<Button
+									variant="outline"
+									size="icon-sm"
+									aria-label="Recarregar lista e contagens"
+									disabled={
+										reloadCoolingDown ||
+										listQuery.isFetching ||
+										statsQuery.isPending
+									}
+									onClick={() => void handleReload()}
+								>
+									<RefreshCw
+										className={
+											listQuery.isFetching
+												? "animate-spin"
+												: undefined
+										}
+									/>
+								</Button>
+							</span>
+						</TooltipTrigger>
+						<TooltipContent>
+							{reloadCoolingDown
+								? "Aguarde um instante antes de recarregar de novo"
+								: "Atualiza lista e contagens"}
+						</TooltipContent>
+					</Tooltip>
+					<Tooltip>
+						<TooltipTrigger asChild>
 							<span className="inline-flex">
 								<Button
 									onClick={() => void handleRunAll()}
@@ -423,7 +592,8 @@ export function EmailsContent() {
 										!hasWorkToReprocess
 									}
 								>
-									{runProgress?.active ? (
+									{runProgress?.active &&
+									runProgress.mode === "all" ? (
 										<Loader2
 											className="animate-spin"
 											aria-hidden
@@ -592,7 +762,11 @@ export function EmailsContent() {
 			{runProgress?.active ? (
 				<Alert className="mt-4">
 					<Loader2 className="animate-spin" />
-					<AlertTitle>Reprocessando e-mails…</AlertTitle>
+					<AlertTitle>
+						{runProgress.mode === "selected"
+							? "Reprocessando selecionados…"
+							: "Reprocessando e-mails…"}
+					</AlertTitle>
 					<AlertDescription>
 						{runProgress.processed} processados ·{" "}
 						{runProgress.succeeded} enviados · {runProgress.failed}{" "}
@@ -636,156 +810,234 @@ export function EmailsContent() {
 						}
 					/>
 				) : (
-					<div className="max-h-[70vh] overflow-auto rounded-2xl border">
-						<TooltipProvider>
-							<Table>
-								<TableHeader className="bg-card [&_th]:bg-card sticky top-0 z-10">
-									<TableRow>
-										<TableHead>Destinatário</TableHead>
-										<TableHead>Tipo</TableHead>
-										<TableHead>Status</TableHead>
-										<TableHead className="text-right">
-											Tentativas
-										</TableHead>
-										<TableHead>Erro / motivo</TableHead>
-										<TableHead className="hidden md:table-cell">
-											Provedor
-										</TableHead>
-										<TableHead className="hidden lg:table-cell">
-											Criado em
-										</TableHead>
-										<TableHead className="hidden lg:table-cell">
-											Atualizado em
-										</TableHead>
-										<TableHead className="text-right">
-											Ações
-										</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{items.map((item) => (
-										<TableRow key={item.id}>
-											<TableCell className="max-w-44 truncate font-medium">
-												{item.recipientEmail}
-											</TableCell>
-											<TableCell>
-												{NOTIFICATION_TYPE_LABELS[
-													item.type as keyof typeof NOTIFICATION_TYPE_LABELS
-												] ?? item.type}
-											</TableCell>
-											<TableCell>
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<span className="cursor-help">
-															{statusBadge(item)}
-														</span>
-													</TooltipTrigger>
-													<TooltipContent className="max-w-72">
-														{
-															STATUS_HELP[
-																item.status ===
-																"sending"
-																	? item.stuck
-																		? "stuck"
-																		: "sending"
-																	: item.status
-															]
-														}
-													</TooltipContent>
-												</Tooltip>
-											</TableCell>
-											<TableCell className="text-right tabular-nums">
-												{item.attempts}
-											</TableCell>
-											<TableCell>
-												{item.status === "skipped" &&
-												item.skipReason &&
-												!item.lastError ? (
-													<Tooltip>
-														<TooltipTrigger asChild>
-															<span className="text-muted-foreground cursor-help underline decoration-dotted underline-offset-2">
-																{skipReasonLabel(
-																	item.skipReason,
-																)}
-															</span>
-														</TooltipTrigger>
-														<TooltipContent className="max-w-80 break-words">
-															Motivo:{" "}
-															{item.skipReason}
-														</TooltipContent>
-													</Tooltip>
-												) : (
-													<ErrorCell item={item} />
-												)}
-											</TableCell>
-											<TableCell className="hidden md:table-cell">
-												{item.provider ?? "—"}
-											</TableCell>
-											<TableCell className="hidden lg:table-cell">
-												<Timestamp
-													value={item.createdAt}
+					<div className="flex flex-col gap-3">
+						{selectedIds.size > 0 ? (
+							<div className="bg-muted/40 flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2">
+								<p className="text-sm">
+									{selectedIds.size} selecionado
+									{selectedIds.size > 1 ? "s" : ""}
+								</p>
+								<div className="flex flex-wrap gap-2">
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() =>
+											setSelectedIds(new Set())
+										}
+									>
+										Limpar seleção
+									</Button>
+									<Button
+										size="sm"
+										disabled={runProgress?.active}
+										onClick={() =>
+											void handleReprocessSelected()
+										}
+									>
+										{runProgress?.active &&
+										runProgress.mode === "selected" ? (
+											<Loader2 className="animate-spin" />
+										) : (
+											<RefreshCw />
+										)}
+										Reprocessar selecionados
+									</Button>
+								</div>
+							</div>
+						) : null}
+						<div className="max-h-[70vh] overflow-auto rounded-2xl border">
+							<TooltipProvider>
+								<Table>
+									<TableHeader className="bg-card [&_th]:bg-card sticky top-0 z-10">
+										<TableRow>
+											<TableHead className="w-10">
+												<Checkbox
+													checked={headerChecked}
+													onCheckedChange={toggleAll}
+													disabled={
+														selectableItems.length ===
+														0
+													}
+													aria-label="Selecionar e-mails reprocessáveis desta página"
 												/>
-											</TableCell>
-											<TableCell className="hidden lg:table-cell">
-												<Timestamp
-													value={item.updatedAt}
-												/>
-											</TableCell>
-											<TableCell className="text-right">
-												{canReprocess(item) ? (
-													<Button
-														variant="outline"
-														size="sm"
-														disabled={
-															reprocessingId ===
-															item.id
-														}
-														aria-label="Reprocessar este e-mail"
-														onClick={() =>
-															void handleReprocess(
-																item,
-															)
-														}
-													>
-														{reprocessingId ===
-														item.id ? (
-															<Loader2
-																className="animate-spin"
-																aria-hidden
-															/>
-														) : (
-															<RefreshCw />
-														)}
-														Reprocessar
-													</Button>
-												) : (
-													<Tooltip>
-														<TooltipTrigger asChild>
-															<span className="inline-flex">
-																<Button
-																	variant="outline"
-																	size="sm"
-																	disabled
-																	aria-label={`Reprocessar indisponível: ${reprocessDisabledReason(item)}`}
-																>
-																	<RefreshCw />
-																	Reprocessar
-																</Button>
-															</span>
-														</TooltipTrigger>
-														<TooltipContent>
-															{reprocessDisabledReason(
-																item,
-															)}
-														</TooltipContent>
-													</Tooltip>
-												)}
-											</TableCell>
+											</TableHead>
+											<TableHead>Destinatário</TableHead>
+											<TableHead>Tipo</TableHead>
+											<TableHead>Status</TableHead>
+											<TableHead className="text-right">
+												Tentativas
+											</TableHead>
+											<TableHead>Erro / motivo</TableHead>
+											<TableHead className="hidden md:table-cell">
+												Provedor
+											</TableHead>
+											<TableHead className="hidden lg:table-cell">
+												Criado em
+											</TableHead>
+											<TableHead className="hidden lg:table-cell">
+												Atualizado em
+											</TableHead>
+											<TableHead className="text-right">
+												Ações
+											</TableHead>
 										</TableRow>
-									))}
-								</TableBody>
-							</Table>
-						</TooltipProvider>
+									</TableHeader>
+									<TableBody>
+										{items.map((item) => (
+											<TableRow key={item.id}>
+												<TableCell>
+													<Checkbox
+														checked={selectedIds.has(
+															item.id,
+														)}
+														onCheckedChange={() =>
+															toggleOne(item.id)
+														}
+														disabled={
+															!canReprocess(item)
+														}
+														aria-label={
+															canReprocess(item)
+																? `Selecionar ${item.recipientEmail}`
+																: `Não selecionável: ${reprocessDisabledReason(item)}`
+														}
+													/>
+												</TableCell>
+												<TableCell className="max-w-44 truncate font-medium">
+													{item.recipientEmail}
+												</TableCell>
+												<TableCell>
+													{NOTIFICATION_TYPE_LABELS[
+														item.type as keyof typeof NOTIFICATION_TYPE_LABELS
+													] ?? item.type}
+												</TableCell>
+												<TableCell>
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<span className="cursor-help">
+																<StatusBadge
+																	item={item}
+																/>
+															</span>
+														</TooltipTrigger>
+														<TooltipContent className="max-w-72">
+															{statusHelpOf(item)}
+														</TooltipContent>
+													</Tooltip>
+												</TableCell>
+												<TableCell className="text-right tabular-nums">
+													{item.attempts}
+												</TableCell>
+												<TableCell>
+													{item.status ===
+														"skipped" &&
+													item.skipReason &&
+													!item.lastError ? (
+														<Tooltip>
+															<TooltipTrigger
+																asChild
+															>
+																<span className="text-muted-foreground cursor-help underline decoration-dotted underline-offset-2">
+																	{skipReasonLabel(
+																		item.skipReason,
+																	)}
+																</span>
+															</TooltipTrigger>
+															<TooltipContent className="max-w-80 break-words">
+																Motivo:{" "}
+																{
+																	item.skipReason
+																}
+															</TooltipContent>
+														</Tooltip>
+													) : (
+														<ErrorCell
+															item={item}
+														/>
+													)}
+												</TableCell>
+												<TableCell className="hidden md:table-cell">
+													{item.provider ?? "—"}
+												</TableCell>
+												<TableCell className="hidden lg:table-cell">
+													<Timestamp
+														value={item.createdAt}
+													/>
+												</TableCell>
+												<TableCell className="hidden lg:table-cell">
+													<Timestamp
+														value={item.updatedAt}
+													/>
+												</TableCell>
+												<TableCell className="text-right">
+													<div className="flex items-center justify-end gap-1">
+														<Button
+															variant="ghost"
+															size="icon-sm"
+															aria-label="Ver detalhes"
+															onClick={() =>
+																setDetailId(
+																	item.id,
+																)
+															}
+														>
+															<Info />
+														</Button>
+														{canReprocess(item) ? (
+															<Button
+																variant="outline"
+																size="sm"
+																disabled={
+																	reprocessingId ===
+																	item.id
+																}
+																aria-label="Reprocessar este e-mail"
+																onClick={() =>
+																	void handleReprocess(
+																		item,
+																	)
+																}
+															>
+																{reprocessingId ===
+																item.id ? (
+																	<Loader2 className="animate-spin" />
+																) : (
+																	<RefreshCw />
+																)}
+																Reprocessar
+															</Button>
+														) : (
+															<Tooltip>
+																<TooltipTrigger
+																	asChild
+																>
+																	<span className="inline-flex">
+																		<Button
+																			variant="outline"
+																			size="sm"
+																			disabled
+																			aria-label={`Reprocessar indisponível: ${reprocessDisabledReason(item)}`}
+																		>
+																			<RefreshCw />
+																			Reprocessar
+																		</Button>
+																	</span>
+																</TooltipTrigger>
+																<TooltipContent>
+																	{reprocessDisabledReason(
+																		item,
+																	)}
+																</TooltipContent>
+															</Tooltip>
+														)}
+													</div>
+												</TableCell>
+											</TableRow>
+										))}
+									</TableBody>
+								</Table>
+							</TooltipProvider>
+						</div>
 					</div>
 				)}
 
@@ -801,9 +1053,10 @@ export function EmailsContent() {
 							disabled={
 								cursorStack.length <= 1 || listQuery.isFetching
 							}
-							onClick={() =>
-								setCursorStack((stack) => stack.slice(0, -1))
-							}
+							onClick={() => {
+								setSelectedIds(new Set());
+								setCursorStack((stack) => stack.slice(0, -1));
+							}}
 						>
 							<ChevronLeft />
 							Anterior
@@ -818,6 +1071,7 @@ export function EmailsContent() {
 										...stack,
 										nextCursor,
 									]);
+								setSelectedIds(new Set());
 							}}
 						>
 							Próxima
@@ -826,6 +1080,24 @@ export function EmailsContent() {
 					</div>
 				</div>
 			</div>
+
+			<NotificationDetailSheet
+				item={detailItem}
+				onOpenChange={(open) => {
+					if (!open) setDetailId(null);
+				}}
+				onReprocess={(item) => {
+					setDetailId(null);
+					void handleReprocess(item);
+				}}
+				canReprocess={detailItem ? canReprocess(detailItem) : false}
+				disabledReason={
+					detailItem ? reprocessDisabledReason(detailItem) : ""
+				}
+				reprocessing={
+					detailItem != null && reprocessingId === detailItem.id
+				}
+			/>
 
 			<ConfirmDialog {...rowDialogProps} />
 			<ConfirmDialog {...runDialogProps} />
