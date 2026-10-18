@@ -1,14 +1,17 @@
 import { Suspense } from "react";
 
 import { ParticipantCardDialog } from "@/components/dialogs/participant-card-dialog";
-import { ParticipantCard } from "@/components/participant/participant-card";
+import {
+	ParticipantCard,
+	ParticipantCardSkeleton,
+} from "@/components/participant/participant-card";
 
 export default function ParticipantModal(props: {
 	params: Promise<{ participantId: string }>;
 }) {
 	return (
 		<ParticipantCardDialog>
-			<Suspense>
+			<Suspense fallback={<ParticipantCardSkeleton />}>
 				<ParticipantModalLoader params={props.params} />
 			</Suspense>
 		</ParticipantCardDialog>

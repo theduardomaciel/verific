@@ -107,7 +107,15 @@ export const participantsRouter = createTRPCRouter({
 					(mod) => mod.userId === requestUserId,
 				) || participantData.project.ownerId === requestUserId;
 
-			if (!isModerator && participantData.userId !== requestUserId) {
+			const profilesEnabled = Boolean(
+				participantData.project.profilesEnabled,
+			);
+
+			if (
+				!isModerator &&
+				participantData.userId !== requestUserId &&
+				!profilesEnabled
+			) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
 					message:

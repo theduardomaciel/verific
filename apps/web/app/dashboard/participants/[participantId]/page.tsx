@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import { ParticipantCard } from "@/components/participant/participant-card";
+import {
+	ParticipantCard,
+	ParticipantCardSkeleton,
+} from "@/components/participant/participant-card";
 
 export const metadata: Metadata = {
 	title: "Participante",
@@ -12,8 +15,8 @@ export default function ParticipantPage(props: {
 }) {
 	return (
 		<main className="container-d py-container-v flex min-h-screen flex-col items-center justify-start">
-			<div className="bg-card flex w-full max-w-[600px] flex-col items-center gap-6 rounded-lg border p-6">
-				<Suspense>
+			<div className="bg-card flex w-full max-w-150 flex-col items-center gap-6 rounded-lg border p-6">
+				<Suspense fallback={<ParticipantCardSkeleton />}>
 					<ParticipantLoader params={props.params} />
 				</Suspense>
 			</div>

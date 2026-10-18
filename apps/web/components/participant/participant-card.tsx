@@ -6,12 +6,7 @@ import { CircleMinus, Hash, Hourglass, LogOut, Mail } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 // Components
 import { Button } from "@/components/ui/button";
-import {
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+// (no dialog primitives needed; rendered both in modal and standalone page)
 import { LogoutForm } from "@/components/ui/logout-form";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -70,8 +65,8 @@ export async function ParticipantCard({ id: participantId, eventUrl }: Props) {
 	const projectUrl = eventUrl ?? participant.project.url;
 
 	return (
-		<Suspense fallback={<ParticipantCardSkeleton />}>
-			<DialogHeader className="flex flex-col items-center justify-start gap-6">
+		<>
+			<div className="flex flex-col items-center justify-start gap-6">
 				<Avatar className="h-32 w-32 rounded-2xl">
 					<AvatarImage src={participant.user.image_url || ""} />
 					<AvatarFallback>
@@ -79,12 +74,14 @@ export async function ParticipantCard({ id: participantId, eventUrl }: Props) {
 					</AvatarFallback>
 				</Avatar>
 				<div className="flex flex-col items-center justify-start gap-1">
-					<DialogTitle>{participant.user.name}</DialogTitle>
-					<DialogDescription>
+					<h2 className="text-xl font-semibold">
+						{participant.user.name}
+					</h2>
+					<p className="text-muted-foreground text-sm">
 						#{participant.id.split("-")[0]}
-					</DialogDescription>
+					</p>
 				</div>
-			</DialogHeader>
+			</div>
 			<div className="flex flex-col items-center justify-center gap-6">
 				<ul className="flex w-full flex-row flex-wrap items-center justify-center gap-2 md:max-w-[70%]">
 					<Badge variant={"secondary"}>
@@ -125,7 +122,7 @@ export async function ParticipantCard({ id: participantId, eventUrl }: Props) {
 					</div>
 				)}
 			</div>
-			<DialogFooter>
+			<div className="flex w-full flex-col items-center justify-start gap-2">
 				{isModerator && !isModeratorParticipant ? (
 					<RemoveParticipantDialog
 						participantId={participant.id}
@@ -148,8 +145,8 @@ export async function ParticipantCard({ id: participantId, eventUrl }: Props) {
 						</Button>
 					</LogoutForm>
 				)}
-			</DialogFooter>
-		</Suspense>
+			</div>
+		</>
 	);
 }
 
