@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 import { IdCard } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -7,18 +9,35 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 interface Props {
 	name?: string;
 	qrValue?: string;
-	logoSrc?: string;
+	logoSrc: {
+		light?: string | null;
+		dark?: string | null;
+	};
 	primaryColor?: string;
 	secondaryColor?: string;
 	onGenerate?: () => void;
 }
 
+const DATA = {
+	name: "Fulano da Silva",
+	qrValue: "verifIC",
+	logoSrc: {
+		light: "/logo_blue.png",
+		dark: "/logo_white.png",
+	},
+	primaryColor: "#1C63B7",
+	secondaryColor: "#458AFF",
+};
+
 export default function BadgesGeneratorCallout({
 	name = "Fulano da Silva",
 	qrValue = "verifIC",
-	logoSrc = "/secomp24-logo.svg",
-	primaryColor,
-	secondaryColor,
+	logoSrc = {
+		light: "/logo_blue.png",
+		dark: "/logo_white.png",
+	},
+	primaryColor = "#1C63B7",
+	secondaryColor = "#458AFF",
 	onGenerate,
 }: Props) {
 	const nameStyle =
@@ -52,11 +71,24 @@ export default function BadgesGeneratorCallout({
 
 				{/* Badge */}
 				<div className="bg-card flex w-full flex-col items-center rounded-2xl border border-neutral-700 px-8 pt-10 pb-8 shadow-sm">
-					<img
-						src={logoSrc}
-						alt="Logo do evento"
-						className="h-8 w-auto object-contain"
-					/>
+					{logoSrc.light && (
+						<Image
+							src={logoSrc.light}
+							alt="Logo do evento"
+							className="h-8 w-auto object-contain dark:hidden"
+							height={212}
+							width={888}
+						/>
+					)}
+					{logoSrc.dark && (
+						<Image
+							src={logoSrc.dark}
+							alt="Logo do evento"
+							className="hidden h-8 w-auto object-contain dark:flex"
+							height={212}
+							width={888}
+						/>
+					)}
 
 					<h3
 						style={nameStyle}
@@ -79,7 +111,7 @@ export default function BadgesGeneratorCallout({
 						value={qrValue}
 						bgColor="var(--card)"
 						fgColor="var(--foreground)"
-						size={168}
+						size={128}
 						level="M"
 						className="mt-5"
 						aria-label={`QR code do crachá de ${name}`}

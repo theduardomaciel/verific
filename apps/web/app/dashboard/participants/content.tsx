@@ -21,7 +21,6 @@ import { ParticipantListItem } from "@/components/participant/participant-item";
 import { SearchBar } from "@/components/search-bar";
 import { SortBy } from "@/components/sort-by";
 
-import { useCurrentProject } from "@/hooks/use-current-project";
 // Hooks
 import { useParsedSearchParams } from "@/hooks/use-parsed-search-params";
 // API
@@ -46,7 +45,6 @@ function ParticipantsSkeleton() {
 export function ParticipantsContent() {
 	const { projectId } = useDashboard();
 	const router = useRouter();
-	const { data: projectData } = useCurrentProject();
 	const parsedParams = useParsedSearchParams((raw) =>
 		getParticipantsParams.parse(raw),
 	);
@@ -87,21 +85,6 @@ export function ParticipantsContent() {
 		amount > 0
 			? Math.min(showingStart + (participants?.length ?? 0) - 1, amount)
 			: 0;
-	const project = projectData?.project as
-		| {
-				logoUrl?: string | null;
-				theme?: unknown;
-				primaryColor?: string | null;
-				secondaryColor?: string | null;
-		  }
-		| undefined;
-	const theme = project
-		? parseEventTheme({
-				theme: project.theme,
-				primaryColor: project.primaryColor,
-				secondaryColor: project.secondaryColor,
-			})
-		: null;
 
 	return (
 		<div className="container-d py-container-v min-h-screen">
@@ -173,10 +156,6 @@ export function ParticipantsContent() {
 					</FiltersPanel>
 					<BadgesGeneratorCallout
 						name="Fulano da Silva"
-						qrValue="https://example.com"
-						logoSrc={project?.logoUrl ?? undefined}
-						primaryColor={theme?.primary}
-						secondaryColor={theme?.secondary}
 						onGenerate={() => {
 							router.push("/dashboard/badges");
 						}}
