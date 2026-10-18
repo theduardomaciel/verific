@@ -143,7 +143,7 @@ export default function Overview() {
 								</div>
 							</CardHeader>
 							<CardContent className="relative flex flex-1">
-								<GraphSelector graphData={stats.graphData} />
+								<GraphSelector />
 							</CardContent>
 						</Card>
 						<ActivitiesList
