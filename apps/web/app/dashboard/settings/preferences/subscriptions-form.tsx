@@ -1,4 +1,6 @@
 "use client";
+// Types
+import { useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import type { RouterOutput } from "@verific/api";
@@ -20,11 +22,28 @@ import { trpc } from "@/lib/trpc/react";
 // Validations
 import { subscriptionManagementSchema } from "@/lib/validations/forms/settings-form/project/subscriptions-form";
 
-// Types
-import type { UseFormReturn } from "react-hook-form";
-
-interface Props {
-	project: RouterOutput["getProject"]["project"];
+function ProfilesSwitch({
+	control,
+	checked,
+	onChange,
+}: {
+	control: any;
+	checked: boolean;
+	onChange: (value: boolean) => void;
+}) {
+	const enableSubscription = useWatch({
+		control,
+		name: "enableSubscription",
+	});
+	return (
+		<Switch
+			id="profilesEnabled"
+			checked={checked}
+			onCheckedChange={onChange}
+			size={"lg"}
+			disabled={enableSubscription === false}
+		/>
+	);
 }
 
 export function ProjectSettingsSubscriptionsForm({ project }: Props) {
@@ -59,7 +78,7 @@ export function ProjectSettingsSubscriptionsForm({ project }: Props) {
 				description="Decida se usuários poderão utilizar a página de inscrição para se cadastrarem ou não"
 				initialState={{
 					enableSubscription: project.isRegistrationEnabled || false,
-					profilesEnabled: project.profilesEnabled || false,
+					profilesEnabled: project.profilesEnabled ?? true,
 				}}
 				onSubmit={onSubmitSubscriptionManagement}
 				renderField={(form) => (
@@ -93,11 +112,10 @@ export function ProjectSettingsSubscriptionsForm({ project }: Props) {
 								<FormItem>
 									<FormControl>
 										<div className="flex items-center space-x-2">
-											<Switch
-												id="profilesEnabled"
+											<ProfilesSwitch
+												control={form.control}
 												checked={field.value}
-												onCheckedChange={field.onChange}
-												size={"lg"}
+												onChange={field.onChange}
 											/>
 											<Label htmlFor="profilesEnabled">
 												Habilitar perfis de
