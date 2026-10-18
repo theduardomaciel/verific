@@ -89,6 +89,15 @@ export function queueEventRegistrationEmail(
 	void scheduleAfterResponse(async () => {
 		const input = buildRegistrationEmailInput(args);
 		if (!input) return;
-		await sendNotification(input);
+		try {
+			await sendNotification(input);
+		} catch (err) {
+			// Refs malformados (InvalidEntityRefsError) ou falha de insert:
+			// loga com contexto — o pedido do usuário nunca quebra.
+			console.error(
+				`[notifications] ${input.type} dispatch failed (registrationId=${args.registrationId}):`,
+				err,
+			);
+		}
 	});
 }

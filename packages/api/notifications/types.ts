@@ -124,8 +124,9 @@ export interface NotificationCursor {
 }
 
 /**
- * Admin-facing row. Never contains `payload`/`entityRefs` (template input
- * stays server-side). `stuck` is derived server-side: status `sending` with
+ * Admin-facing row. Contains `entityRefs` (ids + small scalars the
+ * organizer needs for the diagnostics copy); never rendered template data.
+ * `stuck` is derived server-side: status `sending` with
  * `updatedAt` older than STALE_CLAIM_TIMEOUT_MS.
  */
 export interface PublicNotification {

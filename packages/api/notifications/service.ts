@@ -7,7 +7,11 @@ import { lockActivity } from "../seats";
 import { settleActivity } from "../waitlist";
 import { loadEmailConfig } from "./config";
 import { getProvider } from "./providers";
-import { getNotificationDefinition, hashProps } from "./registry";
+import {
+	getNotificationDefinition,
+	hashProps,
+	validateEntityRefs,
+} from "./registry";
 import { getNotificationEnabledMap, isNotificationEnabled } from "./settings";
 import { DrizzleNotificationStore, STALE_CLAIM_TIMEOUT_MS } from "./store";
 
@@ -94,6 +98,14 @@ function resolveConfig(
 	return deps.config ?? loadEmailConfig();
 }
 
+/** Maximum stored length of the unexpected-error message (no stacks). */
+export const MAX_STORED_ERROR_LENGTH = 300;
+
+/** Truncates a message so `lastError` stays short and secret-free. */
+export function truncateMessage(text: string, max = MAX_STORED_ERROR_LENGTH) {
+	return text.length <= max ? text : `${text.slice(0, max)}…`;
+}
+
 /**
  * Current email usage for admin surfaces: same 24h counting the daily cap
  * uses, plus the configured limit (null when uncapped).
@@ -108,16 +120,24 @@ export async function getEmailUsage(deps?: ServiceDeps): Promise<EmailUsage> {
 }
 
 /**
- * Central single-notification entry point. Checks the per-event setting
- * first: a disabled type is still recorded (status `skipped`,
- * `skipReason: disabled_by_event`) so the admin log explains why no e-mail
- * went out. Enabled rows are inserted idempotently and sent immediately.
- * Never throws: every failure is recorded on the row instead.
+ * Central single-notification entry point. Validates `entityRefs` against
+ * the registry declaration BEFORE inserting anything: missing or malformed
+ * refs throw `InvalidEntityRefsError` (callers must log it and move on).
+ * Then it checks the per-event setting first: a disabled type is still
+ * recorded (status `skipped`, `skipReason: disabled_by_event`) so the admin
+ * log explains why no e-mail went out. Enabled rows are inserted
+ * idempotently and sent immediately. After validation, never throws: every
+ * failure is recorded on the row instead.
  */
 export async function sendNotification(
 	input: SendNotificationInput,
 	deps?: ServiceDeps,
 ): Promise<SendNotificationResult> {
+	// Hard gate: bad refs must throw before a row exists. Kept outside the
+	// try/catch below so the error reaches the trigger site, which logs it
+	// with type and context.
+	validateEntityRefs(input.type, input.entityRefs);
+
 	const resolved = resolveDeps(deps);
 	const store = resolved.store;
 	let rowId: string | null = null;
@@ -204,13 +224,25 @@ export async function enqueueNotifications(
 			}),
 		);
 
-		const inserts = inputs.map((input) => {
+		const inserts: typeof inputs = [];
+		for (const input of inputs) {
+			try {
+				validateEntityRefs(input.type, input.entityRefs);
+			} catch (err) {
+				// Refs malformados: loga com contexto e descarta a linha
+				// (bulk nunca lança; a falha nunca quebra o pedido).
+				console.error(
+					`[notifications] enqueueNotifications descartou entrada (type=${input.type}, to=${input.to}, idempotencyKey=${input.idempotencyKey}):`,
+					err,
+				);
+				continue;
+			}
 			const enabled =
 				input.eventId == null
 					? true
 					: (enabledByEvent.get(input.eventId)?.get(input.type) ??
 						true);
-			return {
+			inserts.push({
 				type: input.type,
 				idempotencyKey: input.idempotencyKey,
 				to: input.to,
@@ -222,8 +254,8 @@ export async function enqueueNotifications(
 							status: "skipped" as const,
 							skipReason: "disabled_by_event",
 						}),
-			};
-		});
+			});
+		}
 		const rows = await store.insertIgnoreMany(inserts);
 		return rows.map(({ row }) => ({ notification: row }));
 	} catch (err) {
@@ -302,8 +334,9 @@ export async function processNotification(
 ): Promise<SendNotificationResult> {
 	const resolved = resolveDeps(deps);
 	const store = resolved.store;
+	let claimed: NotificationRow | null = null;
 	try {
-		const claimed = await store.claim(id);
+		claimed = await store.claim(id);
 		if (!claimed) {
 			return { notification: await store.getById(id) };
 		}
@@ -437,16 +470,19 @@ export async function processNotification(
 		}
 		return { notification: await store.getById(id) };
 	} catch (err) {
+		// Log completo (com stack) para o servidor; a row guarda só nome e
+		// mensagem truncada, sem stack nem segredos.
 		console.error(
-			"[notifications] processNotification failed:",
-			messageOf(err),
+			`[notifications] processNotification failed (id=${id}, type=${claimed?.type ?? "unknown"}, refs=${JSON.stringify(claimed?.entityRefs ?? null)}):`,
+			err,
 		);
 		try {
 			return {
 				notification: await store.update(id, {
 					status: "failed",
-					lastError:
-						"unexpected_error: notification processing failed",
+					lastError: `unexpected_error: ${
+						err instanceof Error ? err.name : "UnknownError"
+					}: ${truncateMessage(messageOf(err))}`,
 					lastErrorRetryable: false,
 				}),
 			};
@@ -543,9 +579,9 @@ export interface ReprocessBatchResult {
 	capReached: boolean;
 }
 
-/** Row without `payload`/`entityRefs`, for admin responses. */
+/** Row without `entityRefs`, for admin responses. */
 export function toPublicNotification(row: NotificationRow): PublicNotification {
-	const { payload: _payload, entityRefs: _entityRefs, ...rest } = row;
+	const { entityRefs: _entityRefs, ...rest } = row;
 	return {
 		...rest,
 		stuck:

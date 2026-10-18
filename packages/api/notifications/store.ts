@@ -96,7 +96,8 @@ export interface NotificationStore {
 	countUsageLast24h(): Promise<number>;
 	/**
 	 * Event-scoped admin listing, newest first, keyset-paginated on
-	 * (createdAt, id). Never selects `payload`. `stuck` is derived in SQL.
+	 * (createdAt, id). Never selects rendered template data. `stuck` is
+	 * derived in SQL.
 	 */
 	listPage(options: ListNotificationsOptions): Promise<{
 		items: PublicNotification[];

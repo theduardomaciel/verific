@@ -24,7 +24,7 @@ import { createTRPCRouter, protectedProcedure } from "../trpc";
 /**
  * Organizer-only admin procedures for the notifications of one event.
  * Every procedure re-checks organizer/admin access for the event, scopes by
- * eventId, and never returns the `payload` column to the client.
+ * eventId, and never returns rendered template data to the client.
  */
 export const notificationsRouter = createTRPCRouter({
 	listNotifications: protectedProcedure

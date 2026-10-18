@@ -29,10 +29,8 @@ export type NotificationStatus = (typeof NOTIFICATION_STATUSES)[number];
  *
  * `entityRefs` holds the ids (and small scalars) the registry needs to
  * validate and rebuild the template props on every attempt. It is the only
- * send input; `payload` is a legacy column kept for old rows and never
- * written or read by the service anymore. Rendered HTML is never stored.
- * `type` stays free-form text (no pgEnum) so new notification types can be
- * added without a migration.
+ * send input; rendered HTML is never stored. `type` stays free-form text
+ * (no pgEnum) so new notification types can be added without a migration.
  */
 export const notification = pgTable(
 	"notifications",
@@ -56,8 +54,6 @@ export const notification = pgTable(
 		lastErrorRetryable: boolean("last_error_retryable"),
 		provider: text("provider"),
 		providerMessageId: text("provider_message_id"),
-		/** Legacy template props from before the registry rebuild. Read-only. */
-		payload: jsonb("payload").$type<Record<string, unknown>>(),
 		/** Ids + small scalars needed by validate/buildProps. Source of truth. */
 		entityRefs: jsonb("entity_refs")
 			.$type<Record<string, string | number | boolean | null>>()

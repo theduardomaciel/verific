@@ -58,18 +58,23 @@ Comportamento por provedor:
 1. `submitAnswers` cria o participante e, **depois do commit**, enfileira
    `sendNotification` com chave
    `event_registration_confirmation:<participantId>`, `to` = e-mail da
-   conta, `eventId` e o payload do template. Falha de e-mail nunca falha
-   nem desfaz a inscrição (usa `after()` do Next quando há runtime, senão
-   aguarda inline com try/catch).
+   conta, `eventId` e `entityRefs = { registrationId }`. Falha de e-mail
+   nunca falha nem desfaz a inscrição (usa `after()` do Next quando há
+   runtime, senão aguarda inline com try/catch). Refs ausentes ou
+   malformadas lançam `InvalidEntityRefsError` **antes** de inserir a linha;
+   o gatilho loga o erro com tipo e contexto e o pedido do usuário não
+   quebra.
 2. `sendNotification` insere com `ON CONFLICT DO NOTHING` (replay da mesma
    chave retorna a linha existente sem reenviar), confere o teto diário e
    delega a `processNotification`: claim atômico (inclui `sending` travado
    há mais de 10 min), render, até 3 tentativas com backoff só em erro
-   `retryable`. Nada disso lança exceção para o chamador — tudo é gravado
-   na linha (`status`, `attempts`, `lastError`, `provider`,
-   `providerMessageId`, `sentAt`, `templateVersion`).
-3. O `payload` guarda só os props do template (nunca o HTML), então uma
-   falha pode ser re-renderizada e reprocessada depois.
+   `retryable`. Depois da validação de refs, nada disso lança exceção para
+   o chamador — tudo é gravado na linha (`status`, `attempts`, `lastError`,
+   `provider`, `providerMessageId`, `sentAt`, `templateVersion`).
+3. Os props nunca são armazenados: todo attempt reconstrói os props do
+   banco a partir de `entityRefs` (a linha guarda `propsHash`, sha256 dos
+   props usados, só como auditoria), então uma falha pode ser
+   re-renderizada e reprocessada depois.
 
 ## Teto diário e uso
 
@@ -106,4 +111,5 @@ pnpm --filter @verific/api email:dev
   paginação keyset e reprocessamento por linha ou em lotes de 20 com
   progresso — parando ao atingir o teto.
 - "Travada" (`sending` com `updatedAt` além de 10 min) é derivada no SQL,
-  nunca no cliente. Respostas nunca incluem a coluna `payload`.
+  nunca no cliente. Respostas nunca incluem HTML ou props renderizados;
+  `entityRefs` (ids e escalares) é exposto ao organizador para o diagnóstico.

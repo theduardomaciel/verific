@@ -44,10 +44,12 @@ export {
 	DEFERRED_NOTIFICATION_TYPES,
 	getNotificationDefinition,
 	hashProps,
+	InvalidEntityRefsError,
 	isNotificationTypeKey,
 	loadSharedActivity,
 	notificationRegistry,
 	stableStringify,
+	validateEntityRefs,
 } from "./registry";
 export type {
 	NotificationSettingItem,

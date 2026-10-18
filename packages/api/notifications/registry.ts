@@ -169,6 +169,66 @@ export interface NotificationTypeDefinition {
 /* Ref helpers                                                         */
 /* ------------------------------------------------------------------ */
 
+/** Thrown at creation time when `entityRefs` is missing or malformed. */
+export class InvalidEntityRefsError extends Error {
+	readonly notificationType: string;
+	readonly issues: readonly string[];
+
+	constructor(type: string, issues: readonly string[]) {
+		super(
+			`[notifications] ${type}: refs de entidade inválidos — ${issues.join("; ")}.`,
+		);
+		this.name = "InvalidEntityRefsError";
+		this.notificationType = type;
+		this.issues = issues;
+	}
+}
+
+/**
+ * Validates `entityRefs` against the refs declared for the type — the same
+ * names the processing step reads through requiredString/optionalString, so
+ * the declaration in the registry is the single source of truth. Throws
+ * `InvalidEntityRefsError` listing every issue before any row is inserted.
+ * Unknown types are ignored here (they become `unsupported_type` later).
+ */
+export function validateEntityRefs(type: string, refs: EntityRefs): void {
+	const definition = getNotificationDefinition(type);
+	if (!definition) return;
+
+	const issues: string[] = [];
+	const declared = new Set<string>();
+	for (const entry of definition.entityRefs) {
+		const optional = entry.endsWith("?");
+		const name = optional ? entry.slice(0, -1) : entry;
+		declared.add(name);
+
+		const value = refs[name];
+		if (value === undefined) {
+			if (!optional) issues.push(`faltando "${name}"`);
+			continue;
+		}
+		if (value === null) {
+			issues.push(`"${name}" é null`);
+			continue;
+		}
+		if (
+			typeof value !== "string" &&
+			typeof value !== "number" &&
+			typeof value !== "boolean"
+		) {
+			issues.push(`"${name}" deve ser um valor escalar`);
+			continue;
+		}
+		if (typeof value === "string" && value.trim() === "") {
+			issues.push(`"${name}" está vazio`);
+		}
+	}
+	for (const key of Object.keys(refs)) {
+		if (!declared.has(key)) issues.push(`ref desconhecida "${key}"`);
+	}
+	if (issues.length > 0) throw new InvalidEntityRefsError(type, issues);
+}
+
 function requiredString(refs: EntityRefs, key: string): string {
 	const value = refs[key];
 	if (typeof value !== "string" || value.trim() === "") {

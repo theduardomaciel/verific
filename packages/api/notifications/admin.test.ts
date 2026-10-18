@@ -376,6 +376,26 @@ describe("reprocessOneNotification", () => {
 		expect(send).not.toHaveBeenCalled();
 	});
 
+	it("reprocessing a sent row is a strict no-op: no send, row untouched", async () => {
+		const { store, send, deps } = setup();
+		const sent = await seed(store, {
+			idempotencyKey: "sent-strict",
+			status: "sent",
+			sentAt: new Date(),
+		});
+		const before = JSON.stringify(store.rows.get(sent.id));
+
+		const { notification } = await reprocessOneNotification(
+			{ eventId: EVENT_A, id: sent.id },
+			deps,
+		);
+
+		expect(notification?.status).toBe("sent");
+		// Nenhum campo mudou (nem updatedAt): a row não foi reenviada.
+		expect(JSON.stringify(store.rows.get(sent.id))).toBe(before);
+		expect(send).not.toHaveBeenCalled();
+	});
+
 	it("sends failed, stale and skipped rows", async () => {
 		const { store, send, deps } = setup();
 		const failed = await seed(store, {

@@ -50,7 +50,6 @@ export class InMemoryNotificationStore implements NotificationStore {
 			lastErrorRetryable: null,
 			provider: null,
 			providerMessageId: null,
-			payload: null,
 			entityRefs: input.entityRefs,
 			propsHash: null,
 			skipReason: input.skipReason ?? null,
@@ -220,6 +219,6 @@ function matchesFilter(
 }
 
 function toPublic(row: NotificationRow, now: number): PublicNotification {
-	const { payload: _payload, entityRefs: _entityRefs, ...rest } = row;
+	const { entityRefs: _entityRefs, ...rest } = row;
 	return { ...rest, stuck: isStuck(row, now) };
 }

@@ -107,13 +107,14 @@ vi.mock("./registry", async (importOriginal) => {
 	};
 });
 
-import { hashProps } from "./registry";
+import { hashProps, InvalidEntityRefsError } from "./registry";
 import {
 	getEmailUsage,
 	processNotification,
 	processQueuedNotifications,
 	enqueueNotifications,
 	sendNotification,
+	truncateMessage,
 } from "./service";
 import { isNotificationEnabled, getNotificationEnabledMap } from "./settings";
 import { STALE_CLAIM_TIMEOUT_MS } from "./store";
@@ -331,7 +332,6 @@ describe("sendNotification", () => {
 		);
 		expect(notification?.propsHash).toMatch(/^[0-9a-f]{64}$/);
 		// Template output is never stored.
-		expect(notification?.payload).toBeNull();
 		expect(JSON.stringify(notification)).not.toContain("<html>");
 	});
 });
@@ -471,7 +471,6 @@ describe("reprocess rebuilds props", () => {
 		expect(send.mock.calls[1]?.[0]?.html).toContain("Oficina de React");
 		expect(second.notification?.propsHash).toBe(hashProps(updatedProps));
 		expect(second.notification?.entityRefs).toEqual(input.entityRefs);
-		expect(second.notification?.payload).toBeNull();
 		expect(stubMocks.validate).toHaveBeenCalledTimes(2);
 		expect(stubMocks.buildProps).toHaveBeenCalledTimes(2);
 	});
@@ -663,5 +662,120 @@ describe("getEmailUsage", () => {
 			sentLast24h: 0,
 			limit: null,
 		});
+	});
+});
+
+describe("entityRefs validation at creation", () => {
+	it.each([
+		["missing required ref", {}],
+		["null ref", { registrationId: null }],
+		["empty ref", { registrationId: "  " }],
+		["unknown ref", { registrationId: "p1", extra: "x" }],
+	])(
+		"sendNotification throws and inserts nothing for %s",
+		async (_label, entityRefs) => {
+			const { store, send, deps } = setup();
+			const bad: SendNotificationInput = {
+				type: "event_registration_confirmation",
+				idempotencyKey: "bad-refs",
+				to: "user@example.com",
+				eventId: randomUUID(),
+				entityRefs,
+			};
+
+			await expect(sendNotification(bad, deps)).rejects.toBeInstanceOf(
+				InvalidEntityRefsError,
+			);
+			expect(store.rows.size).toBe(0);
+			expect(send).not.toHaveBeenCalled();
+		},
+	);
+
+	it("the error names the type and the missing ref", async () => {
+		const { deps } = setup();
+		const bad: SendNotificationInput = {
+			type: "event_registration_confirmation",
+			idempotencyKey: "bad-refs",
+			to: "user@example.com",
+			eventId: randomUUID(),
+			entityRefs: {},
+		};
+
+		await expect(sendNotification(bad, deps)).rejects.toThrow(
+			/event_registration_confirmation.*registrationId/,
+		);
+	});
+
+	it("enqueueNotifications drops invalid inputs and keeps valid ones", async () => {
+		const errorSpy = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => {});
+		const { deps } = setup();
+		const eventId = randomUUID();
+		const invalid: SendNotificationInput = {
+			type: "event_registration_confirmation",
+			idempotencyKey: "bad-bulk",
+			to: "user@example.com",
+			eventId,
+			entityRefs: {},
+		};
+		const valid: SendNotificationInput = {
+			type: "event_registration_confirmation",
+			idempotencyKey: "ok-bulk",
+			to: "user@example.com",
+			eventId,
+			entityRefs: { registrationId: "p1" },
+		};
+
+		const results = await enqueueNotifications([invalid, valid], deps);
+
+		expect(results).toHaveLength(1);
+		expect(results[0]?.notification?.idempotencyKey).toBe("ok-bulk");
+		expect(errorSpy).toHaveBeenCalledWith(
+			expect.stringContaining("event_registration_confirmation"),
+			expect.any(InvalidEntityRefsError),
+		);
+		errorSpy.mockRestore();
+	});
+});
+
+describe("catch-all error visibility", () => {
+	it("stores the original error name and a truncated message", async () => {
+		const errorSpy = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => {});
+		const { store, deps, input } = setup();
+		const { row } = await store.insertIgnore({
+			type: input.type,
+			idempotencyKey: input.idempotencyKey,
+			to: input.to,
+			eventId: input.eventId,
+			entityRefs: input.entityRefs,
+		});
+		vi.spyOn(store, "claim").mockRejectedValue(
+			new TypeError("cannot read property of undefined"),
+		);
+
+		const { notification } = await processNotification(row.id, deps);
+
+		expect(notification?.status).toBe("failed");
+		expect(notification?.lastError).toBe(
+			"unexpected_error: TypeError: cannot read property of undefined",
+		);
+		expect(notification?.lastErrorRetryable).toBe(false);
+		// Log completo com id, tipo e refs.
+		expect(errorSpy).toHaveBeenCalledWith(
+			expect.stringContaining(`id=${row.id}`),
+			expect.any(TypeError),
+		);
+		errorSpy.mockRestore();
+	});
+
+	it("truncateMessage caps the stored message around 300 chars", () => {
+		const long = "x".repeat(1000);
+		const truncated = truncateMessage(long);
+		expect(truncated.length).toBeLessThanOrEqual(301);
+		expect(truncated).toMatch(/…$/);
+		expect(truncateMessage("short")).toBe("short");
 	});
 });

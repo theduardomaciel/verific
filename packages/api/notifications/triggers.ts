@@ -9,7 +9,11 @@ import {
 } from "@verific/drizzle/schema";
 
 import { scheduleAfterResponse } from "./registration-email";
-import { createBuildContext, getNotificationDefinition } from "./registry";
+import {
+	createBuildContext,
+	getNotificationDefinition,
+	InvalidEntityRefsError,
+} from "./registry";
 import {
 	enqueueNotifications,
 	processQueuedNotifications,
@@ -60,7 +64,22 @@ export async function dispatchNotifications(
 	// e-mail of the same activity.
 	const shared = createBuildContext();
 	if (ordered.length === 1) {
-		await sendNotification(ordered[0]!, { shared });
+		try {
+			await sendNotification(ordered[0]!, { shared });
+		} catch (err) {
+			// InvalidEntityRefsError (refs malformados) ou falha de insert:
+			// loga com contexto — nunca deixa a falha chegar ao usuário.
+			if (err instanceof InvalidEntityRefsError) {
+				console.error(
+					`[notifications] dispatch de ${err.notificationType} descartado: ${err.message}`,
+				);
+			} else {
+				console.error(
+					`[notifications] dispatch failed (type=${ordered[0]!.type}, to=${ordered[0]!.to}):`,
+					err,
+				);
+			}
+		}
 		return;
 	}
 	const enqueued = await enqueueNotifications(ordered);
