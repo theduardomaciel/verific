@@ -62,43 +62,54 @@ export default function MainNav({
 	};
 
 	return (
+		// Wrapper fixo: não rola, então os gradientes ficam parados.
+		// min-w-0 + flex-1 deixam ele ocupar só o espaço restante no desktop.
 		<div
-			ref={scrollContainerRef}
 			className={cn(
-				"scrollbar-none relative w-full overflow-x-auto scroll-smooth",
+				"relative w-full min-w-0 md:w-auto md:flex-1",
 				className,
 			)}
 			{...props}
 		>
-			<nav className="flex min-w-fit items-center justify-start gap-4">
-				{links.map((link) => {
-					const href = prefix + link.href;
-					const isActive = isLinkActive(href);
+			{/* Container rolável: apenas o conteúdo rola aqui dentro */}
+			<div
+				ref={scrollContainerRef}
+				className="px-container-h relative w-full scrollbar-none overflow-x-auto scroll-smooth"
+			>
+				<nav className="flex min-w-fit items-center justify-start gap-4">
+					{links.map((link) => {
+						const href = prefix + link.href;
+						const isActive = isLinkActive(href);
 
-					return (
-						<Button
-							key={href}
-							variant={
-								link.variant ??
-								(isActive ? "secondary" : "ghost")
-							}
-							asChild
-						>
-							<Link
-								className={cn(
-									"font-medium whitespace-nowrap",
-									link.className,
-								)}
-								href={href}
-								ref={isActive ? activeButtonRef : null}
-								aria-current={isActive ? "page" : undefined}
+						return (
+							<Button
+								key={href}
+								variant={
+									link.variant ??
+									(isActive ? "secondary" : "ghost")
+								}
+								asChild
 							>
-								{link.label}
-							</Link>
-						</Button>
-					);
-				})}
-			</nav>
+								<Link
+									className={cn(
+										"font-medium whitespace-nowrap",
+										link.className,
+									)}
+									href={href}
+									ref={isActive ? activeButtonRef : null}
+									aria-current={isActive ? "page" : undefined}
+								>
+									{link.label}
+								</Link>
+							</Button>
+						);
+					})}
+				</nav>
+			</div>
+
+			{/* Gradientes sobrepostos ao wrapper, fora da área de scroll */}
+			<div className="from-background pointer-events-none absolute top-0 left-0 h-full w-8 bg-linear-to-r to-transparent" />
+			<div className="from-background pointer-events-none absolute top-0 right-0 h-full w-8 bg-linear-to-l to-transparent" />
 		</div>
 	);
 }

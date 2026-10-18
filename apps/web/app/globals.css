@@ -63,6 +63,23 @@
 	--chart-5: oklch(0.38 0.14 265.52);
 }
 
+:root {
+	@media (width >= 64rem) {
+		/* 1024px */
+		--spacing-container-h: calc((100% - 60rem) / 2);
+	}
+
+	@media (width >= 80rem) {
+		/* 1280px */
+		--spacing-container-h: calc((100% - 72rem) / 2);
+	}
+
+	@media (width >= 96rem) {
+		/* 1536px */
+		--spacing-container-h: calc((100% - 92rem) / 2);
+	}
+}
+
 /* Utility class for removing scrollbars */
 .scrollbar-none {
 	scrollbar-width: none;
@@ -150,24 +167,6 @@
 .container-d {
 	width: 100%;
 	padding-inline: var(--spacing-container-h);
-
-	@media (width >=64rem
-
-		/* 1024px */) {
-		padding-inline: calc((100% - 60rem) / 2);
-	}
-
-	@media (width >=80rem
-
-		/* 1280px */) {
-		padding-inline: calc((100% - 72rem) / 2);
-	}
-
-	@media (width >=96rem
-
-		/* 1536px */) {
-		padding-inline: calc((100% - 92rem) / 2);
-	}
 }
 
 @layer base {

@@ -55,7 +55,8 @@ export function FormsContent() {
 
 	if (versionsQuery.isPending) {
 		return (
-			<div className="container-d py-container-v min-h-screen">
+			<div className="container-d flex min-h-screen flex-col gap-6">
+				<Skeleton className="h-9 w-full" />
 				<Skeleton className="h-96 w-full" />
 			</div>
 		);
