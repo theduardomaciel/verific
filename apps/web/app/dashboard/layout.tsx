@@ -21,7 +21,6 @@ const DASHBOARD_LINKS = [
 	{ href: "/activities", label: "Atividades" },
 	{ href: "/participants", label: "Participantes" },
 	{ href: "/emails", label: "E-mails" },
-	{ href: "/forms", label: "Formulários" },
 	{ href: "/settings", label: "Configurações" },
 ];
 

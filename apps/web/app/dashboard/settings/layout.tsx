@@ -6,12 +6,12 @@ const settingsLinks = [
 		label: "Geral",
 	},
 	{
-		href: "/settings/team",
-		label: "Equipe",
-	},
-	{
 		href: "/settings/preferences",
 		label: "Preferências",
+	},
+	{
+		href: "/settings/team",
+		label: "Equipe",
 	},
 	{
 		href: "/settings/profile-layout",
@@ -22,14 +22,8 @@ const settingsLinks = [
 		label: "Tema",
 	},
 	{
-		href: "/settings/security",
-		label: "Segurança",
-		disabled: true,
-	},
-	{
-		href: "/settings/accessibility",
-		label: "Acessibilidade",
-		disabled: true,
+		href: "/settings/forms",
+		label: "Formulários",
 	},
 	{
 		href: "/settings/notifications",
@@ -40,6 +34,7 @@ const settingsLinks = [
 import type { Metadata } from "next";
 export const metadata: Metadata = {
 	title: "Configurações",
+	description: "Configurações do projeto",
 };
 
 export default async function AccountSettingsLayout({

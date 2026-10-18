@@ -13,7 +13,7 @@ export default function FormsPage() {
 	return (
 		<Suspense
 			fallback={
-				<div className="container-d py-container-v min-h-screen">
+				<div className="container-d min-h-screen">
 					<Skeleton className="h-96 w-full" />
 				</div>
 			}

@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 // Icons
-import { Cloud, LifeBuoy, LogOut, Settings } from "lucide-react";
+import { Cloud, LifeBuoy, LogOut, UserIcon } from "lucide-react";
 
 // Types
 import type { User } from "@verific/auth";
@@ -67,25 +67,12 @@ export function UserNav({ user, showAccountActions }: Props) {
 					<>
 						<Link href="/account/settings">
 							<DropdownMenuItem>
-								<Settings className="mr-2 h-4 w-4" />
-								Configurações
+								<UserIcon className="mr-2 h-4 w-4" />
+								Meu Perfil
 								<DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
 							</DropdownMenuItem>
 						</Link>
-						<DropdownMenuGroup>
-							{/* <Link href="/account">
-								<DropdownMenuItem>
-									<FolderCog className="mr-2 h-4 w-4" />
-									Projetos
-									<DropdownMenuShortcut>⇧⌘A</DropdownMenuShortcut>
-								</DropdownMenuItem>
-							</Link> */}
-							{/* <DropdownMenuItem>
-								<Plus className="mr-2 h-4 w-4" />
-								Novo projeto
-								<DropdownMenuShortcut>⌘+T</DropdownMenuShortcut>
-							</DropdownMenuItem> */}
-						</DropdownMenuGroup>
+						<DropdownMenuGroup></DropdownMenuGroup>
 						<DropdownMenuSeparator />
 					</>
 				)}

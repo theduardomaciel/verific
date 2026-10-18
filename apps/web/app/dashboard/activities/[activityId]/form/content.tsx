@@ -9,11 +9,11 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { BuilderCard } from "@/app/dashboard/forms/components/builder-card";
-import { DeleteFieldDialog } from "@/app/dashboard/forms/components/dialog/delete-field-dialog";
-import { DeleteSectionDialog } from "@/app/dashboard/forms/components/dialog/delete-section-dialog";
-import { useFormsBuilder } from "@/app/dashboard/forms/hooks/use-forms-builder";
-import { FormPreview } from "@/app/dashboard/forms/preview";
+import { BuilderCard } from "@/app/dashboard/settings/forms/components/builder-card";
+import { DeleteFieldDialog } from "@/app/dashboard/settings/forms/components/dialog/delete-field-dialog";
+import { DeleteSectionDialog } from "@/app/dashboard/settings/forms/components/dialog/delete-section-dialog";
+import { useFormsBuilder } from "@/app/dashboard/settings/forms/hooks/use-forms-builder";
+import { FormPreview } from "@/app/dashboard/settings/forms/preview";
 import { trpc } from "@/lib/trpc/react";
 
 export function ActivityFormContent({ activityId }: { activityId: string }) {

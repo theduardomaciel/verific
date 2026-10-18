@@ -66,7 +66,7 @@ export function FormsContent() {
 		: 0;
 
 	return (
-		<div className="container-d py-container-v flex min-h-screen flex-col gap-6">
+		<div className="container-d flex min-h-screen flex-col gap-6">
 			<FormsHeader tab={tab} onTabChange={setTab} />
 
 			{tab === "answers" ? (

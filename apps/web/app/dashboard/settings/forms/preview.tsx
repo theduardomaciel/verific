@@ -141,7 +141,6 @@ export function FormPreview({
 		name: "answers",
 	}) ?? {}) as Record<string, unknown>;
 
-	// oxlint-disable-line react-hooks/exhaustive-deps -- watchedAnswers is a RHF watch() result that changes every render; adding it would defeat the memoization purpose.
 	const grouped = useMemo(() => {
 		if (!sectionsForVisibility.some((s) => s.visibilityRule)) {
 			return groupFieldsBySection(baseVisible, sections);
@@ -149,7 +148,6 @@ export function FormPreview({
 		const visible = filterVisibleFields(
 			baseVisible,
 			sectionsForVisibility,
-			// oxlint-disable-line react-hooks/exhaustive-deps -- watchedAnswers is a RHF watch() result that changes every render; adding it would defeat the memoization purpose.
 			watchedAnswers,
 		);
 		const ids = getVisibleSectionIds(

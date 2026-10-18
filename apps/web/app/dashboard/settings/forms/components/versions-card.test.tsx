@@ -8,9 +8,9 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { VersionsCard } from "@/app/dashboard/forms/components/versions-card";
+import { VersionsCard } from "@/app/dashboard/settings/forms/components/versions-card";
 
-import type { Version } from "@/app/dashboard/forms/types";
+import type { Version } from "@/app/dashboard/settings/forms/types";
 
 afterEach(cleanup);
 
