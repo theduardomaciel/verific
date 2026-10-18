@@ -23,6 +23,8 @@ import {
 	SuccessDialog,
 } from "@/components/forms/dialogs";
 
+import { removeMatchingItems } from "@/lib/trpc/optimistic";
+
 interface DeleteDialogProps {
 	children: React.ReactNode;
 	title: string;
@@ -137,29 +139,15 @@ export function ActivityDeleteDialog({
 	const mutation = trpc.deleteActivity.useMutation({
 		onSuccess: () => {
 			// Some da lista imediatamente (todas as páginas/filtros do
-			// evento já em cache) — o organizador que volta do diálogo não
-			// vê a atividade recém-excluída. O `invalidate` reconcilia com o
-			// servidor em seguida.
-			utils.getActivities.setQueriesData(
-				{ projectId },
-				{},
-				(previous) => {
-					if (
-						!previous ||
-						!previous.activities.some(
+			// evento já em cache); o `invalidate` reconcilia em seguida.
+			utils.getActivities.setQueriesData({ projectId }, {}, (previous) =>
+				previous
+					? removeMatchingItems(
+							previous,
+							"activities",
 							(activity) => activity.id === activityId,
 						)
-					) {
-						return previous;
-					}
-					return {
-						...previous,
-						activities: previous.activities.filter(
-							(activity) => activity.id !== activityId,
-						),
-						amount: Math.max(0, previous.amount - 1),
-					};
-				},
+					: previous,
 			);
 			void utils.getActivities.invalidate();
 			void utils.getDashboardStats.invalidate();

@@ -25,6 +25,7 @@ import {
 	revalidateParticipantEnrollment,
 	revalidateParticipants,
 } from "@/app/actions";
+import { removeMatchingItems } from "@/lib/trpc/optimistic";
 import { trpc } from "@/lib/trpc/react";
 
 interface RemoveParticipantDialogProps {
@@ -74,28 +75,19 @@ export function RemoveParticipantDialog({
 				participantId,
 			});
 			// Expulsar do evento some com a linha da lista de participantes
-			// (todas as páginas/filtros já em cache) antes do `back()` — a
-			// lista remontada não mostra mais o participante removido.
+			// (todas as páginas/filtros já em cache) antes do `back()`.
 			utils.getParticipants.setQueriesData(
 				{ projectId },
 				{},
-				(previous) => {
-					if (
-						!previous ||
-						!previous.participants.some(
-							(participant) => participant.id === participantId,
-						)
-					) {
-						return previous;
-					}
-					return {
-						...previous,
-						participants: previous.participants.filter(
-							(participant) => participant.id !== participantId,
-						),
-						amount: Math.max(0, previous.amount - 1),
-					};
-				},
+				(previous) =>
+					previous
+						? removeMatchingItems(
+								previous,
+								"participants",
+								(participant) =>
+									participant.id === participantId,
+							)
+						: previous,
 			);
 			void utils.getParticipants.invalidate();
 			await revalidateParticipants();
@@ -117,9 +109,9 @@ export function RemoveParticipantDialog({
 					<DialogTitle>Remover Participante</DialogTitle>
 					<DialogDescription className="flex flex-col gap-4">
 						Ao remover este participante, ele perderá acesso ao{" "}
-						{activityId ? "conteúdo da atividade" : "evento"} e não
-						será notificado. <br /> Considere enviar um e-mail para
-						o participante antes de prosseguir.
+						{activityId ? "conteúdo da atividade" : "evento"} e será
+						notificado por e-mail, caso essa notificação esteja
+						habilitada nas configurações do evento.
 					</DialogDescription>
 					<div className="flex flex-col items-start justify-center gap-4">
 						<strong className="text-sm font-semibold">
