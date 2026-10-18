@@ -45,7 +45,10 @@ export function ParticipantsGraph({
 	return (
 		<ChartContainer
 			config={chartConfig}
-			className={cn("h-full min-h-[200px] w-full", className)}
+			className={cn(
+				"h-full min-h-[260px] w-full sm:min-h-[200px]",
+				className,
+			)}
 		>
 			<AreaChart
 				accessibilityLayer
