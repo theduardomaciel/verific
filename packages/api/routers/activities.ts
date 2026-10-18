@@ -1674,46 +1674,23 @@ export const activitiesRouter = createTRPCRouter({
 			const lastHour = new Date(now.getTime() - 60 * 60 * 1000);
 			const lastDay = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-			// Total participants (role = 'participant')
+			// Inscritos no evento (nível de inscrição, independente de
+			// matrícula em atividades — `submitAnswers` cria só o `participant`)
 			const totalParticipantsResult = await db
-				.select({
-					count: countDistinct(participantOnActivity.participantId),
-				})
-				.from(participantOnActivity)
-				.innerJoin(
-					activity,
-					eq(participantOnActivity.activityId, activity.id),
-				)
-				.where(
-					and(
-						eq(activity.projectId, projectId),
-						eq(participantOnActivity.role, "participant"),
-						isNull(activity.cancelledAt),
-					),
-				);
+				.select({ count: count() })
+				.from(participant)
+				.where(eq(participant.projectId, projectId));
 
 			const totalParticipants = totalParticipantsResult[0]?.count ?? 0;
 
-			// Participants in last hour
+			// Signups in the last hour
 			const participantsInLastHourResult = await db
-				.select({
-					count: countDistinct(participantOnActivity.participantId),
-				})
-				.from(participantOnActivity)
-				.innerJoin(
-					activity,
-					eq(participantOnActivity.activityId, activity.id),
-				)
-				.innerJoin(
-					participant,
-					eq(participantOnActivity.participantId, participant.id),
-				)
+				.select({ count: count() })
+				.from(participant)
 				.where(
 					and(
-						eq(activity.projectId, projectId),
-						eq(participantOnActivity.role, "participant"),
+						eq(participant.projectId, projectId),
 						gte(participant.joinedAt, lastHour),
-						isNull(activity.cancelledAt),
 					),
 				);
 
@@ -1733,26 +1710,14 @@ export const activitiesRouter = createTRPCRouter({
 
 			const totalWorkload = totalWorkloadResult[0]?.sum ?? 0;
 
-			// Active participants in last 24h
+			// Signups in the last 24h (event-level)
 			const activeParticipantsResult = await db
-				.select({
-					count: countDistinct(participantOnActivity.participantId),
-				})
-				.from(participantOnActivity)
-				.innerJoin(
-					activity,
-					eq(participantOnActivity.activityId, activity.id),
-				)
-				.innerJoin(
-					participant,
-					eq(participantOnActivity.participantId, participant.id),
-				)
+				.select({ count: count() })
+				.from(participant)
 				.where(
 					and(
-						eq(activity.projectId, projectId),
-						eq(participantOnActivity.role, "participant"),
+						eq(participant.projectId, projectId),
 						gte(participant.joinedAt, lastDay),
-						isNull(activity.cancelledAt),
 					),
 				);
 
@@ -1824,23 +1789,13 @@ export const activitiesRouter = createTRPCRouter({
 			let graphDataQuery = await db
 				.select({
 					date: sql<string>`date(${participant.joinedAt})`,
-					count: countDistinct(participantOnActivity.participantId),
+					count: count(),
 				})
-				.from(participantOnActivity)
-				.innerJoin(
-					activity,
-					eq(participantOnActivity.activityId, activity.id),
-				)
-				.innerJoin(
-					participant,
-					eq(participantOnActivity.participantId, participant.id),
-				)
+				.from(participant)
 				.where(
 					and(
-						eq(activity.projectId, projectId),
-						eq(participantOnActivity.role, "participant"),
+						eq(participant.projectId, projectId),
 						gte(participant.joinedAt, sevenDaysAgo),
-						isNull(activity.cancelledAt),
 					),
 				)
 				.groupBy(sql`date(${participant.joinedAt})`)
@@ -1872,25 +1827,13 @@ export const activitiesRouter = createTRPCRouter({
 				const hoursDataQuery = await db
 					.select({
 						hour: sql<string>`date_trunc('hour', ${participant.joinedAt})`,
-						count: countDistinct(
-							participantOnActivity.participantId,
-						),
+						count: count(),
 					})
-					.from(participantOnActivity)
-					.innerJoin(
-						activity,
-						eq(participantOnActivity.activityId, activity.id),
-					)
-					.innerJoin(
-						participant,
-						eq(participantOnActivity.participantId, participant.id),
-					)
+					.from(participant)
 					.where(
 						and(
-							eq(activity.projectId, projectId),
-							eq(participantOnActivity.role, "participant"),
+							eq(participant.projectId, projectId),
 							gte(participant.joinedAt, twentyFourHoursAgo),
-							isNull(activity.cancelledAt),
 						),
 					)
 					.groupBy(sql`date_trunc('hour', ${participant.joinedAt})`)
@@ -2156,29 +2099,18 @@ export const activitiesRouter = createTRPCRouter({
 				}
 			} else {
 				// Default: event registrations per bucket, mirroring the
-				// getDashboardStats graph (activity-enrolled participants only).
+				// getDashboardStats graph (signup-level, no activity joins —
+				// `submitAnswers` creates only the `participant` row).
 				const trunc = truncate(participant.joinedAt);
 				const rows = await db
 					.select({
 						bucket: trunc,
-						count: countDistinct(
-							participantOnActivity.participantId,
-						),
+						count: count(),
 					})
-					.from(participantOnActivity)
-					.innerJoin(
-						activity,
-						eq(participantOnActivity.activityId, activity.id),
-					)
-					.innerJoin(
-						participant,
-						eq(participantOnActivity.participantId, participant.id),
-					)
+					.from(participant)
 					.where(
 						and(
-							eq(activity.projectId, projectId),
-							eq(participantOnActivity.role, "participant"),
-							isNull(activity.cancelledAt),
+							eq(participant.projectId, projectId),
 							...timeFilters,
 						),
 					)
