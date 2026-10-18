@@ -720,7 +720,7 @@ export const notificationRegistry = {
 		defaultEnabled: true,
 		description:
 			"Confirmação de inscrição em uma atividade, com data, horário e local.",
-		entityRefs: ["activityId", "participantId"],
+		entityRefs: ["activityId", "participantId", "subscribedAt"],
 		idempotencyKeyFormat:
 			"activity_enrollment_confirmed:{activityId}:{participantId}:{subscribedAt}",
 		buildIdempotencyKey: (refs) =>

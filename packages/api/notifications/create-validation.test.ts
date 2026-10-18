@@ -110,6 +110,19 @@ describe("valid creation for every registered type", () => {
 	);
 
 	it.each([...NOTIFICATION_TYPE_KEYS])(
+		"%s builds its idempotency key from the refs it declares",
+		(type) => {
+			// Invariante: todo ref lido por buildIdempotencyKey é declarado
+			// em entityRefs. Sem isto, validateEntityRefs rejeitaria em
+			// produção refs que o próprio key builder exige.
+			const refs = validRefsFor(type);
+			expect(() =>
+				notificationRegistry[type].buildIdempotencyKey(refs),
+			).not.toThrow();
+		},
+	);
+
+	it.each([...NOTIFICATION_TYPE_KEYS])(
 		"enqueueNotifications creates a row with valid refs for %s",
 		async (type) => {
 			const { deps } = setup();
