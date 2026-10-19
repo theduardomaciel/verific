@@ -38,6 +38,9 @@ interface ListProps {
 	className?: string;
 	activityId: string;
 	projectUrl: string;
+	/** Id do participante do usuário logado nesta atividade (esconde a
+	 * remoção da própria linha). */
+	currentParticipantId?: string | null;
 	hasActivity?: boolean;
 	participants: RouterOutput["getActivity"]["activity"]["participants"];
 	sessions?: RouterOutput["getActivity"]["activity"]["sessions"];
@@ -52,6 +55,7 @@ function List({
 	participants,
 	sessions,
 	projectUrl,
+	currentParticipantId,
 	className,
 	emptyMessage,
 }: ListProps) {
@@ -81,6 +85,7 @@ function List({
 					sessions={sessions}
 					showJoinedAt={hasActivity}
 					url={projectUrl}
+					currentParticipantId={currentParticipantId}
 				/>
 			))}
 		</ul>

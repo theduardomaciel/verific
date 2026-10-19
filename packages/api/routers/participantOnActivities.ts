@@ -311,10 +311,10 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 				});
 			}
 
-			// Quem sai por conta própria recebe "cancelada"; quem é removido
-			// pela organização recebe "removida" (com motivo opcional).
-			const isSelfCancellation =
-				isParticipant && !isOwner && !isModerator;
+			// Quem sai por conta própria recebe "cancelada" (inclusive
+			// organizadores que deixam de monitorar a atividade); quem é
+			// removido pela organização recebe "removida" (com motivo).
+			const isSelfCancellation = isParticipant;
 			const contacts = await loadNotificationRecipients([participantId]);
 			const recipientEmail = contacts.get(participantId);
 			const eventId = activityData.project.id;

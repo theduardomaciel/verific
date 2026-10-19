@@ -22,6 +22,7 @@ import { RemoveParticipantDialog } from "../dialogs/remove-participant";
 // Components
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Button } from "../ui/button";
+import { ParticipantQuitButton } from "./participant-quit-button";
 
 type ActivityParticipant =
 	RouterOutput["getActivity"]["activity"]["participants"][number];
@@ -37,6 +38,9 @@ interface BaseProps {
 interface ActivityParticipantCardProps extends BaseProps {
 	participant: ActivityParticipant;
 	sessions?: RouterOutput["getActivity"]["activity"]["sessions"];
+	/** Id do participante do usuário logado nesta atividade. Na própria
+	 * linha, em vez de remover, oferecemos a saída da atividade. */
+	currentParticipantId?: string | null;
 }
 
 interface GeneralParticipantCardProps extends BaseProps {
@@ -78,6 +82,7 @@ export const ParticipantListItem = {
 		participant,
 		sessions,
 		url,
+		currentParticipantId,
 	}: ActivityParticipantCardProps) {
 		const attendances = participant.sessionAttendances ?? [];
 		const attendedSessionIds = new Set(attendances.map((a) => a.sessionId));
@@ -159,20 +164,29 @@ export const ParticipantListItem = {
 								</div>
 							)}
 						</div>
-						<RemoveParticipantDialog
-							participantId={participant.id}
-							activityId={participant.activityId}
-							projectUrl={url}
-							userEmail={participant.user.email}
-						>
-							<Button variant={"ghost"} size={"icon"}>
-								{participant.role === "participant" ? (
-									<Ban className="text-foreground h-4 w-4" />
-								) : (
-									<CircleMinus className="text-foreground h-4 w-4" />
-								)}
-							</Button>
-						</RemoveParticipantDialog>
+						{participant.id === currentParticipantId ? (
+							<ParticipantQuitButton
+								activityId={participant.activityId}
+								userId={participant.userId}
+								participantId={participant.id}
+								projectUrl={url}
+							/>
+						) : (
+							<RemoveParticipantDialog
+								participantId={participant.id}
+								activityId={participant.activityId}
+								projectUrl={url}
+								userEmail={participant.user.email}
+							>
+								<Button variant={"ghost"} size={"icon"}>
+									{participant.role === "participant" ? (
+										<Ban className="text-foreground h-4 w-4" />
+									) : (
+										<CircleMinus className="text-foreground h-4 w-4" />
+									)}
+								</Button>
+							</RemoveParticipantDialog>
+						)}
 					</div>
 				</li>
 			</>
