@@ -37,6 +37,7 @@ function Title({ children, className }: Props) {
 interface ListProps {
 	className?: string;
 	activityId: string;
+	projectUrl: string;
 	hasActivity?: boolean;
 	participants: RouterOutput["getActivity"]["activity"]["participants"];
 	sessions?: RouterOutput["getActivity"]["activity"]["sessions"];
@@ -50,6 +51,7 @@ function List({
 	hasActivity = false,
 	participants,
 	sessions,
+	projectUrl,
 	className,
 	emptyMessage,
 }: ListProps) {
@@ -78,7 +80,7 @@ function List({
 					participant={participant}
 					sessions={sessions}
 					showJoinedAt={hasActivity}
-					url={`/dashboard/participants`}
+					url={projectUrl}
 				/>
 			))}
 		</ul>

@@ -72,6 +72,8 @@ interface Props {
 	projectId: string;
 	endDate?: Date;
 	isEditing?: boolean;
+	/** Disables the submit button while a save is in progress. */
+	isPending?: boolean;
 	/**
 	 * Your "Adicionar formulário" button, or the attached-form summary row
 	 * (name + field count + edit/remove). Falls back to a disabled placeholder.
@@ -628,6 +630,7 @@ export function MutateActivityFormContent({
 	form,
 	projectId,
 	isEditing,
+	isPending,
 	registrationFormAction,
 	onSecondarySubmit,
 }: Props) {
@@ -680,6 +683,7 @@ export function MutateActivityFormContent({
 						key={isEditing ? "edit" : "create"}
 						size="lg"
 						variant="default"
+						disabled={isPending}
 						options={[
 							{
 								value: "save",

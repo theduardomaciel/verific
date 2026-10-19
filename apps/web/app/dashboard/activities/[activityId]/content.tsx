@@ -276,6 +276,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 							participants={participants}
 							sessions={activity.sessions}
 							activityId={activity.id}
+							projectUrl={activity.project.url}
 						/>
 					</ParticipantsList.Holder>
 					{participants && pageCount > 1 && (
@@ -292,6 +293,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 						participants={monitors}
 						sessions={activity.sessions}
 						activityId={activity.id}
+						projectUrl={activity.project.url}
 						emptyMessage={{
 							title: "Nenhum monitor encontrado",
 							description:

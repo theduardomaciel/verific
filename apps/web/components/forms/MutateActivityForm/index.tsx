@@ -56,6 +56,7 @@ export default function MutateActivityForm({
 	const [submittedActivityId, setSubmittedActivityId] = useState<string>();
 	const configureAfterSave = useRef(false);
 	const shouldResetAfterHide = useRef(false);
+	const isSubmitting = useRef(false);
 	const router = useRouter();
 
 	// 1. Define your form.
@@ -128,6 +129,10 @@ export default function MutateActivityForm({
 
 	// 2. Define a submit handler.
 	async function onSubmit(data: MutateActivityFormSchema) {
+		// Guard against double submission (double-click, Enter + click),
+		// which would create duplicate activities.
+		if (isSubmitting.current) return;
+		isSubmitting.current = true;
 		setCurrentState("submitting");
 
 		const { sessions, ...rest } = data;
@@ -184,6 +189,8 @@ export default function MutateActivityForm({
 		} catch (error) {
 			console.error(error);
 			setCurrentState("error");
+		} finally {
+			isSubmitting.current = false;
 		}
 	}
 
@@ -204,6 +211,7 @@ export default function MutateActivityForm({
 					endDate={endDate}
 					form={form}
 					isEditing={!!activity}
+					isPending={currentState === "submitting"}
 					registrationFormAction={registrationFormAction}
 					onSecondarySubmit={
 						enableConfigureAfterSave && !activity

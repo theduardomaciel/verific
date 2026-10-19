@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
-	DialogClose,
 	DialogContent,
 	DialogDescription,
 	DialogFooter,
@@ -17,6 +16,7 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 import { useDashboard } from "@/components/dashboard/dashboard-context";
 
@@ -44,6 +44,7 @@ export function RemoveParticipantDialog({
 	userEmail,
 }: RemoveParticipantDialogProps) {
 	const [open, setOpen] = useState(false);
+	const [reason, setReason] = useState("");
 	const userRouter = useRouter();
 	const utils = trpc.useUtils();
 	const { projectId } = useDashboard();
@@ -52,6 +53,10 @@ export function RemoveParticipantDialog({
 		trpc.deleteParticipantFromActivity.useMutation();
 	const removeFromProjectMutation = trpc.removeParticipant.useMutation();
 
+	const isPending =
+		removeFromActivityMutation.isPending ||
+		removeFromProjectMutation.isPending;
+
 	const handleRemoveFromActivity = async () => {
 		if (!activityId) return;
 		try {
@@ -59,7 +64,36 @@ export function RemoveParticipantDialog({
 				projectUrl,
 				activityId,
 				participantId,
+				reason: reason.trim() || undefined,
 			});
+			// Some com a linha da lista da atividade (todas as páginas já em
+			// cache) antes do refetch disparado pelo `invalidate()`.
+			utils.getActivity.setQueriesData({ activityId }, {}, (previous) => {
+				if (
+					!previous ||
+					typeof previous.participantsAmount !== "number"
+				) {
+					return previous;
+				}
+				const participants = previous.activity.participants.filter(
+					(participant) => participant.id !== participantId,
+				);
+				if (
+					participants.length ===
+					previous.activity.participants.length
+				) {
+					return previous;
+				}
+				return {
+					...previous,
+					activity: { ...previous.activity, participants },
+					participantsAmount: Math.max(
+						0,
+						previous.participantsAmount - 1,
+					),
+				};
+			});
+			void utils.getActivity.invalidate();
 			await revalidateParticipantActivities(participantId);
 			toast.success("Participante removido da atividade");
 			setOpen(false);
@@ -73,6 +107,7 @@ export function RemoveParticipantDialog({
 		try {
 			await removeFromProjectMutation.mutateAsync({
 				participantId,
+				reason: reason.trim() || undefined,
 			});
 			// Expulsar do evento some com a linha da lista de participantes
 			// (todas as páginas/filtros já em cache) antes do `back()`.
@@ -101,7 +136,15 @@ export function RemoveParticipantDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={setOpen}>
+		<Dialog
+			open={open}
+			onOpenChange={(next) => {
+				// Não fecha (Cancelar, ESC ou clique fora) durante a remoção.
+				if (!next && isPending) return;
+				setOpen(next);
+				if (!next) setReason("");
+			}}
+		>
 			<DialogTrigger asChild>{children}</DialogTrigger>
 			<DialogContent>
 				<DialogHeader>
@@ -124,21 +167,44 @@ export function RemoveParticipantDialog({
 							Tem certeza de que deseja continuar?
 						</p>
 					</div>
+					<div className="flex flex-col gap-2">
+						<label
+							htmlFor="remove-participant-reason"
+							className="text-sm font-semibold"
+						>
+							Motivo (opcional)
+						</label>
+						<Textarea
+							id="remove-participant-reason"
+							placeholder="Ex.: Conflito de horário com outra atividade."
+							value={reason}
+							onChange={(e) => setReason(e.target.value)}
+							maxLength={500}
+							rows={3}
+						/>
+						<p className="text-muted-foreground text-right text-xs">
+							{reason.length}/500
+						</p>
+					</div>
 				</DialogHeader>
 				<DialogFooter className="flex gap-2">
-					<DialogClose asChild>
-						<Button
-							disabled={removeFromProjectMutation.isPending}
-							variant="outline"
-						>
-							Cancelar
-						</Button>
-					</DialogClose>
+					<Button
+						type="button"
+						variant="outline"
+						disabled={isPending}
+						onClick={() => {
+							if (isPending) return;
+							setReason("");
+							setOpen(false);
+						}}
+					>
+						Cancelar
+					</Button>
 					{activityId ? (
 						<Button
 							variant="destructive"
 							onClick={() => void handleRemoveFromActivity()}
-							disabled={removeFromActivityMutation.isPending}
+							disabled={isPending}
 						>
 							{removeFromActivityMutation.isPending
 								? "Removendo..."
@@ -148,7 +214,7 @@ export function RemoveParticipantDialog({
 						<Button
 							variant="destructive"
 							onClick={() => void handleRemoveFromProject()}
-							disabled={removeFromProjectMutation.isPending}
+							disabled={isPending}
 						>
 							{removeFromProjectMutation.isPending
 								? "Removendo..."
