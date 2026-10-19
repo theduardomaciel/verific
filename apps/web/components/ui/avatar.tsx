@@ -24,12 +24,17 @@ function Avatar({
 
 function AvatarImage({
 	className,
+	src,
 	...props
 }: React.ComponentProps<typeof AvatarPrimitive.Image>) {
+	// Sem `src` válido não renderizamos a imagem: um `src=""` faz o
+	// navegador recarregar a própria página como imagem (e o React avisa).
+	if (!src) return null;
 	return (
 		<AvatarPrimitive.Image
 			data-slot="avatar-image"
 			className={cn("aspect-square size-full object-cover", className)}
+			src={src}
 			{...props}
 		/>
 	);
