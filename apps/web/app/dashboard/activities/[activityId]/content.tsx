@@ -8,6 +8,7 @@ import {
 	Calendar,
 	Clock,
 	Edit,
+	ClipboardList,
 	Megaphone,
 	MapPin,
 	Share2,
@@ -189,6 +190,21 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 								<Share2 size={20} />
 							</Button>
 						</ShareDialog>
+						<Button
+							asChild
+							size={"lg"}
+							variant={"outline"}
+							className="h-10 min-w-10"
+						>
+							<Link
+								href={`/dashboard/activities/${activityId}/form`}
+								prefetch={false}
+								className="flex-1"
+							>
+								<ClipboardList size={20} />
+								Formulário
+							</Link>
+						</Button>
 						<Button
 							asChild
 							size={"lg"}
