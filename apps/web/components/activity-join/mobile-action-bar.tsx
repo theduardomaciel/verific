@@ -46,8 +46,6 @@ export function MobileActionBar({
 		return () => observer.disconnect();
 	}, [cardId]);
 
-	if (hidden || cardInView) return null;
-
 	function goToForm(): void {
 		const reduceMotion = window.matchMedia(
 			"(prefers-reduced-motion: reduce)",
