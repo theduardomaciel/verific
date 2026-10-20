@@ -73,10 +73,12 @@ export function MobileActionBar({
 			aria-hidden={!visible}
 			className={cn(
 				"bg-background/95 fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur lg:hidden",
-				// visibility segura o elemento na árvore até o fim da
-				// transição: deslizar para dentro e para fora some só no
-				// fim do movimento, e oculto já sai do fluxo de foco.
-				"motion-safe:transition-[visibility,transform] motion-safe:duration-300",
+				// translate (não transform): é a propriedade que o
+				// translate-y-* do Tailwind v4 gera. visibility segura o
+				// elemento na árvore até o fim da transição: deslizar para
+				// dentro e para fora some só no fim do movimento, e oculto
+				// já sai do fluxo de foco.
+				"motion-safe:transition-[visibility,translate] motion-safe:duration-300",
 				visible
 					? "visible translate-y-0"
 					: "invisible translate-y-full",
