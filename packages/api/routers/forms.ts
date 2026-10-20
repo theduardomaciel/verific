@@ -20,6 +20,7 @@ import {
 	formSection,
 	formVersion,
 	participant,
+	participantOnActivity,
 	project,
 	speaker,
 	user,
@@ -1941,6 +1942,7 @@ export const formsRouter = createTRPCRouter({
 		.input(
 			z.object({
 				projectId: z.uuid(),
+				activityId: z.uuid().optional(),
 				page: z.coerce.number().default(1),
 				pageSize: z.coerce.number().default(10),
 				query: z.string().optional(),
@@ -1948,10 +1950,18 @@ export const formsRouter = createTRPCRouter({
 		)
 		.query(async ({ input, ctx }) => {
 			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			if (input.activityId) {
+				await requireActivityInProject(
+					input.activityId,
+					input.projectId,
+				);
+			}
 			const version = await db.query.formVersion.findFirst({
 				where: and(
 					eq(formVersion.projectId, input.projectId),
-					isNull(formVersion.activityId),
+					input.activityId
+						? eq(formVersion.activityId, input.activityId)
+						: isNull(formVersion.activityId),
 					eq(formVersion.isPublished, true),
 				),
 				orderBy: desc(formVersion.version),
@@ -1969,6 +1979,24 @@ export const formsRouter = createTRPCRouter({
 			const page = Math.max(1, input.page);
 			const pageSize = Math.min(50, Math.max(1, input.pageSize));
 			const whereClauses = [eq(participant.projectId, input.projectId)];
+			if (input.activityId) {
+				const enrolled = await db
+					.select({ id: participantOnActivity.participantId })
+					.from(participantOnActivity)
+					.where(
+						eq(participantOnActivity.activityId, input.activityId),
+					);
+				const enrolledIds = enrolled.map((e) => e.id);
+				if (enrolledIds.length === 0) {
+					return {
+						version,
+						fields,
+						participants: [],
+						pageCount: 0,
+					};
+				}
+				whereClauses.push(inArray(participant.id, enrolledIds));
+			}
 			if (input.query) {
 				whereClauses.push(
 					or(
@@ -2026,13 +2054,26 @@ export const formsRouter = createTRPCRouter({
 		}),
 
 	exportAnswers: protectedProcedure
-		.input(z.object({ projectId: z.uuid() }))
+		.input(
+			z.object({
+				projectId: z.uuid(),
+				activityId: z.uuid().optional(),
+			}),
+		)
 		.query(async ({ input, ctx }) => {
 			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			if (input.activityId) {
+				await requireActivityInProject(
+					input.activityId,
+					input.projectId,
+				);
+			}
 			const version = await db.query.formVersion.findFirst({
 				where: and(
 					eq(formVersion.projectId, input.projectId),
-					isNull(formVersion.activityId),
+					input.activityId
+						? eq(formVersion.activityId, input.activityId)
+						: isNull(formVersion.activityId),
 					eq(formVersion.isPublished, true),
 				),
 				orderBy: desc(formVersion.version),
@@ -2046,6 +2087,33 @@ export const formsRouter = createTRPCRouter({
 						orderBy: asc(formField.order),
 					})
 				: [];
+			let participantWhere = eq(participant.projectId, input.projectId);
+			if (input.activityId) {
+				const enrolled = await db
+					.select({ id: participantOnActivity.participantId })
+					.from(participantOnActivity)
+					.where(
+						eq(participantOnActivity.activityId, input.activityId),
+					);
+				const enrolledIds = enrolled.map((e) => e.id);
+				if (enrolledIds.length === 0) {
+					return {
+						version: version
+							? { id: version.id, version: version.version }
+							: null,
+						fields: fields.map((f) => ({
+							key: f.key,
+							label: f.label,
+							type: f.type,
+						})),
+						rows: [],
+					};
+				}
+				participantWhere = and(
+					eq(participant.projectId, input.projectId),
+					inArray(participant.id, enrolledIds),
+				)!;
+			}
 			const participants = await db
 				.select({
 					id: participant.id,
@@ -2055,7 +2123,7 @@ export const formsRouter = createTRPCRouter({
 				})
 				.from(participant)
 				.leftJoin(user, eq(participant.userId, user.id))
-				.where(eq(participant.projectId, input.projectId))
+				.where(participantWhere)
 				.orderBy(asc(participant.joinedAt))
 				.limit(5000);
 			const ids = participants.map((p) => p.id);

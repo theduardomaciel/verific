@@ -65,6 +65,8 @@ interface BuilderCardProps {
 	listRef: RefObject<HTMLDivElement | null>;
 	isDraggingRef: RefObject<boolean>;
 	isPublishing: boolean;
+	disablePublish?: boolean;
+	showLockedNameField?: boolean;
 	upsertSection: SectionMutation;
 	onPublish: () => void;
 	onPersistOrder: (
@@ -500,6 +502,8 @@ export function BuilderCard({
 	listRef,
 	isDraggingRef,
 	isPublishing,
+	disablePublish,
+	showLockedNameField = true,
 	upsertSection,
 	onPublish,
 	onPersistOrder,
@@ -794,7 +798,14 @@ export function BuilderCard({
 						<Button
 							size="sm"
 							onClick={onPublish}
-							disabled={isPublishing || isPublished}
+							disabled={
+								isPublishing || isPublished || !!disablePublish
+							}
+							title={
+								disablePublish
+									? "Sem alterações em relação à versão publicada."
+									: undefined
+							}
 						>
 							Publicar
 						</Button>
@@ -823,26 +834,30 @@ export function BuilderCard({
 				</div>
 			</CardHeader>
 			<CardContent className="flex flex-col gap-3">
-				<div className="bg-muted/40 flex flex-col gap-3 rounded-lg border border-dashed p-3 md:flex-row md:items-center md:justify-between">
-					<div className="flex min-w-0 flex-1 items-start gap-2">
-						<span
-							title="Campo fixo do sistema"
-							className="text-muted-foreground mt-0.5 shrink-0 rounded p-1"
-						>
-							<Lock className="h-5 w-5" />
-						</span>
-						<div className="min-w-0 flex-1">
-							<div className="flex flex-wrap items-center gap-2 font-semibold">
-								<span className="truncate">Nome completo</span>
-								<Badge>Obrigatório</Badge>
-								<Badge variant="outline">Fixo</Badge>
-							</div>
-							<div className="text-muted-foreground mt-1 truncate text-xs">
-								Coletado automaticamente em toda inscrição
+				{showLockedNameField && (
+					<div className="bg-muted/40 flex flex-col gap-3 rounded-lg border border-dashed p-3 md:flex-row md:items-center md:justify-between">
+						<div className="flex min-w-0 flex-1 items-start gap-2">
+							<span
+								title="Campo fixo do sistema"
+								className="text-muted-foreground mt-0.5 shrink-0 rounded p-1"
+							>
+								<Lock className="h-5 w-5" />
+							</span>
+							<div className="min-w-0 flex-1">
+								<div className="flex flex-wrap items-center gap-2 font-semibold">
+									<span className="truncate">
+										Nome completo
+									</span>
+									<Badge>Obrigatório</Badge>
+									<Badge variant="outline">Fixo</Badge>
+								</div>
+								<div className="text-muted-foreground mt-1 truncate text-xs">
+									Coletado automaticamente em toda inscrição
+								</div>
 							</div>
 						</div>
 					</div>
-				</div>
+				)}
 				{body}
 			</CardContent>
 		</Card>

@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
+import { AnswersPanel } from "@/app/dashboard/settings/forms/components/answers-panel";
 import { BuilderCard } from "@/app/dashboard/settings/forms/components/builder-card";
 import { DeleteFieldDialog } from "@/app/dashboard/settings/forms/components/dialog/delete-field-dialog";
 import { DeleteSectionDialog } from "@/app/dashboard/settings/forms/components/dialog/delete-section-dialog";
@@ -21,6 +22,9 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 	// Version scoping (list + selection) is managed here for the activity.
 	const builder = useFormsBuilder({ activityId });
 	const {
+		tab,
+		setTab,
+		versions,
 		selectedId,
 		setSelectedId,
 		fields,
@@ -45,8 +49,62 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 		versionQuery,
 	} = builder;
 
+	const publishedBaseline = versions.find(
+		(v) => v.isPublished && v.id !== selectedId,
+	);
+	const baselineQuery = trpc.getVersion.useQuery(
+		{ versionId: publishedBaseline?.id ?? "" },
+		{ enabled: !!publishedBaseline },
+	);
+	const baselineFields = baselineQuery.data?.fields ?? [];
+	const baselineSections = baselineQuery.data?.sections ?? [];
+
+	function sectionOrderMap(secs: typeof sections) {
+		const m = new Map<string, number>();
+		[...secs]
+			.sort((a, b) => a.order - b.order)
+			.forEach((s, i) => m.set(s.id, i));
+		return m;
+	}
+	function normalizeForm(secs: typeof sections, flds: typeof fields) {
+		const som = sectionOrderMap(secs);
+		const secsNorm = [...secs]
+			.sort((a, b) => a.order - b.order)
+			.map((s) => ({
+				title: s.title,
+				order: s.order,
+				visibilityRule: s.visibilityRule ?? null,
+			}));
+		const fldsNorm = [...flds]
+			.sort((a, b) => a.order - b.order)
+			.map((f) => ({
+				key: f.key,
+				label: f.label,
+				type: f.type,
+				helpText: f.helpText ?? null,
+				required: f.required,
+				order: f.order,
+				sectionOrder: f.sectionId
+					? (som.get(f.sectionId) ?? null)
+					: null,
+				halfWidth: f.halfWidth,
+				options: f.options ?? null,
+				allowOther: f.allowOther ?? false,
+				validation: f.validation ?? null,
+				isVisible: f.isVisible,
+				editableAfterSignup: f.editableAfterSignup,
+				isActive: f.isActive,
+			}));
+		return JSON.stringify({ secs: secsNorm, flds: fldsNorm });
+	}
+	const hasChangesFromBaseline =
+		!publishedBaseline ||
+		!baselineQuery.data ||
+		normalizeForm(sections, fields) !==
+			normalizeForm(baselineSections, baselineFields);
+	const disablePublish = !!publishedBaseline && !hasChangesFromBaseline;
+
 	const utils = trpc.useUtils();
-	const [showPreview, setShowPreview] = useState(false);
 	const [versionId, setVersionId] = useState<string | null>(null);
 	const ensureRef = useRef(false);
 	const ensureVersion = trpc.getOrCreateEditableActivityForm.useMutation();
@@ -115,13 +173,28 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 						Voltar para a atividade
 					</Link>
 				</Button>
-				<Button
-					variant="outline"
-					onClick={() => setShowPreview((v) => !v)}
-				>
-					<Eye className="mr-2 h-4 w-4" />
-					{showPreview ? "Voltar ao editor" : "Pré-visualizar"}
-				</Button>
+				<div className="flex gap-2">
+					<Button
+						variant={tab === "builder" ? "default" : "outline"}
+						onClick={() => setTab("builder")}
+					>
+						<Pencil className="mr-2 h-4 w-4" />
+						Editor
+					</Button>
+					<Button
+						variant={tab === "preview" ? "default" : "outline"}
+						onClick={() => setTab("preview")}
+					>
+						<Eye className="mr-2 h-4 w-4" />
+						Pré-visualizar
+					</Button>
+					<Button
+						variant={tab === "answers" ? "default" : "outline"}
+						onClick={() => setTab("answers")}
+					>
+						Respostas
+					</Button>
+				</div>
 			</div>
 
 			<div>
@@ -134,11 +207,16 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 				</p>
 			</div>
 
-			{showPreview ? (
+			{tab === "preview" ? (
 				<FormPreview
 					fields={fields}
 					sections={sections}
 					isLoading={isLoadingFields}
+				/>
+			) : tab === "answers" ? (
+				<AnswersPanel
+					projectId={builder.projectId}
+					activityId={activityId}
 				/>
 			) : (
 				<>
@@ -170,6 +248,8 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 							listRef={listRef}
 							isDraggingRef={isDraggingRef}
 							isPublishing={publishVersion.isPending}
+							disablePublish={disablePublish}
+							showLockedNameField={false}
 							upsertSection={upsertSection}
 							onPublish={() =>
 								publishVersion.mutate(

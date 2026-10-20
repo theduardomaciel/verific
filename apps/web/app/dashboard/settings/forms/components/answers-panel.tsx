@@ -14,16 +14,26 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { downloadCsv, toCsv } from "@/lib/forms/csv";
 import { trpc } from "@/lib/trpc/react";
 
-export function AnswersPanel({ projectId }: { projectId: string }) {
+export function AnswersPanel({
+	projectId,
+	activityId,
+}: {
+	projectId: string;
+	activityId?: string;
+}) {
 	const [query, setQuery] = useState("");
 	const [page, setPage] = useState(1);
 	const list = trpc.listAnswers.useQuery({
 		projectId,
+		activityId,
 		page,
 		pageSize: 10,
 		query: query || undefined,
 	});
-	const exp = trpc.exportAnswers.useQuery({ projectId }, { enabled: false });
+	const exp = trpc.exportAnswers.useQuery(
+		{ projectId, activityId },
+		{ enabled: false },
+	);
 
 	async function handleExport() {
 		const result = await exp.refetch();
