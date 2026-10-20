@@ -68,7 +68,9 @@ export function MobileActionBar({
 
 	return (
 		<div className="bg-background/95 fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur lg:hidden">
-			<div className="flex min-h-16 items-center justify-between gap-4 px-4 py-3 pb-[env(safe-area-inset-bottom)]">
+			{/* Inset seguro é 0 fora de telas com viewport-fit=cover: o
+				max garante ao menos o espaçamento do py-3. */}
+			<div className="flex min-h-16 items-center justify-between gap-4 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
 				{seatsLabel ? (
 					<p
 						className={cn(

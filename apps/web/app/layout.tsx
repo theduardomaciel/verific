@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 
 import "./globals.css";
 
@@ -17,6 +17,12 @@ export const metadata: Metadata = {
 		icon: "/favicon/favicon.svg",
 		apple: [{ url: "/favicon/apple-icon.png" }],
 	},
+};
+
+// viewport-fit=cover estende a página sob a home indicator no iOS,
+// expondo env(safe-area-inset-*) para respeitar as bordas do aparelho.
+export const viewport: Viewport = {
+	viewportFit: "cover",
 };
 
 // Components
