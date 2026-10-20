@@ -45,10 +45,12 @@ export function FormPreview({
 	fields,
 	sections,
 	isLoading = false,
+	showNameField = true,
 }: {
 	fields: BuilderField[];
 	sections: BuilderSection[];
 	isLoading?: boolean;
+	showNameField?: boolean;
 }) {
 	const baseVisible = useMemo(
 		() => fields.filter((f) => f.isActive && f.isVisible),
@@ -116,16 +118,20 @@ export function FormPreview({
 				sectionsForVisibility,
 				(v.answers ?? {}) as Record<string, unknown>,
 			);
-			const schema = z.object({
-				name: nameSchema,
-				answers: answersSchema,
-			});
+			const schema = showNameField
+				? z.object({
+						name: nameSchema,
+						answers: answersSchema,
+					})
+				: z.object({
+						answers: answersSchema,
+					});
 			const zod = zodResolver(schema as never);
 			return (
 				zod as (a: unknown, b: unknown, c: unknown) => Promise<unknown>
 			)(values, context, options) as never;
 		};
-	}, [fieldsForValidation, sectionsForVisibility, nameSchema]);
+	}, [fieldsForValidation, sectionsForVisibility, nameSchema, showNameField]);
 
 	const form = useForm<{
 		name: string;
@@ -240,7 +246,7 @@ export function FormPreview({
 								<h4 className="text-sm font-bold">
 									{p.displayNumber}. {p.group.section.title}
 								</h4>
-								{p.isFirstContent && (
+								{showNameField && p.isFirstContent && (
 									<FormField
 										control={form.control}
 										name="name"
@@ -298,7 +304,7 @@ export function FormPreview({
 								)}
 							</div>
 						))}
-						{planned.length === 0 && (
+						{showNameField && planned.length === 0 && (
 							<FormField
 								control={form.control}
 								name="name"

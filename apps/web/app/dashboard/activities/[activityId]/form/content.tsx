@@ -212,6 +212,7 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 					fields={fields}
 					sections={sections}
 					isLoading={isLoadingFields}
+					showNameField={false}
 				/>
 			) : tab === "answers" ? (
 				<AnswersPanel
