@@ -13,8 +13,6 @@ import {
 	Share2,
 	Trash,
 } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 
 // Validation (client-safe: no db / server env imports)
 import { getActivityParams } from "@verific/api/schemas";
@@ -34,6 +32,7 @@ import { ExportParticipantsButton } from "@/components/participant/export-button
 // Components
 import * as ParticipantsList from "@/components/participant/participants-list";
 import { SearchBar } from "@/components/search-bar";
+import { CollapsibleDescription } from "@/components/shared/collapsible-description";
 import { SortBy } from "@/components/sort-by";
 
 // Hooks
@@ -145,11 +144,10 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 						</Badge>
 					) : null}
 				</div>
-				<div className="prose prose-sm dark:prose-invert max-w-none">
-					<ReactMarkdown remarkPlugins={[remarkGfm]}>
-						{activity.description || ""}
-					</ReactMarkdown>
-				</div>
+				<CollapsibleDescription
+					key={activity.id}
+					description={activity.description}
+				/>
 			</div>
 			<div className="flex w-full flex-col items-center justify-start gap-4 md:flex-row">
 				<CategoryCard
