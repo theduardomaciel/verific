@@ -145,6 +145,7 @@ export const participantsRouter = createTRPCRouter({
 				totalEventsAttended: activitiesAttended,
 				isModeratorParticipant,
 				isModerator,
+				profilesEnabled,
 			};
 		}),
 

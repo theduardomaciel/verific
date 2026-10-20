@@ -1,5 +1,14 @@
+import Link from "next/link";
+
 // Icons
-import { CircleMinus, Hash, Hourglass, LogOut, Mail } from "lucide-react";
+import {
+	CircleMinus,
+	Hash,
+	Hourglass,
+	LogOut,
+	Mail,
+	UserRound,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 // Components
@@ -29,6 +38,7 @@ export async function ParticipantCard({ id: participantId, eventUrl }: Props) {
 		isModeratorParticipant,
 		hours,
 		totalEventsAttended,
+		profilesEnabled,
 	} = await serverClient.getParticipant({
 		participantId,
 	});
@@ -102,6 +112,17 @@ export async function ParticipantCard({ id: participantId, eventUrl }: Props) {
 						{formatWorkload(hours)}
 					</Badge>
 				</ul>
+				{profilesEnabled && (
+					<Button variant="secondary" className="w-full" asChild>
+						<Link
+							href={`/${projectUrl}/profile/${participant.shortId}`}
+							prefetch={false}
+						>
+							<UserRound width={24} height={24} />
+							Ver perfil completo
+						</Link>
+					</Button>
+				)}
 				{answers.length > 0 && (
 					<div className="flex w-full flex-col gap-2 rounded-lg border p-4 text-left">
 						<h4 className="text-sm font-bold">
