@@ -22,8 +22,8 @@ interface MobileActionBarProps {
 
 /**
  * Barra fixa de ação no mobile: status das vagas + a ação do painel,
- * rolando até o card e focando o título. Some quando o card está
- * visível ou o painel não é acionável.
+ * rolando até o card e focando o título. Desliza para fora quando o
+ * card está visível ou o painel não é acionável.
  */
 export function MobileActionBar({
 	cardId,
@@ -66,8 +66,22 @@ export function MobileActionBar({
 		);
 	}
 
+	const visible = !hidden && !cardInView;
+
 	return (
-		<div className="bg-background/95 fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur lg:hidden">
+		<div
+			aria-hidden={!visible}
+			className={cn(
+				"bg-background/95 fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur lg:hidden",
+				// visibility segura o elemento na árvore até o fim da
+				// transição: deslizar para dentro e para fora some só no
+				// fim do movimento, e oculto já sai do fluxo de foco.
+				"motion-safe:transition-[visibility,transform] motion-safe:duration-300",
+				visible
+					? "visible translate-y-0"
+					: "invisible translate-y-full",
+			)}
+		>
 			{/* Inset seguro é 0 fora de telas com viewport-fit=cover: o
 				max garante ao menos o espaçamento do py-3. */}
 			<div className="flex min-h-16 items-center justify-between gap-4 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
