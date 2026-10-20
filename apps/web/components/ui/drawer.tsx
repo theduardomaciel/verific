@@ -67,14 +67,30 @@ function DrawerContent({
 				{...props}
 			>
 				<div className="bg-muted mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full group-data-[vaul-drawer-direction=bottom]/drawer-content:block" />
-				<div
-					data-slot="drawer-scroll-area"
-					className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain"
-				>
-					{children}
-				</div>
+				{children}
 			</DrawerPrimitive.Content>
 		</DrawerPortal>
+	);
+}
+
+function DrawerScrollArea({
+	className,
+	...props
+}: React.ComponentProps<"div">) {
+	return (
+		<div
+			data-slot="drawer-scroll-area"
+			// Keep scrolling and dragging separate: content only scrolls, while
+			// the header/handle (outside this area) stay draggable at any scroll
+			// position. Without this, touch gestures inside the scroller are
+			// cancelled by the browser before Vaul can handle them.
+			data-vaul-no-drag=""
+			className={cn(
+				"flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain",
+				className,
+			)}
+			{...props}
+		/>
 	);
 }
 
@@ -134,6 +150,7 @@ export {
 	DrawerTrigger,
 	DrawerClose,
 	DrawerContent,
+	DrawerScrollArea,
 	DrawerHeader,
 	DrawerFooter,
 	DrawerTitle,

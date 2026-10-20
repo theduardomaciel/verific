@@ -35,6 +35,7 @@ import {
 import {
 	Drawer,
 	DrawerContent,
+	DrawerScrollArea,
 	DrawerTitle,
 	DrawerTrigger,
 } from "@/components/ui/drawer";
@@ -796,7 +797,7 @@ export function FontPicker({
 				<VisuallyHidden>
 					<DrawerTitle>{label}: seletor de fontes</DrawerTitle>
 				</VisuallyHidden>
-				<div className="overflow-y-auto">{body}</div>
+				<DrawerScrollArea>{body}</DrawerScrollArea>
 			</DrawerContent>
 		</Drawer>
 	);

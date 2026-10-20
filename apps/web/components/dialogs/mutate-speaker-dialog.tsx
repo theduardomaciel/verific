@@ -32,6 +32,7 @@ import {
 	DrawerContent,
 	DrawerFooter,
 	DrawerHeader,
+	DrawerScrollArea,
 	DrawerTitle,
 	DrawerTrigger,
 } from "@/components/ui/drawer";
@@ -263,25 +264,26 @@ export function MutateSpeakerDialog({
 		<Drawer open={open} onOpenChange={setOpen}>
 			<DrawerTrigger asChild>{trigger}</DrawerTrigger>
 			<DrawerContent>
+				<DrawerHeader className="text-left">
+					<DrawerTitle>
+						{speaker
+							? "Editar palestrante"
+							: "Adicionar palestrante"}
+					</DrawerTitle>
+				</DrawerHeader>
+
 				<Form {...form}>
 					<form
 						id="mutate-speaker-form"
-						className="flex w-full flex-col"
+						className="flex min-h-0 w-full flex-1 flex-col"
 					>
-						<DrawerHeader className="text-left">
-							<DrawerTitle>
-								{speaker
-									? "Editar palestrante"
-									: "Adicionar palestrante"}
-							</DrawerTitle>
-						</DrawerHeader>
-						<div className="space-y-6 px-4">
+						<DrawerScrollArea className="space-y-6 px-4">
 							<MutateSpeakerForm
 								form={form}
 								projectId={projectId}
 								speaker={speaker}
 							/>
-						</div>
+						</DrawerScrollArea>
 						<DrawerFooter className="flex w-full gap-2">
 							<Button
 								type="button"

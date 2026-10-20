@@ -27,6 +27,7 @@ import {
 	DrawerContent,
 	DrawerFooter,
 	DrawerHeader,
+	DrawerScrollArea,
 	DrawerTitle,
 	DrawerTrigger,
 } from "@/components/ui/drawer";
@@ -186,18 +187,18 @@ export function CreateProjectDialog() {
 				</Button>
 			</DrawerTrigger>
 			<DrawerContent>
+				<DrawerHeader className="text-left">
+					<DrawerTitle>Criar projeto</DrawerTitle>
+				</DrawerHeader>
+
 				<Form {...form}>
 					<form
 						onSubmit={(e) => void form.handleSubmit(onSubmit)(e)}
-						className="flex w-full flex-col space-y-6"
+						className="flex min-h-0 w-full flex-1 flex-col"
 					>
-						<DrawerHeader className="text-left">
-							<DrawerTitle>Criar projeto</DrawerTitle>
-						</DrawerHeader>
-
-						<div className="space-y-4 px-4">
+						<DrawerScrollArea className="space-y-4 px-4">
 							<CreateProjectForm form={form} />
-						</div>
+						</DrawerScrollArea>
 
 						<DrawerFooter className="flex w-full gap-2">
 							<Button>Criar</Button>

@@ -11,6 +11,7 @@ import {
 	Drawer,
 	DrawerContent,
 	DrawerHeader,
+	DrawerScrollArea,
 	DrawerTitle,
 } from "@/components/ui/drawer";
 import {
@@ -62,8 +63,8 @@ export function ExpandableDescription({
 					open={showDetailsDialog}
 					onOpenChange={setShowDetailsDialog}
 				>
-					<SheetContent className="sm:max-w-[425px]">
-						<SheetHeader className="w-full items-center justify-center text-center">
+					<SheetContent className="gap-0 sm:max-w-[425px]">
+						<SheetHeader className="w-full shrink-0 items-center justify-center border-b text-center">
 							<SheetTitle className="w-full text-center">
 								Detalhes da Atividade
 							</SheetTitle>
@@ -85,9 +86,11 @@ export function ExpandableDescription({
 						<DrawerHeader className="w-full border-b pb-4 text-center">
 							<DrawerTitle>Detalhes da Atividade</DrawerTitle>
 						</DrawerHeader>
-						<div className="px-6 py-4">
-							<ActivityDetailsContent activity={activity} />
-						</div>
+						<DrawerScrollArea>
+							<div className="px-6 py-4">
+								<ActivityDetailsContent activity={activity} />
+							</div>
+						</DrawerScrollArea>
 					</DrawerContent>
 				</Drawer>
 			)}

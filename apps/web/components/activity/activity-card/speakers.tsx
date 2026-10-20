@@ -86,7 +86,7 @@ function SpeakerCard({
 					title={`Ver detalhes de ${speaker.name}`}
 					aria-label={`Ver detalhes de ${speaker.name}`}
 					className={cn(
-						"flex w-full cursor-pointer items-center gap-6 px-6 py-4 text-left transition-colors",
+						"flex w-full h-full cursor-pointer items-center gap-6 px-6 py-4 text-left transition-colors",
 						"hover:bg-muted/50 focus-visible:ring-ring/50 rounded-sm outline-none focus-visible:ring-[3px]",
 						{
 							"rounded-lg border": showBorder,

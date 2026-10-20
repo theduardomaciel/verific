@@ -17,6 +17,7 @@ import {
 import {
 	Drawer,
 	DrawerContent,
+	DrawerScrollArea,
 	DrawerTitle,
 	DrawerTrigger,
 } from "@/components/ui/drawer";
@@ -198,7 +199,7 @@ export function InstancePicker<T extends Item = Item>({
 				<VisuallyHidden>
 					<DrawerTitle>Selecione os itens</DrawerTitle>
 				</VisuallyHidden>
-				<div className="mt-4 border-t">
+				<DrawerScrollArea className="mt-4 border-t">
 					{visualContent(
 						<InstancesList
 							onSelect={handleSelect}
@@ -209,7 +210,7 @@ export function InstancePicker<T extends Item = Item>({
 							className="bg-transparent"
 						/>,
 					)}
-				</div>
+				</DrawerScrollArea>
 			</DrawerContent>
 		</Drawer>
 	);

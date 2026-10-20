@@ -49,15 +49,10 @@ export function ActivityDetailsContent({
 				<Badge className="w-fit">
 					{activityCategoryLabels[activity.category]}
 				</Badge>
-				<div>
-					<h2 className="mb-2 text-xl font-bold">{activity.name}</h2>
-					<div className="prose prose-sm dark:prose-invert max-w-none text-left">
-						<ReactMarkdown remarkPlugins={[remarkGfm]}>
-							{activity.description || ""}
-						</ReactMarkdown>
-					</div>
-				</div>
+				<h2 className="text-xl font-bold">{activity.name}</h2>
 			</div>
+
+			<ActivityCardTags tagsClassName="bg-muted" activity={activity} />
 
 			{speakers && speakers.length > 0 && (
 				<ActivitySpeakers
@@ -70,10 +65,8 @@ export function ActivityDetailsContent({
 				/>
 			)}
 
-			<ActivityCardTags tagsClassName="bg-muted" activity={activity} />
-
 			{effectiveTolerance ? (
-				<div className="bg-muted/50 flex flex-row items-center justify-between gap-3 rounded-sm p-4 text-sm select-none">
+				<div className="bg-muted/50 flex w-full flex-row items-center justify-between gap-3 rounded-sm p-4 text-sm select-none">
 					<span className="text-muted-foreground text-sm">
 						Esta atividade tem{" "}
 						<strong>tolerância de {effectiveTolerance} min</strong>.
@@ -93,6 +86,19 @@ export function ActivityDetailsContent({
 							</TooltipContent>
 						</Tooltip>
 					</TooltipProvider>
+				</div>
+			) : null}
+
+			{activity.description ? (
+				<div className="flex w-full flex-col gap-2">
+					<h3 className="font-subtitle text-left text-base font-semibold">
+						Descrição
+					</h3>
+					<div className="prose prose-sm dark:prose-invert max-w-none text-left">
+						<ReactMarkdown remarkPlugins={[remarkGfm]}>
+							{activity.description}
+						</ReactMarkdown>
+					</div>
 				</div>
 			) : null}
 		</div>
