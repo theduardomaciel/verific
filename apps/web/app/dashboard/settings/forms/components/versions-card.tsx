@@ -76,7 +76,7 @@ export function VersionsCard({
 		<Card>
 			<CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
 				<CardTitle>Versões</CardTitle>
-				<div className="flex gap-2">
+				<div className="flex flex-wrap gap-2">
 					<Button
 						size="sm"
 						variant="outline"

@@ -13,9 +13,11 @@ interface FormsHeaderProps {
 
 export function FormsHeader({ tab, onTabChange }: FormsHeaderProps) {
 	return (
-		<div className="flex flex-wrap items-center justify-between gap-4">
-			<h1 className="text-2xl font-bold">Formulário de inscrição</h1>
-			<div className="flex gap-2">
+		<div className="flex min-w-0 flex-wrap items-center justify-between gap-4">
+			<h1 className="min-w-0 text-2xl font-bold">
+				Formulário de inscrição
+			</h1>
+			<div className="flex flex-wrap gap-2">
 				<Button
 					variant={tab === "builder" ? "default" : "outline"}
 					onClick={() => onTabChange("builder")}

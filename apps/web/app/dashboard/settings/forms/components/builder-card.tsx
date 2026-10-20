@@ -181,7 +181,7 @@ function SectionBlock({
 			ref={sectionRef}
 			data-section-id={section.id}
 			className={cn(
-				"flex flex-col gap-2 rounded-lg border bg-transparent p-3 transition-all duration-200 will-change-transform",
+				"flex min-w-0 flex-col gap-2 rounded-lg border bg-transparent p-3 transition-all duration-200 will-change-transform",
 				isSectionDragging && "border-primary/60 opacity-60 shadow-lg",
 				isSectionDropTarget &&
 					!isSectionDragging &&
@@ -735,7 +735,7 @@ export function BuilderCard({
 					commitFieldGroups(groupsRef.current);
 				}}
 			>
-				<div ref={listRef} className="flex flex-col gap-4">
+				<div ref={listRef} className="flex min-w-0 flex-col gap-4">
 					{sortedSections.map((section, si) => (
 						<SectionBlock
 							key={section.id}

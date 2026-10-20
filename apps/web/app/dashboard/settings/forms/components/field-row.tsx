@@ -92,7 +92,7 @@ export function SortableFieldRow({
 				</div>
 			</div>
 			{!disabled && actions && (
-				<div className="flex shrink-0 items-center gap-3 pl-9 md:pl-0">
+				<div className="flex shrink-0 flex-wrap items-center gap-3 pl-9 md:pl-0">
 					{actions}
 				</div>
 			)}

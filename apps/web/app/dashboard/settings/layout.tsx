@@ -50,7 +50,7 @@ export default async function AccountSettingsLayout({
 
 			<div className="flex h-full flex-col gap-8 md:flex-row">
 				<SettingsSidebar prefix={`/dashboard`} links={settingsLinks} />
-				<div className="flex-1">{children}</div>
+				<div className="min-w-0 flex-1">{children}</div>
 			</div>
 		</main>
 	);
