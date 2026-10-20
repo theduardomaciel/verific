@@ -68,7 +68,7 @@ export function ExpandableDescription({
 								Detalhes da Atividade
 							</SheetTitle>
 						</SheetHeader>
-						<div className="flex px-8 py-4 text-center">
+						<div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-8 py-4 text-center">
 							<ActivityDetailsContent activity={activity} />
 						</div>
 					</SheetContent>
@@ -82,10 +82,10 @@ export function ExpandableDescription({
 					onOpenChange={setShowDetailsDialog}
 				>
 					<DrawerContent>
-						<DrawerHeader className="mb-4 w-full border-b pb-4 text-center">
+						<DrawerHeader className="w-full border-b pb-4 text-center">
 							<DrawerTitle>Detalhes da Atividade</DrawerTitle>
 						</DrawerHeader>
-						<div className="overflow-y-scroll px-6 pb-4">
+						<div className="px-6 py-4">
 							<ActivityDetailsContent activity={activity} />
 						</div>
 					</DrawerContent>
