@@ -202,7 +202,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 								className="flex-1"
 							>
 								<ClipboardList size={20} />
-								Formul·rio
+								Formul√≠rio
 							</Link>
 						</Button>
 						<Button
