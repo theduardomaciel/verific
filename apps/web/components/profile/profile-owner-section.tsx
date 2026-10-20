@@ -26,29 +26,37 @@ interface ProfileOwnerSectionProps {
  * Cabeçalho colapsável "Seu perfil" (só no dono): envolve o conteúdo
  * público já renderizado (composição server→cliente). Visitantes veem
  * o conteúdo sem o cabeçalho.
+ *
+ * O gate pelo hint `?me` fica no componente externo: sem ele, a ilha
+ * interna (e o `useSession`, que dispara `/api/auth/get-session` no mount)
+ * nem monta — visitante comum não paga uma invocação de auth.
  */
-export function ProfileOwnerSection({
+export function ProfileOwnerSection(props: ProfileOwnerSectionProps) {
+	const searchParams = useSearchParams();
+
+	if (searchParams.get("me") === null) {
+		return <>{props.children}</>;
+	}
+
+	return <ProfileOwnerSectionInner {...props} />;
+}
+
+function ProfileOwnerSectionInner({
 	eventUrl,
 	shortId,
 	children,
 }: ProfileOwnerSectionProps) {
 	const [open, setOpen] = useState(true);
-	const searchParams = useSearchParams();
-	const hasHint = searchParams.get("me") !== null;
 	const session = authClient.useSession();
 	const userId = session.data?.user.id;
 	const myProfile = trpc.getMyProfileData.useQuery(
 		{ projectUrl: eventUrl },
-		{ enabled: hasHint && Boolean(userId) },
+		{ enabled: Boolean(userId) },
 	);
 
 	const isOwner = myProfile.data?.shortId === shortId;
 
-	if (
-		!hasHint ||
-		(!session.isPending && !userId) ||
-		(myProfile.data && !isOwner)
-	) {
+	if ((!session.isPending && !userId) || (myProfile.data && !isOwner)) {
 		return <>{children}</>;
 	}
 

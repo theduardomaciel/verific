@@ -170,7 +170,10 @@ export function ActivitiesContent() {
 
 				<div className="order-first space-y-4 md:order-last md:col-span-1">
 					<Button asChild className="w-full" size="lg">
-						<Link href={`/dashboard/activities/create`}>
+						<Link
+							href={`/dashboard/activities/create`}
+							prefetch={false}
+						>
 							<Plus className="mr-2 h-4 w-4" /> Adicionar
 							atividade
 						</Link>

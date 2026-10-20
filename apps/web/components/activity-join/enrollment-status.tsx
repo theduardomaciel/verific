@@ -396,7 +396,9 @@ export function EnrollmentSuccess({
 				{summary ? ` ${summary}.` : ""}
 			</p>
 			<Button asChild size="lg" className="w-full">
-				<Link href={scheduleHref}>Voltar para a programação</Link>
+				<Link href={scheduleHref} prefetch={false}>
+					Voltar para a programação
+				</Link>
 			</Button>
 		</div>
 	);

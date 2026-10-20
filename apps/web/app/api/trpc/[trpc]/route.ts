@@ -49,7 +49,34 @@ function isPublicCacheableQuery(
 	);
 }
 
+/**
+ * Caminhos do batch, lidos da URL antes de executar.
+ *
+ * O `httpBatchLink` põe todos os procedimentos no path
+ * (`/api/trpc/getProject,getAllProjects?batch=1`), inclusive nos POSTs.
+ * Isso permite decidir no `createContext` se a sessão será necessária —
+ * sem esperar a execução. Qualquer batch misto (ou path desconhecido)
+ * mantém a checagem de sessão normal.
+ */
+function batchIsPublicQuery(req: NextRequest): boolean {
+	if (req.method !== "GET") return false;
+
+	const raw = decodeURIComponent(
+		req.nextUrl.pathname.replace(/^\/api\/trpc\/?/, ""),
+	);
+	if (!raw) return false;
+
+	return raw
+		.split(",")
+		.every((path) => PUBLIC_CACHEABLE_QUERY_PATHS.has(path));
+}
+
 const handler = async (req: NextRequest) => {
+	// Um GET 100% público não depende de sessão (há teste de execução em
+	// `packages/api/public-cacheable-queries.test.ts`). Pular a leitura do
+	// cookie cache/DB aqui é seguro e barato: login não muda a resposta.
+	const publicQueryRequest = batchIsPublicQuery(req);
+
 	const response = await fetchRequestHandler({
 		endpoint: "/api/trpc",
 		router: appRouter,
@@ -58,7 +85,7 @@ const handler = async (req: NextRequest) => {
 			// Sessão preguiçosa: sem cookie de sessão não há o que buscar no
 			// banco — a maioria dos acessos públicos nem traz cookie.
 			// `getSession()` (memoizado por request) só roda com candidato.
-			if (!getSessionCookie(req)) {
+			if (publicQueryRequest || !getSessionCookie(req)) {
 				return { session: null };
 			}
 

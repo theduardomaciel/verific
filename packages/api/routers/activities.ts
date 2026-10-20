@@ -405,8 +405,43 @@ export const activitiesRouter = createTRPCRouter({
 				});
 			}
 
-			// Retornamos a atividade básica se o usuário não estiver logado
-			if (!userId)
+			// Retornamos a atividade básica se o usuário não estiver logado.
+			// A contagem de ocupantes viaja junto: antes a página de detalhe
+			// chamava `getActivities` (lista inteira do evento) só para achar
+			// esse número no primeiro render de cada atividade.
+			if (!userId) {
+				const [hasForm, participantsAmount, offeredAmount] =
+					await Promise.all([
+						hasPublishedActivityForm(
+							selectedActivity.projectId,
+							activityId,
+						),
+						db
+							.select({ amount: count() })
+							.from(participantOnActivity)
+							.where(
+								and(
+									eq(
+										participantOnActivity.activityId,
+										activityId,
+									),
+									eq(
+										participantOnActivity.role,
+										"participant",
+									),
+								),
+							),
+						db
+							.select({ amount: count() })
+							.from(activityWaitlist)
+							.where(
+								and(
+									eq(activityWaitlist.activityId, activityId),
+									eq(activityWaitlist.status, "offered"),
+								),
+							),
+					]);
+
 				return {
 					activity: {
 						...selectedActivity,
@@ -420,15 +455,16 @@ export const activitiesRouter = createTRPCRouter({
 							(t) => t.tag,
 						),
 						form: null,
-						hasForm: await hasPublishedActivityForm(
-							selectedActivity.projectId,
-							activityId,
-						),
+						hasForm,
 						participants: [],
+						participantsAmount:
+							(participantsAmount[0]?.amount ?? 0) +
+							(offeredAmount[0]?.amount ?? 0),
 					},
 					pageCount: 0,
 					participantId: null,
 				};
+			}
 
 			// Buscar todos os moderadores
 			const monitorParticipants = await db

@@ -50,6 +50,19 @@ export const isAfterEnd = (endDate: Date) => {
 	return new Date() > new Date(endDate);
 };
 
+/** True when `now` is between `startDate` and `endDate` (both inclusive). */
+export const isWithinPeriod = (
+	startDate: Date | string | number,
+	endDate: Date | string | number,
+	now: Date = new Date(),
+): boolean => {
+	const start = new Date(startDate).getTime();
+	const end = new Date(endDate).getTime();
+	if (!Number.isFinite(start) || !Number.isFinite(end)) return false;
+	const current = now.getTime();
+	return current >= start && current <= end;
+};
+
 export const calculateWorkloadFromTimes = (
 	timeFrom: string | undefined,
 	timeTo: string | undefined,

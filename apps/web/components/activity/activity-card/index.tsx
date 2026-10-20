@@ -169,6 +169,7 @@ export function ActivityCard({
 				<h3 className="text-lg font-bold">
 					<Link
 						href={pageHref}
+						prefetch={false}
 						className="focus-visible:ring-ring/50 rounded-sm outline-none hover:underline focus-visible:ring-[3px]"
 					>
 						{activity.name}
@@ -215,7 +216,7 @@ export function ActivityCard({
 								})}
 								asChild
 							>
-								<Link href={pageHref}>
+								<Link href={pageHref} prefetch={false}>
 									<Check className="mr-2 h-4 w-4" />
 									Inscrito
 								</Link>
@@ -234,14 +235,14 @@ export function ActivityCard({
 							</Button>
 						) : hasWaitlistOffer ? (
 							<Button variant="default" size="lg" asChild>
-								<Link href={pageHref}>
+								<Link href={pageHref} prefetch={false}>
 									Confirmar vaga
 									<ArrowRight className="ml-2 h-4 w-4" />
 								</Link>
 							</Button>
 						) : waitlistPosition != null ? (
 							<Button variant="outline" size="lg" asChild>
-								<Link href={pageHref}>
+								<Link href={pageHref} prefetch={false}>
 									<Hourglass className="mr-2 h-4 w-4" />
 									{`Aguardando na fila${waitlistPosition > 0 ? ` • ${waitlistPosition}º` : ""}`}
 								</Link>
@@ -261,7 +262,9 @@ export function ActivityCard({
 									size={"sm"}
 									asChild
 								>
-									<Link href={pageHref}>Ver detalhes</Link>
+									<Link href={pageHref} prefetch={false}>
+										Ver detalhes
+									</Link>
 								</Button>
 							</>
 						) : quickJoinEligible ? (
@@ -282,7 +285,9 @@ export function ActivityCard({
 									size={"sm"}
 									asChild
 								>
-									<Link href={pageHref}>Ver detalhes</Link>
+									<Link href={pageHref} prefetch={false}>
+										Ver detalhes
+									</Link>
 								</Button>
 							</>
 						) : isRegistrationClosed ? (
@@ -302,7 +307,7 @@ export function ActivityCard({
 								size={"lg"}
 								asChild
 							>
-								<Link href={pageHref}>
+								<Link href={pageHref} prefetch={false}>
 									{isFull
 										? waitlistEnabled
 											? "Entrar na fila"

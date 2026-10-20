@@ -60,6 +60,8 @@ type ProfileServerData = {
 	shortId: string;
 	projectId: string;
 	profilesEnabled: boolean;
+	eventStartDate: string;
+	eventEndDate: string;
 	pageData: Awaited<ReturnType<typeof getProfilePageData>> | null;
 };
 
@@ -74,6 +76,8 @@ function ProfileBody({
 	shortId,
 	projectId,
 	profilesEnabled,
+	eventStartDate,
+	eventEndDate,
 	pageData,
 }: ProfileServerData) {
 	if (!profilesEnabled || !pageData) {
@@ -113,6 +117,8 @@ function ProfileBody({
 							<ProfileVisitRecorder
 								eventUrl={eventUrl}
 								shortId={shortId}
+								eventStartDate={eventStartDate}
+								eventEndDate={eventEndDate}
 							/>
 						</Suspense>
 					)}
@@ -234,6 +240,8 @@ export default async function EventProfilePage({ params }: ProfilePageProps) {
 				shortId={shortId}
 				projectId={project.id}
 				profilesEnabled={profilesEnabled}
+				eventStartDate={new Date(project.startDate).toISOString()}
+				eventEndDate={new Date(project.endDate).toISOString()}
 				pageData={pageData}
 			/>
 		</Suspense>

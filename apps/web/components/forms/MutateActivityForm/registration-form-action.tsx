@@ -36,7 +36,10 @@ export function ActivityRegistrationFormAction({
 				className="shrink-0"
 				asChild
 			>
-				<Link href={`/dashboard/activities/${activityId}/form`}>
+				<Link
+					href={`/dashboard/activities/${activityId}/form`}
+					prefetch={false}
+				>
 					<Plus size={16} />
 					Adicionar formulário
 				</Link>
@@ -91,7 +94,10 @@ export function ActivityRegistrationFormAction({
 					className="flex-1"
 					asChild
 				>
-					<Link href={`/dashboard/activities/${activityId}/form`}>
+					<Link
+						href={`/dashboard/activities/${activityId}/form`}
+						prefetch={false}
+					>
 						<Pencil size={14} />
 						Editar
 					</Link>

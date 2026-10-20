@@ -107,7 +107,10 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 		<div className="container-d py-container-v flex min-h-screen flex-col gap-6">
 			<div className="flex flex-wrap items-center justify-between gap-3">
 				<Button variant="ghost" asChild>
-					<Link href={`/dashboard/activities/${activityId}`}>
+					<Link
+						href={`/dashboard/activities/${activityId}`}
+						prefetch={false}
+					>
 						<ArrowLeft className="mr-2 h-4 w-4" />
 						Voltar para a atividade
 					</Link>

@@ -520,19 +520,6 @@ export const profilesRouter = createTRPCRouter({
 				});
 			}
 			const layout = parseProfileLayout(projectRow.profileLayout);
-			const row = await db.query.participant.findFirst({
-				where: and(
-					eq(participant.projectId, projectRow.id),
-					eq(participant.shortId, input.shortId),
-				),
-				with: { user: { columns: { name: true, image_url: true } } },
-			});
-			if (!row) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Perfil não encontrado.",
-				});
-			}
 			const ids = [
 				layout.subtitleFieldId,
 				layout.bioFieldId,
@@ -540,9 +527,22 @@ export const profilesRouter = createTRPCRouter({
 				layout.emailFieldId,
 				...layout.stats.map((s) => s.fieldId),
 			].filter((id): id is string => Boolean(id));
-			const fields =
+
+			// Campos do layout e participante em paralelo: nenhum depende do
+			// outro (só do id do projeto). A resposta encadeada custava um
+			// round-trip extra no primeiro render de cada perfil.
+			const [row, fields] = await Promise.all([
+				db.query.participant.findFirst({
+					where: and(
+						eq(participant.projectId, projectRow.id),
+						eq(participant.shortId, input.shortId),
+					),
+					with: {
+						user: { columns: { name: true, image_url: true } },
+					},
+				}),
 				ids.length > 0
-					? await db.query.formField.findMany({
+					? db.query.formField.findMany({
 							where: and(
 								eq(formField.projectId, projectRow.id),
 								inArray(formField.id, ids),
@@ -555,11 +555,25 @@ export const profilesRouter = createTRPCRouter({
 								isActive: true,
 							},
 						})
-					: [];
+					: Promise.resolve([]),
+			]);
+			if (!row) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Perfil não encontrado.",
+				});
+			}
 			const fieldsById = new Map(fields.map((f) => [f.id, f]));
-			const [answersByKey, visibility] = await Promise.all([
+			// Respostas, visibilidade e conexões também não dependem entre si.
+			const [answersByKey, visibility, connections] = await Promise.all([
 				loadParticipantAnswers(row.id),
 				loadVisibility(row.id),
+				layout.connectionsEnabled
+					? loadProfileConnections(projectRow.id, row.id)
+					: Promise.resolve({
+							total: 0,
+							visitors: [] as string[],
+						}),
 			]);
 			const slots = resolveProfileSlots({
 				layout,
@@ -568,9 +582,6 @@ export const profilesRouter = createTRPCRouter({
 				visibility,
 				owner: false,
 			});
-			const connections = layout.connectionsEnabled
-				? await loadProfileConnections(projectRow.id, row.id)
-				: { total: 0, visitors: [] as string[] };
 			return {
 				shortId: row.shortId,
 				name: row.user.name,
@@ -742,6 +753,8 @@ export const profilesRouter = createTRPCRouter({
 					id: true,
 					profilesEnabled: true,
 					profileLayout: true,
+					startDate: true,
+					endDate: true,
 				},
 			});
 			if (!projectRow?.profilesEnabled) {
@@ -749,6 +762,16 @@ export const profilesRouter = createTRPCRouter({
 			}
 			if (
 				!parseProfileLayout(projectRow.profileLayout).connectionsEnabled
+			) {
+				return { recorded: false };
+			}
+			// Conexões só existem durante o evento. O cliente já evita a
+			// chamada fora da janela; repetir aqui protege contra relógio
+			// adiantado e clientes antigos em cache.
+			const now = Date.now();
+			if (
+				now < projectRow.startDate.getTime() ||
+				now > projectRow.endDate.getTime()
 			) {
 				return { recorded: false };
 			}

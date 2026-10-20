@@ -16,23 +16,32 @@ import { StatIcon } from "./stat-icons";
  * Itens ocultos no público, visíveis só p/ o dono (com selo).
  * Null p/ visitantes: sem fetch sem hint, sem espaço reservado.
  */
-export function ProfileOwnerHidden({
+export function ProfileOwnerHidden(props: {
+	eventUrl: string;
+	shortId: string;
+}) {
+	const searchParams = useSearchParams();
+
+	// Sem hint do dono, nada a renderizar e nenhuma sessão a buscar.
+	if (searchParams.get("me") === null) return null;
+
+	return <ProfileOwnerHiddenInner {...props} />;
+}
+
+function ProfileOwnerHiddenInner({
 	eventUrl,
 	shortId,
 }: {
 	eventUrl: string;
 	shortId: string;
 }) {
-	const searchParams = useSearchParams();
-	const hasHint = searchParams.get("me") !== null;
 	const session = authClient.useSession();
 	const userId = session.data?.user.id;
 	const myData = trpc.getMyProfileData.useQuery(
 		{ projectUrl: eventUrl },
-		{ enabled: hasHint && Boolean(userId) },
+		{ enabled: Boolean(userId) },
 	);
 
-	if (!hasHint) return null;
 	if (!myData.data || myData.data.shortId !== shortId) return null;
 	const hidden = [
 		...(myData.data.slots.subtitle?.hidden

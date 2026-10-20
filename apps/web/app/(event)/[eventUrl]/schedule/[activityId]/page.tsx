@@ -17,11 +17,7 @@ import {
 import * as EventContainer from "@/components/landing/event-container";
 
 // API
-import {
-	getActivityStaticParams,
-	getCachedActivities,
-	getCachedActivity,
-} from "@/lib/data";
+import { getActivityStaticParams, getCachedActivity } from "@/lib/data";
 
 /**
  * Pré-renderiza cada atividade de evento conhecido: a rota vira estática
@@ -31,6 +27,14 @@ import {
 export async function generateStaticParams() {
 	return getActivityStaticParams();
 }
+
+/**
+ * Conteúdo 100% cacheado (`getCachedActivity`): exige página completa
+ * estática também para atividades criadas depois do build. O primeiro
+ * acesso gera e grava a página; os seguintes saem da CDN sem invocar
+ * função.
+ */
+export const ensureStatic = "navigation";
 
 export default function Page({
 	params,
@@ -74,23 +78,12 @@ async function ActivityPageLoader({
 		notFound();
 	}
 
-	// Contagem pública de inscritos (via lista cacheada do evento): o
-	// `getActivity` sem sessão não retorna contagem, e tudo aqui precisa
-	// continuar estático — nada específico do usuário no servidor.
-	const participantsCount = await getCachedActivities({
-		projectId: data.activity.project.id,
-		pageSize: 1000,
-	})
-		.then(
-			(result) =>
-				result.activities.find((item) => item.id === activityId)
-					?.participantsCount ??
-				("participantsAmount" in data ? data.participantsAmount : null),
-		)
-		.catch(() =>
-			"participantsAmount" in data ? data.participantsAmount : null,
-		)
-		.then((count) => count ?? null);
+	// Contagem pública de inscritos: vem do próprio `getActivity` anônimo
+	// (duas queries COUNT baratas). Antes esta página buscava a lista
+	// inteira do evento (`getCachedActivities`, ~300 ms) só para achar o
+	// número desta atividade no primeiro render.
+	const participantsCount =
+		"participantsAmount" in data ? (data.participantsAmount ?? null) : null;
 
 	return (
 		<EventContainer.Holder>
@@ -101,7 +94,10 @@ async function ActivityPageLoader({
 						asChild
 						className="mb-4 min-h-11 w-fit px-2"
 					>
-						<Link href={`/${eventUrl}/schedule#${activity.id}`}>
+						<Link
+							href={`/${eventUrl}/schedule#${activity.id}`}
+							prefetch={false}
+						>
 							<ArrowLeft className="h-4 w-4" />
 							Voltar para a programação
 						</Link>

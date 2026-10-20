@@ -197,6 +197,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 						>
 							<Link
 								href={`/dashboard/activities/${activityId}/edit`}
+								prefetch={false}
 								className="flex-1"
 							>
 								<Edit size={20} />

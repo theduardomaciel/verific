@@ -124,7 +124,9 @@ export function SpeakerDetailsDialog({
 					) : null}
 					{profileHref ? (
 						<Button asChild className="w-full">
-							<Link href={profileHref}>Ver perfil completo</Link>
+							<Link href={profileHref} prefetch={false}>
+								Ver perfil completo
+							</Link>
 						</Button>
 					) : null}
 				</div>

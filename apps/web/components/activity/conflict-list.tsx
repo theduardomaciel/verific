@@ -63,6 +63,7 @@ export function ConflictList({
 					>
 						<Link
 							href={`/${eventUrl}/schedule/${conflict.otherActivity.id}`}
+							prefetch={false}
 							className="font-semibold underline underline-offset-4"
 						>
 							{conflict.otherActivity.name}

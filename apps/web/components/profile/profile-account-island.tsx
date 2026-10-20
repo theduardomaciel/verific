@@ -35,21 +35,10 @@ interface ProfileAccountIslandProps {
  * o conteúdo do dono carrega em ilhas após a sessão resolver. Sem hint não
  * há fetch algum. Não-donos recebem 404.
  */
-export function ProfileAccountIsland({
-	eventUrl,
-	projectId,
-	shortId,
-}: ProfileAccountIslandProps) {
+export function ProfileAccountIsland(props: ProfileAccountIslandProps) {
 	const searchParams = useSearchParams();
-	const hasHint = searchParams.get("me") !== null;
-	const session = authClient.useSession();
-	const userId = session.data?.user.id;
-	const myProfile = trpc.getMyProfileData.useQuery(
-		{ projectUrl: eventUrl },
-		{ enabled: hasHint && Boolean(userId) },
-	);
 
-	if (!hasHint) {
+	if (searchParams.get("me") === null) {
 		return (
 			<Card className="w-full p-8 text-center">
 				<h1 className="font-heading text-2xl font-bold">
@@ -62,6 +51,21 @@ export function ProfileAccountIsland({
 			</Card>
 		);
 	}
+
+	return <ProfileAccountIslandInner {...props} />;
+}
+
+function ProfileAccountIslandInner({
+	eventUrl,
+	projectId,
+	shortId,
+}: ProfileAccountIslandProps) {
+	const session = authClient.useSession();
+	const userId = session.data?.user.id;
+	const myProfile = trpc.getMyProfileData.useQuery(
+		{ projectUrl: eventUrl },
+		{ enabled: Boolean(userId) },
+	);
 
 	if (session.isPending || (userId && myProfile.isPending)) {
 		return (

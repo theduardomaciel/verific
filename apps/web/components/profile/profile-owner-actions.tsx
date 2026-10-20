@@ -26,21 +26,28 @@ interface ProfileOwnerActionsProps {
  * do `md` para cima ficam em linha. Invisível para visitantes e sem hint
  * (nenhum fetch de sessão).
  */
-export function ProfileOwnerActions({
+export function ProfileOwnerActions(props: ProfileOwnerActionsProps) {
+	const searchParams = useSearchParams();
+
+	// Sem o hint `?me`, nem monta a ilha: `useSession` dispara uma
+	// invocação de `/api/auth/get-session` no mount.
+	if (searchParams.get("me") === null) return null;
+
+	return <ProfileOwnerActionsInner {...props} />;
+}
+
+function ProfileOwnerActionsInner({
 	eventUrl,
 	projectId,
 	shortId,
 }: ProfileOwnerActionsProps) {
-	const searchParams = useSearchParams();
-	const hasHint = searchParams.get("me") !== null;
 	const session = authClient.useSession();
 	const userId = session.data?.user.id;
 	const myProfile = trpc.getMyProfileData.useQuery(
 		{ projectUrl: eventUrl },
-		{ enabled: hasHint && Boolean(userId) },
+		{ enabled: Boolean(userId) },
 	);
 
-	if (!hasHint) return null;
 	if (session.isPending || (userId && myProfile.isPending)) {
 		// Dois botões `size="lg"` (h-10): o esqueleto reserva a mesma altura.
 		return (
