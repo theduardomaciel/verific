@@ -190,21 +190,21 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 								<Share2 size={20} />
 							</Button>
 						</ShareDialog>
-						<Button
-							asChild
-							size={"lg"}
-							variant={"outline"}
-							className="h-10 min-w-10"
-						>
-							<Link
-								href={`/dashboard/activities/${activityId}/form`}
-								prefetch={false}
-								className="flex-1"
+						{activity.form ? (
+							<Button
+								asChild
+								size={"icon"}
+								variant={"outline"}
+								className="h-10 min-w-10"
 							>
-								<ClipboardList size={20} />
-								Formulírio
-							</Link>
-						</Button>
+								<Link
+									href={`/dashboard/activities/${activityId}/form`}
+									prefetch={false}
+								>
+									<ClipboardList size={20} />
+								</Link>
+							</Button>
+						) : null}
 						<Button
 							asChild
 							size={"lg"}
@@ -250,13 +250,13 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 										: null}
 							</span>
 						</ParticipantsList.Title>
-						<div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+						<div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
 							<SearchBar
 								prefix={"search"}
 								placeholder="Pesquisar participantes"
 								className="w-full pl-10 sm:flex-1"
 							/>
-							<div className="flex w-full items-center gap-2 sm:w-auto">
+							<div className="flex w-full items-center gap-3 sm:w-auto">
 								<SortBy
 									items={[
 										{

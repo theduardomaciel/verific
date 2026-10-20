@@ -23,24 +23,53 @@ export function CategoryCard({
 	return (
 		<div
 			className={cn(
-				"flex h-fit flex-row flex-wrap items-center justify-between gap-4 rounded-lg border bg-transparent px-6 py-2",
+				"flex h-fit flex-col gap-3 rounded-lg border bg-transparent px-4 py-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:px-6 lg:py-2",
 				className,
 			)}
 		>
-			<div className="inline-flex items-center justify-start gap-4">
+			<div className="flex flex-row items-center justify-between gap-4 lg:justify-start">
 				<CategoryLabel category={category} />
-				<p className="text-foreground shrink grow basis-0 text-base font-medium">
-					{text}
-				</p>
+
+				{hours ? (
+					<CategoryWorkload hours={hours} className="lg:hidden" />
+				) : null}
 			</div>
+
+			<p
+				title={text}
+				className="text-foreground line-clamp-2 min-w-0 flex-1 text-base font-medium lg:line-clamp-1"
+			>
+				{text}
+			</p>
+
 			{hours ? (
-				<div className="inline-flex items-center justify-end gap-2">
-					<Clock className="h-3.5 w-3.5" />
-					<p className="text-foreground text-left text-sm font-medium">
-						{formatWorkload(hours ?? 0)}
-					</p>
-				</div>
+				<CategoryWorkload
+					hours={hours}
+					className="hidden lg:flex lg:shrink-0"
+				/>
 			) : null}
+		</div>
+	);
+}
+
+function CategoryWorkload({
+	className,
+	hours,
+}: {
+	className?: string;
+	hours: number;
+}) {
+	return (
+		<div
+			className={cn(
+				"inline-flex items-center justify-end gap-2",
+				className,
+			)}
+		>
+			<Clock className="h-3.5 w-3.5" />
+			<p className="text-foreground text-left text-sm font-medium">
+				{formatWorkload(hours ?? 0)}
+			</p>
 		</div>
 	);
 }
