@@ -115,7 +115,7 @@ export function ActivityEnrollmentPanel({
 			<aside
 				id={ENROLLMENT_CARD_ID}
 				aria-labelledby={ENROLLMENT_HEADING_ID}
-				className="bg-card w-full scroll-mt-24 self-start rounded-lg border p-6 text-sm shadow-sm lg:sticky lg:top-24"
+				className="bg-card w-full scroll-mt-24 self-start rounded-lg border p-6 text-sm shadow-sm lg:sticky lg:top-6"
 			>
 				<h2
 					id={ENROLLMENT_HEADING_ID}

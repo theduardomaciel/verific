@@ -82,8 +82,18 @@ async function ActivityPageLoader({
 	// (duas queries COUNT baratas). Antes esta página buscava a lista
 	// inteira do evento (`getCachedActivities`, ~300 ms) só para achar o
 	// número desta atividade no primeiro render.
+	//
+	// O `getActivity` anônimo devolve a contagem DENTRO de `activity`
+	// (participantes + ofertas de fila pendentes); `data.participantsAmount`
+	// de nível superior só existe na branch logada. Sem esse fallback a
+	// contagem ficava `null`, e `isActivityFull` lê contagem desconhecida
+	// como lotada — a página marcava "sem vagas" mesmo havendo vaga.
 	const participantsCount =
-		"participantsAmount" in data ? (data.participantsAmount ?? null) : null;
+		"participantsAmount" in data
+			? (data.participantsAmount ?? null)
+			: (("participantsAmount" in activity
+					? activity.participantsAmount
+					: null) ?? null);
 
 	return (
 		<EventContainer.Holder>
