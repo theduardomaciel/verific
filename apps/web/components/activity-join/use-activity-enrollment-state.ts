@@ -115,6 +115,7 @@ export function useActivityEnrollmentState({
 	const { conflicts, isLoading: conflictsLoading } = useScheduleConflicts(
 		activity,
 		eventUrl,
+		{ userId, participantId, subscribedIds, isPending },
 	);
 
 	const form = useMemo<PublishedActivityForm>(

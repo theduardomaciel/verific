@@ -35,6 +35,9 @@ export function proxy(request: NextRequest) {
 	return NextResponse.next();
 }
 
+// Matcher deliberadamente mínimo: rotas públicas do evento, `/_next/*`,
+// assets, robots/sitemap e payloads RSC `.segment` não passam pelo proxy.
+// Só estas rotas precisam do cookie de sessão para redirecionar.
 export const config = {
 	matcher: [
 		"/dashboard",

@@ -1,39 +1,57 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import { authClient } from "@/lib/auth-client";
 import { isWithinPeriod } from "@/lib/date";
+import { hasSessionMarker } from "@/lib/session-marker";
 import { trpc } from "@/lib/trpc/react";
 
 interface ProfileVisitRecorderProps {
-	eventUrl: string;
+	projectId: string;
 	shortId: string;
 	eventStartDate: string;
 	eventEndDate: string;
 }
 
+// Memória do módulo (por aba, sobrevive à navegação do cliente): uma visita
+// já registrada não volta a chamar a função dentro da mesma janela de
+// deduplicação; uma requisição em voo também não é duplicada por
+// remontagem/StrictMode. Sem `sessionStorage`: o custo de uma nova visita
+// após reload é idempotente no banco.
+const VISIT_DEDUPE_MS = 10 * 60 * 1000;
+const recordedVisits = new Map<string, number>();
+const visitsInFlight = new Set<string>();
+
+function visitKey(projectId: string, shortId: string) {
+	return `${projectId}:${shortId}`;
+}
+
 /**
- * Registra visita = conexão (viewer -> viewed) uma vez por aba/período.
- * Só dispara p/ logados; anônimos, não-participantes e self-visit são
- * ignorados no servidor. Sem hint `?me`: QR do badge não tem query.
+ * Registra visita = conexão (viewer -> viewed) em uma única chamada.
+ *
+ * A mutation pública lê a sessão no servidor: não existe mais o
+ * `/api/auth/get-session` antes dela. Anônimos, não-participantes e
+ * self-visit são ignorados no servidor. O QR do badge não traz `?me`;
+ * o marcador de sessão evita a chamada para quem nem está logado.
  *
  * O período do evento é checado no cliente, com as datas já entregues pelo
- * shell estático: fora dele nem a sessão é consultada. Isso evita as duas
- * invocações de função (get-session + mutation) por visita antes/depois do
- * evento. O servidor repete a checagem como defesa contra relógio adiantado.
+ * shell estático: fora dele nada é chamado. O servidor repete a checagem
+ * como defesa contra relógio adiantado.
  */
 export function ProfileVisitRecorder({
-	eventUrl,
+	projectId,
 	shortId,
 	eventStartDate,
 	eventEndDate,
 }: ProfileVisitRecorderProps) {
-	const [isOngoing, setIsOngoing] = useState(false);
+	const [canRecord, setCanRecord] = useState(false);
 
 	useEffect(() => {
 		const update = () => {
-			setIsOngoing(isWithinPeriod(eventStartDate, eventEndDate));
+			setCanRecord(
+				isWithinPeriod(eventStartDate, eventEndDate) &&
+					hasSessionMarker(),
+			);
 		};
 		update();
 
@@ -52,43 +70,53 @@ export function ProfileVisitRecorder({
 		return () => clearTimeout(timer);
 	}, [eventEndDate, eventStartDate]);
 
-	if (!isOngoing) return null;
+	// Sem marcador não há sessão provável: não gasta a invocação. Sessões
+	// anteriores ao deploy só voltam a registrar após um novo login.
+	if (!canRecord) return null;
 
-	return <ProfileVisitRecorderInner eventUrl={eventUrl} shortId={shortId} />;
+	return (
+		<ProfileVisitRecorderInner projectId={projectId} shortId={shortId} />
+	);
 }
 
 function ProfileVisitRecorderInner({
-	eventUrl,
+	projectId,
 	shortId,
-}: Pick<ProfileVisitRecorderProps, "eventUrl" | "shortId">) {
-	const session = authClient.useSession();
-	const userId = session.data?.user.id;
+}: Pick<ProfileVisitRecorderProps, "projectId" | "shortId">) {
 	const { mutateAsync } = trpc.recordProfileVisit.useMutation();
+	const requestedKey = useRef<string | null>(null);
 
 	useEffect(() => {
-		if (!userId || session.isPending) return;
-		const key = `${eventUrl}:${shortId}:${userId}`;
-		const storageKey = `profile-visit:${key}`;
-		const now = Date.now();
-		const storedAt = Number(sessionStorage.getItem(storageKey));
+		const key = visitKey(projectId, shortId);
+		// Exatamente uma tentativa por montagem (e por perfil, caso a
+		// mesma instância seja reutilizada numa navegação).
+		if (requestedKey.current === key) return;
+		requestedKey.current = key;
 
-		// The database write is idempotent, but avoiding the request entirely
-		// prevents remounts and repeated navigation from invoking a function.
-		if (Number.isFinite(storedAt) && now - storedAt < 10 * 60 * 1000) {
+		const recordedAt = recordedVisits.get(key);
+		if (
+			(recordedAt !== undefined &&
+				Date.now() - recordedAt < VISIT_DEDUPE_MS) ||
+			visitsInFlight.has(key)
+		) {
 			return;
 		}
 
-		sessionStorage.setItem(storageKey, String(now));
-		let cancelled = false;
-		void mutateAsync({ projectUrl: eventUrl, shortId }).catch(() => {
-			// Allow a later visit to retry if the request failed.
-			if (!cancelled) sessionStorage.removeItem(storageKey);
-		});
-
-		return () => {
-			cancelled = true;
-		};
-	}, [eventUrl, mutateAsync, session.isPending, shortId, userId]);
+		visitsInFlight.add(key);
+		void mutateAsync({ projectId, shortId })
+			.then((result) => {
+				// Só marca como concluída quando o servidor realmente gravou.
+				// Visita anônima (`recorded: false`) pode tentar de novo depois
+				// de um login, sem perder a primeira visita registrada.
+				if (result.recorded) recordedVisits.set(key, Date.now());
+			})
+			.catch(() => {
+				// Permite nova tentativa numa próxima montagem.
+			})
+			.finally(() => {
+				visitsInFlight.delete(key);
+			});
+	}, [mutateAsync, projectId, shortId]);
 
 	return null;
 }

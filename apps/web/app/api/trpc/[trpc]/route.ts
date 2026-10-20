@@ -94,9 +94,17 @@ const handler = async (req: NextRequest) => {
 			};
 		},
 		responseMeta: ({ errors, info }) => {
+			// Mutations (incluindo `recordProfileVisit`) nunca podem ser
+			// cacheadas: a resposta depende da sessão e/ou altera dados.
+			if (req.method !== "GET") {
+				return {
+					headers: {
+						"Cache-Control": "private, no-store",
+					},
+				};
+			}
 			// Só GET de query bem-sucedida e 100% de caminhos públicos: nada
-			// de cachear mutação, erro ou batch misto com dado de sessão.
-			if (req.method !== "GET") return {};
+			// de cachear erro ou batch misto com dado de sessão.
 			if (errors.length > 0) return {};
 			if (!isPublicCacheableQuery(info)) return {};
 

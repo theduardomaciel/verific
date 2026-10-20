@@ -5,26 +5,33 @@ import { useMemo, useState } from "react";
 // Types
 import type { ActivityDetail } from "@/components/activity-join/use-activity-enrollment-state";
 
-// Hooks
-import { useSubscribedActivities } from "@/hooks/use-subscribed-activities";
 // Lib
 import { findScheduleConflicts, type Conflict } from "@/lib/schedule/conflicts";
 // API
 import { trpc } from "@/lib/trpc/react";
+
+interface MembershipState {
+	userId?: string;
+	participantId?: string;
+	subscribedIds?: string[];
+	isPending: boolean;
+}
 
 /**
  * Conflitos da atividade da página contra as atividades do usuário no
  * evento (`getActivitiesFromParticipant` já traz as sessões: sem
  * mudança de API). Vazio para anônimo, fora do evento e já inscrito —
  * e vazio enquanto carrega, para o aviso nunca piscar.
+ *
+ * Recebe o vínculo já resolvido pelo chamador: a página de atividade já
+ * usa `useSubscribedActivities`, então repetir o hook aqui só duplicava
+ * consumidores da mesma sessão.
  */
 export function useScheduleConflicts(
 	activity: ActivityDetail,
 	eventUrl: string,
+	{ userId, participantId, subscribedIds, isPending }: MembershipState,
 ): { conflicts: Conflict[]; isLoading: boolean } {
-	const { userId, participantId, subscribedIds, isPending } =
-		useSubscribedActivities(eventUrl);
-
 	const enrolledQuery = trpc.getActivitiesFromParticipant.useQuery(
 		{ projectUrl: eventUrl },
 		{

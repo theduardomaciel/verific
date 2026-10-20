@@ -997,12 +997,12 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 	},
 
 	recordProfileVisit: {
-		snapshot: async (input) => ({
-			projectId: await projectIdByUrl(readString(input, "projectUrl")),
-		}),
-		tags: ({ input, result, snapshot }) => {
+		// A mutation virou pública para fazer a visita em uma única chamada.
+		// O input já traz o id do projeto: sem snapshot, não há segunda
+		// resolução da mesma linha antes do handler.
+		tags: ({ input, result }) => {
 			if (!record(result).recorded) return [];
-			const projectId = readString(snapshot, "projectId");
+			const projectId = readString(input, "projectId");
 			const shortId = readString(input, "shortId");
 			return [
 				projectId && shortId

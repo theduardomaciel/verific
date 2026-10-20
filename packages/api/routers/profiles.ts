@@ -744,11 +744,26 @@ export const profilesRouter = createTRPCRouter({
 	 * Só participantes do mesmo evento; self-visit e anônimos ignorados.
 	 * Idempotente via PK (viewer, viewed): repetição não infla.
 	 */
-	recordProfileVisit: protectedProcedure
-		.input(z.object({ projectUrl: z.string(), shortId: z.string() }))
+	recordProfileVisit: publicProcedure
+		.input(
+			z.object({
+				// O perfil já conhece o projeto: receber o id evita resolver a
+				// URL de novo aqui e no snapshot de invalidação de cache.
+				projectId: z.string().uuid(),
+				shortId: z.string(),
+			}),
+		)
 		.mutation(async ({ input, ctx }) => {
+			// O cliente não consulta mais `/api/auth/get-session` antes:
+			// esta mutation lê a sessão do próprio contexto. Anônimos saem
+			// antes de qualquer query.
+			const userId = ctx.session?.user?.id;
+			if (!userId) {
+				return { recorded: false };
+			}
+
 			const projectRow = await db.query.project.findFirst({
-				where: eq(project.url, input.projectUrl),
+				where: eq(project.id, input.projectId),
 				columns: {
 					id: true,
 					profilesEnabled: true,
@@ -786,7 +801,7 @@ export const profilesRouter = createTRPCRouter({
 				db.query.participant.findFirst({
 					where: and(
 						eq(participant.projectId, projectRow.id),
-						eq(participant.userId, ctx.session.user.id),
+						eq(participant.userId, userId),
 					),
 					columns: { id: true },
 				}),

@@ -115,7 +115,7 @@ function ProfileBody({
 					{modules.connectionsEnabled && (
 						<Suspense fallback={null}>
 							<ProfileVisitRecorder
-								eventUrl={eventUrl}
+								projectId={projectId}
 								shortId={shortId}
 								eventStartDate={eventStartDate}
 								eventEndDate={eventEndDate}
