@@ -28,9 +28,15 @@ const { dbQuery, dbSelect } = vi.hoisted(() => ({
 		profileFieldVisibility: { findMany: vi.fn() },
 		profileConnection: { findMany: vi.fn() },
 	},
-	dbSelect: vi.fn(() => ({
-		from: () => ({ where: async () => [{ n: 0 }] }),
-	})),
+	dbSelect: vi.fn(() => {
+		const rows: unknown[] = [];
+		// `getActivityAvailability` awaita o `where` e também encadeia
+		// `.groupBy(...)`; o mock precisa suportar as duas formas.
+		const whereResult = Object.assign(Promise.resolve(rows), {
+			groupBy: async () => rows,
+		});
+		return { from: () => ({ where: () => whereResult }) };
+	}),
 }));
 
 vi.mock("@verific/drizzle", () => ({
@@ -81,6 +87,10 @@ function tripwireContext() {
 }
 
 const INPUTS: Record<string, unknown> = {
+	getActivityAvailability: {
+		projectId: PROJECT_UUID,
+		activityIds: [randomUUID()],
+	},
 	getAllProjects: undefined,
 	getProject: { url: "event-1" },
 	getProjectTags: { projectId: PROJECT_UUID },

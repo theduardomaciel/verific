@@ -9,8 +9,7 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import {
-	ActivityDetails,
-	ActivityEnrollmentPanel,
+	ActivityDetailContent,
 	ActivityPageSkeleton,
 	type ActivityDetail,
 } from "@/components/activity-join";
@@ -78,16 +77,15 @@ async function ActivityPageLoader({
 		notFound();
 	}
 
-	// Contagem pública de inscritos: vem do próprio `getActivity` anônimo
-	// (duas queries COUNT baratas). Antes esta página buscava a lista
-	// inteira do evento (`getCachedActivities`, ~300 ms) só para achar o
-	// número desta atividade no primeiro render.
+	// Contagem pública inicial: vem do próprio `getActivity` anônimo
+	// (participantes + ofertas de fila pendentes). Ela é apenas o fallback
+	// de primeiro paint; `ActivityDetailContent` atualiza o número com a
+	// query pública `getActivityAvailability` (s-maxage=60), que não
+	// invalida o shell estático a cada join/check-in.
 	//
-	// O `getActivity` anônimo devolve a contagem DENTRO de `activity`
-	// (participantes + ofertas de fila pendentes); `data.participantsAmount`
-	// de nível superior só existe na branch logada. Sem esse fallback a
-	// contagem ficava `null`, e `isActivityFull` lê contagem desconhecida
-	// como lotada — a página marcava "sem vagas" mesmo havendo vaga.
+	// `data.participantsAmount` de nível superior só existe na branch
+	// logada; sem o fallback a contagem ficava `null`, e `isActivityFull`
+	// lê contagem desconhecida como lotada.
 	const participantsCount =
 		"participantsAmount" in data
 			? (data.participantsAmount ?? null)
@@ -114,17 +112,10 @@ async function ActivityPageLoader({
 					</Button>
 
 					<div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px] xl:gap-12">
-						<div className="min-w-0 text-base">
-							<ActivityDetails
-								activity={activity}
-								participantsCount={participantsCount}
-								projectUrl={eventUrl}
-							/>
-						</div>
-						<ActivityEnrollmentPanel
+						<ActivityDetailContent
 							activity={activity}
 							eventUrl={eventUrl}
-							participantsCount={participantsCount}
+							initialParticipantsCount={participantsCount}
 						/>
 					</div>
 				</div>

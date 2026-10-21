@@ -1,13 +1,11 @@
 import { db } from "@verific/drizzle";
-import { and, eq } from "@verific/drizzle/orm";
+import { and, eq, inArray } from "@verific/drizzle/orm";
 import {
 	activity,
-	activitySession,
 	formField,
 	formSection,
 	formVersion,
 	participant,
-	participantOnActivity,
 	project,
 	speaker,
 	speakerOnActivity,
@@ -125,15 +123,6 @@ async function activityProjectId(activityId: string | undefined) {
 	return row?.projectId;
 }
 
-async function activityIdsForParticipant(participantId: string | undefined) {
-	if (!participantId) return [];
-	const rows = await db.query.participantOnActivity.findMany({
-		where: eq(participantOnActivity.participantId, participantId),
-		columns: { activityId: true },
-	});
-	return rows.map((row) => row.activityId);
-}
-
 async function participantRowsByProjectUser(
 	projectId: string | undefined,
 	userId: string | undefined,
@@ -146,6 +135,21 @@ async function participantRowsByProjectUser(
 		),
 		columns: { id: true, shortId: true },
 	});
+}
+
+async function participantShortIds(
+	projectId: string | undefined,
+	participantIds: string[],
+) {
+	if (!projectId || participantIds.length === 0) return [];
+	const rows = await db.query.participant.findMany({
+		where: and(
+			eq(participant.projectId, projectId),
+			inArray(participant.id, participantIds),
+		),
+		columns: { shortId: true },
+	});
+	return rows.map((row) => row.shortId);
 }
 
 async function activityIdsForSpeaker(speakerId: number | undefined) {
@@ -323,41 +327,35 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 		},
 	},
 
-	updateActivityParticipants: {
-		snapshot: snapshotActivityProject,
-		tags: ({ input, snapshot }) => {
-			const activityId = readString(input, "activityId");
-			const projectId = readString(snapshot, "projectId");
-			return [
-				activityId ? activityCacheTag(activityId) : undefined,
-				projectId ? projectActivitiesCacheTag(projectId) : undefined,
-			];
-		},
-	},
-
+	// `updateActivityParticipants` e `addMonitorsToActivity` só mudam
+	// vagas/contagens (monitor não aparece no payload público anônimo): a
+	// disponibilidade vem de `getActivityAvailability` (s-maxage=60), então
+	// regenerar o shell estático aqui seria desperdício.
+	//
+	// `addActivityParticipants` também pode gravar respostas de formulário no
+	// perfil de quem foi inscrito — mas só desses participantes, não do evento
+	// inteiro.
 	addActivityParticipants: {
-		snapshot: snapshotActivityProject,
-		tags: ({ input, snapshot }) => {
-			const activityId = readString(input, "activityId");
-			const projectId = readString(snapshot, "projectId");
-			return [
-				activityId ? activityCacheTag(activityId) : undefined,
-				projectId ? projectActivitiesCacheTag(projectId) : undefined,
-				// Pode gravar respostas em nome de participantes → perfis.
-				projectId ? projectProfilesCacheTag(projectId) : undefined,
-			];
+		snapshot: async (input) => {
+			const projectId = await activityProjectId(
+				readString(input, "activityId"),
+			);
+			return {
+				projectId,
+				shortIds: await participantShortIds(
+					projectId,
+					readStringArray(input, "participantsIdsToAdd"),
+				),
+			};
 		},
-	},
-
-	addMonitorsToActivity: {
-		snapshot: snapshotActivityProject,
 		tags: ({ input, snapshot }) => {
-			const activityId = readString(input, "activityId");
+			// Sem respostas não há mudança no perfil público.
+			if (!record(input).formAnswers) return [];
 			const projectId = readString(snapshot, "projectId");
-			return [
-				activityId ? activityCacheTag(activityId) : undefined,
-				projectId ? projectActivitiesCacheTag(projectId) : undefined,
-			];
+			if (!projectId) return [];
+			return readStringArray(snapshot, "shortIds").map((shortId) =>
+				participantProfileCacheTag(projectId, shortId),
+			);
 		},
 	},
 
@@ -395,45 +393,20 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 				: undefined;
 			return { projectId: row?.projectId, shortId: row?.shortId };
 		},
-		tags: ({ input, snapshot }) => {
-			const activityId = readString(input, "activityId");
+		tags: ({ snapshot }) => {
 			const projectId = readString(snapshot, "projectId");
 			const shortId = readString(snapshot, "shortId");
-			return [
-				activityId ? activityCacheTag(activityId) : undefined,
-				projectId ? projectActivitiesCacheTag(projectId) : undefined,
-				// Respostas da atividade podem aparecer no perfil público.
-				projectId && shortId
-					? participantProfileCacheTag(projectId, shortId)
-					: undefined,
-			];
+			// Só o perfil de quem saiu pode mudar; a contagem da atividade fica
+			// na query pública de disponibilidade.
+			return projectId && shortId
+				? [participantProfileCacheTag(projectId, shortId)]
+				: [];
 		},
 	},
 
 	// ── participants ─────────────────────────────────────────────────
-	updateSessionPresence: {
-		snapshot: async (input) => {
-			const sessionId = readString(input, "sessionId");
-			if (!sessionId) return undefined;
-			const session = await db.query.activitySession.findFirst({
-				where: eq(activitySession.id, sessionId),
-				columns: { activityId: true },
-			});
-			if (!session) return undefined;
-			return {
-				activityId: session.activityId,
-				projectId: await activityProjectId(session.activityId),
-			};
-		},
-		tags: ({ snapshot }) => {
-			const activityId = readString(snapshot, "activityId");
-			const projectId = readString(snapshot, "projectId");
-			return [
-				activityId ? activityCacheTag(activityId) : undefined,
-				projectId ? projectActivitiesCacheTag(projectId) : undefined,
-			];
-		},
-	},
+	// `updateSessionPresence` (check-in de badge) não aparece no payload
+	// público anônimo: atividade, lista e perfis não mudam no HTML cacheado.
 
 	removeParticipant: {
 		snapshot: async (input) => {
@@ -447,21 +420,18 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 			return {
 				projectId: row?.projectId,
 				shortId: row?.shortId,
-				activityIds: await activityIdsForParticipant(participantId),
 			};
 		},
 		tags: ({ snapshot }) => {
 			const projectId = readString(snapshot, "projectId");
 			const shortId = readString(snapshot, "shortId");
 			return [
+				// Remover o participante apaga conexões dele: os perfis que
+				// listavam essa pessoa também mudam.
 				projectId ? projectProfilesCacheTag(projectId) : undefined,
 				projectId && shortId
 					? participantProfileCacheTag(projectId, shortId)
 					: undefined,
-				projectId ? projectActivitiesCacheTag(projectId) : undefined,
-				...readStringArray(snapshot, "activityIds").map(
-					activityCacheTag,
-				),
 			];
 		},
 	},
@@ -476,7 +446,6 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 			return {
 				projectId,
 				shortId: row?.shortId,
-				activityIds: await activityIdsForParticipant(row?.id),
 			};
 		},
 		tags: ({ snapshot }) => {
@@ -487,79 +456,33 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 				projectId && shortId
 					? participantProfileCacheTag(projectId, shortId)
 					: undefined,
-				projectId ? projectActivitiesCacheTag(projectId) : undefined,
-				...readStringArray(snapshot, "activityIds").map(
-					activityCacheTag,
-				),
 			];
 		},
 	},
 
 	// ── waitlist ─────────────────────────────────────────────────────
-	// Inscrição/desistência/promoção mudam contagem (inclusive assentos
-	// "offered", contados em `participantsCount`) e podem gravar respostas.
+	// A contagem (inclusive ofertas "offered") vive em
+	// `getActivityAvailability`; por isso nenhuma dessas mutations invalida
+	// atividade, lista ou o guarda-chuva de perfis. A única mudança pública
+	// possível é o perfil de quem entrou, quando o join grava respostas.
 	joinActivityWaitlist: {
-		snapshot: snapshotActivityProject,
-		tags: ({ input, snapshot }) => {
-			const activityId = readString(input, "activityId");
-			const projectId = readString(snapshot, "projectId");
-			return [
-				activityId ? activityCacheTag(activityId) : undefined,
-				projectId ? projectActivitiesCacheTag(projectId) : undefined,
-				projectId ? projectProfilesCacheTag(projectId) : undefined,
-			];
+		snapshot: async (input, ctx) => {
+			const projectId = await activityProjectId(
+				readString(input, "activityId"),
+			);
+			const row = await participantRowsByProjectUser(
+				projectId,
+				sessionUserId(ctx),
+			);
+			return { projectId, shortId: row?.shortId };
 		},
-	},
-
-	leaveActivityWaitlist: {
-		snapshot: snapshotActivityProject,
 		tags: ({ input, snapshot }) => {
-			const activityId = readString(input, "activityId");
+			if (!record(input).formAnswers) return [];
 			const projectId = readString(snapshot, "projectId");
-			return [
-				activityId ? activityCacheTag(activityId) : undefined,
-				projectId ? projectActivitiesCacheTag(projectId) : undefined,
-				projectId ? projectProfilesCacheTag(projectId) : undefined,
-			];
-		},
-	},
-
-	confirmWaitlistOffer: {
-		snapshot: snapshotActivityProject,
-		tags: ({ input, snapshot }) => {
-			const activityId = readString(input, "activityId");
-			const projectId = readString(snapshot, "projectId");
-			return [
-				activityId ? activityCacheTag(activityId) : undefined,
-				projectId ? projectActivitiesCacheTag(projectId) : undefined,
-				projectId ? projectProfilesCacheTag(projectId) : undefined,
-			];
-		},
-	},
-
-	promoteFromWaitlist: {
-		snapshot: snapshotActivityProject,
-		tags: ({ input, snapshot }) => {
-			const activityId = readString(input, "activityId");
-			const projectId = readString(snapshot, "projectId");
-			return [
-				activityId ? activityCacheTag(activityId) : undefined,
-				projectId ? projectActivitiesCacheTag(projectId) : undefined,
-				projectId ? projectProfilesCacheTag(projectId) : undefined,
-			];
-		},
-	},
-
-	removeFromWaitlist: {
-		snapshot: snapshotActivityProject,
-		tags: ({ input, snapshot }) => {
-			const activityId = readString(input, "activityId");
-			const projectId = readString(snapshot, "projectId");
-			return [
-				activityId ? activityCacheTag(activityId) : undefined,
-				projectId ? projectActivitiesCacheTag(projectId) : undefined,
-				projectId ? projectProfilesCacheTag(projectId) : undefined,
-			];
+			const shortId = readString(snapshot, "shortId");
+			return projectId && shortId
+				? [participantProfileCacheTag(projectId, shortId)]
+				: [];
 		},
 	},
 
@@ -928,17 +851,22 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 	submitAnswers: {
 		tags: ({ input, result }) => {
 			const projectId = readString(input, "projectId");
-			const shortId = readString(result, "shortId");
+			// A inscrição só muda a programação quando vincula um palestrante
+			// pré-cadastrado (`speaker.participantId`): aí a lista e as
+			// atividades daquele palestrante passam a expor o vínculo. Sem
+			// claim, o perfil criado ainda não tem entrada cacheada — e o
+			// guarda-chuva de perfis do evento não muda.
+			const claimedActivityIds = readStringArray(
+				result,
+				"claimedSpeakerActivityIds",
+			);
 			return [
-				projectId ? projectProfilesCacheTag(projectId) : undefined,
-				projectId && shortId
-					? participantProfileCacheTag(projectId, shortId)
-					: undefined,
-				// A inscrição pode vincular um palestrante pré-cadastrado
-				// (`speaker.participantId`), e a programação expõe esse vínculo.
-				projectId ? projectActivitiesCacheTag(projectId) : undefined,
 				// O cadastro grava `user.name` (pode ser o primeiro valor).
 				GLOBAL_CACHE_TAGS.profiles,
+				projectId && claimedActivityIds.length > 0
+					? projectActivitiesCacheTag(projectId)
+					: undefined,
+				...claimedActivityIds.map(activityCacheTag),
 			];
 		},
 	},
@@ -1000,8 +928,13 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 		// A mutation virou pública para fazer a visita em uma única chamada.
 		// O input já traz o id do projeto: sem snapshot, não há segunda
 		// resolução da mesma linha antes do handler.
+		//
+		// `recorded` continua true para visitas aceitas (o cliente usa isso
+		// para o dedupe de 10 min); `created` só é true quando a PK
+		// (viewer, viewed) realmente inseriu uma conexão. Visita repetida não
+		// muda o perfil visitado e não deve regenerar o ISR.
 		tags: ({ input, result }) => {
-			if (!record(result).recorded) return [];
+			if (!record(result).created) return [];
 			const projectId = readString(input, "projectId");
 			const shortId = readString(input, "shortId");
 			return [

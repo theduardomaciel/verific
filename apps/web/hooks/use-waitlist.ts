@@ -35,6 +35,7 @@ export function useWaitlist({ activityId, userId }: UseWaitlistArgs) {
 			utils.getMyWaitlistEntries.invalidate(),
 			utils.getMyEnrollmentState.invalidate(),
 			utils.getActivitiesFromParticipant.invalidate(),
+			utils.getActivityAvailability.invalidate(),
 		]);
 		for (const result of settled) {
 			if (result.status === "rejected") {

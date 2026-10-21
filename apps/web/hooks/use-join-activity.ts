@@ -115,6 +115,7 @@ export function useJoinActivity({
 						await Promise.allSettled([
 							utils.getMyEnrollmentState.invalidate(),
 							utils.getActivitiesFromParticipant.invalidate(),
+							utils.getActivityAvailability.invalidate(),
 						]);
 					}
 					setError(joinError);
@@ -127,6 +128,7 @@ export function useJoinActivity({
 					revalidateParticipantActivities(userId),
 					utils.getMyEnrollmentState.invalidate(),
 					utils.getActivitiesFromParticipant.invalidate(),
+					utils.getActivityAvailability.invalidate(),
 				]);
 				for (const result of settled) {
 					if (result.status === "rejected") {

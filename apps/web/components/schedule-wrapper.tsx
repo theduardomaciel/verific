@@ -23,5 +23,11 @@ export async function ScheduleWrapper({ project }: Props) {
 		pageSize: 1000, // Fetch all activities for the schedule
 	});
 
-	return <ScheduleContent activities={activities} eventUrl={project.url} />;
+	return (
+		<ScheduleContent
+			activities={activities}
+			projectId={project.id}
+			eventUrl={project.url}
+		/>
+	);
 }

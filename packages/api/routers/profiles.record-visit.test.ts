@@ -7,11 +7,12 @@ const USER_ID = "22222222-2222-4222-8222-222222222222";
 const VIEWED_ID = "33333333-3333-4333-8333-333333333333";
 const VIEWER_ID = "44444444-4444-4444-8444-444444444444";
 
-const { db, findProject, findParticipant, insert, insertValues } = vi.hoisted(
-	() => {
+const { db, findProject, findParticipant, insert, insertValues, returning } =
+	vi.hoisted(() => {
 		const findProject = vi.fn();
 		const findParticipant = vi.fn();
-		const onConflictDoNothing = vi.fn(async () => undefined);
+		const returning = vi.fn(async () => [{}]);
+		const onConflictDoNothing = vi.fn(() => ({ returning }));
 		const insertValues = vi.fn(() => ({ onConflictDoNothing }));
 		const insert = vi.fn(() => ({ values: insertValues }));
 		return {
@@ -19,6 +20,7 @@ const { db, findProject, findParticipant, insert, insertValues } = vi.hoisted(
 			findParticipant,
 			insert,
 			insertValues,
+			returning,
 			db: {
 				query: {
 					project: { findFirst: findProject },
@@ -27,8 +29,7 @@ const { db, findProject, findParticipant, insert, insertValues } = vi.hoisted(
 				insert,
 			},
 		};
-	},
-);
+	});
 
 vi.mock("@verific/drizzle", () => ({ db }));
 
@@ -54,6 +55,7 @@ describe("recordProfileVisit", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		findProject.mockResolvedValue(projectRow());
+		returning.mockResolvedValue([{}]);
 	});
 
 	it("does nothing when the event window is closed", async () => {
@@ -100,7 +102,7 @@ describe("recordProfileVisit", () => {
 			shortId: "abc123",
 		});
 
-		expect(result).toEqual({ recorded: true });
+		expect(result).toEqual({ recorded: true, created: true });
 		expect(findProject).toHaveBeenCalledTimes(1);
 		expect(insert).toHaveBeenCalledTimes(1);
 		expect(insertValues).toHaveBeenCalledWith({
@@ -119,12 +121,15 @@ describe("recordProfileVisit", () => {
 
 		const caller = createCaller({ session });
 		const input = { projectId: PROJECT_ID, shortId: "abc123" };
+		returning.mockResolvedValueOnce([{}]).mockResolvedValueOnce([]);
 
 		await expect(caller.recordProfileVisit(input)).resolves.toEqual({
 			recorded: true,
+			created: true,
 		});
 		await expect(caller.recordProfileVisit(input)).resolves.toEqual({
 			recorded: true,
+			created: false,
 		});
 
 		expect(insert).toHaveBeenCalledTimes(2);

@@ -5,11 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
-import {
-	GLOBAL_CACHE_TAGS,
-	projectCacheTag,
-	projectUrlCacheTag,
-} from "@verific/api";
+import { projectCacheTag, projectUrlCacheTag } from "@verific/api";
 import { presetOfFamily } from "@verific/drizzle/theme";
 import { appUrl } from "@verific/env";
 
@@ -34,7 +30,7 @@ export async function generateMetadata({
 	"use cache";
 
 	const { eventUrl } = await params;
-	cacheTag(GLOBAL_CACHE_TAGS.events, projectUrlCacheTag(eventUrl));
+	cacheTag(projectUrlCacheTag(eventUrl));
 	const result = await getProject(eventUrl);
 
 	if (!result?.project) {

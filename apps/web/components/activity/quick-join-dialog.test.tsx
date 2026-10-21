@@ -13,12 +13,14 @@ const {
 	mutateAsyncMock,
 	invalidateSubscribedMock,
 	invalidateActivitiesMock,
+	invalidateAvailabilityMock,
 	revalidateSubscribedMock,
 	revalidateActivitiesMock,
 } = vi.hoisted(() => ({
 	mutateAsyncMock: vi.fn(),
 	invalidateSubscribedMock: vi.fn(),
 	invalidateActivitiesMock: vi.fn(),
+	invalidateAvailabilityMock: vi.fn(),
 	revalidateSubscribedMock: vi.fn(),
 	revalidateActivitiesMock: vi.fn(),
 }));
@@ -31,6 +33,9 @@ vi.mock("@/lib/trpc/react", () => ({
 			},
 			getActivitiesFromParticipant: {
 				invalidate: invalidateActivitiesMock,
+			},
+			getActivityAvailability: {
+				invalidate: invalidateAvailabilityMock,
 			},
 		}),
 		addActivityParticipants: {

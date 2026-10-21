@@ -43,7 +43,7 @@ function logCacheMiss(name: string, key?: string) {
 
 export async function getProject(projectUrl: string) {
 	"use cache";
-	cacheTag(GLOBAL_CACHE_TAGS.events, projectUrlCacheTag(projectUrl));
+	cacheTag(projectUrlCacheTag(projectUrl));
 
 	try {
 		const result = await publicClient.getProject({ url: projectUrl });
@@ -61,6 +61,33 @@ export async function getProject(projectUrl: string) {
 		logCacheMiss("getProject:null", projectUrl);
 		return null;
 	}
+}
+
+/**
+ * Landing do evento: única entrada pública que renderiza `project.owner.name`
+ * (e o e-mail do produtor). O guarda-chuva `events` fica restrito a esta
+ * leitura; layout, metadata, schedule, detalhe, inscrição e perfil usam
+ * `getProject`, que não carrega `events`.
+ *
+ * A entrada externa também precisa das tags de projeto: `getProject` é uma
+ * entrada aninhada, e as tags dela não sobem para o cache desta função.
+ */
+export async function getEventLanding(projectUrl: string) {
+	"use cache";
+	cacheTag(GLOBAL_CACHE_TAGS.events, projectUrlCacheTag(projectUrl));
+
+	const result = await getProject(projectUrl);
+
+	if (result?.project.id) {
+		cacheTag(projectCacheTag(result.project.id));
+		cacheLife("static");
+		logCacheMiss("getEventLanding", projectUrl);
+	} else {
+		cacheLife({ stale: 300, revalidate: 14400, expire: 28800 });
+		logCacheMiss("getEventLanding:null", projectUrl);
+	}
+
+	return result;
 }
 
 export async function getProjects() {
@@ -181,11 +208,11 @@ export async function getCachedActivity(params: { activityId: string }) {
 
 	const data = await publicClient.getActivity(params);
 
-	// O detalhe é renderizado dentro do evento: a tag de lista cobre
-	// mutações que derrubam a programação inteira (criação/exclusão de
-	// atividade e mudanças de palestrante/tag) sem exigir o projectId
-	// de quem muta.
-	cacheTag(projectActivitiesCacheTag(data.activity.project.id));
+	// Sem `project-activities`: o detalhe não deve ser regenerado quando a
+	// lista muda. Mutations que alteram o conteúdo de uma atividade já
+	// invalidam `activity:<id>`; criação/exclusão e mudanças de
+	// palestrante/tag invalidam a lista (e, quando afetam o detalhe,
+	// também as atividades específicas via snapshot).
 	cacheLife("static");
 	logCacheMiss("getCachedActivity", params.activityId);
 

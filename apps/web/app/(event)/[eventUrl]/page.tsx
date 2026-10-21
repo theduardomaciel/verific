@@ -27,7 +27,7 @@ import { EventAction } from "@/components/event-action";
 import * as EventContainer from "@/components/landing/event-container";
 import { EVENT_BADGE_COLORS } from "@/components/landing/event-nav";
 
-import { getEventStaticParams, getProject } from "@/lib/data";
+import { getEventLanding, getEventStaticParams } from "@/lib/data";
 import { cn } from "@/lib/utils";
 
 import { EventPageSkeleton } from "./skeleton";
@@ -61,7 +61,7 @@ export async function generateStaticParams() {
 }
 
 type EventPageProject = NonNullable<
-	Awaited<ReturnType<typeof getProject>>
+	Awaited<ReturnType<typeof getEventLanding>>
 >["project"];
 
 function EventPageBody({ project }: { project: EventPageProject }) {
@@ -227,7 +227,7 @@ function EventPageBody({ project }: { project: EventPageProject }) {
 /**
  * `params` é dado de URL: lido fora de `<Suspense>`, prende o App Shell a
  * um único link e quebra o prefetch compartilhado (`instant-shell-url-data`).
- * Por isso a leitura + `getProject` vivem no loader abaixo, dentro da
+ * Por isso a leitura + `getEventLanding` vivem no loader abaixo, dentro da
  * fronteira. O `notFound` continua valendo — e o layout acima já barra
  * `eventUrl` desconhecido com 404 real antes disso.
  */
@@ -249,7 +249,7 @@ async function EventPageLoader({
 	params: Promise<{ eventUrl: string }>;
 }) {
 	const { eventUrl } = await params;
-	const result = await getProject(eventUrl);
+	const result = await getEventLanding(eventUrl);
 
 	if (!result?.project) {
 		notFound();

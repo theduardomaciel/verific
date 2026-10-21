@@ -25,6 +25,7 @@ export function ParticipantQuitButton({
 	participantId,
 	projectUrl,
 }: Props) {
+	const utils = trpc.useUtils();
 	const mutation = trpc.deleteParticipantFromActivity.useMutation();
 
 	async function handleQuit() {
@@ -35,6 +36,7 @@ export function ParticipantQuitButton({
 		});
 		await revalidateSubscribedActivitiesIdsFromParticipant(userId);
 		await revalidateParticipantActivities(userId);
+		await utils.getActivityAvailability.invalidate();
 	}
 
 	return (

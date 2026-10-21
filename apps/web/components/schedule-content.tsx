@@ -35,6 +35,7 @@ import { SearchBar } from "@/components/search-bar";
 import { SortBy } from "@/components/sort-by";
 
 // Hooks
+import { useActivityAvailability } from "@/hooks/use-activity-availability";
 import { useSubscribedActivities } from "@/hooks/use-subscribed-activities";
 // Utils
 import {
@@ -49,14 +50,37 @@ import { trpc } from "@/lib/trpc/react";
 
 interface ScheduleContentProps {
 	activities: RouterOutput["getActivities"]["activities"];
+	projectId: string;
 	eventUrl: string;
 }
 
 export function ScheduleContent({
 	activities,
+	projectId,
 	eventUrl,
 }: ScheduleContentProps) {
 	const router = useRouter();
+	const utils = trpc.useUtils();
+	const activityIds = useMemo(
+		() => activities.map((activity) => activity.id),
+		[activities],
+	);
+	const availability = useActivityAvailability({ projectId, activityIds });
+	// A lista cacheada traz a contagem da última invalidação; a query pública
+	// substitui o número assim que chega, sem mudar o resto do payload.
+	const displayActivities = useMemo(
+		() =>
+			activities.map((activity) => {
+				const row = availability.byActivity.get(activity.id);
+				return row
+					? {
+							...activity,
+							participantsCount: row.participantsCount,
+						}
+					: activity;
+			}),
+		[activities, availability.byActivity],
+	);
 	const {
 		userId,
 		subscribedIds,
@@ -98,22 +122,23 @@ export function ScheduleContent({
 
 	// Quick join: uma instância de diálogo para a programação inteira.
 	const [quickJoinId, setQuickJoinId] = useState<string | null>(null);
-	// Pós-join local (a contagem estática não muda sozinha): +1 vaga
-	// ocupada e estado "Inscrito" imediatos até dados frescos chegarem.
+	// Pós-join local: estado "Inscrito" imediato. A contagem de vagas vem
+	// da query de disponibilidade (s-maxage=60), fonte volátil única — somar
+	// +1 aqui duplicaria o valor quando a query já trouxesse a nova inscrição.
 	const [joinedIds, setJoinedIds] = useState<string[]>([]);
 	// Respostas do servidor em corrida: o card reflete o estado real.
 	const [exhaustedIds, setExhaustedIds] = useState<string[]>([]);
 	const [closedIds, setClosedIds] = useState<string[]>([]);
 
 	const quickJoinActivity = useMemo(
-		() => activities.find((a) => a.id === quickJoinId) ?? null,
-		[activities, quickJoinId],
+		() => displayActivities.find((a) => a.id === quickJoinId) ?? null,
+		[displayActivities, quickJoinId],
 	);
 
 	// Conflitos de horário por atividade: conjunto inscrito = vínculo do
 	// servidor (`subscribedIds`) ∪ join local (`joinedIds`, imediato).
-	// Fonte é sempre `activities` (nunca a lista filtrada) para busca e
-	// filtros nunca esconderem conflitos. Uma computação, sem hook por card.
+	// Fonte é sempre `displayActivities` (nunca a lista filtrada) para busca
+	// e filtros nunca esconderem conflitos. Uma computação, sem hook por card.
 	// O `now` congela na montagem (regras `react(purity)`/`set-state-in-effect`
 	// barram relógio no render): suficiente para avisos consultivos, que
 	// recalculam a cada navegação.
@@ -124,24 +149,34 @@ export function ScheduleContent({
 		if (!userId || !participantId || !now) return map;
 		const enrolledIds = new Set([...(subscribedIds ?? []), ...joinedIds]);
 		if (enrolledIds.size === 0) return map;
-		const enrolledById = new Map(activities.map((a) => [a.id, a]));
+		const enrolledById = new Map(displayActivities.map((a) => [a.id, a]));
 		const enrolled = [...enrolledIds]
 			.map((id) => enrolledById.get(id))
 			.filter((a) => a !== undefined);
-		for (const activity of activities) {
+		for (const activity of displayActivities) {
 			if (enrolledIds.has(activity.id)) continue;
 			if (hasEverySessionEnded(activity.sessions)) continue;
 			const conflicts = findScheduleConflicts(activity, enrolled, now);
 			if (conflicts.length > 0) map.set(activity.id, conflicts);
 		}
 		return map;
-	}, [activities, subscribedIds, joinedIds, userId, participantId, now]);
+	}, [
+		displayActivities,
+		subscribedIds,
+		joinedIds,
+		userId,
+		participantId,
+		now,
+	]);
 
 	function handleJoined(activity: QuickJoinActivity): void {
 		setQuickJoinId(null);
 		setJoinedIds((prev) =>
 			prev.includes(activity.id) ? prev : [...prev, activity.id],
 		);
+		// A contagem não invalida mais o cache do servidor; a query pública
+		// é atualizada no cliente após o join.
+		void utils.getActivityAvailability.invalidate();
 		// `id` fixo no toast: duplo clique compartilha a promessa e pode
 		// chamar isto duas vezes — o segundo substitui, não empilha.
 		toast.success(`Inscrição confirmada em ${activity.name}`, {
@@ -165,6 +200,7 @@ export function ScheduleContent({
 			setExhaustedIds((prev) =>
 				prev.includes(activity.id) ? prev : [...prev, activity.id],
 			);
+			void utils.getActivityAvailability.invalidate();
 			toast.error(
 				activity.waitlistEnabled === false
 					? "As vagas acabaram."
@@ -202,7 +238,7 @@ export function ScheduleContent({
 			string,
 			{ id: string; name: string; color: string }
 		>();
-		for (const activity of activities) {
+		for (const activity of displayActivities) {
 			for (const tag of activity.tags ?? []) {
 				if (!map.has(tag.id)) map.set(tag.id, tag);
 			}
@@ -210,10 +246,10 @@ export function ScheduleContent({
 		return [...map.values()].sort((a, b) =>
 			a.name.localeCompare(b.name, "pt-BR"),
 		);
-	}, [activities]);
+	}, [displayActivities]);
 
 	const filteredActivities = useMemo(() => {
-		let filtered = activities;
+		let filtered = displayActivities;
 
 		if (searchQuery) {
 			const q = searchQuery.toLowerCase();
@@ -257,7 +293,7 @@ export function ScheduleContent({
 		}
 
 		return sorted;
-	}, [activities, searchQuery, categoryFilter, tagFilter, sortBy]);
+	}, [displayActivities, searchQuery, categoryFilter, tagFilter, sortBy]);
 
 	const { grouped, categories, initialExpanded } = useMemo(() => {
 		const occurrences = expandSessionOccurrences(filteredActivities);
@@ -406,9 +442,6 @@ export function ScheduleContent({
 															setQuickJoinId(
 																selected.id,
 															)
-														}
-														seatDelta={
-															isJoined ? 1 : 0
 														}
 														statusOverride={
 															exhaustedIds.includes(

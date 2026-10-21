@@ -23,6 +23,7 @@ import {
 	participantOnActivity,
 	project,
 	speaker,
+	speakerOnActivity,
 	user,
 } from "@verific/drizzle/schema";
 import { z } from "@verific/zod";
@@ -1703,6 +1704,7 @@ export const formsRouter = createTRPCRouter({
 				columns: { email: true },
 			});
 			const subscriberEmail = subscriber?.email.trim().toLowerCase();
+			let claimedSpeakerActivityIds: string[] = [];
 			if (subscriberEmail) {
 				const candidate = await db.query.speaker.findFirst({
 					where: and(
@@ -1725,6 +1727,21 @@ export const formsRouter = createTRPCRouter({
 							.update(speaker)
 							.set({ participantId })
 							.where(eq(speaker.id, candidate.id));
+						// A lista e as atividades que exibem esse palestrante
+						// passam a apontar para o novo perfil. Devolver os ids
+						// permite invalidar só essas entradas (e só quando o
+						// vínculo realmente aconteceu).
+						const speakerActivities = await db
+							.select({
+								activityId: speakerOnActivity.activityId,
+							})
+							.from(speakerOnActivity)
+							.where(
+								eq(speakerOnActivity.speakerId, candidate.id),
+							);
+						claimedSpeakerActivityIds = speakerActivities.map(
+							(row) => row.activityId,
+						);
 					}
 				}
 			}
@@ -1735,7 +1752,11 @@ export const formsRouter = createTRPCRouter({
 				to: subscriberEmail,
 				eventId: input.projectId,
 			});
-			return { participantId, shortId };
+			return {
+				participantId,
+				shortId,
+				claimedSpeakerActivityIds,
+			};
 		}),
 
 	getMyAnswers: protectedProcedure

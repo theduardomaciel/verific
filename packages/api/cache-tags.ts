@@ -81,6 +81,7 @@ export function participantProfileCacheTag(projectId: string, shortId: string) {
  *   (PII) — não vai para cache compartilhado de borda.
  */
 export const PUBLIC_CACHEABLE_QUERY_PATHS: ReadonlySet<string> = new Set([
+	"getActivityAvailability",
 	"getAllProjects",
 	"getProject",
 	"getProfilePageData",

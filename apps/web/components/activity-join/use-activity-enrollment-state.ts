@@ -46,7 +46,10 @@ export interface PublishedActivityForm {
 interface UseActivityEnrollmentStateArgs {
 	activity: ActivityDetail;
 	eventUrl: string;
-	/** Total de inscritos (resolvido no servidor, público e estático). */
+	/**
+	 * Total de inscritos: fallback cacheado + query pública de
+	 * disponibilidade (`s-maxage=60`).
+	 */
 	participantsCount: number | null;
 }
 

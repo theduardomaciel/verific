@@ -809,14 +809,20 @@ export const profilesRouter = createTRPCRouter({
 			if (!viewed || !viewer || viewer.id === viewed.id) {
 				return { recorded: false };
 			}
-			await db
+			const inserted = await db
 				.insert(profileConnection)
 				.values({
 					viewerParticipantId: viewer.id,
 					viewedParticipantId: viewed.id,
 					projectId: projectRow.id,
 				})
-				.onConflictDoNothing();
-			return { recorded: true };
+				.onConflictDoNothing()
+				.returning({
+					viewerParticipantId: profileConnection.viewerParticipantId,
+				});
+			// `recorded` mantém a semântica do cliente (visita aceita); o
+			// `created` diz se houve linha nova e é o que decide a invalidação
+			// do perfil visitado. Repetir a visita não regenera o ISR.
+			return { recorded: true, created: inserted.length > 0 };
 		}),
 });

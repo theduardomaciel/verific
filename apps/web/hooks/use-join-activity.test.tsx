@@ -10,12 +10,14 @@ const {
 	mutateAsyncMock,
 	invalidateSubscribedMock,
 	invalidateActivitiesMock,
+	invalidateAvailabilityMock,
 	revalidateSubscribedMock,
 	revalidateActivitiesMock,
 } = vi.hoisted(() => ({
 	mutateAsyncMock: vi.fn(),
 	invalidateSubscribedMock: vi.fn(),
 	invalidateActivitiesMock: vi.fn(),
+	invalidateAvailabilityMock: vi.fn(),
 	revalidateSubscribedMock: vi.fn(),
 	revalidateActivitiesMock: vi.fn(),
 }));
@@ -28,6 +30,9 @@ vi.mock("@/lib/trpc/react", () => ({
 			},
 			getActivitiesFromParticipant: {
 				invalidate: invalidateActivitiesMock,
+			},
+			getActivityAvailability: {
+				invalidate: invalidateAvailabilityMock,
 			},
 		}),
 		addActivityParticipants: {
@@ -48,6 +53,7 @@ function setup() {
 	revalidateActivitiesMock.mockResolvedValue(undefined);
 	invalidateSubscribedMock.mockResolvedValue(undefined);
 	invalidateActivitiesMock.mockResolvedValue(undefined);
+	invalidateAvailabilityMock.mockResolvedValue(undefined);
 	return renderHook(() =>
 		useJoinActivity({
 			activityId: "act-1",
@@ -96,6 +102,7 @@ describe("useJoinActivity", () => {
 		expect(revalidateActivitiesMock).toHaveBeenCalledWith("user-1");
 		expect(invalidateSubscribedMock).toHaveBeenCalled();
 		expect(invalidateActivitiesMock).toHaveBeenCalled();
+		expect(invalidateAvailabilityMock).toHaveBeenCalled();
 		expect(result.current.status).toBe("success");
 		expect(result.current.error).toBeNull();
 	});
@@ -150,6 +157,7 @@ describe("useJoinActivity", () => {
 		expect(result.current.status).toBe("error");
 		expect(invalidateSubscribedMock).toHaveBeenCalled();
 		expect(invalidateActivitiesMock).toHaveBeenCalled();
+		expect(invalidateAvailabilityMock).toHaveBeenCalled();
 	});
 
 	it("reset volta ao ocioso", async () => {

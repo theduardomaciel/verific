@@ -110,6 +110,7 @@ describe("submitAnswers registration email", () => {
 		expect(result).toEqual({
 			participantId: PARTICIPANT_ID,
 			shortId: "abc123",
+			claimedSpeakerActivityIds: [],
 		});
 		await vi.waitFor(() => {
 			expect(sendNotificationMock).toHaveBeenCalledTimes(1);
