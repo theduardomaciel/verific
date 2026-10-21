@@ -100,6 +100,20 @@ function readStringArray(value: unknown, key: string): string[] {
 		: [];
 }
 
+type ProfileRef = { projectId: string; shortId: string };
+
+/** Refs `{ projectId, shortId }` devolvidas pelas mutations de identidade. */
+function readProfileRefs(value: unknown, key: string): ProfileRef[] {
+	const item = record(value)[key];
+	if (!Array.isArray(item)) return [];
+
+	return item.flatMap((entry) => {
+		const projectId = readString(entry, "projectId");
+		const shortId = readString(entry, "shortId");
+		return projectId && shortId ? [{ projectId, shortId }] : [];
+	});
+}
+
 function sessionUserId(ctx: MutationCacheContext): string | undefined {
 	const id = ctx.session?.user?.id;
 	return typeof id === "string" && id.length > 0 ? id : undefined;
@@ -297,10 +311,22 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 	},
 
 	// ── users ────────────────────────────────────────────────────────
-	// Nome do usuário aparece em páginas de evento (dono) e perfis públicos;
-	// guarda-chuvas garantem a atualização nas próximas visitas.
+	// O nome aparece na landing (dono) e no perfil público. Sem mudança real,
+	// nada é invalidado; com mudança, só as entradas do próprio usuário e as
+	// landings dos eventos que ele possui.
 	updateUser: {
-		tags: () => [GLOBAL_CACHE_TAGS.events, GLOBAL_CACHE_TAGS.profiles],
+		tags: ({ result }) => {
+			if (!record(result).nameChanged) return [];
+			return [
+				...readProfileRefs(result, "profileRefs").map(
+					({ projectId, shortId }) =>
+						participantProfileCacheTag(projectId, shortId),
+				),
+				...readStringArray(result, "ownedProjectIds").map(
+					projectCacheTag,
+				),
+			];
+		},
 	},
 
 	// ── activities ───────────────────────────────────────────────────
@@ -853,16 +879,26 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 			const projectId = readString(input, "projectId");
 			// A inscrição só muda a programação quando vincula um palestrante
 			// pré-cadastrado (`speaker.participantId`): aí a lista e as
-			// atividades daquele palestrante passam a expor o vínculo. Sem
-			// claim, o perfil criado ainda não tem entrada cacheada — e o
-			// guarda-chuva de perfis do evento não muda.
+			// atividades daquele palestrante passam a expor o vínculo.
 			const claimedActivityIds = readStringArray(
 				result,
 				"claimedSpeakerActivityIds",
 			);
+			// O nome só invalida quando o UPDATE condicional devolveu linha.
+			// Aí, apenas os perfis do próprio usuário e suas landings.
+			const nameChanged = record(result).nameChanged === true;
 			return [
-				// O cadastro grava `user.name` (pode ser o primeiro valor).
-				GLOBAL_CACHE_TAGS.profiles,
+				...(nameChanged
+					? readProfileRefs(result, "profileRefs").map(
+							({ projectId, shortId }) =>
+								participantProfileCacheTag(projectId, shortId),
+						)
+					: []),
+				...(nameChanged
+					? readStringArray(result, "ownedProjectIds").map(
+							projectCacheTag,
+						)
+					: []),
 				projectId && claimedActivityIds.length > 0
 					? projectActivitiesCacheTag(projectId)
 					: undefined,

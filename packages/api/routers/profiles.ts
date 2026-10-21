@@ -1,5 +1,4 @@
 import { TRPCError } from "@trpc/server";
-import { randomBytes } from "node:crypto";
 
 import { db } from "@verific/drizzle";
 import {
@@ -43,28 +42,47 @@ import {
 	writeProjectLayout,
 } from "../lib/profile-links";
 import { requireProjectAccess } from "../lib/project-access";
+import { generateShortId } from "../lib/short-id";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
-/** Identificador curto por participante/evento (URL + QR). */
-export function generateShortId(length = 10): string {
-	return randomBytes(length).toString("base64url").slice(0, length);
-}
-
-/** Preenche shortId ausente (participantes criados antes da Fase 4). */
+/**
+ * Preenche shortId ausente (participantes criados antes da Fase 4).
+ *
+ * Caminho quente: quem já tem shortId retorna sem query nem write — as
+ * procedures de leitura (`getMyParticipant`, `getMyEnrollmentState`, badges)
+ * não pagam nada por esse fallback. Só linhas legadas com `short_id NULL`
+ * escrevem; o UPDATE é condicional (`IS NULL`) para não sobrescrever um id
+ * gerado por outra requisição concorrente.
+ */
 export async function ensureShortId(
 	participantId: string,
 	current: string | null,
 ): Promise<string> {
 	if (current) return current;
+
 	let lastError: unknown = null;
 	for (let i = 0; i < 5; i++) {
 		const shortId = generateShortId();
 		try {
-			await db
+			const updated = await db
 				.update(participant)
 				.set({ shortId })
-				.where(eq(participant.id, participantId));
-			return shortId;
+				.where(
+					and(
+						eq(participant.id, participantId),
+						isNull(participant.shortId),
+					),
+				)
+				.returning({ shortId: participant.shortId });
+
+			if (updated[0]?.shortId) return updated[0].shortId;
+
+			// Outra requisição preencheu entre o SELECT e o UPDATE.
+			const row = await db.query.participant.findFirst({
+				where: eq(participant.id, participantId),
+				columns: { shortId: true },
+			});
+			if (row?.shortId) return row.shortId;
 		} catch (e) {
 			lastError = e;
 			const msg = e instanceof Error ? e.message : String(e);

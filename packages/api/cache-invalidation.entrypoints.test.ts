@@ -21,18 +21,36 @@ import { createCallerFactory, createTRPCRouter, publicProcedure } from "./trpc";
  * de cada um (e o aviso alto quando nenhum revalidator existe).
  */
 
-const { activityFindFirst, dbUpdate } = vi.hoisted(() => ({
-	activityFindFirst: vi.fn(async () => ({ projectId: "project-1" })),
-	dbUpdate: vi.fn(() => ({
-		set: () => ({ where: async () => [] }),
-	})),
-}));
+const {
+	activityFindFirst,
+	dbUpdate,
+	updateReturning,
+	participantFindMany,
+	projectFindMany,
+} = vi.hoisted(() => {
+	const updateReturning = vi.fn(async (): Promise<{ id: string }[]> => []);
+	return {
+		activityFindFirst: vi.fn(async () => ({ projectId: "project-1" })),
+		dbUpdate: vi.fn(() => ({
+			set: () => ({
+				where: () => ({ returning: updateReturning }),
+			}),
+		})),
+		updateReturning,
+		participantFindMany: vi.fn(
+			async (): Promise<{ projectId: string; shortId: string }[]> => [],
+		),
+		projectFindMany: vi.fn(async (): Promise<{ id: string }[]> => []),
+	};
+});
 
 vi.mock("@verific/drizzle", () => ({
 	db: {
 		update: dbUpdate,
 		query: {
 			activity: { findFirst: activityFindFirst },
+			participant: { findMany: participantFindMany },
+			project: { findMany: projectFindMany },
 		},
 	},
 }));
@@ -47,23 +65,65 @@ function collectingRevalidator() {
 }
 
 describe("invalidação por ponto de entrada", () => {
+	beforeEach(() => {
+		updateReturning.mockReset();
+		updateReturning.mockResolvedValue([]);
+		participantFindMany.mockReset();
+		participantFindMany.mockResolvedValue([]);
+		projectFindMany.mockReset();
+		projectFindMany.mockResolvedValue([]);
+	});
+
 	afterEach(() => {
 		vi.clearAllMocks();
 		__unregisterCacheRevalidator();
 	});
 
-	it("roteia uma mutation real do tRPC (updateUser) para events+profiles", async () => {
+	it("não invalida nada quando updateUser mantém o mesmo nome", async () => {
+		updateReturning.mockResolvedValueOnce([]);
 		const seen = collectingRevalidator();
+		const caller = createCaller({
+			session: { user: { id: "user-1" } } as unknown as Session,
+		});
 
+		await expect(
+			caller.updateUser({ name: "Mesmo Nome" }),
+		).resolves.toEqual({
+			success: true,
+			nameChanged: false,
+			profileRefs: [],
+			ownedProjectIds: [],
+		});
+
+		expect(participantFindMany).not.toHaveBeenCalled();
+		expect(projectFindMany).not.toHaveBeenCalled();
+		expect(seen).toEqual([]);
+	});
+
+	it("updateUser invalida só o perfil do usuário e as landings que ele possui", async () => {
+		updateReturning.mockResolvedValueOnce([{ id: "user-1" }]);
+		participantFindMany.mockResolvedValueOnce([
+			{ projectId: "project-1", shortId: "abc123" },
+		]);
+		projectFindMany.mockResolvedValueOnce([{ id: "project-owned" }]);
+		const seen = collectingRevalidator();
 		const caller = createCaller({
 			session: { user: { id: "user-1" } } as unknown as Session,
 		});
 
 		await expect(caller.updateUser({ name: "Novo Nome" })).resolves.toEqual(
-			{ success: true },
+			{
+				success: true,
+				nameChanged: true,
+				profileRefs: [{ projectId: "project-1", shortId: "abc123" }],
+				ownedProjectIds: ["project-owned"],
+			},
 		);
 
-		expect(seen).toEqual(["events", "profiles"]);
+		expect(seen).toEqual([
+			"participant-profile:project-1:abc123",
+			"project:project-owned",
+		]);
 	});
 
 	it("aplica a regra de escopo de atividade (snapshot → tags finas)", async () => {

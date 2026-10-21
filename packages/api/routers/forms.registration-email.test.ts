@@ -1,7 +1,12 @@
 import { randomUUID } from "node:crypto";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Session } from "@verific/auth";
+
+import {
+	__unregisterCacheRevalidator,
+	registerCacheRevalidator,
+} from "../cache-invalidation";
 
 import type { SendNotificationInput } from "../notifications/types";
 
@@ -12,28 +17,41 @@ const {
 	dbMock,
 	sendNotificationMock,
 	findProject,
+	findProjectMany,
 	findParticipant,
+	findParticipantMany,
 	findFormVersion,
 	findUser,
 	findSpeaker,
+	updateReturning,
 } = vi.hoisted(() => {
 	const findProject = vi.fn();
+	const findProjectMany = vi.fn();
 	const findParticipant = vi.fn();
+	const findParticipantMany = vi.fn();
 	const findFormVersion = vi.fn();
 	const findUser = vi.fn();
 	const findSpeaker = vi.fn();
+	const updateReturning = vi.fn();
 	const sendNotification = vi.fn(async (_input: SendNotificationInput) => ({
 		notification: null,
 	}));
 	const db = {
 		query: {
-			project: { findFirst: findProject },
-			participant: { findFirst: findParticipant },
+			project: { findFirst: findProject, findMany: findProjectMany },
+			participant: {
+				findFirst: findParticipant,
+				findMany: findParticipantMany,
+			},
 			formVersion: { findFirst: findFormVersion },
 			user: { findFirst: findUser },
 			speaker: { findFirst: findSpeaker },
 		},
-		update: () => ({ set: () => ({ where: async () => [] }) }),
+		update: () => ({
+			set: () => ({
+				where: () => ({ returning: updateReturning }),
+			}),
+		}),
 		insert: () => ({
 			values: () => ({
 				returning: async () => [
@@ -46,10 +64,13 @@ const {
 		dbMock: db,
 		sendNotificationMock: sendNotification,
 		findProject,
+		findProjectMany,
 		findParticipant,
+		findParticipantMany,
 		findFormVersion,
 		findUser,
 		findSpeaker,
+		updateReturning,
 	};
 });
 
@@ -92,10 +113,17 @@ describe("submitAnswers registration email", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		findProject.mockResolvedValue(projectRow());
+		findProjectMany.mockResolvedValue([]);
 		findParticipant.mockResolvedValue(null);
+		findParticipantMany.mockResolvedValue([]);
 		findFormVersion.mockResolvedValue(null);
 		findUser.mockResolvedValue({ email: "  User@Example.com " });
 		findSpeaker.mockResolvedValue(null);
+		updateReturning.mockResolvedValue([]);
+	});
+
+	afterEach(() => {
+		__unregisterCacheRevalidator();
 	});
 
 	it("calls sendNotification once with the expected key", async () => {
@@ -111,6 +139,9 @@ describe("submitAnswers registration email", () => {
 			participantId: PARTICIPANT_ID,
 			shortId: "abc123",
 			claimedSpeakerActivityIds: [],
+			nameChanged: false,
+			profileRefs: [],
+			ownedProjectIds: [],
 		});
 		await vi.waitFor(() => {
 			expect(sendNotificationMock).toHaveBeenCalledTimes(1);
@@ -161,5 +192,62 @@ describe("submitAnswers registration email", () => {
 			}),
 		).rejects.toMatchObject({ code: "CONFLICT" });
 		expect(sendNotificationMock).not.toHaveBeenCalled();
+	});
+
+	it("não invalida nada quando o nome não mudou", async () => {
+		const seen: string[] = [];
+		registerCacheRevalidator((tag) => seen.push(tag));
+		const caller = createCaller({ session });
+
+		await caller.submitAnswers({
+			projectId: PROJECT_ID,
+			name: "Maria Silva",
+			answers: {},
+		});
+
+		expect(updateReturning).toHaveBeenCalledTimes(1);
+		expect(findParticipantMany).not.toHaveBeenCalled();
+		expect(findProjectMany).not.toHaveBeenCalled();
+		expect(seen).toEqual([]);
+	});
+
+	it("invalida só os perfis do usuário quando o nome mudou", async () => {
+		updateReturning.mockResolvedValueOnce([{ id: "user-1" }]);
+		findParticipantMany.mockResolvedValueOnce([
+			{ projectId: PROJECT_ID, shortId: "abc123" },
+			{ projectId: "project-2", shortId: "xyz789" },
+		]);
+		const seen: string[] = [];
+		registerCacheRevalidator((tag) => seen.push(tag));
+		const caller = createCaller({ session });
+
+		await caller.submitAnswers({
+			projectId: PROJECT_ID,
+			name: "Maria Silva",
+			answers: {},
+		});
+
+		expect(seen).toEqual([
+			`participant-profile:${PROJECT_ID}:abc123`,
+			"participant-profile:project-2:xyz789",
+		]);
+		expect(seen).not.toContain("profiles");
+		expect(seen).not.toContain("events");
+	});
+
+	it("também invalida a landing quando o inscrito é dono do evento", async () => {
+		updateReturning.mockResolvedValueOnce([{ id: "user-1" }]);
+		findProjectMany.mockResolvedValueOnce([{ id: "owned-project" }]);
+		const seen: string[] = [];
+		registerCacheRevalidator((tag) => seen.push(tag));
+		const caller = createCaller({ session });
+
+		await caller.submitAnswers({
+			projectId: PROJECT_ID,
+			name: "Maria Silva",
+			answers: {},
+		});
+
+		expect(seen).toContain("project:owned-project");
 	});
 });

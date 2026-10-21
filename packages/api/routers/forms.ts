@@ -10,6 +10,7 @@ import {
 	ilike,
 	inArray,
 	isNull,
+	ne,
 	or,
 } from "@verific/drizzle/orm";
 import { socialServiceById } from "@verific/drizzle/profile-layout";
@@ -37,6 +38,8 @@ import {
 	readProjectLayout,
 } from "../lib/profile-links";
 import { requireProjectAccess } from "../lib/project-access";
+import { generateShortId } from "../lib/short-id";
+import { userOwnedProjectIds, userProfileRefs } from "../lib/user-public-scope";
 import { queueEventRegistrationEmail } from "../notifications";
 import {
 	answerValueSchema,
@@ -54,7 +57,6 @@ import {
 	type FormFieldForValidation,
 } from "../schemas";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
-import { generateShortId } from "./profiles";
 
 /** Matches versions of one scope: event form (null) or a specific activity. */
 function versionScope(activityId?: string | null) {
@@ -1660,10 +1662,14 @@ export const formsRouter = createTRPCRouter({
 				});
 			}
 
-			await db
+			// Um único UPDATE condicional compara e grava na mesma instrução:
+			// nome igual não escreve, não acorda o WAL e não invalida perfil.
+			const renamed = await db
 				.update(user)
 				.set({ name: input.name })
-				.where(eq(user.id, userId));
+				.where(and(eq(user.id, userId), ne(user.name, input.name)))
+				.returning({ id: user.id });
+			const nameChanged = renamed.length > 0;
 
 			const createdParticipants = await db
 				.insert(participant)
@@ -1683,6 +1689,17 @@ export const formsRouter = createTRPCRouter({
 					code: "INTERNAL_SERVER_ERROR",
 					message: "Falha ao criar inscrição.",
 				});
+
+			// Só consulta o escopo público do usuário quando o nome mudou.
+			// Inclui a inscrição recém-criada e os demais eventos do usuário.
+			let profileRefs: Awaited<ReturnType<typeof userProfileRefs>> = [];
+			let ownedProjectIds: string[] = [];
+			if (nameChanged) {
+				[profileRefs, ownedProjectIds] = await Promise.all([
+					userProfileRefs(userId),
+					userOwnedProjectIds(userId),
+				]);
+			}
 
 			if (version && fields.length > 0) {
 				const rows = buildAnswerRows({
@@ -1756,6 +1773,9 @@ export const formsRouter = createTRPCRouter({
 				participantId,
 				shortId,
 				claimedSpeakerActivityIds,
+				nameChanged,
+				profileRefs,
+				ownedProjectIds,
 			};
 		}),
 

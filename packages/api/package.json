@@ -23,6 +23,7 @@
 		"test:coverage": "vitest run --coverage",
 		"email:dev": "email dev --dir ./notifications/emails --port 3001",
 		"email:preview": "tsx ./notifications/preview.ts",
+		"backfill:short-ids": "tsx ./scripts/backfill-short-ids.ts",
 		"lint": "oxlint --type-aware",
 		"fmt": "oxfmt",
 		"fmt:check": "oxfmt --check",

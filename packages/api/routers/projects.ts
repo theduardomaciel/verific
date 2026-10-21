@@ -16,6 +16,7 @@ import {
 	requireProjectAccess,
 	requireProjectOwner,
 } from "../lib/project-access";
+import { generateShortId } from "../lib/short-id";
 import { normalizeThemeFonts } from "../lib/theme-fonts";
 import {
 	notifyProjectContributorAdded,
@@ -23,7 +24,6 @@ import {
 	notifyProjectDeleted,
 } from "../notifications/triggers";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
-import { generateShortId } from "./profiles";
 
 export const updateProjectSchema = z.object({
 	id: z.uuid(),

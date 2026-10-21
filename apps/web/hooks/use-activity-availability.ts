@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 
+import { normalizeActivityIds } from "@/lib/activity-availability";
 import { trpc } from "@/lib/trpc/react";
 
 interface UseActivityAvailabilityArgs {
@@ -24,21 +25,25 @@ export function useActivityAvailability({
 	projectId,
 	activityIds,
 }: UseActivityAvailabilityArgs) {
-	const idsKey = [...new Set(activityIds)].sort().join(",");
+	const idsKey = useMemo(
+		() => normalizeActivityIds(activityIds).join(","),
+		[activityIds],
+	);
 	const ids = useMemo(
 		() => (idsKey.length > 0 ? idsKey.split(",") : []),
 		[idsKey],
 	);
-
-	const query = trpc.getActivityAvailability.useQuery(
-		{ projectId, activityIds: ids },
-		{
-			enabled: ids.length > 0,
-			staleTime: 60 * 1000,
-			gcTime: 10 * 60 * 1000,
-			refetchOnWindowFocus: true,
-		},
+	const input = useMemo(
+		() => ({ projectId, activityIds: ids }),
+		[projectId, ids],
 	);
+
+	const query = trpc.getActivityAvailability.useQuery(input, {
+		enabled: ids.length > 0,
+		staleTime: 60 * 1000,
+		gcTime: 10 * 60 * 1000,
+		refetchOnWindowFocus: true,
+	});
 
 	const byActivity = useMemo(
 		() =>
