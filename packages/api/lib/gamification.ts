@@ -590,15 +590,12 @@ export async function loadGamificationSnapshot(
 		earnedRows.map((row) => [row.stickerKey, row.earnedAt]),
 	);
 
-	const [totalRow] = await tx
-		.select({ amount: count() })
-		.from(participantPoints)
-		.where(eq(participantPoints.projectId, project.id));
+	const rankingTotal = await loadRanking(tx, project, 0);
 
 	return {
 		points: loaded.total,
 		rank: loaded.rank,
-		totalParticipants: Number(totalRow?.amount ?? 0),
+		totalParticipants: rankingTotal.total,
 		optOut: loaded.optOut,
 		eventDays: loaded.context.eventDays,
 		checkoutEnabled: loaded.context.checkoutEnabled,
