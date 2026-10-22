@@ -33,6 +33,7 @@
 	--breakpoint-xs: 20rem;
 	--spacing-container-h: var(--spacing-container-h, 1rem);
 	--spacing-container-v: 2.5rem;
+	--dashboard-header-height: 4.5rem;
 
 	/* Shadows */
 	--shadow-color: hsl(0 0% 0%);

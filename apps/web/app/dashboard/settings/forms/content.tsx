@@ -55,7 +55,7 @@ export function FormsContent() {
 
 	if (versionsQuery.isPending) {
 		return (
-			<div className="container-d flex min-h-[calc(100dvh-4.5rem)] min-w-0 flex-col gap-6">
+			<div className="container-d flex min-h-[calc(100dvh-var(--dashboard-header-height))] min-w-0 flex-col gap-6">
 				<Skeleton className="h-9 w-full" />
 				<Skeleton className="h-96 w-full" />
 			</div>
@@ -67,7 +67,7 @@ export function FormsContent() {
 		: 0;
 
 	return (
-		<div className="container-d flex min-h-[calc(100dvh-4.5rem)] min-w-0 flex-col gap-6">
+		<div className="container-d flex min-h-[calc(100dvh-var(--dashboard-header-height))] min-w-0 flex-col gap-6">
 			<FormsHeader tab={tab} onTabChange={setTab} />
 
 			{tab === "answers" ? (

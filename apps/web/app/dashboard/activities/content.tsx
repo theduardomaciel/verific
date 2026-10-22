@@ -37,7 +37,7 @@ import { trpc } from "@/lib/trpc/react";
 
 function ActivitiesSkeleton() {
 	return (
-		<div className="container-d py-container-v min-h-[calc(100dvh-4.5rem)]">
+		<div className="container-d py-container-v min-h-[calc(100dvh-var(--dashboard-header-height))]">
 			<div className="grid grid-cols-1 gap-6 md:grid-cols-3">
 				<div className="w-full space-y-4 md:col-span-2">
 					<Skeleton className="h-10 w-full" />
@@ -89,7 +89,7 @@ export function ActivitiesContent() {
 
 	if (isError || !data) {
 		return (
-			<div className="container-d py-container-v min-h-[calc(100dvh-4.5rem)]">
+			<div className="container-d py-container-v min-h-[calc(100dvh-var(--dashboard-header-height))]">
 				<p className="text-muted-foreground text-sm">
 					Não foi possível carregar as atividades. Tente recarregar a
 					página.
@@ -111,7 +111,7 @@ export function ActivitiesContent() {
 	);
 
 	return (
-		<div className="container-d py-container-v min-h-[calc(100dvh-4.5rem)]">
+		<div className="container-d py-container-v min-h-[calc(100dvh-var(--dashboard-header-height))]">
 			<div className="grid grid-cols-1 gap-6 md:grid-cols-3">
 				<div className="w-full space-y-4 md:col-span-2">
 					<div className="flex flex-col items-start gap-4 md:flex-row md:items-center">

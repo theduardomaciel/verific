@@ -16,7 +16,7 @@ export default function ErrorPage({
 	console.log(error, error.digest);
 
 	return (
-		<div className="flex min-h-[calc(100dvh-4.5rem)] flex-col md:flex-row">
+		<div className="flex min-h-[calc(100dvh-var(--dashboard-header-height))] flex-col md:flex-row">
 			{/* Right Part */}
 			<div className="flex w-full flex-1 flex-col items-center justify-center p-8 md:w-1/2">
 				<div className="flex w-full max-w-sm flex-col items-start justify-center gap-6 max-md:pb-8">

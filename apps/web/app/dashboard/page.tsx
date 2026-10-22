@@ -20,7 +20,7 @@ import { trpc } from "@/lib/trpc/react";
 
 function DashboardSkeleton() {
 	return (
-		<main className="container-d py-container-v flex min-h-[calc(100dvh-4.5rem)] w-full flex-1 flex-col items-center justify-start gap-4">
+		<main className="container-d py-container-v flex min-h-[calc(100dvh-var(--dashboard-header-height))] w-full flex-1 flex-col items-center justify-start gap-4">
 			<Skeleton className="mb-2 h-11 w-full" />
 			<div className="grid w-full gap-4 md:grid-cols-2 lg:grid-cols-4">
 				{Array.from({ length: 4 }).map((_, i) => (
@@ -53,7 +53,7 @@ export default function Overview() {
 
 	if (activitiesQuery.isError || statsQuery.isError) {
 		return (
-			<main className="container-d py-container-v flex min-h-[calc(100dvh-4.5rem)] w-full flex-1 flex-col items-center justify-start">
+			<main className="container-d py-container-v flex min-h-[calc(100dvh-var(--dashboard-header-height))] w-full flex-1 flex-col items-center justify-start">
 				<p className="text-muted-foreground text-sm">
 					Não foi possível carregar o dashboard. Tente recarregar a
 					página.
@@ -66,7 +66,7 @@ export default function Overview() {
 	const stats = statsQuery.data;
 
 	return (
-		<main className="container-d py-container-v flex min-h-[calc(100dvh-4.5rem)] w-full flex-1 flex-col items-center justify-start gap-8">
+		<main className="container-d py-container-v flex min-h-[calc(100dvh-var(--dashboard-header-height))] w-full flex-1 flex-col items-center justify-start gap-8">
 			<Tabs
 				defaultValue="overview"
 				className="flex w-full flex-1 flex-col lg:min-h-0"

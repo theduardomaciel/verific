@@ -95,7 +95,7 @@ export default function DashboardLayout({
 		<Suspense
 			fallback={
 				<div
-					className="min-h-[calc(100dvh-4.5rem)] w-full"
+					className="min-h-[calc(100dvh-var(--dashboard-header-height))] w-full"
 					aria-hidden
 				/>
 			}

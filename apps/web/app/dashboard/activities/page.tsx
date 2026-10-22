@@ -13,7 +13,7 @@ export default function ActivitiesPage() {
 	return (
 		<Suspense
 			fallback={
-				<div className="container-d py-container-v min-h-[calc(100dvh-4.5rem)]">
+				<div className="container-d py-container-v min-h-[calc(100dvh-var(--dashboard-header-height))]">
 					<Skeleton className="h-96 w-full" />
 				</div>
 			}

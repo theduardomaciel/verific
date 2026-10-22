@@ -18,7 +18,7 @@ export default function EditActivity({
 	return (
 		<Suspense
 			fallback={
-				<main className="container-p py-container-v flex min-h-[calc(100dvh-4.5rem)] flex-col items-center justify-start">
+				<main className="container-p py-container-v flex min-h-[calc(100dvh-var(--dashboard-header-height))] flex-col items-center justify-start">
 					<Skeleton className="h-96 w-full" />
 				</main>
 			}

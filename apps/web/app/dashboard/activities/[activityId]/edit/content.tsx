@@ -21,7 +21,7 @@ export function EditActivityContent({ activityId }: { activityId: string }) {
 
 	if (isPending) {
 		return (
-			<main className="container-p py-container-v flex min-h-[calc(100dvh-4.5rem)] flex-col items-center justify-start">
+			<main className="container-p py-container-v flex min-h-[calc(100dvh-var(--dashboard-header-height))] flex-col items-center justify-start">
 				<Skeleton className="h-96 w-full" />
 			</main>
 		);
@@ -29,7 +29,7 @@ export function EditActivityContent({ activityId }: { activityId: string }) {
 
 	if (isError || !data) {
 		return (
-			<main className="container-p py-container-v flex min-h-[calc(100dvh-4.5rem)] flex-col items-center justify-start">
+			<main className="container-p py-container-v flex min-h-[calc(100dvh-var(--dashboard-header-height))] flex-col items-center justify-start">
 				<p className="text-muted-foreground text-sm">
 					Não foi possível carregar a atividade. Tente recarregar a
 					página.
@@ -41,7 +41,7 @@ export function EditActivityContent({ activityId }: { activityId: string }) {
 	const { activity, projectStartDate, projectEndDate } = data;
 
 	return (
-		<main className="container-p py-container-v flex min-h-[calc(100dvh-4.5rem)] flex-col items-center justify-start">
+		<main className="container-p py-container-v flex min-h-[calc(100dvh-var(--dashboard-header-height))] flex-col items-center justify-start">
 			<MutateActivityForm
 				projectId={projectId}
 				activity={activity}

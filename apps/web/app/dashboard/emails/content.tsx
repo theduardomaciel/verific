@@ -498,7 +498,7 @@ export function EmailsContent() {
 
 	return (
 		<TooltipProvider delayDuration={200}>
-			<div className="container-d py-container-v flex min-h-[calc(100dvh-4.5rem)] flex-col gap-6">
+			<div className="container-d py-container-v flex min-h-[calc(100dvh-var(--dashboard-header-height))] flex-col gap-6">
 				{/* Linha 1 — Cabeçalho: título à esquerda, ações à direita */}
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 					<div className="min-w-0">

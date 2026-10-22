@@ -47,7 +47,7 @@ export default async function AccountSettingsLayout({
 	children: React.ReactNode;
 }) {
 	return (
-		<main className="container-d py-container-v relative mx-auto min-h-[calc(100dvh-4.5rem)]">
+		<main className="container-d py-container-v relative mx-auto min-h-[calc(100dvh-var(--dashboard-header-height))]">
 			<h1 className="text-foreground mb-8 text-3xl font-bold">
 				Configurações
 			</h1>
