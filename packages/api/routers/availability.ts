@@ -1,5 +1,5 @@
 import { db } from "@verific/drizzle";
-import { and, count, eq, inArray } from "@verific/drizzle/orm";
+import { and, count, eq, inArray, or } from "@verific/drizzle/orm";
 import {
 	activity,
 	activityWaitlist,
@@ -7,7 +7,9 @@ import {
 } from "@verific/drizzle/schema";
 import { z } from "@verific/zod";
 
+import { openOfferWhere } from "../seats";
 import { createTRPCRouter, publicProcedure } from "../trpc";
+import { seatsTaken } from "../waitlist-plan";
 
 /**
  * Disponibilidade pública de uma atividade.
@@ -19,10 +21,9 @@ import { createTRPCRouter, publicProcedure } from "../trpc";
  * `ctx.session`: o handler HTTP do app aplica `s-maxage=60`, então a
  * contagem corrige em até um minuto sem gastar ISR.
  *
- * O cálculo replica o `participantsAmount` público de `getActivity`:
- * inscritos com papel `participant` + ofertas de fila ainda em aberto.
- * `waitlistCount` é a fila em espera (sem contar ofertas), útil para
- * exibição futura sem outra ida ao banco.
+ * `participantsCount` é `seatsTaken`, o mesmo cálculo do `participantsAmount`
+ * público de `getActivity`. `waitlistCount` é a fila em espera, sem contar
+ * ofertas.
  */
 export const availabilityRouter = createTRPCRouter({
 	getActivityAvailability: publicProcedure
@@ -34,11 +35,15 @@ export const availabilityRouter = createTRPCRouter({
 		)
 		.query(async ({ input }) => {
 			const activityIds = [...new Set(input.activityIds)];
+			const now = new Date();
 
 			const [validActivities, participantRows, waitlistRows] =
 				await Promise.all([
 					db
-						.select({ id: activity.id })
+						.select({
+							id: activity.id,
+							participantsLimit: activity.participantsLimit,
+						})
 						.from(activity)
 						.where(
 							and(
@@ -75,10 +80,10 @@ export const availabilityRouter = createTRPCRouter({
 									activityWaitlist.activityId,
 									activityIds,
 								),
-								inArray(activityWaitlist.status, [
-									"waiting",
-									"offered",
-								]),
+								or(
+									eq(activityWaitlist.status, "waiting"),
+									openOfferWhere(now),
+								),
 							),
 						)
 						.groupBy(
@@ -87,14 +92,16 @@ export const availabilityRouter = createTRPCRouter({
 						),
 				]);
 
-			const validIds = new Set(validActivities.map((row) => row.id));
+			const limits = new Map(
+				validActivities.map((row) => [row.id, row.participantsLimit]),
+			);
 			const counts = new Map<
 				string,
 				{ participants: number; offered: number; waiting: number }
 			>();
 
 			for (const activityId of activityIds) {
-				if (validIds.has(activityId)) {
+				if (limits.has(activityId)) {
 					counts.set(activityId, {
 						participants: 0,
 						offered: 0,
@@ -120,7 +127,12 @@ export const availabilityRouter = createTRPCRouter({
 
 			return [...counts.entries()].map(([activityId, entry]) => ({
 				activityId,
-				participantsCount: entry.participants + entry.offered,
+				participantsCount: seatsTaken({
+					limit: limits.get(activityId) ?? null,
+					enrolled: entry.participants,
+					openOffers: entry.offered,
+					waiting: entry.waiting,
+				}),
 				waitlistCount: entry.waiting,
 			}));
 		}),

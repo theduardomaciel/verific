@@ -99,6 +99,7 @@ describe("settleActivity offer notification", () => {
 			participantsLimit: 1,
 			waitlistEnabled: true,
 			waitlistOfferHours: 12,
+			cancelledAt: null,
 		};
 
 		const first = await settleActivity(tx, locked, now);
@@ -155,6 +156,7 @@ describe("settleActivity offer notification", () => {
 			participantsLimit: 2,
 			waitlistEnabled: true,
 			waitlistOfferHours: 12,
+			cancelledAt: null,
 		};
 
 		await settleActivity(tx, locked, now);

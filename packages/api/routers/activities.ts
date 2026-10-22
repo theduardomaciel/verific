@@ -68,7 +68,12 @@ import {
 	BREAKDOWN_REGISTRATIONS_SERIES,
 	BREAKDOWN_TIME_WINDOWS,
 } from "../schemas";
-import { assertSeatsAvailable, lockActivity } from "../seats";
+import {
+	assertActivityOpen,
+	assertSeatsAvailable,
+	lockActivity,
+	openOfferWhere,
+} from "../seats";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { transformSingleToArray } from "../utils";
 import {
@@ -76,6 +81,7 @@ import {
 	resolveEnrolledEntries,
 	settleActivity,
 } from "../waitlist";
+import { seatsTaken } from "../waitlist-plan";
 import { hasPublishedActivityForm } from "./forms";
 
 // Re-export client-safe schemas so existing server imports keep working.
@@ -296,7 +302,8 @@ const mutateActivityParams = z.object({
 	category: z.enum(activityCategories),
 	audience: z.enum(activityAudiences),
 	speakerIds: z.array(z.coerce.number()).optional(),
-	participantsLimit: z.coerce.number().optional(),
+	// `null` remove o limite; `undefined` mantém o atual
+	participantsLimit: z.number().int().min(1).nullable().optional(),
 	address: z.string().optional(),
 	latitude: z.number().optional(),
 	longitude: z.number().optional(),
@@ -410,7 +417,7 @@ export const activitiesRouter = createTRPCRouter({
 			// chamava `getActivities` (lista inteira do evento) só para achar
 			// esse número no primeiro render de cada atividade.
 			if (!userId) {
-				const [hasForm, participantsAmount, offeredAmount] =
+				const [hasForm, participantsAmount, queueRows] =
 					await Promise.all([
 						hasPublishedActivityForm(
 							selectedActivity.projectId,
@@ -432,15 +439,24 @@ export const activitiesRouter = createTRPCRouter({
 								),
 							),
 						db
-							.select({ amount: count() })
+							.select({
+								status: activityWaitlist.status,
+								amount: count(),
+							})
 							.from(activityWaitlist)
 							.where(
 								and(
 									eq(activityWaitlist.activityId, activityId),
-									eq(activityWaitlist.status, "offered"),
+									or(
+										eq(activityWaitlist.status, "waiting"),
+										openOfferWhere(),
+									),
 								),
-							),
+							)
+							.groupBy(activityWaitlist.status),
 					]);
+				const queueAmount = (status: "waiting" | "offered") =>
+					queueRows.find((row) => row.status === status)?.amount ?? 0;
 
 				return {
 					activity: {
@@ -457,9 +473,12 @@ export const activitiesRouter = createTRPCRouter({
 						form: null,
 						hasForm,
 						participants: [],
-						participantsAmount:
-							(participantsAmount[0]?.amount ?? 0) +
-							(offeredAmount[0]?.amount ?? 0),
+						participantsAmount: seatsTaken({
+							limit: selectedActivity.participantsLimit,
+							enrolled: participantsAmount[0]?.amount ?? 0,
+							openOffers: queueAmount("offered"),
+							waiting: queueAmount("waiting"),
+						}),
 					},
 					pageCount: 0,
 					participantId: null,
@@ -849,7 +868,7 @@ export const activitiesRouter = createTRPCRouter({
 
 			// Query de contagem
 			// Get activities count and participants count per activity
-			const [amountDb, participantsCounts, openOffers] =
+			const [amountDb, participantsCounts, queueCounts] =
 				await Promise.all([
 					db
 						.select({ amount: countDistinct(activity.id) })
@@ -881,12 +900,12 @@ export const activitiesRouter = createTRPCRouter({
 									buildActivitiesWhere(activity, filterOpts),
 								)
 								.groupBy(participantOnActivity.activityId),
-					// Vagas oferecidas pela fila também estão ocupadas
 					fullQuery
 						? null
 						: db
 								.select({
 									activityId: activityWaitlist.activityId,
+									status: activityWaitlist.status,
 									count: count(),
 								})
 								.from(activityWaitlist)
@@ -897,13 +916,22 @@ export const activitiesRouter = createTRPCRouter({
 											activityWaitlist.activityId,
 											activity.id,
 										),
-										eq(activityWaitlist.status, "offered"),
+										or(
+											eq(
+												activityWaitlist.status,
+												"waiting",
+											),
+											openOfferWhere(),
+										),
 									),
 								)
 								.where(
 									buildActivitiesWhere(activity, filterOpts),
 								)
-								.groupBy(activityWaitlist.activityId),
+								.groupBy(
+									activityWaitlist.activityId,
+									activityWaitlist.status,
+								),
 				]);
 
 			// Map activityId to participant count
@@ -913,9 +941,13 @@ export const activitiesRouter = createTRPCRouter({
 					participantsCountMap[row.activityId] = row.count;
 				}
 			}
-			for (const row of openOffers ?? []) {
-				participantsCountMap[row.activityId] =
-					(participantsCountMap[row.activityId] ?? 0) + row.count;
+			const offeredCountMap = new Map<string, number>();
+			const waitingCountMap = new Map<string, number>();
+			for (const row of queueCounts ?? []) {
+				(row.status === "offered"
+					? offeredCountMap
+					: waitingCountMap
+				).set(row.activityId, row.count);
 			}
 
 			// `hasForm` por atividade: existe versão publicada no escopo da
@@ -989,7 +1021,12 @@ export const activitiesRouter = createTRPCRouter({
 			const formattedActivities = activities.map(
 				(act: ActivityWithRelations) => ({
 					...act,
-					participantsCount: participantsCountMap[act.id] ?? 0,
+					participantsCount: seatsTaken({
+						limit: act.participantsLimit,
+						enrolled: participantsCountMap[act.id] ?? 0,
+						openOffers: offeredCountMap.get(act.id) ?? 0,
+						waiting: waitingCountMap.get(act.id) ?? 0,
+					}),
 					hasForm: hasFormByActivity.get(act.id) ?? false,
 					tags: (act.tagOnActivity ?? []).map((t) => t.tag),
 					participants: act.participantOnActivity
@@ -1327,6 +1364,7 @@ export const activitiesRouter = createTRPCRouter({
 			const { inserted, resolved, projectId } = await db.transaction(
 				async (tx) => {
 					const locked = await lockActivity(tx, activityId);
+					assertActivityOpen(locked);
 					const queue = await settleActivity(tx, locked);
 					const queued = await assertSeatsAvailable(
 						tx,
@@ -1502,6 +1540,7 @@ export const activitiesRouter = createTRPCRouter({
 				// Quem se inscreve sozinho não passa à frente da fila; quem
 				// tem oferta em aberto usa a vaga reservada para si.
 				const locked = await lockActivity(tx, activityId);
+				assertActivityOpen(locked);
 				const queue = await settleActivity(tx, locked);
 				const queued = await assertSeatsAvailable(
 					tx,
