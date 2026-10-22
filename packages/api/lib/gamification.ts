@@ -233,7 +233,6 @@ export function buildStickerStats(input: {
 	eventDays: number;
 	graceMinutes: number;
 	beforeHour: number;
-	timeZone?: string;
 }): Pick<
 	GamificationStats,
 	| "distinctDays"
@@ -250,7 +249,7 @@ export function buildStickerStats(input: {
 	for (const row of input.attendance) {
 		days.add(eventDayKey(row.joinedAt));
 		hours += sessionHours(row.startsAt, row.endsAt);
-		if (sessionStartHour(row.startsAt, input.timeZone) < input.beforeHour) {
+		if (sessionStartHour(row.startsAt) < input.beforeHour) {
 			earlySessions += 1;
 		}
 		if (
@@ -275,16 +274,14 @@ export function buildStickerStats(input: {
 	};
 }
 
-function sessionStartHour(
-	date: Date | string | number,
-	timeZone = "America/Sao_Paulo",
-): number {
-	const value = new Intl.DateTimeFormat("en-US", {
-		timeZone,
-		hour: "numeric",
-		hourCycle: "h23",
-	}).format(new Date(date));
-	const hour = Number(value);
+const SESSION_HOUR_FORMATTER = new Intl.DateTimeFormat("en-US", {
+	timeZone: "America/Sao_Paulo",
+	hour: "numeric",
+	hourCycle: "h23",
+});
+
+function sessionStartHour(date: Date | string | number): number {
+	const hour = Number(SESSION_HOUR_FORMATTER.format(new Date(date)));
 	return Number.isFinite(hour) ? hour : 99;
 }
 

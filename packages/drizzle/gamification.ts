@@ -98,6 +98,14 @@ export type PointEventSource =
 
 export type StickerSource = "auto" | "manual";
 
+// `en-CA` formata como `YYYY-MM-DD`, independente do locale do runtime.
+const EVENT_DAY_FORMATTER = new Intl.DateTimeFormat("en-CA", {
+	timeZone: GAMIFICATION_TIME_ZONE,
+	year: "numeric",
+	month: "2-digit",
+	day: "2-digit",
+});
+
 /**
  * Chave do dia no fuso do app (`YYYY-MM-DD`). Usada para garantir um
  * check-in por participante por dia do evento.
@@ -105,14 +113,7 @@ export type StickerSource = "auto" | "manual";
 export function eventDayKey(date: Date | string | number): string {
 	const parsed = new Date(date);
 	if (Number.isNaN(parsed.getTime())) return "";
-
-	// `en-CA` formata como `YYYY-MM-DD`, independente do locale do runtime.
-	return new Intl.DateTimeFormat("en-CA", {
-		timeZone: GAMIFICATION_TIME_ZONE,
-		year: "numeric",
-		month: "2-digit",
-		day: "2-digit",
-	}).format(parsed);
+	return EVENT_DAY_FORMATTER.format(parsed);
 }
 
 /**

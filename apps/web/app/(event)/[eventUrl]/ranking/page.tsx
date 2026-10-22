@@ -45,6 +45,7 @@ function RankingBody({
 	project: RankingProject;
 	config: GamificationConfig;
 }) {
+	const rankingEnabled = config.enabled && config.rankingEnabled;
 	const theme = parseEventTheme({
 		theme: (project as { theme?: unknown }).theme,
 		primaryColor: project.primaryColor,
@@ -75,10 +76,23 @@ function RankingBody({
 			</EventContainer.Hero>
 
 			<EventContainer.Content className="container-p">
-				<RankingContent eventUrl={eventUrl} />
+				{rankingEnabled ? (
+					<RankingContent eventUrl={eventUrl} />
+				) : (
+					<div className="flex max-w-md flex-col items-center gap-3 py-10 text-center">
+						<Trophy className="text-muted-foreground size-10" />
+						<p className="text-foreground font-semibold">
+							Ranking desativado
+						</p>
+						<p className="text-muted-foreground text-sm">
+							O organizador não está exibindo o ranking deste
+							evento.
+						</p>
+					</div>
+				)}
 			</EventContainer.Content>
 
-			{config.ranking.allowOptOut && (
+			{rankingEnabled && config.ranking.allowOptOut && (
 				<p className="text-muted-foreground container-p mx-auto -mt-8 pb-8 text-center text-xs">
 					Prefere não aparecer? Você pode desativar sua participação
 					no ranking em “Editar perfil”.
