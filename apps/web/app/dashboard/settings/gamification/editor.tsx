@@ -235,7 +235,11 @@ export function GamificationEditor({
 					</Button>
 					<Button
 						size="sm"
-						disabled={!dirty || saveMutation.isPending}
+						disabled={
+							!dirty ||
+							saveMutation.isPending ||
+							(draft.enabled && !profilesEnabled)
+						}
 						onClick={() => void onSave()}
 					>
 						<Save className="mr-2 h-4 w-4" />
@@ -276,6 +280,7 @@ export function GamificationEditor({
 						label="Ativar gamificação"
 						description="Pontos, adesivos e ranking público no evento."
 						checked={draft.enabled}
+						disabled={!profilesEnabled && !draft.enabled}
 						onCheckedChange={(enabled) => patch({ enabled })}
 					/>
 				</CardContent>
