@@ -13,7 +13,7 @@ export default function ParticipantsPage() {
 	return (
 		<Suspense
 			fallback={
-				<div className="container-d py-container-v min-h-screen">
+				<div className="container-d py-container-v min-h-[calc(100dvh-var(--dashboard-header-height))]">
 					<Skeleton className="h-96 w-full" />
 				</div>
 			}

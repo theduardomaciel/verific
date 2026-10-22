@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { keepPreviousData } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { formatAnswerValue } from "@verific/api/schemas";
@@ -14,6 +16,31 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { downloadCsv, toCsv } from "@/lib/forms/csv";
 import { trpc } from "@/lib/trpc/react";
 
+function AnswersSkeleton() {
+	return (
+		<div className="flex flex-col gap-3" aria-hidden>
+			<div className="flex items-center gap-4">
+				<Skeleton className="h-4 w-32" />
+				<Skeleton className="h-4 w-24" />
+				<Skeleton className="h-4 w-24" />
+			</div>
+			{Array.from({ length: 5 }, (_, index) => (
+				<div
+					key={index}
+					className="flex items-center gap-4 border-t pt-3"
+				>
+					<div className="flex flex-1 flex-col gap-1.5">
+						<Skeleton className="h-4 w-36" />
+						<Skeleton className="h-3 w-44" />
+					</div>
+					<Skeleton className="h-4 w-24" />
+					<Skeleton className="h-4 w-24" />
+				</div>
+			))}
+		</div>
+	);
+}
+
 export function AnswersPanel({
 	projectId,
 	activityId,
@@ -23,17 +50,25 @@ export function AnswersPanel({
 }) {
 	const [query, setQuery] = useState("");
 	const [page, setPage] = useState(1);
-	const list = trpc.listAnswers.useQuery({
-		projectId,
-		activityId,
-		page,
-		pageSize: 10,
-		query: query || undefined,
-	});
+	const list = trpc.listAnswers.useQuery(
+		{
+			projectId,
+			activityId,
+			page,
+			pageSize: 10,
+			query: query || undefined,
+		},
+		{ placeholderData: keepPreviousData },
+	);
 	const exp = trpc.exportAnswers.useQuery(
 		{ projectId, activityId },
 		{ enabled: false },
 	);
+
+	// `isPending` = primeira carga (sem dados). `isRefreshing` = busca,
+	// paginação ou revalidação com a lista anterior ainda visível.
+	const isInitialLoading = list.isPending;
+	const isRefreshing = list.isFetching && !list.isPending;
 
 	async function handleExport() {
 		const result = await exp.refetch();
@@ -68,7 +103,21 @@ export function AnswersPanel({
 	return (
 		<Card>
 			<CardHeader className="flex flex-row items-center justify-between">
-				<CardTitle>Respostas</CardTitle>
+				<CardTitle className="flex items-center gap-2">
+					Respostas
+					{isRefreshing ? (
+						<span
+							role="status"
+							className="text-muted-foreground flex items-center gap-1.5 text-sm font-normal"
+						>
+							<Loader2
+								className="h-4 w-4 animate-spin"
+								aria-hidden
+							/>
+							Carregando...
+						</span>
+					) : null}
+				</CardTitle>
 				<Button
 					size="sm"
 					variant="outline"
@@ -78,7 +127,10 @@ export function AnswersPanel({
 					{exp.isFetching ? "Exportando..." : "Exportar CSV"}
 				</Button>
 			</CardHeader>
-			<CardContent className="flex flex-col gap-4">
+			<CardContent
+				className="flex flex-col gap-4"
+				aria-busy={isInitialLoading || isRefreshing}
+			>
 				<Input
 					placeholder="Buscar por nome ou e-mail..."
 					value={query}
@@ -87,14 +139,20 @@ export function AnswersPanel({
 						setPage(1);
 					}}
 				/>
-				{list.isPending ? (
-					<Skeleton className="h-40 w-full" />
+				{isInitialLoading ? (
+					<AnswersSkeleton />
 				) : !list.data || list.data.participants.length === 0 ? (
 					<p className="text-muted-foreground text-sm">
 						Nenhuma inscrição encontrada.
 					</p>
 				) : (
-					<>
+					<div
+						className={
+							isRefreshing
+								? "pointer-events-none flex flex-col gap-4 opacity-60 transition-opacity"
+								: "flex flex-col gap-4 transition-opacity"
+						}
+					>
 						<div className="overflow-x-auto">
 							<table className="w-full text-sm">
 								<thead>
@@ -145,7 +203,7 @@ export function AnswersPanel({
 							<Button
 								size="sm"
 								variant="outline"
-								disabled={page <= 1}
+								disabled={page <= 1 || isRefreshing}
 								onClick={() => setPage((v) => v - 1)}
 							>
 								Anterior
@@ -156,13 +214,16 @@ export function AnswersPanel({
 							<Button
 								size="sm"
 								variant="outline"
-								disabled={page >= (list.data.pageCount || 1)}
+								disabled={
+									page >= (list.data.pageCount || 1) ||
+									isRefreshing
+								}
 								onClick={() => setPage((v) => v + 1)}
 							>
 								Próxima
 							</Button>
 						</div>
-					</>
+					</div>
 				)}
 			</CardContent>
 		</Card>

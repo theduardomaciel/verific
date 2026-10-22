@@ -1,8 +1,15 @@
 import { relations } from "drizzle-orm";
-import { pgTable, primaryKey, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+	index,
+	pgTable,
+	primaryKey,
+	timestamp,
+	uuid,
+} from "drizzle-orm/pg-core";
 
 import { activitySession } from "./activity-session";
 import { participant } from "./participant";
+import { user } from "./user";
 
 export const sessionAttendance = pgTable(
 	"session_attendances",
@@ -20,10 +27,17 @@ export const sessionAttendance = pgTable(
 				onUpdate: "cascade",
 			}),
 		joinedAt: timestamp("joined_at").defaultNow().notNull(),
+		/** Saída registrada pela equipe (checkout); nulo = não houve checkout. */
+		leftAt: timestamp("left_at"),
+		leftAtByUserId: uuid("left_at_by_user_id").references(() => user.id, {
+			onDelete: "set null",
+			onUpdate: "cascade",
+		}),
 	},
-	(table) => ({
-		pk: primaryKey({ columns: [table.sessionId, table.participantId] }),
-	}),
+	(table) => [
+		primaryKey({ columns: [table.sessionId, table.participantId] }),
+		index("session_attendances_participant_idx").on(table.participantId),
+	],
 );
 
 export const sessionAttendanceRelations = relations(
@@ -36,6 +50,10 @@ export const sessionAttendanceRelations = relations(
 		participant: one(participant, {
 			fields: [sessionAttendance.participantId],
 			references: [participant.id],
+		}),
+		leftBy: one(user, {
+			fields: [sessionAttendance.leftAtByUserId],
+			references: [user.id],
 		}),
 	}),
 );

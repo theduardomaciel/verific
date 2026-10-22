@@ -213,6 +213,7 @@ export const waitlistRouter = createTRPCRouter({
 				);
 				if (seats.ok) {
 					const enrolled = await persistEnrollment(tx, {
+						projectId: locked.projectId,
 						activityId,
 						participantIds: [participantId],
 						answerRows,
@@ -343,6 +344,7 @@ export const waitlistRouter = createTRPCRouter({
 				]);
 				// As respostas foram salvas ao entrar na fila
 				await persistEnrollment(tx, {
+					projectId: locked.projectId,
 					activityId,
 					participantIds: [participantId],
 					answerRows: [],
@@ -559,6 +561,7 @@ export const waitlistRouter = createTRPCRouter({
 				);
 				// As respostas foram salvas ao entrar na fila
 				await persistEnrollment(tx, {
+					projectId: locked.projectId,
 					activityId,
 					participantIds,
 					answerRows: [],

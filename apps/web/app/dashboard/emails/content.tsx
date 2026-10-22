@@ -61,6 +61,7 @@ import {
 	statusHelpOf,
 	toIsoUtc,
 } from "./helpers";
+import { EmailsTableSkeleton, UsageBannerSkeleton } from "./skeleton";
 import { StatusBadge } from "./status-badge";
 import { StatusChip, COUNTER_VARIANT } from "./status-chip";
 
@@ -498,7 +499,7 @@ export function EmailsContent() {
 
 	return (
 		<TooltipProvider delayDuration={200}>
-			<div className="container-d py-container-v flex min-h-screen flex-col gap-6">
+			<div className="container-d py-container-v flex min-h-[calc(100dvh-var(--dashboard-header-height))] flex-col gap-6">
 				{/* Linha 1 — Cabeçalho: título à esquerda, ações à direita */}
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 					<div className="min-w-0">
@@ -582,7 +583,7 @@ export function EmailsContent() {
 				{/* Linha 2 — Caixa de uso da cota: sempre visível, com barra de progresso */}
 				<div>
 					{statsQuery.isPending ? (
-						<Skeleton className="h-24 w-full" />
+						<UsageBannerSkeleton />
 					) : statsQuery.isError || !statsQuery.data ? (
 						<Alert variant="destructive">
 							<OctagonX />
@@ -777,10 +778,7 @@ export function EmailsContent() {
 
 				<div>
 					{listQuery.isPending ? (
-						<div className="space-y-2">
-							<Skeleton className="h-10 w-full" />
-							<Skeleton className="h-64 w-full" />
-						</div>
+						<EmailsTableSkeleton />
 					) : listQuery.isError || !listQuery.data ? (
 						<Alert variant="destructive">
 							<OctagonX />

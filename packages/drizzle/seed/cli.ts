@@ -25,7 +25,7 @@ const isProduction = process.argv
 	.slice(2)
 	.some((arg) => productionFlags.has(arg.toLowerCase()));
 
-const usage = `Uso: pnpm db:seed [--profile=minimal|light|default|stress] [--seed=N] [--ownerId=ID] [--reset] [--notifications] [--prod]`;
+const usage = `Uso: pnpm db:seed [--profile=minimal|light|default|gamification|stress] [--seed=N] [--ownerId=ID] [--reset] [--notifications] [--prod]`;
 
 async function main() {
 	const { values } = parseArgs({

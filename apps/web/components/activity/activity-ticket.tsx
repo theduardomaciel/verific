@@ -32,6 +32,8 @@ export interface WorkshopTicketProps {
 	/** shortId do participante (QR compacto do ingresso). */
 	checkInCode: string;
 	projectUrl?: string;
+	/** Mostra o botão de saída (checkout) para monitores. */
+	checkoutEnabled?: boolean;
 }
 
 const DEFAULT_TOLERANCE = 15; // minutes
@@ -41,6 +43,7 @@ export function ActivityTicket({
 	checkInCode,
 	projectUrl,
 	className,
+	checkoutEnabled = false,
 }: WorkshopTicketProps) {
 	const isMonitor = activity.role === "monitor";
 
@@ -221,6 +224,18 @@ export function ActivityTicket({
 												: "Escanear crachás"
 										}
 									/>
+									{checkoutEnabled && (
+										<BadgeScanner
+											sessionId={session.id}
+											mode="out"
+											buttonVariant="outline"
+											buttonLabel={
+												sessions.length > 1
+													? `Saída da sessão ${i + 1}`
+													: "Registrar saída"
+											}
+										/>
+									)}
 								</div>
 							))}
 							<div className="flex w-full items-center justify-between">

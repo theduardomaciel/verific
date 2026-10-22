@@ -23,6 +23,8 @@ import { revalidateParticipants } from "@/app/actions";
 import { revalidateProfile } from "@/lib/profile-actions";
 import { trpc } from "@/lib/trpc/react";
 
+import { RankingPrivacyToggle } from "./ranking-privacy-toggle";
+
 interface EditProfileDialogProps {
 	eventUrl: string;
 	projectId: string;
@@ -86,6 +88,13 @@ export function EditProfileDialog({
 						projectUrl={eventUrl}
 					/>
 					<div className="mt-6 border-t pt-4">
+						<div className="mb-4">
+							<RankingPrivacyToggle
+								projectId={projectId}
+								eventUrl={eventUrl}
+								shortId={shortId}
+							/>
+						</div>
 						<Button
 							variant="destructive"
 							className="w-full"

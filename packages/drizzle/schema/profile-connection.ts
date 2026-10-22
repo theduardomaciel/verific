@@ -1,5 +1,11 @@
 import { relations } from "drizzle-orm";
-import { pgTable, primaryKey, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+	index,
+	pgTable,
+	primaryKey,
+	timestamp,
+	uuid,
+} from "drizzle-orm/pg-core";
 
 import { participant } from "./participant";
 import { project } from "./project";
@@ -37,6 +43,10 @@ export const profileConnection = pgTable(
 		primaryKey({
 			columns: [table.viewerParticipantId, table.viewedParticipantId],
 		}),
+		index("profile_connections_project_viewed_idx").on(
+			table.projectId,
+			table.viewedParticipantId,
+		),
 	],
 );
 

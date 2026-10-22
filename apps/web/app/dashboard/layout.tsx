@@ -20,6 +20,7 @@ const DASHBOARD_LINKS = [
 	{ href: "", label: "Visão Geral" },
 	{ href: "/activities", label: "Atividades" },
 	{ href: "/participants", label: "Participantes" },
+	{ href: "/reception", label: "Recepção" },
 	{ href: "/emails", label: "E-mails" },
 	{ href: "/settings", label: "Configurações" },
 ];
@@ -61,6 +62,7 @@ async function DashboardLayoutContent({
 	}
 
 	const projectUrl = currentProject.url;
+	const isOwner = projects.owned.some((project) => project.id === projectId);
 
 	return (
 		<div
@@ -72,7 +74,11 @@ async function DashboardLayoutContent({
 				projects={allProjects}
 				links={DASHBOARD_LINKS}
 			/>
-			<DashboardProvider projectId={projectId} projectUrl={projectUrl}>
+			<DashboardProvider
+				projectId={projectId}
+				projectUrl={projectUrl}
+				isOwner={isOwner}
+			>
 				{children}
 			</DashboardProvider>
 			<Footer />
@@ -87,7 +93,12 @@ export default function DashboardLayout({
 }>) {
 	return (
 		<Suspense
-			fallback={<div className="min-h-screen w-full" aria-hidden />}
+			fallback={
+				<div
+					className="min-h-[calc(100dvh-var(--dashboard-header-height))] w-full"
+					aria-hidden
+				/>
+			}
 		>
 			<DashboardLayoutContent>{children}</DashboardLayoutContent>
 		</Suspense>

@@ -19,6 +19,7 @@ import { projectModerator } from "./project-moderator";
 import { speaker } from "./speaker";
 import { user } from "./user";
 
+import type { GamificationConfig } from "../gamification";
 import type { ProfileLayout } from "../profile-layout";
 import type { EventTheme } from "../theme";
 
@@ -65,6 +66,8 @@ export const project = pgTable("projects", {
 	theme: jsonb("theme").$type<EventTheme>(),
 
 	profileLayout: jsonb("profile_layout").$type<ProfileLayout>(),
+
+	gamification: jsonb("gamification").$type<GamificationConfig>(),
 
 	startDate: timestamp("start_date").notNull(),
 	endDate: timestamp("end_date").notNull(),

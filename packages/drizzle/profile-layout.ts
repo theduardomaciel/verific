@@ -178,7 +178,6 @@ export const profileLayoutSchema = z.object({
 	socialsFieldId: z.uuid().nullish(),
 	emailFieldId: z.uuid().nullish(),
 	connectionsEnabled: z.boolean().default(true),
-	badgesEnabled: z.boolean().default(false),
 });
 export type ProfileLayout = z.infer<typeof profileLayoutSchema>;
 

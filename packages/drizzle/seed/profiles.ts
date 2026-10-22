@@ -111,6 +111,48 @@ export const profiles = {
 			},
 		],
 	},
+	// Cenário para exercitar perfil, ranking, adesivos e checkout no dev.
+	// O evento começou há 2 dias (3 dias já "aconteceram"), então há
+	// check-ins diários, sessões concluídas e ranking com pontos.
+	gamification: {
+		users: 30,
+		events: [
+			{
+				name: "Evento Gamificado",
+				url: "seed-gamification",
+				startsInDays: -2,
+				durationDays: 5,
+				participants: 12,
+				monitors: 2,
+				moderators: 1,
+				speakers: 3,
+				activities: [
+					{
+						name: "Abertura",
+						participantsLimit: 20,
+						enrolled: "all",
+						sessions: 1,
+						slot: { day: 0, startHour: 8, hours: 3 },
+					},
+					{
+						name: "Oficina prática",
+						participantsLimit: 20,
+						enrolled: "all",
+						sessions: 1,
+						slot: { day: 0, startHour: 11, hours: 3 },
+					},
+					{
+						name: "Mesa de encerramento",
+						participantsLimit: 20,
+						enrolled: "all",
+						sessions: 1,
+						slot: { day: 0, startHour: 15, hours: 3 },
+					},
+				],
+				gamification: { enabled: true, checkout: true },
+			},
+		],
+	},
 	// Cenário dos testes de estresse: 1500 inscritos + 20 monitores no evento
 	// e 1500 usuários ainda não inscritos
 	stress: {

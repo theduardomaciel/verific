@@ -34,6 +34,7 @@ import {
 } from "@verific/drizzle/schema";
 import { z } from "@verific/zod";
 
+import { evaluateStickers } from "../lib/gamification";
 import {
 	dropVisibilityForFields,
 	isCompatible,
@@ -608,7 +609,6 @@ export const profilesRouter = createTRPCRouter({
 				connections,
 				modules: {
 					connectionsEnabled: layout.connectionsEnabled,
-					badgesEnabled: layout.badgesEnabled,
 				},
 			};
 		}),
@@ -690,7 +690,6 @@ export const profilesRouter = createTRPCRouter({
 				visibility: Object.fromEntries(visibility),
 				modules: {
 					connectionsEnabled: layout.connectionsEnabled,
-					badgesEnabled: layout.badgesEnabled,
 				},
 			};
 		}),
@@ -784,8 +783,10 @@ export const profilesRouter = createTRPCRouter({
 				where: eq(project.id, input.projectId),
 				columns: {
 					id: true,
+					ownerId: true,
 					profilesEnabled: true,
 					profileLayout: true,
+					gamification: true,
 					startDate: true,
 					endDate: true,
 				},
@@ -838,6 +839,16 @@ export const profilesRouter = createTRPCRouter({
 				.returning({
 					viewerParticipantId: profileConnection.viewerParticipantId,
 				});
+			// Conexões novas podem desbloquear o adesivo Conector. Roda
+			// fora da resposta crítica e nunca falha a visita.
+			if (inserted.length > 0) {
+				try {
+					await evaluateStickers(db, projectRow, viewed.id);
+				} catch {
+					// Gamificação é acessória.
+				}
+			}
+
 			// `recorded` mantém a semântica do cliente (visita aceita); o
 			// `created` diz se houve linha nova e é o que decide a invalidação
 			// do perfil visitado. Repetir a visita não regenera o ISR.

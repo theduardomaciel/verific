@@ -5,8 +5,6 @@ import type { StatIconKey } from "@verific/drizzle/profile-layout";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
-import { PLACEHOLDER_BADGES_COUNT } from "@/lib/profile-placeholders";
-
 import { StatIcon } from "./stat-icons";
 
 export interface ProfileConnectionsData {
@@ -24,7 +22,6 @@ export interface ProfileStatsData {
 		hidden: boolean;
 	}>;
 	showConnections: boolean;
-	showBadges: boolean;
 	/** Dono vê itens ocultos marcados (visitantes nunca os recebem). */
 	ownerView?: boolean;
 	connections?: ProfileConnectionsData;
@@ -42,73 +39,49 @@ function initials(full: string): string {
 }
 
 /**
- * Blocos "Seu perfil": cartão de stats (0-5 itens, some quando vazio),
- * adesivos (placeholder) e conexões (atrás de toggle). Sem campos
- * estáticos: tudo vem dos links do layout + respostas.
+ * Blocos "Seu perfil": cartão de stats (0-5 itens, some quando vazio) e
+ * conexões (atrás de toggle). Sem campos estáticos: tudo vem dos links do
+ * layout + respostas. Adesivos/pontos vivem em `ProfileGamification`.
  */
 export function ProfileStats({ data }: { data: ProfileStatsData }) {
 	const visibleStats = data.ownerView
 		? data.stats
 		: data.stats.filter((s) => !s.hidden);
 
-	if (
-		visibleStats.length === 0 &&
-		!data.showConnections &&
-		!data.showBadges
-	) {
+	if (visibleStats.length === 0 && !data.showConnections) {
 		return null;
 	}
 
-	const hasGrid = visibleStats.length > 0 || data.showBadges;
-
 	return (
 		<div className="flex flex-col items-start justify-center gap-6">
-			{hasGrid && (
-				<div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2">
-					{visibleStats.length > 0 && (
-						<Card className="rounded-3xl p-6 font-medium md:p-9">
-							<ul className="flex flex-col gap-4">
-								{visibleStats.map((row, i) => (
-									<li
-										key={`${row.label}-${i}`}
-										className="flex flex-row items-center justify-start gap-3"
+			{visibleStats.length > 0 && (
+				<Card className="w-full rounded-3xl p-6 font-medium md:p-9">
+					<ul className="flex flex-col gap-4">
+						{visibleStats.map((row, i) => (
+							<li
+								key={`${row.label}-${i}`}
+								className="flex flex-row items-center justify-start gap-3"
+							>
+								<StatIcon icon={row.icon} />
+								<span>
+									<span className="text-muted-foreground mr-2 text-sm">
+										{row.label}
+									</span>
+									{row.value}
+								</span>
+								{row.hidden && data.ownerView && (
+									<Badge
+										variant="outline"
+										className="ml-auto"
 									>
-										<StatIcon icon={row.icon} />
-										<span>
-											<span className="text-muted-foreground mr-2 text-sm">
-												{row.label}
-											</span>
-											{row.value}
-										</span>
-										{row.hidden && data.ownerView && (
-											<Badge
-												variant="outline"
-												className="ml-auto"
-											>
-												<EyeOff className="mr-1 h-3 w-3" />
-												Oculto
-											</Badge>
-										)}
-									</li>
-								))}
-							</ul>
-						</Card>
-					)}
-					{data.showBadges && (
-						<div className="from-secondary/60 to-primary/50 flex flex-row items-center justify-between gap-6 rounded-3xl bg-linear-to-l p-6 md:p-9">
-							<span className="text-foreground text-xl font-medium">
-								<span className="text-3xl font-semibold">
-									Adesivos
-								</span>{" "}
-								<br />
-								Coletados
-							</span>
-							<span className="text-foreground mx-auto text-5xl font-bold md:pl-24">
-								{PLACEHOLDER_BADGES_COUNT}
-							</span>
-						</div>
-					)}
-				</div>
+										<EyeOff className="mr-1 h-3 w-3" />
+										Oculto
+									</Badge>
+								)}
+							</li>
+						))}
+					</ul>
+				</Card>
 			)}
 			{data.showConnections && (
 				<ConnectionsCard

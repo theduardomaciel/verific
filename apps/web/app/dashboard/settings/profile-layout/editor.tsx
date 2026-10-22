@@ -23,7 +23,6 @@ import {
 	type StatIconKey,
 } from "@verific/drizzle/profile-layout";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -296,24 +295,6 @@ export function ProfileLayoutEditor({
 							checked={draft.connectionsEnabled}
 							onCheckedChange={(connectionsEnabled) =>
 								patch({ connectionsEnabled })
-							}
-						/>
-					</div>
-					<div className="flex items-center justify-between gap-2 opacity-60">
-						<div className="flex flex-col">
-							<Label>
-								Adesivos{" "}
-								<Badge variant="outline">Em breve</Badge>
-							</Label>
-							<span className="text-muted-foreground text-xs">
-								Só o flag é salvo; ainda não renderiza nada.
-							</span>
-						</div>
-						<Switch
-							checked={draft.badgesEnabled}
-							disabled
-							onCheckedChange={(badgesEnabled) =>
-								patch({ badgesEnabled })
 							}
 						/>
 					</div>

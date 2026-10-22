@@ -24,6 +24,7 @@ export * from "./form-section";
 export * from "./form-field";
 export * from "./form-answer";
 export * from "./notification";
+export * from "./gamification";
 
 // Enums
 export * from "../enum/audience";

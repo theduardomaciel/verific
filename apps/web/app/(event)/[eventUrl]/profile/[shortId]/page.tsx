@@ -1,8 +1,11 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
+import { parseGamificationConfig } from "@verific/drizzle/gamification";
+
 import { Skeleton } from "@/components/ui/skeleton";
 
+import { ProfileGamification } from "@/components/gamification/profile-gamification";
 import * as EventContainer from "@/components/landing/event-container";
 import { ProfileAccountIsland } from "@/components/profile/profile-account-island";
 import { ProfileBanner } from "@/components/profile/profile-banner";
@@ -62,6 +65,9 @@ type ProfileServerData = {
 	profilesEnabled: boolean;
 	eventStartDate: string;
 	eventEndDate: string;
+	gamificationEnabled: boolean;
+	rankingEnabled: boolean;
+	stickersEnabled: boolean;
 	pageData: Awaited<ReturnType<typeof getProfilePageData>> | null;
 };
 
@@ -78,6 +84,9 @@ function ProfileBody({
 	profilesEnabled,
 	eventStartDate,
 	eventEndDate,
+	gamificationEnabled,
+	rankingEnabled,
+	stickersEnabled,
 	pageData,
 }: ProfileServerData) {
 	if (!profilesEnabled || !pageData) {
@@ -106,7 +115,7 @@ function ProfileBody({
 	const hasPublicContent =
 		slots.stats.length > 0 ||
 		modules.connectionsEnabled ||
-		modules.badgesEnabled;
+		gamificationEnabled;
 
 	return (
 		<EventContainer.Holder>
@@ -156,10 +165,17 @@ function ProfileBody({
 										stats: slots.stats,
 										showConnections:
 											modules.connectionsEnabled,
-										showBadges: modules.badgesEnabled,
 										connections: pageData.connections,
 									}}
 								/>
+								{gamificationEnabled && (
+									<ProfileGamification
+										eventUrl={eventUrl}
+										shortId={shortId}
+										rankingEnabled={rankingEnabled}
+										stickersEnabled={stickersEnabled}
+									/>
+								)}
 								<Suspense fallback={null}>
 									<ProfileOwnerHidden
 										eventUrl={eventUrl}
@@ -218,6 +234,8 @@ export default async function EventProfilePage({ params }: ProfilePageProps) {
 
 	const { project } = result;
 	const profilesEnabled = Boolean(project.profilesEnabled);
+	const gamification = parseGamificationConfig(project.gamification);
+	const gamificationEnabled = profilesEnabled && gamification.enabled;
 
 	// Apenas o NOT_FOUND do procedimento vira `null` (e então 404); qualquer
 	// outro erro propaga. Com a rota em ISR, transformar falha transitória
@@ -242,6 +260,9 @@ export default async function EventProfilePage({ params }: ProfilePageProps) {
 				profilesEnabled={profilesEnabled}
 				eventStartDate={new Date(project.startDate).toISOString()}
 				eventEndDate={new Date(project.endDate).toISOString()}
+				gamificationEnabled={gamificationEnabled}
+				rankingEnabled={gamification.rankingEnabled}
+				stickersEnabled={gamification.stickersEnabled}
 				pageData={pageData}
 			/>
 		</Suspense>

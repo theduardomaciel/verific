@@ -68,6 +68,9 @@ function ProfileOwnerTicketsInner({
 				eventUrl={eventUrl}
 				activities={activities.data?.activities ?? []}
 				checkInCode={activities.data?.shortId ?? null}
+				checkoutEnabled={
+					activities.data?.gamification.checkoutEnabled ?? false
+				}
 			/>
 		</div>
 	);

@@ -5,6 +5,7 @@ import {
 	uniqueIndex,
 	uuid,
 	text,
+	boolean,
 } from "drizzle-orm/pg-core";
 
 import { formAnswer } from "./form-answer";
@@ -33,6 +34,9 @@ export const participant = pgTable(
 		joinedAt: timestamp("joined_at").notNull().defaultNow(),
 
 		shortId: text("short_id").notNull(),
+
+		/** Opt-out do ranking público (o próprio perfil segue visível). */
+		rankingOptOut: boolean("ranking_opt_out").default(false).notNull(),
 	},
 	(table) => [
 		uniqueIndex().on(table.userId, table.projectId),

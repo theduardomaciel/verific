@@ -33,6 +33,7 @@
 	--breakpoint-xs: 20rem;
 	--spacing-container-h: var(--spacing-container-h, 1rem);
 	--spacing-container-v: 2.5rem;
+	--dashboard-header-height: 4.5rem;
 
 	/* Shadows */
 	--shadow-color: hsl(0 0% 0%);
@@ -126,9 +127,10 @@
 }
 
 /* Esqueleto de carregamento: cor escolhida no tema do evento; fora do
-   escopo do evento cai para `--secondary` (comportamento atual). */
+   escopo do evento cai para `--border` (cinza visível sobre o card nos dois
+   modos). `--secondary` não serve: no escuro é igual ao fundo do card. */
 .ev-skeleton {
-	background-color: var(--ev-skeleton-bg, var(--secondary));
+	background-color: var(--ev-skeleton-bg, var(--border));
 }
 
 .container-p {

@@ -1512,6 +1512,7 @@ export const activitiesRouter = createTRPCRouter({
 				);
 
 				const inserted = await persistEnrollment(tx, {
+					projectId: locked.projectId,
 					activityId,
 					participantIds: participantsIdsToAdd,
 					answerRows,

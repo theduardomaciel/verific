@@ -31,7 +31,7 @@ export async function DashboardHeader({
 	const session = await getSession();
 
 	return (
-		<div className="md:px-container-h flex w-full flex-col items-center gap-4 border-b py-4 md:flex-row-reverse md:gap-0">
+		<div className="md:px-container-h flex h-auto w-full flex-col items-center gap-4 border-b py-4 md:h-[var(--dashboard-header-height)] md:flex-row-reverse md:gap-0 md:py-0">
 			<div className="px-container-h flex shrink-0 items-center justify-between gap-6 max-md:w-full md:ml-auto md:pl-0">
 				{!!selectedProjectId && (
 					<ProjectSwitcher

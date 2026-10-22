@@ -1,0 +1,2 @@
+CREATE INDEX "session_attendances_participant_idx" ON "session_attendances" USING btree ("participant_id");--> statement-breakpoint
+CREATE INDEX "profile_connections_project_viewed_idx" ON "profile_connections" USING btree ("project_id","viewed_participant_id");

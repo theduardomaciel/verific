@@ -10,6 +10,8 @@ import {
 	UserRound,
 } from "lucide-react";
 
+import { parseGamificationConfig } from "@verific/drizzle/gamification";
+
 import { Badge } from "@/components/ui/badge";
 // Components
 import { Button } from "@/components/ui/button";
@@ -25,6 +27,7 @@ import { serverClient } from "@/lib/trpc/server";
 
 import { RemoveParticipantDialog } from "../dialogs/remove-participant";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { ManualPointsCard } from "./manual-points-card";
 
 interface Props {
 	id: string;
@@ -73,6 +76,9 @@ export async function ParticipantCard({ id: participantId, eventUrl }: Props) {
 	}
 
 	const projectUrl = eventUrl ?? participant.project.url;
+	const gamification = parseGamificationConfig(
+		participant.project.gamification,
+	);
 
 	return (
 		<>
@@ -122,6 +128,13 @@ export async function ParticipantCard({ id: participantId, eventUrl }: Props) {
 							Ver perfil completo
 						</Link>
 					</Button>
+				)}
+				{isModerator && gamification.enabled && (
+					<ManualPointsCard
+						projectId={participant.project.id}
+						participantId={participant.id}
+						participantName={participant.user.name}
+					/>
 				)}
 				{answers.length > 0 && (
 					<div className="flex w-full flex-col gap-2 rounded-lg border p-4 text-left">

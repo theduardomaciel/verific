@@ -272,6 +272,26 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 		},
 	},
 
+	updateGamificationSettings: {
+		snapshot: async (input) => {
+			const id = readString(input, "projectId");
+			if (!id) return undefined;
+			const row = await db.query.project.findFirst({
+				where: eq(project.id, id),
+				columns: { url: true },
+			});
+			return { url: row?.url };
+		},
+		tags: ({ input, snapshot }) => {
+			const id = readString(input, "projectId");
+			const url = readString(snapshot, "url");
+			return [
+				id ? projectCacheTag(id) : undefined,
+				url ? projectUrlCacheTag(url) : undefined,
+			];
+		},
+	},
+
 	deleteProject: {
 		snapshot: async (input) => {
 			const id = readString(input, "id");

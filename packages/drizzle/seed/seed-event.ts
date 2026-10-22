@@ -1,5 +1,12 @@
 import { eq } from "drizzle-orm";
 
+import {
+	DEFAULT_GAMIFICATION_CONFIG,
+	eventDayKeys,
+	isSessionCompleted,
+	sessionHours,
+	sessionPoints,
+} from "../gamification";
 import * as schema from "../schema";
 import {
 	buildActivity,
@@ -52,6 +59,8 @@ export interface EventSpec {
 	moderators: number;
 	speakers: number;
 	activities: ActivitySpec[];
+	/** Liga a gamificação e (opcionalmente) o checkout neste cenário. */
+	gamification?: { enabled?: boolean; checkout?: boolean };
 }
 
 type Session = ReturnType<typeof buildActivitySession>;
@@ -80,12 +89,27 @@ export async function seedEvent(
 	const startDate = addDays(refDate, spec.startsInDays);
 	const endDate = addDays(startDate, spec.durationDays);
 
+	const gamification = spec.gamification
+		? {
+				...DEFAULT_GAMIFICATION_CONFIG,
+				enabled: spec.gamification.enabled ?? true,
+				sessions: {
+					...DEFAULT_GAMIFICATION_CONFIG.sessions,
+					checkoutEnabled: spec.gamification.checkout ?? false,
+				},
+			}
+		: undefined;
+
 	const project = buildProject(
 		faker,
 		{ index: params.index, ownerId: params.ownerId, startDate, endDate },
 		{
 			...(spec.name && { name: spec.name }),
 			...(spec.url && { url: spec.url }),
+			...(gamification && {
+				gamification,
+				profilesEnabled: true,
+			}),
 		},
 	);
 	await db.insert(schema.project).values(project);
@@ -326,13 +350,29 @@ export async function seedEvent(
 		]),
 	);
 
+	const checkout = Boolean(gamification?.sessions.checkoutEnabled);
 	const attendances = buildAttendances(faker, {
 		activities,
 		sessions,
 		enrollments,
 		refDate,
+		checkout,
 	});
 	await insertInChunks(db, schema.sessionAttendance, attendances);
+
+	if (gamification?.enabled) {
+		await seedGamificationData(db, faker, {
+			project,
+			participants,
+			sessions,
+			enrollments,
+			attendances,
+			startDate,
+			endDate,
+			refDate,
+			config: gamification,
+		});
+	}
 
 	let notifications = 0;
 	if (params.notifications) {
@@ -366,6 +406,278 @@ export async function seedEvent(
 		attendances: attendances.length,
 		notifications,
 	};
+}
+
+/**
+ * Cenário de gamificação: check-ins, pontos, adesivos e ranking coerentes
+ * com o que o app geraria. Só roda quando o EventSpec pede, para não inflar
+ * os seeds normais.
+ */
+async function seedGamificationData(
+	db: SeedDb,
+	faker: Faker,
+	params: {
+		project: { id: string; startDate: Date; endDate: Date };
+		participants: { id: string }[];
+		sessions: Session[];
+		enrollments: {
+			participantId: string;
+			activityId: string;
+			subscribedAt: Date;
+		}[];
+		attendances: {
+			sessionId: string;
+			participantId: string;
+			joinedAt: Date;
+			leftAt?: Date;
+		}[];
+		startDate: Date;
+		endDate: Date;
+		refDate: Date;
+		config: typeof DEFAULT_GAMIFICATION_CONFIG;
+	},
+) {
+	const { config, project } = params;
+	const lastDay = new Date(
+		Math.min(params.endDate.getTime(), params.refDate.getTime()),
+	);
+	const dayKeys = eventDayKeys(params.startDate, lastDay);
+	const dayDates = dayKeys.map((key, index) => ({
+		key,
+		at: addMinutes(addDays(params.startDate, index), 9 * 60),
+	}));
+
+	const checkins: Array<typeof schema.participantCheckin.$inferInsert> = [];
+	const checkinDays = new Map<string, Set<string>>();
+	const firstCheckin = new Set<string>();
+
+	for (const participant of params.participants) {
+		const present = dayDates.filter(
+			(_, index) =>
+				index === 0 || faker.datatype.boolean({ probability: 0.55 }),
+		);
+		for (const day of present) {
+			checkins.push({
+				projectId: project.id,
+				participantId: participant.id,
+				day: day.key,
+				checkedInAt: addMinutes(
+					day.at,
+					faker.number.int({ min: -20, max: 20 }),
+				),
+			});
+			firstCheckin.add(participant.id);
+			const days = checkinDays.get(participant.id) ?? new Set<string>();
+			days.add(day.key);
+			checkinDays.set(participant.id, days);
+		}
+	}
+
+	const pointEvents: Array<typeof schema.participantPointEvent.$inferInsert> =
+		[];
+	const totals = new Map<string, number>();
+	const stats = new Map<
+		string,
+		{
+			sessions: Set<string>;
+			hours: number;
+			early: number;
+			completed: number;
+		}
+	>();
+
+	function award(
+		participantId: string,
+		source: typeof schema.participantPointEvent.$inferInsert.source,
+		dedupeKey: string,
+		points: number,
+		createdAt: Date,
+	) {
+		pointEvents.push({
+			projectId: project.id,
+			participantId,
+			source,
+			dedupeKey,
+			points,
+			createdAt,
+		});
+		totals.set(participantId, (totals.get(participantId) ?? 0) + points);
+	}
+
+	for (const checkin of checkins) {
+		const participantId = checkin.participantId;
+		const day = checkin.day;
+		if (!firstCheckin.has(participantId)) continue;
+		firstCheckin.delete(participantId);
+		award(
+			participantId,
+			"checkin",
+			`checkin:${participantId}`,
+			config.presence.firstCheckinPoints,
+			checkin.checkedInAt as Date,
+		);
+		if (config.presence.dailyEnabled) {
+			award(
+				participantId,
+				"daily",
+				`daily:${participantId}:${day}`,
+				config.presence.dailyPoints,
+				checkin.checkedInAt as Date,
+			);
+		}
+	}
+	// Check-ins depois do primeiro também rendem o ponto diário.
+	for (const checkin of checkins) {
+		const participantId = checkin.participantId;
+		const key = `daily:${participantId}:${checkin.day}`;
+		if (
+			config.presence.dailyEnabled &&
+			!pointEvents.some((event) => event.dedupeKey === key)
+		) {
+			award(
+				participantId,
+				"daily",
+				key,
+				config.presence.dailyPoints,
+				checkin.checkedInAt as Date,
+			);
+		}
+	}
+
+	const sessionById = new Map(
+		params.sessions.map((session) => [session.id, session]),
+	);
+	const startHour = (date: Date) =>
+		Number(
+			new Intl.DateTimeFormat("en-US", {
+				timeZone: "America/Sao_Paulo",
+				hour: "numeric",
+				hourCycle: "h23",
+			}).format(date),
+		);
+
+	for (const attendance of params.attendances) {
+		const session = sessionById.get(attendance.sessionId);
+		if (!session) continue;
+		const participantStats = stats.get(attendance.participantId) ?? {
+			sessions: new Set<string>(),
+			hours: 0,
+			early: 0,
+			completed: 0,
+		};
+		participantStats.sessions.add(session.id);
+		participantStats.hours += sessionHours(
+			session.startsAt,
+			session.endsAt,
+		);
+		if (startHour(session.startsAt) < 9) participantStats.early += 1;
+		if (
+			isSessionCompleted({
+				startsAt: session.startsAt,
+				endsAt: session.endsAt,
+				joinedAt: attendance.joinedAt,
+				leftAt: attendance.leftAt ?? null,
+				graceMinutes: config.sessions.completionGraceMinutes,
+			})
+		) {
+			participantStats.completed += 1;
+		}
+		stats.set(attendance.participantId, participantStats);
+
+		award(
+			attendance.participantId,
+			"session",
+			`session:${attendance.participantId}:${session.id}`,
+			sessionPoints({
+				startsAt: session.startsAt,
+				endsAt: session.endsAt,
+				perHour: config.sessions.perHour,
+			}),
+			session.endsAt,
+		);
+		if (
+			config.sessions.checkoutEnabled &&
+			attendance.leftAt &&
+			isSessionCompleted({
+				startsAt: session.startsAt,
+				endsAt: session.endsAt,
+				joinedAt: attendance.joinedAt,
+				leftAt: attendance.leftAt,
+				graceMinutes: config.sessions.completionGraceMinutes,
+			})
+		) {
+			award(
+				attendance.participantId,
+				"completion",
+				`completion:${attendance.participantId}:${session.id}`,
+				config.sessions.completionBonus,
+				attendance.leftAt,
+			);
+		}
+	}
+
+	for (const enrollment of params.enrollments) {
+		award(
+			enrollment.participantId,
+			"enrollment",
+			`enroll:${enrollment.participantId}:${enrollment.activityId}`,
+			config.enrollmentPoints,
+			enrollment.subscribedAt,
+		);
+	}
+
+	await insertInChunks(db, schema.participantCheckin, checkins);
+	await insertInChunks(db, schema.participantPointEvent, pointEvents);
+	await insertInChunks(
+		db,
+		schema.participantPoints,
+		[...totals.entries()].map(([participantId, total]) => ({
+			participantId,
+			projectId: project.id,
+			total,
+			updatedAt: params.refDate,
+		})),
+	);
+
+	const ranking = [...totals.entries()]
+		.sort((a, b) => b[1] - a[1])
+		.map(([participantId], index) => ({ participantId, rank: index + 1 }));
+	const rankByParticipant = new Map(
+		ranking.map((row) => [row.participantId, row.rank]),
+	);
+	const eventDays = dayKeys.length;
+	const stickers: Array<typeof schema.participantSticker.$inferInsert> = [];
+
+	for (const participant of params.participants) {
+		const days = checkinDays.get(participant.id)?.size ?? 0;
+		const participantStats = stats.get(participant.id);
+		const keys: string[] = [];
+		if (days > 0) keys.push("checkin");
+		if ((participantStats?.sessions.size ?? 0) >= 3) keys.push("explorer");
+		if ((participantStats?.hours ?? 0) >= 8) keys.push("marathon");
+		if ((participantStats?.early ?? 0) > 0) keys.push("early-bird");
+		if ((rankByParticipant.get(participant.id) ?? 999) <= 10) {
+			keys.push("elite");
+		}
+		if (days >= 3 && eventDays >= 3) keys.push("frequent");
+		if (eventDays >= 2 && days >= eventDays) keys.push("everyday");
+		if (
+			config.sessions.checkoutEnabled &&
+			(participantStats?.completed ?? 0) >= 5
+		) {
+			keys.push("finisher");
+		}
+		for (const stickerKey of keys) {
+			stickers.push({
+				projectId: project.id,
+				participantId: participant.id,
+				stickerKey,
+				source: "auto",
+				earnedAt: addMinutes(params.startDate, 12 * 60),
+			});
+		}
+	}
+	await insertInChunks(db, schema.participantSticker, stickers);
 }
 
 function buildEnrollments(
@@ -549,6 +861,7 @@ function buildAttendances(
 			role: string;
 		}[];
 		refDate: Date;
+		checkout?: boolean;
 	},
 ) {
 	const tolerance = new Map(
@@ -565,16 +878,31 @@ function buildAttendances(
 						enrollment.role === "participant" &&
 						faker.datatype.boolean({ probability: 0.7 }),
 				)
-				.map((enrollment) => ({
-					sessionId: session.id,
-					participantId: enrollment.participantId,
-					joinedAt: addMinutes(
+				.map((enrollment) => {
+					const joinedAt = addMinutes(
 						session.startsAt,
 						faker.number.int({
 							min: 0,
-							max: tolerance.get(session.activityId) ?? 15,
+							max: params.checkout
+								? 5
+								: (tolerance.get(session.activityId) ?? 15),
 						}),
-					),
-				})),
+					);
+					const leftAt =
+						params.checkout &&
+						faker.datatype.boolean({ probability: 0.65 })
+							? addMinutes(
+									session.endsAt,
+									-faker.number.int({ min: 0, max: 5 }),
+								)
+							: undefined;
+
+					return {
+						sessionId: session.id,
+						participantId: enrollment.participantId,
+						joinedAt,
+						leftAt,
+					};
+				}),
 		);
 }

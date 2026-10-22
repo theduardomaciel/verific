@@ -46,7 +46,6 @@ describe("profile layout", () => {
 		socialsFieldId: null,
 		emailFieldId: null,
 		connectionsEnabled: true,
-		badgesEnabled: false,
 	});
 
 	it("resolve slots e compatibilidade", () => {
@@ -68,7 +67,6 @@ describe("profile layout", () => {
 		const d = parseProfileLayout(null);
 		expect(d.stats).toEqual([]);
 		expect(d.connectionsEnabled).toBe(true);
-		expect(d.badgesEnabled).toBe(false);
 	});
 
 	it("formata valores por tipo (pt-BR)", () => {

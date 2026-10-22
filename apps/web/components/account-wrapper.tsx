@@ -24,12 +24,14 @@ interface AccountWrapperProps {
 	eventUrl: string;
 	activities: Array<any>;
 	checkInCode: string | null;
+	checkoutEnabled?: boolean;
 }
 
 export function AccountWrapper({
 	eventUrl,
 	activities,
 	checkInCode,
+	checkoutEnabled = false,
 }: AccountWrapperProps) {
 	const fallbackDate = useState(() => new Date())[0];
 	const { grouped, categories, initialExpanded } = useMemo(() => {
@@ -79,6 +81,9 @@ export function AccountWrapper({
 												activity={activity}
 												checkInCode={checkInCode || ""}
 												projectUrl={eventUrl}
+												checkoutEnabled={
+													checkoutEnabled
+												}
 											/>
 										</li>
 									))}

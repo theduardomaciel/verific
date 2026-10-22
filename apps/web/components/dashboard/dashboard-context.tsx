@@ -5,6 +5,8 @@ import { createContext, useContext } from "react";
 interface DashboardContextValue {
 	projectId: string;
 	projectUrl: string;
+	/** `true` when the signed-in user owns the selected project. */
+	isOwner: boolean;
 }
 
 const DashboardContext = createContext<DashboardContextValue | null>(null);
@@ -12,10 +14,11 @@ const DashboardContext = createContext<DashboardContextValue | null>(null);
 export function DashboardProvider({
 	projectId,
 	projectUrl,
+	isOwner,
 	children,
 }: DashboardContextValue & { children: React.ReactNode }) {
 	return (
-		<DashboardContext.Provider value={{ projectId, projectUrl }}>
+		<DashboardContext.Provider value={{ projectId, projectUrl, isOwner }}>
 			{children}
 		</DashboardContext.Provider>
 	);

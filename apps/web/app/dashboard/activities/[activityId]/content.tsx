@@ -22,6 +22,7 @@ import { appUrl } from "@verific/env";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { CategoryCard } from "@/components/dashboard/category-card";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
@@ -49,7 +50,7 @@ import { listToString } from "@/lib/i18n";
 import { trpc } from "@/lib/trpc/react";
 
 export function ActivityContent({ activityId }: { activityId: string }) {
-	const { projectId } = useDashboard();
+	const { projectId, isOwner } = useDashboard();
 	const parsedParams = useParsedSearchParams((raw) =>
 		getActivityParams.parse(raw),
 	);
@@ -68,7 +69,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 
 	if (isPending) {
 		return (
-			<main className="py-container-v container-p flex min-h-screen flex-col items-center justify-start gap-9">
+			<main className="py-container-v container-p flex min-h-[calc(100dvh-var(--dashboard-header-height))] flex-col items-center justify-start gap-9">
 				<Skeleton className="h-12 w-full" />
 				<Skeleton className="h-64 w-full" />
 				<Skeleton className="h-96 w-full" />
@@ -78,7 +79,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 
 	if (isError || !data) {
 		return (
-			<main className="py-container-v container-p flex min-h-screen flex-col items-center justify-start">
+			<main className="py-container-v container-p flex min-h-[calc(100dvh-var(--dashboard-header-height))] flex-col items-center justify-start">
 				<p className="text-muted-foreground text-sm">
 					Não foi possível carregar a atividade. Tente recarregar a
 					página.
@@ -99,7 +100,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 	const dateString = getSessionsDateString(sessions);
 
 	return (
-		<main className="py-container-v container-p flex min-h-screen flex-col items-center justify-start gap-9">
+		<main className="py-container-v container-p flex min-h-[calc(100dvh-var(--dashboard-header-height))] flex-col items-center justify-start gap-9">
 			<div className="flex w-full flex-col items-start justify-start gap-4">
 				<div className="flex w-full flex-row flex-wrap items-start justify-between gap-4">
 					<h1 className="text-foreground max-w-full text-4xl font-extrabold first-letter:capitalize md:text-5xl lg:max-w-[60%]">
@@ -168,15 +169,18 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 				/>
 				<div className="flex flex-row items-center gap-3 max-md:w-full max-md:flex-wrap md:justify-between">
 					<div className="flex w-full flex-row items-center gap-3">
-						<ActivityDeleteDialog activityId={activityId}>
-							<Button
-								size={"icon"}
-								variant={"destructive"}
-								className="h-10 min-w-10"
-							>
-								<Trash size={20} />
-							</Button>
-						</ActivityDeleteDialog>
+						{/* Exclusão é restrita ao dono do evento no servidor. */}
+						{isOwner ? (
+							<ActivityDeleteDialog activityId={activityId}>
+								<Button
+									size={"icon"}
+									variant={"destructive"}
+									className="h-10 min-w-10"
+								>
+									<Trash size={20} />
+								</Button>
+							</ActivityDeleteDialog>
+						) : null}
 						<ShareDialog
 							url={`${appUrl}/${activity.project.url}/schedule/${activity.id}`}
 							title="Compartilhar atividade"
@@ -230,95 +234,118 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 					/>
 				</div>
 			</div>
-			<div className="flex w-full flex-col items-start justify-start gap-12 md:flex-row">
-				<div className="flex w-full flex-col items-center justify-start gap-4 md:w-3/5">
-					<ParticipantsList.Holder>
-						<ParticipantsList.Title className="flex w-full flex-row items-center justify-between">
-							<p>Participantes</p>
-							<span className="text-muted-foreground text-sm font-medium">
-								{participantsAmount &&
-								activity.participantsLimit &&
-								activity.participantsLimit > 0
-									? `Vagas disponíveis: ${activity.participantsLimit - participantsAmount}/${activity.participantsLimit}`
-									: participantsAmount &&
-										  participantsAmount > 0
-										? `${participantsAmount} participante${
-												participantsAmount !== 1
-													? "s"
-													: ""
-											}`
-										: null}
-							</span>
-						</ParticipantsList.Title>
-						<div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
-							<SearchBar
-								prefix={"search"}
-								placeholder="Pesquisar participantes"
-								className="w-full pl-10 sm:flex-1"
-							/>
-							<div className="flex w-full items-center gap-3 sm:w-auto">
-								<SortBy
-									items={[
-										{
-											label: "Mais recentes",
-											value: "desc",
-										},
-										{
-											label: "Mais antigos",
-											value: "asc",
-										},
-										{
-											label: "Nome A-Z",
-											value: "name_asc",
-										},
-										{
-											label: "Nome Z-A",
-											value: "name_desc",
-										},
-									]}
+			<Tabs
+				defaultValue="participants"
+				className="w-full gap-4 md:flex-row md:items-start md:gap-12"
+			>
+				<TabsList className="w-full md:hidden">
+					<TabsTrigger value="participants">
+						Participantes
+					</TabsTrigger>
+					<TabsTrigger value="monitors">Monitores</TabsTrigger>
+				</TabsList>
+				<TabsContent
+					value="participants"
+					forceMount
+					className="w-full max-md:data-[state=inactive]:hidden md:w-3/5 md:flex-none"
+				>
+					<div className="flex w-full flex-col items-center justify-start gap-4">
+						<ParticipantsList.Holder>
+							<ParticipantsList.Title className="flex w-full flex-row items-center justify-between">
+								<p>Participantes</p>
+								<span className="text-muted-foreground text-sm font-medium">
+									{participantsAmount &&
+									activity.participantsLimit &&
+									activity.participantsLimit > 0
+										? `Vagas disponíveis: ${activity.participantsLimit - participantsAmount}/${activity.participantsLimit}`
+										: participantsAmount &&
+											  participantsAmount > 0
+											? `${participantsAmount} participante${
+													participantsAmount !== 1
+														? "s"
+														: ""
+												}`
+											: null}
+								</span>
+							</ParticipantsList.Title>
+							<div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
+								<SearchBar
+									prefix={"search"}
+									placeholder="Pesquisar participantes"
+									className="w-full pl-10 sm:flex-1"
 								/>
-								<ExportParticipantsButton
-									participants={participants.map((p) => ({
-										name: p.user.name,
-										email: p.user.email,
-										createdAt: p.subscribedAt,
-									}))}
-								/>
+								<div className="flex w-full items-center gap-3 sm:w-auto">
+									<SortBy
+										items={[
+											{
+												label: "Mais recentes",
+												value: "desc",
+											},
+											{
+												label: "Mais antigos",
+												value: "asc",
+											},
+											{
+												label: "Nome A-Z",
+												value: "name_asc",
+											},
+											{
+												label: "Nome Z-A",
+												value: "name_desc",
+											},
+										]}
+									/>
+									<ExportParticipantsButton
+										participants={participants.map((p) => ({
+											name: p.user.name,
+											email: p.user.email,
+											createdAt: p.subscribedAt,
+										}))}
+									/>
+								</div>
 							</div>
-						</div>
+							<ParticipantsList.List
+								hasActivity
+								participants={participants}
+								sessions={activity.sessions}
+								activityId={activity.id}
+								projectUrl={activity.project.url}
+								currentParticipantId={data.participantId}
+							/>
+						</ParticipantsList.Holder>
+						{participants && pageCount > 1 && (
+							<DashboardPagination
+								currentPage={parsedParams.page || 1}
+								totalPages={pageCount}
+								prefix={`activities/${activity.id}`}
+							/>
+						)}
+					</div>
+				</TabsContent>
+				<TabsContent
+					value="monitors"
+					forceMount
+					className="w-full max-md:data-[state=inactive]:hidden md:w-2/5 md:flex-none"
+				>
+					<ParticipantsList.Holder>
+						<ParticipantsList.Title>
+							Monitores
+						</ParticipantsList.Title>
 						<ParticipantsList.List
-							hasActivity
-							participants={participants}
+							participants={monitors}
 							sessions={activity.sessions}
 							activityId={activity.id}
 							projectUrl={activity.project.url}
 							currentParticipantId={data.participantId}
+							emptyMessage={{
+								title: "Nenhum monitor encontrado",
+								description:
+									"Adicione monitores para que eles possam gerenciar a fila de espera.",
+							}}
 						/>
 					</ParticipantsList.Holder>
-					{participants && pageCount > 1 && (
-						<DashboardPagination
-							currentPage={parsedParams.page || 1}
-							totalPages={pageCount}
-							prefix={`activities/${activity.id}`}
-						/>
-					)}
-				</div>
-				<ParticipantsList.Holder className="md:w-2/5">
-					<ParticipantsList.Title>Monitores</ParticipantsList.Title>
-					<ParticipantsList.List
-						participants={monitors}
-						sessions={activity.sessions}
-						activityId={activity.id}
-						projectUrl={activity.project.url}
-						currentParticipantId={data.participantId}
-						emptyMessage={{
-							title: "Nenhum monitor encontrado",
-							description:
-								"Adicione monitores para que eles possam gerenciar a fila de espera.",
-						}}
-					/>
-				</ParticipantsList.Holder>
-			</div>
+				</TabsContent>
+			</Tabs>
 		</main>
 	);
 }

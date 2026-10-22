@@ -2,6 +2,7 @@
 import { TRPCError } from "@trpc/server";
 
 import { db } from "@verific/drizzle";
+import { parseGamificationConfig } from "@verific/drizzle/gamification";
 import {
 	and,
 	asc,
@@ -23,6 +24,7 @@ import {
 import { z } from "@verific/zod";
 
 import { deleteActivityAnswers } from "../enrollment";
+import { revokeActivityPoints } from "../lib/gamification";
 import {
 	loadNotificationRecipients,
 	notifyActivityEnrollmentCancelled,
@@ -53,6 +55,7 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 					projectId: project.id,
 					participantId: participant.id,
 					shortId: participant.shortId,
+					gamification: project.gamification,
 				})
 				.from(project)
 				.leftJoin(participant, eq(participant.projectId, project.id))
@@ -228,10 +231,20 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 				};
 			});
 
+			const gamificationConfig = parseGamificationConfig(
+				projectRow?.gamification,
+			);
+
 			return {
 				activities: formattedActivities,
 				participantId,
 				shortId,
+				gamification: {
+					enabled: gamificationConfig.enabled,
+					checkoutEnabled:
+						gamificationConfig.enabled &&
+						gamificationConfig.sessions.checkoutEnabled,
+				},
 			};
 		}),
 	deleteParticipantFromActivity: protectedProcedure
@@ -350,6 +363,20 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 							),
 						),
 					);
+				}
+
+				// Pontos da inscrição/presenças não sobrevivem ao cancelamento.
+				try {
+					await tx.transaction(async (sp) => {
+						await revokeActivityPoints(sp, {
+							projectId: eventId,
+							participantId,
+							activityId,
+							sessionIds: activitySessions.map((s) => s.id),
+						});
+					});
+				} catch {
+					// Gamificação nunca bloqueia o cancelamento.
 				}
 
 				await deleteActivityAnswers(tx, activityId, [participantId]);
