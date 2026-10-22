@@ -112,8 +112,6 @@ export function QuickJoinDialog({
 		onOpenChange(next);
 	}
 
-	const isLoading = pending || submitted;
-
 	return (
 		<AlertDialog open={open} onOpenChange={handleOpenChange}>
 			{activity ? (
@@ -179,29 +177,17 @@ export function QuickJoinDialog({
 								<Button
 									type="button"
 									variant="outline"
-									disabled={isLoading}
 									className="min-h-11 w-full sm:w-auto"
-									onClick={() => {
-										onOpenChange(false);
-									}}
+									onClick={() => onJoined(activity)}
 								>
 									Fechar
 								</Button>
 								<Button
 									type="button"
-									disabled={pending}
-									aria-busy={pending}
 									onClick={handleSuccessAction}
 									className="min-h-11 w-full sm:w-auto"
 								>
-									{pending ? (
-										<>
-											<Loader2 className="h-4 w-4 animate-spin" />
-											Redirecionando...
-										</>
-									) : (
-										"Ver programação"
-									)}
+									Ver programação
 								</Button>
 							</AlertDialogFooter>
 						</>
