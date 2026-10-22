@@ -12,7 +12,7 @@ function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
 	return result === 0;
 }
 
-export async function POST(request: NextRequest): Promise<NextResponse> {
+async function sweep(request: NextRequest): Promise<NextResponse> {
 	// Verify CRON_SECRET
 	const cronSecret = (process.env.CRON_SECRET as string) ?? "";
 	if (!cronSecret) {
@@ -57,6 +57,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 		return NextResponse.json({ error: "Internal error" }, { status: 500 });
 	}
 }
+
+// Vercel Cron calls with GET
+export const GET = sweep;
+export const POST = sweep;
 
 // Increase maxDuration for the route (Vercel Hobby: 30s)
 export const maxDuration = 30;

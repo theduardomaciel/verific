@@ -56,7 +56,9 @@ export function createQStashScheduler(): OfferExpiryScheduler {
 			}
 			if (delayMs < 0) delayMs = 0;
 
-			const dedupId = `offer-expiry:${args.enrollmentId}:${args.offeredAt}`;
+			const notBefore = Math.ceil((now + delayMs) / 1000); // Unix seconds, UTC
+			// A reschedule (after the clamp above) gets its own id
+			const dedupId = `offer-expiry:${args.enrollmentId}:${args.offeredAt}:${notBefore}`;
 			const url = emailUrl("/api/jobs/offer-expiry");
 
 			try {
@@ -68,7 +70,7 @@ export function createQStashScheduler(): OfferExpiryScheduler {
 						offeredAt: args.offeredAt,
 						expiresAt: args.expiresAt,
 					},
-					notBefore: Math.ceil((now + delayMs) / 1000), // Unix seconds, UTC
+					notBefore,
 					retries: 3,
 					deduplicationId: dedupId,
 				});
