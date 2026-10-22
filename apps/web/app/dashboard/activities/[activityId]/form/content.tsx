@@ -151,7 +151,7 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 
 	if (!ready && !ensureVersion.isError) {
 		return (
-			<div className="container-d py-container-v min-h-screen">
+			<div className="container-d py-container-v min-h-[calc(100dvh-4.5rem)]">
 				<Skeleton className="h-96 w-full" />
 			</div>
 		);
@@ -162,7 +162,7 @@ export function ActivityFormContent({ activityId }: { activityId: string }) {
 		: 0;
 
 	return (
-		<div className="container-d py-container-v flex min-h-screen flex-col gap-6">
+		<div className="container-d py-container-v flex min-h-[calc(100dvh-4.5rem)] flex-col gap-6">
 			<div className="flex flex-wrap items-center justify-between gap-3">
 				<Button variant="ghost" asChild>
 					<Link

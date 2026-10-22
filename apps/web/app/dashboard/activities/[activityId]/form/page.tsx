@@ -17,7 +17,7 @@ export default function ActivityFormPage({
 	return (
 		<Suspense
 			fallback={
-				<div className="container-d py-container-v min-h-screen">
+				<div className="container-d py-container-v min-h-[calc(100dvh-4.5rem)]">
 					<Skeleton className="h-96 w-full" />
 				</div>
 			}

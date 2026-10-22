@@ -27,7 +27,7 @@ import { trpc } from "@/lib/trpc/react";
 
 function ParticipantsSkeleton() {
 	return (
-		<div className="container-d py-container-v min-h-screen">
+		<div className="container-d py-container-v min-h-[calc(100dvh-4.5rem)]">
 			<div className="grid grid-cols-1 gap-6 md:grid-cols-3">
 				<div className="w-full space-y-4 md:col-span-2">
 					<Skeleton className="h-10 w-full" />
@@ -67,7 +67,7 @@ export function ParticipantsContent() {
 
 	if (isError || !data) {
 		return (
-			<div className="container-d py-container-v min-h-screen">
+			<div className="container-d py-container-v min-h-[calc(100dvh-4.5rem)]">
 				<p className="text-muted-foreground text-sm">
 					Não foi possível carregar os participantes. Tente recarregar
 					a página.
@@ -86,7 +86,7 @@ export function ParticipantsContent() {
 			: 0;
 
 	return (
-		<div className="container-d py-container-v min-h-screen">
+		<div className="container-d py-container-v min-h-[calc(100dvh-4.5rem)]">
 			<div className="grid grid-cols-1 gap-6 md:grid-cols-3">
 				<div className="w-full space-y-4 md:col-span-2">
 					<div className="flex flex-col items-start gap-4 md:flex-row md:items-center">

@@ -93,7 +93,12 @@ export default function DashboardLayout({
 }>) {
 	return (
 		<Suspense
-			fallback={<div className="min-h-screen w-full" aria-hidden />}
+			fallback={
+				<div
+					className="min-h-[calc(100dvh-4.5rem)] w-full"
+					aria-hidden
+				/>
+			}
 		>
 			<DashboardLayoutContent>{children}</DashboardLayoutContent>
 		</Suspense>

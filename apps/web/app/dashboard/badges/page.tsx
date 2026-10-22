@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function BadgesPage() {
 	return (
-		<div className="container-d py-container-v min-h-screen">
+		<div className="container-d py-container-v min-h-[calc(100dvh-4.5rem)]">
 			<Suspense
 				fallback={
 					<div className="flex flex-col gap-4">

@@ -12,7 +12,7 @@ export default function ActivityPage({
 	return (
 		<Suspense
 			fallback={
-				<main className="py-container-v container-p flex min-h-screen flex-col items-center justify-start gap-9">
+				<main className="py-container-v container-p flex min-h-[calc(100dvh-4.5rem)] flex-col items-center justify-start gap-9">
 					<Skeleton className="h-64 w-full" />
 				</main>
 			}

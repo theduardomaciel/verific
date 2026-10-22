@@ -69,7 +69,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 
 	if (isPending) {
 		return (
-			<main className="py-container-v container-p flex min-h-screen flex-col items-center justify-start gap-9">
+			<main className="py-container-v container-p flex min-h-[calc(100dvh-4.5rem)] flex-col items-center justify-start gap-9">
 				<Skeleton className="h-12 w-full" />
 				<Skeleton className="h-64 w-full" />
 				<Skeleton className="h-96 w-full" />
@@ -79,7 +79,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 
 	if (isError || !data) {
 		return (
-			<main className="py-container-v container-p flex min-h-screen flex-col items-center justify-start">
+			<main className="py-container-v container-p flex min-h-[calc(100dvh-4.5rem)] flex-col items-center justify-start">
 				<p className="text-muted-foreground text-sm">
 					Não foi possível carregar a atividade. Tente recarregar a
 					página.
@@ -100,7 +100,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 	const dateString = getSessionsDateString(sessions);
 
 	return (
-		<main className="py-container-v container-p flex min-h-screen flex-col items-center justify-start gap-9">
+		<main className="py-container-v container-p flex min-h-[calc(100dvh-4.5rem)] flex-col items-center justify-start gap-9">
 			<div className="flex w-full flex-col items-start justify-start gap-4">
 				<div className="flex w-full flex-row flex-wrap items-start justify-between gap-4">
 					<h1 className="text-foreground max-w-full text-4xl font-extrabold first-letter:capitalize md:text-5xl lg:max-w-[60%]">
