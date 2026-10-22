@@ -17,7 +17,7 @@ export function ActivitiesList({ activities, className }: Props) {
 	return (
 		<Card
 			className={cn(
-				"h-auto min-h-0 flex flex-col gap-2 overflow-hidden",
+				"h-auto min-h-0 flex flex-col gap-2 overflow-hidden pb-0",
 				className,
 			)}
 		>

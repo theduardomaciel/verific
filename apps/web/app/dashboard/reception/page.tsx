@@ -54,7 +54,7 @@ export default function ReceptionPage() {
 
 	if (!config.enabled) {
 		return (
-			<div className="container-d py-container-v flex flex-col gap-4">
+			<div className="container-d py-container-v flex min-h-[calc(100dvh-var(--dashboard-header-height))] flex-col gap-4">
 				<h1 className="text-foreground text-3xl font-bold">Recepção</h1>
 				<Card>
 					<CardHeader>
@@ -78,7 +78,7 @@ export default function ReceptionPage() {
 	}
 
 	return (
-		<div className="container-d py-container-v flex flex-col gap-6">
+		<div className="container-d py-container-v flex min-h-[calc(100dvh-var(--dashboard-header-height))] flex-col gap-6">
 			<div className="flex flex-col gap-1">
 				<h1 className="text-foreground text-3xl font-bold">Recepção</h1>
 				<p className="text-muted-foreground text-sm">

@@ -66,7 +66,7 @@ export default function Overview() {
 	const stats = statsQuery.data;
 
 	return (
-		<main className="container-d py-container-v flex min-h-[calc(100dvh-var(--dashboard-header-height))] w-full flex-1 flex-col items-center justify-start gap-8">
+		<main className="container-d py-container-v flex min-h-[calc(100dvh-var(--dashboard-header-height))] w-full flex-1 flex-col items-center justify-start gap-8 md:max-h-[calc(100dvh-var(--dashboard-header-height))]">
 			<Tabs
 				defaultValue="overview"
 				className="flex w-full flex-1 flex-col lg:min-h-0"
