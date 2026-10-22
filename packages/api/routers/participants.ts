@@ -1,4 +1,5 @@
 import { db } from "@verific/drizzle";
+import { parseGamificationConfig } from "@verific/drizzle/gamification";
 import type { SQL } from "@verific/drizzle/orm";
 import {
 	and,
@@ -9,6 +10,7 @@ import {
 	exists,
 	ilike,
 	inArray,
+	isNull,
 	or,
 	sql,
 } from "@verific/drizzle/orm";
@@ -27,6 +29,11 @@ import { z } from "@verific/zod";
 // Utils
 import { isMemberAuthenticated } from "../auth";
 import { parseCheckInCode } from "../lib/checkin-code";
+import {
+	awardSessionAttendance,
+	awardSessionCompletion,
+	type StickerAward,
+} from "../lib/gamification";
 import { requireProjectAccess } from "../lib/project-access";
 import {
 	loadNotificationRecipients,
@@ -330,10 +337,12 @@ export const participantsRouter = createTRPCRouter({
 				sessionId: z.string().uuid(),
 				// shortId do ingresso ou URL pública do perfil do crachá.
 				code: z.string().trim().min(1).max(2048),
+				/** `out` registra a saída (quando o organizador habilitou). */
+				mode: z.enum(["in", "out"]).default("in"),
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			const { sessionId, code } = input;
+			const { sessionId, code, mode } = input;
 
 			const error = await isMemberAuthenticated({
 				userId: ctx.session.user.id,
@@ -360,7 +369,14 @@ export const participantsRouter = createTRPCRouter({
 						columns: { id: true, projectId: true },
 						with: {
 							project: {
-								columns: { id: true, ownerId: true },
+								columns: {
+									id: true,
+									ownerId: true,
+									startDate: true,
+									endDate: true,
+									gamification: true,
+									profilesEnabled: true,
+								},
 								with: {
 									moderators: { columns: { userId: true } },
 								},
@@ -390,6 +406,14 @@ export const participantsRouter = createTRPCRouter({
 				});
 			}
 
+			const config = parseGamificationConfig(event.gamification);
+			if (mode === "out" && !config.sessions.checkoutEnabled) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Checkout não está habilitado neste evento.",
+				});
+			}
+
 			// Resolve o código para o participante, sempre no escopo do
 			// evento da sessão (índice único projectId + shortId).
 			const row = await db.query.participant.findFirst({
@@ -406,55 +430,210 @@ export const participantsRouter = createTRPCRouter({
 					message: "Participante não encontrado neste evento.",
 				});
 			}
-			const participantId = row.id;
-			const participantName = row.user.name;
-
-			// Só permite credenciar quem está inscrito na atividade
-			const subscription = await db
-				.select({ amount: count() })
-				.from(participantOnActivity)
-				.where(
-					and(
-						eq(
-							participantOnActivity.activityId,
-							session.activityId,
-						),
-						eq(participantOnActivity.participantId, participantId),
-					),
-				);
-
-			if ((subscription?.[0]?.amount ?? 0) === 0) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: "Participante não está inscrito na atividade",
-				});
-			}
-
-			if (!participantName) {
+			if (!row.user.name) {
 				throw new TRPCError({
 					code: "NOT_FOUND",
 					message: "Participante não encontrado.",
 				});
 			}
+			const participantId = row.id;
+			const participantName = row.user.name;
 
-			await db
-				.insert(sessionAttendance)
-				.values({
-					sessionId,
+			// Só permite credenciar quem está inscrito na atividade
+			if (mode === "in") {
+				const subscription = await db
+					.select({ amount: count() })
+					.from(participantOnActivity)
+					.where(
+						and(
+							eq(
+								participantOnActivity.activityId,
+								session.activityId,
+							),
+							eq(
+								participantOnActivity.participantId,
+								participantId,
+							),
+						),
+					);
+
+				if ((subscription?.[0]?.amount ?? 0) === 0) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: "Participante não está inscrito na atividade",
+					});
+				}
+			}
+
+			const sessionRef = {
+				id: session.id,
+				startsAt: session.startsAt,
+				endsAt: session.endsAt,
+			};
+
+			const result = await db.transaction(async (tx) => {
+				let alreadyPresent = false;
+				let alreadyCheckedOut = false;
+				let completed = false;
+				let pointsAwarded = 0;
+				let totalPoints = 0;
+				let unlockedStickers: StickerAward[] = [];
+
+				if (mode === "in") {
+					const inserted = await tx
+						.insert(sessionAttendance)
+						.values({
+							sessionId,
+							participantId,
+							joinedAt: new Date(),
+						})
+						.onConflictDoNothing()
+						.returning({
+							sessionId: sessionAttendance.sessionId,
+						});
+					alreadyPresent = inserted.length === 0;
+
+					const attendance =
+						await tx.query.sessionAttendance.findFirst({
+							where: and(
+								eq(sessionAttendance.sessionId, sessionId),
+								eq(
+									sessionAttendance.participantId,
+									participantId,
+								),
+							),
+							columns: { joinedAt: true, leftAt: true },
+						});
+					if (!attendance) {
+						throw new TRPCError({
+							code: "INTERNAL_SERVER_ERROR",
+							message: "Falha ao registrar presença.",
+						});
+					}
+
+					try {
+						await tx.transaction(async (sp) => {
+							const attendancePoints =
+								await awardSessionAttendance(sp, {
+									project: event,
+									participantId,
+									session: sessionRef,
+								});
+							pointsAwarded = attendancePoints.pointsAwarded;
+							totalPoints = attendancePoints.totalPoints;
+							unlockedStickers =
+								attendancePoints.unlockedStickers;
+						});
+					} catch {
+						// Gamificação nunca bloqueia o credenciamento.
+						pointsAwarded = 0;
+						totalPoints = 0;
+						unlockedStickers = [];
+					}
+				} else {
+					const attendance =
+						await tx.query.sessionAttendance.findFirst({
+							where: and(
+								eq(sessionAttendance.sessionId, sessionId),
+								eq(
+									sessionAttendance.participantId,
+									participantId,
+								),
+							),
+							columns: { joinedAt: true, leftAt: true },
+						});
+					if (!attendance) {
+						throw new TRPCError({
+							code: "BAD_REQUEST",
+							message:
+								"Participante não fez check-in nesta sessão.",
+						});
+					}
+
+					const now = new Date();
+					const updated = attendance.leftAt
+						? []
+						: await tx
+								.update(sessionAttendance)
+								.set({
+									leftAt: now,
+									leftAtByUserId: staffUserId,
+								})
+								.where(
+									and(
+										eq(
+											sessionAttendance.sessionId,
+											sessionId,
+										),
+										eq(
+											sessionAttendance.participantId,
+											participantId,
+										),
+										isNull(sessionAttendance.leftAt),
+									),
+								)
+								.returning({
+									leftAt: sessionAttendance.leftAt,
+								});
+					alreadyCheckedOut = updated.length === 0;
+					const leftAt =
+						updated[0]?.leftAt ?? attendance.leftAt ?? now;
+
+					try {
+						await tx.transaction(async (sp) => {
+							// Garante os pontos-base mesmo se o check-in
+							// ocorreu antes da gamificação ser ligada.
+							const attendancePoints =
+								await awardSessionAttendance(sp, {
+									project: event,
+									participantId,
+									session: sessionRef,
+								});
+							const completion = await awardSessionCompletion(
+								sp,
+								{
+									project: event,
+									participantId,
+									session: sessionRef,
+									joinedAt: attendance.joinedAt,
+									leftAt,
+								},
+							);
+							completed = completion.completed;
+							pointsAwarded =
+								attendancePoints.pointsAwarded +
+								completion.pointsAwarded;
+							totalPoints = Math.max(
+								attendancePoints.totalPoints,
+								completion.totalPoints,
+							);
+							unlockedStickers = [
+								...attendancePoints.unlockedStickers,
+								...completion.unlockedStickers,
+							];
+						});
+					} catch {
+						pointsAwarded = 0;
+						totalPoints = 0;
+						unlockedStickers = [];
+					}
+				}
+
+				return {
+					success: true as const,
 					participantId,
-					joinedAt: new Date(),
-				})
-				.onConflictDoUpdate({
-					target: [
-						sessionAttendance.sessionId,
-						sessionAttendance.participantId,
-					],
-					set: {
-						joinedAt: new Date(),
-					},
-				});
+					name: participantName,
+					mode,
+					alreadyPresent,
+					alreadyCheckedOut,
+					completed,
+					pointsAwarded,
+					totalPoints,
+					unlockedStickers,
+				};
+			});
 
-			return { success: true, participantId, name: participantName };
+			return result;
 		}),
 	removeParticipant: protectedProcedure
 		.input(

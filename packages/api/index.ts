@@ -2,6 +2,7 @@ import { activitiesRouter } from "./routers/activities";
 import { availabilityRouter } from "./routers/availability";
 import { badgesRouter } from "./routers/badges";
 import { formsRouter } from "./routers/forms";
+import { gamificationRouter } from "./routers/gamification";
 import { notificationsRouter } from "./routers/notifications";
 import { participantOnActivitiesRouter } from "./routers/participantOnActivities";
 import { participantsRouter } from "./routers/participants";
@@ -30,6 +31,7 @@ export const appRouter = mergeRouters(
 	tagsRouter,
 	uploadsRouter,
 	profilesRouter,
+	gamificationRouter,
 	waitlistRouter,
 	notificationsRouter,
 );

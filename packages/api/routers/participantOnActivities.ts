@@ -23,6 +23,7 @@ import {
 import { z } from "@verific/zod";
 
 import { deleteActivityAnswers } from "../enrollment";
+import { revokeActivityPoints } from "../lib/gamification";
 import {
 	loadNotificationRecipients,
 	notifyActivityEnrollmentCancelled,
@@ -350,6 +351,20 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 							),
 						),
 					);
+				}
+
+				// Pontos da inscrição/presenças não sobrevivem ao cancelamento.
+				try {
+					await tx.transaction(async (sp) => {
+						await revokeActivityPoints(sp, {
+							projectId: eventId,
+							participantId,
+							activityId,
+							sessionIds: activitySessions.map((s) => s.id),
+						});
+					});
+				} catch {
+					// Gamificação nunca bloqueia o cancelamento.
 				}
 
 				await deleteActivityAnswers(tx, activityId, [participantId]);

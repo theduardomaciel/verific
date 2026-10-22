@@ -1,14 +1,17 @@
 import { TRPCError } from "@trpc/server";
 
+import { parseGamificationConfig } from "@verific/drizzle/gamification";
 import { and, eq, inArray, sql } from "@verific/drizzle/orm";
 import {
 	activity,
 	formAnswer,
 	formVersion,
 	participantOnActivity,
+	project,
 } from "@verific/drizzle/schema";
 import type { z } from "@verific/zod";
 
+import { awardEnrollment } from "./lib/gamification";
 import {
 	buildAnswerRows,
 	getPublishedVersionWithFields,
@@ -188,12 +191,13 @@ export async function saveActivityAnswers(
 export async function persistEnrollment(
 	tx: Tx,
 	args: {
+		projectId: string;
 		activityId: string;
 		participantIds: string[];
 		answerRows: Awaited<ReturnType<typeof prepareActivityAnswers>>;
 	},
 ): Promise<Array<{ participantId: string; subscribedAt: Date }>> {
-	const { activityId, participantIds, answerRows } = args;
+	const { projectId, activityId, participantIds, answerRows } = args;
 
 	const inserted = await tx
 		.insert(participantOnActivity)
@@ -210,6 +214,38 @@ export async function persistEnrollment(
 		});
 
 	await saveActivityAnswers(tx, answerRows);
+
+	// Gamificação é acessória: roda num savepoint e nunca desfaz a
+	// inscrição. Só pontua vínculos realmente novos.
+	if (inserted.length > 0) {
+		const [projectRow] = await tx
+			.select({
+				id: project.id,
+				ownerId: project.ownerId,
+				startDate: project.startDate,
+				endDate: project.endDate,
+				gamification: project.gamification,
+			})
+			.from(project)
+			.where(eq(project.id, projectId));
+		const config = parseGamificationConfig(projectRow?.gamification);
+		if (projectRow && config.enabled && config.enrollmentPoints > 0) {
+			try {
+				await tx.transaction(async (sp) => {
+					for (const row of inserted) {
+						await awardEnrollment(sp, {
+							project: projectRow,
+							participantId: row.participantId,
+							activityId,
+						});
+					}
+				});
+			} catch {
+				// Pontos nunca bloqueiam a inscrição.
+			}
+		}
+	}
+
 	return inserted;
 }
 
