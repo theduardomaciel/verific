@@ -61,6 +61,7 @@ async function DashboardLayoutContent({
 	}
 
 	const projectUrl = currentProject.url;
+	const isOwner = projects.owned.some((project) => project.id === projectId);
 
 	return (
 		<div
@@ -72,7 +73,11 @@ async function DashboardLayoutContent({
 				projects={allProjects}
 				links={DASHBOARD_LINKS}
 			/>
-			<DashboardProvider projectId={projectId} projectUrl={projectUrl}>
+			<DashboardProvider
+				projectId={projectId}
+				projectUrl={projectUrl}
+				isOwner={isOwner}
+			>
 				{children}
 			</DashboardProvider>
 			<Footer />

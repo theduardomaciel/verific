@@ -49,7 +49,7 @@ import { listToString } from "@/lib/i18n";
 import { trpc } from "@/lib/trpc/react";
 
 export function ActivityContent({ activityId }: { activityId: string }) {
-	const { projectId } = useDashboard();
+	const { projectId, isOwner } = useDashboard();
 	const parsedParams = useParsedSearchParams((raw) =>
 		getActivityParams.parse(raw),
 	);
@@ -168,15 +168,18 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 				/>
 				<div className="flex flex-row items-center gap-3 max-md:w-full max-md:flex-wrap md:justify-between">
 					<div className="flex w-full flex-row items-center gap-3">
-						<ActivityDeleteDialog activityId={activityId}>
-							<Button
-								size={"icon"}
-								variant={"destructive"}
-								className="h-10 min-w-10"
-							>
-								<Trash size={20} />
-							</Button>
-						</ActivityDeleteDialog>
+						{/* Exclusão é restrita ao dono do evento no servidor. */}
+						{isOwner ? (
+							<ActivityDeleteDialog activityId={activityId}>
+								<Button
+									size={"icon"}
+									variant={"destructive"}
+									className="h-10 min-w-10"
+								>
+									<Trash size={20} />
+								</Button>
+							</ActivityDeleteDialog>
+						) : null}
 						<ShareDialog
 							url={`${appUrl}/${activity.project.url}/schedule/${activity.id}`}
 							title="Compartilhar atividade"
