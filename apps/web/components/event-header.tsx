@@ -15,6 +15,8 @@ interface EventHeaderProps {
 	className?: string;
 	/** Liga o link "Ranking" quando a gamificação está ativa. */
 	rankingEnabled?: boolean;
+	/** Mostra o link "Ranking" no cabeçalho (pode estar ativo mas oculto). */
+	rankingShowInNav?: boolean;
 }
 
 /**
@@ -50,20 +52,22 @@ export async function EventHeader({
 	logo,
 	className,
 	rankingEnabled = false,
+	rankingShowInNav = false,
 }: EventHeaderProps) {
 	const registration = await getEventRegistration(eventUrl);
 
-	const baseLinks: MainNavProps["links"] = rankingEnabled
-		? [
-				...NAV_LINKS,
-				{
-					href: "/ranking",
-					label: "Ranking",
-					variant: "event-nav",
-					mobileClassName: MOBILE_NAV_CLASS,
-				},
-			]
-		: NAV_LINKS;
+	const baseLinks: MainNavProps["links"] =
+		rankingEnabled && rankingShowInNav
+			? [
+					...NAV_LINKS,
+					{
+						href: "/ranking",
+						label: "Ranking",
+						variant: "event-nav",
+						mobileClassName: MOBILE_NAV_CLASS,
+					},
+				]
+			: NAV_LINKS;
 
 	// `isOpen` é o campo derivado que já considera o toggle, o arquivamento
 	// e o fim do evento — o mesmo que `EventAction` usa para habilitar o CTA.

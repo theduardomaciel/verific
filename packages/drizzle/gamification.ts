@@ -19,6 +19,8 @@ export const gamificationRankingSchema = z.object({
 	top: z.number().int().min(3).max(100).default(50),
 	allowOptOut: z.boolean().default(true),
 	includeStaff: z.boolean().default(false),
+	/** Mostra o link "Ranking" no cabeçalho do evento. */
+	showInNav: z.boolean().default(true),
 });
 
 export const gamificationPresenceSchema = z.object({
@@ -43,6 +45,7 @@ export const gamificationConfigSchema = z.object({
 		top: 50,
 		allowOptOut: true,
 		includeStaff: false,
+		showInNav: true,
 	}),
 	presence: gamificationPresenceSchema.default({
 		firstCheckinPoints: 50,

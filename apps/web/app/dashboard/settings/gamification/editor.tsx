@@ -400,12 +400,22 @@ export function GamificationEditor({
 					<SwitchRow
 						id="ranking-enabled"
 						label="Exibir ranking público"
-						description="Adiciona o link “Ranking” na navegação do evento."
+						description="Habilita a página de ranking (acessível por URL direta)."
 						checked={draft.rankingEnabled}
 						onCheckedChange={(rankingEnabled) =>
 							patch({ rankingEnabled })
 						}
 						disabled={!draft.enabled}
+					/>
+					<SwitchRow
+						id="ranking-show-in-nav"
+						label="Mostrar link no cabeçalho"
+						description="Quando ligado, o link “Ranking” aparece na navegação do evento. Se desligado, a página continua acessível por URL direta."
+						checked={draft.ranking.showInNav}
+						onCheckedChange={(showInNav) =>
+							patchRanking({ showInNav })
+						}
+						disabled={!draft.enabled || !draft.rankingEnabled}
 					/>
 					<NumberField
 						id="ranking-top"

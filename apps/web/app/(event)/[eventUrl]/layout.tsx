@@ -242,6 +242,7 @@ export default async function EventLayout({
 		Boolean(project.profilesEnabled) &&
 		gamification.enabled &&
 		gamification.rankingEnabled;
+	const rankingShowInNav = rankingEnabled && gamification.ranking.showInNav;
 	const { cssVars, theme } = resolveEventTheme({
 		theme: (project as { theme?: unknown }).theme,
 		primaryColor: project.primaryColor,
