@@ -22,6 +22,7 @@ import { appUrl } from "@verific/env";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { CategoryCard } from "@/components/dashboard/category-card";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
@@ -233,95 +234,118 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 					/>
 				</div>
 			</div>
-			<div className="flex w-full flex-col items-start justify-start gap-12 md:flex-row">
-				<div className="flex w-full flex-col items-center justify-start gap-4 md:w-3/5">
-					<ParticipantsList.Holder>
-						<ParticipantsList.Title className="flex w-full flex-row items-center justify-between">
-							<p>Participantes</p>
-							<span className="text-muted-foreground text-sm font-medium">
-								{participantsAmount &&
-								activity.participantsLimit &&
-								activity.participantsLimit > 0
-									? `Vagas disponíveis: ${activity.participantsLimit - participantsAmount}/${activity.participantsLimit}`
-									: participantsAmount &&
-										  participantsAmount > 0
-										? `${participantsAmount} participante${
-												participantsAmount !== 1
-													? "s"
-													: ""
-											}`
-										: null}
-							</span>
-						</ParticipantsList.Title>
-						<div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
-							<SearchBar
-								prefix={"search"}
-								placeholder="Pesquisar participantes"
-								className="w-full pl-10 sm:flex-1"
-							/>
-							<div className="flex w-full items-center gap-3 sm:w-auto">
-								<SortBy
-									items={[
-										{
-											label: "Mais recentes",
-											value: "desc",
-										},
-										{
-											label: "Mais antigos",
-											value: "asc",
-										},
-										{
-											label: "Nome A-Z",
-											value: "name_asc",
-										},
-										{
-											label: "Nome Z-A",
-											value: "name_desc",
-										},
-									]}
+			<Tabs
+				defaultValue="participants"
+				className="w-full gap-4 md:flex-row md:items-start md:gap-12"
+			>
+				<TabsList className="w-full md:hidden">
+					<TabsTrigger value="participants">
+						Participantes
+					</TabsTrigger>
+					<TabsTrigger value="monitors">Monitores</TabsTrigger>
+				</TabsList>
+				<TabsContent
+					value="participants"
+					forceMount
+					className="w-full max-md:data-[state=inactive]:hidden md:w-3/5 md:flex-none"
+				>
+					<div className="flex w-full flex-col items-center justify-start gap-4">
+						<ParticipantsList.Holder>
+							<ParticipantsList.Title className="flex w-full flex-row items-center justify-between">
+								<p>Participantes</p>
+								<span className="text-muted-foreground text-sm font-medium">
+									{participantsAmount &&
+									activity.participantsLimit &&
+									activity.participantsLimit > 0
+										? `Vagas disponíveis: ${activity.participantsLimit - participantsAmount}/${activity.participantsLimit}`
+										: participantsAmount &&
+											  participantsAmount > 0
+											? `${participantsAmount} participante${
+													participantsAmount !== 1
+														? "s"
+														: ""
+												}`
+											: null}
+								</span>
+							</ParticipantsList.Title>
+							<div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
+								<SearchBar
+									prefix={"search"}
+									placeholder="Pesquisar participantes"
+									className="w-full pl-10 sm:flex-1"
 								/>
-								<ExportParticipantsButton
-									participants={participants.map((p) => ({
-										name: p.user.name,
-										email: p.user.email,
-										createdAt: p.subscribedAt,
-									}))}
-								/>
+								<div className="flex w-full items-center gap-3 sm:w-auto">
+									<SortBy
+										items={[
+											{
+												label: "Mais recentes",
+												value: "desc",
+											},
+											{
+												label: "Mais antigos",
+												value: "asc",
+											},
+											{
+												label: "Nome A-Z",
+												value: "name_asc",
+											},
+											{
+												label: "Nome Z-A",
+												value: "name_desc",
+											},
+										]}
+									/>
+									<ExportParticipantsButton
+										participants={participants.map((p) => ({
+											name: p.user.name,
+											email: p.user.email,
+											createdAt: p.subscribedAt,
+										}))}
+									/>
+								</div>
 							</div>
-						</div>
+							<ParticipantsList.List
+								hasActivity
+								participants={participants}
+								sessions={activity.sessions}
+								activityId={activity.id}
+								projectUrl={activity.project.url}
+								currentParticipantId={data.participantId}
+							/>
+						</ParticipantsList.Holder>
+						{participants && pageCount > 1 && (
+							<DashboardPagination
+								currentPage={parsedParams.page || 1}
+								totalPages={pageCount}
+								prefix={`activities/${activity.id}`}
+							/>
+						)}
+					</div>
+				</TabsContent>
+				<TabsContent
+					value="monitors"
+					forceMount
+					className="w-full max-md:data-[state=inactive]:hidden md:w-2/5 md:flex-none"
+				>
+					<ParticipantsList.Holder>
+						<ParticipantsList.Title>
+							Monitores
+						</ParticipantsList.Title>
 						<ParticipantsList.List
-							hasActivity
-							participants={participants}
+							participants={monitors}
 							sessions={activity.sessions}
 							activityId={activity.id}
 							projectUrl={activity.project.url}
 							currentParticipantId={data.participantId}
+							emptyMessage={{
+								title: "Nenhum monitor encontrado",
+								description:
+									"Adicione monitores para que eles possam gerenciar a fila de espera.",
+							}}
 						/>
 					</ParticipantsList.Holder>
-					{participants && pageCount > 1 && (
-						<DashboardPagination
-							currentPage={parsedParams.page || 1}
-							totalPages={pageCount}
-							prefix={`activities/${activity.id}`}
-						/>
-					)}
-				</div>
-				<ParticipantsList.Holder className="md:w-2/5">
-					<ParticipantsList.Title>Monitores</ParticipantsList.Title>
-					<ParticipantsList.List
-						participants={monitors}
-						sessions={activity.sessions}
-						activityId={activity.id}
-						projectUrl={activity.project.url}
-						currentParticipantId={data.participantId}
-						emptyMessage={{
-							title: "Nenhum monitor encontrado",
-							description:
-								"Adicione monitores para que eles possam gerenciar a fila de espera.",
-						}}
-					/>
-				</ParticipantsList.Holder>
-			</div>
+				</TabsContent>
+			</Tabs>
 		</main>
 	);
 }
