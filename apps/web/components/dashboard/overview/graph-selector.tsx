@@ -130,7 +130,7 @@ export function GraphSelector() {
 		breakdown.data.length === 0;
 
 	return (
-		<div className="flex w-full flex-1 flex-col gap-4">
+		<div className="flex min-h-0 w-full flex-1 flex-col gap-4">
 			<div className="flex flex-row flex-wrap items-center gap-4 md:justify-between">
 				<CardTitle>Participantes</CardTitle>
 				<div className="flex flex-wrap items-center gap-x-6 gap-y-3">

@@ -15,13 +15,18 @@ interface Props {
 
 export function ActivitiesList({ activities, className }: Props) {
 	return (
-		<Card className={cn("h-auto gap-2", className)}>
-			<CardHeader>
+		<Card
+			className={cn(
+				"h-auto min-h-0 flex flex-col gap-2 overflow-hidden",
+				className,
+			)}
+		>
+			<CardHeader className="shrink-0">
 				<CardTitle className="text-base font-medium">
 					Próximas atividades
 				</CardTitle>
 			</CardHeader>
-			<CardContent className="grid gap-4">
+			<CardContent className="grid min-h-0 flex-1 content-start items-start gap-4 overflow-y-auto">
 				{activities.length > 0 ? (
 					activities.map((activity) => (
 						<SimpleActivityCard

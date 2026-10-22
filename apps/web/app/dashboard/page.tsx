@@ -20,16 +20,16 @@ import { trpc } from "@/lib/trpc/react";
 
 function DashboardSkeleton() {
 	return (
-		<main className="container-d py-container-v flex min-h-screen w-full flex-1 flex-col items-center justify-start gap-4">
+		<main className="container-d py-container-v flex min-h-[calc(100dvh-4.5rem)] w-full flex-1 flex-col items-center justify-start gap-4">
 			<Skeleton className="mb-2 h-11 w-full" />
 			<div className="grid w-full gap-4 md:grid-cols-2 lg:grid-cols-4">
 				{Array.from({ length: 4 }).map((_, i) => (
 					<Skeleton key={i} className="h-35.5 w-full" />
 				))}
 			</div>
-			<div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-3">
-				<Skeleton className="h-96 w-full lg:col-span-2" />
-				<Skeleton className="h-96 w-full" />
+			<div className="grid w-full grid-cols-1 gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-3">
+				<Skeleton className="h-96 w-full lg:col-span-2 lg:h-full lg:min-h-0" />
+				<Skeleton className="h-96 w-full lg:h-full lg:min-h-0" />
 			</div>
 		</main>
 	);
@@ -53,7 +53,7 @@ export default function Overview() {
 
 	if (activitiesQuery.isError || statsQuery.isError) {
 		return (
-			<main className="container-d py-container-v flex min-h-screen w-full flex-1 flex-col items-center justify-start">
+			<main className="container-d py-container-v flex min-h-[calc(100dvh-4.5rem)] w-full flex-1 flex-col items-center justify-start">
 				<p className="text-muted-foreground text-sm">
 					Não foi possível carregar o dashboard. Tente recarregar a
 					página.
@@ -66,8 +66,11 @@ export default function Overview() {
 	const stats = statsQuery.data;
 
 	return (
-		<main className="container-d py-container-v flex min-h-screen w-full flex-1 flex-col items-center justify-start gap-8">
-			<Tabs defaultValue="overview" className="flex w-full flex-1">
+		<main className="container-d py-container-v flex min-h-[calc(100dvh-4.5rem)] w-full flex-1 flex-col items-center justify-start gap-8">
+			<Tabs
+				defaultValue="overview"
+				className="flex w-full flex-1 flex-col lg:min-h-0"
+			>
 				<div className="mb-4 flex w-full flex-wrap items-center justify-between space-y-2">
 					<h2 className="text-3xl font-bold tracking-tight">
 						Dashboard
@@ -95,7 +98,10 @@ export default function Overview() {
 					</div>
 				</div>
 
-				<TabsContent value="overview" className="space-y-4">
+				<TabsContent
+					value="overview"
+					className="flex min-h-0 flex-col space-y-4"
+				>
 					{/* Statistics */}
 					<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 						<MetricCard
@@ -138,16 +144,16 @@ export default function Overview() {
 						/>
 					</div>
 
-					{/* TODO: Não escala pra 100% do espaço disponível */}
-					<div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-						<Card className="flex flex-col gap-8 overflow-hidden lg:col-span-2">
-							<CardContent className="relative flex flex-1">
+					{/* Fills the remaining height on desktop */}
+					<div className="grid grid-cols-1 gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-3">
+						<Card className="flex min-h-0 flex-col gap-8 overflow-hidden lg:col-span-2">
+							<CardContent className="relative flex min-h-0 flex-1">
 								<GraphSelector />
 							</CardContent>
 						</Card>
 						<ActivitiesList
 							activities={activities}
-							className="h-fit overflow-y-scroll lg:max-h-[75vh]"
+							className="min-h-0 overflow-hidden lg:h-full lg:min-h-0"
 						/>
 					</div>
 				</TabsContent>
