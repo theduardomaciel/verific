@@ -61,6 +61,7 @@ import {
 	statusHelpOf,
 	toIsoUtc,
 } from "./helpers";
+import { EmailsTableSkeleton, UsageBannerSkeleton } from "./skeleton";
 import { StatusBadge } from "./status-badge";
 import { StatusChip, COUNTER_VARIANT } from "./status-chip";
 
@@ -582,7 +583,7 @@ export function EmailsContent() {
 				{/* Linha 2 — Caixa de uso da cota: sempre visível, com barra de progresso */}
 				<div>
 					{statsQuery.isPending ? (
-						<Skeleton className="h-24 w-full" />
+						<UsageBannerSkeleton />
 					) : statsQuery.isError || !statsQuery.data ? (
 						<Alert variant="destructive">
 							<OctagonX />
@@ -777,10 +778,7 @@ export function EmailsContent() {
 
 				<div>
 					{listQuery.isPending ? (
-						<div className="space-y-2">
-							<Skeleton className="h-10 w-full" />
-							<Skeleton className="h-64 w-full" />
-						</div>
+						<EmailsTableSkeleton />
 					) : listQuery.isError || !listQuery.data ? (
 						<Alert variant="destructive">
 							<OctagonX />
