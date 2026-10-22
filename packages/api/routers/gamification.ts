@@ -9,10 +9,11 @@ import {
 	parseGamificationConfig,
 	stickerByKey,
 } from "@verific/drizzle/gamification";
-import { and, count, eq } from "@verific/drizzle/orm";
+import { and, count, desc, eq } from "@verific/drizzle/orm";
 import {
 	participant,
 	participantCheckin,
+	participantPointEvent,
 	project,
 } from "@verific/drizzle/schema";
 import { z } from "@verific/zod";
@@ -510,6 +511,67 @@ export const gamificationRouter = createTRPCRouter({
 					awardedByUserId: ctx.session.user.id,
 				}),
 			);
+		}),
+
+	/** Total + extrato recente para o ajuste manual no dashboard. */
+	getParticipantPoints: protectedProcedure
+		.input(
+			z.object({
+				projectId: z.string().uuid(),
+				participantId: z.string().uuid(),
+			}),
+		)
+		.query(async ({ input, ctx }) => {
+			const projectRow = await requireProjectAccess(
+				input.projectId,
+				ctx.session.user.id,
+			);
+			const target = await db.query.participant.findFirst({
+				where: and(
+					eq(participant.id, input.participantId),
+					eq(participant.projectId, input.projectId),
+				),
+				columns: { id: true },
+			});
+			if (!target) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Participante não encontrado neste evento.",
+				});
+			}
+
+			const [total, events] = await Promise.all([
+				getPointsTotal(db, input.participantId),
+				db
+					.select({
+						id: participantPointEvent.id,
+						source: participantPointEvent.source,
+						points: participantPointEvent.points,
+						note: participantPointEvent.note,
+						createdAt: participantPointEvent.createdAt,
+					})
+					.from(participantPointEvent)
+					.where(
+						and(
+							eq(
+								participantPointEvent.projectId,
+								input.projectId,
+							),
+							eq(
+								participantPointEvent.participantId,
+								input.participantId,
+							),
+						),
+					)
+					.orderBy(desc(participantPointEvent.createdAt))
+					.limit(20),
+			]);
+
+			return {
+				enabled: projectConfig(projectRow).enabled,
+				total,
+				events,
+			};
 		}),
 
 	/** Total do próprio participante (usado por ilhas do dono). */

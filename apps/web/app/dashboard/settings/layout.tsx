@@ -18,6 +18,10 @@ const settingsLinks = [
 		label: "Perfil",
 	},
 	{
+		href: "/settings/gamification",
+		label: "Gamificação",
+	},
+	{
 		href: "/settings/theme",
 		label: "Tema",
 	},

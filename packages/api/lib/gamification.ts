@@ -442,6 +442,11 @@ async function loadRankPosition(
 				eq(participantPoints.total, input.total),
 				lt(participant.joinedAt, input.joinedAt),
 			),
+			and(
+				eq(participantPoints.total, input.total),
+				eq(participant.joinedAt, input.joinedAt),
+				lt(participant.id, input.participantId),
+			),
 		),
 	];
 	if (input.excludeOptOut) {

@@ -2,6 +2,7 @@
 import { TRPCError } from "@trpc/server";
 
 import { db } from "@verific/drizzle";
+import { parseGamificationConfig } from "@verific/drizzle/gamification";
 import {
 	and,
 	asc,
@@ -54,6 +55,7 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 					projectId: project.id,
 					participantId: participant.id,
 					shortId: participant.shortId,
+					gamification: project.gamification,
 				})
 				.from(project)
 				.leftJoin(participant, eq(participant.projectId, project.id))
@@ -229,10 +231,20 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 				};
 			});
 
+			const gamificationConfig = parseGamificationConfig(
+				projectRow?.gamification,
+			);
+
 			return {
 				activities: formattedActivities,
 				participantId,
 				shortId,
+				gamification: {
+					enabled: gamificationConfig.enabled,
+					checkoutEnabled:
+						gamificationConfig.enabled &&
+						gamificationConfig.sessions.checkoutEnabled,
+				},
 			};
 		}),
 	deleteParticipantFromActivity: protectedProcedure
