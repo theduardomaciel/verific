@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { planSettlement, type WaitlistEntryState } from "./waitlist-plan";
+import {
+	planSettlement,
+	seatsTaken,
+	type WaitlistEntryState,
+} from "./waitlist-plan";
 
 const NOW = new Date("2026-11-10T12:00:00-03:00");
 const STARTS = new Date("2026-11-12T14:00:00-03:00");
@@ -166,5 +170,82 @@ describe("planSettlement", () => {
 		expect(plan.offer).toEqual([
 			{ id: "a", expiresAt: new Date("2026-11-10T14:00:00-03:00") },
 		]);
+	});
+});
+
+describe("seatsTaken", () => {
+	it("sem limite conta só inscritos e ofertas vigentes", () => {
+		expect(
+			seatsTaken({ limit: null, enrolled: 4, openOffers: 1, waiting: 0 }),
+		).toBe(5);
+	});
+
+	it("oferta vencida sem fila libera a vaga", () => {
+		expect(
+			seatsTaken({ limit: 1, enrolled: 0, openOffers: 0, waiting: 0 }),
+		).toBe(0);
+	});
+
+	it("vaga livre com gente na fila fica com a fila", () => {
+		expect(
+			seatsTaken({ limit: 3, enrolled: 1, openOffers: 0, waiting: 1 }),
+		).toBe(2);
+		expect(
+			seatsTaken({ limit: 3, enrolled: 1, openOffers: 0, waiting: 5 }),
+		).toBe(3);
+	});
+
+	it("limite abaixo dos ocupados não esconde quem já tem vaga", () => {
+		expect(
+			seatsTaken({ limit: 2, enrolled: 3, openOffers: 1, waiting: 2 }),
+		).toBe(4);
+	});
+
+	it("bate com o que o acerto da fila faria antes do início", () => {
+		for (const limit of [1, 2, 5]) {
+			for (let enrolled = 0; enrolled <= limit + 1; enrolled++) {
+				for (let open = 0; open <= 2; open++) {
+					for (let expired = 0; expired <= 2; expired++) {
+						for (let queued = 0; queued <= 3; queued++) {
+							const entries = [
+								...Array.from({ length: open }, (_, i) =>
+									offered(
+										`o${i}`,
+										"2026-11-10T20:00:00-03:00",
+									),
+								),
+								...Array.from({ length: expired }, (_, i) =>
+									offered(
+										`x${i}`,
+										"2026-11-10T11:00:00-03:00",
+									),
+								),
+								...Array.from({ length: queued }, (_, i) =>
+									waiting(
+										`w${i}`,
+										"2026-11-05T10:00:00-03:00",
+									),
+								),
+							];
+							const plan = planSettlement({
+								...base,
+								limit,
+								enrolled,
+								entries,
+							});
+
+							expect(
+								seatsTaken({
+									limit,
+									enrolled,
+									openOffers: open,
+									waiting: queued,
+								}),
+							).toBe(enrolled + open + plan.offer.length);
+						}
+					}
+				}
+			}
+		}
 	});
 });

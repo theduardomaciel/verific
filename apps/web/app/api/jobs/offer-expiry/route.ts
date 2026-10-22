@@ -10,7 +10,8 @@ import { and, eq } from "@verific/drizzle/orm";
 import { activityWaitlist } from "@verific/drizzle/schema";
 import { env } from "@verific/env";
 
-const GRACE_MS = 2 * 60 * 1000; // 2 minutes grace before sweep acts
+// A delivery up to this early is treated as due (clock skew), not rescheduled
+const GRACE_MS = 2 * 60 * 1000;
 
 interface OfferExpiryPayload {
 	enrollmentId: string;
@@ -147,10 +148,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 			});
 		}
 
-		// Due: settle the activity so this offer expires and next person gets offered
+		// Due: settle as of the deadline at the latest, so an early delivery
+		// still expires this offer and the next person gets offered
+		const settleAt = new Date(
+			Math.max(now.getTime(), expiresAtDate.getTime()),
+		);
 		await db.transaction(async (tx) => {
 			const locked = await lockActivity(tx, activityId);
-			await settleActivity(tx, locked, now);
+			await settleActivity(tx, locked, settleAt);
 		});
 
 		return NextResponse.json({ status: "settled" });

@@ -68,6 +68,7 @@ export async function assertNoScheduleConflict(
 					name: true,
 					workload: true,
 					allowOverlap: true,
+					cancelledAt: true,
 				},
 				with: {
 					sessions: { columns: { startsAt: true, endsAt: true } },
@@ -78,7 +79,9 @@ export async function assertNoScheduleConflict(
 
 	const conflicts = findScheduleConflicts(
 		target,
-		enrolledRows.map((row) => row.activity),
+		enrolledRows
+			.map((row) => row.activity)
+			.filter((enrolled) => enrolled.cancelledAt === null),
 		new Date(),
 	);
 	if (conflicts.length > 0) {

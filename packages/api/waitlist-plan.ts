@@ -44,6 +44,27 @@ export function byQueueOrder(
 	);
 }
 
+/**
+ * Vagas tomadas para quem ainda não tem vínculo com a atividade: inscritos,
+ * ofertas vigentes e as vagas livres que a fila vai receber no próximo
+ * acerto (quem espera passa na frente). Ofertas vencidas não entram.
+ */
+export function seatsTaken({
+	limit,
+	enrolled,
+	openOffers,
+	waiting,
+}: {
+	limit: number | null;
+	enrolled: number;
+	openOffers: number;
+	waiting: number;
+}): number {
+	const held = enrolled + openOffers;
+	if (limit == null) return held;
+	return held + Math.min(waiting, Math.max(0, limit - held));
+}
+
 export function planSettlement(input: SettlementInput): SettlementPlan {
 	const { limit, enrolled, entries, now, startsAt, endsAt, offerHours } =
 		input;

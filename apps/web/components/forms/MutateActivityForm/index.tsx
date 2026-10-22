@@ -99,7 +99,7 @@ export default function MutateActivityForm({
 			waitlistEnabled: activity?.waitlistEnabled ?? true,
 			waitlistOfferHours: activity?.waitlistOfferHours ?? 12,
 			category: activity?.category || undefined,
-			participantsLimit: activity?.participantsLimit || undefined,
+			participantsLimit: activity?.participantsLimit ?? null,
 			audience: activity?.audience || "external",
 			address: activity?.address || "",
 		},

@@ -1,0 +1,1 @@
+CREATE INDEX "participant_activities_activity_id_role_index" ON "participant_activities" USING btree ("activity_id","role");

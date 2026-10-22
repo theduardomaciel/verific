@@ -1,8 +1,12 @@
 import { TRPCError } from "@trpc/server";
 
 import type { db } from "@verific/drizzle";
-import { and, count, eq, inArray } from "@verific/drizzle/orm";
-import { activity, participantOnActivity } from "@verific/drizzle/schema";
+import { and, count, eq, gt, inArray } from "@verific/drizzle/orm";
+import {
+	activity,
+	activityWaitlist,
+	participantOnActivity,
+} from "@verific/drizzle/schema";
 
 import type { ActiveEntry } from "./waitlist";
 
@@ -22,6 +26,7 @@ export async function lockActivity(tx: Tx, activityId: string) {
 			participantsLimit: activity.participantsLimit,
 			waitlistEnabled: activity.waitlistEnabled,
 			waitlistOfferHours: activity.waitlistOfferHours,
+			cancelledAt: activity.cancelledAt,
 		})
 		.from(activity)
 		.where(eq(activity.id, activityId))
@@ -37,6 +42,30 @@ export async function lockActivity(tx: Tx, activityId: string) {
 }
 
 export type LockedActivity = Awaited<ReturnType<typeof lockActivity>>;
+
+/** Recusa ocupar vaga em atividade cancelada; liberar vaga continua valendo. */
+export function assertActivityOpen(
+	locked: Pick<LockedActivity, "cancelledAt">,
+) {
+	if (locked.cancelledAt) {
+		throw new TRPCError({
+			message: "Activity was cancelled.",
+			code: "BAD_REQUEST",
+			cause: { code: "REGISTRATION_CLOSED" },
+		});
+	}
+}
+
+/**
+ * Oferta da fila ainda dentro do prazo. Uma oferta vencida deixa de ocupar
+ * vaga mesmo antes de `settleActivity` marcá-la como `expired`.
+ */
+export function openOfferWhere(now = new Date()) {
+	return and(
+		eq(activityWaitlist.status, "offered"),
+		gt(activityWaitlist.offerExpiresAt, now),
+	);
+}
 
 export async function countEnrolled(tx: Tx, activityId: string) {
 	const [row] = await tx

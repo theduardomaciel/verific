@@ -28,6 +28,7 @@ import {
 } from "../notifications";
 import { answerValueSchema, type WaitlistErrorCode } from "../schemas";
 import {
+	assertActivityOpen,
 	assertSeatsAvailable,
 	checkSeats,
 	countEnrolled,
@@ -189,6 +190,7 @@ export const waitlistRouter = createTRPCRouter({
 				await assertNoScheduleConflict(tx, activityId, participantId);
 
 				const locked = await lockActivity(tx, activityId);
+				assertActivityOpen(locked);
 				const { endsAt } = await getActivityRange(tx, activityId);
 				if (endsAt && endsAt <= new Date()) {
 					throw waitlistError(
@@ -328,6 +330,7 @@ export const waitlistRouter = createTRPCRouter({
 				await assertNoScheduleConflict(tx, activityId, participantId);
 
 				const locked = await lockActivity(tx, activityId);
+				assertActivityOpen(locked);
 				const queue = await settleActivity(tx, locked);
 				const entry = queue.find(
 					(e) => e.participantId === participantId,
@@ -542,6 +545,7 @@ export const waitlistRouter = createTRPCRouter({
 				}
 
 				const locked = await lockActivity(tx, activityId);
+				assertActivityOpen(locked);
 				const queue = await settleActivity(tx, locked);
 				const missing = participantIds.filter(
 					(id) => !queue.some((entry) => entry.participantId === id),

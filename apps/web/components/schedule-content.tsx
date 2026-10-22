@@ -309,13 +309,18 @@ export function ScheduleContent({
 	const [expandedCategories, setExpandedCategories] =
 		useState<string[]>(initialExpanded);
 
-	// Só reage a mudanças de filtro/busca (estado inicial já correto,
-	// sem flash de abrir/fechar no carregamento). Ajuste durante a
-	// renderização em vez de efeito: sem render cascata.
-	const [prevInitialExpanded, setPrevInitialExpanded] =
-		useState(initialExpanded);
-	if (prevInitialExpanded !== initialExpanded) {
-		setPrevInitialExpanded(initialExpanded);
+	// Só reage a mudanças de filtro/busca: recargas de dados (ex.: a
+	// disponibilidade após uma inscrição) não fecham o que o usuário abriu.
+	// Ajuste durante a renderização em vez de efeito: sem render cascata.
+	const filterKey = JSON.stringify([
+		searchQuery,
+		sortBy,
+		categoryFilter,
+		tagFilter,
+	]);
+	const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+	if (prevFilterKey !== filterKey) {
+		setPrevFilterKey(filterKey);
 		setExpandedCategories(initialExpanded);
 	}
 

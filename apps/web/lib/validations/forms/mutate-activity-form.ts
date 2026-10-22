@@ -35,12 +35,20 @@ export const mutateActivityFormSchema = z
 		isRegistrationOpen: z.boolean().optional(),
 		allowOverlap: z.boolean().optional(),
 		waitlistEnabled: z.boolean().optional(),
-		participantsLimit: z.coerce
-			.number()
-			.optional()
-			.refine((val) => val === undefined || (val >= 0 && val <= 100), {
-				message: "O limite de participantes deve ser entre 0 e 100",
-			}),
+		participantsLimit: z
+			.preprocess(
+				(val) => (val === "" ? null : val),
+				z.coerce
+					.number()
+					.int({
+						message: "O limite de vagas deve ser um número inteiro",
+					})
+					.min(1, {
+						message: "O limite de vagas deve ser de pelo menos 1",
+					})
+					.nullable(),
+			)
+			.optional(),
 		tolerance: z.coerce
 			.number()
 			.optional()

@@ -1,5 +1,11 @@
 import { relations } from "drizzle-orm";
-import { pgTable, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import {
+	index,
+	pgTable,
+	timestamp,
+	uniqueIndex,
+	uuid,
+} from "drizzle-orm/pg-core";
 
 // Enums
 import { roleEnum } from "../enum/role";
@@ -24,7 +30,10 @@ export const participantOnActivity = pgTable(
 		role: roleEnum("role").notNull().default("participant"),
 		subscribedAt: timestamp("subscribedAt").notNull().defaultNow(),
 	},
-	(table) => [uniqueIndex().on(table.participantId, table.activityId)],
+	(table) => [
+		uniqueIndex().on(table.participantId, table.activityId),
+		index().on(table.activityId, table.role),
+	],
 );
 
 export const participantOnActivityRelations = relations(

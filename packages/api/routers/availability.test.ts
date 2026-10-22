@@ -28,14 +28,20 @@ describe("getActivityAvailability", () => {
 		queue.length = 0;
 	});
 
-	it("soma inscritos + ofertas e separa a fila em espera", async () => {
+	it("soma inscritos + ofertas e dá à fila a vaga livre", async () => {
 		const projectId = randomUUID();
 		const activityA = randomUUID();
 		const activityB = randomUUID();
 		const missing = randomUUID();
 
-		queue.push([{ id: activityA }, { id: activityB }]);
-		queue.push([{ activityId: activityA, amount: 3 }]);
+		queue.push([
+			{ id: activityA, participantsLimit: null },
+			{ id: activityB, participantsLimit: 10 },
+		]);
+		queue.push([
+			{ activityId: activityA, amount: 3 },
+			{ activityId: activityB, amount: 9 },
+		]);
 		queue.push([
 			{ activityId: activityA, status: "offered", amount: 2 },
 			{ activityId: activityB, status: "waiting", amount: 4 },
@@ -56,7 +62,7 @@ describe("getActivityAvailability", () => {
 			},
 			{
 				activityId: activityB,
-				participantsCount: 0,
+				participantsCount: 10,
 				waitlistCount: 4,
 			},
 		]);

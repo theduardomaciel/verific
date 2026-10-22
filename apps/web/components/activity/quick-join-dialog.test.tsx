@@ -16,7 +16,9 @@ const {
 	invalidateAvailabilityMock,
 	revalidateSubscribedMock,
 	revalidateActivitiesMock,
+	pushMock,
 } = vi.hoisted(() => ({
+	pushMock: vi.fn(),
 	mutateAsyncMock: vi.fn(),
 	invalidateSubscribedMock: vi.fn(),
 	invalidateActivitiesMock: vi.fn(),
@@ -51,7 +53,7 @@ vi.mock("@/app/actions", () => ({
 
 vi.mock("next/navigation", () => ({
 	useRouter: () => ({
-		push: vi.fn(),
+		push: pushMock,
 	}),
 }));
 
@@ -150,6 +152,35 @@ describe("QuickJoinDialog", () => {
 		expect(mutateAsyncMock).toHaveBeenCalledTimes(1);
 		// onJoined is now called when user clicks "Ver programação"
 		expect(onJoined).not.toHaveBeenCalled();
+	});
+
+	it("fechar após o sucesso marca a inscrição sem navegar", async () => {
+		const { onJoined } = setup();
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Confirmar inscrição" }),
+		);
+		const close = await screen.findByRole("button", { name: "Fechar" });
+		expect(close).toBeEnabled();
+
+		fireEvent.click(close);
+
+		expect(onJoined).toHaveBeenCalledWith(activity);
+		expect(pushMock).not.toHaveBeenCalled();
+	});
+
+	it("ver programação marca a inscrição e navega", async () => {
+		const { onJoined } = setup();
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Confirmar inscrição" }),
+		);
+		fireEvent.click(
+			await screen.findByRole("button", { name: "Ver programação" }),
+		);
+
+		expect(onJoined).toHaveBeenCalledWith(activity);
+		expect(pushMock).toHaveBeenCalledWith("/test-event/schedule#act-1");
 	});
 
 	it("conflito de corrida sobe como bloqueio tipado", async () => {
