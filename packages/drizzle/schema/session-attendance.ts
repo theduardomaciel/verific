@@ -1,5 +1,11 @@
 import { relations } from "drizzle-orm";
-import { pgTable, primaryKey, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+	index,
+	pgTable,
+	primaryKey,
+	timestamp,
+	uuid,
+} from "drizzle-orm/pg-core";
 
 import { activitySession } from "./activity-session";
 import { participant } from "./participant";
@@ -28,9 +34,10 @@ export const sessionAttendance = pgTable(
 			onUpdate: "cascade",
 		}),
 	},
-	(table) => ({
-		pk: primaryKey({ columns: [table.sessionId, table.participantId] }),
-	}),
+	(table) => [
+		primaryKey({ columns: [table.sessionId, table.participantId] }),
+		index("session_attendances_participant_idx").on(table.participantId),
+	],
 );
 
 export const sessionAttendanceRelations = relations(

@@ -43,6 +43,13 @@
 			"when": 1792631907929,
 			"tag": "0005_natural_marauders",
 			"breakpoints": true
+		},
+		{
+			"idx": 6,
+			"version": "7",
+			"when": 1792635303744,
+			"tag": "0006_complete_alex_wilder",
+			"breakpoints": true
 		}
 	]
 }

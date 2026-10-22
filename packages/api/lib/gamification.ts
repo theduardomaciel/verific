@@ -371,7 +371,8 @@ export async function loadParticipantStats(
 		]);
 
 	const total = pointsRow[0]?.total ?? 0;
-	const optOut = Boolean(me?.rankingOptOut);
+	// Se o organizador desligou o opt-out, o flag antigo deixa de valer.
+	const optOut = config.ranking.allowOptOut && Boolean(me?.rankingOptOut);
 	const staffIds = [
 		project.ownerId,
 		...(project.moderators?.map((moderator) => moderator.userId) ?? []),
@@ -470,7 +471,7 @@ async function loadRankPosition(
 
 /** Adesivos recém-conquistados (só os inseridos agora). */
 export async function evaluateStickers(
-	tx: Tx,
+	tx: GamificationClient,
 	project: GamificationProject,
 	participantId: string,
 ): Promise<StickerAward[]> {
@@ -590,7 +591,7 @@ export async function loadGamificationSnapshot(
 		earnedRows.map((row) => [row.stickerKey, row.earnedAt]),
 	);
 
-	const rankingTotal = await loadRanking(tx, project, 0);
+	const rankingTotal = await loadRanking(tx, project, 1);
 
 	return {
 		points: loaded.total,
