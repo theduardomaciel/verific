@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { projectCacheTag, projectUrlCacheTag } from "@verific/api";
+import { parseGamificationConfig } from "@verific/drizzle/gamification";
 import { presetOfFamily } from "@verific/drizzle/theme";
 import { appUrl } from "@verific/env";
 
@@ -236,6 +237,11 @@ export default async function EventLayout({
 	}
 
 	const { project } = result;
+	const gamification = parseGamificationConfig(project.gamification);
+	const rankingEnabled =
+		Boolean(project.profilesEnabled) &&
+		gamification.enabled &&
+		gamification.rankingEnabled;
 	const { cssVars, theme } = resolveEventTheme({
 		theme: (project as { theme?: unknown }).theme,
 		primaryColor: project.primaryColor,
@@ -292,6 +298,7 @@ export default async function EventLayout({
 					<EventHeader
 						eventUrl={eventUrl}
 						className="relative h-21 border-none py-0"
+						rankingEnabled={rankingEnabled}
 						logo={
 							<EventLogo
 								href={`/${eventUrl}`}

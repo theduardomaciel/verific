@@ -162,6 +162,37 @@ export const gamificationRouter = createTRPCRouter({
 				rank: config.rankingEnabled ? snapshot.rank : null,
 				rankingEnabled: config.rankingEnabled,
 				stickersEnabled: config.stickersEnabled,
+				allowOptOut: config.ranking.allowOptOut,
+			};
+		}),
+
+	/** Posição do próprio participante (linha fixa do ranking). */
+	getMyStanding: protectedProcedure
+		.input(z.object({ projectUrl: z.string().min(1) }))
+		.query(async ({ input, ctx }) => {
+			const row = await publicProject(input.projectUrl);
+			const config = requireEnabledProject(row);
+			const participantRow = await db.query.participant.findFirst({
+				where: and(
+					eq(participant.projectId, row!.id),
+					eq(participant.userId, ctx.session.user.id),
+				),
+				columns: { id: true, shortId: true },
+			});
+			if (!participantRow) return null;
+
+			const snapshot = await loadGamificationSnapshot(
+				db,
+				toGamificationProject(row!),
+				participantRow.id,
+			);
+			return {
+				shortId: participantRow.shortId,
+				points: snapshot.points,
+				rank: config.rankingEnabled ? snapshot.rank : null,
+				optOut: snapshot.optOut,
+				totalParticipants: snapshot.totalParticipants,
+				rankingEnabled: config.rankingEnabled,
 			};
 		}),
 

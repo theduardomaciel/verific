@@ -510,6 +510,36 @@ export async function evaluateStickers(
 	});
 }
 
+function stickerUnit(
+	sticker: StickerDefinition,
+):
+	| "checkin"
+	| "sessions"
+	| "hours"
+	| "connections"
+	| "days"
+	| "rank"
+	| "early" {
+	switch (sticker.criterion.type) {
+		case "checkin":
+			return "checkin";
+		case "sessions":
+		case "completed-sessions":
+			return "sessions";
+		case "hours":
+			return "hours";
+		case "connections":
+			return "connections";
+		case "days":
+		case "all-days":
+			return "days";
+		case "rank":
+			return "rank";
+		case "early-session":
+			return "early";
+	}
+}
+
 export interface GamificationSnapshot {
 	points: number;
 	rank: number | null;
@@ -525,6 +555,14 @@ export interface GamificationSnapshot {
 			icon: StickerDefinition["icon"];
 			tier: StickerDefinition["tier"];
 			earnedAt: Date | null;
+			unit:
+				| "checkin"
+				| "sessions"
+				| "hours"
+				| "connections"
+				| "days"
+				| "rank"
+				| "early";
 		}
 	>;
 }
@@ -573,6 +611,7 @@ export async function loadGamificationSnapshot(
 				icon: sticker.icon,
 				tier: sticker.tier,
 				earnedAt,
+				unit: stickerUnit(sticker),
 				...progress,
 				earned: progress.earned || Boolean(earnedAt),
 			};

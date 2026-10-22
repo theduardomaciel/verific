@@ -608,7 +608,6 @@ export const profilesRouter = createTRPCRouter({
 				connections,
 				modules: {
 					connectionsEnabled: layout.connectionsEnabled,
-					badgesEnabled: layout.badgesEnabled,
 				},
 			};
 		}),
@@ -690,7 +689,6 @@ export const profilesRouter = createTRPCRouter({
 				visibility: Object.fromEntries(visibility),
 				modules: {
 					connectionsEnabled: layout.connectionsEnabled,
-					badgesEnabled: layout.badgesEnabled,
 				},
 			};
 		}),
