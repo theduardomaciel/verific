@@ -10,43 +10,6 @@ import { auth } from "@verific/auth";
 import { safeRedirectPath } from "@/lib/safe-redirect";
 import { SESSION_MARKER_COOKIE } from "@/lib/session-marker";
 
-// Vive mais que a sessão (7d, renovável): marcador expirado só custa um
-// no-op; expirar antes da sessão impediria visitas legítimas no evento.
-const SESSION_MARKER_MAX_AGE = 60 * 60 * 24 * 30;
-
-function sessionMarkerOptions() {
-	return {
-		httpOnly: false,
-		secure: process.env.NODE_ENV === "production",
-		sameSite: "lax" as const,
-		path: "/",
-		maxAge: SESSION_MARKER_MAX_AGE,
-	};
-}
-
-export async function loginAction(callbackUrl: string) {
-	const safeCallbackUrl = callbackUrl.startsWith("/")
-		? callbackUrl
-		: "/account";
-	const result = await auth.api.signInSocial({
-		body: {
-			provider: "google",
-			callbackURL: safeCallbackUrl,
-			// Reforça o seletor de contas por requisição (o padrão do
-			// provider já define `prompt: "select_account"`).
-			additionalParams: { prompt: "select_account" },
-		},
-		headers: await headers(),
-	});
-
-	// Marcador otimista: se o usuário desistir no Google ele fica sem
-	// sessão, mas o recorder apenas recebe um no-op. O importante é que
-	// o retorno do OAuth já encontre o marcador para registrar a visita.
-	(await cookies()).set(SESSION_MARKER_COOKIE, "1", sessionMarkerOptions());
-
-	redirect(result.url ?? safeCallbackUrl);
-}
-
 export async function signOutAction(redirectTo: string = "/") {
 	await auth.api.signOut({
 		headers: await headers(),
