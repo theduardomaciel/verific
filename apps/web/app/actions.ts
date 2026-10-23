@@ -5,9 +5,11 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { projectUrlCacheTag } from "@verific/api";
+import { hasProjectAccessByUrl } from "@verific/api/project-access";
 import { auth } from "@verific/auth";
 
 import { safeRedirectPath } from "@/lib/safe-redirect";
+import { getSession } from "@/lib/session";
 import { SESSION_MARKER_COOKIE } from "@/lib/session-marker";
 
 export async function signOutAction(redirectTo: string = "/") {
@@ -81,5 +83,12 @@ export async function revalidateSubscribedActivitiesIdsFromParticipant(
  * tag do middleware tRPC.
  */
 export async function revalidateProjects(projectUrl: string) {
+	const session = await getSession();
+	if (
+		!session ||
+		!(await hasProjectAccessByUrl(projectUrl, session.user.id))
+	) {
+		return;
+	}
 	updateTag(projectUrlCacheTag(projectUrl));
 }
