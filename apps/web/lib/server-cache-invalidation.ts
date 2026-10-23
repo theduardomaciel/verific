@@ -30,4 +30,4 @@ registerCacheRevalidator((tag) => revalidateTag(tag, "max"));
 
 // Escritas de identidade do usuário pelo better-auth (fora do tRPC) mudam
 // `user.name`/`user.image_url`, expostos em páginas públicas cacheadas.
-onAuthUserChanged(() => invalidateAuthUserChange());
+onAuthUserChanged((change) => invalidateAuthUserChange(change));

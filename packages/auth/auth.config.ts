@@ -109,7 +109,8 @@ export const auth = betterAuth({
 			// exclusão de conta) mudam `user.name`/`user.image_url`, que
 			// aparecem em páginas públicas cacheadas. O ouvinte (registrado
 			// pelo app em `@/lib/server-cache-invalidation`) derruba as tags
-			// `events`/`profiles`. Sem ouvinte registrado, é no-op silencioso.
+			// dos perfis e eventos do usuário. Sem ouvinte registrado, é
+			// no-op silencioso.
 			//
 			// O filtro por endpoint descarta atualizações internas do login
 			// (emailVerified / avatar do provedor no vínculo de conta): só
@@ -117,7 +118,7 @@ export const auth = betterAuth({
 			update: {
 				after: async (userData, context) => {
 					if (!isAuthIdentityEndpoint(context?.path)) return;
-					emitAuthUserChanged({
+					await emitAuthUserChanged({
 						reason: "update",
 						userId: readUserId(userData),
 					});
@@ -125,7 +126,7 @@ export const auth = betterAuth({
 			},
 			delete: {
 				after: async (userData) => {
-					emitAuthUserChanged({
+					await emitAuthUserChanged({
 						reason: "delete",
 						userId: readUserId(userData),
 					});
