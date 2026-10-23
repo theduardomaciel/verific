@@ -36,6 +36,8 @@ export const env = createEnv({
 		QSTASH_URL: z.string().url().optional(),
 		CRON_SECRET: z.string().min(32).optional(),
 		SCHEDULER_PROVIDER: z.enum(["console", "qstash"]).optional(),
+		// IPs/faixas IPv4 (CIDR) separados por vírgula, com limites maiores
+		RATE_LIMIT_RELAXED_CIDRS: z.string().optional(),
 	},
 	client: {
 		NEXT_PUBLIC_APP_URL: z.url(),
@@ -73,6 +75,7 @@ export const env = createEnv({
 		QSTASH_URL: process.env.QSTASH_URL,
 		CRON_SECRET: process.env.CRON_SECRET,
 		SCHEDULER_PROVIDER: process.env.SCHEDULER_PROVIDER,
+		RATE_LIMIT_RELAXED_CIDRS: process.env.RATE_LIMIT_RELAXED_CIDRS,
 	},
 	emptyStringAsUndefined: true,
 });

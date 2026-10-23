@@ -24,6 +24,7 @@ import {
 	projectProfilesCacheTag,
 	projectUrlCacheTag,
 } from "./cache-tags";
+import { userOwnedProjectIds, userProfileRefs } from "./lib/user-public-scope";
 
 /**
  * Invalidação on-demand do cache público (Next `cacheComponents`).
@@ -1088,9 +1089,42 @@ export function invalidateCacheTags(
  * `update-user`/`change-email`/exclusão). Mesmas tags da regra `updateUser`:
  * o nome/avatar aparece no evento (dono) e nos perfis públicos.
  *
+ * Sem `userId`, na exclusão (os perfis já sumiram do banco) ou se a busca
+ * das tags do usuário falhar, derruba `events`/`profiles` inteiros.
+ *
  * Chamado pelo ouvinte registrado em `@/lib/server-cache-invalidation`
  * (ver `onAuthUserChanged` em `@verific/auth`).
  */
-export function invalidateAuthUserChange() {
-	invalidateCacheTags([GLOBAL_CACHE_TAGS.events, GLOBAL_CACHE_TAGS.profiles]);
+export async function invalidateAuthUserChange(
+	change: { userId: string | null; reason: "update" | "delete" } = {
+		userId: null,
+		reason: "update",
+	},
+) {
+	const invalidateAll = () =>
+		invalidateCacheTags([
+			GLOBAL_CACHE_TAGS.events,
+			GLOBAL_CACHE_TAGS.profiles,
+		]);
+	if (!change.userId || change.reason === "delete") {
+		invalidateAll();
+		return;
+	}
+
+	let profileRefs, ownedProjectIds;
+	try {
+		[profileRefs, ownedProjectIds] = await Promise.all([
+			userProfileRefs(change.userId),
+			userOwnedProjectIds(change.userId),
+		]);
+	} catch {
+		invalidateAll();
+		return;
+	}
+	invalidateCacheTags([
+		...profileRefs.map(({ projectId, shortId }) =>
+			participantProfileCacheTag(projectId, shortId),
+		),
+		...ownedProjectIds.map(projectCacheTag),
+	]);
 }

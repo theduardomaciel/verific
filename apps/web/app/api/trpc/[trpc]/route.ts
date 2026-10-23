@@ -5,7 +5,7 @@ import { getSessionCookie } from "better-auth/cookies";
 
 import { appRouter, PUBLIC_CACHEABLE_QUERY_PATHS } from "@verific/api";
 
-import { getSession } from "@/lib/session";
+import { getRefreshingSession } from "@/lib/session";
 // Boot da invalidação pública (registra `revalidateTag` em `@verific/api`).
 // Fica num módulo compartilhado, e não aqui, para que os outros runtimes
 // que executam mutations (better-auth, caller de servidor) também o tenham.
@@ -84,13 +84,13 @@ const handler = async (req: NextRequest) => {
 		createContext: async () => {
 			// Sessão preguiçosa: sem cookie de sessão não há o que buscar no
 			// banco — a maioria dos acessos públicos nem traz cookie.
-			// `getSession()` (memoizado por request) só roda com candidato.
+			// `getRefreshingSession()` só roda com candidato.
 			if (publicQueryRequest || !getSessionCookie(req)) {
 				return { session: null };
 			}
 
 			return {
-				session: await getSession(),
+				session: await getRefreshingSession(),
 			};
 		},
 		responseMeta: ({ errors, info }) => {

@@ -3,6 +3,7 @@ import { Suspense } from "react";
 
 import GoogleButton from "@/components/auth/GoogleButton";
 
+import { safeRedirectPath } from "@/lib/safe-redirect";
 import Logo from "@/public/logo.svg";
 import Ticket from "@/public/ticket.svg";
 
@@ -16,9 +17,7 @@ async function LoginContent({
 	searchParams: Promise<{ callbackUrl?: string }>;
 }) {
 	const params = await searchParams;
-	const callbackUrl = params.callbackUrl?.startsWith("/")
-		? params.callbackUrl
-		: "/account";
+	const callbackUrl = safeRedirectPath(params.callbackUrl, "/account");
 
 	return (
 		<div className="flex min-h-screen flex-col md:flex-row">

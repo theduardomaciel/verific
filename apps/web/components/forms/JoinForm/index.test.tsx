@@ -23,7 +23,6 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("@/app/actions", () => ({
 	revalidateParticipantEnrollment: vi.fn(),
-	loginAction: vi.fn(),
 	signOutAction: vi.fn(),
 }));
 vi.mock("@/lib/validations", async (importOriginal) => {

@@ -21,7 +21,9 @@ export type AuthUserChange = {
 	userId: string | null;
 };
 
-export type AuthUserChangeListener = (change: AuthUserChange) => void;
+export type AuthUserChangeListener = (
+	change: AuthUserChange,
+) => void | Promise<void>;
 
 /**
  * Endpoints do better-auth que só existem para o usuário MUDAR a própria
@@ -66,12 +68,8 @@ export function offAuthUserChanged(listener: AuthUserChangeListener) {
  * better-auth: qualquer erro de um ouvinte é engolido (o cache fica
  * momentaneamente velho, o login/fluxo de conta não quebra).
  */
-export function emitAuthUserChanged(change: AuthUserChange) {
-	for (const listener of listeners) {
-		try {
-			listener(change);
-		} catch {
-			// Contexto sem cache (CLI/teste) — segue sem invalidar.
-		}
-	}
+export async function emitAuthUserChanged(change: AuthUserChange) {
+	await Promise.allSettled(
+		[...listeners].map(async (listener) => listener(change)),
+	);
 }

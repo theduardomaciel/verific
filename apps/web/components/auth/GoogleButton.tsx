@@ -5,12 +5,14 @@ import { useState } from "react";
 
 // Icons
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 // Components
 import { Button } from "@/components/ui/button";
 
-// Actions
-import { loginAction } from "@/app/actions";
+import { authClient } from "@/lib/auth-client";
+import { safeRedirectPath } from "@/lib/safe-redirect";
+import { setSessionMarker } from "@/lib/session-marker";
 import { cn } from "@/lib/utils";
 import GoogleLogo from "@/public/icons/google.svg";
 
@@ -26,9 +28,21 @@ export default function GoogleButton({
 }: ButtonProps) {
 	const [loading, setLoading] = useState(false);
 
-	function handleSignIn() {
+	async function handleSignIn() {
 		setLoading(true);
-		void loginAction(callbackUrl);
+		setSessionMarker();
+		const { error } = await authClient.signIn.social({
+			provider: "google",
+			callbackURL: safeRedirectPath(callbackUrl, "/account"),
+		});
+		if (error) {
+			setLoading(false);
+			toast.error(
+				error.status === 429
+					? "Muitas tentativas de login. Tente de novo em alguns segundos."
+					: "Não foi possível iniciar o login. Tente de novo.",
+			);
+		}
 	}
 
 	return (
@@ -36,7 +50,7 @@ export default function GoogleButton({
 			type="button"
 			className={cn("h-fit w-full py-2.5", className)}
 			variant={"outline"}
-			onClick={handleSignIn}
+			onClick={() => void handleSignIn()}
 			disabled={disabled || loading}
 			{...rest}
 		>

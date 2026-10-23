@@ -150,10 +150,10 @@ describe("invalidação por ponto de entrada", () => {
 		]);
 	});
 
-	it("mapeia a mutação de usuário do better-auth para events+profiles", () => {
+	it("sem usuário, a mutação do better-auth derruba events+profiles", async () => {
 		const seen = collectingRevalidator();
 
-		invalidateAuthUserChange();
+		await invalidateAuthUserChange();
 
 		expect(seen).toEqual(["events", "profiles"]);
 	});

@@ -1,10 +1,22 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+const { userProfileRefsMock } = vi.hoisted(() => ({
+	userProfileRefsMock: vi.fn(async () => [
+		{ projectId: "project-1", shortId: "abc123" },
+	]),
+}));
+
+vi.mock("./lib/user-public-scope", () => ({
+	userProfileRefs: userProfileRefsMock,
+	userOwnedProjectIds: async () => ["project-2"],
+}));
+
 import {
 	emitAuthUserChanged,
 	isAuthIdentityEndpoint,
 	offAuthUserChanged,
 	onAuthUserChanged,
+	type AuthUserChange,
 } from "@verific/auth/cache-hooks";
 
 import {
@@ -29,14 +41,45 @@ describe("ponte de cache do better-auth", () => {
 		__unregisterCacheRevalidator();
 	});
 
-	it("uma mudança de usuário derruba events+profiles", () => {
+	it("uma edição do usuário derruba só os perfis e eventos dele", async () => {
 		const seen: string[] = [];
 		registerCacheRevalidator((tag) => seen.push(tag));
-		const listener = () => invalidateAuthUserChange();
+		const listener = (change: AuthUserChange) =>
+			invalidateAuthUserChange(change);
 		onAuthUserChanged(listener);
 
 		try {
-			emitAuthUserChanged({ reason: "update", userId: "user-1" });
+			await emitAuthUserChanged({ reason: "update", userId: "user-1" });
+		} finally {
+			offAuthUserChanged(listener);
+		}
+
+		expect(userProfileRefsMock).toHaveBeenCalledWith("user-1");
+		expect(seen).toEqual([
+			"participant-profile:project-1:abc123",
+			"project:project-2",
+		]);
+	});
+
+	it("se a busca das tags do usuário falhar, derruba events+profiles", async () => {
+		const seen: string[] = [];
+		registerCacheRevalidator((tag) => seen.push(tag));
+		userProfileRefsMock.mockRejectedValueOnce(new Error("db down"));
+
+		await invalidateAuthUserChange({ reason: "update", userId: "user-1" });
+
+		expect(seen).toEqual(["events", "profiles"]);
+	});
+
+	it("exclusão de conta derruba events+profiles", async () => {
+		const seen: string[] = [];
+		registerCacheRevalidator((tag) => seen.push(tag));
+		const listener = (change: AuthUserChange) =>
+			invalidateAuthUserChange(change);
+		onAuthUserChanged(listener);
+
+		try {
+			await emitAuthUserChanged({ reason: "delete", userId: "user-1" });
 		} finally {
 			offAuthUserChanged(listener);
 		}
@@ -44,22 +87,7 @@ describe("ponte de cache do better-auth", () => {
 		expect(seen).toEqual(["events", "profiles"]);
 	});
 
-	it("exclusão de conta invalida do mesmo jeito", () => {
-		const seen: string[] = [];
-		registerCacheRevalidator((tag) => seen.push(tag));
-		const listener = () => invalidateAuthUserChange();
-		onAuthUserChanged(listener);
-
-		try {
-			emitAuthUserChanged({ reason: "delete", userId: "user-1" });
-		} finally {
-			offAuthUserChanged(listener);
-		}
-
-		expect(seen).toEqual(["events", "profiles"]);
-	});
-
-	it("um erro de ouvinte nunca derruba a mutation de auth", () => {
+	it("um erro de ouvinte nunca derruba a mutation de auth", async () => {
 		const boom = vi.fn(() => {
 			throw new Error("boom");
 		});
@@ -68,9 +96,9 @@ describe("ponte de cache do better-auth", () => {
 		onAuthUserChanged(ok);
 
 		try {
-			expect(() =>
+			await expect(
 				emitAuthUserChanged({ reason: "update", userId: "user-1" }),
-			).not.toThrow();
+			).resolves.toBeUndefined();
 		} finally {
 			offAuthUserChanged(boom);
 			offAuthUserChanged(ok);

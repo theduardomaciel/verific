@@ -57,6 +57,13 @@
 			"when": 1792706426793,
 			"tag": "0007_shallow_eternals",
 			"breakpoints": true
+		},
+		{
+			"idx": 8,
+			"version": "7",
+			"when": 1792709044922,
+			"tag": "0008_handy_korg",
+			"breakpoints": true
 		}
 	]
 }
