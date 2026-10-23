@@ -2,6 +2,7 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import SuperJSON from "superjson";
 
 import type { Session } from "@verific/auth";
+import { isQueryError } from "@verific/drizzle/redact";
 import { ZodError } from "@verific/zod";
 
 import { invalidateCacheTags, mutationCacheRules } from "./cache-invalidation";
@@ -30,8 +31,13 @@ type TRPCContext = {
 const t = initTRPC.context<TRPCContext>().create({
 	transformer: SuperJSON,
 	errorFormatter({ shape, error }) {
+		// O erro de uma query traz o SQL e os parâmetros: não vai para o
+		// cliente, e o log do servidor mantém o detalhe
 		return {
 			...shape,
+			message: isQueryError(error.cause)
+				? "Erro interno do servidor."
+				: shape.message,
 			data: {
 				...shape.data,
 				zodError:
@@ -146,15 +152,18 @@ export const publicProcedure = t.procedure.use(cacheInvalidationMiddleware);
  *
  * @see https://trpc.io/docs/procedures
  */
-export const protectedProcedure = publicProcedure.use(({ ctx, next }) => {
-	if (!ctx.session || !ctx.session.user) {
-		throw new TRPCError({ code: "UNAUTHORIZED" });
-	}
+export const protectedProcedure = t.procedure
+	// Antes do snapshot de cache: chamada anônima não chega ao banco
+	.use(({ ctx, next }) => {
+		if (!ctx.session || !ctx.session.user) {
+			throw new TRPCError({ code: "UNAUTHORIZED" });
+		}
 
-	return next({
-		ctx: {
-			// infers the session as non-null
-			session: { ...ctx.session, user: ctx.session.user },
-		},
-	});
-});
+		return next({
+			ctx: {
+				// infers the session as non-null
+				session: { ...ctx.session, user: ctx.session.user },
+			},
+		});
+	})
+	.use(cacheInvalidationMiddleware);
