@@ -1,3 +1,4 @@
+import { getIP } from "@better-auth/core/utils/ip";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { betterAuth } from "better-auth/minimal";
 import { nextCookies } from "better-auth/next-js";
@@ -7,6 +8,9 @@ import { account, session, user, verification } from "@verific/drizzle/schema";
 import { env } from "@verific/env";
 
 import { emitAuthUserChanged, isAuthIdentityEndpoint } from "./cache-hooks";
+import { ipInRanges, parseIpv4Ranges } from "./ip-ranges";
+
+import type { BetterAuthOptions } from "better-auth";
 
 function readUserId(value: unknown): string | null {
 	if (typeof value !== "object" || value === null) return null;
@@ -16,6 +20,20 @@ function readUserId(value: unknown): string | null {
 
 const baseURL = env.BETTER_AUTH_URL.replace(/\/$/, "");
 const secret = env.BETTER_AUTH_SECRET;
+const relaxedRanges = parseIpv4Ranges(env.RATE_LIMIT_RELAXED_CIDRS);
+
+const advanced = {
+	database: {
+		joins: true,
+		// Arrow preserva o receiver: `crypto.randomUUID` destacada
+		// lança "Illegal invocation" em runtimes WebCrypto (edge).
+		generateId: () => crypto.randomUUID(),
+	},
+} satisfies BetterAuthOptions["advanced"];
+
+function isRelaxedIp(request: Request) {
+	return ipInRanges(getIP(request, { advanced }), relaxedRanges);
+}
 
 export const auth = betterAuth({
 	database: drizzleAdapter(db, {
@@ -29,8 +47,18 @@ export const auth = betterAuth({
 	}),
 	secret,
 	baseURL,
-	trustedOrigins: [baseURL],
 	onAPIError: { errorURL: "/auth/error" },
+	// O limite é por IP. Redes em que muita gente sai pelo mesmo IP público
+	// (o campus) entram em `RATE_LIMIT_RELAXED_CIDRS`: login com limite maior
+	// e `/get-session` sem limite. Fora delas, vale o padrão do better-auth.
+	rateLimit: {
+		customRules: {
+			"/get-session": (request, current) =>
+				isRelaxedIp(request) ? false : current,
+			"/sign-in/social": (request, current) =>
+				isRelaxedIp(request) ? { window: 10, max: 100 } : current,
+		},
+	},
 	socialProviders: {
 		google: {
 			clientId: env.GOOGLE_CLIENT_ID,
@@ -105,15 +133,7 @@ export const auth = betterAuth({
 			},
 		},
 	},
-	advanced: {
-		database: {
-			joins: true,
-			// Arrow preserva o receiver: `crypto.randomUUID` destacada
-			// lança "Illegal invocation" em runtimes WebCrypto (edge).
-			generateId: () => crypto.randomUUID(),
-		},
-		useSecureCookies: env.NODE_ENV === "production",
-	},
+	advanced,
 	plugins: [nextCookies()],
 });
 
