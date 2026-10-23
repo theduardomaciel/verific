@@ -2,7 +2,6 @@ import "server-only";
 import { cache } from "react";
 
 import { appRouter, createCallerFactory } from "@verific/api";
-import type { Session } from "@verific/auth";
 
 import { getSession } from "@/lib/session";
 // Rede de segurança: qualquer mutation chamada pelo caller de servidor
@@ -19,16 +18,6 @@ export const serverClient: Client = createClient(async () => ({
 export const publicClient: Client = createClient(async () => ({
 	session: null,
 }));
-
-export function createClientForUser(userId: string): Client {
-	return createClient(async () => ({
-		session: {
-			user: {
-				id: userId,
-			},
-		} as Session,
-	}));
-}
 
 /**
  * Per-request memoized wrapper around `getProjects`.
