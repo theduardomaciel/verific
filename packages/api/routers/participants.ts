@@ -27,7 +27,6 @@ import {
 import { z } from "@verific/zod";
 
 // Utils
-import { isMemberAuthenticated } from "../auth";
 import { parseCheckInCode } from "../lib/checkin-code";
 import {
 	awardSessionAttendance,
@@ -146,8 +145,26 @@ export const participantsRouter = createTRPCRouter({
 				0,
 			);
 
+			// Com perfis públicos, qualquer logado chega aqui; o e-mail só
+			// vai para a organização e para o próprio participante
+			const canSeeEmail =
+				isModerator || participantData.userId === requestUserId;
+			// As inscrições e a equipe só servem aos cálculos acima
+			const {
+				participantOnActivity: _enrollments,
+				project: { moderators: _moderators, ...eventData },
+				...participantRow
+			} = participantData;
+
 			return {
-				participant: participantData,
+				participant: {
+					...participantRow,
+					project: eventData,
+					user: {
+						...participantData.user,
+						email: canSeeEmail ? participantData.user.email : null,
+					},
+				},
 				hours,
 				totalEventsAttended: activitiesAttended,
 				isModeratorParticipant,
@@ -343,14 +360,6 @@ export const participantsRouter = createTRPCRouter({
 		)
 		.mutation(async ({ input, ctx }) => {
 			const { sessionId, code, mode } = input;
-
-			const error = await isMemberAuthenticated({
-				userId: ctx.session.user.id,
-			});
-
-			if (error) {
-				throw new TRPCError(error);
-			}
 
 			let parsed: ReturnType<typeof parseCheckInCode>;
 			try {
