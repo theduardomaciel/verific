@@ -12,10 +12,9 @@ export function isAuthError(error: unknown): boolean {
 }
 
 /**
- * Redirects to the sign-in page. Used as a safety net in layouts when
- * a protected procedure throws UNAUTHORIZED. The proxy (middleware)
- * is the primary mechanism for clearing stale session cookies — this
- * is a fallback for any edge cases it might miss.
+ * Used by layouts when a protected procedure throws UNAUTHORIZED. The
+ * `clear-session` route clears the stale cookies and sends the user to
+ * the sign-in page.
  */
 export async function redirectToSignIn() {
 	redirect("/api/auth/clear-session");
