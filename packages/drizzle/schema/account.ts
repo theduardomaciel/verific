@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+	index,
 	pgTable,
 	text,
 	timestamp,
@@ -31,7 +32,10 @@ export const account = pgTable(
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at").defaultNow().notNull(),
 	},
-	(table) => [uniqueIndex().on(table.providerId, table.accountId)],
+	(table) => [
+		uniqueIndex().on(table.providerId, table.accountId),
+		index().on(table.userId),
+	],
 );
 
 export const accountRelations = relations(account, ({ one }) => ({
