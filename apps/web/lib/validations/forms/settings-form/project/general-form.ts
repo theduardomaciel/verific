@@ -11,16 +11,11 @@ const urlSchema = z.object({
 		.string()
 		.min(1, "URL obrigatória")
 		.max(36, "Máximo 36 caracteres")
-		.refine(
-			(val) => {
-				const regex = /^[a-zA-Z0-9-_]+$/;
-				return regex.test(val);
-			},
-			{
-				message:
-					"A URL deve conter apenas letras, números, hífens e sublinhados",
-			},
-		),
+		// O formato que o servidor grava (`slugify`)
+		.regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, {
+			message:
+				"Use letras minúsculas, números e hífens (ex.: semana-de-computacao)",
+		}),
 });
 
 // Schema para descrição do evento
