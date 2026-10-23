@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { projectUrlCacheTag } from "@verific/api";
 import { auth } from "@verific/auth";
 
+import { safeRedirectPath } from "@/lib/safe-redirect";
 import { SESSION_MARKER_COOKIE } from "@/lib/session-marker";
 
 // Vive mais que a sessão (7d, renovável): marcador expirado só custa um
@@ -51,11 +52,11 @@ export async function signOutAction(redirectTo: string = "/") {
 		headers: await headers(),
 	});
 	(await cookies()).delete(SESSION_MARKER_COOKIE);
-	redirect(redirectTo);
+	redirect(safeRedirectPath(redirectTo, "/"));
 }
 
 export async function signOutFormAction(formData: FormData) {
-	const redirectTo = (formData.get("redirectTo") as string) || "/";
+	const redirectTo = safeRedirectPath(formData.get("redirectTo"), "/");
 	await auth.api.signOut({
 		headers: await headers(),
 	});
