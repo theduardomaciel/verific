@@ -258,9 +258,10 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 			});
 			return { previousUrl: row?.url };
 		},
-		tags: ({ input, snapshot }) => {
+		tags: ({ input, result, snapshot }) => {
 			const id = readString(input, "id");
-			const nextUrl = readString(input, "url");
+			// A URL gravada pode ter sido normalizada
+			const nextUrl = readString(result, "url");
 			const previousUrl = readString(snapshot, "previousUrl");
 			return [
 				GLOBAL_CACHE_TAGS.projects,

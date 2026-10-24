@@ -15,6 +15,7 @@
 		"./waitlist-plan": "./waitlist-plan.ts",
 		"./seats": "./seats.ts",
 		"./enrollment": "./enrollment.ts",
+		"./project-access": "./lib/project-access.ts",
 		"./utils": "./utils.ts"
 	},
 	"scripts": {

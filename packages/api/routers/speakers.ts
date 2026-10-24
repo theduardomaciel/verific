@@ -200,6 +200,12 @@ export const speakersRouter = createTRPCRouter({
 					message: "Palestrante não encontrado.",
 				});
 			}
+			if (existing.projectId !== projectId) {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "Sem permissão neste evento.",
+				});
+			}
 
 			let email = existing.email;
 			let participantId = existing.participantId;
@@ -266,23 +272,11 @@ export const speakersRouter = createTRPCRouter({
 		}),
 
 	getSpeakers: protectedProcedure
-		.input(z.object({ projectId: z.string().uuid().optional() }))
+		.input(z.object({ projectId: z.string().uuid() }))
 		.query(async ({ input, ctx }) => {
-			if (input?.projectId) {
-				await requireProjectAccess(
-					input.projectId,
-					ctx.session.user.id,
-				);
-				return db.query.speaker.findMany({
-					where: eq(speaker.projectId, input.projectId),
-					with: {
-						linkedParticipant: {
-							columns: { id: true, shortId: true },
-						},
-					},
-				});
-			}
+			await requireProjectAccess(input.projectId, ctx.session.user.id);
 			return db.query.speaker.findMany({
+				where: eq(speaker.projectId, input.projectId),
 				with: {
 					linkedParticipant: {
 						columns: { id: true, shortId: true },
