@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
+// Fonts
+import { Hanken_Grotesk } from "next/font/google";
 
 import "./globals.css";
 
-// Fonts
-import { Hanken_Grotesk } from "next/font/google";
+import { appUrl } from "@verific/env";
 
 const hankenGrotesk = Hanken_Grotesk({
 	variable: "--font-hanken-grotesk",
@@ -11,7 +12,8 @@ const hankenGrotesk = Hanken_Grotesk({
 });
 
 export const metadata: Metadata = {
-	title: "verifIC",
+	metadataBase: new URL(appUrl),
+	title: { default: "verifIC", template: "%s · verifIC" },
 	description: "Seu próximo gerenciador de eventos",
 	icons: {
 		icon: "/favicon/favicon.svg",

@@ -8,7 +8,6 @@ import { Suspense } from "react";
 import { projectCacheTag, projectUrlCacheTag } from "@verific/api";
 import { parseGamificationConfig } from "@verific/drizzle/gamification";
 import { presetOfFamily } from "@verific/drizzle/theme";
-import { appUrl } from "@verific/env";
 
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -45,16 +44,14 @@ export async function generateMetadata({
 	cacheLife("static");
 
 	const { project } = result;
-	const baseUrl = appUrl;
 	const imageUrl =
 		project.thumbnailUrl ||
 		project.coverUrl ||
 		project.largeLogoUrl ||
 		project.logoUrl;
-	const fullImageUrl = imageUrl ? `${baseUrl}${imageUrl}` : undefined;
 
 	return {
-		title: project.name,
+		title: { absolute: project.name, template: `%s · ${project.name}` },
 		description: project.description || undefined,
 		robots: {
 			index: true,
@@ -87,10 +84,10 @@ export async function generateMetadata({
 		openGraph: {
 			title: project.name,
 			description: project.description || undefined,
-			url: `${baseUrl}/${eventUrl}`,
+			url: `/${eventUrl}`,
 			siteName: "verifIC",
-			images: fullImageUrl
-				? [{ url: fullImageUrl, alt: `${project.name} image` }]
+			images: imageUrl
+				? [{ url: imageUrl, alt: `${project.name} image` }]
 				: [],
 			locale: "pt_BR",
 			type: "website",
@@ -99,7 +96,7 @@ export async function generateMetadata({
 			card: "summary_large_image",
 			title: project.name,
 			description: project.description || undefined,
-			images: fullImageUrl ? [fullImageUrl] : [],
+			images: imageUrl ? [imageUrl] : [],
 		},
 	};
 }
