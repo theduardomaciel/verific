@@ -143,13 +143,13 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 					</span>
 				</ParticipantsList.Title>
 				{/* Wraps instead of overflowing when the column is narrow */}
-				<div className="flex w-full min-w-0 flex-wrap items-center gap-3">
+				<div className="flex w-full min-w-0 items-center gap-3 max-sm:flex-wrap">
 					<SearchBar
 						prefix={"search"}
 						placeholder="Pesquisar participantes"
-						className="w-full min-w-0 pl-10 sm:min-w-[14rem] sm:flex-1"
+						className="min-w-0 max-sm:w-full sm:min-w-56 sm:flex-1"
 					/>
-					<div className="flex w-full min-w-0 items-center gap-3 sm:w-auto">
+					<div className="flex w-full min-w-0 items-center gap-3 md:w-auto">
 						<SortBy
 							items={[
 								{

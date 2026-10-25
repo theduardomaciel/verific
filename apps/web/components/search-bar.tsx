@@ -21,6 +21,10 @@ interface SearchBarProps extends Omit<
 	// Client-Driven: forneça ambas para gerenciar estado no pai
 	value?: string;
 	onChange?: (value: string) => void;
+	/** Classes do wrapper (controla a largura; padrão: w-full) */
+	className?: string;
+	/** Classes aplicadas diretamente no <input> */
+	inputClassName?: string;
 }
 
 export function SearchBar({
@@ -29,6 +33,9 @@ export function SearchBar({
 	value,
 	onChange,
 	resetKeys = [{ key: "page", defaultValue: "1" }],
+	className,
+	inputClassName,
+	placeholder,
 	...props
 }: SearchBarProps) {
 	const {
@@ -53,21 +60,17 @@ export function SearchBar({
 	};
 
 	return (
-		<div className="relative w-full">
+		<div className={cn("relative w-full", className)}>
 			<Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
 			<Input
-				className={cn("w-full pr-10 pl-10", props.className)}
-				placeholder={props.placeholder || "Pesquisar..."}
+				{...props}
+				className={cn("w-full pr-10 pl-10", inputClassName)}
+				placeholder={placeholder || "Pesquisar..."}
 				value={currentValue as string}
 				onChange={handleInputChange}
-				{...props}
 			/>
 
-			<div
-				className={
-					"absolute top-1/2 right-4 flex -translate-y-1/2 flex-row items-center justify-end gap-2"
-				}
-			>
+			<div className="absolute top-1/2 right-4 flex -translate-y-1/2 flex-row items-center justify-end gap-2">
 				{isPending ? (
 					<Loader2 className="text-foreground h-4 w-4 origin-center animate-spin" />
 				) : (currentValue as string) ? (
