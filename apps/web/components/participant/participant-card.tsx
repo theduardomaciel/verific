@@ -100,10 +100,12 @@ export async function ParticipantCard({ id: participantId, eventUrl }: Props) {
 			</div>
 			<div className="flex flex-col items-center justify-center gap-6">
 				<ul className="flex w-full flex-row flex-wrap items-center justify-center gap-2 md:max-w-[70%]">
-					<Badge variant={"secondary"}>
-						<Mail />
-						{participant.user.email}
-					</Badge>
+					{participant.user.email && (
+						<Badge variant={"secondary"}>
+							<Mail />
+							{participant.user.email}
+						</Badge>
+					)}
 					<Badge variant={"secondary"}>
 						<Hash />
 						{totalEventsAttended}{" "}
@@ -161,7 +163,7 @@ export async function ParticipantCard({ id: participantId, eventUrl }: Props) {
 					<RemoveParticipantDialog
 						participantId={participant.id}
 						projectUrl={projectUrl}
-						userEmail={participant.user.email}
+						userEmail={participant.user.email ?? ""}
 					>
 						<Button className="w-full" variant={"destructive"}>
 							<CircleMinus width={24} height={24} />

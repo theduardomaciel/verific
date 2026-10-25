@@ -44,6 +44,7 @@ import {
 	getFirstSessionStart,
 	hasEverySessionEnded,
 } from "@/lib/date";
+import { fuzzyFilter } from "@/lib/fuzzy-search";
 import { findScheduleConflicts, type Conflict } from "@/lib/schedule/conflicts";
 // API
 import { trpc } from "@/lib/trpc/react";
@@ -252,11 +253,10 @@ export function ScheduleContent({
 		let filtered = displayActivities;
 
 		if (searchQuery) {
-			const q = searchQuery.toLowerCase();
-			filtered = filtered.filter(
-				(a) =>
-					a.name.toLowerCase().includes(q) ||
-					a.description?.toLowerCase().includes(q),
+			filtered = fuzzyFilter(
+				filtered,
+				searchQuery,
+				(a) => `${a.name} ${a.description ?? ""}`,
 			);
 		}
 

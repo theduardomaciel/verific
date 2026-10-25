@@ -4,9 +4,10 @@ import Link from "next/link";
 
 import { Crown, Loader2, Trophy } from "lucide-react";
 
+import type { RouterOutput } from "@verific/api";
+
 import { Card } from "@/components/ui/card";
 
-import { authClient } from "@/lib/auth-client";
 import { getInitials } from "@/lib/i18n";
 import { trpc } from "@/lib/trpc/react";
 import { cn } from "@/lib/utils";
@@ -109,20 +110,15 @@ function PodiumCard({ row, eventUrl }: { row: RankingRow; eventUrl: string }) {
 function RankingRowItem({
 	row,
 	eventUrl,
-	isMe,
 }: {
 	row: RankingRow;
 	eventUrl: string;
-	isMe: boolean;
 }) {
 	return (
 		<li>
 			<Link
 				href={`/${eventUrl}/profile/${row.shortId}`}
-				className={cn(
-					"bg-card flex items-center gap-4 rounded-2xl border px-4 py-3 transition-colors hover:bg-muted/40",
-					isMe && "border-primary/60 bg-primary/5",
-				)}
+				className="bg-card hover:bg-muted/40 flex items-center gap-4 rounded-2xl border px-4 py-3 transition-colors"
 				aria-label={`${row.name}, ${row.points} pontos, posição ${row.rank}`}
 			>
 				<span className="text-muted-foreground w-8 text-right text-sm font-semibold tabular-nums">
@@ -131,11 +127,6 @@ function RankingRowItem({
 				<Avatar row={row} className="size-10" />
 				<span className="min-w-0 flex-1 truncate text-sm font-medium">
 					{row.name}
-					{isMe && (
-						<span className="text-primary ml-2 text-xs font-semibold">
-							Você
-						</span>
-					)}
 				</span>
 				<span className="text-foreground text-sm font-bold tabular-nums">
 					{formatPoints(row.points)} pts
@@ -145,21 +136,26 @@ function RankingRowItem({
 	);
 }
 
-export function RankingContent({ eventUrl }: { eventUrl: string }) {
-	const session = authClient.useSession();
-	const userId = session.data?.user.id;
-
+export function RankingContent({
+	eventUrl,
+	initialData,
+}: {
+	eventUrl: string;
+	initialData?: RouterOutput["getEventRanking"];
+}) {
+	// Ranking é informação não crítica: a página entrega o valor cacheado no
+	// servidor, sem polling e sem nenhuma leitura por visitante (a antiga
+	// `getMyStanding` custava um snapshot completo para cada visitante
+	// logado). Invalidações de gamificação atualizam quem está com a tela
+	// aberta.
 	const ranking = trpc.getEventRanking.useQuery(
 		{ projectUrl: eventUrl },
 		{
-			staleTime: 15_000,
-			refetchInterval: 30_000,
-			refetchOnWindowFocus: true,
+			initialData,
+			staleTime: 5 * 60_000,
+			refetchOnWindowFocus: false,
+			refetchInterval: false,
 		},
-	);
-	const standing = trpc.getMyStanding.useQuery(
-		{ projectUrl: eventUrl },
-		{ enabled: Boolean(userId), retry: false },
 	);
 
 	if (ranking.isPending) {
@@ -201,16 +197,6 @@ export function RankingContent({ eventUrl }: { eventUrl: string }) {
 
 	const top = rows.slice(0, 3);
 	const rest = rows.slice(3);
-	const myShortId = standing.data?.shortId;
-	const myRank = standing.data?.rank ?? null;
-	const myRow = myShortId
-		? rows.find((row) => row.shortId === myShortId)
-		: undefined;
-	const showSticky =
-		Boolean(userId) &&
-		standing.data !== undefined &&
-		standing.data !== null &&
-		!myRow;
 
 	return (
 		<div className="flex w-full flex-col gap-10">
@@ -233,7 +219,6 @@ export function RankingContent({ eventUrl }: { eventUrl: string }) {
 							key={row.participantId}
 							row={row}
 							eventUrl={eventUrl}
-							isMe={row.shortId === myShortId}
 						/>
 					))}
 				</ul>
@@ -245,40 +230,11 @@ export function RankingContent({ eventUrl }: { eventUrl: string }) {
 				</p>
 			)}
 
-			{showSticky && (
-				<div className="bg-background/95 supports-backdrop-filter:bg-background/80 sticky bottom-4 z-30 rounded-2xl border p-2 shadow-lg backdrop-blur">
-					{myRank && standing.data ? (
-						<RankingRowItem
-							row={{
-								participantId: "me",
-								shortId: myShortId ?? "",
-								name: "Você",
-								avatarUrl: null,
-								points: standing.data.points,
-								rank: myRank,
-							}}
-							eventUrl={eventUrl}
-							isMe
-						/>
-					) : (
-						<p className="text-muted-foreground px-4 py-2 text-center text-sm">
-							{standing.data?.optOut
-								? "Você optou por não aparecer no ranking."
-								: standing.data?.points
-									? "Você não aparece no ranking público deste evento."
-									: "Você ainda não pontuou neste evento."}
-						</p>
-					)}
-				</div>
-			)}
-
 			<p className="text-muted-foreground text-center text-xs">
 				{total}{" "}
 				{total === 1
 					? "participante pontuando"
 					: "participantes pontuando"}
-				{" · "}
-				atualiza a cada 30s
 			</p>
 		</div>
 	);

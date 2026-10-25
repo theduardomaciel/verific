@@ -54,7 +54,7 @@ function List({
 	hasActivity = false,
 	participants,
 	sessions,
-	projectUrl,
+	activityId,
 	currentParticipantId,
 	className,
 	emptyMessage,
@@ -70,6 +70,8 @@ function List({
 			/>
 		);
 	}
+	// URL para o detalhe do participante no contexto da atividade
+	const participantUrl = `/dashboard/activities/${activityId}/participants`;
 	return (
 		<ul
 			className={cn(
@@ -78,13 +80,12 @@ function List({
 			)}
 		>
 			{participants.map((participant) => (
-				// oxlint-disable-next-line typescript/unbound-method -- expressão membro JSX (`<A.B />`), não extração de método; sem `this` envolvido.
 				<ParticipantListItem.Activity
 					key={participant.id}
 					participant={participant}
 					sessions={sessions}
 					showJoinedAt={hasActivity}
-					url={projectUrl}
+					url={participantUrl}
 					currentParticipantId={currentParticipantId}
 				/>
 			))}

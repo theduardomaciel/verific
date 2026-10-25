@@ -83,3 +83,17 @@ describe("registro de invalidação", () => {
 		delete mutationCacheRules.__test_fail;
 	});
 });
+
+describe("updateProject", () => {
+	it("invalida a URL gravada, não a digitada", () => {
+		const tags = mutationCacheRules.updateProject!.tags({
+			input: { id: "p1", url: "Meu_Evento" },
+			result: { updated: true, url: "meu-evento" },
+			snapshot: { previousUrl: "antigo" },
+			ctx: { session: null },
+		});
+
+		expect(tags).toContain("project-url:meu-evento");
+		expect(tags).not.toContain("project-url:Meu_Evento");
+	});
+});

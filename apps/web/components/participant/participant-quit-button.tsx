@@ -54,9 +54,8 @@ export function ParticipantQuitButton({
 			onSuccessRedirect={`/${projectUrl}`}
 			onDelete={handleQuit}
 		>
-			<Button variant={"ghost"}>
+			<Button variant={"ghost"} size="icon">
 				<LogOutIcon />
-				Cancelar inscrição
 			</Button>
 		</DeleteDialog>
 	);

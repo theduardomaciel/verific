@@ -242,7 +242,7 @@ export default async function EventLayout({
 		Boolean(project.profilesEnabled) &&
 		gamification.enabled &&
 		gamification.rankingEnabled;
-	const rankingShowInNav = rankingEnabled && gamification.ranking.showInNav;
+	const rankingPublic = rankingEnabled && gamification.ranking.isPublic;
 	const { cssVars, theme } = resolveEventTheme({
 		theme: (project as { theme?: unknown }).theme,
 		primaryColor: project.primaryColor,
@@ -300,6 +300,7 @@ export default async function EventLayout({
 						eventUrl={eventUrl}
 						className="relative h-21 border-none py-0"
 						rankingEnabled={rankingEnabled}
+						rankingPublic={rankingPublic}
 						logo={
 							<EventLogo
 								href={`/${eventUrl}`}

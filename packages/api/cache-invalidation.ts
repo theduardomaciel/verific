@@ -2,6 +2,7 @@ import { db } from "@verific/drizzle";
 import { and, eq, inArray } from "@verific/drizzle/orm";
 import {
 	activity,
+	activitySession,
 	formField,
 	formSection,
 	formVersion,
@@ -21,6 +22,7 @@ import {
 	projectActivitiesCacheTag,
 	projectCacheTag,
 	projectFormCacheTag,
+	projectGamificationCacheTag,
 	projectProfilesCacheTag,
 	projectUrlCacheTag,
 } from "./cache-tags";
@@ -135,6 +137,18 @@ async function activityProjectId(activityId: string | undefined) {
 		where: eq(activity.id, activityId),
 		columns: { projectId: true },
 	});
+	return row?.projectId;
+}
+
+/** Evento dono de uma sessão (usado pelo credenciamento de badge). */
+async function sessionProjectId(sessionId: string | undefined) {
+	if (!sessionId) return undefined;
+	const [row] = await db
+		.select({ projectId: activity.projectId })
+		.from(activitySession)
+		.innerJoin(activity, eq(activitySession.activityId, activity.id))
+		.where(eq(activitySession.id, sessionId))
+		.limit(1);
 	return row?.projectId;
 }
 
@@ -258,9 +272,10 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 			});
 			return { previousUrl: row?.url };
 		},
-		tags: ({ input, snapshot }) => {
+		tags: ({ input, result, snapshot }) => {
 			const id = readString(input, "id");
-			const nextUrl = readString(input, "url");
+			// A URL gravada pode ter sido normalizada
+			const nextUrl = readString(result, "url");
 			const previousUrl = readString(snapshot, "previousUrl");
 			return [
 				GLOBAL_CACHE_TAGS.projects,
@@ -288,6 +303,7 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 			const url = readString(snapshot, "url");
 			return [
 				id ? projectCacheTag(id) : undefined,
+				id ? projectGamificationCacheTag(id) : undefined,
 				url ? projectUrlCacheTag(url) : undefined,
 			];
 		},
@@ -396,13 +412,18 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 			};
 		},
 		tags: ({ input, snapshot }) => {
-			// Sem respostas não há mudança no perfil público.
-			if (!record(input).formAnswers) return [];
 			const projectId = readString(snapshot, "projectId");
 			if (!projectId) return [];
-			return readStringArray(snapshot, "shortIds").map((shortId) =>
-				participantProfileCacheTag(projectId, shortId),
-			);
+			return [
+				// Inscrição concede pontos (quando ligados) e muda o ranking.
+				projectGamificationCacheTag(projectId),
+				// Sem respostas não há mudança no perfil público.
+				...(!record(input).formAnswers
+					? []
+					: readStringArray(snapshot, "shortIds").map((shortId) =>
+							participantProfileCacheTag(projectId, shortId),
+						)),
+			];
 		},
 	},
 
@@ -445,15 +466,68 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 			const shortId = readString(snapshot, "shortId");
 			// Só o perfil de quem saiu pode mudar; a contagem da atividade fica
 			// na query pública de disponibilidade.
-			return projectId && shortId
-				? [participantProfileCacheTag(projectId, shortId)]
-				: [];
+			return [
+				projectId && shortId
+					? participantProfileCacheTag(projectId, shortId)
+					: undefined,
+				// A saída revoga pontos de inscrição/presença.
+				projectId ? projectGamificationCacheTag(projectId) : undefined,
+			];
 		},
 	},
 
 	// ── participants ─────────────────────────────────────────────────
-	// `updateSessionPresence` (check-in de badge) não aparece no payload
-	// público anônimo: atividade, lista e perfis não mudam no HTML cacheado.
+	// `updateSessionPresence` (check-in de badge) não muda o HTML público,
+	// mas concede pontos e pode desbloquear adesivos: invalida o cache de
+	// gamificação do evento (ranking + snapshots dos perfis).
+	updateSessionPresence: {
+		snapshot: async (input) => ({
+			projectId: await sessionProjectId(readString(input, "sessionId")),
+		}),
+		tags: ({ snapshot }) => {
+			const projectId = readString(snapshot, "projectId");
+			return [
+				projectId ? projectGamificationCacheTag(projectId) : undefined,
+			];
+		},
+	},
+
+	// ── gamification ─────────────────────────────────────────────────
+	checkInParticipant: {
+		tags: ({ input }) => {
+			const projectId = readString(input, "projectId");
+			return [
+				projectId ? projectGamificationCacheTag(projectId) : undefined,
+			];
+		},
+	},
+
+	awardManualPoints: {
+		tags: ({ input }) => {
+			const projectId = readString(input, "projectId");
+			return [
+				projectId ? projectGamificationCacheTag(projectId) : undefined,
+			];
+		},
+	},
+
+	grantParticipantSticker: {
+		tags: ({ input }) => {
+			const projectId = readString(input, "projectId");
+			return [
+				projectId ? projectGamificationCacheTag(projectId) : undefined,
+			];
+		},
+	},
+
+	setRankingOptOut: {
+		tags: ({ input }) => {
+			const projectId = readString(input, "projectId");
+			return [
+				projectId ? projectGamificationCacheTag(projectId) : undefined,
+			];
+		},
+	},
 
 	removeParticipant: {
 		snapshot: async (input) => {
@@ -479,6 +553,8 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 				projectId && shortId
 					? participantProfileCacheTag(projectId, shortId)
 					: undefined,
+				// Pontos e adesivos do participante somem do ranking.
+				projectId ? projectGamificationCacheTag(projectId) : undefined,
 			];
 		},
 	},
@@ -524,12 +600,35 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 			return { projectId, shortId: row?.shortId };
 		},
 		tags: ({ input, snapshot }) => {
-			if (!record(input).formAnswers) return [];
 			const projectId = readString(snapshot, "projectId");
 			const shortId = readString(snapshot, "shortId");
-			return projectId && shortId
-				? [participantProfileCacheTag(projectId, shortId)]
-				: [];
+			return [
+				// Entrar direto (vaga livre) concede pontos de inscrição.
+				projectId ? projectGamificationCacheTag(projectId) : undefined,
+				...(record(input).formAnswers && projectId && shortId
+					? [participantProfileCacheTag(projectId, shortId)]
+					: []),
+			];
+		},
+	},
+
+	confirmWaitlistOffer: {
+		snapshot: snapshotActivityProject,
+		tags: ({ snapshot }) => {
+			const projectId = readString(snapshot, "projectId");
+			return [
+				projectId ? projectGamificationCacheTag(projectId) : undefined,
+			];
+		},
+	},
+
+	promoteFromWaitlist: {
+		snapshot: snapshotActivityProject,
+		tags: ({ snapshot }) => {
+			const projectId = readString(snapshot, "projectId");
+			return [
+				projectId ? projectGamificationCacheTag(projectId) : undefined,
+			];
 		},
 	},
 
@@ -924,6 +1023,8 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 					? projectActivitiesCacheTag(projectId)
 					: undefined,
 				...claimedActivityIds.map(activityCacheTag),
+				// A inscrição concede pontos de boas-vindas.
+				projectId ? projectGamificationCacheTag(projectId) : undefined,
 			];
 		},
 	},
@@ -998,6 +1099,8 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 				projectId && shortId
 					? participantProfileCacheTag(projectId, shortId)
 					: undefined,
+				// Conexões novas podem liberar o adesivo Conector.
+				projectId ? projectGamificationCacheTag(projectId) : undefined,
 			];
 		},
 	},

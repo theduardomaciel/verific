@@ -2,13 +2,14 @@
 import { TRPCError } from "@trpc/server";
 
 import { db } from "@verific/drizzle";
-import { and, eq } from "@verific/drizzle/orm";
+import { and, eq, like, or } from "@verific/drizzle/orm";
 import {
 	participant,
 	project,
 	projectModerator,
 	user,
 } from "@verific/drizzle/schema";
+import { slugify } from "@verific/drizzle/slug";
 import { eventThemeSchema } from "@verific/drizzle/theme";
 import { z } from "@verific/zod";
 
@@ -55,6 +56,31 @@ export const updateProjectSchema = z.object({
 	endDate: z.coerce.date().optional(),
 });
 
+/** O Drizzle 0.45 embrulha o erro do Postgres; o código fica em `cause`. */
+function isUniqueViolation(error: unknown) {
+	return (
+		error instanceof Error &&
+		(error.cause as { code?: string } | undefined)?.code === "23505"
+	);
+}
+
+// Pastas de `apps/web/app`: têm prioridade sobre a rota do evento
+const RESERVED_URLS = ["account", "api", "auth", "dashboard", "dev"];
+
+/** Primeira URL livre entre `base`, `base-2`, `base-3`… */
+async function findFreeProjectUrl(name: string) {
+	const base = slugify(name) || "evento";
+	const taken = await db
+		.select({ url: project.url })
+		.from(project)
+		.where(or(eq(project.url, base), like(project.url, `${base}-%`)));
+	const used = new Set([...RESERVED_URLS, ...taken.map((row) => row.url)]);
+	if (!used.has(base)) return base;
+	let suffix = 2;
+	while (used.has(`${base}-${suffix}`)) suffix++;
+	return `${base}-${suffix}`;
+}
+
 export const projectsRouter = createTRPCRouter({
 	createProject: protectedProcedure
 		.input(
@@ -98,14 +124,12 @@ export const projectsRouter = createTRPCRouter({
 				throw new Error("User not found");
 			}
 
-			const url = name.toLowerCase().replace(/\s+/g, "-");
-
-			const created = await db
+			const [created] = await db
 				.insert(project)
 				.values({
 					name,
 					description,
-					url,
+					url: await findFreeProjectUrl(name),
 					address,
 					latitude,
 					longitude,
@@ -120,19 +144,16 @@ export const projectsRouter = createTRPCRouter({
 					ownerId: userId,
 				})
 				.returning({ id: project.id, url: project.url });
-
-			if (created.length === 0) {
-				throw new Error("Project creation failed");
-			}
+			if (!created) throw new Error("Project creation failed");
 
 			// We create a monitor participant for the owner
 			await db.insert(participant).values({
-				projectId: created[0]!.id,
+				projectId: created.id,
 				userId: userId,
 				shortId: generateShortId(),
 			});
 
-			return { id: created[0]!.id, url: created[0]!.url };
+			return { id: created.id, url: created.url };
 		}),
 
 	updateProject: protectedProcedure
@@ -140,7 +161,24 @@ export const projectsRouter = createTRPCRouter({
 		.mutation(async ({ input, ctx }) => {
 			const { id, ...rest } = input;
 
-			await requireProjectAccess(id, ctx.session.user.id);
+			const current = await requireProjectAccess(id, ctx.session.user.id);
+
+			// URLs antigas podem ter acento; só uma URL nova é normalizada
+			if (rest.url !== undefined && rest.url !== current.url) {
+				rest.url = slugify(rest.url);
+				if (!rest.url) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: "URL inválida.",
+					});
+				}
+				if (RESERVED_URLS.includes(rest.url)) {
+					throw new TRPCError({
+						code: "CONFLICT",
+						message: "Essa URL é reservada pelo sistema.",
+					});
+				}
+			}
 
 			// Valida as fontes contra o catálogo e normaliza a categoria
 			// (o schema é tolerante na leitura; aqui a escrita é estrita).
@@ -157,8 +195,21 @@ export const projectsRouter = createTRPCRouter({
 				throw new Error("No fields to update");
 			}
 
-			await db.update(project).set(updateData).where(eq(project.id, id));
-			return { updated: true };
+			try {
+				await db
+					.update(project)
+					.set(updateData)
+					.where(eq(project.id, id));
+			} catch (error) {
+				if (isUniqueViolation(error)) {
+					throw new TRPCError({
+						code: "CONFLICT",
+						message: "Essa URL já é usada por outro evento.",
+					});
+				}
+				throw error;
+			}
+			return { updated: true, url: rest.url ?? current.url };
 		}),
 
 	getProject: publicProcedure
@@ -205,8 +256,10 @@ export const projectsRouter = createTRPCRouter({
 			});
 
 			if (!projectData) {
-				console.log(projectData);
-				throw new Error("Project not found");
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Project not found",
+				});
 			}
 
 			return {

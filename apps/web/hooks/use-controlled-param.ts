@@ -5,6 +5,13 @@ import { useQueryString } from "./use-query-string";
 
 type ParamType = "string" | "array";
 
+interface ResetKeyConfig {
+	/** The key to reset (e.g., "page") */
+	key: string;
+	/** The default value to reset to (e.g., "1" for page) */
+	defaultValue: string;
+}
+
 /**
  * Hook para gerenciar parâmetros com dois cenários:
  *
@@ -25,6 +32,7 @@ export function useControlledParam<T extends string | string[]>({
 	debounce = 750,
 	type = "string",
 	defaultValue,
+	resetKeys,
 }: {
 	key: string;
 	value?: T;
@@ -32,6 +40,8 @@ export function useControlledParam<T extends string | string[]>({
 	debounce?: number;
 	type?: ParamType;
 	defaultValue?: T;
+	/** Keys to reset when this param changes (e.g., reset page to 1 when search changes) */
+	resetKeys?: ResetKeyConfig[];
 }) {
 	const router = useRouter();
 	const { query, toUrl } = useQueryString();
@@ -105,15 +115,22 @@ export function useControlledParam<T extends string | string[]>({
 
 			lastUrlUpdateRef.current = serialized;
 
+			// Build the URL parameters, including reset keys
+			const urlParams: Record<string, string | undefined> = {
+				[key]: serialized,
+			};
+
+			// Add reset keys with their default values
+			if (resetKeys && resetKeys.length > 0) {
+				for (const resetKey of resetKeys) {
+					urlParams[resetKey.key] = resetKey.defaultValue;
+				}
+			}
+
 			startTransition(() => {
-				router.push(
-					toUrl({
-						[key]: serialized,
-					}),
-					{
-						scroll: false,
-					},
-				);
+				router.push(toUrl(urlParams), {
+					scroll: false,
+				});
 			});
 		}, debounce);
 
@@ -130,6 +147,7 @@ export function useControlledParam<T extends string | string[]>({
 		isControlled,
 		serializeValue,
 		debounce,
+		resetKeys,
 	]);
 
 	const setValue = useCallback(

@@ -194,7 +194,7 @@ describe("submitAnswers registration email", () => {
 		expect(sendNotificationMock).not.toHaveBeenCalled();
 	});
 
-	it("não invalida nada quando o nome não mudou", async () => {
+	it("invalida só o ranking quando o nome não mudou", async () => {
 		const seen: string[] = [];
 		registerCacheRevalidator((tag) => seen.push(tag));
 		const caller = createCaller({ session });
@@ -208,7 +208,9 @@ describe("submitAnswers registration email", () => {
 		expect(updateReturning).toHaveBeenCalledTimes(1);
 		expect(findParticipantMany).not.toHaveBeenCalled();
 		expect(findProjectMany).not.toHaveBeenCalled();
-		expect(seen).toEqual([]);
+		// A inscrição concede pontos de boas-vindas: o ranking muda mesmo
+		// sem alteração de nome.
+		expect(seen).toEqual([`project-gamification:${PROJECT_ID}`]);
 	});
 
 	it("invalida só os perfis do usuário quando o nome mudou", async () => {
@@ -230,6 +232,7 @@ describe("submitAnswers registration email", () => {
 		expect(seen).toEqual([
 			`participant-profile:${PROJECT_ID}:abc123`,
 			"participant-profile:project-2:xyz789",
+			`project-gamification:${PROJECT_ID}`,
 		]);
 		expect(seen).not.toContain("profiles");
 		expect(seen).not.toContain("events");

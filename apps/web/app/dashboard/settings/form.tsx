@@ -1,5 +1,6 @@
 "use client";
 // Components
+import { TRPCClientError } from "@trpc/client";
 import { toast } from "sonner";
 
 // Infer types from schemas
@@ -85,15 +86,19 @@ export function ProjectSettingsGeneral({ project }: Props) {
 	const onSubmitUrl = async (form: UseFormReturn<UrlFormValues>) => {
 		const data = form.getValues();
 		try {
-			await updateMutation.mutateAsync({
+			const { url } = await updateMutation.mutateAsync({
 				id: project.id,
 				url: data.url,
 			});
 			toast.success("URL do evento atualizada com sucesso!");
-			form.reset(data);
+			// O servidor grava a URL normalizada
+			form.reset({ url });
 		} catch (error) {
 			toast.error(
-				"Erro ao atualizar a URL do evento. Tente novamente mais tarde.",
+				error instanceof TRPCClientError &&
+					["CONFLICT", "BAD_REQUEST"].includes(error.data?.code)
+					? error.message
+					: "Erro ao atualizar a URL do evento. Tente novamente mais tarde.",
 			);
 			console.error("updating event url", error);
 		}
@@ -236,8 +241,12 @@ export function ProjectSettingsGeneral({ project }: Props) {
 				renderField={(form) => (
 					<DateRangePicker
 						value={{
-							from: form.watch("startDate"),
-							to: form.watch("endDate"),
+							from: form.watch("startDate")
+								? new Date(form.watch("startDate"))
+								: undefined,
+							to: form.watch("endDate")
+								? new Date(form.watch("endDate"))
+								: undefined,
 						}}
 						onChange={(value) => {
 							if (value?.from)

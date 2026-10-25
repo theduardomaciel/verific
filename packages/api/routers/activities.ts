@@ -21,7 +21,6 @@ import {
 	exists,
 	min,
 } from "@verific/drizzle/orm";
-import type { speaker } from "@verific/drizzle/schema";
 import {
 	activity,
 	activitySession,
@@ -31,6 +30,7 @@ import {
 	formField,
 	formVersion,
 	sessionAttendance,
+	speaker,
 	speakerOnActivity,
 	participant,
 	participantOnActivity,
@@ -42,13 +42,19 @@ import {
 import { z } from "@verific/zod";
 
 // Utils
-import { isMemberAuthenticated } from "../auth";
 import {
 	assertNoScheduleConflict,
 	lockParticipant,
 	persistEnrollment,
 	prepareActivityAnswers,
 } from "../enrollment";
+import {
+	hasProjectAccess,
+	requireActivityAccess,
+	requireParticipantsInProject,
+	requireProjectAccess,
+} from "../lib/project-access";
+import { planSessionDiff } from "../lib/session-diff";
 import {
 	loadActivityAudience,
 	loadNotificationRecipients,
@@ -93,6 +99,8 @@ import { activityAudiences } from "@verific/drizzle/enum/audience";
 import { activityCategories } from "@verific/drizzle/enum/category";
 
 const activitySessionSchema = z.object({
+	/** Id de uma sessão já existente (omisso quando é nova). */
+	id: z.uuid().optional(),
 	startsAt: z.coerce.date(),
 	endsAt: z.coerce.date(),
 	address: z.string().optional(),
@@ -301,7 +309,11 @@ const mutateActivityParams = z.object({
 	tagIds: z.array(z.uuid()).max(5).optional(),
 	category: z.enum(activityCategories),
 	audience: z.enum(activityAudiences),
-	speakerIds: z.array(z.coerce.number()).optional(),
+	// Repetido violaria a chave de `speaker_activities`
+	speakerIds: z
+		.array(z.coerce.number())
+		.transform((ids) => [...new Set(ids)])
+		.optional(),
 	// `null` remove o limite; `undefined` mantém o atual
 	participantsLimit: z.number().int().min(1).nullable().optional(),
 	address: z.string().optional(),
@@ -352,6 +364,36 @@ async function setActivityTags(
 	);
 }
 
+/** Um id repetido contaria duas vezes nas vagas e nas respostas. */
+function toUniqueIds(value: string | string[]) {
+	const ids = transformSingleToArray(value);
+	return ids && [...new Set(ids)];
+}
+
+async function assertSpeakersInProject(
+	speakerIds: number[],
+	projectId: string,
+) {
+	if (speakerIds.length === 0) return;
+
+	const rows = await db
+		.select({ id: speaker.id })
+		.from(speaker)
+		.where(
+			and(
+				eq(speaker.projectId, projectId),
+				inArray(speaker.id, speakerIds),
+			),
+		);
+
+	if (rows.length !== speakerIds.length) {
+		throw new TRPCError({
+			message: "Alguns palestrantes não pertencem a este evento.",
+			code: "BAD_REQUEST",
+		});
+	}
+}
+
 /**
  * Public speaker shape: strips the organizer-entered `email` (linking
  * intent, never public) and flattens the resolved profile link.
@@ -361,8 +403,8 @@ function toPublicSpeaker<
 		email?: string | null;
 		linkedParticipant?: { shortId: string } | null;
 	},
->(speaker: T) {
-	const { email: _email, linkedParticipant, ...rest } = speaker;
+>(row: T) {
+	const { email: _email, linkedParticipant, ...rest } = row;
 	return {
 		...rest,
 		profileShortId: linkedParticipant?.shortId ?? null,
@@ -412,11 +454,15 @@ export const activitiesRouter = createTRPCRouter({
 				});
 			}
 
-			// Retornamos a atividade básica se o usuário não estiver logado.
+			// Sem acesso de organizador, só a atividade básica: a lista de
+			// inscritos traz e-mails e presenças.
 			// A contagem de ocupantes viaja junto: antes a página de detalhe
 			// chamava `getActivities` (lista inteira do evento) só para achar
 			// esse número no primeiro render de cada atividade.
-			if (!userId) {
+			const canManage = userId
+				? await hasProjectAccess(selectedActivity.projectId, userId)
+				: false;
+			if (!canManage) {
 				const [hasForm, participantsAmount, queueRows] =
 					await Promise.all([
 						hasPublishedActivityForm(
@@ -704,7 +750,7 @@ export const activitiesRouter = createTRPCRouter({
 				tagIds: z.array(z.uuid()).optional(),
 			}),
 		)
-		.query(async ({ input }) => {
+		.query(async ({ input, ctx }) => {
 			const {
 				projectId,
 				projectUrl,
@@ -745,6 +791,13 @@ export const activitiesRouter = createTRPCRouter({
 					message: "Project ID or URL is required.",
 					code: "BAD_REQUEST",
 				});
+			}
+
+			// A lista com os inscritos é do dashboard
+			if (fullQuery) {
+				const userId = ctx.session?.user.id;
+				if (!userId) throw new TRPCError({ code: "UNAUTHORIZED" });
+				await requireProjectAccess(projectIdToUse, userId);
 			}
 
 			const filterOpts = {
@@ -1019,8 +1072,15 @@ export const activitiesRouter = createTRPCRouter({
 			}
 
 			const formattedActivities = activities.map(
-				(act: ActivityWithRelations) => ({
+				({
+					participantOnActivity: enrollments,
+					...act
+				}: ActivityWithRelations) => ({
 					...act,
+					speakerOnActivity: act.speakerOnActivity.map((s) => ({
+						...s,
+						speaker: toPublicSpeaker(s.speaker),
+					})),
 					participantsCount: seatsTaken({
 						limit: act.participantsLimit,
 						enrolled: participantsCountMap[act.id] ?? 0,
@@ -1029,8 +1089,8 @@ export const activitiesRouter = createTRPCRouter({
 					}),
 					hasForm: hasFormByActivity.get(act.id) ?? false,
 					tags: (act.tagOnActivity ?? []).map((t) => t.tag),
-					participants: act.participantOnActivity
-						? act.participantOnActivity.map(
+					participants: enrollments
+						? enrollments.map(
 								(
 									p: NonNullable<
 										ActivityWithRelations["participantOnActivity"]
@@ -1109,6 +1169,10 @@ export const activitiesRouter = createTRPCRouter({
 				longitude,
 				projectId,
 			} = input;
+
+			await requireProjectAccess(projectId, userId);
+			if (speakerIds)
+				await assertSpeakersInProject(speakerIds, projectId);
 
 			const insertedActivityId = await db.transaction(async (tx) => {
 				const inserted = await tx
@@ -1222,18 +1286,13 @@ export const activitiesRouter = createTRPCRouter({
 				longitude,
 			} = input;
 
-			const error = await isMemberAuthenticated({
-				userId: ctx.session.user.id,
-			});
-
-			if (error) throw new TRPCError(error);
-
 			const existing = await db.query.activity.findFirst({
 				where: eq(activity.id, activityId),
 				columns: { projectId: true, address: true },
 				with: {
 					sessions: {
 						columns: {
+							id: true,
 							startsAt: true,
 							endsAt: true,
 							address: true,
@@ -1247,6 +1306,11 @@ export const activitiesRouter = createTRPCRouter({
 					message: "Activity not found.",
 					code: "NOT_FOUND",
 				});
+			}
+
+			await requireProjectAccess(existing.projectId, ctx.session.user.id);
+			if (speakerIds) {
+				await assertSpeakersInProject(speakerIds, existing.projectId);
 			}
 
 			await db.transaction(async (tx) => {
@@ -1272,19 +1336,50 @@ export const activitiesRouter = createTRPCRouter({
 					})
 					.where(eq(activity.id, activityId));
 
-				// Replace sessions (attendance rows cascade-delete with them)
+				// Atualiza as sessões por id. Recriar a lista apagava as
+				// presenças em cascata e deixava os pontos órfãos.
 				if (sessions !== undefined) {
-					await tx
-						.delete(activitySession)
+					const currentSessions = await tx
+						.select({
+							id: activitySession.id,
+							startsAt: activitySession.startsAt,
+							endsAt: activitySession.endsAt,
+							address: activitySession.address,
+						})
+						.from(activitySession)
 						.where(eq(activitySession.activityId, activityId));
-					await tx.insert(activitySession).values(
-						sessions.map((session) => ({
-							activityId,
-							startsAt: session.startsAt,
-							endsAt: session.endsAt,
-							address: session.address,
-						})),
-					);
+
+					const plan = planSessionDiff(currentSessions, sessions);
+
+					for (const session of plan.toUpdate) {
+						await tx
+							.update(activitySession)
+							.set({
+								startsAt: session.startsAt,
+								endsAt: session.endsAt,
+								address: session.address,
+							})
+							.where(eq(activitySession.id, session.id));
+					}
+
+					if (plan.toDeleteIds.length > 0) {
+						await tx
+							.delete(activitySession)
+							.where(
+								inArray(activitySession.id, plan.toDeleteIds),
+							);
+					}
+
+					if (plan.toInsert.length > 0) {
+						await tx.insert(activitySession).values(
+							plan.toInsert.map((session) => ({
+								activityId,
+								startsAt: session.startsAt,
+								endsAt: session.endsAt,
+								address: session.address,
+							})),
+						);
+					}
 				}
 
 				// Update speakers
@@ -1342,8 +1437,8 @@ export const activitiesRouter = createTRPCRouter({
 			z.object({
 				activityId: z.string().uuid(),
 				participantsIdsToMutate: z
-					.union([z.array(z.string()), z.string()])
-					.transform(transformSingleToArray),
+					.union([z.array(z.uuid()), z.uuid()])
+					.transform(toUniqueIds),
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
@@ -1356,10 +1451,14 @@ export const activitiesRouter = createTRPCRouter({
 				});
 			}
 
-			const error = await isMemberAuthenticated({
-				userId: ctx.session.user.id,
-			});
-			if (error) throw new TRPCError(error);
+			const access = await requireActivityAccess(
+				activityId,
+				ctx.session.user.id,
+			);
+			await requireParticipantsInProject(
+				access.projectId,
+				participantsIdsToMutate,
+			);
 
 			const { inserted, resolved, projectId } = await db.transaction(
 				async (tx) => {
@@ -1430,8 +1529,8 @@ export const activitiesRouter = createTRPCRouter({
 			z.object({
 				activityId: z.uuid(),
 				participantsIdsToAdd: z
-					.union([z.array(z.string()), z.string()])
-					.transform(transformSingleToArray),
+					.union([z.array(z.uuid()), z.uuid()])
+					.transform(toUniqueIds),
 				formAnswers: z
 					.object({
 						answers: z.record(z.string(), answerValueSchema),
@@ -1449,12 +1548,6 @@ export const activitiesRouter = createTRPCRouter({
 				});
 			}
 
-			const error = await isMemberAuthenticated({
-				userId: ctx.session.user.id,
-			});
-
-			if (error) throw new TRPCError(error);
-
 			const foundActivity = await db.query.activity.findFirst({
 				where: eq(activity.id, activityId),
 			});
@@ -1471,24 +1564,6 @@ export const activitiesRouter = createTRPCRouter({
 					message: "Activity registration is closed.",
 					code: "BAD_REQUEST",
 					cause: { code: "REGISTRATION_CLOSED" },
-				});
-			}
-
-			const projectParticipants = await db
-				.select({ id: participant.id })
-				.from(participant)
-				.where(
-					and(
-						eq(participant.projectId, foundActivity.projectId),
-						inArray(participant.id, participantsIdsToAdd),
-					),
-				);
-
-			if (projectParticipants.length !== participantsIdsToAdd.length) {
-				throw new TRPCError({
-					message:
-						"Participants must belong to the activity project.",
-					code: "FORBIDDEN",
 				});
 			}
 
@@ -1512,6 +1587,17 @@ export const activitiesRouter = createTRPCRouter({
 				!!requesterParticipantId &&
 				participantsIdsToAdd.length === 1 &&
 				participantsIdsToAdd.includes(requesterParticipantId);
+			// A organização vem antes: sem ela, a resposta diria quem é do evento
+			if (!isSelfServiceJoin) {
+				await requireProjectAccess(
+					foundActivity.projectId,
+					ctx.session.user.id,
+				);
+				await requireParticipantsInProject(
+					foundActivity.projectId,
+					participantsIdsToAdd,
+				);
+			}
 
 			// Respostas do formulário de inscrição da atividade (quando houver)
 			const answerRows = await prepareActivityAnswers({
@@ -1603,8 +1689,8 @@ export const activitiesRouter = createTRPCRouter({
 			z.object({
 				activityId: z.string().uuid(),
 				participantsIdsToAdd: z
-					.union([z.array(z.string()), z.string()])
-					.transform(transformSingleToArray),
+					.union([z.array(z.uuid()), z.uuid()])
+					.transform(toUniqueIds),
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
@@ -1617,10 +1703,14 @@ export const activitiesRouter = createTRPCRouter({
 				});
 			}
 
-			const error = await isMemberAuthenticated({
-				userId: ctx.session.user.id,
-			});
-			if (error) throw new TRPCError(error);
+			const access = await requireActivityAccess(
+				activityId,
+				ctx.session.user.id,
+			);
+			await requireParticipantsInProject(
+				access.projectId,
+				participantsIdsToAdd,
+			);
 
 			const toInsert: (typeof participantOnActivity.$inferInsert)[] =
 				participantsIdsToAdd.map((participantId) => ({
@@ -1741,10 +1831,11 @@ export const activitiesRouter = createTRPCRouter({
 
 			return { success: true };
 		}),
-	getDashboardStats: publicProcedure
+	getDashboardStats: protectedProcedure
 		.input(z.object({ projectId: z.string().uuid() }))
-		.query(async ({ input }) => {
+		.query(async ({ input, ctx }) => {
 			const { projectId } = input;
+			await requireProjectAccess(projectId, ctx.session.user.id);
 
 			const now = new Date();
 			const lastHour = new Date(now.getTime() - 60 * 60 * 1000);
@@ -1942,9 +2033,11 @@ export const activitiesRouter = createTRPCRouter({
 				coursesData: [] as Array<{ course: string; count: number }>,
 			};
 		}),
-	getBreakdownFields: publicProcedure
+	getBreakdownFields: protectedProcedure
 		.input(z.object({ projectId: z.string().uuid() }))
-		.query(async ({ input }) => {
+		.query(async ({ input, ctx }) => {
+			await requireProjectAccess(input.projectId, ctx.session.user.id);
+
 			// Latest published version of every scope: the event-wide form and
 			// each activity's form.
 			const versions = await db.query.formVersion.findMany({
@@ -2007,7 +2100,7 @@ export const activitiesRouter = createTRPCRouter({
 					null,
 			}));
 		}),
-	getBreakdownSeries: publicProcedure
+	getBreakdownSeries: protectedProcedure
 		.input(
 			z.object({
 				projectId: z.string().uuid(),
@@ -2016,8 +2109,9 @@ export const activitiesRouter = createTRPCRouter({
 				window: z.enum(BREAKDOWN_TIME_WINDOWS).default("7d"),
 			}),
 		)
-		.query(async ({ input }) => {
+		.query(async ({ input, ctx }) => {
 			const { projectId, window } = input;
+			await requireProjectAccess(projectId, ctx.session.user.id);
 
 			// Bucket granularity: hours for the 24h window, days otherwise.
 			const granularity = window === "24h" ? "hour" : "day";
@@ -2294,10 +2388,7 @@ export const activitiesRouter = createTRPCRouter({
 	getReleasableActivities: protectedProcedure
 		.input(z.object({ projectId: z.uuid() }))
 		.query(async ({ input, ctx }) => {
-			const error = await isMemberAuthenticated({
-				userId: ctx.session.user.id,
-			});
-			if (error) throw new TRPCError(error);
+			await requireProjectAccess(input.projectId, ctx.session.user.id);
 
 			// Closed registrations, and not yet ended
 			const rows = await db.query.activity.findMany({
@@ -2347,10 +2438,7 @@ export const activitiesRouter = createTRPCRouter({
 			const { projectId, isRegistrationOpen } = input;
 			const activityIds = [...new Set(input.activityIds)];
 
-			const error = await isMemberAuthenticated({
-				userId: ctx.session.user.id,
-			});
-			if (error) throw new TRPCError(error);
+			await requireProjectAccess(input.projectId, ctx.session.user.id);
 
 			await db.transaction(async (tx) => {
 				const updated = await tx

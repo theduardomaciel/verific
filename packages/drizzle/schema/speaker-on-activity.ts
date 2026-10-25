@@ -1,5 +1,11 @@
 import { relations } from "drizzle-orm";
-import { uuid, smallserial, pgTable, primaryKey } from "drizzle-orm/pg-core";
+import {
+	uuid,
+	smallserial,
+	pgTable,
+	primaryKey,
+	index,
+} from "drizzle-orm/pg-core";
 
 import { activity } from "./activity";
 import { speaker } from "./speaker";
@@ -22,6 +28,9 @@ export const speakerOnActivity = pgTable(
 	},
 	(table) => ({
 		pk: primaryKey({ columns: [table.activityId, table.speakerId] }),
+		speakerIdIdx: index("speaker_on_activity_speaker_id_idx").on(
+			table.speakerId,
+		),
 	}),
 );
 

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 
+import { ptBR } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -77,6 +78,7 @@ export function DateRangePicker({ className, value, onChange }: Props) {
 						selected={value}
 						onSelect={onChange}
 						numberOfMonths={2}
+						locale={ptBR}
 					/>
 				</PopoverContent>
 			</Popover>

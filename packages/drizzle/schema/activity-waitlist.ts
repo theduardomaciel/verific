@@ -44,6 +44,7 @@ export const activityWaitlist = pgTable(
 			table.status,
 			table.joinedAt,
 		),
+		index("activity_waitlist_participant_id_idx").on(table.participantId),
 	],
 );
 

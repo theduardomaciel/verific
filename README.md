@@ -133,6 +133,19 @@ Para a migração de uma nova versão do esquema para o banco de dados, utilize 
 >
 > Para a migração de um novo esquema para o banco de dados, utilize `pnpm db:generate` para criar o arquivo `.sql` com a migração, e em seguida `pnpm db:migrate` para enviar os dados para a rede.
 
+> [!IMPORTANT]
+> `pnpm db:migrate` roda contra o banco de **desenvolvimento**. Em produção use
+> `pnpm db:migrate:prod`, que lê `PRODUCTION_DATABASE_URL` e imprime apenas o
+> host/banco antes de aplicar.
+>
+> A migration `0009` cria a unicidade de `projects.url` e, antes disso, renomeia
+> URLs duplicadas (a mais antiga mantém a original; as demais recebem `-2`,
+> `-3`, ...). Para ver o que será alterado antes de migrar:
+>
+> ```sql
+> SELECT url, count(*) FROM projects GROUP BY url HAVING count(*) > 1;
+> ```
+
 ### 🌱 Seed do banco (primeiro deploy)
 
 O build do Next.js usa **Cache Components** (`cacheComponents: true`), que exige que `generateStaticParams` retorne pelo menos um resultado. **Em banco vazio, o build falha na Vercel.**

@@ -4,6 +4,7 @@ import {
 	eventDayKeys,
 	GAMIFICATION_STICKERS,
 	isSessionCompleted,
+	isStickerAvailable,
 	parseGamificationConfig,
 	resolveStickerProgress,
 	sessionHours,
@@ -298,11 +299,15 @@ interface LoadedStats {
  * Coleta presença, sessões, conexões e posição no ranking de um
  * participante. O rank só é calculado quando ele é elegível (não está
  * opt-out nem é staff excluída).
+ *
+ * `includeRank: false` pula a consulta de posição (a mais cara daqui) para
+ * chamadores que só precisam de adesivos/estatísticas.
  */
 export async function loadParticipantStats(
 	tx: GamificationClient,
 	project: GamificationProject,
 	participantId: string,
+	options?: { includeRank?: boolean },
 ): Promise<LoadedStats> {
 	const config = projectConfig(project);
 	const eventDays = eventDayCount(project.startDate, project.endDate);
@@ -315,6 +320,15 @@ export async function loadParticipantStats(
 		})
 		.from(participant)
 		.where(eq(participant.id, participantId));
+
+	// O chamador quase sempre já carregou os moderadores junto do projeto
+	// (`requireProjectAccess`); só cai na query quando não veio.
+	const moderatorRowsPromise = project.moderators
+		? Promise.resolve(project.moderators)
+		: tx
+				.select({ userId: projectModerator.userId })
+				.from(projectModerator)
+				.where(eq(projectModerator.projectId, project.id));
 
 	const [checkinRows, attendance, connections, pointsRow, moderatorRows] =
 		await Promise.all([
@@ -361,20 +375,13 @@ export async function loadParticipantStats(
 				.select({ total: participantPoints.total })
 				.from(participantPoints)
 				.where(eq(participantPoints.participantId, participantId)),
-			tx
-				.select({ userId: projectModerator.userId })
-				.from(projectModerator)
-				.where(eq(projectModerator.projectId, project.id)),
+			moderatorRowsPromise,
 		]);
 
 	const total = pointsRow[0]?.total ?? 0;
 	// Se o organizador desligou o opt-out, o flag antigo deixa de valer.
 	const optOut = config.ranking.allowOptOut && Boolean(me?.rankingOptOut);
-	const staffIds = [
-		project.ownerId,
-		...(project.moderators?.map((moderator) => moderator.userId) ?? []),
-		...moderatorRows.map((row) => row.userId),
-	];
+	const staffIds = staffUserIds(project, moderatorRows);
 	const isStaff = Boolean(me?.userId && staffIds.includes(me.userId));
 
 	const attendanceRows: AttendanceRow[] = attendance;
@@ -388,7 +395,10 @@ export async function loadParticipantStats(
 	});
 
 	const rankEligible =
-		!optOut && (config.ranking.includeStaff || !isStaff) && Boolean(me);
+		options?.includeRank !== false &&
+		!optOut &&
+		(config.ranking.includeStaff || !isStaff) &&
+		Boolean(me);
 
 	const rank = rankEligible
 		? await loadRankPosition(tx, {
@@ -418,6 +428,34 @@ export async function loadParticipantStats(
 			...partial,
 		},
 	};
+}
+
+/** Dono + moderadores do evento (fonte única para excluir staff do ranking). */
+function staffUserIds(
+	project: GamificationProject,
+	moderatorRows: Array<{ userId: string }>,
+): string[] {
+	return [
+		project.ownerId,
+		...(project.moderators?.map((moderator) => moderator.userId) ?? []),
+		...moderatorRows.map((row) => row.userId),
+	];
+}
+
+/** Filtros comuns do ranking: opt-out e staff aplicados. */
+function rankingFilters(
+	config: GamificationConfig,
+	projectId: string,
+	staffIds: string[],
+) {
+	const filters = [eq(participantPoints.projectId, projectId)];
+	if (config.ranking.allowOptOut) {
+		filters.push(eq(participant.rankingOptOut, false));
+	}
+	if (!config.ranking.includeStaff && staffIds.length > 0) {
+		filters.push(notInArray(participant.userId, staffIds));
+	}
+	return filters;
 }
 
 async function loadRankPosition(
@@ -472,14 +510,43 @@ export async function evaluateStickers(
 	project: GamificationProject,
 	participantId: string,
 ): Promise<StickerAward[]> {
-	const loaded = await loadParticipantStats(tx, project, participantId);
-	if (!loaded.config.enabled || !loaded.config.stickersEnabled) return [];
+	const config = projectConfig(project);
+	if (!config.enabled || !config.stickersEnabled) return [];
 
-	const earnedKeys = GAMIFICATION_STICKERS.filter(
-		(sticker) =>
-			resolveStickerProgress(sticker, loaded.stats, loaded.context)
-				.earned,
-	).map((sticker) => sticker.key);
+	const context: StickerContext = {
+		eventDays: eventDayCount(project.startDate, project.endDate),
+		checkoutEnabled: config.sessions.checkoutEnabled,
+	};
+	const available = GAMIFICATION_STICKERS.filter((sticker) =>
+		isStickerAvailable(sticker, context),
+	);
+	if (available.length === 0) return [];
+
+	// Caminho quente (check-in/presença): quase sempre todos os adesivos
+	// possíveis já foram concedidos. Ler só as chaves existentes encerra a
+	// avaliação com uma query, em vez de recalcular todas as estatísticas.
+	const earnedRows = await tx
+		.select({ stickerKey: participantSticker.stickerKey })
+		.from(participantSticker)
+		.where(eq(participantSticker.participantId, participantId));
+	const earned = new Set(earnedRows.map((row) => row.stickerKey));
+	const pending = available.filter((sticker) => !earned.has(sticker.key));
+	if (pending.length === 0) return [];
+
+	const loaded = await loadParticipantStats(tx, project, participantId, {
+		// A posição no ranking só importa se o adesivo de rank ainda está aberto.
+		includeRank: pending.some(
+			(sticker) => sticker.criterion.type === "rank",
+		),
+	});
+
+	const earnedKeys = pending
+		.filter(
+			(sticker) =>
+				resolveStickerProgress(sticker, loaded.stats, loaded.context)
+					.earned,
+		)
+		.map((sticker) => sticker.key);
 	if (earnedKeys.length === 0) return [];
 
 	const inserted = await tx
@@ -588,12 +655,12 @@ export async function loadGamificationSnapshot(
 		earnedRows.map((row) => [row.stickerKey, row.earnedAt]),
 	);
 
-	const rankingTotal = await loadRanking(tx, project, 1);
+	const totalParticipants = await loadRankingTotal(tx, project);
 
 	return {
 		points: loaded.total,
 		rank: loaded.rank,
-		totalParticipants: rankingTotal.total,
+		totalParticipants,
 		optOut: loaded.optOut,
 		eventDays: loaded.context.eventDays,
 		checkoutEnabled: loaded.context.checkoutEnabled,
@@ -918,6 +985,36 @@ export interface RankingRow {
 	rank: number;
 }
 
+/** Total de participantes elegíveis (só a contagem, sem a lista). */
+async function loadRankingTotal(
+	tx: GamificationClient,
+	project: GamificationProject,
+): Promise<number> {
+	const config = projectConfig(project);
+	const moderatorRows = project.moderators
+		? project.moderators
+		: await tx
+				.select({ userId: projectModerator.userId })
+				.from(projectModerator)
+				.where(eq(projectModerator.projectId, project.id));
+	const filters = rankingFilters(
+		config,
+		project.id,
+		staffUserIds(project, moderatorRows),
+	);
+
+	const [row] = await tx
+		.select({ amount: count() })
+		.from(participantPoints)
+		.innerJoin(
+			participant,
+			eq(participant.id, participantPoints.participantId),
+		)
+		.where(and(...filters));
+
+	return Number(row?.amount ?? 0);
+}
+
 /** Top do ranking público (opt-outs e staff aplicados). */
 export async function loadRanking(
 	tx: GamificationClient,
@@ -925,23 +1022,17 @@ export async function loadRanking(
 	limit: number,
 ): Promise<{ rows: RankingRow[]; total: number }> {
 	const config = projectConfig(project);
-	const moderatorRows = await tx
-		.select({ userId: projectModerator.userId })
-		.from(projectModerator)
-		.where(eq(projectModerator.projectId, project.id));
-	const staffIds = [
-		project.ownerId,
-		...(project.moderators?.map((moderator) => moderator.userId) ?? []),
-		...moderatorRows.map((row) => row.userId),
-	];
-
-	const filters = [eq(participantPoints.projectId, project.id)];
-	if (config.ranking.allowOptOut) {
-		filters.push(eq(participant.rankingOptOut, false));
-	}
-	if (!config.ranking.includeStaff && staffIds.length > 0) {
-		filters.push(notInArray(participant.userId, staffIds));
-	}
+	const moderatorRows = project.moderators
+		? project.moderators
+		: await tx
+				.select({ userId: projectModerator.userId })
+				.from(projectModerator)
+				.where(eq(projectModerator.projectId, project.id));
+	const filters = rankingFilters(
+		config,
+		project.id,
+		staffUserIds(project, moderatorRows),
+	);
 
 	const [rows, totalRow] = await Promise.all([
 		tx

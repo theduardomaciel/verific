@@ -66,7 +66,7 @@ function ProfileOwnerSectionInner({
 				<Collapsible
 					open={open}
 					onOpenChange={setOpen}
-					className="w-full"
+					className="flex w-full flex-col gap-6"
 				>
 					<CollapsibleTrigger className="font-subtitle flex items-center gap-3 text-xl font-bold">
 						Seu perfil
@@ -77,7 +77,7 @@ function ProfileOwnerSectionInner({
 							)}
 						/>
 					</CollapsibleTrigger>
-					<CollapsibleContent className="pt-6">
+					<CollapsibleContent className="flex flex-col gap-6">
 						{children}
 					</CollapsibleContent>
 				</Collapsible>

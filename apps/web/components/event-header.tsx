@@ -15,8 +15,8 @@ interface EventHeaderProps {
 	className?: string;
 	/** Liga o link "Ranking" quando a gamificação está ativa. */
 	rankingEnabled?: boolean;
-	/** Mostra o link "Ranking" no cabeçalho (pode estar ativo mas oculto). */
-	rankingShowInNav?: boolean;
+	/** Ranking visível para visitantes (pode estar ativo mas privado). */
+	rankingPublic?: boolean;
 }
 
 /**
@@ -52,12 +52,12 @@ export async function EventHeader({
 	logo,
 	className,
 	rankingEnabled = false,
-	rankingShowInNav = false,
+	rankingPublic = false,
 }: EventHeaderProps) {
 	const registration = await getEventRegistration(eventUrl);
 
 	const baseLinks: MainNavProps["links"] =
-		rankingEnabled && rankingShowInNav
+		rankingEnabled && rankingPublic
 			? [
 					...NAV_LINKS,
 					{

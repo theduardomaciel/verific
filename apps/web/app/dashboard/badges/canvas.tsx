@@ -159,6 +159,8 @@ function Outline({
 /**
  * Redimensiona `s` arrastando `handle` por (dx, dy). O lado oposto fica
  * fixo; respeita tamanho mínimo, limites e (opcional) proporção quadrada.
+ * Para itens quadrados (QR), mantém o quadrado mesmo ao atingir os limites,
+ * ancorando no canto oposto ao handle arrastado.
  */
 function resizeRect(
 	s: MmRect,
@@ -169,30 +171,87 @@ function resizeRect(
 	bounds: MmRect,
 	square: boolean,
 ): MmRect {
-	let l = s.x;
-	let t = s.y;
-	let r = s.x + s.w;
-	let b = s.y + s.h;
+	// Valores originais (antes de qualquer modificação)
+	const origL = s.x;
+	const origT = s.y;
+	const origR = s.x + s.w;
+	const origB = s.y + s.h;
+
+	let l = origL;
+	let t = origT;
+	let r = origR;
+	let b = origB;
 	const west = handle.includes("w");
 	const east = handle.includes("e");
 	const north = handle.includes("n");
 	const south = handle.includes("s");
-	if (west) l = Math.min(l + dx, r - min);
-	if (east) r = Math.max(r + dx, l + min);
-	if (north) t = Math.min(t + dy, b - min);
-	if (south) b = Math.max(b + dy, t + min);
-	if (square) {
-		const side = Math.max(r - l, b - t, min);
-		if (west) l = r - side;
-		else r = l + side;
-		if (north) t = b - side;
-		else b = t + side;
+
+	// Para handles de borda (não-canto), comporta-se como antes
+	const isCorner = (west || east) && (north || south);
+
+	if (!square || !isCorner) {
+		// Lógica original para handles de borda ou itens não-quadrados
+		if (west) l = Math.min(l + dx, r - min);
+		if (east) r = Math.max(r + dx, l + min);
+		if (north) t = Math.min(t + dy, b - min);
+		if (south) b = Math.max(b + dy, t + min);
+
+		l = Math.max(l, bounds.x);
+		t = Math.max(t, bounds.y);
+		r = Math.min(r, bounds.x + bounds.w);
+		b = Math.min(b, bounds.y + bounds.h);
+		return { x: l, y: t, w: Math.max(r - l, min), h: Math.max(b - t, min) };
 	}
-	l = Math.max(l, bounds.x);
-	t = Math.max(t, bounds.y);
-	r = Math.min(r, bounds.x + bounds.w);
-	b = Math.min(b, bounds.y + bounds.h);
-	return { x: l, y: t, w: Math.max(r - l, min), h: Math.max(b - t, min) };
+
+	// Para itens quadrados com handle de canto: ancora no canto oposto
+	// NW (west+north) → ancora SE (origR, origB)
+	// NE (east+north) → ancora SW (origL, origB)
+	// SW (west+south) → ancora NE (origR, origT)
+	// SE (east+south) → ancora NW (origL, origT)
+
+	const anchorX = west ? origR : origL; // X do canto âncora (fixo)
+	const anchorY = north ? origB : origT; // Y do canto âncora (fixo)
+
+	// Nova posição do canto arrastado (após aplicar dx, dy)
+	const draggedX = west ? origL + dx : origR + dx;
+	const draggedY = north ? origT + dy : origB + dy;
+
+	// Lado do quadrado = distância do canto âncora ao canto arrastado
+	// Para NW: side = max(origR - draggedX, origB - draggedY)
+	// Para NE: side = max(draggedX - origL, origB - draggedY)
+	// Para SW: side = max(origR - draggedX, draggedY - origT)
+	// Para SE: side = max(draggedX - origL, draggedY - origT)
+	const desiredW = west ? anchorX - draggedX : draggedX - anchorX;
+	const desiredH = north ? anchorY - draggedY : draggedY - anchorY;
+	let side = Math.max(Math.max(desiredW, desiredH), min);
+
+	// Posiciona o quadrado com o canto âncora fixo
+	let newL = west ? anchorX - side : anchorX;
+	let newT = north ? anchorY - side : anchorY;
+
+	// Aplica limites: se o quadrado sai dos bounds, reduz o lado mantendo a âncora
+	if (newL < bounds.x) {
+		const maxSide = anchorX - bounds.x;
+		side = Math.min(side, maxSide);
+		newL = west ? anchorX - side : anchorX;
+	}
+	if (newL + side > bounds.x + bounds.w) {
+		const maxSide = bounds.x + bounds.w - anchorX;
+		side = Math.min(side, maxSide);
+		newL = west ? anchorX - side : anchorX;
+	}
+	if (newT < bounds.y) {
+		const maxSide = anchorY - bounds.y;
+		side = Math.min(side, maxSide);
+		newT = north ? anchorY - side : anchorY;
+	}
+	if (newT + side > bounds.y + bounds.h) {
+		const maxSide = bounds.y + bounds.h - anchorY;
+		side = Math.min(side, maxSide);
+		newT = north ? anchorY - side : anchorY;
+	}
+
+	return { x: newL, y: newT, w: side, h: side };
 }
 
 export function BadgeCanvas({
@@ -500,8 +559,20 @@ export function BadgeCanvas({
 
 	const enabledItems = layout.items.filter((i) => i.enabled);
 	const selectedItem = enabledItems.find((i) => i.id === selectedId) ?? null;
+	// For QR codes, compute square rect (same logic as display-list)
 	const selectedAbs = selectedItem
-		? relativeToBadge(selectedItem.rect, F)
+		? selectedItem.kind === "qr"
+			? (() => {
+					const abs = relativeToBadge(selectedItem.rect, F);
+					const side = Math.min(abs.w, abs.h);
+					return {
+						x: abs.x + (abs.w - side) / 2,
+						y: abs.y + (abs.h - side) / 2,
+						w: side,
+						h: side,
+					};
+				})()
+			: relativeToBadge(selectedItem.rect, F)
 		: null;
 
 	const renderHandles = (
@@ -696,7 +767,20 @@ export function BadgeCanvas({
 
 			{/* Caixas interativas dos itens */}
 			{enabledItems.map((item) => {
-				const abs = relativeToBadge(item.rect, F);
+				// For QR codes, use square rect (same as display-list)
+				const absBase = relativeToBadge(item.rect, F);
+				const abs =
+					item.kind === "qr"
+						? (() => {
+								const side = Math.min(absBase.w, absBase.h);
+								return {
+									x: absBase.x + (absBase.w - side) / 2,
+									y: absBase.y + (absBase.h - side) / 2,
+									w: side,
+									h: side,
+								};
+							})()
+						: absBase;
 				const selected = item.id === selectedId;
 				const hovered = item.id === hoverId && !selected;
 				const showLabel =

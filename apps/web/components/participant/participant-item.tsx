@@ -164,29 +164,63 @@ export const ParticipantListItem = {
 								</div>
 							)}
 						</div>
-						{participant.id === currentParticipantId ? (
-							<ParticipantQuitButton
-								activityId={participant.activityId}
-								userId={participant.userId}
-								participantId={participant.id}
-								projectUrl={url}
-							/>
-						) : (
-							<RemoveParticipantDialog
-								participantId={participant.id}
-								activityId={participant.activityId}
-								projectUrl={url}
-								userEmail={participant.user.email}
+						<div className="flex items-center gap-2">
+							{/* Ver detalhes do participante */}
+							<Button
+								className="hidden p-0 md:flex"
+								variant={"ghost"}
+								size={"icon"}
+								asChild
 							>
-								<Button variant={"ghost"} size={"icon"}>
-									{participant.role === "participant" ? (
-										<Ban className="text-foreground h-4 w-4" />
-									) : (
-										<CircleMinus className="text-foreground h-4 w-4" />
-									)}
-								</Button>
-							</RemoveParticipantDialog>
-						)}
+								<Link
+									href={`${url}/${participant.id}`}
+									prefetch={false}
+								>
+									<BookUser className="text-foreground h-4 w-4" />
+									<span className="sr-only">
+										Ver detalhes
+									</span>
+								</Link>
+							</Button>
+							<Button
+								className="flex w-full md:hidden"
+								variant={"default"}
+								asChild
+							>
+								<Link
+									href={`${url}/${participant.id}`}
+									prefetch={false}
+								>
+									<BookUser className="text-foreground h-4 w-4" />
+									<span>Ver detalhes</span>
+								</Link>
+							</Button>
+							{participant.role ===
+							"monitor" ? null : participant.id ===
+							  currentParticipantId ? (
+								<ParticipantQuitButton
+									activityId={participant.activityId}
+									userId={participant.userId}
+									participantId={participant.id}
+									projectUrl={url}
+								/>
+							) : (
+								<RemoveParticipantDialog
+									participantId={participant.id}
+									activityId={participant.activityId}
+									projectUrl={url}
+									userEmail={participant.user.email}
+								>
+									<Button variant="ghost" size="icon">
+										{participant.role === "participant" ? (
+											<Ban className="text-foreground h-4 w-4" />
+										) : (
+											<CircleMinus className="text-foreground h-4 w-4" />
+										)}
+									</Button>
+								</RemoveParticipantDialog>
+							)}
+						</div>
 					</div>
 				</li>
 			</>

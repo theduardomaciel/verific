@@ -7,9 +7,23 @@ import { tag } from "@verific/drizzle/schema";
 import { z } from "@verific/zod";
 
 // Utils
-import { isMemberAuthenticated } from "../auth";
+import { requireProjectAccess } from "../lib/project-access";
 import { tagColorSchema } from "../schemas";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
+
+async function requireTagAccess(tagId: string, userId: string) {
+	const found = await db.query.tag.findFirst({
+		where: eq(tag.id, tagId),
+		columns: { projectId: true },
+	});
+	if (!found) {
+		throw new TRPCError({
+			message: "Trilha não encontrada.",
+			code: "NOT_FOUND",
+		});
+	}
+	await requireProjectAccess(found.projectId, userId);
+}
 
 export const tagsRouter = createTRPCRouter({
 	getProjectTags: publicProcedure
@@ -30,10 +44,7 @@ export const tagsRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			const error = await isMemberAuthenticated({
-				userId: ctx.session.user.id,
-			});
-			if (error) throw new TRPCError(error);
+			await requireProjectAccess(input.projectId, ctx.session.user.id);
 
 			try {
 				const created = await db
@@ -61,10 +72,7 @@ export const tagsRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			const error = await isMemberAuthenticated({
-				userId: ctx.session.user.id,
-			});
-			if (error) throw new TRPCError(error);
+			await requireTagAccess(input.tagId, ctx.session.user.id);
 
 			try {
 				await db
@@ -83,10 +91,7 @@ export const tagsRouter = createTRPCRouter({
 	deleteTag: protectedProcedure
 		.input(z.object({ tagId: z.uuid() }))
 		.mutation(async ({ input, ctx }) => {
-			const error = await isMemberAuthenticated({
-				userId: ctx.session.user.id,
-			});
-			if (error) throw new TRPCError(error);
+			await requireTagAccess(input.tagId, ctx.session.user.id);
 
 			// Links activity↔tag são removidos por cascade
 			await db.delete(tag).where(eq(tag.id, input.tagId));

@@ -2,6 +2,7 @@ export * from "./account";
 export * from "./activity";
 export * from "./badge-layout";
 export * from "./activity-session";
+export * from "./activity-conflict";
 export * from "./activity-waitlist";
 export * from "./session-attendance";
 export * from "./tag";

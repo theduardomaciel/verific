@@ -4,6 +4,7 @@ import { Suspense } from "react";
 
 import { Trophy } from "lucide-react";
 
+import type { RouterOutput } from "@verific/api";
 import {
 	parseGamificationConfig,
 	type GamificationConfig,
@@ -13,7 +14,9 @@ import { parseEventTheme } from "@verific/drizzle/theme";
 import { RankingContent } from "@/components/gamification/ranking-content";
 import * as EventContainer from "@/components/landing/event-container";
 
-import { getProject } from "@/lib/data";
+import { getCachedEventRanking, getProject } from "@/lib/data";
+import { isProfileNotFoundError } from "@/lib/profile-page-data";
+import { serverClient } from "@/lib/trpc/server";
 
 import { RankingPageSkeleton } from "./skeleton";
 
@@ -30,9 +33,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 	const result = await getProject(eventUrl);
 	if (!result?.project) return { title: "Ranking" };
 
+	const config = parseGamificationConfig(result.project.gamification);
+
 	return {
 		title: `Ranking · ${result.project.name}`,
 		description: `Veja os participantes que mais se engajaram em ${result.project.name}.`,
+		// Ranking privado não deve ser indexado (nem aparecer em buscas).
+		robots: config.ranking.isPublic
+			? undefined
+			: { index: false, follow: false },
 	};
 }
 
@@ -40,10 +49,12 @@ function RankingBody({
 	eventUrl,
 	project,
 	config,
+	initialData,
 }: {
 	eventUrl: string;
 	project: RankingProject;
 	config: GamificationConfig;
+	initialData: RouterOutput["getEventRanking"];
 }) {
 	const rankingEnabled = config.enabled && config.rankingEnabled;
 	const theme = parseEventTheme({
@@ -76,20 +87,7 @@ function RankingBody({
 			</EventContainer.Hero>
 
 			<EventContainer.Content className="container-p">
-				{rankingEnabled ? (
-					<RankingContent eventUrl={eventUrl} />
-				) : (
-					<div className="flex max-w-md flex-col items-center gap-3 py-10 text-center">
-						<Trophy className="text-muted-foreground size-10" />
-						<p className="text-foreground font-semibold">
-							Ranking desativado
-						</p>
-						<p className="text-muted-foreground text-sm">
-							O organizador não está exibindo o ranking deste
-							evento.
-						</p>
-					</div>
-				)}
+				<RankingContent eventUrl={eventUrl} initialData={initialData} />
 			</EventContainer.Content>
 
 			{rankingEnabled && config.ranking.allowOptOut && (
@@ -125,7 +123,30 @@ async function RankingLoader({ params }: Props) {
 		notFound();
 	}
 
+	// Ranking público: valor do Data Cache (página estática, sem polling).
+	// Ranking privado: só dono/moderador — a leitura passa pela sessão e o
+	// procedimento responde NOT_FOUND para os demais.
+	let initialData: RouterOutput["getEventRanking"] | null = null;
+	try {
+		initialData = config.ranking.isPublic
+			? await getCachedEventRanking(eventUrl)
+			: await serverClient.getEventRanking({ projectUrl: eventUrl });
+	} catch (error) {
+		// Só NOT_FOUND vira 404; falha transitória de banco não pode ser
+		// gravada no cache da rota.
+		if (!isProfileNotFoundError(error)) throw error;
+	}
+
+	if (!initialData) {
+		notFound();
+	}
+
 	return (
-		<RankingBody eventUrl={eventUrl} project={project} config={config} />
+		<RankingBody
+			eventUrl={eventUrl}
+			project={project}
+			config={config}
+			initialData={initialData}
+		/>
 	);
 }

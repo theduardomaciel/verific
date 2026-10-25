@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "@verific/drizzle";
 import { and, eq, sql } from "@verific/drizzle/orm";
+import { redactQueryParams } from "@verific/drizzle/redact";
 import { project, user, activityWaitlist } from "@verific/drizzle/schema";
 
 import { lockActivity } from "../seats";
@@ -492,8 +493,9 @@ export async function processNotification(
 	}
 }
 
+// Vai para o log e para o `lastError` exibido na tela de e-mails
 function messageOf(err: unknown): string {
-	return err instanceof Error ? err.message : String(err);
+	return redactQueryParams(err instanceof Error ? err.message : String(err));
 }
 
 const saoPauloDayKey = new Intl.DateTimeFormat("en-CA", {

@@ -66,6 +66,18 @@ export function participantProfileCacheTag(projectId: string, shortId: string) {
 }
 
 /**
+ * Ranking público e snapshot de gamificação do evento (`getEventRanking`,
+ * `getParticipantGamification`).
+ *
+ * Uma tag por evento (e não por participante) é intencional: qualquer
+ * check-in/ponto muda a ordem do ranking, então a invalidação fina não
+ * compensaria o custo de manter duas listas de tags.
+ */
+export function projectGamificationCacheTag(projectId: string) {
+	return `project-gamification:${projectId}`;
+}
+
+/**
  * Consultas públicas cujo resultado **não depende da sessão** — elegíveis a
  * `Cache-Control` público no handler HTTP do tRPC (edge cache). Qualquer
  * caminho fora desta lista mantém a resposta privada.
@@ -76,9 +88,11 @@ export function participantProfileCacheTag(projectId: string, shortId: string) {
  * simplesmente nunca casa — silêncio, não erro.
  *
  * Ficam de fora, de propósito:
- * - `getActivity`: devolve campos que dependem de `ctx.session`.
- * - `getActivities`: com `fullQuery` embute linhas de `participant`/`user`
- *   (PII) — não vai para cache compartilhado de borda.
+ * - `getActivity`: devolve campos que dependem de `ctx.session` (e-mail dos
+ *   inscritos para organizadores).
+ * - `getActivities`: com `fullQuery` exige organizador e lê a sessão.
+ * - `getEventRanking`: quando o ranking não é público, a resposta depende da
+ *   sessão (só membros do evento veem).
  */
 export const PUBLIC_CACHEABLE_QUERY_PATHS: ReadonlySet<string> = new Set([
 	"getActivityAvailability",

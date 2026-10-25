@@ -29,7 +29,7 @@ export const project = pgTable("projects", {
 	description: text("description"),
 	welcomeMessage: text("welcome_message"),
 
-	url: text("url").notNull(),
+	url: text("url").notNull().unique(),
 
 	// 📍 Location fields
 	address: text("address").notNull(), // Human-readable address for display

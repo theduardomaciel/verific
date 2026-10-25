@@ -16,6 +16,8 @@ interface SearchBarProps extends Omit<
 > {
 	prefix?: string;
 	debounce?: number;
+	/** Keys to reset when search changes (e.g., reset page to 1) */
+	resetKeys?: Array<{ key: string; defaultValue: string }>;
 	// Client-Driven: forneça ambas para gerenciar estado no pai
 	value?: string;
 	onChange?: (value: string) => void;
@@ -26,6 +28,7 @@ export function SearchBar({
 	debounce = 500,
 	value,
 	onChange,
+	resetKeys = [{ key: "page", defaultValue: "1" }],
 	...props
 }: SearchBarProps) {
 	const {
@@ -38,6 +41,7 @@ export function SearchBar({
 		onChange,
 		debounce,
 		type: "string",
+		resetKeys,
 	});
 
 	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

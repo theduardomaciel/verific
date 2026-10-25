@@ -25,15 +25,6 @@ export async function insertInChunks<T extends PgTable>(
 	}
 }
 
-export function slugify(text: string, separator = "-") {
-	return text
-		.normalize("NFD")
-		.replace(/[̀-ͯ]/g, "")
-		.toLowerCase()
-		.replace(/[^a-z0-9]+/g, separator)
-		.replace(new RegExp(`^\\${separator}+|\\${separator}+$`, "g"), "");
-}
-
 export function addDays(date: Date, days: number) {
 	return new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
 }

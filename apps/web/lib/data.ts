@@ -8,6 +8,7 @@ import {
 	projectActivitiesCacheTag,
 	projectCacheTag,
 	projectFormCacheTag,
+	projectGamificationCacheTag,
 	projectProfilesCacheTag,
 	projectUrlCacheTag,
 } from "@verific/api";
@@ -54,13 +55,27 @@ export async function getProject(projectUrl: string) {
 		cacheLife("static");
 		logCacheMiss("getProject", projectUrl);
 		return result;
-	} catch {
+	} catch (error) {
+		// Só o NOT_FOUND do procedimento é um 404 real. Um timeout do Neon,
+		// um cold start ou um bug viram erro na requisição — cachear `null`
+		// aqui prenderia um evento válido no 404 por horas.
+		if (!isNotFoundError(error)) throw error;
+
 		// Slug inexistente: `null` barato, mas com vida curta — uma varredura
 		// de bots não pode prender o 404 depois que o evento for criado.
 		cacheLife({ stale: 300, revalidate: 14400, expire: 28800 });
 		logCacheMiss("getProject:null", projectUrl);
 		return null;
 	}
+}
+
+/** `TRPCError` com `code: "NOT_FOUND"`, sem depender do runtime do tRPC. */
+function isNotFoundError(error: unknown): boolean {
+	return (
+		typeof error === "object" &&
+		error !== null &&
+		(error as { code?: unknown }).code === "NOT_FOUND"
+	);
 }
 
 /**
@@ -265,4 +280,55 @@ export async function getCachedProfileLayout(projectUrl: string) {
 	logCacheMiss("getCachedProfileLayout", projectUrl);
 
 	return publicClient.getProfileLayout({ projectUrl });
+}
+
+/**
+ * Ranking público do evento.
+ *
+ * Só deve ser chamado quando `ranking.isPublic` é verdadeiro: o caller de
+ * servidor não tem sessão, e o procedimento responde NOT_FOUND para
+ * ranking privado. O perfil `static` mantém a leitura fora do banco na
+ * maior parte das visitas (o ranking é informação não crítica) e as
+ * mutations de gamificação invalidam a tag — a rede de segurança é a
+ * regeneração diária.
+ */
+export async function getCachedEventRanking(projectUrl: string) {
+	"use cache";
+	cacheTag(projectUrlCacheTag(projectUrl));
+
+	const result = await getProject(projectUrl);
+	if (!result?.project) {
+		// Deixa o procedimento lançar NOT_FOUND (a página converte em 404 e o
+		// erro não é cacheado), como em `getProfilePageData`.
+		return publicClient.getEventRanking({ projectUrl });
+	}
+
+	cacheTag(projectGamificationCacheTag(result.project.id));
+	cacheLife("static");
+	logCacheMiss("getCachedEventRanking", projectUrl);
+
+	return publicClient.getEventRanking({ projectUrl });
+}
+
+/** Pontos, posição e adesivos do perfil (cache por evento). */
+export async function getCachedParticipantGamification(
+	projectUrl: string,
+	shortId: string,
+) {
+	"use cache";
+	cacheTag(projectUrlCacheTag(projectUrl));
+
+	const result = await getProject(projectUrl);
+	if (!result?.project) {
+		return publicClient.getParticipantGamification({ projectUrl, shortId });
+	}
+
+	cacheTag(projectGamificationCacheTag(result.project.id));
+	cacheLife("static");
+	logCacheMiss(
+		"getCachedParticipantGamification",
+		`${projectUrl}/${shortId}`,
+	);
+
+	return publicClient.getParticipantGamification({ projectUrl, shortId });
 }

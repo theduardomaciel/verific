@@ -1,5 +1,11 @@
 import { relations } from "drizzle-orm";
-import { pgTable, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import {
+	pgTable,
+	timestamp,
+	uniqueIndex,
+	uuid,
+	index,
+} from "drizzle-orm/pg-core";
 
 import { activity } from "./activity";
 
@@ -29,6 +35,8 @@ export const activityConflict = pgTable(
 			table.blockingActivityId,
 			table.blockedActivityId,
 		),
+		index("activity_conflicts_blocking_idx").on(table.blockingActivityId),
+		index("activity_conflicts_blocked_idx").on(table.blockedActivityId),
 	],
 );
 

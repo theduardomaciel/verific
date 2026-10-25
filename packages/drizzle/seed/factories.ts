@@ -1,6 +1,7 @@
 import { activityAudiences } from "../enum/audience";
 import { activityCategories } from "../enum/category";
-import { SEED_EMAIL_DOMAIN, SEED_URL_PREFIX, slugify } from "./utils";
+import { slugify } from "../slug";
+import { SEED_EMAIL_DOMAIN, SEED_URL_PREFIX } from "./utils";
 
 import type * as schema from "../schema";
 import type { Faker } from "@faker-js/faker";
