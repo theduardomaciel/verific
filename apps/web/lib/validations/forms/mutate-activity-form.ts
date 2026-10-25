@@ -10,6 +10,8 @@ const toMinutes = (time: string) => {
 };
 
 export const activitySessionFormSchema = z.object({
+	/** Id de uma sessão já salva (ausente em sessões novas). */
+	id: z.uuid().optional(),
 	date: z.coerce.date({
 		error: "É necessário inserir a data da sessão",
 	}),

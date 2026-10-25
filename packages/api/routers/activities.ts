@@ -54,6 +54,7 @@ import {
 	requireParticipantsInProject,
 	requireProjectAccess,
 } from "../lib/project-access";
+import { planSessionDiff } from "../lib/session-diff";
 import {
 	loadActivityAudience,
 	loadNotificationRecipients,
@@ -98,6 +99,8 @@ import { activityAudiences } from "@verific/drizzle/enum/audience";
 import { activityCategories } from "@verific/drizzle/enum/category";
 
 const activitySessionSchema = z.object({
+	/** Id de uma sessão já existente (omisso quando é nova). */
+	id: z.uuid().optional(),
 	startsAt: z.coerce.date(),
 	endsAt: z.coerce.date(),
 	address: z.string().optional(),
@@ -1289,6 +1292,7 @@ export const activitiesRouter = createTRPCRouter({
 				with: {
 					sessions: {
 						columns: {
+							id: true,
 							startsAt: true,
 							endsAt: true,
 							address: true,
@@ -1332,19 +1336,50 @@ export const activitiesRouter = createTRPCRouter({
 					})
 					.where(eq(activity.id, activityId));
 
-				// Replace sessions (attendance rows cascade-delete with them)
+				// Atualiza as sessões por id. Recriar a lista apagava as
+				// presenças em cascata e deixava os pontos órfãos.
 				if (sessions !== undefined) {
-					await tx
-						.delete(activitySession)
+					const currentSessions = await tx
+						.select({
+							id: activitySession.id,
+							startsAt: activitySession.startsAt,
+							endsAt: activitySession.endsAt,
+							address: activitySession.address,
+						})
+						.from(activitySession)
 						.where(eq(activitySession.activityId, activityId));
-					await tx.insert(activitySession).values(
-						sessions.map((session) => ({
-							activityId,
-							startsAt: session.startsAt,
-							endsAt: session.endsAt,
-							address: session.address,
-						})),
-					);
+
+					const plan = planSessionDiff(currentSessions, sessions);
+
+					for (const session of plan.toUpdate) {
+						await tx
+							.update(activitySession)
+							.set({
+								startsAt: session.startsAt,
+								endsAt: session.endsAt,
+								address: session.address,
+							})
+							.where(eq(activitySession.id, session.id));
+					}
+
+					if (plan.toDeleteIds.length > 0) {
+						await tx
+							.delete(activitySession)
+							.where(
+								inArray(activitySession.id, plan.toDeleteIds),
+							);
+					}
+
+					if (plan.toInsert.length > 0) {
+						await tx.insert(activitySession).values(
+							plan.toInsert.map((session) => ({
+								activityId,
+								startsAt: session.startsAt,
+								endsAt: session.endsAt,
+								address: session.address,
+							})),
+						);
+					}
 				}
 
 				// Update speakers

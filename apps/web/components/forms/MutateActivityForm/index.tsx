@@ -80,6 +80,7 @@ export default function MutateActivityForm({
 			tagIds: activity?.tags?.map((tag) => tag.id) || [],
 			sessions: activity?.sessions?.length
 				? activity.sessions.map((session) => ({
+						id: session.id,
 						date: new Date(session.startsAt),
 						timeFrom: dateToTimeString(session.startsAt),
 						timeTo: dateToTimeString(session.endsAt),
@@ -143,6 +144,7 @@ export default function MutateActivityForm({
 			const endsAt = new Date(session.date);
 			setTimeOnDate(endsAt, session.timeTo);
 			return {
+				id: session.id,
 				startsAt,
 				endsAt,
 				address: session.address || undefined,
