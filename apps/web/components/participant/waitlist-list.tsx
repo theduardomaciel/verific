@@ -3,15 +3,29 @@
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
+import type { RouterOutput } from "@verific/api";
+
 import { Button } from "@/components/ui/button";
 
-import { trpc } from "@/lib/trpc/react";
 import { cn } from "@/lib/utils";
 
 import { WaitlistStatusBadge } from "./waitlist-status-badge";
 
+type WaitlistData = NonNullable<RouterOutput["getActivityWaitlist"]>;
+
 interface WaitlistListProps {
 	activityId: string;
+	waitlistData: WaitlistData;
+	promote: (args: {
+		activityId: string;
+		participantIds: string[];
+	}) => Promise<unknown>;
+	remove: (args: {
+		activityId: string;
+		participantId: string;
+	}) => Promise<unknown>;
+	isPromoting: boolean;
+	isRemoving: boolean;
 }
 
 // Position | Participant | Status | Joined | Actions
@@ -21,47 +35,15 @@ interface WaitlistListProps {
 const ROW_GRID =
 	"lg:grid lg:grid-cols-[2.5rem_minmax(0,1fr)_7rem_9rem_15rem] lg:items-center lg:gap-3";
 
-export function WaitlistList({ activityId }: WaitlistListProps) {
-	const { data, isPending, isError, refetch } =
-		trpc.getActivityWaitlist.useQuery(
-			{ activityId },
-			{
-				staleTime: 30 * 1000,
-				refetchOnWindowFocus: true,
-			},
-		);
-
-	const promoteMutation = trpc.promoteFromWaitlist.useMutation({
-		onSuccess: () => {
-			refetch();
-		},
-	});
-
-	const removeMutation = trpc.removeFromWaitlist.useMutation({
-		onSuccess: () => {
-			refetch();
-		},
-	});
-
-	if (isPending) {
-		return (
-			<div className="flex w-full flex-col gap-4">
-				<div className="bg-muted h-8 w-3/4 animate-pulse rounded" />
-				<div className="bg-muted h-8 w-3/4 animate-pulse rounded" />
-				<div className="bg-muted h-8 w-3/4 animate-pulse rounded" />
-			</div>
-		);
-	}
-
-	if (isError || !data) {
-		return (
-			<div className="text-muted-foreground py-8 text-center">
-				Não foi possível carregar a fila de espera.
-			</div>
-		);
-	}
-
-	const { participantsLimit, enrolled, freeSeats, entries } = data;
+export function WaitlistList({
+	activityId,
+	waitlistData,
+	promote,
+	remove,
+	isPromoting,
+	isRemoving,
+}: WaitlistListProps) {
+	const { participantsLimit, enrolled, freeSeats, entries } = waitlistData;
 
 	const waitingEntries = entries.filter((e) => e.status === "waiting");
 	const offeredEntries = entries.filter((e) => e.status === "offered");
@@ -227,16 +209,14 @@ export function WaitlistList({ activityId }: WaitlistListProps) {
 												variant="default"
 												className="max-lg:flex-1"
 												onClick={() =>
-													promoteMutation.mutate({
+													promote({
 														activityId,
 														participantIds: [
 															entry.participantId,
 														],
 													})
 												}
-												disabled={
-													promoteMutation.isPending
-												}
+												disabled={isPromoting}
 											>
 												Promover
 											</Button>
@@ -247,13 +227,13 @@ export function WaitlistList({ activityId }: WaitlistListProps) {
 											variant="outline"
 											className="max-lg:flex-1"
 											onClick={() =>
-												removeMutation.mutate({
+												remove({
 													activityId,
 													participantId:
 														entry.participantId,
 												})
 											}
-											disabled={removeMutation.isPending}
+											disabled={isRemoving}
 										>
 											Remover oferta
 										</Button>
@@ -264,13 +244,13 @@ export function WaitlistList({ activityId }: WaitlistListProps) {
 											variant="destructive"
 											className="max-lg:flex-1"
 											onClick={() =>
-												removeMutation.mutate({
+												remove({
 													activityId,
 													participantId:
 														entry.participantId,
 												})
 											}
-											disabled={removeMutation.isPending}
+											disabled={isRemoving}
 										>
 											Remover da fila
 										</Button>

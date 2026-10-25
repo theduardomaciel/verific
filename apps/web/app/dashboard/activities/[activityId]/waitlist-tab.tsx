@@ -2,7 +2,7 @@
 
 import { WaitlistList } from "@/components/participant/waitlist-list";
 
-import { trpc } from "@/lib/trpc/react";
+import { useActivityWaitlist } from "@/hooks/use-activity-waitlist";
 
 interface WaitlistTabProps {
 	activityId: string;
@@ -13,14 +13,17 @@ export function WaitlistTab({
 	activityId,
 	participantsLimit,
 }: WaitlistTabProps) {
-	const { data: waitlistData, isPending } = trpc.getActivityWaitlist.useQuery(
-		{ activityId },
-		{
-			enabled: !!participantsLimit,
-			staleTime: 30 * 1000,
-			refetchOnWindowFocus: true,
-		},
-	);
+	const {
+		data: waitlistData,
+		isPending,
+		promote,
+		remove,
+		isPromoting,
+		isRemoving,
+	} = useActivityWaitlist({
+		activityId,
+		participantsLimit,
+	});
 
 	if (isPending) {
 		return (
@@ -32,5 +35,14 @@ export function WaitlistTab({
 		);
 	}
 
-	return <WaitlistList activityId={activityId} />;
+	return (
+		<WaitlistList
+			activityId={activityId}
+			waitlistData={waitlistData!}
+			promote={promote}
+			remove={remove}
+			isPromoting={isPromoting}
+			isRemoving={isRemoving}
+		/>
+	);
 }
