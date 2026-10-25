@@ -25,6 +25,7 @@ import {
 	notifyActivityEnrollmentConfirmed,
 	notifyActivityWaitlisted,
 	notifyActivityWaitlistPromoted,
+	notifyActivityWaitlistRemoved,
 } from "../notifications";
 import { answerValueSchema, type WaitlistErrorCode } from "../schemas";
 import {
@@ -589,7 +590,6 @@ export const waitlistRouter = createTRPCRouter({
 			return { success: true };
 		}),
 
-	/** Tira alguém da fila; a vaga oferecida, se houver, vai ao próximo. */
 	removeFromWaitlist: protectedProcedure
 		.input(
 			z.object({
@@ -600,6 +600,7 @@ export const waitlistRouter = createTRPCRouter({
 		.mutation(async ({ input, ctx }) => {
 			const { activityId, participantId } = input;
 			await assertCanManageActivity(activityId, ctx.session.user.id);
+			const found = await findActivity(activityId);
 
 			await db.transaction(async (tx) => {
 				const locked = await lockActivity(tx, activityId);
@@ -615,6 +616,18 @@ export const waitlistRouter = createTRPCRouter({
 				}
 				await settleActivity(tx, locked);
 			});
+
+			const contacts = await loadNotificationRecipients([participantId]);
+			const to = contacts.get(participantId);
+			if (to) {
+				void notifyActivityWaitlistRemoved({
+					eventId: found.projectId,
+					activityId,
+					participantId,
+					to,
+					removedAt: new Date(),
+				});
+			}
 
 			return { success: true };
 		}),

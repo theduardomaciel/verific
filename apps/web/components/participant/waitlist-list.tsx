@@ -7,6 +7,12 @@ import type { RouterOutput } from "@verific/api";
 
 import { Button } from "@/components/ui/button";
 
+import {
+	PromoteFromWaitlistDialog,
+	RemoveFromWaitlistDialog,
+	RemoveOfferDialog,
+} from "@/components/dialogs/waitlist-action-dialog";
+
 import { cn } from "@/lib/utils";
 
 import { WaitlistStatusBadge } from "./waitlist-status-badge";
@@ -19,11 +25,11 @@ interface WaitlistListProps {
 	promote: (args: {
 		activityId: string;
 		participantIds: string[];
-	}) => Promise<unknown>;
+	}) => Promise<void>;
 	remove: (args: {
 		activityId: string;
 		participantId: string;
-	}) => Promise<unknown>;
+	}) => Promise<void>;
 	isPromoting: boolean;
 	isRemoving: boolean;
 }
@@ -204,56 +210,60 @@ export function WaitlistList({
 								<div className="flex flex-wrap items-center gap-2 lg:justify-end">
 									{entry.status === "waiting" &&
 										canPromote && (
-											<Button
-												size="sm"
-												variant="default"
-												className="max-lg:flex-1"
-												onClick={() =>
-													promote({
-														activityId,
-														participantIds: [
-															entry.participantId,
-														],
-													})
+											<PromoteFromWaitlistDialog
+												activityId={activityId}
+												participantId={
+													entry.participantId
 												}
-												disabled={isPromoting}
+												participantName={
+													entry.name ?? "Participante"
+												}
 											>
-												Promover
-											</Button>
+												<Button
+													size="sm"
+													variant="default"
+													className="max-lg:flex-1"
+													disabled={isPromoting}
+												>
+													Promover
+												</Button>
+											</PromoteFromWaitlistDialog>
 										)}
 									{entry.status === "offered" && (
-										<Button
-											size="sm"
-											variant="outline"
-											className="max-lg:flex-1"
-											onClick={() =>
-												remove({
-													activityId,
-													participantId:
-														entry.participantId,
-												})
+										<RemoveOfferDialog
+											activityId={activityId}
+											participantId={entry.participantId}
+											participantName={
+												entry.name ?? "Participante"
 											}
-											disabled={isRemoving}
 										>
-											Remover oferta
-										</Button>
+											<Button
+												size="sm"
+												variant="outline"
+												className="max-lg:flex-1"
+												disabled={isRemoving}
+											>
+												Remover oferta
+											</Button>
+										</RemoveOfferDialog>
 									)}
 									{entry.status === "waiting" && (
-										<Button
-											size="sm"
-											variant="destructive"
-											className="max-lg:flex-1"
-											onClick={() =>
-												remove({
-													activityId,
-													participantId:
-														entry.participantId,
-												})
+										<RemoveFromWaitlistDialog
+											activityId={activityId}
+											participantId={entry.participantId}
+											participantName={
+												entry.name ?? "Participante"
 											}
-											disabled={isRemoving}
 										>
-											Remover da fila
-										</Button>
+											<Button
+												size="sm"
+												variant="destructive"
+												className="max-lg:flex-1"
+												disabled={isRemoving}
+											>
+												Remover da fila
+											</Button>
+										</RemoveFromWaitlistDialog>
 									)}
 								</div>
 							</li>

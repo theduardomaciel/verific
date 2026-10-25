@@ -104,6 +104,7 @@ export {
 	notifyActivityWaitlisted,
 	notifyActivityWaitlistOffered,
 	notifyActivityWaitlistPromoted,
+	notifyActivityWaitlistRemoved,
 	notifyEventRegistrationRemoved,
 	notifyProjectContributorAdded,
 	notifyProjectContributorRemoved,

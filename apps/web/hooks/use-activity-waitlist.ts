@@ -46,8 +46,10 @@ export function useActivityWaitlist({
 
 	return {
 		...query,
-		promote: promoteMutation.mutateAsync,
-		remove: removeMutation.mutateAsync,
+		promote: (args: { activityId: string; participantIds: string[] }) =>
+			promoteMutation.mutateAsync(args) as unknown as Promise<void>,
+		remove: (args: { activityId: string; participantId: string }) =>
+			removeMutation.mutateAsync(args) as unknown as Promise<void>,
 		isPromoting: promoteMutation.isPending,
 		isRemoving: removeMutation.isPending,
 	};
