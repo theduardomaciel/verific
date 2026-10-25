@@ -100,7 +100,7 @@ function dispatchAfterResponse(inputs: SendNotificationInput[]): Promise<void> {
  */
 function makeInput(args: {
 	type: SendNotificationInput["type"];
-	eventId: string;
+	eventId: string | null;
 	to: string;
 	entityRefs: EntityRefs;
 }): SendNotificationInput | null {
@@ -498,7 +498,8 @@ export function notifyProjectDeleted(args: {
 		if (!to) return [];
 		const input = makeInput({
 			type: "project_deleted",
-			eventId: args.projectId,
+			// O evento já foi apagado: a linha não pode referenciá-lo
+			eventId: null,
 			to,
 			entityRefs: {
 				projectId: args.projectId,

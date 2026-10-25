@@ -24,6 +24,8 @@ vi.mock("@verific/drizzle", () => ({
 		},
 		delete: dbDelete,
 		select: dbSelect,
+		transaction: (fn: (tx: { delete: typeof dbDelete }) => unknown) =>
+			fn({ delete: dbDelete }),
 	},
 }));
 vi.mock("@verific/env", () => ({ env: {} }));
@@ -76,7 +78,8 @@ describe("deleteProject access control", () => {
 		await expect(caller.deleteProject({ id: PROJECT_ID })).resolves.toEqual(
 			{ success: true },
 		);
-		expect(dbDelete).toHaveBeenCalledTimes(1);
+		// As atividades saem antes: activities.project_id é RESTRICT
+		expect(dbDelete).toHaveBeenCalledTimes(2);
 	});
 
 	it("rejects moderators: deletion is owner-only", async () => {

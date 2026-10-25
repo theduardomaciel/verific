@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { db } from "@verific/drizzle";
 import { and, eq, like, or } from "@verific/drizzle/orm";
 import {
+	activity,
 	participant,
 	project,
 	projectModerator,
@@ -324,7 +325,13 @@ export const projectsRouter = createTRPCRouter({
 				.where(eq(user.id, ctx.session.user.id));
 			const deletedByName = ownerRows[0]?.name?.trim() || undefined;
 
-			await db.delete(project).where(eq(project.id, input.id));
+			// activities.project_id é RESTRICT
+			await db.transaction(async (tx) => {
+				await tx
+					.delete(activity)
+					.where(eq(activity.projectId, input.id));
+				await tx.delete(project).where(eq(project.id, input.id));
+			});
 
 			void notifyProjectDeleted({
 				projectId: input.id,

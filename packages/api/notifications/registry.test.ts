@@ -321,11 +321,14 @@ describe("validate", () => {
 		]);
 
 		await expect(
-			notificationRegistry.event_registration_removed.buildProps({
-				registrationId: "p1",
-				projectId: "event-1",
-				participantName: "Ana",
-			}),
+			notificationRegistry.event_registration_removed.buildProps(
+				{
+					registrationId: "p1",
+					projectId: "event-1",
+					participantName: "Ana",
+				},
+				undefined,
+			),
 		).resolves.toMatchObject({
 			participantName: "Ana",
 			eventName: "SECOMP",
