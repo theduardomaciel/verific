@@ -49,6 +49,8 @@ import { listToString } from "@/lib/i18n";
 // API
 import { trpc } from "@/lib/trpc/react";
 
+import { WaitlistTab } from "./waitlist-tab";
+
 export function ActivityContent({ activityId }: { activityId: string }) {
 	const { projectId, isOwner } = useDashboard();
 	const parsedParams = useParsedSearchParams((raw) =>
@@ -243,17 +245,18 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 						Participantes
 					</TabsTrigger>
 					<TabsTrigger value="monitors">Monitores</TabsTrigger>
+					<TabsTrigger value="waitlist">Fila de espera</TabsTrigger>
 				</TabsList>
 				<TabsContent
 					value="participants"
 					forceMount
-					className="w-full max-md:data-[state=inactive]:hidden md:w-3/5 md:flex-none"
+					className="w-full min-w-0 max-md:data-[state=inactive]:hidden md:w-3/5 md:flex-none"
 				>
-					<div className="flex w-full flex-col items-center justify-start gap-4">
+					<div className="flex w-full min-w-0 flex-col items-center justify-start gap-4">
 						<ParticipantsList.Holder>
-							<ParticipantsList.Title className="flex w-full flex-row items-center justify-between">
+							<ParticipantsList.Title className="flex w-full min-w-0 flex-row items-center justify-between">
 								<p>Participantes</p>
-								<span className="text-muted-foreground text-sm font-medium">
+								<span className="text-muted-foreground truncate text-sm font-medium">
 									{participantsAmount &&
 									activity.participantsLimit &&
 									activity.participantsLimit > 0
@@ -268,13 +271,13 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 											: null}
 								</span>
 							</ParticipantsList.Title>
-							<div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
+							<div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
 								<SearchBar
 									prefix={"search"}
 									placeholder="Pesquisar participantes"
-									className="w-full pl-10 sm:flex-1"
+									className="w-full min-w-0 pl-10 sm:flex-1"
 								/>
-								<div className="flex w-full items-center gap-3 sm:w-auto">
+								<div className="flex w-full min-w-0 items-center gap-3 sm:w-auto">
 									<SortBy
 										items={[
 											{
@@ -325,7 +328,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 				<TabsContent
 					value="monitors"
 					forceMount
-					className="w-full max-md:data-[state=inactive]:hidden md:w-2/5 md:flex-none"
+					className="w-full min-w-0 max-md:data-[state=inactive]:hidden md:w-2/5 md:flex-none"
 				>
 					<ParticipantsList.Holder>
 						<ParticipantsList.Title>
@@ -344,6 +347,18 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 							}}
 						/>
 					</ParticipantsList.Holder>
+				</TabsContent>
+				<TabsContent
+					value="waitlist"
+					forceMount
+					className="w-full min-w-0 max-md:data-[state=inactive]:hidden md:w-full md:flex-none"
+				>
+					<div className="flex w-full min-w-0 flex-col items-center justify-start gap-4">
+						<WaitlistTab
+							activityId={activityId}
+							participantsLimit={activity.participantsLimit}
+						/>
+					</div>
 				</TabsContent>
 			</Tabs>
 		</main>

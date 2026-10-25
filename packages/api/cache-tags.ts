@@ -60,6 +60,11 @@ export function activityCacheTag(activityId: string) {
 	return `activity:${activityId}`;
 }
 
+/** Disponibilidade pública de vagas (`getActivityAvailability`). */
+export function activityAvailabilityCacheTag(activityId: string) {
+	return `activity-availability:${activityId}`;
+}
+
 /** Perfil público de um participante (`getProfilePageData`). */
 export function participantProfileCacheTag(projectId: string, shortId: string) {
 	return `participant-profile:${projectId}:${shortId}`;
