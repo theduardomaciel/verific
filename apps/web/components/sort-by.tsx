@@ -32,6 +32,7 @@ export function SortBy({ items, value, onChange }: SortByProps) {
 		onChange,
 		type: "string",
 		defaultValue: items[0]?.value || "",
+		resetKeys: [{ key: "page", defaultValue: "1" }],
 	});
 
 	const onValueChange = useCallback(

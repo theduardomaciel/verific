@@ -88,6 +88,7 @@ export function Filter({
 		value,
 		onChange,
 		type: "array",
+		resetKeys: [{ key: "page", defaultValue: "1" }],
 	});
 
 	const safeFilters = (filters ?? []) as string[];
