@@ -262,11 +262,17 @@ export function parseEventTheme(input: {
 }): EventTheme {
 	const parsed = eventThemeSchema.safeParse(input.theme ?? {});
 	const base = parsed.success ? parsed.data : DEFAULT_THEME;
-	const hex = (v: string | null | undefined) =>
-		v && /^#[0-9A-Fa-f]{6}$/.test(v) ? v : undefined;
+	// As colunas legadas só valem para o tema que não salvou a cor
+	const stored = parsed.success ? (input.theme as object | undefined) : {};
+	const legacy = (key: "primary" | "secondary", v?: string | null) =>
+		stored && key in stored
+			? base[key]
+			: v && /^#[0-9A-Fa-f]{6}$/.test(v)
+				? v
+				: base[key];
 	return {
 		...base,
-		primary: hex(input.primaryColor) ?? base.primary,
-		secondary: hex(input.secondaryColor) ?? base.secondary,
+		primary: legacy("primary", input.primaryColor),
+		secondary: legacy("secondary", input.secondaryColor),
 	};
 }

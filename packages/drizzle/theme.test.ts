@@ -79,6 +79,18 @@ describe("seleções de fonte (três papéis + escala)", () => {
 		expect(theme.fonts.body.family).toBe("Inter");
 	});
 
+	it("usa as cores legadas só quando o tema não tem cor", () => {
+		const legacy = { primaryColor: "#111111", secondaryColor: "#222222" };
+
+		expect(
+			parseEventTheme({ ...legacy, theme: { primary: "#123456" } }),
+		).toMatchObject({ primary: "#123456", secondary: "#222222" });
+		expect(parseEventTheme({ ...legacy, theme: null })).toMatchObject({
+			primary: "#111111",
+			secondary: "#222222",
+		});
+	});
+
 	it("rejeita escala fora do limite do papel", () => {
 		expect(
 			eventThemeSchema.safeParse({
