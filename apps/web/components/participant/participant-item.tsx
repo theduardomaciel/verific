@@ -164,7 +164,9 @@ export const ParticipantListItem = {
 								</div>
 							)}
 						</div>
-						{participant.id === currentParticipantId ? (
+						{participant.role ===
+						"monitor" ? null : participant.id ===
+						  currentParticipantId ? (
 							<ParticipantQuitButton
 								activityId={participant.activityId}
 								userId={participant.userId}
@@ -178,7 +180,7 @@ export const ParticipantListItem = {
 								projectUrl={url}
 								userEmail={participant.user.email}
 							>
-								<Button variant={"ghost"} size={"icon"}>
+								<Button variant="ghost" size="icon">
 									{participant.role === "participant" ? (
 										<Ban className="text-foreground h-4 w-4" />
 									) : (
