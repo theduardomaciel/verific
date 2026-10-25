@@ -54,7 +54,7 @@ function List({
 	hasActivity = false,
 	participants,
 	sessions,
-	projectUrl,
+	activityId,
 	currentParticipantId,
 	className,
 	emptyMessage,
@@ -70,6 +70,8 @@ function List({
 			/>
 		);
 	}
+	// URL para o detalhe do participante no contexto da atividade
+	const participantUrl = `/dashboard/activities/${activityId}/participants`;
 	return (
 		<ul
 			className={cn(
@@ -83,7 +85,7 @@ function List({
 					participant={participant}
 					sessions={sessions}
 					showJoinedAt={hasActivity}
-					url={projectUrl}
+					url={participantUrl}
 					currentParticipantId={currentParticipantId}
 				/>
 			))}
