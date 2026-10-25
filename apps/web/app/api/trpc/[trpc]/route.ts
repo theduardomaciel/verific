@@ -34,9 +34,17 @@ export const OPTIONS = () => {
  * é o teto de defasagem após uma mutation; o `stale-while-revalidate`
  * longo cobre picos (a borda serve o valor antigo uma vez e regenera em
  * fundo) — exatamente o comportamento desejado numa enchente de acessos.
+ *
+ * O `Cache-Control` do NAVEGADOR é separado (`max-age=0`): sem ele o
+ * Chromium aplica cache heurístico e devolve a resposta anterior por até
+ * 1h (vagas e dashboard desatualizados). A borda lê os cabeçalhos
+ * `CDN-Cache-Control`/`Vercel-CDN-Cache-Control`, que continuam com a
+ * janela longa.
  */
-const PUBLIC_QUERY_CACHE_CONTROL =
+const PUBLIC_QUERY_CDN_CACHE_CONTROL =
 	"public, s-maxage=60, stale-while-revalidate=3600";
+const PUBLIC_QUERY_BROWSER_CACHE_CONTROL = "public, max-age=0, must-revalidate";
+const PRIVATE_QUERY_CACHE_CONTROL = "private, no-store";
 
 function isPublicCacheableQuery(
 	info: { type: string; calls: readonly { path: string }[] } | undefined,
@@ -99,18 +107,34 @@ const handler = async (req: NextRequest) => {
 			if (req.method !== "GET") {
 				return {
 					headers: {
-						"Cache-Control": "private, no-store",
+						"Cache-Control": PRIVATE_QUERY_CACHE_CONTROL,
 					},
 				};
 			}
 			// Só GET de query bem-sucedida e 100% de caminhos públicos: nada
 			// de cachear erro ou batch misto com dado de sessão.
-			if (errors.length > 0) return {};
-			if (!isPublicCacheableQuery(info)) return {};
+			if (errors.length > 0) {
+				return {
+					headers: {
+						"Cache-Control": PRIVATE_QUERY_CACHE_CONTROL,
+					},
+				};
+			}
+			if (!isPublicCacheableQuery(info)) {
+				// Queries de sessão (ex.: `getActivity` com e-mail de
+				// inscritos) também não podem ficar no cache do navegador.
+				return {
+					headers: {
+						"Cache-Control": PRIVATE_QUERY_CACHE_CONTROL,
+					},
+				};
+			}
 
 			return {
 				headers: {
-					"Cache-Control": PUBLIC_QUERY_CACHE_CONTROL,
+					"Cache-Control": PUBLIC_QUERY_BROWSER_CACHE_CONTROL,
+					"CDN-Cache-Control": PUBLIC_QUERY_CDN_CACHE_CONTROL,
+					"Vercel-CDN-Cache-Control": PUBLIC_QUERY_CDN_CACHE_CONTROL,
 				},
 			};
 		},
