@@ -124,9 +124,12 @@ export function ProfileGamification({
 							{earned} de {stickers.length} adesivos
 						</span>
 					</div>
-					<ul className="flex flex-row flex-wrap items-start gap-4">
+					<ul className="grid grid-cols-[repeat(auto-fill,minmax(6rem,1fr))] items-start gap-4">
 						{stickers.map((sticker) => (
-							<li key={sticker.key}>
+							<li
+								key={sticker.key}
+								className="flex items-center justify-center"
+							>
 								<StickerSeal
 									sticker={sticker}
 									className={
