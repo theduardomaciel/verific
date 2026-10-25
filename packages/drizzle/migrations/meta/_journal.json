@@ -71,6 +71,20 @@
 			"when": 1792770858998,
 			"tag": "0009_calm_doctor_faustus",
 			"breakpoints": true
+		},
+		{
+			"idx": 10,
+			"version": "7",
+			"when": 1792889729528,
+			"tag": "0010_robust_the_fallen",
+			"breakpoints": true
+		},
+		{
+			"idx": 11,
+			"version": "7",
+			"when": 1792890044060,
+			"tag": "0011_modern_typhoid_mary",
+			"breakpoints": true
 		}
 	]
 }
