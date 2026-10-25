@@ -56,6 +56,11 @@ export function SettingsFormCard<
 		defaultValues: initialState as any,
 	});
 
+	// Subscribe to all form changes to trigger re-renders on field updates
+	// This ensures renderField is called with updated values when user interacts with pickers
+	// eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: subscribe to all form changes
+	form.watch();
+
 	const { isSubmitting, isDirty } = form.formState;
 
 	return (

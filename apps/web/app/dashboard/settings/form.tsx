@@ -241,8 +241,12 @@ export function ProjectSettingsGeneral({ project }: Props) {
 				renderField={(form) => (
 					<DateRangePicker
 						value={{
-							from: form.watch("startDate"),
-							to: form.watch("endDate"),
+							from: form.watch("startDate")
+								? new Date(form.watch("startDate"))
+								: undefined,
+							to: form.watch("endDate")
+								? new Date(form.watch("endDate"))
+								: undefined,
 						}}
 						onChange={(value) => {
 							if (value?.from)

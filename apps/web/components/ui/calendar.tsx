@@ -2,6 +2,7 @@
 
 import * as React from "react";
 
+import { ptBR } from "date-fns/locale";
 import {
 	ChevronDownIcon,
 	ChevronLeftIcon,
@@ -23,9 +24,11 @@ function Calendar({
 	buttonVariant = "ghost",
 	formatters,
 	components,
+	locale = ptBR,
 	...props
 }: React.ComponentProps<typeof DayPicker> & {
 	buttonVariant?: React.ComponentProps<typeof Button>["variant"];
+	locale?: typeof ptBR;
 }) {
 	const defaultClassNames = getDefaultClassNames();
 
@@ -39,9 +42,10 @@ function Calendar({
 				className,
 			)}
 			captionLayout={captionLayout}
+			locale={locale}
 			formatters={{
 				formatMonthDropdown: (date) =>
-					date.toLocaleString("default", { month: "short" }),
+					date.toLocaleString(locale.code, { month: "short" }),
 				...formatters,
 			}}
 			classNames={{

@@ -320,6 +320,9 @@ importers:
       culori:
         specifier: ^4.0.2
         version: 4.0.2
+      date-fns:
+        specifier: 4.4.0
+        version: 4.4.0
       embla-carousel-autoplay:
         specifier: ^8.6.0
         version: 8.6.0(embla-carousel@8.6.0)
