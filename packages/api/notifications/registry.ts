@@ -384,6 +384,34 @@ export async function loadSharedActivity(
 	return shared;
 }
 
+async function loadSharedProject(
+	projectId: string,
+	ctx?: BuildContext,
+): Promise<SharedProject> {
+	const cached = ctx?.projects.get(projectId);
+	if (cached) return cached;
+	const rows = await db
+		.select({
+			id: project.id,
+			name: project.name,
+			url: project.url,
+			address: project.address,
+			startDate: project.startDate,
+			endDate: project.endDate,
+			largeLogoDarkUrl: project.largeLogoDarkUrl,
+			ownerId: project.ownerId,
+		})
+		.from(project)
+		.where(eq(project.id, projectId));
+	const row = rows[0];
+	if (!row) {
+		throw new Error(`[notifications] project ${projectId} not found.`);
+	}
+	const shared = projectToShared(row);
+	ctx?.projects.set(projectId, shared);
+	return shared;
+}
+
 async function getSharedActivity(
 	activityId: string,
 	ctx?: BuildContext,
@@ -676,7 +704,13 @@ export const notificationRegistry = {
 		defaultEnabled: true,
 		description:
 			"Aviso ao participante quando a organização remove a inscrição dele do evento, com motivo opcional.",
-		entityRefs: ["registrationId", "reason?"],
+		// O participante já foi apagado: o nome vem nos refs
+		entityRefs: [
+			"registrationId",
+			"projectId",
+			"participantName",
+			"reason?",
+		],
 		idempotencyKeyFormat: "event_registration_removed:{registrationId}",
 		buildIdempotencyKey: (refs) =>
 			`event_registration_removed:${requiredString(refs, "registrationId")}`,
@@ -687,24 +721,21 @@ export const notificationRegistry = {
 				.from(participant)
 				.where(eq(participant.id, registrationId));
 			return rows.length > 0
-				? { ok: true }
-				: { ok: false, reason: "entity_gone" };
+				? { ok: false, reason: "state_changed" }
+				: { ok: true };
 		},
 		async buildProps(refs, ctx) {
-			const registrationId = requiredString(refs, "registrationId");
-			const row = await loadParticipantEvent(registrationId, ctx);
-			if (!row) {
-				throw new Error(
-					`[notifications] participant ${registrationId} not found.`,
-				);
-			}
+			const shared = await loadSharedProject(
+				requiredString(refs, "projectId"),
+				ctx,
+			);
 			const reason = optionalString(refs, "reason");
 			return {
-				participantName: row.participantName,
-				eventName: row.project.name,
-				accessUrl: eventUrl(row.project.url),
+				participantName: requiredString(refs, "participantName"),
+				eventName: shared.name,
+				accessUrl: eventUrl(shared.url),
 				...(reason ? { reason } : {}),
-				...logoRef(row.project.largeLogoDarkUrl, row.project.id),
+				...logoRef(shared.largeLogoDarkUrl, shared.id),
 			};
 		},
 		subject: (props) =>
@@ -1092,30 +1123,7 @@ export const notificationRegistry = {
 		},
 		async buildProps(refs, ctx) {
 			const projectId = requiredString(refs, "projectId");
-			let shared = ctx?.projects.get(projectId);
-			if (!shared) {
-				const rows = await db
-					.select({
-						id: project.id,
-						name: project.name,
-						url: project.url,
-						address: project.address,
-						startDate: project.startDate,
-						endDate: project.endDate,
-						largeLogoDarkUrl: project.largeLogoDarkUrl,
-						ownerId: project.ownerId,
-					})
-					.from(project)
-					.where(eq(project.id, projectId));
-				const row = rows[0];
-				if (!row) {
-					throw new Error(
-						`[notifications] project ${projectId} not found.`,
-					);
-				}
-				shared = projectToShared(row);
-				ctx?.projects.set(projectId, shared);
-			}
+			const shared = await loadSharedProject(projectId, ctx);
 			const ownerRows = await db
 				.select({ name: user.name })
 				.from(user)
@@ -1220,30 +1228,7 @@ export const notificationRegistry = {
 			const contributorUserId = requiredString(refs, "contributorUserId");
 			const addedByUserId = optionalString(refs, "addedByUserId");
 
-			let shared = ctx?.projects.get(projectId);
-			if (!shared) {
-				const rows = await db
-					.select({
-						id: project.id,
-						name: project.name,
-						url: project.url,
-						address: project.address,
-						startDate: project.startDate,
-						endDate: project.endDate,
-						largeLogoDarkUrl: project.largeLogoDarkUrl,
-						ownerId: project.ownerId,
-					})
-					.from(project)
-					.where(eq(project.id, projectId));
-				const row = rows[0];
-				if (!row) {
-					throw new Error(
-						`[notifications] project ${projectId} not found.`,
-					);
-				}
-				shared = projectToShared(row);
-				ctx?.projects.set(projectId, shared);
-			}
+			const shared = await loadSharedProject(projectId, ctx);
 
 			const contributorRows = await db
 				.select({ name: user.name })

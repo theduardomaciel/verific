@@ -277,7 +277,8 @@ describe("validate", () => {
 		[...NOTIFICATION_TYPE_KEYS].filter(
 			(type) =>
 				type !== "project_deleted" &&
-				type !== "project_contributor_removed",
+				type !== "project_contributor_removed" &&
+				type !== "event_registration_removed",
 		),
 	)("%s returns entity_gone when nothing is found", async (type) => {
 		queue.length = 0;
@@ -289,6 +290,47 @@ describe("validate", () => {
 				reason: "entity_gone",
 			},
 		);
+	});
+
+	it("sends the registration removal only after the delete", async () => {
+		const removed = notificationRegistry.event_registration_removed;
+
+		queue.push([]);
+		await expect(
+			removed.validate({ registrationId: "p1" }),
+		).resolves.toEqual({ ok: true });
+
+		queue.push([{ id: "p1" }]);
+		await expect(
+			removed.validate({ registrationId: "p1" }),
+		).resolves.toEqual({ ok: false, reason: "state_changed" });
+	});
+
+	it("builds the registration removal from the refs and the event", async () => {
+		queue.push([
+			{
+				id: "event-1",
+				name: "SECOMP",
+				url: "secomp",
+				address: null,
+				startDate: new Date("2026-01-01"),
+				endDate: new Date("2026-01-02"),
+				largeLogoDarkUrl: null,
+				ownerId: "owner-1",
+			},
+		]);
+
+		await expect(
+			notificationRegistry.event_registration_removed.buildProps({
+				registrationId: "p1",
+				projectId: "event-1",
+				participantName: "Ana",
+			}),
+		).resolves.toMatchObject({
+			participantName: "Ana",
+			eventName: "SECOMP",
+			accessUrl: "https://example.com/secomp",
+		});
 	});
 
 	it("returns state_changed when the enrollment is already gone", async () => {

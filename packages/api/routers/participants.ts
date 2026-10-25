@@ -700,6 +700,7 @@ export const participantsRouter = createTRPCRouter({
 			const participantData = await db.query.participant.findFirst({
 				where: eq(participant.id, participantId),
 				with: {
+					user: { columns: { name: true } },
 					project: {
 						with: {
 							moderators: {
@@ -784,6 +785,7 @@ export const participantsRouter = createTRPCRouter({
 				void notifyEventRegistrationRemoved({
 					eventId: participantData.project.id,
 					registrationId: participantId,
+					participantName: participantData.user.name,
 					to: recipientEmail,
 					...(reason ? { reason } : {}),
 				});

@@ -204,6 +204,7 @@ export async function loadEnrolledAudience(
 export function notifyEventRegistrationRemoved(args: {
 	eventId: string;
 	registrationId: string;
+	participantName: string;
 	to: string;
 	reason?: string;
 }): Promise<void> {
@@ -213,6 +214,8 @@ export function notifyEventRegistrationRemoved(args: {
 		to: args.to,
 		entityRefs: {
 			registrationId: args.registrationId,
+			projectId: args.eventId,
+			participantName: args.participantName,
 			...(args.reason ? { reason: args.reason } : {}),
 		},
 	});
