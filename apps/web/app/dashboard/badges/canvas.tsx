@@ -171,75 +171,87 @@ function resizeRect(
 	bounds: MmRect,
 	square: boolean,
 ): MmRect {
-	let l = s.x;
-	let t = s.y;
-	let r = s.x + s.w;
-	let b = s.y + s.h;
+	// Valores originais (antes de qualquer modificação)
+	const origL = s.x;
+	const origT = s.y;
+	const origR = s.x + s.w;
+	const origB = s.y + s.h;
+
+	let l = origL;
+	let t = origT;
+	let r = origR;
+	let b = origB;
 	const west = handle.includes("w");
 	const east = handle.includes("e");
 	const north = handle.includes("n");
 	const south = handle.includes("s");
-	if (west) l = Math.min(l + dx, r - min);
-	if (east) r = Math.max(r + dx, l + min);
-	if (north) t = Math.min(t + dy, b - min);
-	if (south) b = Math.max(b + dy, t + min);
 
-	if (square) {
-		// Para itens quadrados: o lado oposto ao handle fica fixo.
-		// Ex: arrastando NE (top-right) → SW (bottom-left) fixo.
-		const anchorL = west ? r : l; // Se arrasta oeste, ancora em leste (direita)
-		const anchorT = north ? b : t; // Se arrasta norte, ancora em sul (baixo)
-		const anchorR = west ? l : r; // Se arrasta oeste, o lado direito é o âncora
-		const anchorB = north ? t : b; // Se arrasta norte, o lado baixo é o âncora
+	// Para handles de borda (não-canto), comporta-se como antes
+	const isCorner = (west || east) && (north || south);
 
-		// Lado desejado baseado no eixo que está sendo movido
-		let desiredW = Math.abs((west ? anchorL : l) - (east ? anchorR : r));
-		let desiredH = Math.abs((north ? anchorT : t) - (south ? anchorB : b));
-		let side = Math.max(Math.max(desiredW, desiredH), min);
+	if (!square || !isCorner) {
+		// Lógica original para handles de borda ou itens não-quadrados
+		if (west) l = Math.min(l + dx, r - min);
+		if (east) r = Math.max(r + dx, l + min);
+		if (north) t = Math.min(t + dy, b - min);
+		if (south) b = Math.max(b + dy, t + min);
 
-		// Posiciona o quadrado ancorado no canto oposto
-		let newL: number, newT: number;
-		if (west) {
-			newL = anchorL - side;
-		} else {
-			newL = anchorL;
-		}
-		if (north) {
-			newT = anchorT - side;
-		} else {
-			newT = anchorT;
-		}
-
-		// Se não cabe nos limites, reduz o lado mantendo a âncora
-		if (newL < bounds.x) {
-			const maxSide = anchorL - bounds.x;
-			side = Math.min(side, maxSide);
-			newL = anchorL - side;
-		}
-		if (newL + side > bounds.x + bounds.w) {
-			const maxSide = bounds.x + bounds.w - anchorL;
-			side = Math.min(side, maxSide);
-			if (west) newL = anchorL - side;
-		}
-		if (newT < bounds.y) {
-			const maxSide = anchorT - bounds.y;
-			side = Math.min(side, maxSide);
-			newT = anchorT - side;
-		}
-		if (newT + side > bounds.y + bounds.h) {
-			const maxSide = bounds.y + bounds.h - anchorT;
-			side = Math.min(side, maxSide);
-			if (north) newT = anchorT - side;
-		}
-
-		return { x: newL, y: newT, w: side, h: side };
+		l = Math.max(l, bounds.x);
+		t = Math.max(t, bounds.y);
+		r = Math.min(r, bounds.x + bounds.w);
+		b = Math.min(b, bounds.y + bounds.h);
+		return { x: l, y: t, w: Math.max(r - l, min), h: Math.max(b - t, min) };
 	}
 
-	l = Math.max(l, bounds.x);
-	t = Math.max(t, bounds.y);
-	r = Math.min(r, bounds.x + bounds.w);
-	b = Math.min(b, bounds.y + bounds.h);
-	return { x: l, y: t, w: Math.max(r - l, min), h: Math.max(b - t, min) };
+	// Para itens quadrados com handle de canto: ancora no canto oposto
+	// NW (west+north) → ancora SE (origR, origB)
+	// NE (east+north) → ancora SW (origL, origB)
+	// SW (west+south) → ancora NE (origR, origT)
+	// SE (east+south) → ancora NW (origL, origT)
+
+	const anchorX = west ? origR : origL; // X do canto âncora (fixo)
+	const anchorY = north ? origB : origT; // Y do canto âncora (fixo)
+
+	// Nova posição do canto arrastado (após aplicar dx, dy)
+	const draggedX = west ? origL + dx : origR + dx;
+	const draggedY = north ? origT + dy : origB + dy;
+
+	// Lado do quadrado = distância do canto âncora ao canto arrastado
+	// Para NW: side = max(origR - draggedX, origB - draggedY)
+	// Para NE: side = max(draggedX - origL, origB - draggedY)
+	// Para SW: side = max(origR - draggedX, draggedY - origT)
+	// Para SE: side = max(draggedX - origL, draggedY - origT)
+	const desiredW = west ? anchorX - draggedX : draggedX - anchorX;
+	const desiredH = north ? anchorY - draggedY : draggedY - anchorY;
+	let side = Math.max(Math.max(desiredW, desiredH), min);
+
+	// Posiciona o quadrado com o canto âncora fixo
+	let newL = west ? anchorX - side : anchorX;
+	let newT = north ? anchorY - side : anchorY;
+
+	// Aplica limites: se o quadrado sai dos bounds, reduz o lado mantendo a âncora
+	if (newL < bounds.x) {
+		const maxSide = anchorX - bounds.x;
+		side = Math.min(side, maxSide);
+		newL = west ? anchorX - side : anchorX;
+	}
+	if (newL + side > bounds.x + bounds.w) {
+		const maxSide = bounds.x + bounds.w - anchorX;
+		side = Math.min(side, maxSide);
+		newL = west ? anchorX - side : anchorX;
+	}
+	if (newT < bounds.y) {
+		const maxSide = anchorY - bounds.y;
+		side = Math.min(side, maxSide);
+		newT = north ? anchorY - side : anchorY;
+	}
+	if (newT + side > bounds.y + bounds.h) {
+		const maxSide = bounds.y + bounds.h - anchorY;
+		side = Math.min(side, maxSide);
+		newT = north ? anchorY - side : anchorY;
+	}
+
+	return { x: newL, y: newT, w: side, h: side };
 }
 
 export function BadgeCanvas({
