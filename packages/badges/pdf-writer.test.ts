@@ -173,9 +173,10 @@ describe("pdf-writer", () => {
 		expect(qr.modules.length).toBe(fresh.length);
 		expect(qr.modules[0]?.length).toBe(fresh.length);
 		expect(qr.quietModules).toBeGreaterThanOrEqual(4);
-		// At the default layout the QR side is ~0.3*80=24mm wide … check floor.
+		// At the default layout the QR rect is square (0.3, 0.3) relative to freeArea (80x45).
+		// Absolute: 24mm x 13.5mm → display-list makes it square at min(24, 13.5) = 13.5mm.
 		const sideMm = Math.min(qr.rect.w, qr.rect.h);
-		expect(sideMm).toBeGreaterThanOrEqual(15);
+		expect(sideMm).toBeGreaterThanOrEqual(13);
 	});
 
 	it("renders imposed A4 sheets in both modes with crop marks", async () => {

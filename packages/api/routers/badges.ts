@@ -22,6 +22,7 @@ import {
 	formVersion,
 	participant,
 	participantOnActivity,
+	user,
 } from "@verific/drizzle/schema";
 import { appUrl } from "@verific/env";
 import { z } from "@verific/zod";
@@ -183,6 +184,17 @@ export const badgesRouter = createTRPCRouter({
 				activityId: z.string().uuid().optional(),
 				cursor: z.number().int().min(0).default(0),
 				limit: z.number().int().min(1).max(200).default(100),
+				/** Optional: bound field IDs from the draft layout (for unsaved changes). */
+				fieldIds: z.array(z.string().uuid()).optional(),
+				/** Optional: sort order for participants. */
+				sort: z
+					.enum([
+						"name_asc",
+						"name_desc",
+						"joined_asc",
+						"joined_desc",
+					])
+					.optional(),
 			}),
 		)
 		.query(async ({ input, ctx }) => {
@@ -193,7 +205,8 @@ export const badgesRouter = createTRPCRouter({
 			const layout =
 				(await readStoredLayout(input.projectId)) ??
 				badgeLayoutSchema.parse({ items: defaultBadgeItems() });
-			const ids = boundFieldIds(layout);
+			// Use provided fieldIds (from draft) or fall back to saved layout
+			const ids = input.fieldIds ?? boundFieldIds(layout);
 			const fields =
 				ids.length > 0
 					? await db.query.formField.findMany({
@@ -248,16 +261,39 @@ export const badgesRouter = createTRPCRouter({
 					)
 				: eq(participant.projectId, input.projectId);
 
+			let orderByClause;
+			switch (input.sort) {
+				case "name_asc":
+					orderByClause = asc(user.name);
+					break;
+				case "name_desc":
+					orderByClause = desc(user.name);
+					break;
+				case "joined_asc":
+					orderByClause = asc(participant.joinedAt);
+					break;
+				case "joined_desc":
+					orderByClause = desc(participant.joinedAt);
+					break;
+				default:
+					orderByClause = asc(participant.joinedAt);
+			}
+
 			const [totalRows, page] = await Promise.all([
 				db.select({ n: count() }).from(participant).where(baseWhere),
-				db.query.participant.findMany({
-					where: baseWhere,
-					columns: { id: true, shortId: true, joinedAt: true },
-					with: { user: { columns: { name: true } } },
-					orderBy: [asc(participant.joinedAt), asc(participant.id)],
-					limit: input.limit,
-					offset: input.cursor,
-				}),
+				db
+					.select({
+						id: participant.id,
+						shortId: participant.shortId,
+						joinedAt: participant.joinedAt,
+						user: { name: user.name },
+					})
+					.from(participant)
+					.innerJoin(user, eq(participant.userId, user.id))
+					.where(baseWhere)
+					.orderBy(orderByClause, asc(participant.id))
+					.limit(input.limit)
+					.offset(input.cursor),
 			]);
 			const total = totalRows[0]?.n ?? 0;
 

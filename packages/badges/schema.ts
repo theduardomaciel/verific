@@ -182,7 +182,7 @@ export function defaultBadgeItems(): BadgeItem[] {
 			kind: "qr",
 			id: "qr",
 			enabled: true,
-			rect: { x: 0.35, y: 0.48, w: 0.3, h: 0.46 },
+			rect: { x: 0.35, y: 0.48, w: 0.3, h: 0.3 },
 			quietModules: 4,
 		},
 	];

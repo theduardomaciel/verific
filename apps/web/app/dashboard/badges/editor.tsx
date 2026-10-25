@@ -182,6 +182,9 @@ export function BadgeEditor({
 		string,
 		number[]
 	> | null>(null);
+	const [printSort, setPrintSort] = useState<
+		"name_asc" | "name_desc" | "joined_asc" | "joined_desc"
+	>("joined_asc");
 	const prevArtUrl = useRef<string | null>(null);
 
 	// Catálogo de pesos por família: alimenta o seletor de peso e a
@@ -611,6 +614,22 @@ export function BadgeEditor({
 		}
 	};
 
+	// Compute bound field IDs from the current draft layout
+	const getBoundFieldIds = (layout: BadgeLayout): string[] => {
+		const ids = new Set<string>();
+		for (const item of layout.items) {
+			if (
+				item.kind === "text" &&
+				item.enabled &&
+				item.source &&
+				item.source !== "name"
+			) {
+				ids.add(item.source);
+			}
+		}
+		return [...ids];
+	};
+
 	const runPrint = async (testPrint: "single" | "outlines" | null) => {
 		setPrintState({
 			running: true,
@@ -622,11 +641,14 @@ export function BadgeEditor({
 			const c = ctx ?? (await loadFonts(draft));
 			if (!c) throw new Error(fontsError ?? "Fontes indisponíveis.");
 			const artwork = await fetchBadgeArtwork(draft);
+			const boundFieldIds = getBoundFieldIds(draft);
 			const fetchPage = (cursor: number) =>
 				utils.getBadgeBatch.fetch({
 					projectId,
 					cursor,
 					limit: testPrint ? 1 : 200,
+					fieldIds: boundFieldIds,
+					sort: printSort,
 				});
 			const { files } = await runBadgePrint({
 				ctx: { ...c, layout: draft },
@@ -898,6 +920,41 @@ export function BadgeEditor({
 								>
 									Folha de alinhamento
 								</Button>
+							</div>
+							<div className="flex flex-col gap-1 text-xs">
+								<span className="text-muted-foreground">
+									Ordenação dos crachás
+								</span>
+								<Select
+									value={printSort}
+									onValueChange={(v) =>
+										setPrintSort(
+											v as
+												| "name_asc"
+												| "name_desc"
+												| "joined_asc"
+												| "joined_desc",
+										)
+									}
+								>
+									<SelectTrigger size="sm" className="w-48">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="name_asc">
+											Nome (A-Z)
+										</SelectItem>
+										<SelectItem value="name_desc">
+											Nome (Z-A)
+										</SelectItem>
+										<SelectItem value="joined_asc">
+											Inscritos (mais antigos primeiro)
+										</SelectItem>
+										<SelectItem value="joined_desc">
+											Inscritos (mais recentes primeiro)
+										</SelectItem>
+									</SelectContent>
+								</Select>
 							</div>
 							{printState.running ? (
 								<p className="text-muted-foreground text-xs">
