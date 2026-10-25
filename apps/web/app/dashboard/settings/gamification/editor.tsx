@@ -200,7 +200,6 @@ export function GamificationEditor({
 				utils.getProject.invalidate(),
 				utils.getEventRanking.invalidate(),
 				utils.getParticipantGamification.invalidate(),
-				utils.getMyStanding.invalidate(),
 			]);
 			toast.success("Gamificação atualizada!");
 		} catch {
@@ -399,8 +398,8 @@ export function GamificationEditor({
 				<CardContent className="flex flex-col gap-5">
 					<SwitchRow
 						id="ranking-enabled"
-						label="Exibir ranking público"
-						description="Habilita a página de ranking (acessível por URL direta)."
+						label="Ativar ranking"
+						description="Habilita a classificação por pontos no evento."
 						checked={draft.rankingEnabled}
 						onCheckedChange={(rankingEnabled) =>
 							patch({ rankingEnabled })
@@ -408,12 +407,12 @@ export function GamificationEditor({
 						disabled={!draft.enabled}
 					/>
 					<SwitchRow
-						id="ranking-show-in-nav"
-						label="Mostrar link no cabeçalho"
-						description="Quando ligado, o link “Ranking” aparece na navegação do evento. Se desligado, a página continua acessível por URL direta."
-						checked={draft.ranking.showInNav}
-						onCheckedChange={(showInNav) =>
-							patchRanking({ showInNav })
+						id="ranking-public"
+						label="Ranking público"
+						description="Quando ligado, o link “Ranking” aparece na navegação e qualquer visitante acessa a página. Desligado, o ranking fica restrito a donos e moderadores."
+						checked={draft.ranking.isPublic}
+						onCheckedChange={(isPublic) =>
+							patchRanking({ isPublic })
 						}
 						disabled={!draft.enabled || !draft.rankingEnabled}
 					/>

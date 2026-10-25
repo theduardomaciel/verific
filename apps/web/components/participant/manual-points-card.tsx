@@ -71,7 +71,6 @@ export function ManualPointsCard({
 			utils.getParticipantPoints.invalidate(),
 			utils.getParticipantGamification.invalidate(),
 			utils.getEventRanking.invalidate(),
-			utils.getMyStanding.invalidate(),
 		]);
 	}
 

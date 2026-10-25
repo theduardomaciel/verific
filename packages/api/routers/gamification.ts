@@ -77,6 +77,25 @@ function requireEnabledProject(row: Awaited<ReturnType<typeof publicProject>>) {
 	return config;
 }
 
+/**
+ * Ranking restrito ao organizador (`ranking.isPublic === false`).
+ *
+ * Usa a linha já carregada por `publicProject` (dono + moderadores), então
+ * a checagem não custa query extra. Responde NOT_FOUND para não revelar que
+ * o evento tem ranking.
+ */
+function assertRankingVisible(
+	row: NonNullable<Awaited<ReturnType<typeof publicProject>>>,
+	userId: string | undefined,
+) {
+	if (userId === row.ownerId) return;
+	if (userId && row.moderators.some((m) => m.userId === userId)) return;
+	throw new TRPCError({
+		code: "NOT_FOUND",
+		message: "Ranking não encontrado.",
+	});
+}
+
 function toGamificationProject(
 	row: NonNullable<Awaited<ReturnType<typeof publicProject>>>,
 ): GamificationProject {
@@ -100,7 +119,7 @@ export const gamificationRouter = createTRPCRouter({
 				limit: z.number().int().min(1).max(100).optional(),
 			}),
 		)
-		.query(async ({ input }) => {
+		.query(async ({ input, ctx }) => {
 			const row = await publicProject(input.projectUrl);
 			const config = requireEnabledProject(row);
 			if (!config.rankingEnabled) {
@@ -108,6 +127,9 @@ export const gamificationRouter = createTRPCRouter({
 					code: "NOT_FOUND",
 					message: "Ranking desativado neste evento.",
 				});
+			}
+			if (!config.ranking.isPublic) {
+				assertRankingVisible(row!, ctx.session?.user.id);
 			}
 
 			const limit = Math.min(
@@ -158,42 +180,17 @@ export const gamificationRouter = createTRPCRouter({
 				participantRow.id,
 			);
 
+			// Ranking privado: posição e opt-out não fazem sentido no perfil
+			// público (o organizador vê tudo pelo dashboard).
+			const rankingVisible =
+				config.rankingEnabled && config.ranking.isPublic;
+
 			return {
 				...snapshot,
-				rank: config.rankingEnabled ? snapshot.rank : null,
-				rankingEnabled: config.rankingEnabled,
+				rank: rankingVisible ? snapshot.rank : null,
+				rankingEnabled: rankingVisible,
 				stickersEnabled: config.stickersEnabled,
-				allowOptOut: config.ranking.allowOptOut,
-			};
-		}),
-
-	/** Posição do próprio participante (linha fixa do ranking). */
-	getMyStanding: protectedProcedure
-		.input(z.object({ projectUrl: z.string().min(1) }))
-		.query(async ({ input, ctx }) => {
-			const row = await publicProject(input.projectUrl);
-			const config = requireEnabledProject(row);
-			const participantRow = await db.query.participant.findFirst({
-				where: and(
-					eq(participant.projectId, row!.id),
-					eq(participant.userId, ctx.session.user.id),
-				),
-				columns: { id: true, shortId: true },
-			});
-			if (!participantRow) return null;
-
-			const snapshot = await loadGamificationSnapshot(
-				db,
-				toGamificationProject(row!),
-				participantRow.id,
-			);
-			return {
-				shortId: participantRow.shortId,
-				points: snapshot.points,
-				rank: config.rankingEnabled ? snapshot.rank : null,
-				optOut: snapshot.optOut,
-				totalParticipants: snapshot.totalParticipants,
-				rankingEnabled: config.rankingEnabled,
+				allowOptOut: rankingVisible && config.ranking.allowOptOut,
 			};
 		}),
 

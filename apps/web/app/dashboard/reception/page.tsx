@@ -27,7 +27,9 @@ export default function ReceptionPage() {
 	const { projectId } = useDashboard();
 	const summary = trpc.getReceptionSummary.useQuery(
 		{ projectId },
-		{ refetchInterval: 15_000, refetchOnWindowFocus: true },
+		// Sem polling: o scanner invalida o resumo a cada check-in. Manter o
+		// intervalo só mantinha o Neon acordado com a tela parada.
+		{ refetchOnWindowFocus: true },
 	);
 
 	if (summary.isPending) {

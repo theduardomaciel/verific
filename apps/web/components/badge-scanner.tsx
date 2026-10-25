@@ -88,7 +88,6 @@ export function BadgeScanner({
 			utils.getReceptionSummary.invalidate(),
 			utils.getParticipantGamification.invalidate(),
 			utils.getEventRanking.invalidate(),
-			utils.getMyStanding.invalidate(),
 		]);
 	}
 

@@ -43,7 +43,6 @@ export function RankingPrivacyToggle({
 			await Promise.all([
 				utils.getParticipantGamification.invalidate(),
 				utils.getEventRanking.invalidate(),
-				utils.getMyStanding.invalidate(),
 			]);
 			toast.success(
 				next

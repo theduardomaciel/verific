@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
+import type { RouterOutput } from "@verific/api";
 import { parseGamificationConfig } from "@verific/drizzle/gamification";
 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,6 +18,7 @@ import { ProfileStats } from "@/components/profile/profile-stats";
 import { ProfileVisitRecorder } from "@/components/profile/profile-visit-recorder";
 
 import {
+	getCachedParticipantGamification,
 	getEventStaticParams,
 	getProject,
 	getProfilePageData,
@@ -68,6 +70,7 @@ type ProfileServerData = {
 	gamificationEnabled: boolean;
 	rankingEnabled: boolean;
 	stickersEnabled: boolean;
+	gamificationData: RouterOutput["getParticipantGamification"] | null;
 	pageData: Awaited<ReturnType<typeof getProfilePageData>> | null;
 };
 
@@ -87,6 +90,7 @@ function ProfileBody({
 	gamificationEnabled,
 	rankingEnabled,
 	stickersEnabled,
+	gamificationData,
 	pageData,
 }: ProfileServerData) {
 	if (!profilesEnabled || !pageData) {
@@ -174,6 +178,9 @@ function ProfileBody({
 										shortId={shortId}
 										rankingEnabled={rankingEnabled}
 										stickersEnabled={stickersEnabled}
+										initialData={
+											gamificationData ?? undefined
+										}
 									/>
 								)}
 								<Suspense fallback={null}>
@@ -251,6 +258,15 @@ export default async function EventProfilePage({ params }: ProfilePageProps) {
 		notFound();
 	}
 
+	// Pontos/adesivos vêm do cache por evento (sem polling no cliente). Um
+	// perfil sem gamificação (NOT_FOUND) apenas não renderiza o cartão.
+	const gamificationData =
+		gamificationEnabled && pageData
+			? await resolveProfilePageData(
+					getCachedParticipantGamification(eventUrl, shortId),
+				)
+			: null;
+
 	return (
 		<Suspense fallback={<ProfilePageSkeleton />}>
 			<ProfileBody
@@ -261,8 +277,11 @@ export default async function EventProfilePage({ params }: ProfilePageProps) {
 				eventStartDate={new Date(project.startDate).toISOString()}
 				eventEndDate={new Date(project.endDate).toISOString()}
 				gamificationEnabled={gamificationEnabled}
-				rankingEnabled={gamification.rankingEnabled}
+				rankingEnabled={
+					gamification.rankingEnabled && gamification.ranking.isPublic
+				}
 				stickersEnabled={gamification.stickersEnabled}
+				gamificationData={gamificationData}
 				pageData={pageData}
 			/>
 		</Suspense>

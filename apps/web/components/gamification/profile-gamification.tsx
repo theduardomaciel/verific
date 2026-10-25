@@ -1,5 +1,7 @@
 "use client";
 
+import type { RouterOutput } from "@verific/api";
+
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -13,6 +15,7 @@ interface ProfileGamificationProps {
 	shortId: string;
 	rankingEnabled: boolean;
 	stickersEnabled: boolean;
+	initialData?: RouterOutput["getParticipantGamification"];
 }
 
 function formatPoints(value: number): string {
@@ -45,19 +48,23 @@ function Metric({
 
 /**
  * Cartão público de gamificação no perfil. Ilha client: pontos e ranking
- * mudam a cada check-in, então não podem morar no shell ISR.
+ * mudam a cada check-in, então não podem morar no shell ISR — mas o
+ * primeiro render vem do servidor (`initialData`, cacheado por evento) e
+ * não há polling.
  */
 export function ProfileGamification({
 	eventUrl,
 	shortId,
 	rankingEnabled,
 	stickersEnabled,
+	initialData,
 }: ProfileGamificationProps) {
 	const query = trpc.getParticipantGamification.useQuery(
 		{ projectUrl: eventUrl, shortId },
 		{
-			staleTime: 30_000,
-			refetchOnWindowFocus: true,
+			initialData,
+			staleTime: 5 * 60_000,
+			refetchOnWindowFocus: false,
 			retry: false,
 		},
 	);
