@@ -402,16 +402,48 @@ export const participantsRouter = createTRPCRouter({
 				});
 			}
 
-			// Só a equipe do evento credencia (dono ou moderador).
+			// Credenciamento pode ser feito por:
+			// 1. Equipe do evento (dono ou moderador do projeto)
+			// 2. Monitores da atividade (participantes com role "monitor" na atividade)
 			const staffUserId = ctx.session.user.id;
 			const event = session.activity.project;
-			const isStaff =
+			const activityId = session.activity.id;
+
+			const isEventStaff =
 				event.ownerId === staffUserId ||
 				event.moderators.some((m) => m.userId === staffUserId);
-			if (!isStaff) {
+
+			// Verifica se o usuário atual é monitor desta atividade
+			const staffParticipant = await db.query.participant.findFirst({
+				where: and(
+					eq(participant.projectId, event.id),
+					eq(participant.userId, staffUserId),
+				),
+				columns: { id: true },
+			});
+
+			let isActivityMonitor = false;
+			if (staffParticipant) {
+				const monitorLink =
+					await db.query.participantOnActivity.findFirst({
+						where: and(
+							eq(participantOnActivity.activityId, activityId),
+							eq(
+								participantOnActivity.participantId,
+								staffParticipant.id,
+							),
+							eq(participantOnActivity.role, "monitor"),
+						),
+						columns: { participantId: true },
+					});
+				isActivityMonitor = !!monitorLink;
+			}
+
+			if (!isEventStaff && !isActivityMonitor) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
-					message: "Apenas a equipe do evento pode credenciar.",
+					message:
+						"Apenas a equipe do evento ou monitores da atividade podem credenciar.",
 				});
 			}
 
@@ -448,8 +480,9 @@ export const participantsRouter = createTRPCRouter({
 			const participantId = row.id;
 			const participantName = row.user.name;
 
-			// Só permite credenciar quem está inscrito na atividade
-			if (mode === "in") {
+			// Só permite credenciar quem está inscrito na atividade,
+			// exceto se o credenciador for monitor da atividade
+			if (mode === "in" && !isActivityMonitor) {
 				const subscription = await db
 					.select({ amount: count() })
 					.from(participantOnActivity)
