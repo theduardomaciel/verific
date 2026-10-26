@@ -514,3 +514,37 @@ describe("campos de número e data vazios", () => {
 		expect(result.errors).toEqual({ idade: ["Informe um número."] });
 	});
 });
+
+describe("regra de seção sobre campo fora da lista", () => {
+	const sections = [
+		{ id: "s1" },
+		{
+			id: "s2",
+			visibilityRule: {
+				sourceFieldId: "f-estudante",
+				operator: "is_checked" as const,
+			},
+		},
+	];
+	const curso = { id: "f-curso", key: "curso", sectionId: "s2" };
+	const ruleFields = [{ id: "f-estudante", key: "estudante" }, curso];
+
+	it("usa os campos da regra para decidir a seção", () => {
+		expect(
+			filterVisibleFields(
+				[curso],
+				sections,
+				{ estudante: false },
+				ruleFields,
+			),
+		).toEqual([]);
+		expect(
+			filterVisibleFields(
+				[curso],
+				sections,
+				{ estudante: true },
+				ruleFields,
+			),
+		).toEqual([curso]);
+	});
+});

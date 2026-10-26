@@ -57,7 +57,8 @@ export function EditProfileDialog({
 	const handleRemoveSelf = async () => {
 		try {
 			await removeSelfMutation.mutateAsync({ projectId });
-			await refreshRoute();
+			// Já saiu: uma falha ao atualizar a tela não vira erro
+			void refreshRoute().catch(console.error);
 			toast.success("Você saiu do evento com sucesso");
 			setRemoveOpen(false);
 			// Redirect to the event public page after leaving

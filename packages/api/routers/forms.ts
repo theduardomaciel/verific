@@ -30,9 +30,14 @@ import {
 import { z } from "@verific/zod";
 
 import {
+	answerToValue,
+	eventAnswerRows,
+	latestByKey,
+} from "../lib/event-answers";
+import {
 	dropVisibilityForFields,
-	remapProfileLinksOnClone,
-	removeProfileLinksForFields,
+	detachProfileLinks,
+	relinkProfileToVersion,
 	slotForField,
 	isCompatible,
 	readProjectLayout,
@@ -179,16 +184,6 @@ function mapValueToColumns(type: string, value: unknown) {
 		default:
 			return { valueText: String(value) };
 	}
-}
-
-function answerToValue(row: typeof formAnswer.$inferSelect): unknown {
-	if (row.valueJson !== null && row.valueJson !== undefined)
-		return row.valueJson;
-	if (row.valueNumber !== null && row.valueNumber !== undefined)
-		return row.valueNumber;
-	if (row.valueDate !== null && row.valueDate !== undefined)
-		return row.valueDate;
-	return row.valueText;
 }
 
 /** Latest published version of a scope (event or activity) with active fields + sections. */
@@ -425,17 +420,6 @@ async function cloneVersionContents(
 				})
 				.where(eq(formSection.id, newSectionId));
 		}
-		// Links do layout do perfil acompanham os novos ids (só no
-		// formulário do evento); o resto é descartado sem quebrar nada.
-		const clonedVersion = await db.query.formVersion.findFirst({
-			where: eq(formVersion.id, newVersionId),
-			columns: { activityId: true },
-		});
-		await remapProfileLinksOnClone(
-			projectId,
-			!clonedVersion?.activityId,
-			fieldIdMap,
-		);
 	}
 	if (sourceSections.length === 0 && sourceFields.length > 0) {
 		const fallback = await db
@@ -1016,8 +1000,9 @@ export const formsRouter = createTRPCRouter({
 					const layout = await readProjectLayout(version.projectId);
 					const slot = slotForField(layout, input.fieldId);
 					if (slot && !isCompatible(slot.slot, input.type)) {
-						// Tipo incompatível com o slot: link some (sem quebrar nada).
-						await removeProfileLinksForFields(version.projectId, [
+						// Tipo incompatível com o slot: o link volta para a
+						// versão publicada ou some
+						await detachProfileLinks(version.projectId, [
 							input.fieldId,
 						]);
 					} else if (
@@ -1113,9 +1098,9 @@ export const formsRouter = createTRPCRouter({
 				.select({ amount: count() })
 				.from(formAnswer)
 				.where(eq(formAnswer.fieldId, input.fieldId));
-			// Links do perfil p/ este campo somem junto (sem referência
-			// pendurada); flags de visibilidade vão junto.
-			await removeProfileLinksForFields(field.projectId, [input.fieldId]);
+			// Links do perfil p/ este campo voltam para a versão publicada
+			// (ou somem, sem referência pendurada)
+			await detachProfileLinks(field.projectId, [input.fieldId]);
 			if ((answersCount[0]?.amount ?? 0) > 0) {
 				await db
 					.update(formField)
@@ -1400,6 +1385,10 @@ export const formsRouter = createTRPCRouter({
 					.set({ isPublished: true, publishedAt: new Date() })
 					.where(eq(formVersion.id, input.versionId));
 			});
+			// O perfil passa a usar os campos da versão publicada
+			if (!version.activityId) {
+				await relinkProfileToVersion(version.projectId, version.id);
+			}
 			return { success: true, activityId: version.activityId };
 		}),
 
@@ -1436,7 +1425,7 @@ export const formsRouter = createTRPCRouter({
 				where: eq(formField.formVersionId, input.versionId),
 				columns: { id: true },
 			});
-			await removeProfileLinksForFields(
+			await detachProfileLinks(
 				version.projectId,
 				versionFields.map((f) => f.id),
 			);
@@ -1825,15 +1814,15 @@ export const formsRouter = createTRPCRouter({
 				),
 			});
 			if (!participantRow) return { participant: null, answers: [] };
-			const answers = await db.query.formAnswer.findMany({
-				where: eq(formAnswer.participantId, participantRow.id),
-				with: { field: true },
-			});
+			// Uma resposta por pergunta do evento: a mais recente
+			const latest = latestByKey(
+				await eventAnswerRows(participantRow.id),
+			);
 			return {
 				participant: participantRow,
-				answers: answers.map((a) => ({
-					...a,
-					value: answerToValue(a),
+				answers: [...latest].map(([key, value]) => ({
+					value,
+					field: { key },
 				})),
 			};
 		}),
@@ -1884,10 +1873,22 @@ export const formsRouter = createTRPCRouter({
 			const editable = fields.filter(
 				(f) => f.editableAfterSignup && f.isVisible,
 			);
+			const editableKeys = new Set(editable.map((f) => f.key));
+			// As regras de seção podem depender de campos não editáveis: valem
+			// as respostas guardadas deles
+			const stored = await eventAnswerRows(participantRow.id);
+			const fixedAnswers = Object.fromEntries(
+				[...latestByKey(stored)].filter(
+					([key]) => !editableKeys.has(key),
+				),
+			);
+			const ruleFields = toValidationFields(fields);
+			const visibilitySections = toVisibilitySections(sections);
 			const validation = validateAnswers(
 				toValidationFields(editable),
-				input.answers,
-				toVisibilitySections(sections),
+				{ ...fixedAnswers, ...input.answers },
+				visibilitySections,
+				ruleFields,
 			);
 			if (!validation.success) {
 				throw new TRPCError({
@@ -1896,70 +1897,89 @@ export const formsRouter = createTRPCRouter({
 					cause: validation.errors,
 				});
 			}
-			const visibleEditable = filterVisibleFields(
-				toValidationFields(editable),
-				toVisibilitySections(sections),
-				(validation.data ?? {}) as Record<string, unknown>,
-			);
+			const data = (validation.data ?? {}) as Record<string, unknown>;
 			const visibleEditableKeys = new Set(
-				visibleEditable.map((f) => f.key),
+				filterVisibleFields(
+					toValidationFields(editable),
+					visibilitySections,
+					{ ...fixedAnswers, ...data },
+					ruleFields,
+				).map((f) => f.key),
 			);
+
+			// Cada pergunta fica com uma resposta só: a desta versão. As de
+			// versões anteriores com a mesma chave saem junto.
+			const storedFieldIds = (key: string) =>
+				stored
+					.filter((row) => row.key === key)
+					.map((row) => row.fieldId);
+			const doomed: string[] = [];
+			const writes: Array<{
+				field: (typeof editable)[number];
+				mapped: NonNullable<ReturnType<typeof mapValueToColumns>>;
+			}> = [];
 			for (const field of editable) {
-				if (!visibleEditableKeys.has(field.key)) {
-					await db
+				const raw = data[field.key];
+				// Seção escondida ou campo opcional esvaziado
+				if (
+					!visibleEditableKeys.has(field.key) ||
+					(raw === undefined && !field.required)
+				) {
+					doomed.push(...storedFieldIds(field.key));
+					continue;
+				}
+				if (raw === undefined) continue;
+				const mapped = mapValueToColumns(field.type, raw);
+				if (!mapped) continue;
+				writes.push({ field, mapped });
+				doomed.push(
+					...storedFieldIds(field.key).filter(
+						(id) => id !== field.id,
+					),
+				);
+			}
+
+			await db.transaction(async (tx) => {
+				if (doomed.length > 0) {
+					await tx
 						.delete(formAnswer)
 						.where(
 							and(
 								eq(formAnswer.participantId, participantRow.id),
-								eq(formAnswer.fieldId, field.id),
+								inArray(formAnswer.fieldId, doomed),
 							),
 						);
-					continue;
 				}
-				const raw = (validation.data ?? {})[field.key];
-				if (raw === undefined) {
-					if (!field.required) {
-						await db
-							.delete(formAnswer)
-							.where(
-								and(
-									eq(
-										formAnswer.participantId,
-										participantRow.id,
-									),
-									eq(formAnswer.fieldId, field.id),
-								),
-							);
-					}
-					continue;
-				}
-				const mapped = mapValueToColumns(field.type, raw);
-				if (!mapped) continue;
-				await db
-					.insert(formAnswer)
-					.values({
-						participantId: participantRow.id,
-						fieldId: field.id,
-						formVersionId: version.id,
-						projectId: input.projectId,
-						fieldSnapshot: {
-							key: field.key,
-							label: field.label,
-							type: field.type,
-							required: field.required,
-							options: field.options,
-							allowOther: field.allowOther,
-						},
-						...mapped,
-					})
-					.onConflictDoUpdate({
-						target: [formAnswer.participantId, formAnswer.fieldId],
-						set: {
-							...mapped,
+				for (const { field, mapped } of writes) {
+					await tx
+						.insert(formAnswer)
+						.values({
+							participantId: participantRow.id,
+							fieldId: field.id,
 							formVersionId: version.id,
-						},
-					});
-			}
+							projectId: input.projectId,
+							fieldSnapshot: {
+								key: field.key,
+								label: field.label,
+								type: field.type,
+								required: field.required,
+								options: field.options,
+								allowOther: field.allowOther,
+							},
+							...mapped,
+						})
+						.onConflictDoUpdate({
+							target: [
+								formAnswer.participantId,
+								formAnswer.fieldId,
+							],
+							set: {
+								...mapped,
+								formVersionId: version.id,
+							},
+						});
+				}
+			});
 			return { success: true };
 		}),
 

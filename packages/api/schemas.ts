@@ -495,13 +495,22 @@ export function getVisibleSectionIds<
 	return visible;
 }
 
-/** Filters a field list down to fields in visible sections. */
+/**
+ * Filters a field list down to fields in visible sections. `ruleFields`
+ * resolves the rules' source fields when they are not in `fields` (e.g. a
+ * rule on a field that can't be edited after signup).
+ */
 export function filterVisibleFields<
 	F extends { key: string; id?: string; sectionId?: string | null },
 	S extends SectionForVisibility,
->(fields: F[], sections: S[], answers: Record<string, unknown>): F[] {
+>(
+	fields: F[],
+	sections: S[],
+	answers: Record<string, unknown>,
+	ruleFields: Array<{ id?: string; key: string }> = fields,
+): F[] {
 	if (!sections.some((s) => s.visibilityRule)) return fields;
-	const visibleIds = getVisibleSectionIds(sections, fields, answers);
+	const visibleIds = getVisibleSectionIds(sections, ruleFields, answers);
 	return fields.filter((f) => {
 		if (!f.sectionId) return true;
 		if (!sections.some((s) => s.id === f.sectionId)) return true;
@@ -820,10 +829,11 @@ export function buildAnswersSchema(
 	fields: FormFieldForValidation[],
 	sections?: SectionForVisibility[],
 	answers?: Record<string, unknown>,
+	ruleFields?: Array<{ id?: string; key: string }>,
 ) {
 	const effective =
 		sections && answers
-			? filterVisibleFields(fields, sections, answers)
+			? filterVisibleFields(fields, sections, answers, ruleFields)
 			: fields;
 	const shape: Record<string, z.ZodTypeAny> = {};
 	for (const field of effective) {
@@ -837,14 +847,15 @@ export function validateAnswers(
 	fields: FormFieldForValidation[],
 	answers: Record<string, unknown>,
 	sections?: SectionForVisibility[],
+	ruleFields?: Array<{ id?: string; key: string }>,
 ): {
 	success: boolean;
 	errors?: Record<string, string[]>;
 	data?: Record<string, unknown>;
 } {
-	const schema = buildAnswersSchema(fields, sections, answers);
+	const schema = buildAnswersSchema(fields, sections, answers, ruleFields);
 	const parsed = schema.safeParse(
-		stripHiddenForValidation(fields, sections, answers),
+		stripHiddenForValidation(fields, sections, answers, ruleFields),
 	);
 	if (parsed.success) return { success: true, data: parsed.data };
 	const flat = parsed.error.flatten();
@@ -864,10 +875,13 @@ function stripHiddenForValidation(
 	fields: FormFieldForValidation[],
 	sections: SectionForVisibility[] | undefined,
 	answers: Record<string, unknown>,
+	ruleFields?: Array<{ id?: string; key: string }>,
 ): Record<string, unknown> {
 	if (!sections || !sections.some((s) => s.visibilityRule)) return answers;
 	const visible = new Set(
-		filterVisibleFields(fields, sections, answers).map((f) => f.key),
+		filterVisibleFields(fields, sections, answers, ruleFields).map(
+			(f) => f.key,
+		),
 	);
 	const next: Record<string, unknown> = {};
 	for (const [k, v] of Object.entries(answers)) {

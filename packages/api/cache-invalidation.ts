@@ -790,20 +790,6 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 	},
 
 	// ── forms ────────────────────────────────────────────────────────
-	createVersion: {
-		tags: ({ input }) => {
-			// Clonagem remapeia links do layout de perfil.
-			const projectId = readString(input, "projectId");
-			const clones = readString(input, "cloneFromVersionId");
-			return clones && projectId
-				? [
-						profileLayoutCacheTag(projectId),
-						projectProfilesCacheTag(projectId),
-					]
-				: [];
-		},
-	},
-
 	upsertField: {
 		snapshot: async (input) => {
 			const version = await versionById(readString(input, "versionId"));
@@ -950,7 +936,12 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 						activityCacheTag(activityId),
 						projectActivitiesCacheTag(projectId),
 					]
-				: [projectFormCacheTag(projectId)];
+				: [
+						projectFormCacheTag(projectId),
+						// O layout do perfil passa para os campos publicados
+						profileLayoutCacheTag(projectId),
+						projectProfilesCacheTag(projectId),
+					];
 		},
 	},
 
