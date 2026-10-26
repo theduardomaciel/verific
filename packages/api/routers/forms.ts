@@ -1956,7 +1956,6 @@ export const formsRouter = createTRPCRouter({
 						target: [formAnswer.participantId, formAnswer.fieldId],
 						set: {
 							...mapped,
-							updatedAt: new Date(),
 							formVersionId: version.id,
 						},
 					});

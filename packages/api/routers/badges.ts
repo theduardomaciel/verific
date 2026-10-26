@@ -159,7 +159,7 @@ export const badgesRouter = createTRPCRouter({
 				.values({ projectId: input.projectId, layout })
 				.onConflictDoUpdate({
 					target: [badgeLayout.projectId],
-					set: { layout, updatedAt: new Date() },
+					set: { layout },
 				});
 			void deleteReplacedImages(
 				input.projectId,

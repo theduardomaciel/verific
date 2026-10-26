@@ -49,7 +49,10 @@ export const formAnswer = pgTable(
 		valueJson: jsonb("value_json").$type<unknown>(),
 		fieldSnapshot: jsonb("field_snapshot").$type<FormFieldSnapshot>(),
 		answeredAt: timestamp("answered_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.defaultNow()
+			.notNull()
+			.$onUpdate(() => new Date()),
 	},
 	(table) => [
 		uniqueIndex().on(table.participantId, table.fieldId),

@@ -243,7 +243,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 		const staleBefore = new Date(Date.now() - STALE_CLAIM_TIMEOUT_MS);
 		const claimed = await db
 			.update(notificationTable)
-			.set({ status: "sending", updatedAt: new Date() })
+			.set({ status: "sending" })
 			.where(
 				and(
 					eq(notificationTable.id, id),
@@ -264,7 +264,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 		const staleBefore = new Date(Date.now() - STALE_CLAIM_TIMEOUT_MS);
 		const updated = await db
 			.update(notificationTable)
-			.set({ status: "pending", updatedAt: new Date() })
+			.set({ status: "pending" })
 			.where(
 				and(
 					eq(notificationTable.status, "sending"),
@@ -400,7 +400,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 	): Promise<NotificationRow | null> {
 		const updated = await db
 			.update(notificationTable)
-			.set({ ...patch, updatedAt: new Date() })
+			.set(patch)
 			.where(eq(notificationTable.id, id))
 			.returning();
 		return updated[0] ?? null;
