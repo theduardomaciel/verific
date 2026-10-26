@@ -1662,33 +1662,122 @@ export const formsRouter = createTRPCRouter({
 				});
 			}
 
-			// Um único UPDATE condicional compara e grava na mesma instrução:
-			// nome igual não escreve, não acorda o WAL e não invalida perfil.
-			const renamed = await db
-				.update(user)
-				.set({ name: input.name })
-				.where(and(eq(user.id, userId), ne(user.name, input.name)))
-				.returning({ id: user.id });
-			const nameChanged = renamed.length > 0;
+			// Inscrição, respostas e vínculo de palestrante entram juntos
+			const {
+				participantId,
+				shortId,
+				nameChanged,
+				subscriberEmail,
+				claimedSpeakerActivityIds,
+			} = await db.transaction(async (tx) => {
+				// Um único UPDATE condicional compara e grava na mesma instrução:
+				// nome igual não escreve, não acorda o WAL e não invalida perfil.
+				const renamed = await tx
+					.update(user)
+					.set({ name: input.name })
+					.where(and(eq(user.id, userId), ne(user.name, input.name)))
+					.returning({ id: user.id });
+				const nameChanged = renamed.length > 0;
 
-			const createdParticipants = await db
-				.insert(participant)
-				.values({
-					userId,
-					projectId: input.projectId,
-					shortId: generateShortId(),
-				})
-				.returning({
-					id: participant.id,
-					shortId: participant.shortId,
+				const createdParticipants = await tx
+					.insert(participant)
+					.values({
+						userId,
+						projectId: input.projectId,
+						shortId: generateShortId(),
+					})
+					// Clique duplo: a segunda inscrição cai no índice único
+					.onConflictDoNothing({
+						target: [participant.userId, participant.projectId],
+					})
+					.returning({
+						id: participant.id,
+						shortId: participant.shortId,
+					});
+				const participantId = createdParticipants[0]?.id;
+				const shortId = createdParticipants[0]?.shortId;
+				if (!participantId || !shortId)
+					throw new TRPCError({
+						code: "CONFLICT",
+						message: "Você já está inscrito neste evento.",
+					});
+
+				if (version && fields.length > 0) {
+					const rows = buildAnswerRows({
+						participantId,
+						projectId: input.projectId,
+						versionId: version.id,
+						fields,
+						sections,
+						data: (validation.data ?? {}) as Record<
+							string,
+							unknown
+						>,
+					});
+					if (rows.length > 0)
+						await tx.insert(formAnswer).values(rows);
+				}
+
+				// Speaker claim: if the organizer pre-registered this email as a
+				// speaker, link the first unlinked speaker row. Never steals a
+				// link from another speaker.
+				const subscriber = await tx.query.user.findFirst({
+					where: eq(user.id, userId),
+					columns: { email: true },
 				});
-			const participantId = createdParticipants[0]?.id;
-			const shortId = createdParticipants[0]?.shortId;
-			if (!participantId || !shortId)
-				throw new TRPCError({
-					code: "INTERNAL_SERVER_ERROR",
-					message: "Falha ao criar inscrição.",
-				});
+				const subscriberEmail = subscriber?.email.trim().toLowerCase();
+				let claimedSpeakerActivityIds: string[] = [];
+				if (subscriberEmail) {
+					const candidate = await tx.query.speaker.findFirst({
+						where: and(
+							eq(speaker.projectId, input.projectId),
+							eq(speaker.email, subscriberEmail),
+							isNull(speaker.participantId),
+						),
+						columns: { id: true },
+					});
+					if (candidate) {
+						const alreadyLinked = await tx.query.speaker.findFirst({
+							where: and(
+								eq(speaker.projectId, input.projectId),
+								eq(speaker.participantId, participantId),
+							),
+							columns: { id: true },
+						});
+						if (!alreadyLinked) {
+							await tx
+								.update(speaker)
+								.set({ participantId })
+								.where(eq(speaker.id, candidate.id));
+							// A lista e as atividades que exibem esse palestrante
+							// passam a apontar para o novo perfil. Devolver os ids
+							// permite invalidar só essas entradas (e só quando o
+							// vínculo realmente aconteceu).
+							const speakerActivities = await tx
+								.select({
+									activityId: speakerOnActivity.activityId,
+								})
+								.from(speakerOnActivity)
+								.where(
+									eq(
+										speakerOnActivity.speakerId,
+										candidate.id,
+									),
+								);
+							claimedSpeakerActivityIds = speakerActivities.map(
+								(row) => row.activityId,
+							);
+						}
+					}
+				}
+				return {
+					participantId,
+					shortId,
+					nameChanged,
+					subscriberEmail,
+					claimedSpeakerActivityIds,
+				};
+			});
 
 			// Só consulta o escopo público do usuário quando o nome mudou.
 			// Inclui a inscrição recém-criada e os demais eventos do usuário.
@@ -1701,67 +1790,6 @@ export const formsRouter = createTRPCRouter({
 				]);
 			}
 
-			if (version && fields.length > 0) {
-				const rows = buildAnswerRows({
-					participantId,
-					projectId: input.projectId,
-					versionId: version.id,
-					fields,
-					sections,
-					data: (validation.data ?? {}) as Record<string, unknown>,
-				});
-				if (rows.length > 0) await db.insert(formAnswer).values(rows);
-			}
-
-			// Speaker claim: if the organizer pre-registered this email as a
-			// speaker, link the first unlinked speaker row. Never steals a
-			// link from another speaker.
-			const subscriber = await db.query.user.findFirst({
-				where: eq(user.id, userId),
-				columns: { email: true },
-			});
-			const subscriberEmail = subscriber?.email.trim().toLowerCase();
-			let claimedSpeakerActivityIds: string[] = [];
-			if (subscriberEmail) {
-				const candidate = await db.query.speaker.findFirst({
-					where: and(
-						eq(speaker.projectId, input.projectId),
-						eq(speaker.email, subscriberEmail),
-						isNull(speaker.participantId),
-					),
-					columns: { id: true },
-				});
-				if (candidate) {
-					const alreadyLinked = await db.query.speaker.findFirst({
-						where: and(
-							eq(speaker.projectId, input.projectId),
-							eq(speaker.participantId, participantId),
-						),
-						columns: { id: true },
-					});
-					if (!alreadyLinked) {
-						await db
-							.update(speaker)
-							.set({ participantId })
-							.where(eq(speaker.id, candidate.id));
-						// A lista e as atividades que exibem esse palestrante
-						// passam a apontar para o novo perfil. Devolver os ids
-						// permite invalidar só essas entradas (e só quando o
-						// vínculo realmente aconteceu).
-						const speakerActivities = await db
-							.select({
-								activityId: speakerOnActivity.activityId,
-							})
-							.from(speakerOnActivity)
-							.where(
-								eq(speakerOnActivity.speakerId, candidate.id),
-							);
-						claimedSpeakerActivityIds = speakerActivities.map(
-							(row) => row.activityId,
-						);
-					}
-				}
-			}
 			// Confirmation email, after everything is committed. Fire-and-forget:
 			// it can never fail or roll back the registration.
 			queueEventRegistrationEmail({

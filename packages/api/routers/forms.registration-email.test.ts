@@ -24,6 +24,7 @@ const {
 	findUser,
 	findSpeaker,
 	updateReturning,
+	insertReturning,
 } = vi.hoisted(() => {
 	const findProject = vi.fn();
 	const findProjectMany = vi.fn();
@@ -33,6 +34,7 @@ const {
 	const findUser = vi.fn();
 	const findSpeaker = vi.fn();
 	const updateReturning = vi.fn();
+	const insertReturning = vi.fn();
 	const sendNotification = vi.fn(async (_input: SendNotificationInput) => ({
 		notification: null,
 	}));
@@ -54,11 +56,10 @@ const {
 		}),
 		insert: () => ({
 			values: () => ({
-				returning: async () => [
-					{ id: PARTICIPANT_ID, shortId: "abc123" },
-				],
+				onConflictDoNothing: () => ({ returning: insertReturning }),
 			}),
 		}),
+		transaction: (fn: (tx: unknown) => unknown) => fn(db),
 	};
 	return {
 		dbMock: db,
@@ -71,6 +72,7 @@ const {
 		findUser,
 		findSpeaker,
 		updateReturning,
+		insertReturning,
 	};
 });
 
@@ -120,6 +122,9 @@ describe("submitAnswers registration email", () => {
 		findUser.mockResolvedValue({ email: "  User@Example.com " });
 		findSpeaker.mockResolvedValue(null);
 		updateReturning.mockResolvedValue([]);
+		insertReturning.mockResolvedValue([
+			{ id: PARTICIPANT_ID, shortId: "abc123" },
+		]);
 	});
 
 	afterEach(() => {
@@ -182,6 +187,20 @@ describe("submitAnswers registration email", () => {
 
 	it("does not send on duplicate registration attempts", async () => {
 		findParticipant.mockResolvedValue({ id: "existing" });
+		const caller = createCaller({ session });
+
+		await expect(
+			caller.submitAnswers({
+				projectId: PROJECT_ID,
+				name: "Maria Silva",
+				answers: {},
+			}),
+		).rejects.toMatchObject({ code: "CONFLICT" });
+		expect(sendNotificationMock).not.toHaveBeenCalled();
+	});
+
+	it("recusa a inscrição simultânea que perdeu a corrida", async () => {
+		insertReturning.mockResolvedValue([]);
 		const caller = createCaller({ session });
 
 		await expect(
