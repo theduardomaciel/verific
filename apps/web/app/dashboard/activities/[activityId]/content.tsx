@@ -27,7 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CategoryCard } from "@/components/dashboard/category-card";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
 import { DashboardPagination } from "@/components/dashboard/pagination";
-import { AddMonitorDialog } from "@/components/dialogs/add-monitor-dialog";
+import { AddParticipantsDialog } from "@/components/dialogs/add-participants-dialog";
 import { ActivityDeleteDialog } from "@/components/dialogs/delete-dialog";
 import { ShareDialog } from "@/components/dialogs/share-dialog";
 import { ExportParticipantsButton } from "@/components/participant/export-button";
@@ -341,7 +341,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 							</Link>
 						</Button>
 					</div>
-					<AddMonitorDialog
+					<AddParticipantsDialog
 						projectId={projectId}
 						activityId={activityId}
 						alreadyAdded={activity.participants

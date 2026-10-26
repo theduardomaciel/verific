@@ -14,8 +14,8 @@ vi.mock("@/components/badge-scanner", () => ({
 		<button type="button">{buttonLabel}</button>
 	),
 }));
-vi.mock("@/components/manual-participant-dialog", () => ({
-	ManualParticipantDialog: () => null,
+vi.mock("@/components/dialogs/add-participants-dialog", () => ({
+	AddParticipantsDialog: () => null,
 }));
 vi.mock("@/lib/trpc/react", () => ({
 	trpc: {

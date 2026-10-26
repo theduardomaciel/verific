@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import type { RouterOutput } from "@verific/api";
 
 import { BadgeScanner } from "@/components/badge-scanner";
-import { ManualParticipantDialog } from "@/components/manual-participant-dialog";
+import { AddParticipantsDialog } from "@/components/dialogs/add-participants-dialog";
 import { ExpandableDescription } from "@/components/shared/expandable-description";
 
 import { useNow } from "@/hooks/use-now";
@@ -233,38 +233,47 @@ export function ActivityTicket({
 												: "Escanear crachás"
 										}
 									/>
-									<ManualParticipantDialog
+									<AddParticipantsDialog
 										projectId={activity.projectId}
+										activityId={activity.id}
+										alreadyAdded={[]}
+										buttonVariant="outline"
 										buttonLabel={
 											sessions.length > 1
 												? `Credenciar por nome · sessão ${i + 1}`
 												: "Credenciar por nome"
 										}
 										title="Credenciamento manual"
-										description="Selecione um participante para credenciar nesta sessão."
-										onSelect={async (participant) => {
-											if (!participant.shortId) {
-												throw new Error(
-													"Participante sem shortId",
-												);
-											}
-											const checked =
-												await presenceMutation.mutateAsync(
-													{
-														sessionId: session.id,
-														code: participant.shortId,
-														mode: "in",
-													},
-												);
-											await invalidate();
-											const name =
-												checked.name ??
-												participant.user?.name ??
-												"";
-											if (name) {
-												toast.success(
-													`${name} credenciado.`,
-												);
+										description="Selecione os participantes para credenciar nesta sessão."
+										role="participant"
+										onSubmitSelected={async (
+											participants,
+										) => {
+											for (const participant of participants) {
+												if (!participant.shortId) {
+													throw new Error(
+														"Participante sem shortId",
+													);
+												}
+												const checked =
+													await presenceMutation.mutateAsync(
+														{
+															sessionId:
+																session.id,
+															code: participant.shortId,
+															mode: "in",
+														},
+													);
+												await invalidate();
+												const name =
+													checked.name ??
+													participant.user?.name ??
+													"";
+												if (name) {
+													toast.success(
+														`${name} credenciado.`,
+													);
+												}
 											}
 										}}
 									/>
@@ -280,8 +289,10 @@ export function ActivityTicket({
 														: "Registrar saída"
 												}
 											/>
-											<ManualParticipantDialog
+											<AddParticipantsDialog
 												projectId={activity.projectId}
+												activityId={activity.id}
+												alreadyAdded={[]}
 												buttonVariant="outline"
 												buttonLabel={
 													sessions.length > 1
@@ -289,34 +300,39 @@ export function ActivityTicket({
 														: "Registrar saída por nome"
 												}
 												title="Saída manual"
-												description="Selecione um participante para registrar a saída desta sessão."
-												onSelect={async (
-													participant,
+												description="Selecione os participantes para registrar a saída desta sessão."
+												role="participant"
+												onSubmitSelected={async (
+													participants,
 												) => {
-													if (!participant.shortId) {
-														throw new Error(
-															"Participante sem shortId",
-														);
-													}
-													const checked =
-														await presenceMutation.mutateAsync(
-															{
-																sessionId:
-																	session.id,
-																code: participant.shortId,
-																mode: "out",
-															},
-														);
-													await invalidate();
-													const name =
-														checked.name ??
-														participant.user
-															?.name ??
-														"";
-													if (name) {
-														toast.success(
-															`${name} saída registrada.`,
-														);
+													for (const participant of participants) {
+														if (
+															!participant.shortId
+														) {
+															throw new Error(
+																"Participante sem shortId",
+															);
+														}
+														const checked =
+															await presenceMutation.mutateAsync(
+																{
+																	sessionId:
+																		session.id,
+																	code: participant.shortId,
+																	mode: "out",
+																},
+															);
+														await invalidate();
+														const name =
+															checked.name ??
+															participant.user
+																?.name ??
+															"";
+														if (name) {
+															toast.success(
+																`${name} saída registrada.`,
+															);
+														}
 													}
 												}}
 											/>

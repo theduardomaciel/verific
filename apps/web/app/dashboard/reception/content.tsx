@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { BadgeScanner } from "@/components/badge-scanner";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
-import { ManualParticipantDialog } from "@/components/manual-participant-dialog";
+import { AddParticipantsDialog } from "@/components/dialogs/add-participants-dialog";
 
 import { trpc } from "@/lib/trpc/react";
 
@@ -150,31 +150,36 @@ export function ReceptionPage() {
 						mode="reception"
 						buttonLabel="Fazer check-in de hoje"
 					/>
-					<ManualParticipantDialog
+					<AddParticipantsDialog
 						projectId={projectId}
+						alreadyAdded={[]}
 						buttonLabel="Adicionar por nome"
 						title="Check-in manual"
-						description="Selecione um participante para registrar o check-in de hoje."
-						onSelect={async (participant) => {
-							if (!participant.shortId) {
-								throw new Error("Participante sem shortId");
-							}
-							const checked = await receptionMutation.mutateAsync(
-								{
-									projectId,
-									code: participant.shortId,
-								},
-							);
-							await invalidate();
-							const name =
-								checked.name ?? participant.user?.name ?? "";
-							// eslint-disable-next-line no-console
-							if (name) {
-								toast.success(
-									checked.alreadyCheckedIn
-										? `${name} já fez check-in hoje.`
-										: `${name} fez check-in.`,
-								);
+						description="Selecione os participantes para registrar o check-in de hoje."
+						role="participant"
+						onSubmitSelected={async (participants) => {
+							for (const participant of participants) {
+								if (!participant.shortId) {
+									throw new Error("Participante sem shortId");
+								}
+								const checked =
+									await receptionMutation.mutateAsync({
+										projectId,
+										code: participant.shortId,
+									});
+								await invalidate();
+								const name =
+									checked.name ??
+									participant.user?.name ??
+									"";
+								// eslint-disable-next-line no-console
+								if (name) {
+									toast.success(
+										checked.alreadyCheckedIn
+											? `${name} já fez check-in hoje.`
+											: `${name} fez check-in.`,
+									);
+								}
 							}
 						}}
 					/>

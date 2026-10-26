@@ -1,0 +1,35 @@
+
+> web@0.1.0 predev
+> pnpm codegen:css-colors
+
+$ tsx tools/scripts/codegen-css-colors.ts
+✅ Generated CSS colors file successfully
+
+> web@0.1.0 dev
+> next dev
+
+⚠ You are using a non-standard "NODE_ENV" value in your environment. This creates inconsistencies in the project and is strongly advised against. Read more: https://nextjs.org/docs/messages/non-standard-node-env
+⚠ Port 3000 is in use by process 90316, using available port 3001 instead.
+▲ Next.js 16.4.2 (Turbopack)
+- Local:         http://localhost:3001
+- Network:       http://172.172.20.33:3001
+- Environments: .env
+✓ Ready in 1127ms
+✓ Running next.config.ts took 113ms
+⨯ Another next dev server is already running.
+
+- Local:        http://localhost:3000
+- PID:          90316
+- Dir:          C:\Users\Eduardo\Documents\UFAL\Projetos\verific\apps\web
+- Log:          .next\dev\logs\next-development.log
+
+You can access the existing server at http://localhost:3000,
+or run taskkill /PID 90316 /F to stop it and start a new one.
+[?25h
+npm error Lifecycle script `dev` failed with error:
+npm error code 1
+npm error path C:\Users\Eduardo\Documents\UFAL\Projetos\verific\apps\web
+npm error workspace web@0.1.0
+npm error location C:\Users\Eduardo\Documents\UFAL\Projetos\verific\apps\web
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c next dev
