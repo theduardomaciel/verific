@@ -6,7 +6,9 @@ vi.mock("@verific/api", async () => {
 	const { initTRPC } = await import("@trpc/server");
 	const t = initTRPC.create();
 	return {
-		appRouter: t.router({ ping: t.procedure.query(() => "pong") }),
+		appRouter: t.router({
+			ping: t.procedure.query(() => "pong"),
+		}),
 		PUBLIC_CACHEABLE_QUERY_PATHS: new Set(["ping"]),
 	};
 });

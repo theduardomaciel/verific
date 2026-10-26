@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import JoinForm from "@/components/forms/JoinForm";
 
-import { authClient } from "@/lib/auth-client";
+import { usePublicSession } from "@/hooks/use-public-session";
 import { clearJoinDraft } from "@/lib/forms/join-draft";
 import { trpc } from "@/lib/trpc/react";
 
@@ -54,7 +54,7 @@ export function SubscribeGate({
 	formData,
 	profileLayout,
 }: SubscribeGateProps) {
-	const session = authClient.useSession();
+	const session = usePublicSession();
 	const user = session.data?.user;
 	const enrollment = trpc.getMyEnrollmentState.useQuery(
 		{ projectUrl: project.url, clientSessionId: user?.id },
