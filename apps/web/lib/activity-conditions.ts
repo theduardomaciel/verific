@@ -67,5 +67,5 @@ export function getEffectiveTolerance(activity: {
 	tolerance?: number | null;
 }): number | null {
 	if (!offersWaitlistSpot(activity)) return null;
-	return activity.tolerance ?? null;
+	return activity.tolerance ? activity.tolerance : null;
 }

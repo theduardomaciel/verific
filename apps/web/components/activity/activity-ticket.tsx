@@ -68,7 +68,7 @@ export function ActivityTicket({
 	const attendedCount = sessions.filter((s) => s.joinedAt).length;
 
 	const lastEnd = getLastSessionEnd(sessions);
-	const tolerance = activity.tolerance;
+	const tolerance = activity.tolerance || null;
 	const endDatePlusTolerance =
 		lastEnd && tolerance != null
 			? new Date(lastEnd.getTime() + tolerance * 60 * 1000)

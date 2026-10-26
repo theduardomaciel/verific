@@ -53,7 +53,7 @@ export const mutateActivityFormSchema = z
 			.optional(),
 		tolerance: z
 			.preprocess(
-				(val) => (val === "" ? null : val),
+				(val) => (val === "" || val === 0 || val === "0" ? null : val),
 				z.coerce
 					.number()
 					.int({

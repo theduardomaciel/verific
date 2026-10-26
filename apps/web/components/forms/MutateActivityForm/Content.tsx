@@ -186,7 +186,9 @@ function RegistrationSettings({
 											max={240}
 											placeholder="Sem tempo limite"
 											{...field}
-											value={field.value ?? ""}
+											value={
+												field.value ? field.value : ""
+											}
 										/>
 									</FormControl>
 									<FormMessage />
