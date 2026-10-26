@@ -11,14 +11,12 @@ import { Button } from "../ui/button";
 
 interface Props {
 	activityId: string;
-	userId: string;
 	participantId: string;
 	projectUrl: string;
 }
 
 export function ParticipantQuitButton({
 	activityId,
-	userId,
 	participantId,
 	projectUrl,
 }: Props) {

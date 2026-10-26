@@ -12,9 +12,7 @@ import { GamificationSkeleton, GamificationSettingsPage } from "./content";
 async function Prefetched() {
 	const projectId = await dashboardProjectId();
 	const queries = projectId
-		? await Promise.all([
-				prefetch("getGamificationSettings", { projectId }),
-			])
+		? [await prefetch("getGamificationSettings", { projectId })]
 		: [];
 	return (
 		<HydrateQueries queries={queries}>

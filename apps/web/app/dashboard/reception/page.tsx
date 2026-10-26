@@ -12,7 +12,7 @@ import { ReceptionSkeleton, ReceptionPage } from "./content";
 async function Prefetched() {
 	const projectId = await dashboardProjectId();
 	const queries = projectId
-		? await Promise.all([prefetch("getReceptionSummary", { projectId })])
+		? [await prefetch("getReceptionSummary", { projectId })]
 		: [];
 	return (
 		<HydrateQueries queries={queries}>

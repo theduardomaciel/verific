@@ -33,7 +33,9 @@ describe("useControlledParam", () => {
 			}),
 		);
 
-		act(() => vi.advanceTimersByTime(1000));
+		act(() => {
+			vi.advanceTimersByTime(1000);
+		});
 
 		expect(result.current.value).toBe("name");
 		expect(push).not.toHaveBeenCalled();
@@ -45,7 +47,9 @@ describe("useControlledParam", () => {
 			useControlledParam({ key: "sort", defaultValue: "date" }),
 		);
 
-		act(() => vi.advanceTimersByTime(1000));
+		act(() => {
+			vi.advanceTimersByTime(1000);
+		});
 
 		expect(result.current.value).toBe("date");
 		expect(push).not.toHaveBeenCalled();
@@ -57,8 +61,12 @@ describe("useControlledParam", () => {
 			useControlledParam({ key: "sort", resetKeys }),
 		);
 
-		act(() => result.current.setValue("date"));
-		act(() => vi.advanceTimersByTime(1000));
+		act(() => {
+			result.current.setValue("date");
+		});
+		act(() => {
+			vi.advanceTimersByTime(1000);
+		});
 
 		expect(push).toHaveBeenCalledWith("/evento/schedule?sort=date&page=1", {
 			scroll: false,

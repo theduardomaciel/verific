@@ -183,7 +183,6 @@ export const ParticipantListItem = {
 							  currentParticipantId ? (
 								<ParticipantQuitButton
 									activityId={participant.activityId}
-									userId={participant.userId}
 									participantId={participant.id}
 									projectUrl={url}
 								/>

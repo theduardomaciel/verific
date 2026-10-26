@@ -147,9 +147,6 @@ export function AddMonitorDialog({
 		event.preventDefault();
 
 		const selectedParticipantsIds = selectedParticipants.map((p) => p.id);
-		const selectedParticipantsUserIds = selectedParticipants.map(
-			(p) => p.userId,
-		);
 
 		if (selectedParticipantsIds.length === 0) {
 			toast.warning(

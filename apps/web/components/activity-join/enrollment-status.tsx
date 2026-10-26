@@ -121,12 +121,10 @@ export function NotInEventStatus({ eventUrl }: { eventUrl: string }) {
 
 export function AlreadySubscribedStatus({
 	activity,
-	userId,
 	participantId,
 	projectUrl,
 }: {
 	activity: ActivityDetail;
-	userId: string;
 	participantId: string;
 	projectUrl: string;
 }) {
@@ -148,7 +146,6 @@ export function AlreadySubscribedStatus({
 			{!hasEnded ? (
 				<ParticipantQuitButton
 					activityId={activity.id}
-					userId={userId}
 					participantId={participantId}
 					projectUrl={projectUrl}
 				/>

@@ -141,7 +141,6 @@ export function ActivityEnrollmentPanel({
 					) : state === "already-subscribed" ? (
 						<AlreadySubscribedStatus
 							activity={activity}
-							userId={userId ?? ""}
 							participantId={participantId ?? ""}
 							projectUrl={activity.project?.url ?? eventUrl}
 						/>

@@ -15,9 +15,7 @@ import {
 async function Prefetched() {
 	const projectId = await dashboardProjectId();
 	const queries = projectId
-		? await Promise.all([
-				prefetch("getNotificationSettings", { projectId }),
-			])
+		? [await prefetch("getNotificationSettings", { projectId })]
 		: [];
 	return (
 		<HydrateQueries queries={queries}>

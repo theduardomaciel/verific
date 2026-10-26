@@ -317,7 +317,6 @@ export function ActivityCard({
 					{!!participantId && !!userId && !hasEnded && (
 						<ParticipantQuitButton
 							activityId={activity.id}
-							userId={userId}
 							participantId={participantId}
 							projectUrl={activity.project?.url}
 						/>
