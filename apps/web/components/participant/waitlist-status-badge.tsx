@@ -13,12 +13,12 @@ export function WaitlistStatusBadge({ status }: WaitlistStatusBadgeProps) {
 		waiting: {
 			label: "Aguardando",
 			className:
-				"bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+				"bg-brand-100 text-brand-800 dark:bg-brand-900/30 dark:text-brand-400",
 		},
 		offered: {
 			label: "Oferta ativa",
 			className:
-				"bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
+				"bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
 		},
 		enrolled: {
 			label: "Inscrito",

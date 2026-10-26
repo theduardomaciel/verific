@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -145,9 +147,11 @@ export function WaitlistList({
 								{/* Participant (+ status badge on mobile) */}
 								<div className="flex min-w-0 items-start gap-3 lg:items-center">
 									{entry.imageUrl ? (
-										<img
+										<Image
 											src={entry.imageUrl}
 											alt=""
+											width={32}
+											height={32}
 											className="h-8 w-8 shrink-0 rounded-full"
 										/>
 									) : (
@@ -269,9 +273,10 @@ export function WaitlistList({
 													<strong>
 														{entry.name ??
 															"Participante"}
+														?
 													</strong>
-													? A vaga será oferecida para
-													o próximo participante na
+													A vaga será oferecida para o
+													próximo participante na
 													fila.
 												</>
 											}
