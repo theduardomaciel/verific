@@ -482,3 +482,35 @@ describe("answer transport values (RHF-coerced)", () => {
 		expect(fromString.success).toBe(true);
 	});
 });
+
+describe("campos de número e data vazios", () => {
+	const field = (
+		key: string,
+		type: FormFieldForValidation["type"],
+		required: boolean,
+	): FormFieldForValidation => ({
+		key,
+		label: key,
+		type,
+		required,
+		isVisible: true,
+		isActive: true,
+	});
+
+	it("trata vazio como sem resposta quando é opcional", () => {
+		const result = validateAnswers(
+			[field("idade", "number", false), field("nasc", "date", false)],
+			{ idade: "", nasc: "" },
+		);
+
+		expect(result).toEqual({ success: true, data: {} });
+	});
+
+	it("não aceita vazio como 0 quando é obrigatório", () => {
+		const result = validateAnswers([field("idade", "number", true)], {
+			idade: "",
+		});
+
+		expect(result.errors).toEqual({ idade: ["Informe um número."] });
+	});
+});

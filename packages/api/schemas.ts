@@ -584,6 +584,8 @@ export function validateSectionVisibilityRule(args: {
 	return null;
 }
 
+const blankToUndefined = (value: unknown) => (value === "" ? undefined : value);
+
 function fieldValueSchema(field: FormFieldForValidation) {
 	let base: z.ZodTypeAny;
 
@@ -607,16 +609,19 @@ function fieldValueSchema(field: FormFieldForValidation) {
 			break;
 		}
 		case "number": {
-			base = z.coerce.number();
+			let number = z.coerce.number({ error: "Informe um número." });
 			const v = field.validation;
-			if (typeof v?.min === "number")
-				base = (base as z.ZodCoercedNumber<number>).min(v.min);
-			if (typeof v?.max === "number")
-				base = (base as z.ZodCoercedNumber<number>).max(v.max);
+			if (typeof v?.min === "number") number = number.min(v.min);
+			if (typeof v?.max === "number") number = number.max(v.max);
+			// Vazio é "sem resposta", não 0
+			base = z.preprocess(blankToUndefined, number);
 			break;
 		}
 		case "date": {
-			base = z.coerce.date();
+			base = z.preprocess(
+				blankToUndefined,
+				z.coerce.date({ error: "Informe uma data válida." }),
+			);
 			break;
 		}
 		case "select_single":
@@ -776,9 +781,8 @@ function fieldValueSchema(field: FormFieldForValidation) {
 	}
 
 	if (!field.required) {
-		return base
-			.optional()
-			.nullable()
+		return z
+			.preprocess(blankToUndefined, base.optional().nullable())
 			.transform((v) => {
 				if (v === "" || v === null) return undefined;
 				if (Array.isArray(v) && v.length === 0) return undefined;
