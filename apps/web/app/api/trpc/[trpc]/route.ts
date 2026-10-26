@@ -96,6 +96,8 @@ const handler = async (req: NextRequest) => {
 		endpoint: "/api/trpc",
 		router: appRouter,
 		req,
+		// Queries com `context.fresh` chegam por POST (ver `lib/trpc/client`)
+		allowMethodOverride: true,
 		createContext: async () => {
 			// Sessão preguiçosa: sem cookie de sessão não há o que buscar no
 			// banco — a maioria dos acessos públicos nem traz cookie.

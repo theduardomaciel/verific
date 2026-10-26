@@ -15,7 +15,7 @@ vi.mock("@verific/api", async () => {
 vi.mock("@/lib/session", () => ({ getRefreshingSession: async () => null }));
 vi.mock("@/lib/server-cache-invalidation", () => ({}));
 
-import { GET } from "./route";
+import { GET, POST } from "./route";
 
 describe("rota do tRPC", () => {
 	it("responde 404, não 500, a um path com % inválido", async () => {
@@ -32,5 +32,19 @@ describe("rota do tRPC", () => {
 		);
 
 		expect(response.status).toBe(200);
+	});
+
+	it("responde a query enviada por POST sem cache de borda", async () => {
+		const response = await POST(
+			new NextRequest("http://localhost/api/trpc/ping?batch=1", {
+				method: "POST",
+				body: JSON.stringify({ 0: {} }),
+				headers: { "content-type": "application/json" },
+			}),
+		);
+
+		expect(response.status).toBe(200);
+		expect(response.headers.get("Cache-Control")).toBe("private, no-store");
+		expect(response.headers.get("CDN-Cache-Control")).toBeNull();
 	});
 });
