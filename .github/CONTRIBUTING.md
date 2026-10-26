@@ -19,7 +19,7 @@ git checkout -b nome-da-sua-branch
 ou, se preferir, pode usar o comando abaixo para criar e mudar para a nova branch ao mesmo tempo:
 
 ```bash
-git switch -b nome-da-sua-branch
+git switch -c nome-da-sua-branch
 ```
 
 > [!NOTE]

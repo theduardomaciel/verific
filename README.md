@@ -104,14 +104,16 @@ pnpm install
 > [!NOTE]
 > Os arquivos de exemplo são `apps/web/.env.example` (app + e-mail) e `packages/drizzle/.env.example` (banco). Variáveis sensíveis nunca vão para o cliente: só `NEXT_PUBLIC_*` sai do servidor.
 >
-> | Grupo                  | Variáveis                                                                                              | Detalhes                                                                                                                            |
-> | ---------------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
-> | App/URLs               | `NODE_ENV`, `VERCEL_URL`, `NEXT_PUBLIC_VERCEL_URL`, `PORT`                                             | Base das URLs absolutas (ex.: links do e-mail)                                                                                      |
-> | Banco                  | `DATABASE_URL`                                                                                         | PostgreSQL (Neon); também lida de `packages/drizzle/.env` pelos comandos `db:*`                                                     |
-> | Auth                   | `BETTER_AUTH_SECRET` (≥32 chars), `BETTER_AUTH_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`        | Login social Google                                                                                                                 |
-> | Rate limit (opcional)  | `RATE_LIMIT_RELAXED_CIDRS`                                                                             | IPs/faixas IPv4 (CIDR), separados por vírgula, com limites maiores (redes que compartilham IP público)                              |
-> | Storage (S3, opcional) | `S3_*`, `NEXT_PUBLIC_STORAGE_BASE_URL`                                                                 | Upload de imagens; sem elas o upload falha com mensagem clara. Ver [docs/image-uploads.md](docs/image-uploads.md)                   |
-> | E-mail                 | `EMAIL_PROVIDER=console\|ses\|resend`, `EMAIL_FROM`, `EMAIL_DAILY_LIMIT?`, `SES_*` ou `RESEND_API_KEY` | `console` é o padrão em dev (só loga); produção exige provedor real. Ver [docs/email-notifications.md](docs/email-notifications.md) |
+> | Grupo                  | Variáveis                                                                                                                    | Detalhes                                                                                                                            |
+> | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+> | App/URLs               | `NEXT_PUBLIC_APP_URL`, `NODE_ENV`, `VERCEL_URL`, `NEXT_PUBLIC_VERCEL_URL`, `PORT`                                            | `NEXT_PUBLIC_APP_URL` é a base das URLs absolutas (links do e-mail, metadados)                                                      |
+> | Banco                  | `DATABASE_URL`                                                                                                               | PostgreSQL (Neon); também lida de `packages/drizzle/.env` pelos comandos `db:*`                                                     |
+> | Auth                   | `BETTER_AUTH_SECRET` (≥32 chars), `BETTER_AUTH_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`                              | Login social Google                                                                                                                 |
+> | Rate limit (opcional)  | `RATE_LIMIT_RELAXED_CIDRS`                                                                                                   | IPs/faixas IPv4 (CIDR), separados por vírgula, com limites maiores (redes que compartilham IP público)                              |
+> | Storage (S3, opcional) | `S3_*`, `NEXT_PUBLIC_STORAGE_BASE_URL`                                                                                       | Upload de imagens; sem elas o upload falha com mensagem clara. Ver [docs/image-uploads.md](docs/image-uploads.md)                   |
+> | E-mail                 | `EMAIL_PROVIDER=console\|ses\|resend`, `EMAIL_FROM`, `EMAIL_DAILY_LIMIT?`, `SES_*` ou `RESEND_API_KEY`                       | `console` é o padrão em dev (só loga); produção exige provedor real. Ver [docs/email-notifications.md](docs/email-notifications.md) |
+> | Fila de espera         | `SCHEDULER_PROVIDER=console\|qstash`, `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY`, `QSTASH_URL?` | Agenda a expiração das ofertas; sem `QSTASH_TOKEN`, usa `console` (só loga)                                                         |
+> | Cron                   | `CRON_SECRET` (≥32 chars)                                                                                                    | Autoriza a varredura diária em `/api/cron/sweep`                                                                                    |
 
 5. Para dar início ao servidor local de desenvolvimento, utilize
 
@@ -154,16 +156,16 @@ Antes do primeiro deploy (ou após `db:push`/`db:migrate` que limpa o banco), ro
 
 ```bash
 # Perfil mínimo: 5 usuários, 1 evento, 1 atividade (mais rápido, ~2s) — ideal para CI/deploy
-pnpm db:seed --profile=minimal
+pnpm db:seed -- --profile=minimal
 
 # Perfil leve: 30 usuários, 2 eventos, ~40 atividades (rápido, ~5s)
-pnpm db:seed --profile=light
+pnpm db:seed -- --profile=light
 
 # Perfil padrão: 400 usuários, 2 eventos, ~120 atividades
-pnpm db:seed --profile=default
+pnpm db:seed -- --profile=default
 
 # Perfil de estresse: 3000+ usuários, 1 evento, ~60 atividades (para testes de carga)
-pnpm db:seed --profile=stress
+pnpm db:seed -- --profile=stress
 ```
 
 > [!NOTE]

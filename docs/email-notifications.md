@@ -1,9 +1,18 @@
 # Notificações por e-mail
 
-Serviço central em `packages/api/notifications/` (tabela `notifications`,
-ver migração `0013`). Hoje existe um único tipo:
-`event_registration_confirmation` — confirmação de inscrição no evento
-principal, enviada após `submitAnswers`, com reprocessamento manual em
+Serviço central em `packages/api/notifications/` (tabela `notifications`).
+Os tipos ficam em `notifications/registry.ts`, cada um com público,
+chave de idempotência, validação e template:
+
+- **participante:** confirmação e remoção da inscrição no evento;
+  inscrição, fila de espera (entrada, oferta e promoção), cancelamento e
+  remoção em atividades; mudança de horário ou local e cancelamento da
+  atividade;
+- **organização:** aviso de cota diária, contribuidor adicionado ou
+  removido e evento excluído.
+
+Os que reagem a mudanças de estado saem depois do commit
+(`notifications/triggers.ts`). Todos podem ser reprocessados em
 `/dashboard/emails`.
 
 ## Provedores
@@ -55,6 +64,9 @@ Comportamento por provedor:
 
 ## Fluxo de envio
 
+O exemplo é a confirmação de inscrição; os outros tipos seguem o mesmo
+caminho a partir do passo 2.
+
 1. `submitAnswers` cria o participante e, **depois do commit**, enfileira
    `sendNotification` com chave
    `event_registration_confirmation:<participantId>`, `to` = e-mail da
@@ -85,9 +97,7 @@ Estourou → status `blocked_quota`, sem envio. `getEmailUsage()` expõe
 
 ## Template e preview
 
-Template React Email v3 em
-`packages/api/notifications/emails/event-registration-confirmation.tsx`
-(pt-BR, 600px, cabeçalho escuro `#12081F`, botão teal). Texto puro gerado do
+Templates React Email v3 em `packages/api/notifications/emails/` (pt-BR, 600px, cabeçalho escuro `#12081F`, botão teal). Texto puro gerado do
 mesmo JSX. Imagem do cabeçalho: usa o logo horizontal escuro
 (`largeLogoDarkUrl`) centralizado a 280px, com `alt` do evento; se a URL não
 for `https` absoluta ou for SVG/WebP, cai para o nome do evento em texto. Os
