@@ -39,8 +39,6 @@ export interface WorkshopTicketProps {
 	checkoutEnabled?: boolean;
 }
 
-const DEFAULT_TOLERANCE = 15; // minutes
-
 export function ActivityTicket({
 	activity,
 	checkInCode,
@@ -70,10 +68,11 @@ export function ActivityTicket({
 	const attendedCount = sessions.filter((s) => s.joinedAt).length;
 
 	const lastEnd = getLastSessionEnd(sessions);
-	const tolerance = activity.tolerance ?? DEFAULT_TOLERANCE;
-	const endDatePlusTolerance = lastEnd
-		? new Date(lastEnd.getTime() + tolerance * 60 * 1000)
-		: null;
+	const tolerance = activity.tolerance;
+	const endDatePlusTolerance =
+		lastEnd && tolerance != null
+			? new Date(lastEnd.getTime() + tolerance * 60 * 1000)
+			: null;
 	const isExpired = endDatePlusTolerance ? now > endDatePlusTolerance : false;
 
 	return (

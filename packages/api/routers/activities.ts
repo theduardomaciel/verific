@@ -319,7 +319,7 @@ const mutateActivityParams = z.object({
 	address: z.string().optional(),
 	latitude: z.number().optional(),
 	longitude: z.number().optional(),
-	tolerance: z.coerce.number().optional(),
+	tolerance: z.coerce.number().int().min(5).max(240).nullable().optional(),
 	workload: z.coerce.number().optional(),
 	allowOverlap: z.boolean().optional(),
 	waitlistEnabled: z.boolean().optional(),

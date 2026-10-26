@@ -94,7 +94,7 @@ export default function MutateActivityForm({
 							address: "",
 						},
 					],
-			tolerance: activity?.tolerance || 0,
+			tolerance: activity?.tolerance ?? null,
 			workload: activity?.workload || undefined,
 			allowOverlap: activity?.allowOverlap ?? false,
 			waitlistEnabled: activity?.waitlistEnabled ?? true,

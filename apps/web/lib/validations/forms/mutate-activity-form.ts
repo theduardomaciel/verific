@@ -51,12 +51,25 @@ export const mutateActivityFormSchema = z
 					.nullable(),
 			)
 			.optional(),
-		tolerance: z.coerce
-			.number()
-			.optional()
-			.refine((val) => val === undefined || val >= 0, {
-				message: "A tolerância deve ser maior ou igual a 0",
-			}),
+		tolerance: z
+			.preprocess(
+				(val) => (val === "" ? null : val),
+				z.coerce
+					.number()
+					.int({
+						message: "A tolerância deve ser um número inteiro",
+					})
+					.min(5, {
+						message:
+							"A tolerância deve ser de pelo menos 5 minutos",
+					})
+					.max(240, {
+						message:
+							"A tolerância deve ser de no máximo 240 minutos",
+					})
+					.nullable(),
+			)
+			.optional(),
 		waitlistOfferHours: z.coerce.number().int().min(1).max(168).optional(),
 		workload: z.coerce
 			.number()

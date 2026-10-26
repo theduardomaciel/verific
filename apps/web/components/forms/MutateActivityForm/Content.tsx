@@ -177,33 +177,18 @@ function RegistrationSettings({
 							render={({ field }) => (
 								<FormItem>
 									<FormLabel>Tempo de tolerância</FormLabel>
-									<Select
-										onValueChange={field.onChange}
-										value={field.value?.toString() ?? ""}
-									>
-										<FormControl>
-											<SelectTrigger className="w-full">
-												<SelectValue placeholder="Selecione" />
-											</SelectTrigger>
-										</FormControl>
-										<SelectContent>
-											<SelectItem value="0">
-												Sem tolerância
-											</SelectItem>
-											<SelectItem value="5">
-												5 minutos
-											</SelectItem>
-											<SelectItem value="10">
-												10 minutos
-											</SelectItem>
-											<SelectItem value="15">
-												15 minutos
-											</SelectItem>
-											<SelectItem value="20">
-												20 minutos
-											</SelectItem>
-										</SelectContent>
-									</Select>
+									<FormControl>
+										<InputWithSuffix
+											suffix=" minutos"
+											className="w-full"
+											type="number"
+											min={5}
+											max={240}
+											placeholder="Sem tempo limite"
+											{...field}
+											value={field.value ?? ""}
+										/>
+									</FormControl>
 									<FormMessage />
 								</FormItem>
 							)}
