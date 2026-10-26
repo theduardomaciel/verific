@@ -425,20 +425,21 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 	// perfil de quem foi inscrito — mas só desses participantes, não do evento
 	// inteiro.
 	addActivityParticipants: {
+		// Sem respostas, o resultado já traz o evento: nenhuma leitura extra
 		snapshot: async (input) => {
+			if (!record(input).formAnswers) return undefined;
 			const projectId = await activityProjectId(
 				readString(input, "activityId"),
 			);
 			return {
-				projectId,
 				shortIds: await participantShortIds(
 					projectId,
 					readStringArray(input, "participantsIdsToAdd"),
 				),
 			};
 		},
-		tags: ({ input, snapshot }) => {
-			const projectId = readString(snapshot, "projectId");
+		tags: ({ input, result, snapshot }) => {
+			const projectId = readString(result, "projectId");
 			if (!projectId) return [];
 			return [
 				// Inscrição concede pontos (quando ligados) e muda o ranking.

@@ -1706,7 +1706,7 @@ export const activitiesRouter = createTRPCRouter({
 				resolved,
 			});
 
-			return { success: true };
+			return { success: true, projectId: foundActivity.projectId };
 		}),
 
 	addMonitorsToActivity: protectedProcedure
