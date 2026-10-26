@@ -188,6 +188,8 @@ describe("pdf-writer", () => {
 			),
 		);
 		const badges = Array.from({ length: 10 }, () => primitives);
+		// data-only imprime só a área livre: 10 cabem numa página
+		const pageCount = { "data-only": 1, full: 2 } as const;
 		for (const mode of ["data-only", "full"] as const) {
 			const sheetLayout = { ...layout(), mode };
 			const bytes = await renderBadgeSheets({
@@ -199,7 +201,7 @@ describe("pdf-writer", () => {
 				artworkPdfBytes: null,
 			});
 			const pdf = await PDF.load(bytes as never);
-			expect(pdf.getPageCount()).toBe(2);
+			expect(pdf.getPageCount()).toBe(pageCount[mode]);
 			const page = pdf.getPage(0);
 			expect(page?.width).toBeCloseTo(mmToPt(210), 1);
 			expect(page?.height).toBeCloseTo(mmToPt(297), 1);
