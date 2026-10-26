@@ -845,126 +845,23 @@ export function BadgeEditor({
 													? { maxWidth: 520 }
 													: {
 															width:
-																(draft.mode ===
-																"data-only"
-																	? draft
-																			.freeArea
-																			.w
-																	: draft.badgeW) *
+																draft.badgeW *
 																pxPerMm,
 														}
 											}
 										>
 											<BadgePreviewSvg
-												primitives={
-													draft.mode === "data-only"
-														? preview.primitives.map(
-																(p) => {
-																	const F =
-																		draft.freeArea;
-																	if (
-																		p.kind ===
-																		"rect"
-																	)
-																		return {
-																			...p,
-																			rect: {
-																				...p.rect,
-																				x:
-																					p
-																						.rect
-																						.x -
-																					F.x,
-																				y:
-																					p
-																						.rect
-																						.y -
-																					F.y,
-																			},
-																		};
-																	if (
-																		p.kind ===
-																		"text"
-																	)
-																		return {
-																			...p,
-																			xMm:
-																				p.xMm -
-																				F.x,
-																			yMm:
-																				p.yMm -
-																				F.y,
-																		};
-																	if (
-																		p.kind ===
-																		"qr"
-																	)
-																		return {
-																			...p,
-																			rect: {
-																				...p.rect,
-																				x:
-																					p
-																						.rect
-																						.x -
-																					F.x,
-																				y:
-																					p
-																						.rect
-																						.y -
-																					F.y,
-																			},
-																		};
-																	if (
-																		p.kind ===
-																		"image"
-																	)
-																		return {
-																			...p,
-																			rect: {
-																				...p.rect,
-																				x:
-																					p
-																						.rect
-																						.x -
-																					F.x,
-																				y:
-																					p
-																						.rect
-																						.y -
-																					F.y,
-																			},
-																		};
-																	return p;
-																},
-															)
-														: preview.primitives
-												}
-												badgeWMm={
-													draft.mode === "data-only"
-														? draft.freeArea.w
-														: draft.badgeW
-												}
-												badgeHMm={
-													draft.mode === "data-only"
-														? draft.freeArea.h
-														: draft.badgeH
-												}
+												primitives={preview.primitives}
+												badgeWMm={draft.badgeW}
+												badgeHMm={draft.badgeH}
 												pxPerMm={
 													zoom === "fit"
-														? 520 /
-															(draft.mode ===
-															"data-only"
-																? draft.freeArea
-																		.w
-																: draft.badgeW)
+														? 520 / draft.badgeW
 														: pxPerMm
 												}
 												artworkUrl={
-													draft.mode === "full"
-														? draft.artworkUrl ||
-															undefined
-														: undefined
+													draft.artworkUrl ||
+													undefined
 												}
 												artworkKind={draft.artworkKind}
 												mode={draft.mode}
