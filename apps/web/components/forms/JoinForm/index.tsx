@@ -39,7 +39,7 @@ import {
 } from "@/components/forms/dialogs";
 import { DynamicField } from "@/components/forms/dynamic/DynamicField";
 
-import { revalidateParticipantEnrollment } from "@/app/actions";
+import { refreshRoute } from "@/app/actions";
 import {
 	clearJoinDraft,
 	readJoinDraft,
@@ -390,7 +390,7 @@ export default function JoinForm({
 			setCurrentState("error");
 			return;
 		}
-		if (user.id) await revalidateParticipantEnrollment(user.id);
+		await refreshRoute();
 		clearJoinDraft(project.id);
 		setCurrentState("submitted");
 	}

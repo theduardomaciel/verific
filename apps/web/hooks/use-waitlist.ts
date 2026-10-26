@@ -2,10 +2,7 @@
 
 import { useCallback, useState } from "react";
 
-import {
-	revalidateParticipantActivities,
-	revalidateSubscribedActivitiesIdsFromParticipant,
-} from "@/app/actions";
+import { refreshRoute } from "@/app/actions";
 import { toJoinError, type JoinAnswers } from "@/hooks/use-join-activity";
 // API
 import { trpc } from "@/lib/trpc/react";
@@ -30,8 +27,7 @@ export function useWaitlist({ activityId, userId }: UseWaitlistArgs) {
 
 	const refresh = useCallback(async () => {
 		const settled = await Promise.allSettled([
-			revalidateSubscribedActivitiesIdsFromParticipant(userId),
-			revalidateParticipantActivities(userId),
+			refreshRoute(),
 			utils.getMyWaitlistEntries.invalidate(),
 			utils.getMyEnrollmentState.invalidate(),
 			utils.getActivitiesFromParticipant.invalidate(),

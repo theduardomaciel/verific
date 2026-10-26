@@ -3,10 +3,7 @@
 
 import { LogOutIcon } from "lucide-react";
 
-import {
-	revalidateParticipantActivities,
-	revalidateSubscribedActivitiesIdsFromParticipant,
-} from "@/app/actions";
+import { refreshRoute } from "@/app/actions";
 import { trpc } from "@/lib/trpc/react";
 
 import { DeleteDialog } from "../dialogs/delete-dialog";
@@ -34,8 +31,7 @@ export function ParticipantQuitButton({
 			participantId,
 			projectUrl,
 		});
-		await revalidateSubscribedActivitiesIdsFromParticipant(userId);
-		await revalidateParticipantActivities(userId);
+		await refreshRoute();
 		await utils.getActivityAvailability.invalidate();
 	}
 

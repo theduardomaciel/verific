@@ -22,7 +22,7 @@ vi.mock("next/navigation", () => ({
 	useRouter: () => ({ push: vi.fn() }),
 }));
 vi.mock("@/app/actions", () => ({
-	revalidateParticipantEnrollment: vi.fn(),
+	refreshRoute: vi.fn(),
 	signOutAction: vi.fn(),
 }));
 vi.mock("@/lib/validations", async (importOriginal) => {

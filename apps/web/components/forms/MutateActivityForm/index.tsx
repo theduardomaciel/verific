@@ -22,7 +22,7 @@ import { MutateActivityFormContent } from "@/components/forms/MutateActivityForm
 import { dateToTimeString } from "@/components/pickers/time-picker";
 
 // Actions
-import { revalidateActivities } from "@/app/actions";
+import { refreshRoute } from "@/app/actions";
 // API
 import { trpc } from "@/lib/trpc/react";
 // Validation
@@ -174,7 +174,7 @@ export default function MutateActivityForm({
 
 				if (configureAfterSave.current) {
 					configureAfterSave.current = false;
-					await revalidateActivities();
+					await refreshRoute();
 					void utils.getActivities.invalidate();
 					router.push(`/dashboard/activities/${activityId}/form`);
 					return;
@@ -184,7 +184,7 @@ export default function MutateActivityForm({
 				shouldResetAfterHide.current = true;
 			}
 
-			await revalidateActivities();
+			await refreshRoute();
 			void utils.getActivities.invalidate();
 			void utils.getActivity.invalidate();
 			void utils.getDashboardStats.invalidate();

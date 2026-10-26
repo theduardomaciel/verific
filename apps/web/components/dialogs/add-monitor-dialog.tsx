@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
-import { revalidateParticipantActivities } from "@/app/actions";
+import { refreshRoute } from "@/app/actions";
 // Hooks
 import { useParticipantSearch } from "@/hooks/participant/use-participant-search";
 import { useParticipantSelection } from "@/hooks/participant/use-participant-selection";
@@ -171,11 +171,7 @@ export function AddMonitorDialog({
 					participantsIdsToAdd: selectedParticipantsIds,
 				});
 				setAddedUsersAmount(selectedParticipantsIds.length);
-				await Promise.all(
-					selectedParticipantsUserIds.map((id) =>
-						revalidateParticipantActivities(id),
-					),
-				);
+				await refreshRoute();
 			} catch (error) {
 				console.error(error);
 				toast.error("Erro ao adicionar monitor", {

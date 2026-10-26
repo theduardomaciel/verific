@@ -27,7 +27,7 @@ vi.mock("@/lib/trpc/react", () => ({
 	},
 }));
 vi.mock("@/app/actions", () => ({
-	revalidateParticipantActivities: vi.fn(),
+	refreshRoute: vi.fn(),
 }));
 vi.mock("@/hooks/participant/use-participant-search", () => ({
 	useParticipantSearch: () => ({

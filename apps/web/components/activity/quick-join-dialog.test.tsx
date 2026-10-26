@@ -14,8 +14,7 @@ const {
 	invalidateSubscribedMock,
 	invalidateActivitiesMock,
 	invalidateAvailabilityMock,
-	revalidateSubscribedMock,
-	revalidateActivitiesMock,
+	refreshRouteMock,
 	pushMock,
 } = vi.hoisted(() => ({
 	pushMock: vi.fn(),
@@ -23,8 +22,7 @@ const {
 	invalidateSubscribedMock: vi.fn(),
 	invalidateActivitiesMock: vi.fn(),
 	invalidateAvailabilityMock: vi.fn(),
-	revalidateSubscribedMock: vi.fn(),
-	revalidateActivitiesMock: vi.fn(),
+	refreshRouteMock: vi.fn(),
 }));
 
 vi.mock("@/lib/trpc/react", () => ({
@@ -47,8 +45,7 @@ vi.mock("@/lib/trpc/react", () => ({
 }));
 
 vi.mock("@/app/actions", () => ({
-	revalidateSubscribedActivitiesIdsFromParticipant: revalidateSubscribedMock,
-	revalidateParticipantActivities: revalidateActivitiesMock,
+	refreshRoute: refreshRouteMock,
 }));
 
 vi.mock("next/navigation", () => ({

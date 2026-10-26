@@ -19,7 +19,7 @@ import {
 
 import { EditMyAnswersForm } from "@/components/forms/dynamic/EditAnswersForm";
 
-import { revalidateParticipants } from "@/app/actions";
+import { refreshRoute } from "@/app/actions";
 import { revalidateProfile } from "@/lib/profile-actions";
 import { trpc } from "@/lib/trpc/react";
 
@@ -57,9 +57,7 @@ export function EditProfileDialog({
 	const handleRemoveSelf = async () => {
 		try {
 			await removeSelfMutation.mutateAsync({ projectId });
-			await revalidateParticipants();
-			// Note: we don't have direct access to userId here, but the enrollment
-			// tag will be invalidated by the server action when the participant is removed
+			await refreshRoute();
 			toast.success("Você saiu do evento com sucesso");
 			setRemoveOpen(false);
 			// Redirect to the event public page after leaving
