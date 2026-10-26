@@ -47,7 +47,7 @@ describe("planSettlement", () => {
 			entries: [waiting("a", "2026-11-05T10:00:00-03:00")],
 		});
 
-		expect(plan).toEqual({ expire: [], offer: [] });
+		expect(plan).toEqual({ expire: [], revoke: [], offer: [] });
 	});
 
 	it("oferece as vagas livres pela ordem de entrada", () => {
@@ -67,6 +67,23 @@ describe("planSettlement", () => {
 		);
 	});
 
+	it("devolve à fila as últimas ofertas quando o limite baixa", () => {
+		const first = offered("first", "2026-11-10T20:00:00-03:00");
+		const last = {
+			...offered("last", "2026-11-10T20:00:00-03:00"),
+			joinedAt: new Date("2026-11-02T10:00:00-03:00"),
+		};
+
+		const plan = planSettlement({
+			...base,
+			limit: 8,
+			enrolled: 7,
+			entries: [last, first, waiting("w", "2026-11-03T10:00:00-03:00")],
+		});
+
+		expect(plan).toEqual({ expire: [], revoke: ["last"], offer: [] });
+	});
+
 	it("conta ofertas em aberto como vagas ocupadas", () => {
 		const plan = planSettlement({
 			...base,
@@ -77,7 +94,7 @@ describe("planSettlement", () => {
 			],
 		});
 
-		expect(plan).toEqual({ expire: [], offer: [] });
+		expect(plan).toEqual({ expire: [], revoke: [], offer: [] });
 	});
 
 	it("passa a oferta vencida para o próximo", () => {
@@ -116,7 +133,7 @@ describe("planSettlement", () => {
 			],
 		});
 
-		expect(plan).toEqual({ expire: ["stale"], offer: [] });
+		expect(plan).toEqual({ expire: ["stale"], revoke: [], offer: [] });
 	});
 
 	it("encerra a fila inteira quando a atividade acaba", () => {
@@ -130,7 +147,7 @@ describe("planSettlement", () => {
 			],
 		});
 
-		expect(plan).toEqual({ expire: ["o", "w"], offer: [] });
+		expect(plan).toEqual({ expire: ["o", "w"], revoke: [], offer: [] });
 	});
 
 	it("oferece a todos quando o limite é removido", () => {

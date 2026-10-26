@@ -157,6 +157,13 @@ export async function settleActivity(
 		await recordEvents(tx, locked.id, expired, "expired", null);
 	}
 
+	if (plan.revoke.length > 0) {
+		await tx
+			.update(activityWaitlist)
+			.set({ status: "waiting", offeredAt: null, offerExpiresAt: null })
+			.where(inArray(activityWaitlist.id, plan.revoke));
+	}
+
 	// Todas as ofertas de uma rodada têm o mesmo prazo
 	const offerIds = plan.offer.map((offer) => offer.id);
 	if (plan.offer.length > 0) {
@@ -176,10 +183,10 @@ export async function settleActivity(
 			null,
 		);
 
-		// Offers are created lazily by any settle (including reads), so this is
-		// the only place that sees every new offer. Fire-and-forget: the e-mail
-		// is built and validated after the transaction commits, and a rolled
-		// back settlement is later skipped by `validate`.
+		// Every new offer comes from a settle, so this is the only place that
+		// sees them all. Fire-and-forget: the e-mail is built and validated
+		// after the transaction commits, and a rolled back settlement is later
+		// skipped by `validate`.
 		const expiresById = new Map(
 			plan.offer.map((offer) => [offer.id, offer.expiresAt]),
 		);
@@ -198,6 +205,7 @@ export async function settleActivity(
 	}
 
 	const expired = new Set(plan.expire);
+	const revoked = new Set(plan.revoke);
 	const offered = new Map(plan.offer.map((o) => [o.id, o.expiresAt]));
 	return entries
 		.filter((entry) => !expired.has(entry.id))
@@ -208,7 +216,13 @@ export async function settleActivity(
 						status: "offered" as const,
 						offerExpiresAt: offered.get(entry.id)!,
 					}
-				: entry,
+				: revoked.has(entry.id)
+					? {
+							...entry,
+							status: "waiting" as const,
+							offerExpiresAt: null,
+						}
+					: entry,
 		);
 }
 
