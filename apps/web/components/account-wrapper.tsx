@@ -71,8 +71,9 @@ export function AccountWrapper({
 							<AccordionTrigger className="text-foreground font-subtitle text-xl font-bold">
 								{category}
 							</AccordionTrigger>
-							<AccordionContent>
-								<ul className="flex w-full flex-col gap-4">
+							{/* Folga para a sombra dos ingressos: o conteúdo corta o que passa da borda */}
+							<AccordionContent className="-mx-4 px-4 pb-8">
+								<ul className="flex w-full flex-col gap-8">
 									{grouped.get(category)!.map((activity) => (
 										<li
 											key={activity.id}
