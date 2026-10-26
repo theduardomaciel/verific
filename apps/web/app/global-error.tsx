@@ -19,12 +19,12 @@ const randomPhrases = ["oops", "erro"];
 
 export default function ErrorPage({
 	error,
-	reset,
+	retry,
 }: {
 	error: Error & { digest?: string };
-	reset: () => void;
+	retry: () => void;
 }) {
-	console.log(error, error.digest);
+	console.error(error, error.digest);
 
 	const bgWords = useState(() => {
 		const pick = () =>
@@ -88,7 +88,7 @@ export default function ErrorPage({
 							<span className="bg-muted w-full rounded-md border p-4 font-mono text-sm">
 								{error.message}
 							</span>
-							<Button size={"lg"} onClick={() => reset()}>
+							<Button size={"lg"} onClick={() => retry()}>
 								<RefreshCcw />
 								Tentar novamente
 							</Button>

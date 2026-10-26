@@ -49,7 +49,8 @@ async function DashboardLayoutContent({
 		if (isAuthError(error)) {
 			await redirectToSignIn();
 		}
-		notFound();
+		// Falha do banco não é página inexistente: vai para o error boundary
+		throw error;
 	}
 
 	const allProjects = projects.owned.concat(projects.shared);

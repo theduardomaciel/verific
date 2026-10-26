@@ -26,7 +26,8 @@ async function AccountLayoutContent({ children }: Props) {
 		if (isAuthError(error)) {
 			await redirectToSignIn();
 		}
-		notFound();
+		// Falha do banco não é página inexistente: vai para o error boundary
+		throw error;
 	}
 
 	if (!projects) {
