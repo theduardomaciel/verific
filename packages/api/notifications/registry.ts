@@ -942,8 +942,11 @@ export const notificationRegistry = {
 			const participantId = requiredString(refs, "participantId");
 			if (!(await activityExists(activityId)))
 				return { ok: false, reason: "entity_gone" };
+			// Os refs não trazem a entrada: busca pela atividade e pessoa
 			const status = await waitlistStatus(
-				optionalString(refs, "enrollmentId"),
+				undefined,
+				activityId,
+				participantId,
 			);
 			if (status === null) return { ok: false, reason: "entity_gone" };
 			if (status !== "removed")

@@ -292,6 +292,18 @@ describe("validate", () => {
 		);
 	});
 
+	it("sends the waitlist removal while the entry is removed", async () => {
+		queue.push([{ id: "a1" }], [{ status: "removed" }]);
+
+		await expect(
+			notificationRegistry.activity_waitlist_removed.validate({
+				activityId: "a1",
+				participantId: "p1",
+				removedAt: "2026-10-25T00:00:00.000Z",
+			}),
+		).resolves.toEqual({ ok: true });
+	});
+
 	it("sends the registration removal only after the delete", async () => {
 		const removed = notificationRegistry.event_registration_removed;
 
