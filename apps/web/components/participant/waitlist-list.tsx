@@ -248,9 +248,6 @@ export function WaitlistList({
 												variant="default"
 												successMessage={`${entry.name ?? "Participante"} promovido da fila de espera`}
 												errorMessage="Erro ao promover participante"
-												participantId={
-													entry.participantId
-												}
 												onConfirm={async (reason) => {
 													await promote({
 														activityId,
@@ -294,7 +291,6 @@ export function WaitlistList({
 											variant="outline"
 											successMessage={`Oferta de ${entry.name ?? "Participante"} removida`}
 											errorMessage="Erro ao remover oferta"
-											participantId={entry.participantId}
 											onConfirm={async (reason) => {
 												await remove({
 													activityId,
@@ -350,7 +346,6 @@ export function WaitlistList({
 											variant="destructive"
 											successMessage={`${entry.name ?? "Participante"} removido da fila de espera`}
 											errorMessage="Erro ao remover da fila de espera"
-											participantId={entry.participantId}
 											onConfirm={async (reason) => {
 												await remove({
 													activityId,
