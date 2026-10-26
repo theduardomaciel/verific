@@ -20,7 +20,6 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 // Actions
-// import { signOutAction } from "@/app/actions";
 import { LogoutForm } from "@/components/ui/logout-form";
 
 // Lib
@@ -35,8 +34,6 @@ interface Props {
 
 export function UserNav({ user, showAccountActions }: Props) {
 	const initials = getInitials(user.name);
-
-	// console.log("UserNav user:", user);
 
 	return (
 		<DropdownMenu>
@@ -69,7 +66,6 @@ export function UserNav({ user, showAccountActions }: Props) {
 							<DropdownMenuItem>
 								<UserIcon className="mr-2 h-4 w-4" />
 								Minha Conta
-								{/* <DropdownMenuShortcut>⌘S</DropdownMenuShortcut> */}
 							</DropdownMenuItem>
 						</Link>
 						<DropdownMenuGroup></DropdownMenuGroup>
@@ -95,7 +91,6 @@ export function UserNav({ user, showAccountActions }: Props) {
 						>
 							<LogOut className="mr-2 h-4 w-4" />
 							<span>Log out</span>
-							{/* <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut> */}
 						</button>
 					</DropdownMenuItem>
 				</LogoutForm>

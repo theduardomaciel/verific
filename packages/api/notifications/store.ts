@@ -69,7 +69,7 @@ export interface NotificationStore {
 	): Promise<{ row: NotificationRow; inserted: boolean }>;
 	/**
 	 * Bulk variant of `insertIgnore`: one multi-values insert + one select
-	 * for the conflicting keys (two round trips per batch, neon-http safe).
+	 * for the conflicting keys (two round trips per batch).
 	 * The result preserves the input order and `inserted` flags.
 	 */
 	insertIgnoreMany(

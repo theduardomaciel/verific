@@ -435,9 +435,6 @@ export function PlacePicker({
 						id="map"
 						className="h-[300px] w-full rounded-md border"
 					/>
-					{/* <div className="text-xs text-muted-foreground">
-							Arraste o marcador ou clique no mapa para definir o local
-						</div> */}
 				</div>
 			</PopoverContent>
 		</Popover>

@@ -107,7 +107,6 @@ export default function MutateActivityForm({
 	});
 
 	// Atenção! O botão de "submit" não funcionará caso existam erros (mesmo que não visíveis) no formulário.
-	// console.log("Errors: ", form.formState.errors);
 
 	const updateMutation = trpc.updateActivity.useMutation();
 	const createMutation = trpc.createActivity.useMutation();

@@ -41,9 +41,6 @@ export default function RootLayout({
 			data-scroll-behavior="smooth"
 			suppressHydrationWarning
 		>
-			{/* <head>
-				<script src="https://unpkg.com/react-scan/dist/auto.global.js" />
-			</head> */}
 			<body className={`${hankenGrotesk.variable} antialiased`}>
 				<Providers>{children}</Providers>
 			</body>

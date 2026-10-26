@@ -326,7 +326,7 @@ function projectToShared(row: {
 	};
 }
 
-/** Loads activity + project + sessions in ONE query (neon-http round trip). */
+/** Loads activity + project + sessions in ONE query. */
 export async function loadSharedActivity(
 	activityId: string,
 	ctx?: BuildContext,

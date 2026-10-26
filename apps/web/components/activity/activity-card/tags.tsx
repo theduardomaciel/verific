@@ -94,17 +94,6 @@ export function ActivityCardTags({
 					</span>
 				</Badge>
 			) : null}
-			{/* <Badge
-				className={cn(
-					"bg-background text-foreground py-1 brightness-95 wrap-break-word",
-					tagsClassName,
-				)}
-			>
-				<Users className="mr-2 h-3.5! w-3.5!" />
-				<span className="-mt-0.5 text-sm capitalize">
-					{activity.audience === "internal" ? "Interno" : "Externo"}
-				</span>
-			</Badge> */}
 		</div>
 	);
 }
