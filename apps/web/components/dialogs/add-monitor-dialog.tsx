@@ -155,9 +155,6 @@ export function AddMonitorDialog({
 			(p) => p.userId,
 		);
 
-		console.log("Monitores selecionados: ", selectedParticipantsIds);
-		// console.log(selectedParticipantsUserIds, "userIds");
-
 		if (selectedParticipantsIds.length === 0) {
 			toast.warning(
 				"Nenhum monitor selecionado. Selecione ao menos um monitor para adicionar.",
@@ -165,27 +162,28 @@ export function AddMonitorDialog({
 			return;
 		}
 
-		try {
-			startTransition(async () => {
+		// O erro de uma transição assíncrona vai para o error boundary: o
+		// try/catch precisa ficar dentro dela
+		startTransition(async () => {
+			try {
 				await mutations.mutateAsync({
 					activityId,
 					participantsIdsToAdd: selectedParticipantsIds,
 				});
 				setAddedUsersAmount(selectedParticipantsIds.length);
-			});
-
-			await Promise.all(
-				selectedParticipantsUserIds.map((id) =>
-					revalidateParticipantActivities(id),
-				),
-			);
-		} catch (error) {
-			console.error(error);
-			toast.error("Erro ao adicionar monitor", {
-				description:
-					"Ocorreu um erro ao adicionar o monitor. Tente novamente mais tarde.",
-			});
-		}
+				await Promise.all(
+					selectedParticipantsUserIds.map((id) =>
+						revalidateParticipantActivities(id),
+					),
+				);
+			} catch (error) {
+				console.error(error);
+				toast.error("Erro ao adicionar monitor", {
+					description:
+						"Ocorreu um erro ao adicionar o monitor. Tente novamente mais tarde.",
+				});
+			}
+		});
 	}
 
 	// Reseta o formulário quando a mutação conclui. Os sets puros ficam na
