@@ -14,6 +14,7 @@ import { slugify } from "@verific/drizzle/slug";
 import { eventThemeSchema } from "@verific/drizzle/theme";
 import { z } from "@verific/zod";
 
+import { deleteReplacedImages } from "../lib/image-cleanup";
 import {
 	requireProjectAccess,
 	requireProjectOwner,
@@ -64,6 +65,15 @@ function isUniqueViolation(error: unknown) {
 		(error.cause as { code?: string } | undefined)?.code === "23505"
 	);
 }
+
+const PROJECT_IMAGE_COLUMNS = [
+	"logoUrl",
+	"logoDarkUrl",
+	"largeLogoUrl",
+	"largeLogoDarkUrl",
+	"coverUrl",
+	"thumbnailUrl",
+] as const;
 
 // Pastas de `apps/web/app`: têm prioridade sobre a rota do evento
 const RESERVED_URLS = ["account", "api", "auth", "dashboard", "dev"];
@@ -210,6 +220,13 @@ export const projectsRouter = createTRPCRouter({
 				}
 				throw error;
 			}
+			const images = (row: Partial<typeof current>) =>
+				PROJECT_IMAGE_COLUMNS.map((column) => row[column]);
+			void deleteReplacedImages(
+				id,
+				images(current),
+				images({ ...current, ...updateData }),
+			);
 			return { updated: true, url: rest.url ?? current.url };
 		}),
 

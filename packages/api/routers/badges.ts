@@ -30,6 +30,7 @@ import { appUrl } from "@verific/env";
 import { z } from "@verific/zod";
 
 import { matchBadgeAnswers } from "../lib/badge-answers";
+import { deleteReplacedImages } from "../lib/image-cleanup";
 import { requireProjectAccess } from "../lib/project-access";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { ensureShortId } from "./profiles";
@@ -152,6 +153,7 @@ export const badgesRouter = createTRPCRouter({
 					}
 				}
 			}
+			const previous = await readStoredLayout(input.projectId);
 			await db
 				.insert(badgeLayout)
 				.values({ projectId: input.projectId, layout })
@@ -159,6 +161,11 @@ export const badgesRouter = createTRPCRouter({
 					target: [badgeLayout.projectId],
 					set: { layout, updatedAt: new Date() },
 				});
+			void deleteReplacedImages(
+				input.projectId,
+				[previous?.artworkUrl],
+				[layout.artworkUrl],
+			);
 			return { saved: true };
 		}),
 

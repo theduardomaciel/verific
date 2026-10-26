@@ -55,11 +55,11 @@ vi.mock("../lib/storage", async (importOriginal) => {
 	};
 });
 
+import { deleteReplacedImages } from "../lib/image-cleanup";
 import { createCallerFactory } from "../trpc";
 import { participantsRouter } from "./participants";
 import { speakersRouter } from "./speakers";
 import { tagsRouter } from "./tags";
-import { uploadsRouter } from "./uploads";
 
 const intruder = { user: { id: "intruder" } } as unknown as Session;
 const owner = { user: { id: "owner" } } as unknown as Session;
@@ -128,72 +128,75 @@ describe("speakers", () => {
 	});
 });
 
-describe("uploads", () => {
-	const createCaller = createCallerFactory(uploadsRouter);
+describe("imagem substituída", () => {
+	it("updateSpeaker apaga a foto antiga depois de salvar a nova", async () => {
+		const oldKey = `speaker/${PROJECT_ID}/antiga.webp`;
+		findSpeaker.mockResolvedValue({
+			id: 7,
+			projectId: PROJECT_ID,
+			imageUrl: oldKey,
+			email: null,
+			participantId: null,
+		});
+		const where = vi.fn(async () => []);
+		updateMock.mockReturnValue({ set: () => ({ where }) });
 
-	it.each([
-		`event-logo/${OTHER_PROJECT_ID}/a.webp`,
-		`event-logo/${PROJECT_ID}/../${OTHER_PROJECT_ID}/a.webp`,
-		`outra-coisa/${PROJECT_ID}/a.webp`,
-		`event-logo/${PROJECT_ID}/`,
-	])("deleteImage recusa a chave %s", async (key) => {
-		await expect(
-			createCaller({ session: owner }).deleteImage({
-				projectId: PROJECT_ID,
-				publicUrlOrKey: key,
-			}),
-		).rejects.toMatchObject({ code: "FORBIDDEN" });
-		expect(deleteObject).not.toHaveBeenCalled();
+		await createCallerFactory(speakersRouter)({
+			session: owner,
+		}).updateSpeaker({
+			id: 7,
+			name: "Ana",
+			description: "",
+			imageUrl: `speaker/${PROJECT_ID}/nova.webp`,
+			projectId: PROJECT_ID,
+		});
+
+		await vi.waitFor(() =>
+			expect(deleteObject).toHaveBeenCalledWith(oldKey),
+		);
+		expect(where.mock.invocationCallOrder[0]).toBeLessThan(
+			deleteObject.mock.invocationCallOrder[0]!,
+		);
 	});
+});
 
-	it("deleteImage aceita imagem migrada do próprio evento", async () => {
-		findSpeaker.mockResolvedValue({ projectId: PROJECT_ID });
-		const caller = createCaller({ session: owner });
-
-		for (const key of [
-			`migrated/projects/${PROJECT_ID}/logo_url.webp`,
-			"migrated/speakers/7/image_url.webp",
-		]) {
-			await expect(
-				caller.deleteImage({
-					projectId: PROJECT_ID,
-					publicUrlOrKey: key,
-				}),
-			).resolves.toEqual({ deleted: true });
-		}
-	});
-
-	it("deleteImage recusa imagem migrada de outro evento", async () => {
+describe("deleteReplacedImages", () => {
+	it("apaga só as imagens do próprio evento que saíram de uso", async () => {
 		findSpeaker.mockResolvedValue({ projectId: OTHER_PROJECT_ID });
 		findActivity.mockResolvedValue({ projectId: OTHER_PROJECT_ID });
-		const caller = createCaller({ session: owner });
+		const own = `event-logo/${PROJECT_ID}/a.webp`;
 
-		for (const key of [
-			`migrated/projects/${OTHER_PROJECT_ID}/logo_url.webp`,
-			"migrated/speakers/7/image_url.webp",
-			`migrated/activities/${randomUUID()}/banner_url.webp`,
-			"migrated/activities/nao-e-uuid/banner_url.webp",
-		]) {
-			await expect(
-				caller.deleteImage({
-					projectId: PROJECT_ID,
-					publicUrlOrKey: key,
-				}),
-			).rejects.toMatchObject({ code: "FORBIDDEN" });
-		}
-		expect(deleteObject).not.toHaveBeenCalled();
+		await deleteReplacedImages(
+			PROJECT_ID,
+			[
+				own,
+				`event-logo/${PROJECT_ID}/mantida.webp`,
+				`event-logo/${OTHER_PROJECT_ID}/a.webp`,
+				`event-logo/${PROJECT_ID}/../${OTHER_PROJECT_ID}/a.webp`,
+				`outra-coisa/${PROJECT_ID}/a.webp`,
+				`toString/${PROJECT_ID}/a.webp`,
+				`migrated/projects/${OTHER_PROJECT_ID}/logo_url.webp`,
+				"migrated/speakers/7/image_url.webp",
+				`migrated/activities/${randomUUID()}/banner_url.webp`,
+				"migrated/activities/nao-e-uuid/banner_url.webp",
+				null,
+			],
+			[`event-logo/${PROJECT_ID}/mantida.webp`],
+		);
+
+		expect(deleteObject.mock.calls).toEqual([[own]]);
 	});
 
-	it("deleteImage apaga imagem do próprio evento", async () => {
-		await expect(
-			createCaller({ session: owner }).deleteImage({
-				projectId: PROJECT_ID,
-				publicUrlOrKey: `event-logo/${PROJECT_ID}/a.webp`,
-			}),
-		).resolves.toEqual({ deleted: true });
-		expect(deleteObject).toHaveBeenCalledWith(
-			`event-logo/${PROJECT_ID}/a.webp`,
-		);
+	it("aceita imagem migrada do próprio evento", async () => {
+		findSpeaker.mockResolvedValue({ projectId: PROJECT_ID });
+		const keys = [
+			`migrated/projects/${PROJECT_ID}/logo_url.webp`,
+			"migrated/speakers/7/image_url.webp",
+		];
+
+		await deleteReplacedImages(PROJECT_ID, keys, []);
+
+		expect(deleteObject.mock.calls).toEqual(keys.map((key) => [key]));
 	});
 });
 
