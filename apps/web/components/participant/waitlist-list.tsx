@@ -61,29 +61,6 @@ export function WaitlistList({
 
 	return (
 		<div className="flex w-full min-w-0 flex-col gap-4">
-			{settle && (
-				<div className="flex justify-end">
-					<Button
-						size="sm"
-						variant="outline"
-						disabled={isSettling}
-						onClick={async () => {
-							try {
-								await settle({ activityId });
-								toast.success("Fila de espera processada");
-							} catch {
-								toast.error(
-									"Erro ao processar a fila de espera",
-								);
-							}
-						}}
-					>
-						{isSettling
-							? "Processando..."
-							: "Processar fila (expirar ofertas)"}
-					</Button>
-				</div>
-			)}
 			{/* Summary Cards */}
 			<div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 lg:gap-4">
 				<div className="bg-card flex min-w-0 flex-col gap-1 rounded-lg border p-4">
@@ -323,6 +300,32 @@ export function WaitlistList({
 												Remover oferta
 											</Button>
 										</WaitlistActionDialog>
+									)}
+									{entry.status === "expired" && settle && (
+										<Button
+											size="sm"
+											variant="outline"
+											className="max-lg:flex-1"
+											disabled={isSettling}
+											onClick={async () => {
+												try {
+													await settle({
+														activityId,
+													});
+													toast.success(
+														"Fila de espera processada",
+													);
+												} catch {
+													toast.error(
+														"Erro ao processar a fila de espera",
+													);
+												}
+											}}
+										>
+											{isSettling
+												? "Processando..."
+												: "Processar fila"}
+										</Button>
 									)}
 									{entry.status === "waiting" && (
 										<WaitlistActionDialog
