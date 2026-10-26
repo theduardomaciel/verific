@@ -253,6 +253,7 @@ export const participantsRouter = createTRPCRouter({
 							userId: participant.userId,
 							projectId: participant.projectId,
 							joinedAt: participant.joinedAt,
+							shortId: participant.shortId,
 							user: {
 								name: user.name,
 								email: user.email,

@@ -5,12 +5,14 @@ import { useState } from "react";
 // Icons
 import { Check, User, Clock, Frown } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import { toast } from "sonner";
 
 // API
 import type { RouterOutput } from "@verific/api";
 
 // Components
 import { BadgeScanner } from "@/components/badge-scanner";
+import { ManualParticipantDialog } from "@/components/manual-participant-dialog";
 import { ExpandableDescription } from "@/components/shared/expandable-description";
 
 // Utils
@@ -21,6 +23,7 @@ import {
 	getSessionsSorted,
 	getSessionTimeString,
 } from "@/lib/date";
+import { trpc } from "@/lib/trpc/react";
 import { cn } from "@/lib/utils";
 
 import { ActivitySpeakers } from "./activity-card/speakers";
@@ -46,6 +49,19 @@ export function ActivityTicket({
 	checkoutEnabled = false,
 }: WorkshopTicketProps) {
 	const isMonitor = activity.role === "monitor";
+
+	const utils = trpc.useUtils();
+	const presenceMutation = trpc.updateSessionPresence.useMutation();
+
+	async function invalidate() {
+		await Promise.all([
+			utils.getActivitiesFromParticipant.invalidate(),
+			utils.getActivity.invalidate(),
+			utils.getReceptionSummary.invalidate(),
+			utils.getParticipantGamification.invalidate(),
+			utils.getEventRanking.invalidate(),
+		]);
+	}
 
 	// Congelado na montagem: evita que o selo de expiração oscile em
 	// re-renders não relacionados (não há timer).
@@ -224,17 +240,94 @@ export function ActivityTicket({
 												: "Escanear crachás"
 										}
 									/>
-									{checkoutEnabled && (
-										<BadgeScanner
-											sessionId={session.id}
-											mode="out"
-											buttonVariant="outline"
-											buttonLabel={
-												sessions.length > 1
-													? `Saída da sessão ${i + 1}`
-													: "Registrar saída"
+									<ManualParticipantDialog
+										projectId={activity.projectId}
+										buttonLabel={
+											sessions.length > 1
+												? `Credenciar por nome · sessão ${i + 1}`
+												: "Credenciar por nome"
+										}
+										title="Credenciamento manual"
+										description="Selecione um participante para credenciar nesta sessão."
+										onSelect={async (participant) => {
+											if (!participant.shortId) {
+												throw new Error(
+													"Participante sem shortId",
+												);
 											}
-										/>
+											const checked =
+												await presenceMutation.mutateAsync(
+													{
+														sessionId: session.id,
+														code: participant.shortId,
+														mode: "in",
+													},
+												);
+											await invalidate();
+											const name =
+												checked.name ??
+												participant.user?.name ??
+												"";
+											if (name) {
+												toast.success(
+													`${name} credenciado.`,
+												);
+											}
+										}}
+									/>
+									{checkoutEnabled && (
+										<>
+											<BadgeScanner
+												sessionId={session.id}
+												mode="out"
+												buttonVariant="outline"
+												buttonLabel={
+													sessions.length > 1
+														? `Saída da sessão ${i + 1}`
+														: "Registrar saída"
+												}
+											/>
+											<ManualParticipantDialog
+												projectId={activity.projectId}
+												buttonVariant="outline"
+												buttonLabel={
+													sessions.length > 1
+														? `Saída por nome · sessão ${i + 1}`
+														: "Registrar saída por nome"
+												}
+												title="Saída manual"
+												description="Selecione um participante para registrar a saída desta sessão."
+												onSelect={async (
+													participant,
+												) => {
+													if (!participant.shortId) {
+														throw new Error(
+															"Participante sem shortId",
+														);
+													}
+													const checked =
+														await presenceMutation.mutateAsync(
+															{
+																sessionId:
+																	session.id,
+																code: participant.shortId,
+																mode: "out",
+															},
+														);
+													await invalidate();
+													const name =
+														checked.name ??
+														participant.user
+															?.name ??
+														"";
+													if (name) {
+														toast.success(
+															`${name} saída registrada.`,
+														);
+													}
+												}}
+											/>
+										</>
 									)}
 								</div>
 							))}

@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { CalendarCheck, Settings, Users } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { BadgeScanner } from "@/components/badge-scanner";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
+import { ManualParticipantDialog } from "@/components/manual-participant-dialog";
 
 import { trpc } from "@/lib/trpc/react";
 
@@ -25,12 +27,22 @@ function formatDay(day: string): string {
 
 export default function ReceptionPage() {
 	const { projectId } = useDashboard();
+	const utils = trpc.useUtils();
+	const receptionMutation = trpc.checkInParticipant.useMutation();
 	const summary = trpc.getReceptionSummary.useQuery(
 		{ projectId },
 		// Sem polling: o scanner invalida o resumo a cada check-in. Manter o
 		// intervalo só mantinha o Neon acordado com a tela parada.
 		{ refetchOnWindowFocus: true },
 	);
+
+	async function invalidate() {
+		await Promise.all([
+			utils.getReceptionSummary.invalidate(),
+			utils.getParticipantGamification.invalidate(),
+			utils.getEventRanking.invalidate(),
+		]);
+	}
 
 	if (summary.isPending) {
 		return (
@@ -133,6 +145,34 @@ export default function ReceptionPage() {
 						projectId={projectId}
 						mode="reception"
 						buttonLabel="Fazer check-in de hoje"
+					/>
+					<ManualParticipantDialog
+						projectId={projectId}
+						buttonLabel="Adicionar por nome"
+						title="Check-in manual"
+						description="Selecione um participante para registrar o check-in de hoje."
+						onSelect={async (participant) => {
+							if (!participant.shortId) {
+								throw new Error("Participante sem shortId");
+							}
+							const checked = await receptionMutation.mutateAsync(
+								{
+									projectId,
+									code: participant.shortId,
+								},
+							);
+							await invalidate();
+							const name =
+								checked.name ?? participant.user?.name ?? "";
+							// eslint-disable-next-line no-console
+							if (name) {
+								toast.success(
+									checked.alreadyCheckedIn
+										? `${name} já fez check-in hoje.`
+										: `${name} fez check-in.`,
+								);
+							}
+						}}
 					/>
 					<p className="text-muted-foreground text-center text-xs">
 						O mesmo QR do ingresso/crachá é usado. Repetir o scan no
