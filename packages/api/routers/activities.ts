@@ -1869,30 +1869,29 @@ export const activitiesRouter = createTRPCRouter({
 
 			// Inscritos no evento (nível de inscrição, independente de
 			// matrícula em atividades — `submitAnswers` cria só o `participant`)
-			const totalParticipantsResult = await db
-				.select({ count: count() })
+			const signupsSince = (since: Date) =>
+				sql<number>`count(*) filter (where ${participant.joinedAt} >= ${since})`.mapWith(
+					Number,
+				);
+			const [signups] = await db
+				.select({
+					total: count(),
+					lastHour: signupsSince(lastHour),
+					lastDay: signupsSince(lastDay),
+				})
 				.from(participant)
 				.where(eq(participant.projectId, projectId));
+			const totalParticipants = signups?.total ?? 0;
+			const participantsInLastHour = signups?.lastHour ?? 0;
+			const activeParticipants = signups?.lastDay ?? 0;
 
-			const totalParticipants = totalParticipantsResult[0]?.count ?? 0;
-
-			// Signups in the last hour
-			const participantsInLastHourResult = await db
-				.select({ count: count() })
-				.from(participant)
-				.where(
-					and(
-						eq(participant.projectId, projectId),
-						gte(participant.joinedAt, lastHour),
-					),
-				);
-
-			const participantsInLastHour =
-				participantsInLastHourResult[0]?.count ?? 0;
-
-			// Total workload from activities
-			const totalWorkloadResult = await db
-				.select({ sum: sum(activity.workload) })
+			// Carga horária e vagas das atividades não canceladas (a soma
+			// ignora as sem limite)
+			const [activityTotals] = await db
+				.select({
+					workload: sum(activity.workload).mapWith(Number),
+					possible: sum(activity.participantsLimit).mapWith(Number),
+				})
 				.from(activity)
 				.where(
 					and(
@@ -1900,58 +1899,29 @@ export const activitiesRouter = createTRPCRouter({
 						isNull(activity.cancelledAt),
 					),
 				);
+			const totalWorkload = activityTotals?.workload ?? 0;
+			const totalPossible = activityTotals?.possible ?? 0;
 
-			const totalWorkload = totalWorkloadResult[0]?.sum ?? 0;
-
-			// Signups in the last 24h (event-level)
-			const activeParticipantsResult = await db
-				.select({ count: count() })
-				.from(participant)
-				.where(
-					and(
-						eq(participant.projectId, projectId),
-						gte(participant.joinedAt, lastDay),
+			// Inscrições em atividades com limite
+			const totalEnrollments = await db.$count(
+				participantOnActivity,
+				and(
+					eq(participantOnActivity.role, "participant"),
+					inArray(
+						participantOnActivity.activityId,
+						db
+							.select({ id: activity.id })
+							.from(activity)
+							.where(
+								and(
+									eq(activity.projectId, projectId),
+									isNotNull(activity.participantsLimit),
+									isNull(activity.cancelledAt),
+								),
+							),
 					),
-				);
-
-			const activeParticipants = activeParticipantsResult[0]?.count ?? 0;
-
-			// Total possible enrollments (sum of participantsLimit where not null)
-			const totalPossibleResult = await db
-				.select({ sum: sum(activity.participantsLimit) })
-				.from(activity)
-				.where(
-					and(
-						eq(activity.projectId, projectId),
-						isNotNull(activity.participantsLimit),
-						isNull(activity.cancelledAt),
-					),
-				);
-
-			const totalPossible = totalPossibleResult[0]?.sum ?? 0;
-
-			// Total enrollments (count of participantOnActivity where participantOnActivity.role = 'participant' and activity has participantsLimit)
-			const totalEnrollmentsResult = await db
-				.select({ count: count() })
-				.from(participantOnActivity)
-				.innerJoin(
-					participant,
-					eq(participantOnActivity.participantId, participant.id),
-				)
-				.innerJoin(
-					activity,
-					eq(participantOnActivity.activityId, activity.id),
-				)
-				.where(
-					and(
-						eq(activity.projectId, projectId),
-						eq(participantOnActivity.role, "participant"),
-						isNotNull(activity.participantsLimit),
-						isNull(activity.cancelledAt),
-					),
-				);
-
-			const totalEnrollments = totalEnrollmentsResult[0]?.count ?? 0;
+				),
+			);
 
 			// Calculations
 			const participantsInLastHourPercentage =
