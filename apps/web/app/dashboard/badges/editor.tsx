@@ -185,6 +185,9 @@ export function BadgeEditor({
 	const [printSort, setPrintSort] = useState<
 		"name_asc" | "name_desc" | "joined_asc" | "joined_desc"
 	>("joined_asc");
+	const [printSource, setPrintSource] = useState<"participants" | "speakers">(
+		"participants",
+	);
 	const prevArtUrl = useRef<string | null>(null);
 
 	// Catálogo de pesos por família: alimenta o seletor de peso e a
@@ -649,6 +652,7 @@ export function BadgeEditor({
 					limit: testPrint ? 1 : 200,
 					fieldIds: boundFieldIds,
 					sort: printSort,
+					source: printSource,
 				});
 			const { files } = await runBadgePrint({
 				ctx: { ...c, layout: draft },
@@ -923,6 +927,31 @@ export function BadgeEditor({
 							</div>
 							<div className="flex flex-col gap-1 text-xs">
 								<span className="text-muted-foreground">
+									Origem dos crachás
+								</span>
+								<Select
+									value={printSource}
+									onValueChange={(v) =>
+										setPrintSource(
+											v as "participants" | "speakers",
+										)
+									}
+								>
+									<SelectTrigger size="sm" className="w-48">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="participants">
+											Participantes
+										</SelectItem>
+										<SelectItem value="speakers">
+											Palestrantes
+										</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+							<div className="flex flex-col gap-1 text-xs">
+								<span className="text-muted-foreground">
 									Ordenação dos crachás
 								</span>
 								<Select
@@ -1070,11 +1099,13 @@ export function BadgeEditor({
 										{item.kind === "text"
 											? item.source === "name"
 												? "Nome"
-												: (fieldLabels.get(
-														item.source,
-													) ??
-													item.label ??
-													"Linha")
+												: item.source === "label"
+													? "Rótulo"
+													: (fieldLabels.get(
+															item.source,
+														) ??
+														item.label ??
+														"Linha")
 											: item.kind === "qr"
 												? "QR"
 												: "Logo"}
@@ -1608,6 +1639,9 @@ function TextPanel({
 							<SelectContent>
 								<SelectItem value="__none">
 									Não vinculado
+								</SelectItem>
+								<SelectItem value="label">
+									Rótulo (Palestrante)
 								</SelectItem>
 								{fieldOptions.map((f) => (
 									<SelectItem key={f.id} value={f.id}>

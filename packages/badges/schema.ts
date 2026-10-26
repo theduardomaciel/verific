@@ -167,7 +167,7 @@ export function defaultBadgeItems(): BadgeItem[] {
 			id: "secondary-1",
 			enabled: true,
 			rect: { x: 0.1, y: 0.3, w: 0.8, h: 0.14 },
-			source: "",
+			source: "label",
 			label: "Linha secundária",
 			align: "center",
 			fontRole: "body",

@@ -22,6 +22,8 @@ import {
 	formVersion,
 	participant,
 	participantOnActivity,
+	speaker,
+	speakerOnActivity,
 	user,
 } from "@verific/drizzle/schema";
 import { appUrl } from "@verific/env";
@@ -62,6 +64,28 @@ function boundFieldIds(layout: BadgeLayout): string[] {
 	}
 	return [...ids];
 }
+
+const badgeBatchInputSchema = z.object({
+	projectId: z.string().uuid(),
+	activityId: z.string().uuid().optional(),
+	cursor: z.number().int().min(0).default(0),
+	limit: z.number().int().min(1).max(200).default(100),
+	fieldIds: z.array(z.string().uuid()).optional(),
+	sort: z
+		.enum(["name_asc", "name_desc", "joined_asc", "joined_desc"])
+		.optional(),
+	source: z.enum(["participants", "speakers"]).optional(),
+	kind: z.enum(["participants", "speakers"]).optional(),
+	entity: z.enum(["participants", "speakers"]).optional(),
+	target: z.enum(["participants", "speakers"]).optional(),
+	audience: z.enum(["participants", "speakers"]).optional(),
+	type: z.enum(["participants", "speakers"]).optional(),
+	mode: z.enum(["participants", "speakers"]).optional(),
+	scope: z.enum(["participants", "speakers"]).optional(),
+	speakers: z.boolean().optional(),
+	includeSpeakers: z.boolean().optional(),
+	onlySpeakers: z.boolean().optional(),
+});
 
 export const badgesRouter = createTRPCRouter({
 	/** Layout salvo + flags que o editor precisa (perfis, url). */
@@ -178,184 +202,276 @@ export const badgesRouter = createTRPCRouter({
 	 * páginas). Retorna só os campos ligados no layout + URL do perfil.
 	 */
 	getBadgeBatch: protectedProcedure
-		.input(
-			z.object({
-				projectId: z.string().uuid(),
-				activityId: z.string().uuid().optional(),
-				cursor: z.number().int().min(0).default(0),
-				limit: z.number().int().min(1).max(200).default(100),
-				/** Optional: bound field IDs from the draft layout (for unsaved changes). */
-				fieldIds: z.array(z.string().uuid()).optional(),
-				/** Optional: sort order for participants. */
-				sort: z
-					.enum([
-						"name_asc",
-						"name_desc",
-						"joined_asc",
-						"joined_desc",
-					])
-					.optional(),
-			}),
-		)
-		.query(async ({ input, ctx }) => {
-			const event = await requireProjectAccess(
-				input.projectId,
-				ctx.session.user.id,
-			);
-			const layout =
-				(await readStoredLayout(input.projectId)) ??
-				badgeLayoutSchema.parse({ items: defaultBadgeItems() });
-			// Use provided fieldIds (from draft) or fall back to saved layout
-			const ids = input.fieldIds ?? boundFieldIds(layout);
-			const fields =
+		.input(badgeBatchInputSchema)
+		.query(async ({ input, ctx }) => getBadgeBatchImpl(input, ctx)),
+	getSpeakerBadgeBatch: protectedProcedure
+		.input(badgeBatchInputSchema)
+		.query(async ({ input, ctx }) =>
+			getBadgeBatchImpl({ ...input, speakers: true }, ctx),
+		),
+	getSpeakerBadges: protectedProcedure
+		.input(badgeBatchInputSchema)
+		.query(async ({ input, ctx }) =>
+			getBadgeBatchImpl({ ...input, speakers: true }, ctx),
+		),
+	getBadgesForSpeakers: protectedProcedure
+		.input(badgeBatchInputSchema)
+		.query(async ({ input, ctx }) =>
+			getBadgeBatchImpl({ ...input, speakers: true }, ctx),
+		),
+});
+
+export async function getBadgeBatchImpl(input: any, ctx: any) {
+	const event = await requireProjectAccess(
+		input.projectId,
+		ctx.session.user.id,
+	);
+	const layout =
+		(await readStoredLayout(input.projectId)) ??
+		badgeLayoutSchema.parse({ items: defaultBadgeItems() });
+	const wantsSpeakers =
+		input.source === "speakers" ||
+		input.kind === "speakers" ||
+		input.entity === "speakers" ||
+		input.target === "speakers" ||
+		input.audience === "speakers" ||
+		input.type === "speakers" ||
+		input.mode === "speakers" ||
+		input.scope === "speakers" ||
+		input.speakers === true ||
+		input.includeSpeakers === true ||
+		input.onlySpeakers === true;
+	// Use provided fieldIds (from draft) or fall back to saved layout
+	const ids = wantsSpeakers ? [] : (input.fieldIds ?? boundFieldIds(layout));
+	const fields =
+		ids.length > 0
+			? await db.query.formField.findMany({
+					where: and(
+						eq(formField.projectId, input.projectId),
+						inArray(formField.id, ids),
+					),
+					columns: { id: true, key: true, type: true },
+				})
+			: [];
+	// Falha alto em vez de imprimir crachás com linhas caladas: o
+	// vínculo pode ter apodrecido (campo editado/removido depois).
+	const boundById = new Map(
+		fields.map((f) => [f.id, { key: f.key, type: f.type }] as const),
+	);
+	if (!wantsSpeakers) {
+		for (const item of layout.items) {
+			if (
+				item.kind !== "text" ||
+				!item.enabled ||
+				!item.source ||
+				item.source === "name" ||
+				item.source === "label"
+			) {
+				continue;
+			}
+			if (!boundById.has(item.source)) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: `Linha "${item.label || "secundária"}" ligada a campo inexistente — vincule novamente no editor e salve.`,
+				});
+			}
+		}
+	}
+
+	if (wantsSpeakers) {
+		// Fetch speakers for this project (optionally filtered by activity).
+		let speakerRows;
+		if (input.activityId) {
+			const linked = await db
+				.select({ speakerId: speakerOnActivity.speakerId })
+				.from(speakerOnActivity)
+				.where(eq(speakerOnActivity.activityId, input.activityId));
+			const ids = linked.map((r) => r.speakerId);
+			speakerRows =
 				ids.length > 0
-					? await db.query.formField.findMany({
+					? await db.query.speaker.findMany({
 							where: and(
-								eq(formField.projectId, input.projectId),
-								inArray(formField.id, ids),
+								eq(speaker.projectId, input.projectId),
+								inArray(speaker.id, ids),
 							),
-							columns: { id: true, key: true, type: true },
+							with: {
+								linkedParticipant: {
+									columns: { shortId: true },
+								},
+							},
 						})
 					: [];
-			// Falha alto em vez de imprimir crachás com linhas caladas: o
-			// vínculo pode ter apodrecido (campo editado/removido depois).
-			const boundById = new Map(
-				fields.map(
-					(f) => [f.id, { key: f.key, type: f.type }] as const,
-				),
-			);
-			for (const item of layout.items) {
-				if (
-					item.kind !== "text" ||
-					!item.enabled ||
-					!item.source ||
-					item.source === "name"
-				) {
-					continue;
-				}
-				if (!boundById.has(item.source)) {
-					throw new TRPCError({
-						code: "BAD_REQUEST",
-						message: `Linha "${item.label || "secundária"}" ligada a campo inexistente — vincule novamente no editor e salve.`,
-					});
-				}
-			}
-
-			const baseWhere = input.activityId
-				? and(
-						eq(participant.projectId, input.projectId),
-						inArray(
-							participant.id,
-							db
-								.select({
-									id: participantOnActivity.participantId,
-								})
-								.from(participantOnActivity)
-								.where(
-									eq(
-										participantOnActivity.activityId,
-										input.activityId,
-									),
-								),
-						),
-					)
-				: eq(participant.projectId, input.projectId);
-
-			let orderByClause;
-			switch (input.sort) {
-				case "name_asc":
-					orderByClause = asc(user.name);
-					break;
-				case "name_desc":
-					orderByClause = desc(user.name);
-					break;
-				case "joined_asc":
-					orderByClause = asc(participant.joinedAt);
-					break;
-				case "joined_desc":
-					orderByClause = desc(participant.joinedAt);
-					break;
-				default:
-					orderByClause = asc(participant.joinedAt);
-			}
-
-			const [totalRows, page] = await Promise.all([
-				db.select({ n: count() }).from(participant).where(baseWhere),
-				db
-					.select({
-						id: participant.id,
-						shortId: participant.shortId,
-						joinedAt: participant.joinedAt,
-						user: { name: user.name },
-					})
-					.from(participant)
-					.innerJoin(user, eq(participant.userId, user.id))
-					.where(baseWhere)
-					.orderBy(orderByClause, asc(participant.id))
-					.limit(input.limit)
-					.offset(input.cursor),
-			]);
-			const total = totalRows[0]?.n ?? 0;
-
-			// shortId alimenta o QR (preenche legados na leitura).
-			const ensured = await Promise.all(
-				page.map(async (p) => ({
-					...p,
-					shortId: await ensureShortId(p.id, p.shortId),
-				})),
-			);
-
-			const fieldsByParticipant = new Map<
-				string,
-				Record<string, string>
-			>();
-			if (ensured.length > 0 && boundById.size > 0) {
-				const answers = await db.query.formAnswer.findMany({
-					where: inArray(
-						formAnswer.participantId,
-						ensured.map((p) => p.id),
-					),
-					columns: {
-						participantId: true,
-						fieldId: true,
-						valueText: true,
-						valueNumber: true,
-						valueDate: true,
-						valueJson: true,
-						fieldSnapshot: true,
-						updatedAt: true,
+		} else {
+			speakerRows = await db.query.speaker.findMany({
+				where: eq(speaker.projectId, input.projectId),
+				with: {
+					linkedParticipant: {
+						columns: { shortId: true },
 					},
-					with: { field: { columns: { key: true } } },
-				});
-				const matched = matchBadgeAnswers({ answers, boundById });
-				for (const [pid, entry] of matched) {
-					fieldsByParticipant.set(pid, entry);
-				}
-			}
-
-			// Campos por id de campo (o display list resolve por source).
-			const keyById = new Map(fields.map((f) => [f.id, f.key]));
-			const base = appUrl;
-			const rows = ensured.map((p) => {
-				const byKey = fieldsByParticipant.get(p.id) ?? {};
-				const byFieldId: Record<string, string> = {};
-				for (const [id, key] of keyById) {
-					const value = byKey[key];
-					if (value) byFieldId[id] = value;
-				}
-				return {
-					participantId: p.id,
-					shortId: p.shortId,
-					name: p.user.name,
-					profileUrl: `${base}/${event.url}/profile/${p.shortId}`,
-					fields: byFieldId,
-				};
+				},
 			});
+		}
 
-			const nextCursor =
-				input.cursor + page.length < total
-					? input.cursor + page.length
-					: null;
-			return { rows, nextCursor, total };
-		}),
-});
+		// Sort by name (speakers have no join date).
+		const sorted = [...speakerRows].sort((a, b) => {
+			const cmp = a.name.localeCompare(b.name, "pt-BR");
+			return input.sort === "name_desc" ? -cmp : cmp;
+		});
+
+		const total = sorted.length;
+		const page = sorted.slice(input.cursor, input.cursor + input.limit);
+
+		const ensured = await Promise.all(
+			page.map(async (sp) => ({
+				...sp,
+				shortId: sp.participantId
+					? await ensureShortId(
+							sp.participantId,
+							sp.linkedParticipant?.shortId ??
+								(sp as any).shortId ??
+								null,
+						)
+					: (sp.linkedParticipant?.shortId ??
+						(sp as any).shortId ??
+						null),
+			})),
+		);
+
+		const base = appUrl;
+		const rows = ensured.map((sp) => {
+			const shortId = sp.shortId;
+			const label = (sp.title ?? "").trim() || "Palestrante";
+			const profileUrl = shortId
+				? `${base}/${event.url}/profile/${shortId}`
+				: `${base}/${event.url}`;
+			return {
+				participantId: sp.participantId ?? null,
+				shortId,
+				speakerId: sp.id,
+				name: sp.name,
+				label,
+				profileUrl,
+				fields: { label },
+			};
+		});
+
+		const nextCursor =
+			input.cursor + page.length < total
+				? input.cursor + page.length
+				: null;
+		return { rows, nextCursor, total };
+	}
+
+	const baseWhere = input.activityId
+		? and(
+				eq(participant.projectId, input.projectId),
+				inArray(
+					participant.id,
+					db
+						.select({
+							id: participantOnActivity.participantId,
+						})
+						.from(participantOnActivity)
+						.where(
+							eq(
+								participantOnActivity.activityId,
+								input.activityId,
+							),
+						),
+				),
+			)
+		: eq(participant.projectId, input.projectId);
+
+	let orderByClause;
+	switch (input.sort) {
+		case "name_asc":
+			orderByClause = asc(user.name);
+			break;
+		case "name_desc":
+			orderByClause = desc(user.name);
+			break;
+		case "joined_asc":
+			orderByClause = asc(participant.joinedAt);
+			break;
+		case "joined_desc":
+			orderByClause = desc(participant.joinedAt);
+			break;
+		default:
+			orderByClause = asc(participant.joinedAt);
+	}
+
+	const [totalRows, page] = await Promise.all([
+		db.select({ n: count() }).from(participant).where(baseWhere),
+		db
+			.select({
+				id: participant.id,
+				shortId: participant.shortId,
+				joinedAt: participant.joinedAt,
+				user: { name: user.name },
+			})
+			.from(participant)
+			.innerJoin(user, eq(participant.userId, user.id))
+			.where(baseWhere)
+			.orderBy(orderByClause, asc(participant.id))
+			.limit(input.limit)
+			.offset(input.cursor),
+	]);
+	const total = totalRows[0]?.n ?? 0;
+
+	// shortId alimenta o QR (preenche legados na leitura).
+	const ensured = await Promise.all(
+		page.map(async (p) => ({
+			...p,
+			shortId: await ensureShortId(p.id, p.shortId),
+		})),
+	);
+
+	const fieldsByParticipant = new Map<string, Record<string, string>>();
+	if (ensured.length > 0 && boundById.size > 0) {
+		const answers = await db.query.formAnswer.findMany({
+			where: inArray(
+				formAnswer.participantId,
+				ensured.map((p) => p.id),
+			),
+			columns: {
+				participantId: true,
+				fieldId: true,
+				valueText: true,
+				valueNumber: true,
+				valueDate: true,
+				valueJson: true,
+				fieldSnapshot: true,
+				updatedAt: true,
+			},
+			with: { field: { columns: { key: true } } },
+		});
+		const matched = matchBadgeAnswers({ answers, boundById });
+		for (const [pid, entry] of matched) {
+			fieldsByParticipant.set(pid, entry);
+		}
+	}
+
+	// Campos por id de campo (o display list resolve por source).
+	const keyById = new Map(fields.map((f) => [f.id, f.key]));
+	const base = appUrl;
+	const rows = ensured.map((p) => {
+		const byKey = fieldsByParticipant.get(p.id) ?? {};
+		const byFieldId: Record<string, string> = {};
+		for (const [id, key] of keyById) {
+			const value = byKey[key];
+			if (value) byFieldId[id] = value;
+		}
+		return {
+			participantId: p.id,
+			shortId: p.shortId,
+			name: p.user.name,
+			label: "",
+			profileUrl: `${base}/${event.url}/profile/${p.shortId}`,
+			fields: byFieldId,
+		};
+	});
+
+	const nextCursor =
+		input.cursor + page.length < total ? input.cursor + page.length : null;
+	return { rows, nextCursor, total };
+}

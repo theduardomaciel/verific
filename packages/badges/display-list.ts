@@ -13,6 +13,8 @@ import type { BadgeLayout } from "./schema";
 
 export interface ParticipantBadgeData {
 	name: string;
+	/** Optional built-in label (e.g. "Palestrante") for speaker badges. */
+	label?: string;
 	/** Secondary source id → display value (absent/empty = omit line). */
 	fields: Record<string, string>;
 	qrPayload: string;
@@ -75,18 +77,29 @@ export function buildDisplayList(
 	) =>
 		item.source === "name"
 			? data.name.trim().length > 0
-			: (data.fields[item.source] ?? "").trim().length > 0;
+			: item.source === "label" || item.source === ""
+				? (data.label ?? "").trim().length > 0
+				: (data.fields[item.source] ?? "").trim().length > 0;
 
 	// "Projetado": o que apareceria com todos os dados preenchidos.
 	const designed = layout.items.filter((item) => {
 		if (!item.enabled) return false;
 		if (item.kind === "text")
-			return item.source === "name" || !!item.source;
+			return (
+				item.source === "name" ||
+				item.source === "label" ||
+				item.source === "" ||
+				!!item.source
+			);
 		if (item.kind === "logo") return !!item.imageUrl;
 		return true;
 	});
 	const present = designed.filter((item) =>
-		item.kind === "text" ? hasText(item) : true,
+		item.kind === "text"
+			? hasText(item)
+			: item.kind === "qr"
+				? /\/profile\//.test(data.qrPayload)
+				: true,
 	);
 
 	const extent = (items: typeof designed) => {
@@ -142,7 +155,9 @@ export function buildDisplayList(
 			const value =
 				item.source === "name"
 					? data.name
-					: (data.fields[item.source] ?? "").trim();
+					: item.source === "label" || item.source === ""
+						? (data.label ?? "").trim()
+						: (data.fields[item.source] ?? "").trim();
 			if (!value) continue;
 			const abs = relativeToBadge(item.rect, layout.freeArea);
 			// Use item's family if specified, otherwise fall back to role's family
@@ -182,6 +197,9 @@ export function buildDisplayList(
 				lineHeightPt: fitted.fontSizePt * LINE_HEIGHT,
 			});
 		} else if (item.kind === "qr") {
+			if (!/\/profile\//.test(data.qrPayload)) {
+				continue;
+			}
 			const abs = relativeToBadge(item.rect, layout.freeArea);
 			// Keep square, fit inside.
 			const side = Math.min(abs.w, abs.h);

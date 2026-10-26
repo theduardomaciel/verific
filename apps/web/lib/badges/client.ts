@@ -298,6 +298,7 @@ export async function createBadgePrintContext(
 
 export interface BadgeRow {
 	name: string;
+	label?: string;
 	profileUrl: string;
 	fields: Record<string, string>;
 }
@@ -308,7 +309,12 @@ export function buildRowPrimitives(
 ): DisplayPrimitive[] {
 	return buildDisplayList(
 		ctx.layout,
-		{ name: row.name, fields: row.fields, qrPayload: row.profileUrl },
+		{
+			name: row.name,
+			label: row.label,
+			fields: row.fields,
+			qrPayload: row.profileUrl,
+		},
 		{
 			measure: ctx.measure,
 			fontFamilyForRole: (role) => ctx.roles[role].family,
