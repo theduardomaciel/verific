@@ -18,6 +18,7 @@ import { ActivityTicket } from "@/components/activity/activity-ticket";
 import { Empty } from "@/components/empty";
 
 // Utils
+import { useToday } from "@/hooks/use-now";
 import { categorizeByDate, getFirstSessionStart } from "@/lib/date";
 
 interface AccountWrapperProps {
@@ -34,15 +35,17 @@ export function AccountWrapper({
 	checkoutEnabled = false,
 }: AccountWrapperProps) {
 	const fallbackDate = useState(() => new Date())[0];
+	const today = useToday();
 	const { grouped, categories, initialExpanded } = useMemo(() => {
 		const { grouped, categories } = categorizeByDate(
 			activities,
 			(item) => getFirstSessionStart(item.sessions) ?? fallbackDate,
+			today,
 		);
 		const hasToday = categories.includes("Hoje");
 		const initialExpanded = hasToday ? ["Hoje"] : categories;
 		return { grouped, categories, initialExpanded };
-	}, [activities, fallbackDate]);
+	}, [activities, fallbackDate, today]);
 
 	const [expandedCategories, setExpandedCategories] =
 		useState<string[]>(initialExpanded);

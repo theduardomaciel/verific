@@ -11,15 +11,32 @@ const saoPauloDateFormatter = new Intl.DateTimeFormat("pt-BR", {
 	month: "2-digit",
 });
 
-export const isDateDifferent = (date1: Date, date2: Date) => {
-	const d1 = new Date(date1);
-	const d2 = new Date(date2);
-	return (
-		d1.getDate() !== d2.getDate() ||
-		d1.getMonth() !== d2.getMonth() ||
-		d1.getFullYear() !== d2.getFullYear()
-	);
+const saoPauloDayFormatter = new Intl.DateTimeFormat("en-CA", {
+	timeZone: "America/Sao_Paulo",
+	year: "numeric",
+	month: "2-digit",
+	day: "2-digit",
+});
+
+const saoPauloHourFormatter = new Intl.DateTimeFormat("en-GB", {
+	timeZone: "America/Sao_Paulo",
+	hour: "numeric",
+	minute: "numeric",
+	hourCycle: "h23",
+});
+
+/** Dia em Brasília no formato "2026-10-20", independente do fuso de quem roda. */
+export const saoPauloDayKey = (date: Date | string) =>
+	saoPauloDayFormatter.format(new Date(date));
+
+const addDaysToKey = (key: string, days: number) => {
+	const date = new Date(`${key}T00:00:00Z`);
+	date.setUTCDate(date.getUTCDate() + days);
+	return date.toISOString().slice(0, 10);
 };
+
+export const isDateDifferent = (date1: Date, date2: Date) =>
+	saoPauloDayKey(date1) !== saoPauloDayKey(date2);
 
 export const getDateString = (dateFrom: Date, dateTo: Date) => {
 	const dateString = `${saoPauloDateFormatter.format(new Date(dateFrom))}${
@@ -33,8 +50,10 @@ export const getDateString = (dateFrom: Date, dateTo: Date) => {
 
 export const getTimeString = (date: Date, asHourFormat = false) => {
 	if (asHourFormat) {
-		const hours = new Date(date).getHours();
-		const minutes = new Date(date).getMinutes();
+		const [hours, minutes] = saoPauloHourFormatter
+			.format(new Date(date))
+			.split(":")
+			.map(Number) as [number, number];
 		return minutes === 0
 			? `${hours}h`
 			: `${hours}h${minutes.toString().padStart(2, "0")}`;
@@ -247,61 +266,54 @@ export function expandSessionOccurrences<
 
 /* --------------- Categorization --------------- */
 
-export const isToday = (date: Date): boolean => {
-	return new Date(date).toDateString() === new Date().toDateString();
-};
+// `now` nulo (servidor, primeira renderização): sem "Hoje" nem "Amanhã",
+// que ficariam congelados no HTML estático
+export const isToday = (date: Date, now: Date | null = new Date()) =>
+	now !== null && saoPauloDayKey(date) === saoPauloDayKey(now);
 
-export const isTomorrow = (date: Date): boolean => {
-	const tomorrow = new Date();
-	tomorrow.setDate(tomorrow.getDate() + 1);
-	return new Date(date).toDateString() === tomorrow.toDateString();
-};
+export const isTomorrow = (date: Date, now: Date | null = new Date()) =>
+	now !== null &&
+	saoPauloDayKey(date) === addDaysToKey(saoPauloDayKey(now), 1);
 
+const longDayFormatter = new Intl.DateTimeFormat("pt-BR", {
+	timeZone: "America/Sao_Paulo",
+	day: "2-digit",
+	month: "long",
+});
+
+/** Agrupa por dia de Brasília, em ordem cronológica. */
 export function categorizeByDate<T>(
 	items: T[],
 	getDate: (item: T) => Date,
+	now: Date | null = new Date(),
 ): { grouped: Map<string, T[]>; categories: string[] } {
-	const today = new Date();
-	today.setHours(0, 0, 0, 0);
-	const tomorrow = new Date(today);
-	tomorrow.setDate(tomorrow.getDate() + 1);
-
-	const grouped = new Map<string, T[]>();
+	const byDay = new Map<string, T[]>();
 	for (const item of items) {
-		const activityDate = new Date(getDate(item));
-		activityDate.setHours(0, 0, 0, 0);
-		let category: string;
-		if (activityDate.getTime() === today.getTime()) {
-			category = "Hoje";
-		} else if (activityDate.getTime() === tomorrow.getTime()) {
-			category = "Amanhã";
-		} else {
-			category = activityDate.toLocaleDateString("pt-BR", {
-				day: "2-digit",
-				month: "long",
-			});
-		}
-		if (!grouped.has(category)) {
-			grouped.set(category, []);
-		}
-		grouped.get(category)!.push(item);
+		const key = saoPauloDayKey(getDate(item));
+		const group = byDay.get(key);
+		if (group) group.push(item);
+		else byDay.set(key, [item]);
 	}
 
-	const categories = Array.from(grouped.keys()).sort((a, b) => {
-		if (a === "Hoje") return -1;
-		if (b === "Hoje") return 1;
-		if (a === "Amanhã") return -1;
-		if (b === "Amanhã") return 1;
-		// Parse dates (DD/MM to Date)
-		const dateA = new Date(a.split("/").reverse().join("-"));
-		const dateB = new Date(b.split("/").reverse().join("-"));
-		return dateA.getTime() - dateB.getTime();
-	});
+	const today = now ? saoPauloDayKey(now) : null;
+	const tomorrow = today ? addDaysToKey(today, 1) : null;
+	const grouped = new Map<string, T[]>();
+	for (const key of [...byDay.keys()].sort()) {
+		const category =
+			key === today
+				? "Hoje"
+				: key === tomorrow
+					? "Amanhã"
+					: longDayFormatter.format(new Date(`${key}T12:00:00Z`));
+		grouped.set(category, byDay.get(key)!);
+	}
 
-	return { grouped, categories };
+	return { grouped, categories: [...grouped.keys()] };
 }
 
 export interface FriendlyDateOptions {
+	/** Referência para "Hoje"/"Amanhã"; nulo formata sempre a data. */
+	now?: Date | null;
 	includeDay?: boolean;
 	includeHour?: boolean;
 	longMonth?: boolean;
@@ -331,14 +343,15 @@ export function formatFriendlyDate(
 	options?: FriendlyDateOptions,
 ): string {
 	const {
+		now = new Date(),
 		includeDay = true,
 		includeHour = false,
 		longMonth = false,
 		locale = "pt-BR",
 	} = options || {};
 
-	const today = isToday(date);
-	const tomorrow = isTomorrow(date);
+	const today = isToday(date, now);
+	const tomorrow = isTomorrow(date, now);
 
 	if (today) {
 		return includeHour

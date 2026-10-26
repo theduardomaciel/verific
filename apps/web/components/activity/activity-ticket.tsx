@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-
 // Icons
 import { Check, User, Clock, Frown } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
@@ -15,6 +13,7 @@ import { BadgeScanner } from "@/components/badge-scanner";
 import { ManualParticipantDialog } from "@/components/manual-participant-dialog";
 import { ExpandableDescription } from "@/components/shared/expandable-description";
 
+import { useNow } from "@/hooks/use-now";
 // Utils
 import {
 	formatFriendlyDate,
@@ -61,9 +60,7 @@ export function ActivityTicket({
 		]);
 	}
 
-	// Congelado na montagem: evita que o selo de expiração oscile em
-	// re-renders não relacionados (não há timer).
-	const [now] = useState(() => new Date());
+	const now = useNow();
 	const sessions = getSessionsSorted(activity.sessions);
 	const attendedCount = sessions.filter((s) => s.joinedAt).length;
 
@@ -73,7 +70,8 @@ export function ActivityTicket({
 		lastEnd && tolerance != null
 			? new Date(lastEnd.getTime() + tolerance * 60 * 1000)
 			: null;
-	const isExpired = endDatePlusTolerance ? now > endDatePlusTolerance : false;
+	const isExpired =
+		now && endDatePlusTolerance ? now > endDatePlusTolerance : false;
 
 	return (
 		<div
@@ -137,7 +135,7 @@ export function ActivityTicket({
 										<Clock className="size-4" />
 										{formatFriendlyDate(
 											new Date(session.startsAt),
-											{ includeHour: true },
+											{ includeHour: true, now },
 										)}
 									</span>
 								)}

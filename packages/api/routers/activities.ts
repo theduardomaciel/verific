@@ -20,6 +20,7 @@ import {
 	sql,
 	exists,
 	min,
+	type AnyColumn,
 } from "@verific/drizzle/orm";
 import {
 	activity,
@@ -392,6 +393,30 @@ async function assertSpeakersInProject(
 			code: "BAD_REQUEST",
 		});
 	}
+}
+
+/**
+ * Início do dia ou da hora em Brasília. As colunas guardam UTC sem fuso, e o
+ * resultado volta como texto ("2026-10-20 21:00:00").
+ */
+function localTrunc(unit: "hour" | "day", column: AnyColumn) {
+	return sql<string>`date_trunc(${sql.raw(`'${unit}'`)}, (${column} at time zone 'UTC') at time zone 'America/Sao_Paulo')`;
+}
+
+/** Rótulo de um intervalo de `localTrunc`, sem depender do fuso do servidor. */
+function formatLocalBucket(raw: string, unit: "hour" | "day") {
+	const date = new Date(`${raw.replace(" ", "T")}Z`);
+	return unit === "hour"
+		? date.toLocaleTimeString("pt-BR", {
+				timeZone: "UTC",
+				hour: "2-digit",
+				minute: "2-digit",
+			})
+		: date.toLocaleDateString("pt-BR", {
+				timeZone: "UTC",
+				month: "short",
+				day: "numeric",
+			});
 }
 
 /**
@@ -1955,7 +1980,7 @@ export const activitiesRouter = createTRPCRouter({
 			);
 			let graphDataQuery = await db
 				.select({
-					date: sql<string>`date(${participant.joinedAt})`,
+					date: localTrunc("day", participant.joinedAt),
 					count: count(),
 				})
 				.from(participant)
@@ -1965,8 +1990,8 @@ export const activitiesRouter = createTRPCRouter({
 						gte(participant.joinedAt, sevenDaysAgo),
 					),
 				)
-				.groupBy(sql`date(${participant.joinedAt})`)
-				.orderBy(sql`date(${participant.joinedAt})`);
+				.groupBy(localTrunc("day", participant.joinedAt))
+				.orderBy(localTrunc("day", participant.joinedAt));
 
 			let graphData: Array<{
 				date: string;
@@ -1978,10 +2003,7 @@ export const activitiesRouter = createTRPCRouter({
 				graphData = graphDataQuery.map((row) => {
 					cumulative += row.count;
 					return {
-						date: new Date(row.date).toLocaleDateString("pt-BR", {
-							month: "short",
-							day: "numeric",
-						}),
+						date: formatLocalBucket(row.date, "day"),
 						total: cumulative,
 						active: row.count,
 					};
@@ -1993,7 +2015,7 @@ export const activitiesRouter = createTRPCRouter({
 				);
 				const hoursDataQuery = await db
 					.select({
-						hour: sql<string>`date_trunc('hour', ${participant.joinedAt})`,
+						hour: localTrunc("hour", participant.joinedAt),
 						count: count(),
 					})
 					.from(participant)
@@ -2003,18 +2025,14 @@ export const activitiesRouter = createTRPCRouter({
 							gte(participant.joinedAt, twentyFourHoursAgo),
 						),
 					)
-					.groupBy(sql`date_trunc('hour', ${participant.joinedAt})`)
-					.orderBy(sql`date_trunc('hour', ${participant.joinedAt})`);
+					.groupBy(localTrunc("hour", participant.joinedAt))
+					.orderBy(localTrunc("hour", participant.joinedAt));
 
 				let cumulative = 0;
 				graphData = hoursDataQuery.map((row) => {
 					cumulative += row.count;
-					const hourDate = new Date(row.hour);
 					return {
-						date: hourDate.toLocaleTimeString("pt-BR", {
-							hour: "2-digit",
-							minute: "2-digit",
-						}),
+						date: formatLocalBucket(row.hour, "hour"),
 						total: cumulative,
 						active: row.count,
 					};
@@ -2115,10 +2133,8 @@ export const activitiesRouter = createTRPCRouter({
 
 			// Bucket granularity: hours for the 24h window, days otherwise.
 			const granularity = window === "24h" ? "hour" : "day";
-			const truncate = (column: unknown) =>
-				granularity === "hour"
-					? sql<string>`date_trunc('hour', ${column})`
-					: sql<string>`date_trunc('day', ${column})`;
+			const truncate = (column: AnyColumn) =>
+				localTrunc(granularity, column);
 
 			// Window bounds. "event" anchors on the project dates; "all" is unbounded.
 			const now = new Date();
@@ -2343,18 +2359,8 @@ export const activitiesRouter = createTRPCRouter({
 				series = [BREAKDOWN_REGISTRATIONS_SERIES];
 			}
 
-			const formatBucket = (raw: string) => {
-				const date = new Date(raw);
-				return granularity === "hour"
-					? date.toLocaleTimeString("pt-BR", {
-							hour: "2-digit",
-							minute: "2-digit",
-						})
-					: date.toLocaleDateString("pt-BR", {
-							month: "short",
-							day: "numeric",
-						});
-			};
+			const formatBucket = (raw: string) =>
+				formatLocalBucket(raw, granularity);
 
 			const data = [...perBucket.entries()]
 				.sort(([a], [b]) => a.localeCompare(b))

@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { ConflictList } from "@/components/activity/conflict-list";
 import { ParticipantQuitButton } from "@/components/participant/participant-quit-button";
 
+import { useToday } from "@/hooks/use-now";
 // Lib
 import {
 	formatFriendlyDate,
@@ -312,8 +313,9 @@ export function OfferStatus({
 	onDecline: () => void;
 	pending: "confirm" | "leave" | null;
 }) {
+	const now = useToday();
 	const deadline = expiresAt
-		? ` Prazo: ${formatFriendlyDate(new Date(expiresAt), { includeHour: true })}.`
+		? ` Prazo: ${formatFriendlyDate(new Date(expiresAt), { includeHour: true, now })}.`
 		: "";
 	const blocked = conflicts.length > 0;
 
