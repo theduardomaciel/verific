@@ -54,6 +54,10 @@ interface ResolvedDeps {
 	now: () => Date;
 	sleep: (ms: number) => Promise<void>;
 	shared?: BuildContext;
+	/** Lote: configuração de cada tipo por evento, lida uma vez. */
+	enabledCache?: Map<string, boolean>;
+	/** Lote: o aviso de cota sai uma vez, no fim. */
+	deferQuotaWarning?: boolean;
 }
 
 export interface SendNotificationResult {
@@ -83,6 +87,19 @@ function resolveDeps(deps?: ServiceDeps): ResolvedDeps {
 				new Promise<void>((resolve) => setTimeout(resolve, ms))),
 		shared: deps?.shared,
 	};
+}
+
+async function isTypeEnabled(
+	deps: ResolvedDeps,
+	eventId: string,
+	type: string,
+): Promise<boolean> {
+	const key = `${eventId}:${type}`;
+	const cached = deps.enabledCache?.get(key);
+	if (cached !== undefined) return cached;
+	const enabled = await isNotificationEnabled(eventId, type);
+	deps.enabledCache?.set(key, enabled);
+	return enabled;
 }
 
 async function resolveProvider(deps: ResolvedDeps): Promise<EmailProvider> {
@@ -286,7 +303,11 @@ export async function processQueuedNotifications(
 	ids: string[],
 	deps?: ServiceDeps,
 ): Promise<ProcessQueuedResult> {
-	const resolved = resolveDeps(deps);
+	const resolved: ResolvedDeps = {
+		...resolveDeps(deps),
+		enabledCache: new Map(),
+		deferQuotaWarning: true,
+	};
 	const config = resolveConfig(resolved);
 	const result: ProcessQueuedResult = {
 		processed: 0,
@@ -296,29 +317,35 @@ export async function processQueuedNotifications(
 		remaining: 0,
 		capReached: false,
 	};
+	// Uso lido uma vez; cada envio do lote soma um
+	let used =
+		config.dailyLimit !== undefined
+			? await resolved.store.countUsageLast24h()
+			: 0;
+	let lastSent: NotificationRow | null = null;
 	for (let index = 0; index < ids.length; index += 1) {
-		if (config.dailyLimit !== undefined) {
-			const used = await resolved.store.countUsageLast24h();
-			if (used >= config.dailyLimit) {
-				result.remaining = ids.length - index;
-				result.capReached = true;
-				break;
-			}
+		if (config.dailyLimit !== undefined && used >= config.dailyLimit) {
+			result.remaining = ids.length - index;
+			result.capReached = true;
+			break;
 		}
-		const { notification } = await processNotification(
-			ids[index]!,
-			resolved,
-		);
+		const { notification } = await processResolved(ids[index]!, resolved);
 		result.processed += 1;
 		if (!notification) result.failed += 1;
-		else if (notification.status === "sent") result.sent += 1;
-		else if (notification.status === "skipped") result.skipped += 1;
+		else if (notification.status === "sent") {
+			result.sent += 1;
+			used += 1;
+			lastSent = notification;
+		} else if (notification.status === "skipped") result.skipped += 1;
 		else if (
 			notification.status === "sending" ||
 			notification.status === "pending"
 		)
 			result.skipped += 1;
 		else result.failed += 1;
+	}
+	if (lastSent) {
+		await maybeSendQuotaWarning(lastSent, resolved);
 	}
 	return result;
 }
@@ -333,7 +360,13 @@ export async function processNotification(
 	id: string,
 	deps?: ServiceDeps,
 ): Promise<SendNotificationResult> {
-	const resolved = resolveDeps(deps);
+	return processResolved(id, resolveDeps(deps));
+}
+
+async function processResolved(
+	id: string,
+	resolved: ResolvedDeps,
+): Promise<SendNotificationResult> {
 	const store = resolved.store;
 	let claimed: NotificationRow | null = null;
 	try {
@@ -354,7 +387,8 @@ export async function processNotification(
 		}
 
 		if (claimed.eventId) {
-			const enabled = await isNotificationEnabled(
+			const enabled = await isTypeEnabled(
+				resolved,
 				claimed.eventId,
 				claimed.type,
 			);
@@ -400,12 +434,13 @@ export async function processNotification(
 			return { notification: failed ?? claimed };
 		}
 		const subject = definition.subject(props) || rendered.subject;
-		await store.update(id, {
+		// Vai junto com a primeira gravação do envio
+		const renderMeta = {
 			subject,
 			templateVersion: rendered.templateVersion,
 			propsHash: hashProps(props),
 			skipReason: null,
-		});
+		};
 
 		for (let attempt = 1; attempt <= MAX_SEND_ATTEMPTS; attempt += 1) {
 			let result;
@@ -434,6 +469,7 @@ export async function processNotification(
 
 			if (result.ok) {
 				const sent = await store.update(id, {
+					...renderMeta,
 					status: "sent",
 					attempts: attempt,
 					lastError: null,
@@ -442,12 +478,15 @@ export async function processNotification(
 					providerMessageId: result.providerMessageId,
 					sentAt: resolved.now(),
 				});
-				await maybeSendQuotaWarning(claimed, resolved);
+				if (!resolved.deferQuotaWarning) {
+					await maybeSendQuotaWarning(claimed, resolved);
+				}
 				return { notification: sent ?? claimed };
 			}
 
 			if (result.code === "provider_quota") {
 				const blocked = await store.update(id, {
+					...renderMeta,
 					status: "blocked_quota",
 					attempts: attempt,
 					lastError: `${result.code}: ${result.message}`,
@@ -458,6 +497,7 @@ export async function processNotification(
 			}
 
 			await store.update(id, {
+				...renderMeta,
 				attempts: attempt,
 				lastError: `${result.code}: ${result.message}`,
 				lastErrorRetryable: result.retryable,
