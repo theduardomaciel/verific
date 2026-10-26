@@ -35,6 +35,7 @@ import {
 	ACTIVITY_WAITLIST_PROMOTED_VERSION,
 	ACTIVITY_WAITLISTED_VERSION,
 	ACTIVITY_WAITLIST_OFFERED_VERSION,
+	ACTIVITY_WAITLIST_OFFER_REVOKED_VERSION,
 	ACTIVITY_WAITLIST_REMOVED_VERSION,
 	activityCancelledPreviewProps,
 	activityCancelledSubject,
@@ -48,6 +49,8 @@ import {
 	activityUpdatedSubject,
 	activityWaitlistOfferedPreviewProps,
 	activityWaitlistOfferedSubject,
+	activityWaitlistOfferRevokedPreviewProps,
+	activityWaitlistOfferRevokedSubject,
 	activityWaitlistPromotedPreviewProps,
 	activityWaitlistPromotedSubject,
 	activityWaitlistRemovedPreviewProps,
@@ -60,6 +63,7 @@ import {
 	renderActivityEnrollmentRemoved,
 	renderActivityUpdated,
 	renderActivityWaitlistOffered,
+	renderActivityWaitlistOfferRevoked,
 	renderActivityWaitlistPromoted,
 	renderActivityWaitlistRemoved,
 	renderActivityWaitlisted,
@@ -878,6 +882,50 @@ export const notificationRegistry = {
 		render: (props) => renderActivityWaitlistOffered(props),
 		previewProps: activityWaitlistOfferedPreviewProps,
 		templateVersion: ACTIVITY_WAITLIST_OFFERED_VERSION,
+	} satisfies NotificationTypeDefinition,
+
+	activity_waitlist_offer_revoked: {
+		key: "activity_waitlist_offer_revoked",
+		audience: "participant",
+		category: "transactional",
+		scope: "activity",
+		defaultEnabled: true,
+		description:
+			"Aviso de que a vaga reservada na fila foi desfeita porque a organização reduziu as vagas; o participante continua na fila.",
+		entityRefs: [
+			"activityId",
+			"participantId",
+			"enrollmentId",
+			"revokedAt",
+		],
+		idempotencyKeyFormat:
+			"activity_waitlist_offer_revoked:{enrollmentId}:{revokedAt}",
+		buildIdempotencyKey: (refs) =>
+			`activity_waitlist_offer_revoked:${requiredString(refs, "enrollmentId")}:${requiredString(refs, "revokedAt")}`,
+		async validate(refs) {
+			const activityId = requiredString(refs, "activityId");
+			if (!(await activityExists(activityId)))
+				return { ok: false, reason: "entity_gone" };
+			const status = await waitlistStatus(
+				optionalString(refs, "enrollmentId"),
+				activityId,
+				requiredString(refs, "participantId"),
+			);
+			if (status === null) return { ok: false, reason: "entity_gone" };
+			// Uma nova oferta (ou a saída da fila) já tornou o aviso velho
+			return status === "waiting"
+				? { ok: true }
+				: { ok: false, reason: "state_changed" };
+		},
+		buildProps: (refs, ctx) => buildActivityProps(refs, ctx),
+		subject: (props) =>
+			activityWaitlistOfferRevokedSubject({
+				activityName: String(props["activityName"]),
+				eventName: String(props["eventName"]),
+			}),
+		render: (props) => renderActivityWaitlistOfferRevoked(props),
+		previewProps: activityWaitlistOfferRevokedPreviewProps,
+		templateVersion: ACTIVITY_WAITLIST_OFFER_REVOKED_VERSION,
 	} satisfies NotificationTypeDefinition,
 
 	activity_waitlist_promoted: {

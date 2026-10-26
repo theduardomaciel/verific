@@ -1,0 +1,1 @@
+ALTER TYPE "public"."waitlist_event_type" ADD VALUE 'revoked';

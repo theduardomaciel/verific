@@ -5,9 +5,9 @@ Os tipos ficam em `notifications/registry.ts`, cada um com público,
 chave de idempotência, validação e template:
 
 - **participante:** confirmação e remoção da inscrição no evento;
-  inscrição, fila de espera (entrada, oferta e promoção), cancelamento e
-  remoção em atividades; mudança de horário ou local e cancelamento da
-  atividade;
+  inscrição, fila de espera (entrada, oferta, oferta desfeita, promoção e
+  remoção), cancelamento e remoção em atividades; mudança de horário ou
+  local e cancelamento da atividade;
 - **organização:** aviso de cota diária, contribuidor adicionado ou
   removido e evento excluído.
 

@@ -20,6 +20,8 @@ export const waitlistEventTypes = [
 	"expired",
 	"promoted",
 	"removed",
+	// Oferta desfeita porque o limite baixou: volta a esperar
+	"revoked",
 ] as const;
 export const waitlistEventTypeEnum = pgEnum(
 	"waitlist_event_type",

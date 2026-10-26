@@ -103,6 +103,7 @@ export {
 	notifyActivityUpdated,
 	notifyActivityWaitlisted,
 	notifyActivityWaitlistOffered,
+	notifyActivityWaitlistOfferRevoked,
 	notifyActivityWaitlistPromoted,
 	notifyActivityWaitlistRemoved,
 	notifyEventRegistrationRemoved,

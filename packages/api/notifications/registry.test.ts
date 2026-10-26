@@ -128,6 +128,11 @@ const IDEMPOTENCY_CASES: Array<{
 		expected: "activity_waitlist_offered:e1:2026-01-02T12:00:00.000Z",
 	},
 	{
+		type: "activity_waitlist_offer_revoked",
+		refs: { enrollmentId: "e1", revokedAt: "2026-01-02T13:00:00.000Z" },
+		expected: "activity_waitlist_offer_revoked:e1:2026-01-02T13:00:00.000Z",
+	},
+	{
 		type: "activity_enrollment_cancelled",
 		refs: {
 			activityId: "a1",
@@ -244,6 +249,11 @@ const VALIDATE_REFS: Record<
 		participantId: "p1",
 		enrollmentId: "e1",
 	},
+	activity_waitlist_offer_revoked: {
+		activityId: "a1",
+		participantId: "p1",
+		enrollmentId: "e1",
+	},
 	activity_enrollment_cancelled: { activityId: "a1", participantId: "p1" },
 	activity_enrollment_removed: { activityId: "a1", participantId: "p1" },
 	activity_updated: { activityId: "a1", participantId: "p1" },
@@ -302,6 +312,25 @@ describe("validate", () => {
 				removedAt: "2026-10-25T00:00:00.000Z",
 			}),
 		).resolves.toEqual({ ok: true });
+	});
+
+	it("sends the revoked offer only while the entry waits again", async () => {
+		const revoked = notificationRegistry.activity_waitlist_offer_revoked;
+		const refs = {
+			activityId: "a1",
+			participantId: "p1",
+			enrollmentId: "e1",
+			revokedAt: "2026-10-25T00:00:00.000Z",
+		};
+
+		queue.push([{ id: "a1" }], [{ status: "waiting" }]);
+		await expect(revoked.validate(refs)).resolves.toEqual({ ok: true });
+
+		queue.push([{ id: "a1" }], [{ status: "offered" }]);
+		await expect(revoked.validate(refs)).resolves.toEqual({
+			ok: false,
+			reason: "state_changed",
+		});
 	});
 
 	it("sends the registration removal only after the delete", async () => {

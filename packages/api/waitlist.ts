@@ -8,7 +8,10 @@ import {
 } from "@verific/drizzle/schema";
 
 import { deleteActivityAnswers } from "./enrollment";
-import { notifyActivityWaitlistOffered } from "./notifications";
+import {
+	notifyActivityWaitlistOffered,
+	notifyActivityWaitlistOfferRevoked,
+} from "./notifications";
 import { countEnrolled, type LockedActivity, type Tx } from "./seats";
 import { byQueueOrder, planSettlement } from "./waitlist-plan";
 
@@ -186,6 +189,25 @@ export async function settleActivity(
 			.update(activityWaitlist)
 			.set({ status: "waiting", offeredAt: null, offerExpiresAt: null })
 			.where(inArray(activityWaitlist.id, plan.revoke));
+		await recordEvents(
+			tx,
+			locked.id,
+			participantOf(plan.revoke),
+			"revoked",
+			null,
+		);
+		// Como a oferta: o e-mail é validado depois do commit
+		void notifyActivityWaitlistOfferRevoked({
+			eventId: locked.projectId,
+			activityId: locked.id,
+			revoked: entries
+				.filter((entry) => plan.revoke.includes(entry.id))
+				.map((entry) => ({
+					participantId: entry.participantId,
+					enrollmentId: entry.id,
+				})),
+			revokedAt: now,
+		});
 	}
 
 	// Todas as ofertas de uma rodada têm o mesmo prazo
