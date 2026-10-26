@@ -6,7 +6,7 @@ import { Footer } from "@/components/footer";
 import { DashboardHeader } from "@/components/header/dashboard-header";
 
 import { isAuthError, redirectToSignIn } from "@/lib/auth-redirect";
-import { HydrateQuery } from "@/lib/trpc/hydrate";
+import { HydrateQueries } from "@/lib/trpc/hydrate";
 import { getCachedAccountProjects } from "@/lib/trpc/server";
 
 const ACCOUNT_LINKS = [
@@ -44,9 +44,13 @@ async function AccountLayoutContent({ children }: Props) {
 				projects={projects.owned}
 			/>
 			{/* A página lista os mesmos projetos */}
-			<HydrateQuery path="getProjects" data={projects}>
+			<HydrateQueries
+				queries={[
+					{ path: "getProjects", input: undefined, data: projects },
+				]}
+			>
 				{children}
-			</HydrateQuery>
+			</HydrateQueries>
 			<Footer />
 		</div>
 	);
