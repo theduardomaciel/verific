@@ -202,6 +202,27 @@ describe("activities: só a organização do evento altera", () => {
 		).toEqual([5]);
 	});
 
+	it.each([{ tolerance: 2.5 }, { tolerance: -1 }, { workload: -2 }])(
+		"recusa %o antes do banco",
+		(extra) => {
+			const parsed = activitiesRouter._def.procedures.createActivity._def
+				.inputs[0] as unknown as {
+				safeParse: (value: unknown) => { success: boolean };
+			};
+
+			expect(
+				parsed.safeParse({
+					projectId: PROJECT_ID,
+					name: "Oficina",
+					sessions,
+					category: "workshop",
+					audience: "internal",
+					...extra,
+				}).success,
+			).toBe(false);
+		},
+	);
+
 	it("addActivityParticipants não revela quem é do evento", async () => {
 		selectMock.mockReturnValue(selectChain([]));
 		const caller = createCaller({ session: intruder });
