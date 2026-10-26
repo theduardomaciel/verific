@@ -20,9 +20,7 @@ import { serverClient } from "@/lib/trpc/server";
 
 import { RankingPageSkeleton } from "./skeleton";
 
-interface Props {
-	params: Promise<{ eventUrl: string }>;
-}
+type Props = Pick<PageProps<"/[eventUrl]/ranking">, "params">;
 
 type RankingProject = NonNullable<
 	Awaited<ReturnType<typeof getProject>>

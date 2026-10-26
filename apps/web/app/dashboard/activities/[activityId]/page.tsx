@@ -6,9 +6,7 @@ import { ActivityContent } from "./content";
 
 export default function ActivityPage({
 	params,
-}: {
-	params: Promise<{ activityId: string }>;
-}) {
+}: PageProps<"/dashboard/activities/[activityId]">) {
 	return (
 		<Suspense
 			fallback={
@@ -24,9 +22,7 @@ export default function ActivityPage({
 
 async function ActivityContentLoader({
 	params,
-}: {
-	params: Promise<{ activityId: string }>;
-}) {
+}: Pick<PageProps<"/dashboard/activities/[activityId]">, "params">) {
 	const { activityId } = await params;
 
 	return <ActivityContent activityId={activityId} />;

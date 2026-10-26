@@ -15,9 +15,7 @@ export const metadata: Metadata = {
 
 async function LoginContent({
 	searchParams,
-}: {
-	searchParams: Promise<{ callbackUrl?: string }>;
-}) {
+}: Pick<PageProps<"/auth">, "searchParams">) {
 	const params = await searchParams;
 	const callbackUrl = safeRedirectPath(params.callbackUrl, "/account");
 
@@ -78,11 +76,7 @@ async function LoginContent({
 	);
 }
 
-export default function LoginPage({
-	searchParams,
-}: {
-	searchParams: Promise<{ callbackUrl?: string }>;
-}) {
+export default function LoginPage({ searchParams }: PageProps<"/auth">) {
 	return (
 		<Suspense fallback={<div className="min-h-screen" />}>
 			<LoginContent searchParams={searchParams} />

@@ -42,9 +42,7 @@ export const instant = false;
  */
 export default async function EventSubscribePage({
 	params,
-}: {
-	params: Promise<{ eventUrl: string }>;
-}) {
+}: PageProps<"/[eventUrl]/subscribe">) {
 	const { eventUrl } = await params;
 	const result = await getProject(eventUrl);
 

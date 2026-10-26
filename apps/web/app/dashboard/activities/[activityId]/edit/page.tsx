@@ -12,9 +12,7 @@ export const metadata: Metadata = {
 
 export default function EditActivity({
 	params,
-}: {
-	params: Promise<{ activityId: string }>;
-}) {
+}: PageProps<"/dashboard/activities/[activityId]/edit">) {
 	return (
 		<Suspense
 			fallback={
@@ -30,9 +28,7 @@ export default function EditActivity({
 
 async function EditActivityLoader({
 	params,
-}: {
-	params: Promise<{ activityId: string }>;
-}) {
+}: Pick<PageProps<"/dashboard/activities/[activityId]/edit">, "params">) {
 	const { activityId } = await params;
 
 	return <EditActivityContent activityId={activityId} />;

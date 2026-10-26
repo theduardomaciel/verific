@@ -24,9 +24,7 @@ import Logo from "@/public/logo.svg";
 
 export async function generateMetadata({
 	params,
-}: {
-	params: Promise<{ eventUrl: string }>;
-}): Promise<Metadata> {
+}: PageProps<"/[eventUrl]">): Promise<Metadata> {
 	"use cache";
 
 	const { eventUrl } = await params;
@@ -222,10 +220,7 @@ function EventLogo({ light, dark, lightDims, darkDims, href }: EventLogoProps) {
 export default async function EventLayout({
 	children,
 	params,
-}: {
-	children: React.ReactNode;
-	params: Promise<{ eventUrl: string }>;
-}) {
+}: LayoutProps<"/[eventUrl]">) {
 	const { eventUrl } = await params;
 	const result = await getProject(eventUrl);
 

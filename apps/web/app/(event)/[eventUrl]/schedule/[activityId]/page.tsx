@@ -37,9 +37,7 @@ export const ensureStatic = "navigation";
 
 export default function Page({
 	params,
-}: {
-	params: Promise<{ activityId: string; eventUrl: string }>;
-}) {
+}: PageProps<"/[eventUrl]/schedule/[activityId]">) {
 	return (
 		<Suspense fallback={<ActivityPageShellSkeleton />}>
 			<ActivityPageLoader params={params} />
@@ -59,9 +57,7 @@ function ActivityPageShellSkeleton() {
 
 async function ActivityPageLoader({
 	params,
-}: {
-	params: Promise<{ activityId: string; eventUrl: string }>;
-}) {
+}: Pick<PageProps<"/[eventUrl]/schedule/[activityId]">, "params">) {
 	const { activityId, eventUrl } = await params;
 
 	const data = await getCachedActivity({ activityId }).catch(() => null);

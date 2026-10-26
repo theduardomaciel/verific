@@ -11,11 +11,9 @@ export const metadata: Metadata = {
 
 async function ErrorContent({
 	searchParams,
-}: {
-	searchParams: Promise<{ [key: string]: string | undefined }>;
-}) {
+}: Pick<PageProps<"/auth/error">, "searchParams">) {
 	const params = await searchParams;
-	const error = params.error || "default";
+	const error = [params.error].flat()[0] || "default";
 
 	return (
 		<div className="flex min-h-screen flex-col md:flex-row">
@@ -37,11 +35,7 @@ async function ErrorContent({
 	);
 }
 
-export default function ErrorPage({
-	searchParams,
-}: {
-	searchParams: Promise<{ [key: string]: string | undefined }>;
-}) {
+export default function ErrorPage({ searchParams }: PageProps<"/auth/error">) {
 	return (
 		<Suspense fallback={<div className="min-h-screen" />}>
 			<ErrorContent searchParams={searchParams} />
