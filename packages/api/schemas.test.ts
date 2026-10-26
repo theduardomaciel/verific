@@ -220,6 +220,10 @@ describe("formatAnswerValue", () => {
 		expect(formatAnswerValue("text", undefined)).toBe("");
 		expect(formatAnswerValue("text", "")).toBe("");
 	});
+
+	it("serializes an unexpected object instead of [object Object]", () => {
+		expect(formatAnswerValue("text", { a: 1 })).toBe('{"a":1}');
+	});
 });
 
 describe("radio_group", () => {

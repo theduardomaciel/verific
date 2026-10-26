@@ -230,14 +230,19 @@ export function resolveProfileSlots(input: {
 						) {
 							continue;
 						}
-						const service = socialServiceById(
-							String((entry as { service: unknown }).service),
-						);
+						const { service: serviceId, value } = entry as {
+							service: unknown;
+							value: unknown;
+						};
+						if (
+							typeof serviceId !== "string" ||
+							typeof value !== "string"
+						) {
+							continue;
+						}
+						const service = socialServiceById(serviceId);
 						if (!service) continue;
-						const url = normalizeSocialLink(
-							service.id,
-							String((entry as { value: unknown }).value ?? ""),
-						);
+						const url = normalizeSocialLink(service.id, value);
 						if (!url) continue;
 						out.socials.push({
 							service: service.id,

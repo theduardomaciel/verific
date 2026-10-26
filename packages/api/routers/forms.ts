@@ -182,7 +182,10 @@ function mapValueToColumns(type: string, value: unknown) {
 			return { valueJson: b };
 		}
 		default:
-			return { valueText: String(value) };
+			return {
+				valueText:
+					typeof value === "string" ? value : JSON.stringify(value),
+			};
 	}
 }
 

@@ -927,5 +927,5 @@ export function formatAnswerValue(
 		}
 		return value;
 	}
-	return String(value);
+	return JSON.stringify(value) ?? "";
 }
