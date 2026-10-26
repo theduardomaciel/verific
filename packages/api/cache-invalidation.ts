@@ -290,7 +290,10 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 			const nextUrl = readString(result, "url");
 			const previousUrl = readString(snapshot, "previousUrl");
 			return [
-				GLOBAL_CACHE_TAGS.projects,
+				// A lista pública só tem id e URL
+				nextUrl !== previousUrl
+					? GLOBAL_CACHE_TAGS.projects
+					: undefined,
 				id ? projectCacheTag(id) : undefined,
 				previousUrl ? projectUrlCacheTag(previousUrl) : undefined,
 				nextUrl && nextUrl !== previousUrl

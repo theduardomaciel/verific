@@ -98,6 +98,19 @@ describe("updateProject", () => {
 
 		expect(tags).toContain("project-url:meu-evento");
 		expect(tags).not.toContain("project-url:Meu_Evento");
+		expect(tags).toContain("projects");
+	});
+
+	it("só derruba a lista pública quando a URL muda", () => {
+		const tags = mutationCacheRules.updateProject!.tags({
+			input: { id: "p1", name: "Outro nome" },
+			result: { updated: true, url: "evento" },
+			snapshot: { previousUrl: "evento" },
+			ctx: { session: null },
+		});
+
+		expect(tags).not.toContain("projects");
+		expect(tags).toContain("project:p1");
 	});
 });
 
