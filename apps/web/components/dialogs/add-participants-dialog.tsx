@@ -262,7 +262,7 @@ export function AddParticipantsDialog({
 					{resolvedButtonLabel}
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="w-full sm:max-w-lg">
+			<DialogContent className="w-full overflow-hidden sm:max-w-lg">
 				<DialogHeader>
 					<DialogTitle>{resolvedTitle}</DialogTitle>
 					<DialogDescription>
