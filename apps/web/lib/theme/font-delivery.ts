@@ -3,9 +3,8 @@ import { presetOfFamily } from "@verific/drizzle/theme";
 import { buildFontStylesheetUrl } from "@verific/fonts";
 
 /**
- * Entrega das fontes do tema nas páginas públicas (único ponto de
- * decisão — Fase 5 troca o CDN pelo self-hosted só aqui, sem tocar os
- * chamadores).
+ * Entrega das fontes do tema nas páginas públicas. É o único ponto que
+ * decide de onde elas vêm.
  *
  * - Papéis com preset (as 5 fontes com curadoria) continuam via
  *   `next/font` (auto-hospedadas, zero terceiros): nada extra é emitido.

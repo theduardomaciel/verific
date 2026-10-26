@@ -62,9 +62,8 @@ export async function generateMetadata({
 				"max-snippet": -1,
 			},
 		},
-		// Favicon direto do arquivo armazenado (quadrado desde o upload)
-		// com variantes de esquema: o `logoDarkUrl` existia mas nunca era
-		// usado no ícone da aba.
+		// Favicon direto do arquivo armazenado (quadrado desde o upload),
+		// com a variante escura no modo escuro
 		icons: project.logoUrl
 			? {
 					icon: [
@@ -112,14 +111,11 @@ export async function generateStaticParams() {
 export const instant = false;
 
 /**
- * Fallback **só do header**. O esqueleto de layout inteiro (hero `h-56` +
- * três cards) saiu: ele não tinha relação com a página real e era a primeira
- * pintura de toda carga direta, porque `{children}` e o rodapé ficavam dentro
- * da mesma fronteira. Agora só o header transmite (é a única árvore que lê
- * `usePathname()`), então este bloco reproduz a geometria dele — `h-21`
- * (84px), com `py-0` e `items-center` como no `EventHeader` real — para a
- * troca não deslocar o conteúdo abaixo. Logo (`h-8`) e botão de menu mobile
- * (`md:hidden`) seguem o mesmo recorte responsivo do header.
+ * Fallback **só do header**: é a única árvore que transmite (lê
+ * `usePathname()`). Reproduz a geometria do `EventHeader` — `h-21` (84px),
+ * `py-0` e `items-center` — para a troca não deslocar o conteúdo abaixo.
+ * Logo (`h-8`) e botão de menu mobile (`md:hidden`) seguem o mesmo recorte
+ * responsivo do header.
  */
 function EventHeaderFallback() {
 	return (
@@ -167,8 +163,7 @@ function squareDims(side: number | null | undefined): LogoDims | undefined {
  * Logo do evento no cabeçalho.
  *
  * A variante escura só recebe `dark:hidden`/`hidden dark:block` quando
- * existe de fato: antes, a clara sumia no modo escuro e a escura não era
- * renderizada sem URL própria — o logo desaparecia por completo.
+ * existe de fato; sem ela, o logo claro aparece nos dois modos.
  */
 function EventLogo({ light, dark, lightDims, darkDims, href }: EventLogoProps) {
 	if (!light) {

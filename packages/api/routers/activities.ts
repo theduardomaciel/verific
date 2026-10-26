@@ -478,9 +478,8 @@ export const activitiesRouter = createTRPCRouter({
 
 			// Sem acesso de organizador, só a atividade básica: a lista de
 			// inscritos traz e-mails e presenças.
-			// A contagem de ocupantes viaja junto: antes a página de detalhe
-			// chamava `getActivities` (lista inteira do evento) só para achar
-			// esse número no primeiro render de cada atividade.
+			// A contagem de ocupantes viaja junto, para a página de detalhe
+			// não precisar da lista do evento.
 			const canManage = userId
 				? await hasProjectAccess(selectedActivity.projectId, userId)
 				: false;

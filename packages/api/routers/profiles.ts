@@ -47,7 +47,7 @@ import { generateShortId } from "../lib/short-id";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
 /**
- * Preenche shortId ausente (participantes criados antes da Fase 4).
+ * Preenche shortId ausente (participantes criados antes da coluna existir).
  *
  * Caminho quente: quem já tem shortId retorna sem query nem write — as
  * procedures de leitura (`getMyParticipant`, `getMyEnrollmentState`, badges)

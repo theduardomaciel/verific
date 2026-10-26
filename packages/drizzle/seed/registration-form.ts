@@ -6,7 +6,7 @@ import type { Faker } from "@faker-js/faker";
 type FieldInsert = typeof schema.formField.$inferInsert;
 type AnswerInsert = typeof schema.formAnswer.$inferInsert;
 
-// Os campos que antes ficavam no participante, agora como formulário publicado
+// Campos do formulário de inscrição publicado do evento
 export const REGISTRATION_FIELDS = [
 	{ key: "matricula", label: "Matrícula", type: "text", required: true },
 	{

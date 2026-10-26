@@ -45,9 +45,8 @@ import { userOwnedProjectIds, userProfileRefs } from "./lib/user-public-scope";
  *
  * Semântica: `revalidateTag(tag, "max")` (stale-while-revalidate) — a
  * invalidação apenas marca a entrada como stale; o próximo visitante
- * recebe a versão antiga e a regeneração acontece em background. Nada é
- * regenerado "em massa" junto da mutação (era isso que estourava o
- * orçamento de CPU).
+ * recebe a versão antiga e a regeneração acontece em background, sem
+ * regenerar tudo junto da mutação.
  *
  * Regras que **não** aparecem aqui foram omitidas de propósito: mutations
  * de dashboard (contribuidores, notificações, badges, uploads, preferências)
@@ -1113,9 +1112,8 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 	},
 
 	recordProfileVisit: {
-		// A mutation virou pública para fazer a visita em uma única chamada.
-		// O input já traz o id do projeto: sem snapshot, não há segunda
-		// resolução da mesma linha antes do handler.
+		// Mutation pública, para a visita sair numa só chamada. O input já
+		// traz o id do projeto, então não há snapshot.
 		//
 		// `recorded` continua true para visitas aceitas (o cliente usa isso
 		// para o dedupe de 10 min); `created` só é true quando a PK

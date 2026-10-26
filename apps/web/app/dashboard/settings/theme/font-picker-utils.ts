@@ -68,7 +68,7 @@ const AVG_LATIN_WOFF2_KB = 18;
 
 /**
  * Heurística honesta do custo da seleção (nº de arquivos + ordem de
- * grandeza). O valor exato só existe após a ingestão (Fase 5).
+ * grandeza). O valor exato depende dos arquivos que o CDN serve.
  */
 export function estimateFontPayload(
 	entry: Pick<FontCatalogEntry, "subsets">,
