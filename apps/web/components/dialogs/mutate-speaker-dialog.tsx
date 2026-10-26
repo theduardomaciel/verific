@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 // Form
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -103,10 +103,10 @@ export function MutateSpeakerDialog({
 
 	const utils = trpc.useUtils();
 
-	// Inicializamos o formulário com o Zod e o React Hook Form
+	// `values` acompanha a prop `speaker` (o RHF compara o conteúdo)
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
-		defaultValues: {
+		values: {
 			name: speaker?.name ?? "",
 			email: speaker?.email ?? "",
 			title: speaker?.title ?? "",
@@ -115,19 +115,6 @@ export function MutateSpeakerDialog({
 			imageUrl: speaker?.imageUrl ?? "",
 		},
 	});
-
-	// Sincroniza o formulário com a prop speaker sempre que ela mudar
-	// oxlint-disable-line react-hooks/exhaustive-deps -- `form` from RHF is stable; adding it to deps is unnecessary and triggers the linter incorrectly (form is not a hook).
-	useEffect(() => {
-		form.reset({
-			name: speaker?.name ?? "",
-			email: speaker?.email ?? "",
-			title: speaker?.title ?? "",
-			socials: speaker?.socials ?? [],
-			description: speaker?.description ?? "",
-			imageUrl: speaker?.imageUrl ?? "",
-		});
-	}, [speaker]);
 
 	// Trocar para o endpoint correto, pois speakers está na raiz do router
 	const updateMutation = trpc.updateSpeaker.useMutation();
@@ -186,17 +173,8 @@ export function MutateSpeakerDialog({
 	// TODO: Fazemos o submit do formulário manualmente pois estamos acidentalmente rodando
 	// o formulário da página junto com o do dialog/drawer
 	async function handleManualSubmit() {
-		// Manually trigger validation on all fields and wait for it to complete
-		// oxlint-disable-line react-hooks/exhaustive-deps -- `form` from RHF is stable; adding it to deps is unnecessary and triggers the linter incorrectly (form is not a hook).
-		const isValid = await form.trigger();
-
-		if (isValid) {
-			// If valid, get values and submit
-			const values = form.getValues();
-			await onSubmit(values);
-		} else {
-			// Log errors for debugging
-			console.log("Form validation failed:", form.formState.errors);
+		if (await form.trigger()) {
+			await onSubmit(form.getValues());
 		}
 	}
 
