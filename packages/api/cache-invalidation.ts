@@ -242,18 +242,15 @@ function publishedFormTags(version: VersionScope) {
 /** Snapshot padrão das mutations de atividade: o projeto dono. */
 async function snapshotActivityProject(input: unknown) {
 	const activityId = readString(input, "activityId");
-	const projectId = await activityProjectId(activityId);
-	let participantsLimit: number | null | undefined;
-	if (activityId) {
-		const act = await db.query.activity.findFirst({
-			where: eq(activity.id, activityId),
-			columns: { participantsLimit: true },
-		});
-		participantsLimit = act?.participantsLimit ?? null;
-	}
+	if (!activityId)
+		return { projectId: undefined, participantsLimit: undefined };
+	const row = await db.query.activity.findFirst({
+		where: eq(activity.id, activityId),
+		columns: { projectId: true, participantsLimit: true },
+	});
 	return {
-		projectId,
-		participantsLimit,
+		projectId: row?.projectId,
+		participantsLimit: row ? row.participantsLimit : undefined,
 	};
 }
 
