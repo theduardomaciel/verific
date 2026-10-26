@@ -61,6 +61,15 @@ export function WaitlistList({
 
 	const canPromote = freeSeats != null && freeSeats > 0;
 
+	const handleSettle = async () => {
+		try {
+			await settle?.({ activityId });
+			toast.success("Fila de espera processada");
+		} catch {
+			toast.error("Erro ao processar a fila de espera");
+		}
+	};
+
 	return (
 		<div className="flex w-full min-w-0 flex-col gap-4">
 			{/* Summary Cards */}
@@ -312,20 +321,7 @@ export function WaitlistList({
 											variant="outline"
 											className="max-lg:flex-1"
 											disabled={isSettling}
-											onClick={async () => {
-												try {
-													await settle({
-														activityId,
-													});
-													toast.success(
-														"Fila de espera processada",
-													);
-												} catch {
-													toast.error(
-														"Erro ao processar a fila de espera",
-													);
-												}
-											}}
+											onClick={() => void handleSettle()}
 										>
 											{isSettling
 												? "Processando..."
