@@ -256,7 +256,7 @@ export function AddParticipantsDialog({
 				<Button
 					size={"lg"}
 					variant={buttonVariant}
-					className="h-10 flex-1"
+					className="h-10 min-h-10 flex-1 shrink-0"
 				>
 					<UserPlus size={20} />
 					{resolvedButtonLabel}
@@ -338,7 +338,7 @@ export function AddParticipantsDialog({
 					<DialogFooter className="w-full gap-2 sm:justify-start">
 						<DialogClose asChild>
 							<Button
-								className="flex flex-1 md:h-10"
+								className="flex h-10 min-h-10 flex-1 shrink-0"
 								type="button"
 								size={"lg"}
 								variant="secondary"
@@ -348,7 +348,7 @@ export function AddParticipantsDialog({
 							</Button>
 						</DialogClose>
 						<Button
-							className="flex flex-1 md:h-10"
+							className="flex h-10 min-h-10 flex-1 shrink-0"
 							size={"lg"}
 							type="submit"
 							disabled={isMutating}
@@ -369,7 +369,4 @@ export function AddParticipantsDialog({
 	);
 }
 
-// Backward-compatible aliases
-export const AddParticipantDialog = AddParticipantsDialog;
-export const AddMonitorDialog = AddParticipantsDialog;
 export { AddParticipantsDialog as default };
