@@ -835,7 +835,7 @@ export const activitiesRouter = createTRPCRouter({
 
 			type ActivityWithRelations = typeof activity.$inferSelect & {
 				participantsCount: number;
-				project: typeof project.$inferSelect;
+				project: Pick<typeof project.$inferSelect, "id" | "url">;
 				sessions: Array<typeof activitySession.$inferSelect>;
 				speakerOnActivity: Array<
 					typeof speakerOnActivity.$inferSelect & {
@@ -864,7 +864,8 @@ export const activitiesRouter = createTRPCRouter({
 			// Only include participators if fullQuery is true
 			const withObj = fullQuery
 				? {
-						project: true,
+						// Os consumidores só usam a URL; o resto do projeto pesa no cache
+						project: { columns: { id: true, url: true } },
 						sessions: {
 							orderBy: asc(activitySession.startsAt),
 						},
@@ -898,7 +899,7 @@ export const activitiesRouter = createTRPCRouter({
 						},
 					}
 				: {
-						project: true,
+						project: { columns: { id: true, url: true } },
 						sessions: {
 							orderBy: asc(activitySession.startsAt),
 						},
