@@ -1,0 +1,1 @@
+ALTER TABLE "activity_waitlist_events" ADD COLUMN "reason" text;

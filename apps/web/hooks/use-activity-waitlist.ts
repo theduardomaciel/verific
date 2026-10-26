@@ -33,23 +33,68 @@ export function useActivityWaitlist({
 	);
 
 	const promoteMutation = trpc.promoteFromWaitlist.useMutation({
-		onSuccess: () => {
+		onSuccess: (_data, vars) => {
+			// Atualização otimista: remove da fila e incrementa inscritos.
+			utils.getActivityWaitlist.setQueriesData(
+				{ activityId },
+				{},
+				(previous) => {
+					if (!previous) return previous;
+					const promoted = new Set(vars.participantIds);
+					const entries = previous.entries.filter(
+						(entry) => !promoted.has(entry.participantId),
+					);
+					const removedCount =
+						previous.entries.length - entries.length;
+					if (removedCount === 0) return previous;
+					return {
+						...previous,
+						entries,
+						enrolled: previous.enrolled + removedCount,
+						freeSeats:
+							previous.freeSeats != null
+								? Math.max(0, previous.freeSeats - removedCount)
+								: null,
+					};
+				},
+			);
 			void utils.getActivityWaitlist.invalidate({ activityId });
 		},
 	});
 
 	const removeMutation = trpc.removeFromWaitlist.useMutation({
-		onSuccess: () => {
+		onSuccess: (_data, vars) => {
+			// Atualização otimista: remove da fila.
+			utils.getActivityWaitlist.setQueriesData(
+				{ activityId },
+				{},
+				(previous) => {
+					if (!previous) return previous;
+					const entries = previous.entries.filter(
+						(entry) => entry.participantId !== vars.participantId,
+					);
+					if (entries.length === previous.entries.length) {
+						return previous;
+					}
+					return { ...previous, entries };
+				},
+			);
 			void utils.getActivityWaitlist.invalidate({ activityId });
 		},
 	});
 
 	return {
 		...query,
-		promote: (args: { activityId: string; participantIds: string[] }) =>
-			promoteMutation.mutateAsync(args) as unknown as Promise<void>,
-		remove: (args: { activityId: string; participantId: string }) =>
-			removeMutation.mutateAsync(args) as unknown as Promise<void>,
+		promote: (args: {
+			activityId: string;
+			participantIds: string[];
+			reason?: string;
+		}) => promoteMutation.mutateAsync(args) as unknown as Promise<void>,
+		remove: (args: {
+			activityId: string;
+			participantId: string;
+			reason?: string;
+		}) => removeMutation.mutateAsync(args) as unknown as Promise<void>,
 		isPromoting: promoteMutation.isPending,
 		isRemoving: removeMutation.isPending,
 	};

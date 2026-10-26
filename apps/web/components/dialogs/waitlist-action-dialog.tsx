@@ -17,75 +17,51 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 
-import { useDashboard } from "@/components/dashboard/dashboard-context";
-
 import { revalidateParticipantActivities } from "@/app/actions";
-import { trpc } from "@/lib/trpc/react";
 
-interface PromoteFromWaitlistDialogProps {
+interface WaitlistActionDialogProps {
 	children: React.ReactNode;
-	activityId: string;
-	participantId: string;
-	participantName: string;
+	title: string;
+	description: React.ReactNode;
+	confirmLabel: string;
+	pendingLabel: string;
+	variant?: "default" | "destructive" | "outline";
+	successMessage: string;
+	errorMessage: string;
+	participantId?: string;
+	onConfirm: (reason: string | undefined) => Promise<void>;
+	isPending: boolean;
 }
 
-export function PromoteFromWaitlistDialog({
+export function WaitlistActionDialog({
 	children,
-	activityId,
+	title,
+	description,
+	confirmLabel,
+	pendingLabel,
+	variant = "default",
+	successMessage,
+	errorMessage,
 	participantId,
-	participantName,
-}: PromoteFromWaitlistDialogProps) {
+	onConfirm,
+	isPending,
+}: WaitlistActionDialogProps) {
 	const [open, setOpen] = useState(false);
 	const [reason, setReason] = useState("");
 	const userRouter = useRouter();
-	const utils = trpc.useUtils();
-	const { projectId } = useDashboard();
 
-	const promoteMutation = trpc.promoteFromWaitlist.useMutation();
-
-	const isPending = promoteMutation.isPending;
-
-	const handlePromote = async () => {
+	const handleConfirm = async () => {
 		try {
-			await promoteMutation.mutateAsync({
-				activityId,
-				participantIds: [participantId],
-			});
-
-			// Optimistic update: remove from waitlist entries immediately
-			utils.getActivityWaitlist.setQueriesData(
-				{ activityId },
-				{},
-				(previous) => {
-					if (!previous) return previous;
-					const entries = previous.entries.filter(
-						(entry) => entry.participantId !== participantId,
-					);
-					if (entries.length === previous.entries.length) {
-						return previous;
-					}
-					const promoted = previous.entries.find(
-						(entry) => entry.participantId === participantId,
-					);
-					return {
-						...previous,
-						entries,
-						enrolled: previous.enrolled + 1,
-						freeSeats:
-							previous.freeSeats != null
-								? Math.max(0, previous.freeSeats - 1)
-								: null,
-					};
-				},
-			);
-
-			void utils.getActivityWaitlist.invalidate({ activityId });
-			await revalidateParticipantActivities(participantId);
-			toast.success(`${participantName} promovido da fila de espera`);
+			await onConfirm(reason.trim() || undefined);
+			if (participantId) {
+				await revalidateParticipantActivities(participantId);
+			}
+			toast.success(successMessage);
 			setOpen(false);
+			setReason("");
 			userRouter.refresh();
 		} catch {
-			toast.error("Erro ao promover participante");
+			toast.error(errorMessage);
 		}
 	};
 
@@ -101,14 +77,27 @@ export function PromoteFromWaitlistDialog({
 			<DialogTrigger asChild>{children}</DialogTrigger>
 			<DialogContent className="max-w-md">
 				<DialogHeader>
-					<DialogTitle>Promover da fila de espera</DialogTitle>
+					<DialogTitle>{title}</DialogTitle>
 					<DialogDescription className="flex flex-col gap-4">
-						Tem certeza que deseja promover{" "}
-						<strong>{participantName}</strong> da fila de espera? A
-						vaga será confirmada imediatamente e o participante será
-						notificado por e-mail.
+						{description}
 					</DialogDescription>
 				</DialogHeader>
+				<div className="flex flex-col gap-2">
+					<label
+						htmlFor="waitlist-action-reason"
+						className="text-sm font-medium"
+					>
+						Motivo (opcional)
+					</label>
+					<Textarea
+						id="waitlist-action-reason"
+						value={reason}
+						onChange={(event) => setReason(event.target.value)}
+						placeholder="Descreva o motivo da ação..."
+						disabled={isPending}
+						rows={3}
+					/>
+				</div>
 				<DialogFooter className="flex gap-2">
 					<Button
 						type="button"
@@ -123,220 +112,11 @@ export function PromoteFromWaitlistDialog({
 						Cancelar
 					</Button>
 					<Button
-						variant="default"
-						onClick={() => void handlePromote()}
+						variant={variant}
+						onClick={() => void handleConfirm()}
 						disabled={isPending}
 					>
-						{isPending ? "Promovendo..." : "Sim, promover"}
-					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
-	);
-}
-
-interface RemoveOfferDialogProps {
-	children: React.ReactNode;
-	activityId: string;
-	participantId: string;
-	participantName: string;
-}
-
-export function RemoveOfferDialog({
-	children,
-	activityId,
-	participantId,
-	participantName,
-}: RemoveOfferDialogProps) {
-	const [open, setOpen] = useState(false);
-	const [reason, setReason] = useState("");
-	const userRouter = useRouter();
-	const utils = trpc.useUtils();
-	const { projectId } = useDashboard();
-
-	const removeMutation = trpc.removeFromWaitlist.useMutation();
-
-	const isPending = removeMutation.isPending;
-
-	const handleRemoveOffer = async () => {
-		try {
-			await removeMutation.mutateAsync({
-				activityId,
-				participantId,
-			});
-
-			// Optimistic update: remove the offered entry
-			utils.getActivityWaitlist.setQueriesData(
-				{ activityId },
-				{},
-				(previous) => {
-					if (!previous) return previous;
-					const entries = previous.entries.filter(
-						(entry) => entry.participantId !== participantId,
-					);
-					if (entries.length === previous.entries.length) {
-						return previous;
-					}
-					return {
-						...previous,
-						entries,
-					};
-				},
-			);
-
-			void utils.getActivityWaitlist.invalidate({ activityId });
-			await revalidateParticipantActivities(participantId);
-			toast.success(`Oferta de ${participantName} removida`);
-			setOpen(false);
-			userRouter.refresh();
-		} catch {
-			toast.error("Erro ao remover oferta");
-		}
-	};
-
-	return (
-		<Dialog
-			open={open}
-			onOpenChange={(next) => {
-				if (!next && isPending) return;
-				setOpen(next);
-				if (!next) setReason("");
-			}}
-		>
-			<DialogTrigger asChild>{children}</DialogTrigger>
-			<DialogContent className="max-w-md">
-				<DialogHeader>
-					<DialogTitle>Remover oferta</DialogTitle>
-					<DialogDescription className="flex flex-col gap-4">
-						Tem certeza que deseja remover a oferta de{" "}
-						<strong>{participantName}</strong>? A vaga será
-						oferecida para o próximo participante na fila.
-					</DialogDescription>
-				</DialogHeader>
-				<DialogFooter className="flex gap-2">
-					<Button
-						type="button"
-						variant="outline"
-						disabled={isPending}
-						onClick={() => {
-							if (isPending) return;
-							setReason("");
-							setOpen(false);
-						}}
-					>
-						Cancelar
-					</Button>
-					<Button
-						variant="destructive"
-						onClick={() => void handleRemoveOffer()}
-						disabled={isPending}
-					>
-						{isPending ? "Removendo..." : "Sim, remover oferta"}
-					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
-	);
-}
-
-interface RemoveFromWaitlistDialogProps {
-	children: React.ReactNode;
-	activityId: string;
-	participantId: string;
-	participantName: string;
-}
-
-export function RemoveFromWaitlistDialog({
-	children,
-	activityId,
-	participantId,
-	participantName,
-}: RemoveFromWaitlistDialogProps) {
-	const [open, setOpen] = useState(false);
-	const [reason, setReason] = useState("");
-	const userRouter = useRouter();
-	const utils = trpc.useUtils();
-	const { projectId } = useDashboard();
-
-	const removeMutation = trpc.removeFromWaitlist.useMutation();
-
-	const isPending = removeMutation.isPending;
-
-	const handleRemove = async () => {
-		try {
-			await removeMutation.mutateAsync({
-				activityId,
-				participantId,
-			});
-
-			// Optimistic update: remove from waitlist entries
-			utils.getActivityWaitlist.setQueriesData(
-				{ activityId },
-				{},
-				(previous) => {
-					if (!previous) return previous;
-					const entries = previous.entries.filter(
-						(entry) => entry.participantId !== participantId,
-					);
-					if (entries.length === previous.entries.length) {
-						return previous;
-					}
-					return {
-						...previous,
-						entries,
-					};
-				},
-			);
-
-			void utils.getActivityWaitlist.invalidate({ activityId });
-			await revalidateParticipantActivities(participantId);
-			toast.success(`${participantName} removido da fila de espera`);
-			setOpen(false);
-			userRouter.refresh();
-		} catch {
-			toast.error("Erro ao remover da fila de espera");
-		}
-	};
-
-	return (
-		<Dialog
-			open={open}
-			onOpenChange={(next) => {
-				if (!next && isPending) return;
-				setOpen(next);
-				if (!next) setReason("");
-			}}
-		>
-			<DialogTrigger asChild>{children}</DialogTrigger>
-			<DialogContent className="max-w-md">
-				<DialogHeader>
-					<DialogTitle>Remover da fila de espera</DialogTitle>
-					<DialogDescription className="flex flex-col gap-4">
-						Tem certeza que deseja remover{" "}
-						<strong>{participantName}</strong> da fila de espera?
-						Esta ação não pode ser desfeita e o participante será
-						notificado por e-mail.
-					</DialogDescription>
-				</DialogHeader>
-				<DialogFooter className="flex gap-2">
-					<Button
-						type="button"
-						variant="outline"
-						disabled={isPending}
-						onClick={() => {
-							if (isPending) return;
-							setReason("");
-							setOpen(false);
-						}}
-					>
-						Cancelar
-					</Button>
-					<Button
-						variant="destructive"
-						onClick={() => void handleRemove()}
-						disabled={isPending}
-					>
-						{isPending ? "Removendo..." : "Sim, remover da fila"}
+						{isPending ? pendingLabel : confirmLabel}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

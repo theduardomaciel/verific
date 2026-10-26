@@ -2,6 +2,7 @@ import { relations, sql } from "drizzle-orm";
 import {
 	index,
 	pgTable,
+	text,
 	timestamp,
 	uniqueIndex,
 	uuid,
@@ -69,6 +70,9 @@ export const activityWaitlistEvent = pgTable(
 		actorUserId: uuid("actor_user_id").references(() => user.id, {
 			onDelete: "set null",
 		}),
+		// Motivo informado pelo organizador na ação (promover/remover).
+		// Nulo quando a mudança foi automática ou sem motivo.
+		reason: text("reason"),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
 	(table) => [index().on(table.activityId, table.createdAt)],

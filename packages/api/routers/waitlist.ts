@@ -501,6 +501,7 @@ export const waitlistRouter = createTRPCRouter({
 					type: true,
 					createdAt: true,
 					participantId: true,
+					reason: true,
 				},
 				with: {
 					participant: {
@@ -525,10 +526,11 @@ export const waitlistRouter = createTRPCRouter({
 			z.object({
 				activityId: z.uuid(),
 				participantIds: z.array(z.uuid()).min(1),
+				reason: z.string().trim().max(500).optional(),
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			const { activityId } = input;
+			const { activityId, reason } = input;
 			const participantIds = [...new Set(input.participantIds)].sort();
 			await assertCanManageActivity(activityId, ctx.session.user.id);
 			const found = await findActivity(activityId);
@@ -574,6 +576,7 @@ export const waitlistRouter = createTRPCRouter({
 				return resolveEnrolledEntries(tx, activityId, queued, {
 					type: "promoted",
 					actorUserId: ctx.session.user.id,
+					reason,
 				});
 			});
 
@@ -595,10 +598,11 @@ export const waitlistRouter = createTRPCRouter({
 			z.object({
 				activityId: z.uuid(),
 				participantId: z.uuid(),
+				reason: z.string().trim().max(500).optional(),
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			const { activityId, participantId } = input;
+			const { activityId, participantId, reason } = input;
 			await assertCanManageActivity(activityId, ctx.session.user.id);
 			const found = await findActivity(activityId);
 
@@ -607,6 +611,7 @@ export const waitlistRouter = createTRPCRouter({
 				const closed = await closeEntry(tx, activityId, participantId, {
 					type: "removed",
 					actorUserId: ctx.session.user.id,
+					reason,
 				});
 				if (!closed) {
 					throw waitlistError(

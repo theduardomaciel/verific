@@ -7,11 +7,7 @@ import type { RouterOutput } from "@verific/api";
 
 import { Button } from "@/components/ui/button";
 
-import {
-	PromoteFromWaitlistDialog,
-	RemoveFromWaitlistDialog,
-	RemoveOfferDialog,
-} from "@/components/dialogs/waitlist-action-dialog";
+import { WaitlistActionDialog } from "@/components/dialogs/waitlist-action-dialog";
 
 import { cn } from "@/lib/utils";
 
@@ -25,10 +21,12 @@ interface WaitlistListProps {
 	promote: (args: {
 		activityId: string;
 		participantIds: string[];
+		reason?: string;
 	}) => Promise<void>;
 	remove: (args: {
 		activityId: string;
 		participantId: string;
+		reason?: string;
 	}) => Promise<void>;
 	isPromoting: boolean;
 	isRemoving: boolean;
@@ -210,14 +208,41 @@ export function WaitlistList({
 								<div className="flex flex-wrap items-center gap-2 lg:justify-end">
 									{entry.status === "waiting" &&
 										canPromote && (
-											<PromoteFromWaitlistDialog
-												activityId={activityId}
+											<WaitlistActionDialog
+												title="Promover da fila de espera"
+												description={
+													<>
+														Tem certeza que deseja
+														promover{" "}
+														<strong>
+															{entry.name ??
+																"Participante"}
+														</strong>{" "}
+														da fila de espera? A
+														vaga será confirmada
+														imediatamente e o
+														participante será
+														notificado por e-mail.
+													</>
+												}
+												confirmLabel="Sim, promover"
+												pendingLabel="Promovendo..."
+												variant="default"
+												successMessage={`${entry.name ?? "Participante"} promovido da fila de espera`}
+												errorMessage="Erro ao promover participante"
 												participantId={
 													entry.participantId
 												}
-												participantName={
-													entry.name ?? "Participante"
-												}
+												onConfirm={async (reason) => {
+													await promote({
+														activityId,
+														participantIds: [
+															entry.participantId,
+														],
+														reason,
+													});
+												}}
+												isPending={isPromoting}
 											>
 												<Button
 													size="sm"
@@ -227,15 +252,39 @@ export function WaitlistList({
 												>
 													Promover
 												</Button>
-											</PromoteFromWaitlistDialog>
+											</WaitlistActionDialog>
 										)}
 									{entry.status === "offered" && (
-										<RemoveOfferDialog
-											activityId={activityId}
-											participantId={entry.participantId}
-											participantName={
-												entry.name ?? "Participante"
+										<WaitlistActionDialog
+											title="Remover oferta"
+											description={
+												<>
+													Tem certeza que deseja
+													remover a oferta de{" "}
+													<strong>
+														{entry.name ??
+															"Participante"}
+													</strong>
+													? A vaga será oferecida para
+													o próximo participante na
+													fila.
+												</>
 											}
+											confirmLabel="Sim, remover oferta"
+											pendingLabel="Removendo..."
+											variant="outline"
+											successMessage={`Oferta de ${entry.name ?? "Participante"} removida`}
+											errorMessage="Erro ao remover oferta"
+											participantId={entry.participantId}
+											onConfirm={async (reason) => {
+												await remove({
+													activityId,
+													participantId:
+														entry.participantId,
+													reason,
+												});
+											}}
+											isPending={isRemoving}
 										>
 											<Button
 												size="sm"
@@ -245,15 +294,40 @@ export function WaitlistList({
 											>
 												Remover oferta
 											</Button>
-										</RemoveOfferDialog>
+										</WaitlistActionDialog>
 									)}
 									{entry.status === "waiting" && (
-										<RemoveFromWaitlistDialog
-											activityId={activityId}
-											participantId={entry.participantId}
-											participantName={
-												entry.name ?? "Participante"
+										<WaitlistActionDialog
+											title="Remover da fila de espera"
+											description={
+												<>
+													Tem certeza que deseja
+													remover{" "}
+													<strong>
+														{entry.name ??
+															"Participante"}
+													</strong>{" "}
+													da fila de espera? Esta ação
+													não pode ser desfeita e o
+													participante será notificado
+													por e-mail.
+												</>
 											}
+											confirmLabel="Sim, remover da fila"
+											pendingLabel="Removendo..."
+											variant="destructive"
+											successMessage={`${entry.name ?? "Participante"} removido da fila de espera`}
+											errorMessage="Erro ao remover da fila de espera"
+											participantId={entry.participantId}
+											onConfirm={async (reason) => {
+												await remove({
+													activityId,
+													participantId:
+														entry.participantId,
+													reason,
+												});
+											}}
+											isPending={isRemoving}
 										>
 											<Button
 												size="sm"
@@ -263,7 +337,7 @@ export function WaitlistList({
 											>
 												Remover da fila
 											</Button>
-										</RemoveFromWaitlistDialog>
+										</WaitlistActionDialog>
 									)}
 								</div>
 							</li>
