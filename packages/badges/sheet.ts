@@ -71,8 +71,15 @@ export function planSheets(input: PlanSheetsInput): SheetPage[] {
 	const markLength = input.markLengthMm ?? 3;
 	const markOffset = input.markOffsetMm ?? 1;
 
-	const cellW = layout.badgeW + bleed * 2;
-	const cellH = layout.badgeH + bleed * 2;
+	// In data-only mode we print only the available (free) area, not the
+	// whole badge.
+	const printW =
+		layout.mode === "data-only" ? layout.freeArea.w : layout.badgeW;
+	const printH =
+		layout.mode === "data-only" ? layout.freeArea.h : layout.badgeH;
+
+	const cellW = printW + bleed * 2;
+	const cellH = printH + bleed * 2;
 
 	let cols: number;
 	let rows: number;
@@ -109,7 +116,7 @@ export function planSheets(input: PlanSheetsInput): SheetPage[] {
 		cellUsedH = cellH;
 		originX = g.originX;
 		originY = g.originY;
-		const usedArea = cols * rows * layout.badgeW * layout.badgeH;
+		const usedArea = cols * rows * printW * printH;
 		wastedPct =
 			Math.round(
 				((page.w * page.h - usedArea) / (page.w * page.h)) * 1000,

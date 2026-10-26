@@ -445,9 +445,13 @@ export function BadgeEditor({
 	const imposition = useMemo(() => {
 		if (draft.manualGrid.enabled) return null;
 		try {
+			const badgeW =
+				draft.mode === "data-only" ? draft.freeArea.w : draft.badgeW;
+			const badgeH =
+				draft.mode === "data-only" ? draft.freeArea.h : draft.badgeH;
 			return computeImposition({
-				badgeW: draft.badgeW + draft.page.bleedMm * 2,
-				badgeH: draft.badgeH + draft.page.bleedMm * 2,
+				badgeW: badgeW + draft.page.bleedMm * 2,
+				badgeH: badgeH + draft.page.bleedMm * 2,
 				pageW:
 					draft.page.size === "custom"
 						? (draft.page.customW ?? 210)
@@ -841,23 +845,126 @@ export function BadgeEditor({
 													? { maxWidth: 520 }
 													: {
 															width:
-																draft.badgeW *
+																(draft.mode ===
+																"data-only"
+																	? draft
+																			.freeArea
+																			.w
+																	: draft.badgeW) *
 																pxPerMm,
 														}
 											}
 										>
 											<BadgePreviewSvg
-												primitives={preview.primitives}
-												badgeWMm={draft.badgeW}
-												badgeHMm={draft.badgeH}
+												primitives={
+													draft.mode === "data-only"
+														? preview.primitives.map(
+																(p) => {
+																	const F =
+																		draft.freeArea;
+																	if (
+																		p.kind ===
+																		"rect"
+																	)
+																		return {
+																			...p,
+																			rect: {
+																				...p.rect,
+																				x:
+																					p
+																						.rect
+																						.x -
+																					F.x,
+																				y:
+																					p
+																						.rect
+																						.y -
+																					F.y,
+																			},
+																		};
+																	if (
+																		p.kind ===
+																		"text"
+																	)
+																		return {
+																			...p,
+																			xMm:
+																				p.xMm -
+																				F.x,
+																			yMm:
+																				p.yMm -
+																				F.y,
+																		};
+																	if (
+																		p.kind ===
+																		"qr"
+																	)
+																		return {
+																			...p,
+																			rect: {
+																				...p.rect,
+																				x:
+																					p
+																						.rect
+																						.x -
+																					F.x,
+																				y:
+																					p
+																						.rect
+																						.y -
+																					F.y,
+																			},
+																		};
+																	if (
+																		p.kind ===
+																		"image"
+																	)
+																		return {
+																			...p,
+																			rect: {
+																				...p.rect,
+																				x:
+																					p
+																						.rect
+																						.x -
+																					F.x,
+																				y:
+																					p
+																						.rect
+																						.y -
+																					F.y,
+																			},
+																		};
+																	return p;
+																},
+															)
+														: preview.primitives
+												}
+												badgeWMm={
+													draft.mode === "data-only"
+														? draft.freeArea.w
+														: draft.badgeW
+												}
+												badgeHMm={
+													draft.mode === "data-only"
+														? draft.freeArea.h
+														: draft.badgeH
+												}
 												pxPerMm={
 													zoom === "fit"
-														? 520 / draft.badgeW
+														? 520 /
+															(draft.mode ===
+															"data-only"
+																? draft.freeArea
+																		.w
+																: draft.badgeW)
 														: pxPerMm
 												}
 												artworkUrl={
-													draft.artworkUrl ||
-													undefined
+													draft.mode === "full"
+														? draft.artworkUrl ||
+															undefined
+														: undefined
 												}
 												artworkKind={draft.artworkKind}
 												mode={draft.mode}
