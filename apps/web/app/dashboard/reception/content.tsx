@@ -156,7 +156,7 @@ export function ReceptionPage() {
 						buttonLabel="Adicionar por nome"
 						title="Check-in manual"
 						description="Selecione os participantes para registrar o check-in de hoje."
-						role="participant"
+						kind="participant"
 						onSubmitSelected={async (participants) => {
 							for (const participant of participants) {
 								if (!participant.shortId) {

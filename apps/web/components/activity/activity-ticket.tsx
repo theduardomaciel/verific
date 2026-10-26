@@ -245,7 +245,7 @@ export function ActivityTicket({
 										}
 										title="Credenciamento manual"
 										description="Selecione os participantes para credenciar nesta sessão."
-										role="participant"
+										kind="participant"
 										onSubmitSelected={async (
 											participants,
 										) => {
@@ -301,7 +301,7 @@ export function ActivityTicket({
 												}
 												title="Saída manual"
 												description="Selecione os participantes para registrar a saída desta sessão."
-												role="participant"
+												kind="participant"
 												onSubmitSelected={async (
 													participants,
 												) => {

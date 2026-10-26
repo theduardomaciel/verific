@@ -90,7 +90,7 @@ function editDistance(a: string, b: string): number {
 	if (!bl) return al;
 
 	const d: number[][] = Array.from({ length: al + 1 }, () =>
-		new Array(bl + 1).fill(0),
+		Array.from({ length: bl + 1 }, () => 0),
 	);
 	for (let i = 0; i <= al; i++) d[i]![0] = i;
 	for (let j = 0; j <= bl; j++) d[0]![j] = j;

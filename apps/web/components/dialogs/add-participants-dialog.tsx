@@ -32,8 +32,6 @@ interface AddParticipantsDialogProps {
 	projectId: string;
 	activityId?: string;
 	alreadyAdded?: string[];
-	role?: DialogRole;
-	mode?: DialogRole;
 	kind?: DialogRole;
 	buttonLabel?: string;
 	buttonVariant?: "default" | "outline";
@@ -48,8 +46,6 @@ export function AddParticipantsDialog({
 	projectId,
 	activityId,
 	alreadyAdded = [],
-	role,
-	mode,
 	kind,
 	buttonLabel,
 	buttonVariant = "default",
@@ -59,7 +55,7 @@ export function AddParticipantsDialog({
 	onAdd,
 	onSelect,
 }: AddParticipantsDialogProps) {
-	const resolvedRole: DialogRole = role ?? mode ?? kind ?? "monitor";
+	const resolvedRole: DialogRole = kind ?? "monitor";
 
 	const defaultButtonLabel =
 		resolvedRole === "participant"
