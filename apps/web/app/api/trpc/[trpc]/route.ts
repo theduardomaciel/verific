@@ -80,6 +80,13 @@ function batchIsPublicQuery(req: NextRequest): boolean {
 }
 
 const handler = async (req: NextRequest) => {
+	// Com um `%` inválido no path, o tRPC lançaria URIError e responderia 500
+	try {
+		decodeURIComponent(req.nextUrl.pathname);
+	} catch {
+		return new Response(null, { status: 404 });
+	}
+
 	// Um GET 100% público não depende de sessão (há teste de execução em
 	// `packages/api/public-cacheable-queries.test.ts`). Pular a leitura do
 	// cookie cache/DB aqui é seguro e barato: login não muda a resposta.
@@ -147,6 +154,4 @@ const handler = async (req: NextRequest) => {
 	return response;
 };
 
-// export const runtime = "edge";
-// export const preferredRegion = "cle1";
 export { handler as GET, handler as POST };
