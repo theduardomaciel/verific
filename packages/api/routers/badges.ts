@@ -161,7 +161,7 @@ export const badgesRouter = createTRPCRouter({
 					target: [badgeLayout.projectId],
 					set: { layout },
 				});
-			void deleteReplacedImages(
+			await deleteReplacedImages(
 				input.projectId,
 				[previous?.artworkUrl],
 				[layout.artworkUrl],

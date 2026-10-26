@@ -247,7 +247,7 @@ export const speakersRouter = createTRPCRouter({
 						: {}),
 				})
 				.where(eq(speaker.id, id));
-			void deleteReplacedImages(
+			await deleteReplacedImages(
 				projectId,
 				[existing.imageUrl],
 				[imageUrl],

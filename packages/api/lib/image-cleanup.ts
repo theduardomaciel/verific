@@ -3,6 +3,7 @@ import { eq } from "@verific/drizzle/orm";
 import { activity, speaker } from "@verific/drizzle/schema";
 import { z } from "@verific/zod";
 
+import { scheduleAfterResponse } from "./after-response";
 import { IMAGE_PURPOSES, storage } from "./storage";
 
 /** Evento dono da imagem, pelo formato da chave. */
@@ -38,11 +39,11 @@ export async function imageProjectId(key: string) {
 }
 
 /**
- * Apaga do storage as imagens do evento que uma gravação deixou de usar.
- * Roda depois do commit: trocar a imagem e desistir de salvar não apaga a
- * que continua salva. Falhas ficam como objeto órfão.
+ * Apaga do storage, depois da resposta, as imagens do evento que uma
+ * gravação deixou de usar. Roda depois do commit: trocar a imagem e desistir
+ * de salvar não apaga a que continua salva. Falhas ficam como objeto órfão.
  */
-export async function deleteReplacedImages(
+export function deleteReplacedImages(
 	projectId: string,
 	before: Array<string | null | undefined>,
 	after: Array<string | null | undefined>,
@@ -51,13 +52,14 @@ export async function deleteReplacedImages(
 	const replaced = [...new Set(before)].filter(
 		(url): url is string => !!url && !kept.has(url),
 	);
-	await Promise.all(
-		replaced.map(async (url) => {
-			const key = storage.extractKey(url);
-			if (!key || (await imageProjectId(key)) !== projectId) return;
-			await storage.deleteObject(key);
-		}),
-	).catch((error: unknown) => {
-		console.error("[storage] falha ao apagar imagem substituída:", error);
+	if (replaced.length === 0) return Promise.resolve();
+	return scheduleAfterResponse(async () => {
+		await Promise.all(
+			replaced.map(async (url) => {
+				const key = storage.extractKey(url);
+				if (!key || (await imageProjectId(key)) !== projectId) return;
+				await storage.deleteObject(key);
+			}),
+		);
 	});
 }

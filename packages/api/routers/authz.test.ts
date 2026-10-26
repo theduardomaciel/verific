@@ -54,6 +54,10 @@ vi.mock("../lib/storage", async (importOriginal) => {
 		storage: { ...original.storage, deleteObject },
 	};
 });
+// Sem resposta para esperar: a exclusão roda já
+vi.mock("../lib/after-response", () => ({
+	scheduleAfterResponse: (work: () => Promise<void>) => work(),
+}));
 
 import { deleteReplacedImages } from "../lib/image-cleanup";
 import { createCallerFactory } from "../trpc";

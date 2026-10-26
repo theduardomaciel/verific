@@ -221,7 +221,7 @@ export const projectsRouter = createTRPCRouter({
 			}
 			const images = (row: Partial<typeof current>) =>
 				PROJECT_IMAGE_COLUMNS.map((column) => row[column]);
-			void deleteReplacedImages(
+			await deleteReplacedImages(
 				id,
 				images(current),
 				images({ ...current, ...updateData }),
