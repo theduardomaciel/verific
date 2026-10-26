@@ -79,11 +79,12 @@ export function useControlledParam<T extends string | string[]>({
 		if (isControlled) {
 			return value as T;
 		}
-		const urlValue = parseValue(query.get(key));
-		const fallback =
+		const raw = query.get(key);
+		if (raw !== null) return parseValue(raw);
+		return (
 			defaultValue ??
-			(type === "array" ? ([] as unknown as T) : ("" as unknown as T));
-		return urlValue ?? fallback;
+			(type === "array" ? ([] as unknown as T) : ("" as unknown as T))
+		);
 	}, [isControlled, value, query, key, parseValue, defaultValue, type]);
 
 	const [localValue, setLocalValue] = useState<T>(getInitialValue);
@@ -93,7 +94,11 @@ export function useControlledParam<T extends string | string[]>({
 
 	// Refs para gerenciar debounce manualmente (mais eficiente que useDebounce)
 	const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-	const lastUrlUpdateRef = useRef<string | undefined>(undefined);
+	// O valor inicial já é o da URL (ou o padrão): só uma mudança navega,
+	// senão a montagem reescreveria a URL e voltaria a página para 1
+	const lastUrlUpdateRef = useRef<string | undefined>(
+		serializeValue(localValue),
+	);
 
 	// Atualiza URL apenas em modo URL-Driven (sem onChange)
 	useEffect(() => {
