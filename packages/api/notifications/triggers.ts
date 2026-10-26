@@ -384,6 +384,27 @@ export function notifyActivityEnrollmentCancelled(args: {
 	return dispatchAfterResponse(input ? [input] : []);
 }
 
+/** An organizer removed the participant from the waitlist. */
+export function notifyActivityWaitlistRemoved(args: {
+	eventId: string;
+	activityId: string;
+	participantId: string;
+	to: string;
+	removedAt: Date;
+}): Promise<void> {
+	const input = makeInput({
+		type: "activity_waitlist_removed",
+		eventId: args.eventId,
+		to: args.to,
+		entityRefs: {
+			activityId: args.activityId,
+			participantId: args.participantId,
+			removedAt: args.removedAt.toISOString(),
+		},
+	});
+	return dispatchAfterResponse(input ? [input] : []);
+}
+
 /** An organizer removed the participant from the activity. */
 export function notifyActivityEnrollmentRemoved(args: {
 	eventId: string;

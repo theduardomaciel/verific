@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import GoogleButton from "@/components/auth/GoogleButton";
 
 import { safeRedirectPath } from "@/lib/safe-redirect";
+import { getSession } from "@/lib/session";
 import Logo from "@/public/logo.svg";
 import Ticket from "@/public/ticket.svg";
 
@@ -18,6 +20,18 @@ async function LoginContent({
 }) {
 	const params = await searchParams;
 	const callbackUrl = safeRedirectPath(params.callbackUrl, "/account");
+
+	// Usuário já autenticado (sessão de visita anterior): redireciona em vez
+	// de mostrar o formulário. Evita o "botão não faz nada" ao voltar do
+	// login. Guarda contra loop quando callbackUrl aponta para /auth.
+	const session = await getSession();
+	if (session) {
+		const target =
+			callbackUrl === "/auth" || callbackUrl.startsWith("/auth?")
+				? "/account"
+				: callbackUrl;
+		redirect(target);
+	}
 
 	return (
 		<div className="flex min-h-screen flex-col md:flex-row">

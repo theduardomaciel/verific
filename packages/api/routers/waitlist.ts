@@ -25,6 +25,7 @@ import {
 	notifyActivityEnrollmentConfirmed,
 	notifyActivityWaitlisted,
 	notifyActivityWaitlistPromoted,
+	notifyActivityWaitlistRemoved,
 } from "../notifications";
 import { answerValueSchema, type WaitlistErrorCode } from "../schemas";
 import {
@@ -500,6 +501,7 @@ export const waitlistRouter = createTRPCRouter({
 					type: true,
 					createdAt: true,
 					participantId: true,
+					reason: true,
 				},
 				with: {
 					participant: {
@@ -524,10 +526,11 @@ export const waitlistRouter = createTRPCRouter({
 			z.object({
 				activityId: z.uuid(),
 				participantIds: z.array(z.uuid()).min(1),
+				reason: z.string().trim().max(500).optional(),
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			const { activityId } = input;
+			const { activityId, reason } = input;
 			const participantIds = [...new Set(input.participantIds)].sort();
 			await assertCanManageActivity(activityId, ctx.session.user.id);
 			const found = await findActivity(activityId);
@@ -573,6 +576,7 @@ export const waitlistRouter = createTRPCRouter({
 				return resolveEnrolledEntries(tx, activityId, queued, {
 					type: "promoted",
 					actorUserId: ctx.session.user.id,
+					reason,
 				});
 			});
 
@@ -589,23 +593,25 @@ export const waitlistRouter = createTRPCRouter({
 			return { success: true };
 		}),
 
-	/** Tira alguém da fila; a vaga oferecida, se houver, vai ao próximo. */
 	removeFromWaitlist: protectedProcedure
 		.input(
 			z.object({
 				activityId: z.uuid(),
 				participantId: z.uuid(),
+				reason: z.string().trim().max(500).optional(),
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			const { activityId, participantId } = input;
+			const { activityId, participantId, reason } = input;
 			await assertCanManageActivity(activityId, ctx.session.user.id);
+			const found = await findActivity(activityId);
 
 			await db.transaction(async (tx) => {
 				const locked = await lockActivity(tx, activityId);
 				const closed = await closeEntry(tx, activityId, participantId, {
 					type: "removed",
 					actorUserId: ctx.session.user.id,
+					reason,
 				});
 				if (!closed) {
 					throw waitlistError(
@@ -616,6 +622,37 @@ export const waitlistRouter = createTRPCRouter({
 				await settleActivity(tx, locked);
 			});
 
+			const contacts = await loadNotificationRecipients([participantId]);
+			const to = contacts.get(participantId);
+			if (to) {
+				void notifyActivityWaitlistRemoved({
+					eventId: found.projectId,
+					activityId,
+					participantId,
+					to,
+					removedAt: new Date(),
+				});
+			}
+
+			return { success: true };
+		}),
+
+	/**
+	 * Processa manualmente a fila da atividade: expira ofertas vencidas e
+	 * oferece as vagas livres ao próximo da fila. Útil quando o agendador
+	 * (QStash/sweep) não disparou a tempo.
+	 */
+	settleActivityWaitlist: protectedProcedure
+		.input(z.object({ activityId: z.uuid() }))
+		.mutation(async ({ input, ctx }) => {
+			await assertCanManageActivity(
+				input.activityId,
+				ctx.session.user.id,
+			);
+			await db.transaction(async (tx) => {
+				const locked = await lockActivity(tx, input.activityId);
+				await settleActivity(tx, locked);
+			});
 			return { success: true };
 		}),
 });

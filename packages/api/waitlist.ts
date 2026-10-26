@@ -19,6 +19,7 @@ async function recordEvents(
 	participantIds: string[],
 	type: WaitlistEventType,
 	actorUserId: string | null,
+	reason?: string | null,
 ) {
 	if (participantIds.length === 0) return;
 	await tx.insert(activityWaitlistEvent).values(
@@ -27,6 +28,7 @@ async function recordEvents(
 			participantId,
 			type,
 			actorUserId,
+			reason: reason ?? null,
 		})),
 	);
 }
@@ -242,7 +244,11 @@ export async function resolveEnrolledEntries(
 	tx: Tx,
 	activityId: string,
 	participantIds: string[],
-	event: { type: "confirmed" | "promoted"; actorUserId: string | null },
+	event: {
+		type: "confirmed" | "promoted";
+		actorUserId: string | null;
+		reason?: string | null;
+	},
 ): Promise<ResolvedWaitlistEntry[]> {
 	if (participantIds.length === 0) return [];
 
@@ -268,6 +274,7 @@ export async function resolveEnrolledEntries(
 		resolved.map((row) => row.participantId),
 		event.type,
 		event.actorUserId,
+		event.reason,
 	);
 
 	return resolved.map((row) => ({
@@ -285,7 +292,11 @@ export async function closeEntry(
 	tx: Tx,
 	activityId: string,
 	participantId: string,
-	event: { type: "left" | "removed"; actorUserId: string | null },
+	event: {
+		type: "left" | "removed";
+		actorUserId: string | null;
+		reason?: string | null;
+	},
 ) {
 	const [closed] = await tx
 		.update(activityWaitlist)
@@ -307,6 +318,7 @@ export async function closeEntry(
 		[participantId],
 		event.type,
 		event.actorUserId,
+		event.reason,
 	);
 	return true;
 }

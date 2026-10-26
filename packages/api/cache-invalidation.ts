@@ -15,6 +15,7 @@ import {
 } from "@verific/drizzle/schema";
 
 import {
+	activityAvailabilityCacheTag,
 	activityCacheTag,
 	GLOBAL_CACHE_TAGS,
 	participantProfileCacheTag,
@@ -241,8 +242,19 @@ function publishedFormTags(version: VersionScope) {
 
 /** Snapshot padrão das mutations de atividade: o projeto dono. */
 async function snapshotActivityProject(input: unknown) {
+	const activityId = readString(input, "activityId");
+	const projectId = await activityProjectId(activityId);
+	let participantsLimit: number | null | undefined;
+	if (activityId) {
+		const act = await db.query.activity.findFirst({
+			where: eq(activity.id, activityId),
+			columns: { participantsLimit: true },
+		});
+		participantsLimit = act?.participantsLimit ?? null;
+	}
 	return {
-		projectId: await activityProjectId(readString(input, "activityId")),
+		projectId,
+		participantsLimit,
 	};
 }
 
@@ -383,10 +395,24 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 		tags: ({ input, snapshot }) => {
 			const activityId = readString(input, "activityId");
 			const projectId = readString(snapshot, "projectId");
-			return [
+			const participantsLimit = readNumber(input, "participantsLimit");
+			const oldParticipantsLimit = readNumber(
+				snapshot,
+				"participantsLimit",
+			);
+			const tags = [
 				activityId ? activityCacheTag(activityId) : undefined,
 				projectId ? projectActivitiesCacheTag(projectId) : undefined,
 			];
+			// Invalidate availability cache when seat limit changes
+			if (
+				activityId &&
+				participantsLimit !== undefined &&
+				participantsLimit !== oldParticipantsLimit
+			) {
+				tags.push(activityAvailabilityCacheTag(activityId));
+			}
+			return tags;
 		},
 	},
 

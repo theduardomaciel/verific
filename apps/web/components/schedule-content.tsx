@@ -256,6 +256,7 @@ export function ScheduleContent({
 			filtered = fuzzyFilter(
 				filtered,
 				searchQuery,
+				(a) => a.name,
 				(a) => `${a.name} ${a.description ?? ""}`,
 			);
 		}

@@ -235,6 +235,10 @@ const VALIDATE_REFS: Record<
 		participantId: "p1",
 		enrollmentId: "e1",
 	},
+	activity_waitlist_removed: {
+		activityId: "a1",
+		participantId: "p1",
+	},
 	activity_waitlist_offered: {
 		activityId: "a1",
 		participantId: "p1",

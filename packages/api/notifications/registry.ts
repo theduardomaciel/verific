@@ -35,6 +35,7 @@ import {
 	ACTIVITY_WAITLIST_PROMOTED_VERSION,
 	ACTIVITY_WAITLISTED_VERSION,
 	ACTIVITY_WAITLIST_OFFERED_VERSION,
+	ACTIVITY_WAITLIST_REMOVED_VERSION,
 	activityCancelledPreviewProps,
 	activityCancelledSubject,
 	activityEnrollmentCancelledPreviewProps,
@@ -49,6 +50,8 @@ import {
 	activityWaitlistOfferedSubject,
 	activityWaitlistPromotedPreviewProps,
 	activityWaitlistPromotedSubject,
+	activityWaitlistRemovedPreviewProps,
+	activityWaitlistRemovedSubject,
 	activityWaitlistedPreviewProps,
 	activityWaitlistedSubject,
 	renderActivityCancelled,
@@ -58,6 +61,7 @@ import {
 	renderActivityUpdated,
 	renderActivityWaitlistOffered,
 	renderActivityWaitlistPromoted,
+	renderActivityWaitlistRemoved,
 	renderActivityWaitlisted,
 	EVENT_REGISTRATION_REMOVED_VERSION,
 	eventRegistrationRemovedPreviewProps,
@@ -887,6 +891,43 @@ export const notificationRegistry = {
 		render: (props) => renderActivityWaitlistPromoted(props),
 		previewProps: activityWaitlistPromotedPreviewProps,
 		templateVersion: ACTIVITY_WAITLIST_PROMOTED_VERSION,
+	} satisfies NotificationTypeDefinition,
+
+	activity_waitlist_removed: {
+		key: "activity_waitlist_removed",
+		audience: "participant",
+		category: "transactional",
+		scope: "activity",
+		defaultEnabled: true,
+		description:
+			"Aviso quando a organização remove o participante da fila de espera de uma atividade.",
+		entityRefs: ["activityId", "participantId", "removedAt"],
+		idempotencyKeyFormat:
+			"activity_waitlist_removed:{activityId}:{participantId}:{removedAt}",
+		buildIdempotencyKey: (refs) =>
+			`activity_waitlist_removed:${requiredString(refs, "activityId")}:${requiredString(refs, "participantId")}:${requiredString(refs, "removedAt")}`,
+		async validate(refs) {
+			const activityId = requiredString(refs, "activityId");
+			const participantId = requiredString(refs, "participantId");
+			if (!(await activityExists(activityId)))
+				return { ok: false, reason: "entity_gone" };
+			const status = await waitlistStatus(
+				optionalString(refs, "enrollmentId"),
+			);
+			if (status === null) return { ok: false, reason: "entity_gone" };
+			if (status !== "removed")
+				return { ok: false, reason: "state_changed" };
+			return { ok: true };
+		},
+		buildProps: (refs, ctx) => buildActivityProps(refs, ctx),
+		subject: (props) =>
+			activityWaitlistRemovedSubject({
+				activityName: String(props["activityName"]),
+				eventName: String(props["eventName"]),
+			}),
+		render: (props) => renderActivityWaitlistRemoved(props),
+		previewProps: activityWaitlistRemovedPreviewProps,
+		templateVersion: ACTIVITY_WAITLIST_REMOVED_VERSION,
 	} satisfies NotificationTypeDefinition,
 
 	activity_enrollment_cancelled: {

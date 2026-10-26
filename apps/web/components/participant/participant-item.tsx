@@ -167,7 +167,7 @@ export const ParticipantListItem = {
 						<div className="flex items-center gap-2">
 							{/* Ver detalhes do participante */}
 							<Button
-								className="hidden p-0 md:flex"
+								className="flex p-0"
 								variant={"ghost"}
 								size={"icon"}
 								asChild
@@ -180,19 +180,6 @@ export const ParticipantListItem = {
 									<span className="sr-only">
 										Ver detalhes
 									</span>
-								</Link>
-							</Button>
-							<Button
-								className="flex w-full md:hidden"
-								variant={"default"}
-								asChild
-							>
-								<Link
-									href={`${url}/${participant.id}`}
-									prefetch={false}
-								>
-									<BookUser className="text-foreground h-4 w-4" />
-									<span>Ver detalhes</span>
 								</Link>
 							</Button>
 							{participant.role ===

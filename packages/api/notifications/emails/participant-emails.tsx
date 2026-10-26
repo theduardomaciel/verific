@@ -358,6 +358,66 @@ export const activityWaitlistPromotedPreviewProps: ActivityWaitlistPromotedProps
 	};
 
 /* ------------------------------------------------------------------ */
+/* activity_waitlist_removed                                           */
+/* ------------------------------------------------------------------ */
+
+export const ACTIVITY_WAITLIST_REMOVED_VERSION = "v1" as const;
+
+export type ActivityWaitlistRemovedProps = z.infer<typeof baseSchema>;
+
+export const activityWaitlistRemovedSubject = (props: {
+	activityName: string;
+	eventName: string;
+}) => `Removido da fila: ${props.activityName} – ${props.eventName}`;
+
+export function ActivityWaitlistRemovedEmail(
+	props: ActivityWaitlistRemovedProps,
+) {
+	return (
+		<ActivityEmailShell
+			badge="Removido da fila"
+			title={props.activityName}
+			preview={activityWaitlistRemovedSubject(props)}
+			props={props}
+			ctaLabel="Ver atividade"
+		>
+			<Text style={emailStyles.paragraph}>
+				Você foi removido da fila de espera de{" "}
+				<strong>{props.activityName}</strong>. Se tiver dúvidas, entre
+				em contato com a organização do evento.
+			</Text>
+			<ActivityDetails
+				dateText={props.activityDateText}
+				location={props.activityLocation}
+			/>
+		</ActivityEmailShell>
+	);
+}
+
+export async function renderActivityWaitlistRemoved(
+	props: unknown,
+): Promise<RenderedTemplate> {
+	const parsed = baseSchema.parse(props);
+	const element = <ActivityWaitlistRemovedEmail {...parsed} />;
+	return renderBoth(
+		element,
+		activityWaitlistRemovedSubject(parsed),
+		ACTIVITY_WAITLIST_REMOVED_VERSION,
+	);
+}
+
+/** Sample props for `react-email dev` and registry previews. */
+export const activityWaitlistRemovedPreviewProps: ActivityWaitlistRemovedProps =
+	{
+		participantName: "Maria Silva",
+		eventName: "SECOMP 2026",
+		activityName: "Oficina de React",
+		activityDateText: "12 de abril de 2026, 14:00 – 18:00",
+		activityLocation: "Laboratório 4",
+		accessUrl: "https://example.com/secomp-2026/schedule/activity-1",
+	};
+
+/* ------------------------------------------------------------------ */
 /* activity_enrollment_cancelled                                       */
 /* ------------------------------------------------------------------ */
 
