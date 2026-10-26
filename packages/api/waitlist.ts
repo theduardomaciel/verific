@@ -1,3 +1,4 @@
+import type { db } from "@verific/drizzle";
 import { and, eq, inArray, max, min } from "@verific/drizzle/orm";
 import {
 	activitySession,
@@ -49,15 +50,17 @@ export type EffectiveEntry = {
 	offerExpiresAt: Date | null;
 };
 
+const entryColumns = {
+	id: activityWaitlist.id,
+	participantId: activityWaitlist.participantId,
+	status: activityWaitlist.status,
+	joinedAt: activityWaitlist.joinedAt,
+	offerExpiresAt: activityWaitlist.offerExpiresAt,
+};
+
 export async function getActiveEntries(tx: Tx, activityId: string) {
 	return tx
-		.select({
-			id: activityWaitlist.id,
-			participantId: activityWaitlist.participantId,
-			status: activityWaitlist.status,
-			joinedAt: activityWaitlist.joinedAt,
-			offerExpiresAt: activityWaitlist.offerExpiresAt,
-		})
+		.select(entryColumns)
 		.from(activityWaitlist)
 		.where(
 			and(
@@ -78,18 +81,39 @@ export async function getEffectiveEntries(
 	activityId: string,
 	now = new Date(),
 ): Promise<EffectiveEntry[]> {
-	const entries = await getActiveEntries(tx, activityId);
-	return entries.map((entry) => {
+	const queues = await getEffectiveEntriesByActivity(tx, [activityId], now);
+	return queues.get(activityId) ?? [];
+}
+
+/** `getEffectiveEntries` de várias atividades numa leitura só. */
+export async function getEffectiveEntriesByActivity(
+	tx: Tx | typeof db,
+	activityIds: string[],
+	now = new Date(),
+): Promise<Map<string, EffectiveEntry[]>> {
+	const rows = (await tx
+		.select({ activityId: activityWaitlist.activityId, ...entryColumns })
+		.from(activityWaitlist)
+		.where(
+			and(
+				inArray(activityWaitlist.activityId, activityIds),
+				inArray(activityWaitlist.status, [...ACTIVE]),
+			),
+		)) as Array<ActiveEntry & { activityId: string }>;
+	const byActivity = new Map<string, EffectiveEntry[]>();
+	for (const { activityId, ...entry } of rows) {
+		const queue = byActivity.get(activityId) ?? [];
 		// If offered but expired, treat as expired for display purposes
-		if (
+		queue.push(
 			entry.status === "offered" &&
-			entry.offerExpiresAt &&
-			entry.offerExpiresAt <= now
-		) {
-			return { ...entry, status: "expired" as const };
-		}
-		return entry;
-	});
+				entry.offerExpiresAt &&
+				entry.offerExpiresAt <= now
+				? { ...entry, status: "expired" }
+				: entry,
+		);
+		byActivity.set(activityId, queue);
+	}
+	return byActivity;
 }
 
 /** Início da primeira sessão e fim da última (`null` sem sessões). */
