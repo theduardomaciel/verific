@@ -77,6 +77,11 @@ export const notification = pgTable(
 			table.eventId,
 			table.status,
 		),
+		// Uso das últimas 24 h (limite diário de e-mails)
+		index("notifications_status_sent_at_idx").on(
+			table.status,
+			table.sentAt,
+		),
 	],
 );
 

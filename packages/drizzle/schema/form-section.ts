@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+	index,
 	integer,
 	jsonb,
 	pgTable,
@@ -25,25 +26,31 @@ export interface SectionVisibilityRule {
 	values?: string[];
 }
 
-export const formSection = pgTable("form_sections", {
-	id: uuid("id").primaryKey().defaultRandom(),
-	formVersionId: uuid("form_version_id")
-		.notNull()
-		.references(() => formVersion.id, {
-			onDelete: "cascade",
-			onUpdate: "cascade",
-		}),
-	projectId: uuid("project_id")
-		.notNull()
-		.references(() => project.id, {
-			onDelete: "cascade",
-			onUpdate: "cascade",
-		}),
-	title: text("title").notNull(),
-	order: integer("order").default(0).notNull(),
-	visibilityRule: jsonb("visibility_rule").$type<SectionVisibilityRule>(),
-	createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+export const formSection = pgTable(
+	"form_sections",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		formVersionId: uuid("form_version_id")
+			.notNull()
+			.references(() => formVersion.id, {
+				onDelete: "cascade",
+				onUpdate: "cascade",
+			}),
+		projectId: uuid("project_id")
+			.notNull()
+			.references(() => project.id, {
+				onDelete: "cascade",
+				onUpdate: "cascade",
+			}),
+		title: text("title").notNull(),
+		order: integer("order").default(0).notNull(),
+		visibilityRule: jsonb("visibility_rule").$type<SectionVisibilityRule>(),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(table) => [
+		index("form_sections_form_version_id_idx").on(table.formVersionId),
+	],
+);
 
 export const formSectionRelations = relations(formSection, ({ one, many }) => ({
 	version: one(formVersion, {

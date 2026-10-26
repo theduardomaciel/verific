@@ -1,5 +1,11 @@
 import { relations } from "drizzle-orm";
-import { pgTable, timestamp, uuid, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+	index,
+	pgTable,
+	timestamp,
+	uniqueIndex,
+	uuid,
+} from "drizzle-orm/pg-core";
 
 import { project } from "./project";
 import { user } from "./user";
@@ -27,6 +33,7 @@ export const projectModerator = pgTable(
 			table.projectId,
 			table.userId,
 		),
+		index("project_moderators_user_id_idx").on(table.userId),
 	],
 );
 

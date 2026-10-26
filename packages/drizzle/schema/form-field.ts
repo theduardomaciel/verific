@@ -1,6 +1,7 @@
 import { relations } from "drizzle-orm";
 import {
 	boolean,
+	index,
 	integer,
 	jsonb,
 	pgTable,
@@ -71,7 +72,10 @@ export const formField = pgTable(
 		isActive: boolean("is_active").default(true).notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
-	(table) => [uniqueIndex().on(table.formVersionId, table.key)],
+	(table) => [
+		uniqueIndex().on(table.formVersionId, table.key),
+		index("form_fields_section_id_idx").on(table.sectionId),
+	],
 );
 
 export const formFieldRelations = relations(formField, ({ one, many }) => ({
