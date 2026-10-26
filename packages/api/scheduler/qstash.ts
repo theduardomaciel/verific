@@ -28,20 +28,6 @@ export function createQStashScheduler(): OfferExpiryScheduler {
 
 	const client = new Client({ token });
 
-	async function getSigningKeys(): Promise<{
-		current: string;
-		next?: string;
-	}> {
-		const current = env.QSTASH_CURRENT_SIGNING_KEY;
-		const next = env.QSTASH_NEXT_SIGNING_KEY;
-		if (!current) {
-			throw new Error(
-				"QSTASH_CURRENT_SIGNING_KEY is not set. Get it from the Upstash console.",
-			);
-		}
-		return { current, next };
-	}
-
 	return {
 		async schedule(
 			args: ScheduleOfferExpiryArgs,
@@ -61,26 +47,22 @@ export function createQStashScheduler(): OfferExpiryScheduler {
 			const dedupId = `offer-expiry:${args.enrollmentId}:${args.offeredAt}:${notBefore}`;
 			const url = emailUrl("/api/jobs/offer-expiry");
 
-			try {
-				const res = await client.publishJSON({
-					url,
-					body: {
-						enrollmentId: args.enrollmentId,
-						activityId: args.activityId,
-						offeredAt: args.offeredAt,
-						expiresAt: args.expiresAt,
-					},
-					notBefore,
-					retries: 3,
-					deduplicationId: dedupId,
-				});
-				// @upstash/qstash v2 returns { messageId } on success
-				const messageId = (res as { messageId?: string }).messageId;
-				return { messageId };
-			} catch (err) {
-				// Re-throw so caller can catch and log without breaking offer creation
-				throw err;
-			}
+			// Errors propagate: the caller logs them without breaking offer creation
+			const res = await client.publishJSON({
+				url,
+				body: {
+					enrollmentId: args.enrollmentId,
+					activityId: args.activityId,
+					offeredAt: args.offeredAt,
+					expiresAt: args.expiresAt,
+				},
+				notBefore,
+				retries: 3,
+				deduplicationId: dedupId,
+			});
+			// @upstash/qstash v2 returns { messageId } on success
+			const messageId = (res as { messageId?: string }).messageId;
+			return { messageId };
 		},
 	};
 }

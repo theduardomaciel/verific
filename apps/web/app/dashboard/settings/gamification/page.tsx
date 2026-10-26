@@ -1,44 +1,30 @@
-"use client";
+import { Suspense } from "react";
 
-import { Skeleton } from "@/components/ui/skeleton";
+import {
+	dashboardProjectId,
+	HydrateQueries,
+	prefetch,
+} from "@/lib/trpc/hydrate";
 
-import { useDashboard } from "@/components/dashboard/dashboard-context";
+import { GamificationSkeleton, GamificationSettingsPage } from "./content";
 
-import { trpc } from "@/lib/trpc/react";
-
-import { GamificationEditor } from "./editor";
-
-export default function GamificationSettingsPage() {
-	const { projectId } = useDashboard();
-	const settings = trpc.getGamificationSettings.useQuery(
-		{ projectId },
-		{ staleTime: 30_000, refetchOnWindowFocus: false },
-	);
-
-	if (settings.isPending) {
-		return (
-			<div className="flex flex-col gap-4">
-				<Skeleton className="h-10 w-64" />
-				<Skeleton className="h-40 w-full rounded-2xl" />
-				<Skeleton className="h-64 w-full rounded-2xl" />
-			</div>
-		);
-	}
-
-	if (settings.isError || !settings.data) {
-		return (
-			<p className="text-muted-foreground text-sm">
-				Não foi possível carregar as configurações de gamificação.
-			</p>
-		);
-	}
-
+// Os dados chegam com a página (o mesmo `input` da query do cliente)
+async function Prefetched() {
+	const projectId = await dashboardProjectId();
+	const queries = projectId
+		? [await prefetch("getGamificationSettings", { projectId })]
+		: [];
 	return (
-		<GamificationEditor
-			projectId={projectId}
-			initial={settings.data.config}
-			eventDays={settings.data.eventDays}
-			profilesEnabled={settings.data.profilesEnabled}
-		/>
+		<HydrateQueries queries={queries}>
+			<GamificationSettingsPage />
+		</HydrateQueries>
+	);
+}
+
+export default function Page() {
+	return (
+		<Suspense fallback={<GamificationSkeleton />}>
+			<Prefetched />
+		</Suspense>
 	);
 }

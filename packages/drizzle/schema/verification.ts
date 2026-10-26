@@ -8,7 +8,10 @@ export const verification = pgTable(
 		value: text("value").notNull(),
 		expiresAt: timestamp("expires_at").notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.defaultNow()
+			.notNull()
+			.$onUpdate(() => new Date()),
 	},
 	(table) => [index("verification_identifier_idx").on(table.identifier)],
 );

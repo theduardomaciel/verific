@@ -86,7 +86,6 @@ export function SocialLinksEditor({
 						key={`${service.id}-${i}`}
 						className="flex items-end gap-2"
 					>
-						{/* <div className="w-36 shrink-0"> */}
 						<Select
 							disabled={disabled}
 							value={service.id}
@@ -104,7 +103,6 @@ export function SocialLinksEditor({
 								))}
 							</SelectContent>
 						</Select>
-						{/* </div> */}
 						<Input
 							type="text"
 							placeholder="usuário ou URL"

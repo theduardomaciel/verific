@@ -5,19 +5,15 @@ import { useMemo } from "react";
 import type { RouterOutput } from "@verific/api";
 
 import { useScheduleConflicts } from "@/hooks/use-schedule-conflicts";
-// Hooks
 import { useSubscribedActivities } from "@/hooks/use-subscribed-activities";
-// Lib
 import {
 	isActivityEnded,
 	isActivityFull,
 	isRegistrationClosed,
 	offersWaitlistSpot,
 } from "@/lib/activity-conditions";
-// API
 import { trpc } from "@/lib/trpc/react";
 
-// Types
 import type { Conflict } from "@/lib/schedule/conflicts";
 
 export type ActivityDetail = RouterOutput["getActivity"]["activity"];

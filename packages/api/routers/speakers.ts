@@ -9,6 +9,7 @@ import {
 import { participant, speaker, user } from "@verific/drizzle/schema";
 import { z } from "@verific/zod";
 
+import { deleteReplacedImages } from "../lib/image-cleanup";
 import { requireProjectAccess } from "../lib/project-access";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
@@ -246,6 +247,11 @@ export const speakersRouter = createTRPCRouter({
 						: {}),
 				})
 				.where(eq(speaker.id, id));
+			await deleteReplacedImages(
+				projectId,
+				[existing.imageUrl],
+				[imageUrl],
+			);
 			return { updated: true };
 		}),
 

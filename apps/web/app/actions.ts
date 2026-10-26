@@ -41,37 +41,12 @@ export async function updateProjectCookies(projectId: string) {
 }
 
 /**
- * Ações chamadas por componentes de cliente DEPOIS de mutations tRPC.
- *
- * O cache do servidor já é invalidado no middleware do tRPC (registro
- * declarativo em `@verific/api/cache-invalidation`), que roda no handler
- * HTTP de todas as mutations. O que faltava era o roteador do cliente:
- * `refresh()` marca o cache de router como stale para a próxima
- * renderização buscar o RSC novo — sem `revalidateTag` (que apagaria o
- * cache de router inteiro, de graça, a cada chamada).
- *
- * Os nomes antigos seguem exportados porque os componentes (e seus
- * testes) os importam; o corpo virou no-op de servidor.
+ * Chamada por componentes de cliente depois de uma mutation tRPC, uma vez
+ * por fluxo (cada chamada é uma invocação). O cache do servidor já foi
+ * invalidado pelo middleware do tRPC; `refresh()` marca o cache de router
+ * do cliente como velho para a próxima renderização buscar o RSC novo.
  */
-export async function revalidateActivities() {
-	refresh();
-}
-
-export async function revalidateParticipants() {
-	refresh();
-}
-
-export async function revalidateParticipantActivities(_userId: string) {
-	refresh();
-}
-
-export async function revalidateParticipantEnrollment(_userId: string) {
-	refresh();
-}
-
-export async function revalidateSubscribedActivitiesIdsFromParticipant(
-	_userId: string,
-) {
+export async function refreshRoute() {
 	refresh();
 }
 

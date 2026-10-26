@@ -20,9 +20,7 @@ import { serverClient } from "@/lib/trpc/server";
 
 import { RankingPageSkeleton } from "./skeleton";
 
-interface Props {
-	params: Promise<{ eventUrl: string }>;
-}
+type Props = Pick<PageProps<"/[eventUrl]/ranking">, "params">;
 
 type RankingProject = NonNullable<
 	Awaited<ReturnType<typeof getProject>>
@@ -36,7 +34,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 	const config = parseGamificationConfig(result.project.gamification);
 
 	return {
-		title: `Ranking · ${result.project.name}`,
+		title: "Ranking",
 		description: `Veja os participantes que mais se engajaram em ${result.project.name}.`,
 		// Ranking privado não deve ser indexado (nem aparecer em buscas).
 		robots: config.ranking.isPublic

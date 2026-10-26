@@ -10,7 +10,7 @@ import type { RouterOutput } from "@verific/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-import { revalidateActivities } from "@/app/actions";
+import { refreshRoute } from "@/app/actions";
 import { trpc } from "@/lib/trpc/react";
 
 type ActivityFormSummary = NonNullable<
@@ -52,7 +52,7 @@ export function ActivityRegistrationFormAction({
 			if (form.isPublished) {
 				await unpublish.mutateAsync({ versionId: form.versionId });
 				// Saiu do ar: o `hasForm` da programação precisa cair junto.
-				await revalidateActivities();
+				await refreshRoute();
 				toast.success(
 					"Formulário desvinculado. As inscrições voltam a ser diretas.",
 				);

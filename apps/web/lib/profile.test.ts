@@ -79,6 +79,7 @@ describe("profile layout", () => {
 		expect(formatProfileValue(true, "checkbox")).toBe("Sim");
 		expect(formatProfileValue(["a", "b"], "select_multiple")).toBe("a; b");
 		expect(formatProfileValue(null, "text")).toBeNull();
+		expect(formatProfileValue({ a: 1 }, "text")).toBeNull();
 	});
 });
 

@@ -1,13 +1,10 @@
 import React, { useEffect, useState } from "react";
 
-// Icons
 import { Share2Icon, CheckIcon } from "lucide-react";
 import { toast } from "sonner";
 
-// Components
 import { Button } from "@/components/ui/button";
 
-// Libs
 import { cn } from "@/lib/utils";
 
 interface ShareFieldProps {

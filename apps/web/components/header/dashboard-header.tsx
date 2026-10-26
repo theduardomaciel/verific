@@ -1,12 +1,9 @@
 import Link from "next/link";
 
-// Types
 import type { RouterOutput } from "@verific/api";
 
-// Components
 import MainNav, { type MainNavProps } from "@/components/header/main-nav";
 
-// API
 import { getSession } from "@/lib/session";
 import Logo from "@/public/logo.svg";
 

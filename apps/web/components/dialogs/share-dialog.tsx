@@ -2,11 +2,8 @@
 
 import React, { useState } from "react";
 
-// Icons
 import { ArrowRightIcon } from "lucide-react";
-// QR Code
 import { QRCodeSVG } from "qrcode.react";
-// Components
 import { toast } from "sonner";
 
 import { buttonVariants } from "@/components/ui/button";

@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { pgTable, primaryKey, uuid } from "drizzle-orm/pg-core";
+import { index, pgTable, primaryKey, uuid } from "drizzle-orm/pg-core";
 
 import { activity } from "./activity";
 import { tag } from "./tag";
@@ -20,9 +20,10 @@ export const tagOnActivity = pgTable(
 				onUpdate: "cascade",
 			}),
 	},
-	(table) => ({
-		pk: primaryKey({ columns: [table.activityId, table.tagId] }),
-	}),
+	(table) => [
+		primaryKey({ columns: [table.activityId, table.tagId] }),
+		index("tag_activities_tag_id_idx").on(table.tagId),
+	],
 );
 
 export const tagOnActivityRelations = relations(tagOnActivity, ({ one }) => ({

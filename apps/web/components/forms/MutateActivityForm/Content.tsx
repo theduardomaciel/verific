@@ -2,7 +2,6 @@
 import { useRouter } from "next/navigation";
 import * as React from "react";
 
-// Icons
 import {
 	ArrowLeft,
 	ClipboardList,
@@ -15,10 +14,8 @@ import {
 	User,
 } from "lucide-react";
 import { useFieldArray, useWatch, type UseFormReturn } from "react-hook-form";
-// Components
 import { toast } from "sonner";
 
-// Types
 import type { RouterOutput } from "@verific/api";
 import { tagColors } from "@verific/api/schemas";
 import {
@@ -28,7 +25,6 @@ import {
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-// Date and Time
 import { Calendar } from "@/components/ui/calendar";
 import {
 	FormControl,
@@ -62,7 +58,6 @@ import { InstancePicker } from "@/components/pickers/instance-picker";
 import { TimePicker } from "@/components/pickers/time-picker";
 
 import { sumSessionsHours } from "@/lib/date";
-// API
 import { trpc } from "@/lib/trpc/react";
 
 import type { MutateActivityFormSchema } from "@/lib/validations/forms/mutate-activity-form";

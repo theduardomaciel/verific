@@ -21,8 +21,11 @@ vi.mock("@/public/icons/google.svg", () => ({
 vi.mock("next/navigation", () => ({
 	useRouter: () => ({ push: vi.fn() }),
 }));
+const { refreshRouteMock } = vi.hoisted(() => ({
+	refreshRouteMock: vi.fn(async () => {}),
+}));
 vi.mock("@/app/actions", () => ({
-	revalidateParticipantEnrollment: vi.fn(),
+	refreshRoute: refreshRouteMock,
 	signOutAction: vi.fn(),
 }));
 vi.mock("@/lib/validations", async (importOriginal) => {
@@ -247,5 +250,64 @@ describe("JoinForm wizard", () => {
 		const restored = screen.getAllByRole("textbox");
 		expect((restored[0] as HTMLInputElement).value).toBe("Fulano da Silva");
 		expect((restored[1] as HTMLInputElement).value).toBe("fulana");
+	});
+
+	it.each([mockUser, undefined])(
+		"não troca o nome digitado ao remontar (usuário %#)",
+		(user) => {
+			const draftProject = {
+				id: `p-name-${user ? "in" : "out"}`,
+				url: "e",
+			};
+			const props = {
+				project: draftProject,
+				formData,
+				profileLayout: null,
+				user: user as never,
+			};
+			const { unmount } = render(<JoinForm {...props} />);
+			fireEvent.change(screen.getAllByRole("textbox")[0]!, {
+				target: { value: "Outro Nome" },
+			});
+
+			unmount();
+			render(<JoinForm {...props} />);
+
+			expect(
+				(screen.getAllByRole("textbox")[0] as HTMLInputElement).value,
+			).toBe("Outro Nome");
+		},
+	);
+
+	it("preenche o nome da conta no login feito no meio do preenchimento", () => {
+		const props = {
+			project: { id: "p-login", url: "e" },
+			formData,
+			profileLayout: null,
+		};
+		const { rerender } = render(<JoinForm {...props} />);
+
+		rerender(<JoinForm {...props} user={mockUser as never} />);
+
+		expect(
+			(screen.getAllByRole("textbox")[0] as HTMLInputElement).value,
+		).toBe(mockUser.name);
+	});
+
+	it("confirma a inscrição mesmo se a atualização da rota falhar", async () => {
+		mockMutateAsync.mockResolvedValue({ shortId: "abc123" });
+		refreshRouteMock.mockRejectedValueOnce(new Error("rede"));
+		vi.spyOn(console, "error").mockImplementation(() => {});
+		renderForm(mockUser);
+
+		const boxes = screen.getAllByRole("textbox");
+		fireEvent.change(boxes[0]!, { target: { value: "Fulano da Silva" } });
+		fireEvent.change(boxes[1]!, { target: { value: "fulana" } });
+		fireEvent.change(boxes[2]!, { target: { value: "aceito" } });
+		fireEvent.click(screen.getByRole("button", { name: "Concluir" }));
+
+		expect(
+			await screen.findByText(/Sua inscrição foi confirmada/),
+		).toBeInTheDocument();
 	});
 });

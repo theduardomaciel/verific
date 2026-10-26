@@ -220,6 +220,10 @@ describe("formatAnswerValue", () => {
 		expect(formatAnswerValue("text", undefined)).toBe("");
 		expect(formatAnswerValue("text", "")).toBe("");
 	});
+
+	it("serializes an unexpected object instead of [object Object]", () => {
+		expect(formatAnswerValue("text", { a: 1 })).toBe('{"a":1}');
+	});
 });
 
 describe("radio_group", () => {
@@ -480,5 +484,71 @@ describe("answer transport values (RHF-coerced)", () => {
 			data_de_nascimento: "2004-03-16",
 		});
 		expect(fromString.success).toBe(true);
+	});
+});
+
+describe("campos de número e data vazios", () => {
+	const field = (
+		key: string,
+		type: FormFieldForValidation["type"],
+		required: boolean,
+	): FormFieldForValidation => ({
+		key,
+		label: key,
+		type,
+		required,
+		isVisible: true,
+		isActive: true,
+	});
+
+	it("trata vazio como sem resposta quando é opcional", () => {
+		const result = validateAnswers(
+			[field("idade", "number", false), field("nasc", "date", false)],
+			{ idade: "", nasc: "" },
+		);
+
+		expect(result).toEqual({ success: true, data: {} });
+	});
+
+	it("não aceita vazio como 0 quando é obrigatório", () => {
+		const result = validateAnswers([field("idade", "number", true)], {
+			idade: "",
+		});
+
+		expect(result.errors).toEqual({ idade: ["Informe um número."] });
+	});
+});
+
+describe("regra de seção sobre campo fora da lista", () => {
+	const sections = [
+		{ id: "s1" },
+		{
+			id: "s2",
+			visibilityRule: {
+				sourceFieldId: "f-estudante",
+				operator: "is_checked" as const,
+			},
+		},
+	];
+	const curso = { id: "f-curso", key: "curso", sectionId: "s2" };
+	const ruleFields = [{ id: "f-estudante", key: "estudante" }, curso];
+
+	it("usa os campos da regra para decidir a seção", () => {
+		expect(
+			filterVisibleFields(
+				[curso],
+				sections,
+				{ estudante: false },
+				ruleFields,
+			),
+		).toEqual([]);
+		expect(
+			filterVisibleFields(
+				[curso],
+				sections,
+				{ estudante: true },
+				ruleFields,
+			),
+		).toEqual([curso]);
 	});
 });

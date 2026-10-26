@@ -1,7 +1,5 @@
-// Types
 import type { RouterOutput } from "@verific/api";
 
-// Components
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { SimpleActivityCard } from "@/components/activity/activity-card/dashboard";

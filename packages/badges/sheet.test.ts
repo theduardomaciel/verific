@@ -6,7 +6,7 @@ import { planSheets } from "./sheet";
 
 function layout(overrides: Record<string, unknown> = {}) {
 	return badgeLayoutSchema.parse({
-		mode: "data-only",
+		mode: "full",
 		badgeW: 90,
 		badgeH: 55,
 		freeArea: { x: 5, y: 5, w: 80, h: 45, radius: 3, padding: 3 },
@@ -40,6 +40,18 @@ describe("planSheets", () => {
 			expect(c.trimWMm).toBeCloseTo(90, 9);
 			expect(c.trimHMm).toBeCloseTo(55, 9);
 		}
+	});
+
+	it("prints only the free area in data-only mode", () => {
+		const pages = planSheets({
+			layout: layout({ mode: "data-only" }),
+			badgeCount: 10,
+		});
+		expect(pages).toHaveLength(1);
+		expect(pages[0]?.cols).toBe(2);
+		expect(pages[0]?.rows).toBe(5);
+		expect(pages[0]?.cells[0]?.trimWMm).toBeCloseTo(80, 9);
+		expect(pages[0]?.cells[0]?.trimHMm).toBeCloseTo(45, 9);
 	});
 
 	it("rotates cells when that fits more", () => {

@@ -2,6 +2,7 @@ import { EyeOff } from "lucide-react";
 
 import type { StatIconKey } from "@verific/drizzle/profile-layout";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
@@ -9,8 +10,8 @@ import { StatIcon } from "./stat-icons";
 
 export interface ProfileConnectionsData {
 	total: number;
-	/** Nomes completos dos visitantes recentes (até ~7). */
-	visitors: string[];
+	/** Visitantes recentes (até ~7), com nome e avatar. */
+	visitors: Array<{ name: string; avatarUrl: string | null }>;
 }
 
 export interface ProfileStatsData {
@@ -106,10 +107,11 @@ function ConnectionsCard({
 }) {
 	const total = connections?.total ?? 0;
 	const visitors = connections?.visitors ?? [];
-	const firstNames = visitors.slice(0, 3).map(firstName);
+	const firstNames = visitors.slice(0, 3).map((v) => firstName(v.name));
 	const stack = visitors.slice(0, 6).map((v) => ({
-		name: v,
-		initials: initials(v),
+		name: v.name,
+		avatarUrl: v.avatarUrl,
+		initials: initials(v.name),
 	}));
 	const remaining = Math.max(total - stack.length, 0);
 
@@ -144,16 +146,25 @@ function ConnectionsCard({
 							className="not-first:-ml-2"
 							title={s.name}
 						>
-							<span className="bg-background text-foreground flex h-10 w-10 items-center justify-center rounded-full text-xs leading-none font-semibold md:h-16 md:w-16 md:text-lg">
-								{s.initials}
-							</span>
+							<Avatar className="bg-accent h-10 w-10 shadow-2xl md:h-16 md:w-16">
+								<AvatarImage
+									src={s.avatarUrl ?? undefined}
+									alt={s.name}
+									referrerPolicy="no-referrer"
+								/>
+								<AvatarFallback className="bg-background text-foreground text-xs leading-none font-semibold md:text-lg">
+									{s.initials}
+								</AvatarFallback>
+							</Avatar>
 						</li>
 					))}
 					{remaining > 0 && (
 						<li className="not-first:-ml-2">
-							<span className="bg-background text-foreground flex h-10 w-10 items-center justify-center rounded-full text-xs leading-none font-semibold md:h-16 md:w-16 md:text-lg">
-								+{remaining}
-							</span>
+							<Avatar className="h-10 w-10 md:h-16 md:w-16">
+								<AvatarFallback className="bg-background text-foreground text-xs leading-none font-semibold md:text-lg">
+									+{remaining}
+								</AvatarFallback>
+							</Avatar>
 						</li>
 					)}
 				</ul>

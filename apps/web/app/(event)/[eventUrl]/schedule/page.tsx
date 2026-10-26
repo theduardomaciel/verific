@@ -24,9 +24,7 @@ export async function generateStaticParams() {
 	return getEventStaticParams();
 }
 
-interface Props {
-	params: Promise<{ eventUrl: string }>;
-}
+type Props = Pick<PageProps<"/[eventUrl]/schedule">, "params">;
 
 type SchedulePageProject = NonNullable<
 	Awaited<ReturnType<typeof getProject>>

@@ -35,6 +35,7 @@ import {
 	ACTIVITY_WAITLIST_PROMOTED_VERSION,
 	ACTIVITY_WAITLISTED_VERSION,
 	ACTIVITY_WAITLIST_OFFERED_VERSION,
+	ACTIVITY_WAITLIST_OFFER_REVOKED_VERSION,
 	ACTIVITY_WAITLIST_REMOVED_VERSION,
 	activityCancelledPreviewProps,
 	activityCancelledSubject,
@@ -48,6 +49,8 @@ import {
 	activityUpdatedSubject,
 	activityWaitlistOfferedPreviewProps,
 	activityWaitlistOfferedSubject,
+	activityWaitlistOfferRevokedPreviewProps,
+	activityWaitlistOfferRevokedSubject,
 	activityWaitlistPromotedPreviewProps,
 	activityWaitlistPromotedSubject,
 	activityWaitlistRemovedPreviewProps,
@@ -60,6 +63,7 @@ import {
 	renderActivityEnrollmentRemoved,
 	renderActivityUpdated,
 	renderActivityWaitlistOffered,
+	renderActivityWaitlistOfferRevoked,
 	renderActivityWaitlistPromoted,
 	renderActivityWaitlistRemoved,
 	renderActivityWaitlisted,
@@ -326,7 +330,7 @@ function projectToShared(row: {
 	};
 }
 
-/** Loads activity + project + sessions in ONE query (neon-http round trip). */
+/** Loads activity + project + sessions in ONE query. */
 export async function loadSharedActivity(
 	activityId: string,
 	ctx?: BuildContext,
@@ -381,6 +385,34 @@ export async function loadSharedActivity(
 			})),
 	};
 	ctx?.activities.set(activityId, shared);
+	return shared;
+}
+
+async function loadSharedProject(
+	projectId: string,
+	ctx?: BuildContext,
+): Promise<SharedProject> {
+	const cached = ctx?.projects.get(projectId);
+	if (cached) return cached;
+	const rows = await db
+		.select({
+			id: project.id,
+			name: project.name,
+			url: project.url,
+			address: project.address,
+			startDate: project.startDate,
+			endDate: project.endDate,
+			largeLogoDarkUrl: project.largeLogoDarkUrl,
+			ownerId: project.ownerId,
+		})
+		.from(project)
+		.where(eq(project.id, projectId));
+	const row = rows[0];
+	if (!row) {
+		throw new Error(`[notifications] project ${projectId} not found.`);
+	}
+	const shared = projectToShared(row);
+	ctx?.projects.set(projectId, shared);
 	return shared;
 }
 
@@ -676,7 +708,13 @@ export const notificationRegistry = {
 		defaultEnabled: true,
 		description:
 			"Aviso ao participante quando a organização remove a inscrição dele do evento, com motivo opcional.",
-		entityRefs: ["registrationId", "reason?"],
+		// O participante já foi apagado: o nome vem nos refs
+		entityRefs: [
+			"registrationId",
+			"projectId",
+			"participantName",
+			"reason?",
+		],
 		idempotencyKeyFormat: "event_registration_removed:{registrationId}",
 		buildIdempotencyKey: (refs) =>
 			`event_registration_removed:${requiredString(refs, "registrationId")}`,
@@ -687,24 +725,21 @@ export const notificationRegistry = {
 				.from(participant)
 				.where(eq(participant.id, registrationId));
 			return rows.length > 0
-				? { ok: true }
-				: { ok: false, reason: "entity_gone" };
+				? { ok: false, reason: "state_changed" }
+				: { ok: true };
 		},
 		async buildProps(refs, ctx) {
-			const registrationId = requiredString(refs, "registrationId");
-			const row = await loadParticipantEvent(registrationId, ctx);
-			if (!row) {
-				throw new Error(
-					`[notifications] participant ${registrationId} not found.`,
-				);
-			}
+			const shared = await loadSharedProject(
+				requiredString(refs, "projectId"),
+				ctx,
+			);
 			const reason = optionalString(refs, "reason");
 			return {
-				participantName: row.participantName,
-				eventName: row.project.name,
-				accessUrl: eventUrl(row.project.url),
+				participantName: requiredString(refs, "participantName"),
+				eventName: shared.name,
+				accessUrl: eventUrl(shared.url),
 				...(reason ? { reason } : {}),
-				...logoRef(row.project.largeLogoDarkUrl, row.project.id),
+				...logoRef(shared.largeLogoDarkUrl, shared.id),
 			};
 		},
 		subject: (props) =>
@@ -849,6 +884,50 @@ export const notificationRegistry = {
 		templateVersion: ACTIVITY_WAITLIST_OFFERED_VERSION,
 	} satisfies NotificationTypeDefinition,
 
+	activity_waitlist_offer_revoked: {
+		key: "activity_waitlist_offer_revoked",
+		audience: "participant",
+		category: "transactional",
+		scope: "activity",
+		defaultEnabled: true,
+		description:
+			"Aviso de que a vaga reservada na fila foi desfeita porque a organização reduziu as vagas; o participante continua na fila.",
+		entityRefs: [
+			"activityId",
+			"participantId",
+			"enrollmentId",
+			"revokedAt",
+		],
+		idempotencyKeyFormat:
+			"activity_waitlist_offer_revoked:{enrollmentId}:{revokedAt}",
+		buildIdempotencyKey: (refs) =>
+			`activity_waitlist_offer_revoked:${requiredString(refs, "enrollmentId")}:${requiredString(refs, "revokedAt")}`,
+		async validate(refs) {
+			const activityId = requiredString(refs, "activityId");
+			if (!(await activityExists(activityId)))
+				return { ok: false, reason: "entity_gone" };
+			const status = await waitlistStatus(
+				optionalString(refs, "enrollmentId"),
+				activityId,
+				requiredString(refs, "participantId"),
+			);
+			if (status === null) return { ok: false, reason: "entity_gone" };
+			// Uma nova oferta (ou a saída da fila) já tornou o aviso velho
+			return status === "waiting"
+				? { ok: true }
+				: { ok: false, reason: "state_changed" };
+		},
+		buildProps: (refs, ctx) => buildActivityProps(refs, ctx),
+		subject: (props) =>
+			activityWaitlistOfferRevokedSubject({
+				activityName: String(props["activityName"]),
+				eventName: String(props["eventName"]),
+			}),
+		render: (props) => renderActivityWaitlistOfferRevoked(props),
+		previewProps: activityWaitlistOfferRevokedPreviewProps,
+		templateVersion: ACTIVITY_WAITLIST_OFFER_REVOKED_VERSION,
+	} satisfies NotificationTypeDefinition,
+
 	activity_waitlist_promoted: {
 		key: "activity_waitlist_promoted",
 		audience: "participant",
@@ -911,8 +990,11 @@ export const notificationRegistry = {
 			const participantId = requiredString(refs, "participantId");
 			if (!(await activityExists(activityId)))
 				return { ok: false, reason: "entity_gone" };
+			// Os refs não trazem a entrada: busca pela atividade e pessoa
 			const status = await waitlistStatus(
-				optionalString(refs, "enrollmentId"),
+				undefined,
+				activityId,
+				participantId,
 			);
 			if (status === null) return { ok: false, reason: "entity_gone" };
 			if (status !== "removed")
@@ -1092,30 +1174,7 @@ export const notificationRegistry = {
 		},
 		async buildProps(refs, ctx) {
 			const projectId = requiredString(refs, "projectId");
-			let shared = ctx?.projects.get(projectId);
-			if (!shared) {
-				const rows = await db
-					.select({
-						id: project.id,
-						name: project.name,
-						url: project.url,
-						address: project.address,
-						startDate: project.startDate,
-						endDate: project.endDate,
-						largeLogoDarkUrl: project.largeLogoDarkUrl,
-						ownerId: project.ownerId,
-					})
-					.from(project)
-					.where(eq(project.id, projectId));
-				const row = rows[0];
-				if (!row) {
-					throw new Error(
-						`[notifications] project ${projectId} not found.`,
-					);
-				}
-				shared = projectToShared(row);
-				ctx?.projects.set(projectId, shared);
-			}
+			const shared = await loadSharedProject(projectId, ctx);
 			const ownerRows = await db
 				.select({ name: user.name })
 				.from(user)
@@ -1220,30 +1279,7 @@ export const notificationRegistry = {
 			const contributorUserId = requiredString(refs, "contributorUserId");
 			const addedByUserId = optionalString(refs, "addedByUserId");
 
-			let shared = ctx?.projects.get(projectId);
-			if (!shared) {
-				const rows = await db
-					.select({
-						id: project.id,
-						name: project.name,
-						url: project.url,
-						address: project.address,
-						startDate: project.startDate,
-						endDate: project.endDate,
-						largeLogoDarkUrl: project.largeLogoDarkUrl,
-						ownerId: project.ownerId,
-					})
-					.from(project)
-					.where(eq(project.id, projectId));
-				const row = rows[0];
-				if (!row) {
-					throw new Error(
-						`[notifications] project ${projectId} not found.`,
-					);
-				}
-				shared = projectToShared(row);
-				ctx?.projects.set(projectId, shared);
-			}
+			const shared = await loadSharedProject(projectId, ctx);
 
 			const contributorRows = await db
 				.select({ name: user.name })

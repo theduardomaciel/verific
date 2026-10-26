@@ -11,15 +11,19 @@ interface OfferedArgs {
 	}>;
 }
 
-const { notifyOfferedMock, deleteAnswersMock } = vi.hoisted(() => ({
-	notifyOfferedMock: vi.fn<(args: OfferedArgs) => Promise<void>>(
-		async () => {},
-	),
-	deleteAnswersMock: vi.fn(async () => {}),
-}));
+const { notifyOfferedMock, notifyRevokedMock, deleteAnswersMock } = vi.hoisted(
+	() => ({
+		notifyOfferedMock: vi.fn<(args: OfferedArgs) => Promise<void>>(
+			async () => {},
+		),
+		notifyRevokedMock: vi.fn(async () => {}),
+		deleteAnswersMock: vi.fn(async () => {}),
+	}),
+);
 
 vi.mock("./notifications", () => ({
 	notifyActivityWaitlistOffered: notifyOfferedMock,
+	notifyActivityWaitlistOfferRevoked: notifyRevokedMock,
 }));
 vi.mock("./enrollment", () => ({
 	deleteActivityAnswers: deleteAnswersMock,
@@ -45,8 +49,9 @@ function makeTx(args: {
 	enrolled: number;
 	startsAt: Date | null;
 	endsAt: Date | null;
+	inserted?: unknown[];
 }) {
-	const { entries, enrolled, startsAt, endsAt } = args;
+	const { entries, enrolled, startsAt, endsAt, inserted = [] } = args;
 	return {
 		select: () => ({
 			from: (table: unknown) => ({
@@ -68,7 +73,11 @@ function makeTx(args: {
 				},
 			}),
 		}),
-		insert: () => ({ values: async () => {} }),
+		insert: () => ({
+			values: async (rows: unknown[]) => {
+				inserted.push(...rows);
+			},
+		}),
 	} as never;
 }
 
@@ -168,5 +177,55 @@ describe("settleActivity offer notification", () => {
 			"p1",
 			"p2",
 		]);
+	});
+});
+
+describe("settleActivity with a lowered limit", () => {
+	it("returns the last open offer to the queue, records it and warns the person", async () => {
+		const now = new Date("2026-01-01T12:00:00.000Z");
+		const offer = (id: string, joinedAt: string): ActiveEntry => ({
+			id,
+			participantId: `p-${id}`,
+			status: "offered",
+			joinedAt: new Date(joinedAt),
+			offerExpiresAt: new Date("2026-01-01T20:00:00.000Z"),
+		});
+		const inserted: unknown[] = [];
+		const tx = makeTx({
+			entries: [
+				offer("e1", "2026-01-01T09:00:00.000Z"),
+				offer("e2", "2026-01-01T10:00:00.000Z"),
+			],
+			enrolled: 0,
+			startsAt: new Date("2026-01-02T12:00:00.000Z"),
+			endsAt: new Date("2026-01-02T18:00:00.000Z"),
+			inserted,
+		});
+
+		const queue = await settleActivity(
+			tx,
+			{
+				id: "a1",
+				projectId: "pr1",
+				participantsLimit: 1,
+				waitlistEnabled: true,
+				waitlistOfferHours: 12,
+				cancelledAt: null,
+			},
+			now,
+		);
+
+		expect(queue.find((entry) => entry.id === "e2")?.status).toBe(
+			"waiting",
+		);
+		expect(inserted).toEqual([
+			expect.objectContaining({ participantId: "p-e2", type: "revoked" }),
+		]);
+		expect(notifyRevokedMock).toHaveBeenCalledWith({
+			eventId: "pr1",
+			activityId: "a1",
+			revoked: [{ participantId: "p-e2", enrollmentId: "e2" }],
+			revokedAt: now,
+		});
 	});
 });

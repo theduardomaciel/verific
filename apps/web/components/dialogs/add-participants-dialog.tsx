@@ -2,11 +2,9 @@
 
 import { useEffect, useState, useTransition, useMemo } from "react";
 
-// Icons
 import { Loader2, UserPlus, Search } from "lucide-react";
 import { toast } from "sonner";
 
-// Components
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -20,40 +18,68 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
-import { revalidateParticipantActivities } from "@/app/actions";
-// Hooks
+import { refreshRoute } from "@/app/actions";
 import { useParticipantSearch } from "@/hooks/participant/use-participant-search";
 import { useParticipantSelection } from "@/hooks/participant/use-participant-selection";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
-// Types
 import { trpc } from "@/lib/trpc/react";
 
 import { ParticipantItem } from "../participant-item";
 
-interface AddMonitorDialogProps {
+type DialogRole = "monitor" | "participant";
+
+interface AddParticipantsDialogProps {
 	projectId: string;
-	activityId: string;
-	alreadyAdded: string[];
+	activityId?: string;
+	alreadyAdded?: string[];
+	kind?: DialogRole;
+	buttonLabel?: string;
+	buttonVariant?: "default" | "outline";
+	title?: string;
+	description?: string;
+	onSubmitSelected?: (participants: any[]) => Promise<void>;
+	onAdd?: (participants: any[]) => Promise<void>;
+	onSelect?: (participants: any[]) => Promise<void>;
 }
 
-export function AddMonitorDialog({
+export function AddParticipantsDialog({
 	projectId,
 	activityId,
-	alreadyAdded,
-}: AddMonitorDialogProps) {
-	// Data exibida no cabeçalho, fixada na montagem.
+	alreadyAdded = [],
+	kind,
+	buttonLabel,
+	buttonVariant = "default",
+	title,
+	description,
+	onSubmitSelected,
+	onAdd,
+	onSelect,
+}: AddParticipantsDialogProps) {
+	const resolvedRole: DialogRole = kind ?? "monitor";
+
+	const defaultButtonLabel =
+		resolvedRole === "participant"
+			? "Adicionar participantes"
+			: "Adicionar monitores";
+	const defaultTitle =
+		resolvedRole === "participant"
+			? "Adicionar participantes"
+			: "Adicionar monitores";
+
+	const resolvedButtonLabel = buttonLabel ?? defaultButtonLabel;
+	const resolvedTitle = title ?? defaultTitle;
+
+	const customHandler = onSubmitSelected ?? onAdd ?? onSelect;
+
 	const [currentDate] = useState(() => new Date());
 
-	// Dialog state
 	const [isOpen, setIsOpen] = useState(false);
 
-	// Mutation state
 	const [addedUsersAmount, setAddedUsersAmount] = useState<
 		number | undefined
 	>(undefined);
 	const [isMutating, startTransition] = useTransition();
 
-	// Custom hooks
 	const {
 		page,
 		setPage,
@@ -74,12 +100,8 @@ export function AddMonitorDialog({
 		clearSelection,
 	} = useParticipantSelection();
 
-	// Participants data management
 	const [allParticipants, setAllParticipants] = useState<any[]>([]);
 
-	// Atualiza a lista quando novos dados chegam (paginação infinita).
-	// Ajuste durante a renderização em vez de efeito: sem render em cascata.
-	// Espelha as dependências do efeito original ([data, page]).
 	const [prevParticipantsSync, setPrevParticipantsSync] = useState({
 		data,
 		page,
@@ -91,25 +113,20 @@ export function AddMonitorDialog({
 	) {
 		setPrevParticipantsSync({ data, page });
 		setAllParticipants((prev) => {
-			// If first page (new search), replace completely
 			if (page === 0) {
 				return data.participants;
 			}
-			// Otherwise, add to existing list (infinite scroll)
 			const newParticipants = data.participants.filter(
 				(p: any) => !prev.find((existing) => existing.id === p.id),
 			);
 			return [...prev, ...newParticipants];
 		});
-		// Check if there are more pages
 		if (data.pageCount && page >= data.pageCount - 1) {
 			setHasMore(false);
 		}
-		// Mark search as finished
 		setIsSearching(false);
 	}
 
-	// Computed values
 	const filteredParticipants = useMemo(
 		() =>
 			allParticipants.filter(
@@ -128,7 +145,6 @@ export function AddMonitorDialog({
 		[selectedParticipants, unselectedParticipants],
 	);
 
-	// Infinite scroll
 	const observerTarget = useInfiniteScroll({
 		isFetching,
 		isSearching,
@@ -137,59 +153,63 @@ export function AddMonitorDialog({
 		setPage,
 	});
 
-	// Mutations
 	const utils = trpc.useUtils();
-	const mutations = trpc.addMonitorsToActivity.useMutation({
-		onSuccess: () => {
-			void utils.getActivity.invalidate();
-			void utils.getActivities.invalidate();
-		},
-	});
+	const mutations: any =
+		resolvedRole === "participant"
+			? (trpc.addActivityParticipants?.useMutation?.({
+					onSuccess: () => {
+						void utils?.getActivity?.invalidate?.();
+						void utils?.getActivities?.invalidate?.();
+					},
+				}) ??
+				trpc.addMonitorsToActivity.useMutation({
+					onSuccess: () => {
+						void utils?.getActivity?.invalidate?.();
+						void utils?.getActivities?.invalidate?.();
+					},
+				}))
+			: trpc.addMonitorsToActivity.useMutation({
+					onSuccess: () => {
+						void utils?.getActivity?.invalidate?.();
+						void utils?.getActivities?.invalidate?.();
+					},
+				});
 
-	// Handlers
 	async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 
 		const selectedParticipantsIds = selectedParticipants.map((p) => p.id);
-		const selectedParticipantsUserIds = selectedParticipants.map(
-			(p) => p.userId,
-		);
-
-		console.log("Monitores selecionados: ", selectedParticipantsIds);
-		// console.log(selectedParticipantsUserIds, "userIds");
 
 		if (selectedParticipantsIds.length === 0) {
 			toast.warning(
-				"Nenhum monitor selecionado. Selecione ao menos um monitor para adicionar.",
+				"Nenhum participante selecionado. Selecione ao menos um para adicionar.",
 			);
 			return;
 		}
 
-		try {
-			startTransition(async () => {
-				await mutations.mutateAsync({
-					activityId,
-					participantsIdsToAdd: selectedParticipantsIds,
-				});
+		startTransition(async () => {
+			try {
+				if (customHandler) {
+					await customHandler(selectedParticipants);
+				} else {
+					await mutations.mutateAsync({
+						activityId,
+						participantsIdsToAdd: selectedParticipantsIds,
+					});
+				}
 				setAddedUsersAmount(selectedParticipantsIds.length);
-			});
-
-			await Promise.all(
-				selectedParticipantsUserIds.map((id) =>
-					revalidateParticipantActivities(id),
-				),
-			);
-		} catch (error) {
-			console.error(error);
-			toast.error("Erro ao adicionar monitor", {
-				description:
-					"Ocorreu um erro ao adicionar o monitor. Tente novamente mais tarde.",
-			});
-		}
+				await refreshRoute();
+			} catch (error) {
+				console.error(error);
+				const noun =
+					resolvedRole === "participant" ? "participante" : "monitor";
+				toast.error(`Erro ao adicionar ${noun}`, {
+					description: `Ocorreu um erro ao adicionar o ${noun}. Tente novamente mais tarde.`,
+				});
+			}
+		});
 	}
 
-	// Reseta o formulário quando a mutação conclui. Os sets puros ficam na
-	// renderização (sem cascata); o toast permanece no efeito.
 	const [prevMutationDone, setPrevMutationDone] = useState({
 		isMutating,
 		addedUsersAmount,
@@ -208,40 +228,47 @@ export function AddMonitorDialog({
 		clearSelection();
 	}
 
-	// Effects
 	useEffect(() => {
 		if (isMutating === false && addedUsersAmount) {
-			const title =
+			const isMonitor = resolvedRole === "monitor";
+			const plural = isMonitor ? "Monitores" : "Participantes";
+			const singular = isMonitor ? "Monitor" : "Participante";
+			const titleText =
 				addedUsersAmount > 1
-					? "Monitores adicionados!"
-					: "Monitor adicionado!";
-			const description =
+					? `${plural} adicionados!`
+					: `${singular} adicionado!`;
+			const descriptionText =
 				addedUsersAmount > 1
-					? "Os monitores foram adicionados com sucesso."
-					: "O monitor foi adicionado com sucesso.";
+					? `Os ${isMonitor ? "monitores" : "participantes"} foram adicionados com sucesso.`
+					: `O ${isMonitor ? "monitor" : "participante"} foi adicionado com sucesso.`;
 
-			toast.success(title, { description });
+			toast.success(titleText, { description: descriptionText });
 		}
-	}, [isMutating, addedUsersAmount]);
+	}, [isMutating, addedUsersAmount, resolvedRole]);
 
 	return (
 		<Dialog open={isOpen} onOpenChange={setIsOpen}>
 			<DialogTrigger asChild>
-				<Button size={"lg"} className="h-10 flex-1">
+				<Button
+					size={"lg"}
+					variant={buttonVariant}
+					className="h-10 min-h-10 flex-1 shrink-0"
+				>
 					<UserPlus size={20} />
-					Adicionar monitores
+					{resolvedButtonLabel}
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="w-full sm:max-w-lg">
+			<DialogContent className="w-full overflow-hidden sm:max-w-lg">
 				<DialogHeader>
-					<DialogTitle>Adicionar monitores</DialogTitle>
+					<DialogTitle>{resolvedTitle}</DialogTitle>
 					<DialogDescription>
-						{currentDate.toLocaleString("pt-BR", {
-							weekday: "long",
-							day: "numeric",
-							month: "long",
-							year: "numeric",
-						})}
+						{description ??
+							currentDate.toLocaleString("pt-BR", {
+								weekday: "long",
+								day: "numeric",
+								month: "long",
+								year: "numeric",
+							})}
 					</DialogDescription>
 				</DialogHeader>
 				<form
@@ -249,7 +276,6 @@ export function AddMonitorDialog({
 					className="flex flex-col items-start justify-start gap-4"
 				>
 					<div className="flex w-full flex-col items-center justify-start gap-4">
-						{/* Search Input */}
 						<div className="relative w-full">
 							<Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
 							<Input
@@ -263,7 +289,6 @@ export function AddMonitorDialog({
 							)}
 						</div>
 
-						{/* Participants List */}
 						{displayedParticipants &&
 						displayedParticipants.length > 0 ? (
 							<div className="flex h-[32.5vh] w-full flex-col items-center justify-start lg:h-[40vh]">
@@ -306,11 +331,10 @@ export function AddMonitorDialog({
 						)}
 					</div>
 
-					{/* Footer */}
 					<DialogFooter className="w-full gap-2 sm:justify-start">
 						<DialogClose asChild>
 							<Button
-								className="flex flex-1 md:h-10"
+								className="flex h-10 min-h-10 flex-1 shrink-0"
 								type="button"
 								size={"lg"}
 								variant="secondary"
@@ -320,7 +344,7 @@ export function AddMonitorDialog({
 							</Button>
 						</DialogClose>
 						<Button
-							className="flex flex-1 md:h-10"
+							className="flex h-10 min-h-10 flex-1 shrink-0"
 							size={"lg"}
 							type="submit"
 							disabled={isMutating}
@@ -340,3 +364,5 @@ export function AddMonitorDialog({
 		</Dialog>
 	);
 }
+
+export { AddParticipantsDialog as default };

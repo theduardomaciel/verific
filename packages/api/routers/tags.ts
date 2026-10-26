@@ -1,4 +1,3 @@
-// tRPC
 import { TRPCError } from "@trpc/server";
 
 import { db } from "@verific/drizzle";
@@ -6,7 +5,6 @@ import { asc, eq } from "@verific/drizzle/orm";
 import { tag } from "@verific/drizzle/schema";
 import { z } from "@verific/zod";
 
-// Utils
 import { requireProjectAccess } from "../lib/project-access";
 import { tagColorSchema } from "../schemas";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";

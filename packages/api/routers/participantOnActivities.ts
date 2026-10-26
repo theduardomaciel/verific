@@ -1,4 +1,3 @@
-// tRPC
 import { TRPCError } from "@trpc/server";
 
 import { db } from "@verific/drizzle";
@@ -332,10 +331,10 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 			const recipientEmail = contacts.get(participantId);
 			const eventId = activityData.project.id;
 
-			await db.transaction(async (tx) => {
+			const removed = await db.transaction(async (tx) => {
 				const locked = await lockActivity(tx, activityId);
 
-				await tx
+				const deleted = await tx
 					.delete(participantOnActivity)
 					.where(
 						and(
@@ -345,7 +344,10 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 								participantId,
 							),
 						),
-					);
+					)
+					.returning({ role: participantOnActivity.role });
+				// Já saiu (ex.: clique duplo): nada a desfazer nem a avisar
+				if (deleted.length === 0) return false;
 
 				// Remove presenças em sessões desta atividade (assinatura removida)
 				const activitySessions = await tx
@@ -383,9 +385,10 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 
 				// A vaga liberada vai para o próximo da fila
 				await settleActivity(tx, locked);
+				return true;
 			});
 
-			if (recipientEmail) {
+			if (removed && recipientEmail) {
 				if (isSelfCancellation) {
 					void notifyActivityEnrollmentCancelled({
 						eventId,

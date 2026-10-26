@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from "next";
+import { Hanken_Grotesk } from "next/font/google";
 
 import "./globals.css";
 
-// Fonts
-import { Hanken_Grotesk } from "next/font/google";
+import { appUrl } from "@verific/env";
 
 const hankenGrotesk = Hanken_Grotesk({
 	variable: "--font-hanken-grotesk",
@@ -11,7 +11,8 @@ const hankenGrotesk = Hanken_Grotesk({
 });
 
 export const metadata: Metadata = {
-	title: "verifIC",
+	metadataBase: new URL(appUrl),
+	title: { default: "verifIC", template: "%s · verifIC" },
 	description: "Seu próximo gerenciador de eventos",
 	icons: {
 		icon: "/favicon/favicon.svg",
@@ -25,7 +26,6 @@ export const viewport: Viewport = {
 	viewportFit: "cover",
 };
 
-// Components
 import { Providers } from "@/components/providers";
 
 export default function RootLayout({
@@ -39,9 +39,6 @@ export default function RootLayout({
 			data-scroll-behavior="smooth"
 			suppressHydrationWarning
 		>
-			{/* <head>
-				<script src="https://unpkg.com/react-scan/dist/auto.global.js" />
-			</head> */}
 			<body className={`${hankenGrotesk.variable} antialiased`}>
 				<Providers>{children}</Providers>
 			</body>

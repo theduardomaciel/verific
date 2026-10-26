@@ -1,9 +1,7 @@
 "use client";
-// Components
 import { TRPCClientError } from "@trpc/client";
 import { toast } from "sonner";
 
-// Infer types from schemas
 import type { z } from "@verific/zod";
 
 import {
@@ -19,7 +17,6 @@ import { DateRangePicker } from "@/components/pickers/date-range-picker";
 import { PlacePicker } from "@/components/pickers/place-picker";
 import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
 
-// Validations
 import {
 	addressSchema,
 	dateSchema,
@@ -36,7 +33,6 @@ type AddressFormValues = z.infer<typeof addressSchema>;
 
 import type { RouterOutput } from "@verific/api";
 
-// tRPC
 import { trpc } from "@/lib/trpc/react";
 
 interface Props {

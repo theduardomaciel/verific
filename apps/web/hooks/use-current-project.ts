@@ -21,6 +21,8 @@ export function useCurrentProject(): CurrentProjectQuery {
 			staleTime: 60 * 1000,
 			gcTime: 10 * 60 * 1000,
 			refetchOnWindowFocus: false,
+			// Depois de salvar, a leitura não pode vir do cache de borda
+			trpc: { context: { fresh: true } },
 		},
 	);
 

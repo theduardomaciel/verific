@@ -1,14 +1,11 @@
 "use client";
 
-// Icons
 import { Calendar, Clock, MapPin } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-// Lib
 import { activityCategoryLabels } from "@verific/drizzle/schema";
 
-// Components
 import { Badge } from "@/components/ui/badge";
 
 import { ActivityCardTags } from "@/components/activity/activity-card/tags";
@@ -24,7 +21,6 @@ import { cn } from "@/lib/utils";
 
 import { SpeakersList } from "./speakers-list";
 
-// Types
 import type { ActivityDetail } from "./use-activity-enrollment-state";
 
 interface ActivityDetailsProps {

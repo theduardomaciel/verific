@@ -2,13 +2,10 @@
 
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Hooks
 import { useDashboard } from "@/components/dashboard/dashboard-context";
-// Components
 import MutateActivityForm from "@/components/forms/MutateActivityForm";
 import { ActivityRegistrationFormAction } from "@/components/forms/MutateActivityForm/registration-form-action";
 
-// API
 import { trpc } from "@/lib/trpc/react";
 
 export function EditActivityContent({ activityId }: { activityId: string }) {

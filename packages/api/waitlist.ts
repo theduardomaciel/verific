@@ -1,3 +1,4 @@
+import type { db } from "@verific/drizzle";
 import { and, eq, inArray, max, min } from "@verific/drizzle/orm";
 import {
 	activitySession,
@@ -7,7 +8,10 @@ import {
 } from "@verific/drizzle/schema";
 
 import { deleteActivityAnswers } from "./enrollment";
-import { notifyActivityWaitlistOffered } from "./notifications";
+import {
+	notifyActivityWaitlistOffered,
+	notifyActivityWaitlistOfferRevoked,
+} from "./notifications";
 import { countEnrolled, type LockedActivity, type Tx } from "./seats";
 import { byQueueOrder, planSettlement } from "./waitlist-plan";
 
@@ -49,15 +53,17 @@ export type EffectiveEntry = {
 	offerExpiresAt: Date | null;
 };
 
+const entryColumns = {
+	id: activityWaitlist.id,
+	participantId: activityWaitlist.participantId,
+	status: activityWaitlist.status,
+	joinedAt: activityWaitlist.joinedAt,
+	offerExpiresAt: activityWaitlist.offerExpiresAt,
+};
+
 export async function getActiveEntries(tx: Tx, activityId: string) {
 	return tx
-		.select({
-			id: activityWaitlist.id,
-			participantId: activityWaitlist.participantId,
-			status: activityWaitlist.status,
-			joinedAt: activityWaitlist.joinedAt,
-			offerExpiresAt: activityWaitlist.offerExpiresAt,
-		})
+		.select(entryColumns)
 		.from(activityWaitlist)
 		.where(
 			and(
@@ -78,18 +84,39 @@ export async function getEffectiveEntries(
 	activityId: string,
 	now = new Date(),
 ): Promise<EffectiveEntry[]> {
-	const entries = await getActiveEntries(tx, activityId);
-	return entries.map((entry) => {
+	const queues = await getEffectiveEntriesByActivity(tx, [activityId], now);
+	return queues.get(activityId) ?? [];
+}
+
+/** `getEffectiveEntries` de várias atividades numa leitura só. */
+export async function getEffectiveEntriesByActivity(
+	tx: Tx | typeof db,
+	activityIds: string[],
+	now = new Date(),
+): Promise<Map<string, EffectiveEntry[]>> {
+	const rows = (await tx
+		.select({ activityId: activityWaitlist.activityId, ...entryColumns })
+		.from(activityWaitlist)
+		.where(
+			and(
+				inArray(activityWaitlist.activityId, activityIds),
+				inArray(activityWaitlist.status, [...ACTIVE]),
+			),
+		)) as Array<ActiveEntry & { activityId: string }>;
+	const byActivity = new Map<string, EffectiveEntry[]>();
+	for (const { activityId, ...entry } of rows) {
+		const queue = byActivity.get(activityId) ?? [];
 		// If offered but expired, treat as expired for display purposes
-		if (
+		queue.push(
 			entry.status === "offered" &&
-			entry.offerExpiresAt &&
-			entry.offerExpiresAt <= now
-		) {
-			return { ...entry, status: "expired" as const };
-		}
-		return entry;
-	});
+				entry.offerExpiresAt &&
+				entry.offerExpiresAt <= now
+				? { ...entry, status: "expired" }
+				: entry,
+		);
+		byActivity.set(activityId, queue);
+	}
+	return byActivity;
 }
 
 /** Início da primeira sessão e fim da última (`null` sem sessões). */
@@ -157,6 +184,32 @@ export async function settleActivity(
 		await recordEvents(tx, locked.id, expired, "expired", null);
 	}
 
+	if (plan.revoke.length > 0) {
+		await tx
+			.update(activityWaitlist)
+			.set({ status: "waiting", offeredAt: null, offerExpiresAt: null })
+			.where(inArray(activityWaitlist.id, plan.revoke));
+		await recordEvents(
+			tx,
+			locked.id,
+			participantOf(plan.revoke),
+			"revoked",
+			null,
+		);
+		// Como a oferta: o e-mail é validado depois do commit
+		void notifyActivityWaitlistOfferRevoked({
+			eventId: locked.projectId,
+			activityId: locked.id,
+			revoked: entries
+				.filter((entry) => plan.revoke.includes(entry.id))
+				.map((entry) => ({
+					participantId: entry.participantId,
+					enrollmentId: entry.id,
+				})),
+			revokedAt: now,
+		});
+	}
+
 	// Todas as ofertas de uma rodada têm o mesmo prazo
 	const offerIds = plan.offer.map((offer) => offer.id);
 	if (plan.offer.length > 0) {
@@ -176,10 +229,10 @@ export async function settleActivity(
 			null,
 		);
 
-		// Offers are created lazily by any settle (including reads), so this is
-		// the only place that sees every new offer. Fire-and-forget: the e-mail
-		// is built and validated after the transaction commits, and a rolled
-		// back settlement is later skipped by `validate`.
+		// Every new offer comes from a settle, so this is the only place that
+		// sees them all. Fire-and-forget: the e-mail is built and validated
+		// after the transaction commits, and a rolled back settlement is later
+		// skipped by `validate`.
 		const expiresById = new Map(
 			plan.offer.map((offer) => [offer.id, offer.expiresAt]),
 		);
@@ -198,6 +251,7 @@ export async function settleActivity(
 	}
 
 	const expired = new Set(plan.expire);
+	const revoked = new Set(plan.revoke);
 	const offered = new Map(plan.offer.map((o) => [o.id, o.expiresAt]));
 	return entries
 		.filter((entry) => !expired.has(entry.id))
@@ -208,7 +262,13 @@ export async function settleActivity(
 						status: "offered" as const,
 						offerExpiresAt: offered.get(entry.id)!,
 					}
-				: entry,
+				: revoked.has(entry.id)
+					? {
+							...entry,
+							status: "waiting" as const,
+							offerExpiresAt: null,
+						}
+					: entry,
 		);
 }
 

@@ -529,6 +529,35 @@ describe("bulk enqueue and processing", () => {
 	});
 });
 
+describe("bulk processing round trips", () => {
+	it("lê o uso e a configuração do evento uma vez por lote", async () => {
+		const { store, send, deps } = setup({ dailyLimit: 100 });
+		const eventId = randomUUID();
+		const enqueued = await enqueueNotifications(
+			Array.from({ length: 3 }, (_, index) => ({
+				type: "event_registration_confirmation" as const,
+				idempotencyKey: `round-${index}`,
+				to: "user@example.com",
+				eventId,
+				entityRefs: { registrationId: randomUUID() },
+			})),
+			deps,
+		);
+		const countUsage = vi.spyOn(store, "countUsageLast24h");
+		isNotificationEnabledMock.mockClear();
+
+		await processQueuedNotifications(
+			enqueued.map((result) => result.notification!.id),
+			deps,
+		);
+
+		expect(send).toHaveBeenCalledTimes(3);
+		// Uma leitura para o lote e uma para o aviso de cota no fim
+		expect(countUsage).toHaveBeenCalledTimes(2);
+		expect(isNotificationEnabledMock).toHaveBeenCalledTimes(1);
+	});
+});
+
 describe("quota warning", () => {
 	it("sends one warning per day when usage crosses 80% of the limit", async () => {
 		const { store, send, deps, input } = setup({ dailyLimit: 5 });

@@ -24,7 +24,10 @@ export const user = pgTable(
 		publicEmail: text("public_email").notNull(),
 		image_url: text("image_url"),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.defaultNow()
+			.notNull()
+			.$onUpdate(() => new Date()),
 	},
 	(table) => [uniqueIndex().on(table.email)],
 );

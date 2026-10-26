@@ -15,9 +15,8 @@ interface MobileMenuProps {
 	onClose: () => void;
 	/**
 	 * Usa os tokens do evento (`--ev-mobile-menu-bg`/`--ev-mobile-menu-fg`)
-	 * em vez do fundo da página. Antes o `Header` repassava o próprio
-	 * `style` (fundo do cabeçalho, que pode ser `transparent`) e o painel
-	 * fullscreen ficava vazado sobre a página.
+	 * em vez do fundo do cabeçalho, que pode ser `transparent` e deixaria o
+	 * painel em tela cheia vazado sobre a página.
 	 */
 	eventTheme?: boolean;
 }

@@ -45,9 +45,8 @@ import { userOwnedProjectIds, userProfileRefs } from "./lib/user-public-scope";
  *
  * Semântica: `revalidateTag(tag, "max")` (stale-while-revalidate) — a
  * invalidação apenas marca a entrada como stale; o próximo visitante
- * recebe a versão antiga e a regeneração acontece em background. Nada é
- * regenerado "em massa" junto da mutação (era isso que estourava o
- * orçamento de CPU).
+ * recebe a versão antiga e a regeneração acontece em background, sem
+ * regenerar tudo junto da mutação.
  *
  * Regras que **não** aparecem aqui foram omitidas de propósito: mutations
  * de dashboard (contribuidores, notificações, badges, uploads, preferências)
@@ -243,18 +242,15 @@ function publishedFormTags(version: VersionScope) {
 /** Snapshot padrão das mutations de atividade: o projeto dono. */
 async function snapshotActivityProject(input: unknown) {
 	const activityId = readString(input, "activityId");
-	const projectId = await activityProjectId(activityId);
-	let participantsLimit: number | null | undefined;
-	if (activityId) {
-		const act = await db.query.activity.findFirst({
-			where: eq(activity.id, activityId),
-			columns: { participantsLimit: true },
-		});
-		participantsLimit = act?.participantsLimit ?? null;
-	}
+	if (!activityId)
+		return { projectId: undefined, participantsLimit: undefined };
+	const row = await db.query.activity.findFirst({
+		where: eq(activity.id, activityId),
+		columns: { projectId: true, participantsLimit: true },
+	});
 	return {
-		projectId,
-		participantsLimit,
+		projectId: row?.projectId,
+		participantsLimit: row ? row.participantsLimit : undefined,
 	};
 }
 
@@ -290,7 +286,10 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 			const nextUrl = readString(result, "url");
 			const previousUrl = readString(snapshot, "previousUrl");
 			return [
-				GLOBAL_CACHE_TAGS.projects,
+				// A lista pública só tem id e URL
+				nextUrl !== previousUrl
+					? GLOBAL_CACHE_TAGS.projects
+					: undefined,
 				id ? projectCacheTag(id) : undefined,
 				previousUrl ? projectUrlCacheTag(previousUrl) : undefined,
 				nextUrl && nextUrl !== previousUrl
@@ -425,20 +424,21 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 	// perfil de quem foi inscrito — mas só desses participantes, não do evento
 	// inteiro.
 	addActivityParticipants: {
+		// Sem respostas, o resultado já traz o evento: nenhuma leitura extra
 		snapshot: async (input) => {
+			if (!record(input).formAnswers) return undefined;
 			const projectId = await activityProjectId(
 				readString(input, "activityId"),
 			);
 			return {
-				projectId,
 				shortIds: await participantShortIds(
 					projectId,
 					readStringArray(input, "participantsIdsToAdd"),
 				),
 			};
 		},
-		tags: ({ input, snapshot }) => {
-			const projectId = readString(snapshot, "projectId");
+		tags: ({ input, result, snapshot }) => {
+			const projectId = readString(result, "projectId");
 			if (!projectId) return [];
 			return [
 				// Inscrição concede pontos (quando ligados) e muda o ranking.
@@ -790,20 +790,6 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 	},
 
 	// ── forms ────────────────────────────────────────────────────────
-	createVersion: {
-		tags: ({ input }) => {
-			// Clonagem remapeia links do layout de perfil.
-			const projectId = readString(input, "projectId");
-			const clones = readString(input, "cloneFromVersionId");
-			return clones && projectId
-				? [
-						profileLayoutCacheTag(projectId),
-						projectProfilesCacheTag(projectId),
-					]
-				: [];
-		},
-	},
-
 	upsertField: {
 		snapshot: async (input) => {
 			const version = await versionById(readString(input, "versionId"));
@@ -950,7 +936,12 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 						activityCacheTag(activityId),
 						projectActivitiesCacheTag(projectId),
 					]
-				: [projectFormCacheTag(projectId)];
+				: [
+						projectFormCacheTag(projectId),
+						// O layout do perfil passa para os campos publicados
+						profileLayoutCacheTag(projectId),
+						projectProfilesCacheTag(projectId),
+					];
 		},
 	},
 
@@ -1109,9 +1100,8 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 	},
 
 	recordProfileVisit: {
-		// A mutation virou pública para fazer a visita em uma única chamada.
-		// O input já traz o id do projeto: sem snapshot, não há segunda
-		// resolução da mesma linha antes do handler.
+		// Mutation pública, para a visita sair numa só chamada. O input já
+		// traz o id do projeto, então não há snapshot.
 		//
 		// `recorded` continua true para visitas aceitas (o cliente usa isso
 		// para o dedupe de 10 min); `created` só é true quando a PK

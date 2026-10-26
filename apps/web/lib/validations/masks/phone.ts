@@ -17,7 +17,7 @@ export function formatPhone(value: string) {
 /**
  * Brasil-only helpers: the stored canonical form is E.164 (`+55...`),
  * the visual mask (`formatPhone`) operates on the national digits.
- * See DOCS/i18n.md.
+ * See docs/i18n.md.
  */
 
 /** Strips the `+55` country code of an E.164 value, returning national digits. */

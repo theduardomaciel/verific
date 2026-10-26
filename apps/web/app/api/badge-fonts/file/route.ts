@@ -117,7 +117,9 @@ export async function GET(req: NextRequest) {
 		headers: {
 			"Content-Type": "font/ttf",
 			"Content-Length": String(bytes.length),
-			"Cache-Control": "public, max-age=31536000, immutable",
+			// `s-maxage`: a borda também guarda, sem chamar a função de novo
+			"Cache-Control":
+				"public, max-age=31536000, s-maxage=31536000, immutable",
 		},
 	});
 }

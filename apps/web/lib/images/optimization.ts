@@ -132,7 +132,7 @@ async function encodePngOrFallback(
 
 /**
  * Otimização client-side: redimensiona para o máximo da finalidade,
- * rasteriza SVG (decisão Fase 0: vetores viram bitmap, sem risco XSS),
+ * rasteriza SVG (vetores viram bitmap, sem risco de XSS),
  * remove metadados (canvas não preserva EXIF) e codifica. As finalidades de
  * logo saem em PNG; as demais em WebP. Finalidades quadradas
  * (`event-logo`) são centralizadas num canvas 1:1 transparente.

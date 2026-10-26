@@ -51,7 +51,10 @@ export function FormsContent() {
 	} = builder;
 
 	// Única query do projeto aqui: flags repassadas ao totem de perfil.
-	const projectQuery = trpc.getProject.useQuery({ id: projectId });
+	const projectQuery = trpc.getProject.useQuery(
+		{ id: projectId },
+		{ trpc: { context: { fresh: true } } },
+	);
 
 	if (versionsQuery.isPending) {
 		return (

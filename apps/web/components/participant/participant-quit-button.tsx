@@ -3,10 +3,7 @@
 
 import { LogOutIcon } from "lucide-react";
 
-import {
-	revalidateParticipantActivities,
-	revalidateSubscribedActivitiesIdsFromParticipant,
-} from "@/app/actions";
+import { refreshRoute } from "@/app/actions";
 import { trpc } from "@/lib/trpc/react";
 
 import { DeleteDialog } from "../dialogs/delete-dialog";
@@ -14,14 +11,12 @@ import { Button } from "../ui/button";
 
 interface Props {
 	activityId: string;
-	userId: string;
 	participantId: string;
 	projectUrl: string;
 }
 
 export function ParticipantQuitButton({
 	activityId,
-	userId,
 	participantId,
 	projectUrl,
 }: Props) {
@@ -34,8 +29,8 @@ export function ParticipantQuitButton({
 			participantId,
 			projectUrl,
 		});
-		await revalidateSubscribedActivitiesIdsFromParticipant(userId);
-		await revalidateParticipantActivities(userId);
+		// Já cancelada: uma falha ao atualizar a tela não vira erro
+		void refreshRoute().catch(console.error);
 		await utils.getActivityAvailability.invalidate();
 	}
 

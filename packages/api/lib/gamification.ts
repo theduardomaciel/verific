@@ -136,7 +136,6 @@ export async function awardPoints(
 			participantId: input.participantId,
 			projectId: input.projectId,
 			total: inserted.length > 0 ? input.points : 0,
-			updatedAt: new Date(),
 		})
 		.onConflictDoUpdate({
 			target: participantPoints.participantId,
@@ -146,7 +145,6 @@ export async function awardPoints(
 					inserted.length > 0
 						? sql`${participantPoints.total} + ${input.points}`
 						: participantPoints.total,
-				updatedAt: new Date(),
 			},
 		})
 		.returning({ total: participantPoints.total });
@@ -196,7 +194,6 @@ export async function revokePoints(
 		.update(participantPoints)
 		.set({
 			total: sql`greatest(0, ${participantPoints.total} - ${removed})`,
-			updatedAt: new Date(),
 		})
 		.where(eq(participantPoints.participantId, input.participantId))
 		.returning({ total: participantPoints.total });

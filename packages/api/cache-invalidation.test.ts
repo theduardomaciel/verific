@@ -5,7 +5,10 @@ import {
 	mutationCacheRules,
 	registerCacheRevalidator,
 } from "./cache-invalidation";
-import { PUBLIC_CACHEABLE_QUERY_PATHS } from "./cache-tags";
+import {
+	PUBLIC_CACHEABLE_QUERY_PATHS,
+	projectGamificationCacheTag,
+} from "./cache-tags";
 import { appRouter } from "./index";
 import { createCallerFactory, createTRPCRouter, publicProcedure } from "./trpc";
 
@@ -95,5 +98,37 @@ describe("updateProject", () => {
 
 		expect(tags).toContain("project-url:meu-evento");
 		expect(tags).not.toContain("project-url:Meu_Evento");
+		expect(tags).toContain("projects");
+	});
+
+	it("só derruba a lista pública quando a URL muda", () => {
+		const tags = mutationCacheRules.updateProject!.tags({
+			input: { id: "p1", name: "Outro nome" },
+			result: { updated: true, url: "evento" },
+			snapshot: { previousUrl: "evento" },
+			ctx: { session: null },
+		});
+
+		expect(tags).not.toContain("projects");
+		expect(tags).toContain("project:p1");
+	});
+});
+
+describe("addActivityParticipants", () => {
+	const rule = mutationCacheRules.addActivityParticipants!;
+	const input = { activityId: "a1", participantsIdsToAdd: ["p1"] };
+
+	it("sem respostas, não lê o banco e usa o evento do resultado", async () => {
+		await expect(rule.snapshot!(input, { session: null })).resolves.toBe(
+			undefined,
+		);
+		expect(
+			rule.tags({
+				input,
+				result: { success: true, projectId: "e1" },
+				ctx: { session: null },
+				snapshot: undefined,
+			}),
+		).toEqual([projectGamificationCacheTag("e1")]);
 	});
 });

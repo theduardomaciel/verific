@@ -2,10 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
-// Icons
 import { Loader2, MapPin, Search } from "lucide-react";
 
-// Components
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -435,9 +433,6 @@ export function PlacePicker({
 						id="map"
 						className="h-[300px] w-full rounded-md border"
 					/>
-					{/* <div className="text-xs text-muted-foreground">
-							Arraste o marcador ou clique no mapa para definir o local
-						</div> */}
 				</div>
 			</PopoverContent>
 		</Popover>

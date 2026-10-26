@@ -111,9 +111,6 @@ export default function MainNav({
 				</nav>
 			</div>
 
-			{/* opacity-0 é o estado base: sem overflow, a animação não roda e continuam invisíveis */}
-			{/* <div className="scroll-fade-start from-background pointer-events-none absolute top-0 left-0 h-full w-8 bg-linear-to-r to-transparent opacity-0" />
-			<div className="scroll-fade-end from-background pointer-events-none absolute top-0 right-0 h-full w-24 bg-linear-to-l to-transparent opacity-0 md:w-8" /> */}
 			{showGradients && (
 				<>
 					<div className="from-background pointer-events-none absolute top-0 left-0 h-full w-8 bg-linear-to-r to-transparent" />

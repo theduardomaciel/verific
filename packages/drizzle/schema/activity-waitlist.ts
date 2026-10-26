@@ -75,7 +75,12 @@ export const activityWaitlistEvent = pgTable(
 		reason: text("reason"),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
-	(table) => [index().on(table.activityId, table.createdAt)],
+	(table) => [
+		index().on(table.activityId, table.createdAt),
+		index("activity_waitlist_events_participant_id_idx").on(
+			table.participantId,
+		),
+	],
 );
 
 export const activityWaitlistRelations = relations(

@@ -8,13 +8,11 @@ import { Eye } from "lucide-react";
 import { useForm, useWatch } from "react-hook-form";
 
 import type { RouterOutput } from "@verific/api";
-// Validation
 import {
 	buildAnswersSchema,
 	filterVisibleFields,
 	getVisibleSectionIds,
 } from "@verific/api/schemas";
-// Types
 import type { User } from "@verific/auth";
 import { isFieldLinked } from "@verific/drizzle/profile-layout";
 import { z } from "@verific/zod";
@@ -30,7 +28,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 
-// Components
 import { FormSection, SectionFooter } from "@/components/forms";
 import {
 	ErrorDialog,
@@ -39,7 +36,7 @@ import {
 } from "@/components/forms/dialogs";
 import { DynamicField } from "@/components/forms/dynamic/DynamicField";
 
-import { revalidateParticipantEnrollment } from "@/app/actions";
+import { refreshRoute } from "@/app/actions";
 import {
 	clearJoinDraft,
 	readJoinDraft,
@@ -50,7 +47,6 @@ import {
 	groupFieldsBySection,
 	planFormSections,
 } from "@/lib/forms/layout";
-// API
 import { trpc } from "@/lib/trpc/react";
 import { scrollToNextSection } from "@/lib/validations";
 
@@ -94,7 +90,7 @@ export default function JoinForm({
 	const sections = useMemo(() => formData?.sections ?? [], [formData]);
 
 	// Rascunho salvo em `localStorage`: o estado do formulário é
-	// descartado a cada remontagem (troca de aba, login no meio do
+	// descartado a cada remontagem (reload, login no meio do
 	// preenchimento), então o progresso é restaurado daqui.
 	const [initialDraft] = useState(() => {
 		const knownKeys = new Set(
@@ -209,8 +205,8 @@ export default function JoinForm({
 		useWatch({ control: form.control, name: "answers" }) ?? {};
 	const watchedName = useWatch({ control: form.control, name: "name" }) ?? "";
 
-	// Persiste cada alteração: remontagens (troca de aba, login/logout)
-	// recriam o `useForm` e o rascunho é restaurado em `defaultValues`.
+	// Persiste cada alteração: remontagens (reload, login/logout) recriam o
+	// `useForm` e o rascunho é restaurado em `defaultValues`.
 	useEffect(() => {
 		if (submissionStartedRef.current || currentState === "submitted") {
 			clearJoinDraft(project.id);
@@ -284,9 +280,17 @@ export default function JoinForm({
 		/>
 	);
 
+	// Na montagem vale o rascunho. Numa troca de conta, o nome acompanha a
+	// conta, a menos que a pessoa tenha digitado outro.
+	const previousUserRef = useRef(user);
 	useEffect(() => {
-		if (user?.name) form.setValue("name", user.name);
-	}, [user?.name, form]);
+		const previous = previousUserRef.current;
+		previousUserRef.current = user;
+		if (previous?.id === user?.id) return;
+		const typed = form.getValues("name");
+		if (typed && typed !== (previous?.name ?? "")) return;
+		form.setValue("name", user?.name ?? "");
+	}, [user, form]);
 
 	useEffect(() => {
 		if (!hasConditional) return;
@@ -298,10 +302,6 @@ export default function JoinForm({
 			form.clearErrors(hidden.map((k) => `answers.${k}` as never));
 		}
 	}, [visibleFields, fieldsForValidation, hasConditional, form]);
-
-	useEffect(() => {
-		if (!user) form.setValue("name", "");
-	}, [user, form]);
 
 	// Com login o aviso perde o sentido (ajuste durante a renderização).
 	if (user && needsLogin) {
@@ -386,9 +386,10 @@ export default function JoinForm({
 			setCurrentState("error");
 			return;
 		}
-		if (user.id) await revalidateParticipantEnrollment(user.id);
 		clearJoinDraft(project.id);
 		setCurrentState("submitted");
+		// A inscrição já foi gravada: uma falha aqui não muda o resultado
+		void refreshRoute().catch(console.error);
 	}
 
 	const successDescription = `Enviaremos um e-mail de confirmação${
@@ -518,8 +519,6 @@ export default function JoinForm({
 				isOpen={currentState === "submitted"}
 				onClose={() => {
 					setCurrentState(false);
-					// Ponto de integração do e-mail de confirmação (sem provider
-					// ainda): link do perfil `/${project.url}/profile/${shortId}`.
 					router.push(
 						createdShortId
 							? `/${project.url}/profile/${createdShortId}?me=1`

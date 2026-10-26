@@ -3,19 +3,16 @@
 import Link from "next/link";
 
 import { keepPreviousData } from "@tanstack/react-query";
-// Icons
 import { Plus } from "lucide-react";
 
 // Validation (client-safe: no db / server env imports)
 import { getActivitiesParams } from "@verific/api/schemas";
 import { sortOptions, sortOptionsLabels } from "@verific/api/utils";
-// Types & Enums
 import {
 	activityCategories,
 	activityCategoryLabels,
 } from "@verific/drizzle/schema";
 
-// Components
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -30,9 +27,7 @@ import { Empty } from "@/components/empty";
 import { SearchBar } from "@/components/search-bar";
 import { SortBy } from "@/components/sort-by";
 
-// Hooks
 import { useParsedSearchParams } from "@/hooks/use-parsed-search-params";
-// API
 import { trpc } from "@/lib/trpc/react";
 
 function ActivitiesSkeleton() {

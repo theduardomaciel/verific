@@ -1,10 +1,11 @@
 "use client";
 
-import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc/react";
 
+import { usePublicSession } from "./use-public-session";
+
 export function useSubscribedActivities(eventUrl: string) {
-	const session = authClient.useSession();
+	const session = usePublicSession();
 	const userId = session.data?.user.id;
 
 	const subscribedQuery = trpc.getMyEnrollmentState.useQuery(

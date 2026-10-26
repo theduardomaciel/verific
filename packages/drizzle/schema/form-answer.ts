@@ -1,6 +1,7 @@
 import { relations } from "drizzle-orm";
 import {
 	doublePrecision,
+	index,
 	jsonb,
 	pgTable,
 	text,
@@ -48,9 +49,16 @@ export const formAnswer = pgTable(
 		valueJson: jsonb("value_json").$type<unknown>(),
 		fieldSnapshot: jsonb("field_snapshot").$type<FormFieldSnapshot>(),
 		answeredAt: timestamp("answered_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.defaultNow()
+			.notNull()
+			.$onUpdate(() => new Date()),
 	},
-	(table) => [uniqueIndex().on(table.participantId, table.fieldId)],
+	(table) => [
+		uniqueIndex().on(table.participantId, table.fieldId),
+		index("form_answers_field_id_idx").on(table.fieldId),
+		index("form_answers_form_version_id_idx").on(table.formVersionId),
+	],
 );
 
 export const formAnswerRelations = relations(formAnswer, ({ one }) => ({

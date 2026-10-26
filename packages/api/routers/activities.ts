@@ -1,4 +1,3 @@
-// tRPC
 import { TRPCError } from "@trpc/server";
 
 import { db } from "@verific/drizzle";
@@ -20,6 +19,7 @@ import {
 	sql,
 	exists,
 	min,
+	type AnyColumn,
 } from "@verific/drizzle/orm";
 import {
 	activity,
@@ -41,7 +41,6 @@ import {
 } from "@verific/drizzle/schema";
 import { z } from "@verific/zod";
 
-// Utils
 import {
 	assertNoScheduleConflict,
 	lockParticipant,
@@ -95,7 +94,6 @@ import { hasPublishedActivityForm } from "./forms";
 export { activitySort, getActivitiesParams, getActivityParams };
 
 import { activityAudiences } from "@verific/drizzle/enum/audience";
-// Enums
 import { activityCategories } from "@verific/drizzle/enum/category";
 
 const activitySessionSchema = z.object({
@@ -320,7 +318,7 @@ const mutateActivityParams = z.object({
 	latitude: z.number().optional(),
 	longitude: z.number().optional(),
 	tolerance: z.coerce.number().int().min(5).max(240).nullable().optional(),
-	workload: z.coerce.number().optional(),
+	workload: z.coerce.number().min(0).optional(),
 	allowOverlap: z.boolean().optional(),
 	waitlistEnabled: z.boolean().optional(),
 	waitlistOfferHours: z.coerce.number().int().min(1).max(168).optional(),
@@ -395,6 +393,30 @@ async function assertSpeakersInProject(
 }
 
 /**
+ * Início do dia ou da hora em Brasília. As colunas guardam UTC sem fuso, e o
+ * resultado volta como texto ("2026-10-20 21:00:00").
+ */
+function localTrunc(unit: "hour" | "day", column: AnyColumn) {
+	return sql<string>`date_trunc(${sql.raw(`'${unit}'`)}, (${column} at time zone 'UTC') at time zone 'America/Sao_Paulo')`;
+}
+
+/** Rótulo de um intervalo de `localTrunc`, sem depender do fuso do servidor. */
+function formatLocalBucket(raw: string, unit: "hour" | "day") {
+	const date = new Date(`${raw.replace(" ", "T")}Z`);
+	return unit === "hour"
+		? date.toLocaleTimeString("pt-BR", {
+				timeZone: "UTC",
+				hour: "2-digit",
+				minute: "2-digit",
+			})
+		: date.toLocaleDateString("pt-BR", {
+				timeZone: "UTC",
+				month: "short",
+				day: "numeric",
+			});
+}
+
+/**
  * Public speaker shape: strips the organizer-entered `email` (linking
  * intent, never public) and flattens the resolved profile link.
  */
@@ -456,9 +478,8 @@ export const activitiesRouter = createTRPCRouter({
 
 			// Sem acesso de organizador, só a atividade básica: a lista de
 			// inscritos traz e-mails e presenças.
-			// A contagem de ocupantes viaja junto: antes a página de detalhe
-			// chamava `getActivities` (lista inteira do evento) só para achar
-			// esse número no primeiro render de cada atividade.
+			// A contagem de ocupantes viaja junto, para a página de detalhe
+			// não precisar da lista do evento.
 			const canManage = userId
 				? await hasProjectAccess(selectedActivity.projectId, userId)
 				: false;
@@ -810,7 +831,7 @@ export const activitiesRouter = createTRPCRouter({
 
 			type ActivityWithRelations = typeof activity.$inferSelect & {
 				participantsCount: number;
-				project: typeof project.$inferSelect;
+				project: Pick<typeof project.$inferSelect, "id" | "url">;
 				sessions: Array<typeof activitySession.$inferSelect>;
 				speakerOnActivity: Array<
 					typeof speakerOnActivity.$inferSelect & {
@@ -839,7 +860,8 @@ export const activitiesRouter = createTRPCRouter({
 			// Only include participators if fullQuery is true
 			const withObj = fullQuery
 				? {
-						project: true,
+						// Os consumidores só usam a URL; o resto do projeto pesa no cache
+						project: { columns: { id: true, url: true } },
 						sessions: {
 							orderBy: asc(activitySession.startsAt),
 						},
@@ -873,7 +895,7 @@ export const activitiesRouter = createTRPCRouter({
 						},
 					}
 				: {
-						project: true,
+						project: { columns: { id: true, url: true } },
 						sessions: {
 							orderBy: asc(activitySession.startsAt),
 						},
@@ -1681,7 +1703,7 @@ export const activitiesRouter = createTRPCRouter({
 				resolved,
 			});
 
-			return { success: true };
+			return { success: true, projectId: foundActivity.projectId };
 		}),
 
 	addMonitorsToActivity: protectedProcedure
@@ -1843,30 +1865,29 @@ export const activitiesRouter = createTRPCRouter({
 
 			// Inscritos no evento (nível de inscrição, independente de
 			// matrícula em atividades — `submitAnswers` cria só o `participant`)
-			const totalParticipantsResult = await db
-				.select({ count: count() })
+			const signupsSince = (since: Date) =>
+				sql<number>`count(*) filter (where ${participant.joinedAt} >= ${since})`.mapWith(
+					Number,
+				);
+			const [signups] = await db
+				.select({
+					total: count(),
+					lastHour: signupsSince(lastHour),
+					lastDay: signupsSince(lastDay),
+				})
 				.from(participant)
 				.where(eq(participant.projectId, projectId));
+			const totalParticipants = signups?.total ?? 0;
+			const participantsInLastHour = signups?.lastHour ?? 0;
+			const activeParticipants = signups?.lastDay ?? 0;
 
-			const totalParticipants = totalParticipantsResult[0]?.count ?? 0;
-
-			// Signups in the last hour
-			const participantsInLastHourResult = await db
-				.select({ count: count() })
-				.from(participant)
-				.where(
-					and(
-						eq(participant.projectId, projectId),
-						gte(participant.joinedAt, lastHour),
-					),
-				);
-
-			const participantsInLastHour =
-				participantsInLastHourResult[0]?.count ?? 0;
-
-			// Total workload from activities
-			const totalWorkloadResult = await db
-				.select({ sum: sum(activity.workload) })
+			// Carga horária e vagas das atividades não canceladas (a soma
+			// ignora as sem limite)
+			const [activityTotals] = await db
+				.select({
+					workload: sum(activity.workload).mapWith(Number),
+					possible: sum(activity.participantsLimit).mapWith(Number),
+				})
 				.from(activity)
 				.where(
 					and(
@@ -1874,58 +1895,29 @@ export const activitiesRouter = createTRPCRouter({
 						isNull(activity.cancelledAt),
 					),
 				);
+			const totalWorkload = activityTotals?.workload ?? 0;
+			const totalPossible = activityTotals?.possible ?? 0;
 
-			const totalWorkload = totalWorkloadResult[0]?.sum ?? 0;
-
-			// Signups in the last 24h (event-level)
-			const activeParticipantsResult = await db
-				.select({ count: count() })
-				.from(participant)
-				.where(
-					and(
-						eq(participant.projectId, projectId),
-						gte(participant.joinedAt, lastDay),
+			// Inscrições em atividades com limite
+			const totalEnrollments = await db.$count(
+				participantOnActivity,
+				and(
+					eq(participantOnActivity.role, "participant"),
+					inArray(
+						participantOnActivity.activityId,
+						db
+							.select({ id: activity.id })
+							.from(activity)
+							.where(
+								and(
+									eq(activity.projectId, projectId),
+									isNotNull(activity.participantsLimit),
+									isNull(activity.cancelledAt),
+								),
+							),
 					),
-				);
-
-			const activeParticipants = activeParticipantsResult[0]?.count ?? 0;
-
-			// Total possible enrollments (sum of participantsLimit where not null)
-			const totalPossibleResult = await db
-				.select({ sum: sum(activity.participantsLimit) })
-				.from(activity)
-				.where(
-					and(
-						eq(activity.projectId, projectId),
-						isNotNull(activity.participantsLimit),
-						isNull(activity.cancelledAt),
-					),
-				);
-
-			const totalPossible = totalPossibleResult[0]?.sum ?? 0;
-
-			// Total enrollments (count of participantOnActivity where participantOnActivity.role = 'participant' and activity has participantsLimit)
-			const totalEnrollmentsResult = await db
-				.select({ count: count() })
-				.from(participantOnActivity)
-				.innerJoin(
-					participant,
-					eq(participantOnActivity.participantId, participant.id),
-				)
-				.innerJoin(
-					activity,
-					eq(participantOnActivity.activityId, activity.id),
-				)
-				.where(
-					and(
-						eq(activity.projectId, projectId),
-						eq(participantOnActivity.role, "participant"),
-						isNotNull(activity.participantsLimit),
-						isNull(activity.cancelledAt),
-					),
-				);
-
-			const totalEnrollments = totalEnrollmentsResult[0]?.count ?? 0;
+				),
+			);
 
 			// Calculations
 			const participantsInLastHourPercentage =
@@ -1955,7 +1947,7 @@ export const activitiesRouter = createTRPCRouter({
 			);
 			let graphDataQuery = await db
 				.select({
-					date: sql<string>`date(${participant.joinedAt})`,
+					date: localTrunc("day", participant.joinedAt),
 					count: count(),
 				})
 				.from(participant)
@@ -1965,8 +1957,8 @@ export const activitiesRouter = createTRPCRouter({
 						gte(participant.joinedAt, sevenDaysAgo),
 					),
 				)
-				.groupBy(sql`date(${participant.joinedAt})`)
-				.orderBy(sql`date(${participant.joinedAt})`);
+				.groupBy(localTrunc("day", participant.joinedAt))
+				.orderBy(localTrunc("day", participant.joinedAt));
 
 			let graphData: Array<{
 				date: string;
@@ -1978,10 +1970,7 @@ export const activitiesRouter = createTRPCRouter({
 				graphData = graphDataQuery.map((row) => {
 					cumulative += row.count;
 					return {
-						date: new Date(row.date).toLocaleDateString("pt-BR", {
-							month: "short",
-							day: "numeric",
-						}),
+						date: formatLocalBucket(row.date, "day"),
 						total: cumulative,
 						active: row.count,
 					};
@@ -1993,7 +1982,7 @@ export const activitiesRouter = createTRPCRouter({
 				);
 				const hoursDataQuery = await db
 					.select({
-						hour: sql<string>`date_trunc('hour', ${participant.joinedAt})`,
+						hour: localTrunc("hour", participant.joinedAt),
 						count: count(),
 					})
 					.from(participant)
@@ -2003,18 +1992,14 @@ export const activitiesRouter = createTRPCRouter({
 							gte(participant.joinedAt, twentyFourHoursAgo),
 						),
 					)
-					.groupBy(sql`date_trunc('hour', ${participant.joinedAt})`)
-					.orderBy(sql`date_trunc('hour', ${participant.joinedAt})`);
+					.groupBy(localTrunc("hour", participant.joinedAt))
+					.orderBy(localTrunc("hour", participant.joinedAt));
 
 				let cumulative = 0;
 				graphData = hoursDataQuery.map((row) => {
 					cumulative += row.count;
-					const hourDate = new Date(row.hour);
 					return {
-						date: hourDate.toLocaleTimeString("pt-BR", {
-							hour: "2-digit",
-							minute: "2-digit",
-						}),
+						date: formatLocalBucket(row.hour, "hour"),
 						total: cumulative,
 						active: row.count,
 					};
@@ -2115,10 +2100,8 @@ export const activitiesRouter = createTRPCRouter({
 
 			// Bucket granularity: hours for the 24h window, days otherwise.
 			const granularity = window === "24h" ? "hour" : "day";
-			const truncate = (column: unknown) =>
-				granularity === "hour"
-					? sql<string>`date_trunc('hour', ${column})`
-					: sql<string>`date_trunc('day', ${column})`;
+			const truncate = (column: AnyColumn) =>
+				localTrunc(granularity, column);
 
 			// Window bounds. "event" anchors on the project dates; "all" is unbounded.
 			const now = new Date();
@@ -2343,18 +2326,8 @@ export const activitiesRouter = createTRPCRouter({
 				series = [BREAKDOWN_REGISTRATIONS_SERIES];
 			}
 
-			const formatBucket = (raw: string) => {
-				const date = new Date(raw);
-				return granularity === "hour"
-					? date.toLocaleTimeString("pt-BR", {
-							hour: "2-digit",
-							minute: "2-digit",
-						})
-					: date.toLocaleDateString("pt-BR", {
-							month: "short",
-							day: "numeric",
-						});
-			};
+			const formatBucket = (raw: string) =>
+				formatLocalBucket(raw, granularity);
 
 			const data = [...perBucket.entries()]
 				.sort(([a], [b]) => a.localeCompare(b))

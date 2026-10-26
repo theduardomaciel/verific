@@ -11,9 +11,7 @@ export const metadata: Metadata = {
 
 export default function ActivityFormPage({
 	params,
-}: {
-	params: Promise<{ activityId: string }>;
-}) {
+}: PageProps<"/dashboard/activities/[activityId]/form">) {
 	return (
 		<Suspense
 			fallback={
@@ -29,9 +27,7 @@ export default function ActivityFormPage({
 
 async function ActivityFormLoader({
 	params,
-}: {
-	params: Promise<{ activityId: string }>;
-}) {
+}: Pick<PageProps<"/dashboard/activities/[activityId]/form">, "params">) {
 	const { activityId } = await params;
 
 	return <ActivityFormContent key={activityId} activityId={activityId} />;

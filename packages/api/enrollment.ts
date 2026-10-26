@@ -179,7 +179,6 @@ export async function saveActivityAnswers(
 				valueDate: sql`excluded."value_date"`,
 				valueJson: sql`excluded."value_json"`,
 				fieldSnapshot: sql`excluded."field_snapshot"`,
-				updatedAt: new Date(),
 			},
 		});
 }

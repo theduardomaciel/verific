@@ -30,7 +30,10 @@ export const account = pgTable(
 		scope: text("scope"),
 		password: text("password"),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.defaultNow()
+			.notNull()
+			.$onUpdate(() => new Date()),
 	},
 	(table) => [
 		uniqueIndex().on(table.providerId, table.accountId),

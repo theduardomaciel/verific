@@ -252,21 +252,69 @@ function drawBadgeContent(target: ContentTarget, o: BadgeContentOptions): void {
 	}
 }
 
+function transformPrimitiveToFreeArea(
+	p: DisplayPrimitive,
+	free: BadgeLayout["freeArea"],
+): DisplayPrimitive {
+	if (p.kind === "rect") {
+		return {
+			...p,
+			rect: {
+				...p.rect,
+				x: p.rect.x - free.x,
+				y: p.rect.y - free.y,
+			},
+		};
+	}
+	if (p.kind === "text") {
+		return { ...p, xMm: p.xMm - free.x, yMm: p.yMm - free.y };
+	}
+	if (p.kind === "qr") {
+		return {
+			...p,
+			rect: {
+				...p.rect,
+				x: p.rect.x - free.x,
+				y: p.rect.y - free.y,
+			},
+		};
+	}
+	if (p.kind === "image") {
+		return {
+			...p,
+			rect: {
+				...p.rect,
+				x: p.rect.x - free.x,
+				y: p.rect.y - free.y,
+			},
+		};
+	}
+	return p;
+}
+
 export async function renderBadgesToPdf(
 	input: RenderBadgePdfInput,
 ): Promise<Uint8Array> {
 	const pdf = PDF.create();
 	if (input.title) pdf.setTitle(input.title);
 
-	const badgeWpt = mmToPt(input.layout.badgeW);
-	const badgeHpt = mmToPt(input.layout.badgeH);
+	const dataOnly = input.layout.mode === "data-only";
+	const free = input.layout.freeArea;
+	const printW = dataOnly ? free.w : input.layout.badgeW;
+	const printH = dataOnly ? free.h : input.layout.badgeH;
+
+	const badgeWpt = mmToPt(printW);
+	const badgeHpt = mmToPt(printH);
 	const res = await embedShared(pdf, input);
 
 	for (const primitives of input.badges) {
+		const list = dataOnly
+			? primitives.map((p) => transformPrimitiveToFreeArea(p, free))
+			: primitives;
 		const page = pdf.addPage({ width: badgeWpt, height: badgeHpt });
 		drawBadgeContent(page, {
 			layout: input.layout,
-			primitives,
+			primitives: list,
 			res,
 			badgeWpt,
 			badgeHpt,
@@ -339,8 +387,13 @@ export async function renderBadgeSheets(
 	if (input.title) pdf.setTitle(input.title);
 	const res = await embedShared(pdf, input);
 
-	const badgeWpt = mmToPt(input.layout.badgeW);
-	const badgeHpt = mmToPt(input.layout.badgeH);
+	const dataOnly = input.layout.mode === "data-only";
+	const free = input.layout.freeArea;
+	const printW = dataOnly ? free.w : input.layout.badgeW;
+	const printH = dataOnly ? free.h : input.layout.badgeH;
+
+	const badgeWpt = mmToPt(printW);
+	const badgeHpt = mmToPt(printH);
 	const bleed = input.layout.page.bleedMm;
 	const markLenPt = mmToPt(input.markLengthMm ?? 3);
 	const markOffPt = mmToPt(input.markOffsetMm ?? 1);
@@ -382,11 +435,16 @@ export async function renderBadgeSheets(
 				continue;
 			}
 
-			const primitives = input.badges[cell.badgeIndex];
-			if (!primitives) {
+			const rawPrimitives = input.badges[cell.badgeIndex];
+			if (!rawPrimitives) {
 				throw new Error("Crachá ausente para a célula da folha.");
 			}
 			const dataOnly = input.layout.mode === "data-only";
+			const primitives = dataOnly
+				? rawPrimitives.map((p) =>
+						transformPrimitiveToFreeArea(p, input.layout.freeArea),
+					)
+				: rawPrimitives;
 			const base = {
 				layout: input.layout,
 				primitives,

@@ -4,11 +4,7 @@ import { useCallback, useRef, useState } from "react";
 
 import { JOIN_ERROR_CODES, type JoinErrorCode } from "@verific/api/schemas";
 
-import {
-	revalidateParticipantActivities,
-	revalidateSubscribedActivitiesIdsFromParticipant,
-} from "@/app/actions";
-// API
+import { refreshRoute } from "@/app/actions";
 import { trpc } from "@/lib/trpc/react";
 
 export type JoinError =
@@ -124,8 +120,7 @@ export function useJoinActivity({
 				}
 
 				const settled = await Promise.allSettled([
-					revalidateSubscribedActivitiesIdsFromParticipant(userId),
-					revalidateParticipantActivities(userId),
+					refreshRoute(),
 					utils.getMyEnrollmentState.invalidate(),
 					utils.getActivitiesFromParticipant.invalidate(),
 					utils.getActivityAvailability.invalidate(),

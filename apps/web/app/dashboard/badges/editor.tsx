@@ -205,7 +205,6 @@ export function BadgeEditor({
 	const utils = trpc.useUtils();
 	const saveMutation = trpc.saveLayout.useMutation();
 	const uploadMutation = trpc.requestImageUpload.useMutation();
-	const deleteImageMutation = trpc.deleteImage.useMutation();
 
 	const draftRef = useRef(draft);
 	const commit = (next: BadgeLayout) => {
@@ -446,9 +445,13 @@ export function BadgeEditor({
 	const imposition = useMemo(() => {
 		if (draft.manualGrid.enabled) return null;
 		try {
+			const badgeW =
+				draft.mode === "data-only" ? draft.freeArea.w : draft.badgeW;
+			const badgeH =
+				draft.mode === "data-only" ? draft.freeArea.h : draft.badgeH;
 			return computeImposition({
-				badgeW: draft.badgeW + draft.page.bleedMm * 2,
-				badgeH: draft.badgeH + draft.page.bleedMm * 2,
+				badgeW: badgeW + draft.page.bleedMm * 2,
+				badgeH: badgeH + draft.page.bleedMm * 2,
 				pageW:
 					draft.page.size === "custom"
 						? (draft.page.customW ?? 210)
@@ -581,23 +584,12 @@ export function BadgeEditor({
 			const put = await fetch(uploadUrl, { method: "PUT", body: blob });
 			if (!put.ok) throw new Error(`Upload falhou (HTTP ${put.status}).`);
 
-			// Delete previous artwork from storage if it exists
-			const previousUrl = draft.artworkUrl;
+			// A arte anterior é apagada pelo servidor ao salvar o layout
 			patch((d) => {
 				d.artworkUrl = publicUrl;
 				d.artworkKind = kind;
 				d.artworkPixels = null;
 			});
-			if (previousUrl && previousUrl !== publicUrl) {
-				try {
-					await deleteImageMutation.mutateAsync({
-						projectId,
-						publicUrlOrKey: previousUrl,
-					});
-				} catch {
-					// Best-effort: orphaned object may be collected later.
-				}
-			}
 
 			if (kind !== "pdf") {
 				const probe = new Image();
@@ -1335,21 +1327,10 @@ export function BadgeEditor({
 									size="sm"
 									variant="outline"
 									onClick={() => {
-										const urlToDelete = draft.artworkUrl;
 										patch((d) => {
 											d.artworkUrl = "";
 											d.artworkPixels = null;
 										}, true);
-										if (urlToDelete) {
-											deleteImageMutation
-												.mutateAsync({
-													projectId,
-													publicUrlOrKey: urlToDelete,
-												})
-												.catch(() => {
-													// Best-effort: limpa o campo mesmo se a exclusão falhar.
-												});
-										}
 									}}
 								>
 									Remover arte

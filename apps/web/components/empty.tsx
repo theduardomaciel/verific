@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-// Icons
 import { CircleOff } from "lucide-react";
 
 interface Props {

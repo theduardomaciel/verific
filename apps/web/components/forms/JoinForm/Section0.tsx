@@ -9,7 +9,6 @@ import {
 
 import GoogleButton from "@/components/auth/GoogleButton";
 import { Logged } from "@/components/auth/LoginStatus";
-// Components
 import {
 	FormSection,
 	Panel,

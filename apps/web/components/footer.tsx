@@ -22,13 +22,8 @@ const footerVariants = cva(
 );
 
 /**
- * Ano do copyright como constante estática — atualizada manualmente.
- *
- * Antes vinha de `new Date().getFullYear()` dentro de um `"use cache"`
- * só para congelar o valor: uma entrada de cache (com `cacheLife`) em
- * toda página que renderiza o rodapé, e a virada do ano invalidava a
- * entrada de todas elas. Estático: nenhuma leitura de dado, nenhuma
- * entrada de cache, nenhuma surpresa.
+ * Ano do copyright, atualizado manualmente: ler a data exigiria uma entrada
+ * de cache em toda página com rodapé.
  */
 const COPYRIGHT_YEAR = 2026;
 

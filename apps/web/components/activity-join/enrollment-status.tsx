@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 
-// Icons
 import {
 	BellRing,
 	BookLock,
@@ -18,14 +17,13 @@ import {
 	TicketX,
 } from "lucide-react";
 
-// Components
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
 import { ConflictList } from "@/components/activity/conflict-list";
 import { ParticipantQuitButton } from "@/components/participant/participant-quit-button";
 
-// Lib
+import { useToday } from "@/hooks/use-now";
 import {
 	formatFriendlyDate,
 	getSessionsDateString,
@@ -35,7 +33,6 @@ import {
 } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
-// Types
 import type { ActivityDetail } from "./use-activity-enrollment-state";
 import type { Conflict } from "@/lib/schedule/conflicts";
 
@@ -124,12 +121,10 @@ export function NotInEventStatus({ eventUrl }: { eventUrl: string }) {
 
 export function AlreadySubscribedStatus({
 	activity,
-	userId,
 	participantId,
 	projectUrl,
 }: {
 	activity: ActivityDetail;
-	userId: string;
 	participantId: string;
 	projectUrl: string;
 }) {
@@ -151,7 +146,6 @@ export function AlreadySubscribedStatus({
 			{!hasEnded ? (
 				<ParticipantQuitButton
 					activityId={activity.id}
-					userId={userId}
 					participantId={participantId}
 					projectUrl={projectUrl}
 				/>
@@ -312,8 +306,9 @@ export function OfferStatus({
 	onDecline: () => void;
 	pending: "confirm" | "leave" | null;
 }) {
+	const now = useToday();
 	const deadline = expiresAt
-		? ` Prazo: ${formatFriendlyDate(new Date(expiresAt), { includeHour: true })}.`
+		? ` Prazo: ${formatFriendlyDate(new Date(expiresAt), { includeHour: true, now })}.`
 		: "";
 	const blocked = conflicts.length > 0;
 

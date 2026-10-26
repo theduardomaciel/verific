@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-// Icons
 import { CircleAlert, Loader2 } from "lucide-react";
 import { useForm, useWatch, type Resolver } from "react-hook-form";
 import { toast } from "sonner";
@@ -15,7 +14,6 @@ import {
 } from "@verific/api/schemas";
 import { z } from "@verific/zod";
 
-// Components
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
@@ -23,17 +21,14 @@ import { Separator } from "@/components/ui/separator";
 
 import { DynamicField } from "@/components/forms/dynamic/DynamicField";
 
-// Hooks
 import { useJoinActivity, type JoinError } from "@/hooks/use-join-activity";
 import { useWaitlist } from "@/hooks/use-waitlist";
 import { getEffectiveTolerance } from "@/lib/activity-conditions";
 import { focusFieldControl, getFieldId } from "@/lib/forms/field-id";
-// Lib
 import { groupFieldsBySection } from "@/lib/forms/layout";
 
 import { ToleranceNotice } from "./enrollment-status";
 
-// Types
 import type {
 	ActivityDetail,
 	PublishedActivityForm,

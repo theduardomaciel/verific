@@ -1,5 +1,4 @@
 "use client";
-// Types
 import { useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -14,12 +13,9 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
-// Components
 import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
 
-// tRPC
 import { trpc } from "@/lib/trpc/react";
-// Validations
 import { subscriptionManagementSchema } from "@/lib/validations/forms/settings-form/project/subscriptions-form";
 
 import type { UseFormReturn } from "react-hook-form";

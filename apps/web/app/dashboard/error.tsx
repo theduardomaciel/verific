@@ -1,19 +1,17 @@
 "use client";
 
-// Icons
 import { RefreshCcw } from "lucide-react";
 
-// Components
 import { Button } from "@/components/ui/button";
 
 export default function ErrorPage({
 	error,
-	reset,
+	retry,
 }: {
 	error: Error & { digest?: string };
-	reset: () => void;
+	retry: () => void;
 }) {
-	console.log(error, error.digest);
+	console.error(error, error.digest);
 
 	return (
 		<div className="flex min-h-[calc(100dvh-var(--dashboard-header-height))] flex-col md:flex-row">
@@ -31,7 +29,7 @@ export default function ErrorPage({
 						<span className="bg-muted w-full rounded-md border p-4 font-mono text-sm">
 							{error.message}
 						</span>
-						<Button size={"lg"} onClick={() => reset()}>
+						<Button size={"lg"} onClick={() => retry()}>
 							<RefreshCcw />
 							Tentar novamente
 						</Button>

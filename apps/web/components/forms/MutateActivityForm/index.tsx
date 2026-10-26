@@ -6,10 +6,8 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
-// Types
 import type { RouterOutput } from "@verific/api";
 
-// Components
 import { Form } from "@/components/ui/form";
 
 import {
@@ -17,15 +15,11 @@ import {
 	LoadingDialog,
 	SuccessDialog,
 } from "@/components/forms/dialogs";
-// Content
 import { MutateActivityFormContent } from "@/components/forms/MutateActivityForm/Content";
 import { dateToTimeString } from "@/components/pickers/time-picker";
 
-// Actions
-import { revalidateActivities } from "@/app/actions";
-// API
+import { refreshRoute } from "@/app/actions";
 import { trpc } from "@/lib/trpc/react";
-// Validation
 import {
 	type MutateActivityFormSchema,
 	mutateActivityFormSchema,
@@ -107,7 +101,6 @@ export default function MutateActivityForm({
 	});
 
 	// Atenção! O botão de "submit" não funcionará caso existam erros (mesmo que não visíveis) no formulário.
-	// console.log("Errors: ", form.formState.errors);
 
 	const updateMutation = trpc.updateActivity.useMutation();
 	const createMutation = trpc.createActivity.useMutation();
@@ -174,7 +167,7 @@ export default function MutateActivityForm({
 
 				if (configureAfterSave.current) {
 					configureAfterSave.current = false;
-					await revalidateActivities();
+					void refreshRoute().catch(console.error);
 					void utils.getActivities.invalidate();
 					router.push(`/dashboard/activities/${activityId}/form`);
 					return;
@@ -183,17 +176,19 @@ export default function MutateActivityForm({
 				setCurrentState("submitted");
 				shouldResetAfterHide.current = true;
 			}
-
-			await revalidateActivities();
-			void utils.getActivities.invalidate();
-			void utils.getActivity.invalidate();
-			void utils.getDashboardStats.invalidate();
 		} catch (error) {
 			console.error(error);
 			setCurrentState("error");
+			return;
 		} finally {
 			isSubmitting.current = false;
 		}
+
+		// Já salvo: uma falha ao atualizar a tela não vira erro de envio
+		void refreshRoute().catch(console.error);
+		void utils.getActivities.invalidate();
+		void utils.getActivity.invalidate();
+		void utils.getDashboardStats.invalidate();
 	}
 
 	return (

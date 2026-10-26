@@ -80,6 +80,13 @@ function batchIsPublicQuery(req: NextRequest): boolean {
 }
 
 const handler = async (req: NextRequest) => {
+	// Com um `%` inválido no path, o tRPC lançaria URIError e responderia 500
+	try {
+		decodeURIComponent(req.nextUrl.pathname);
+	} catch {
+		return new Response(null, { status: 404 });
+	}
+
 	// Um GET 100% público não depende de sessão (há teste de execução em
 	// `packages/api/public-cacheable-queries.test.ts`). Pular a leitura do
 	// cookie cache/DB aqui é seguro e barato: login não muda a resposta.
@@ -89,6 +96,8 @@ const handler = async (req: NextRequest) => {
 		endpoint: "/api/trpc",
 		router: appRouter,
 		req,
+		// Queries com `context.fresh` chegam por POST (ver `lib/trpc/client`)
+		allowMethodOverride: true,
 		createContext: async () => {
 			// Sessão preguiçosa: sem cookie de sessão não há o que buscar no
 			// banco — a maioria dos acessos públicos nem traz cookie.
@@ -147,6 +156,4 @@ const handler = async (req: NextRequest) => {
 	return response;
 };
 
-// export const runtime = "edge";
-// export const preferredRegion = "cle1";
 export { handler as GET, handler as POST };

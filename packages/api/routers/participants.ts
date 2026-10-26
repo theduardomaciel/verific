@@ -26,7 +26,6 @@ import {
 } from "@verific/drizzle/schema";
 import { z } from "@verific/zod";
 
-// Utils
 import { parseCheckInCode } from "../lib/checkin-code";
 import {
 	awardSessionAttendance,
@@ -46,7 +45,6 @@ import { settleActivity } from "../waitlist";
 // Client components must import from `@verific/api/schemas` instead.
 export { getParticipantsParams };
 
-// tRPC
 import { TRPCError } from "@trpc/server";
 
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
@@ -700,6 +698,7 @@ export const participantsRouter = createTRPCRouter({
 			const participantData = await db.query.participant.findFirst({
 				where: eq(participant.id, participantId),
 				with: {
+					user: { columns: { name: true } },
 					project: {
 						with: {
 							moderators: {
@@ -784,6 +783,7 @@ export const participantsRouter = createTRPCRouter({
 				void notifyEventRegistrationRemoved({
 					eventId: participantData.project.id,
 					registrationId: participantId,
+					participantName: participantData.user.name,
 					to: recipientEmail,
 					...(reason ? { reason } : {}),
 				});

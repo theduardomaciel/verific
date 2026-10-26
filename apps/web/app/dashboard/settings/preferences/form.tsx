@@ -2,9 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-// Icons
 import { ExternalLink, Mail } from "lucide-react";
-// Components
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";

@@ -1,11 +1,8 @@
-import { useState } from "react";
-
 import { Calendar, Timer } from "lucide-react";
 
-// Components
 import { Badge } from "@/components/ui/badge";
 
-// Data
+import { useNow } from "@/hooks/use-now";
 import {
 	formatFriendlyDate,
 	getLiveSession,
@@ -22,12 +19,11 @@ interface Props {
 }
 
 export function ActivityStatus({ className, sessions, dateFormat }: Props) {
-	const live = getLiveSession(sessions);
-	const next = live ? null : getNextSession(sessions);
-	// Congelado na montagem: evita que o selo oscile entre estados em
-	// re-renders não relacionados (não há timer; o valor é recalculado
-	// a cada montagem).
-	const [now] = useState(() => Date.now());
+	// Sem hora no servidor: mostra só a data da primeira sessão
+	const now = useNow();
+	const live = now ? getLiveSession(sessions, now) : null;
+	const next = now ? (live ? null : getNextSession(sessions, now)) : null;
+	const format = { ...dateFormat, now };
 
 	if (live) {
 		return (
@@ -41,7 +37,7 @@ export function ActivityStatus({ className, sessions, dateFormat }: Props) {
 	}
 
 	if (next) {
-		const startsIn = new Date(next.startsAt).getTime() - now;
+		const startsIn = new Date(next.startsAt).getTime() - now!.getTime();
 		if (startsIn <= 15 * 60 * 1000) {
 			return (
 				<Badge variant="secondary">
@@ -59,14 +55,14 @@ export function ActivityStatus({ className, sessions, dateFormat }: Props) {
 			>
 				<Calendar className="mt-[1.2px] h-4 w-4" />
 				<p className="text-sm leading-0 overflow-ellipsis">
-					{formatFriendlyDate(new Date(next.startsAt), dateFormat)}
+					{formatFriendlyDate(new Date(next.startsAt), format)}
 				</p>
 			</div>
 		);
 	}
 
 	// No upcoming sessions: show the last session date
-	const last = sessions[sessions.length - 1];
+	const last = now ? sessions[sessions.length - 1] : sessions[0];
 	if (!last) return null;
 
 	return (
@@ -78,7 +74,7 @@ export function ActivityStatus({ className, sessions, dateFormat }: Props) {
 		>
 			<Calendar className="mt-[1.2px] h-4 w-4" />
 			<p className="text-sm leading-0 overflow-ellipsis">
-				{formatFriendlyDate(new Date(last.startsAt), dateFormat)}
+				{formatFriendlyDate(new Date(last.startsAt), format)}
 			</p>
 		</div>
 	);

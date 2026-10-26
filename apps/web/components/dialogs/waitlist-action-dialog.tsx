@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 
-import { revalidateParticipantActivities } from "@/app/actions";
+import { refreshRoute } from "@/app/actions";
 
 interface WaitlistActionDialogProps {
 	children: React.ReactNode;
@@ -28,7 +28,6 @@ interface WaitlistActionDialogProps {
 	variant?: "default" | "destructive" | "outline";
 	successMessage: string;
 	errorMessage: string;
-	participantId?: string;
 	onConfirm: (reason: string | undefined) => Promise<void>;
 	isPending: boolean;
 }
@@ -42,7 +41,6 @@ export function WaitlistActionDialog({
 	variant = "default",
 	successMessage,
 	errorMessage,
-	participantId,
 	onConfirm,
 	isPending,
 }: WaitlistActionDialogProps) {
@@ -53,9 +51,8 @@ export function WaitlistActionDialog({
 	const handleConfirm = async () => {
 		try {
 			await onConfirm(reason.trim() || undefined);
-			if (participantId) {
-				await revalidateParticipantActivities(participantId);
-			}
+			// Já aplicado: uma falha aqui não vira erro da ação
+			void refreshRoute().catch(console.error);
 			toast.success(successMessage);
 			setOpen(false);
 			setReason("");

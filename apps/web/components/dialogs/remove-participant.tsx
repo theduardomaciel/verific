@@ -20,11 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { useDashboard } from "@/components/dashboard/dashboard-context";
 
-import {
-	revalidateParticipantActivities,
-	revalidateParticipantEnrollment,
-	revalidateParticipants,
-} from "@/app/actions";
+import { refreshRoute } from "@/app/actions";
 import { removeMatchingItems } from "@/lib/trpc/optimistic";
 import { trpc } from "@/lib/trpc/react";
 
@@ -94,7 +90,6 @@ export function RemoveParticipantDialog({
 				};
 			});
 			void utils.getActivity.invalidate();
-			await revalidateParticipantActivities(participantId);
 			toast.success("Participante removido da atividade");
 			setOpen(false);
 			userRouter.refresh();
@@ -125,8 +120,8 @@ export function RemoveParticipantDialog({
 						: previous,
 			);
 			void utils.getParticipants.invalidate();
-			await revalidateParticipants();
-			await revalidateParticipantEnrollment(participantId);
+			// Já removido: uma falha ao atualizar a tela não vira erro
+			void refreshRoute().catch(console.error);
 			toast.success("Participante removido do evento");
 			setOpen(false);
 			userRouter.back();

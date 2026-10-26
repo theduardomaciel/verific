@@ -3,15 +3,12 @@
 import { useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-// Icons
 import { Plus } from "lucide-react";
 import { useForm, type UseFormReturn } from "react-hook-form";
 
-// Form
 import { z } from "@verific/zod";
 
 import { Button } from "@/components/ui/button";
-// Components
 import {
 	Dialog,
 	DialogClose,
@@ -47,9 +44,7 @@ import { DateRangePicker } from "@/components/pickers/date-range-picker";
 import { PlacePicker } from "@/components/pickers/place-picker";
 
 import { revalidateProjects, updateProjectCookies } from "@/app/actions";
-// Hooks
 import { useMediaQuery } from "@/hooks/use-media-query";
-// API
 import { trpc } from "@/lib/trpc/react";
 
 import { ErrorDialog, LoadingDialog } from "../forms/dialogs";
@@ -109,9 +104,9 @@ export function CreateProjectDialog() {
 
 		const { date, location, ...rest } = data;
 
-		// console.log(data);
+		let created;
 		try {
-			const { id, url } = await createMutation.mutateAsync({
+			created = await createMutation.mutateAsync({
 				startDate: date.from,
 				endDate: date.to,
 				address: location.address,
@@ -119,14 +114,16 @@ export function CreateProjectDialog() {
 				longitude: location.longitude,
 				...rest,
 			});
-
-			// Atualiza o cookie com as informações do projeto
-			await revalidateProjects(url);
-			void updateProjectCookies(id);
 		} catch (error) {
 			console.error(error);
 			setCurrentState("error");
+			return;
 		}
+
+		// O evento já existe: uma falha aqui não pode sugerir criar de novo
+		await revalidateProjects(created.url).catch(console.error);
+		// Grava o evento no cookie e vai para o dashboard
+		void updateProjectCookies(created.id);
 	}
 
 	if (isDesktop) {

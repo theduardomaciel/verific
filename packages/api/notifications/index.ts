@@ -88,8 +88,8 @@ export type { QueueRegistrationEmailArgs } from "./registration-email";
 export {
 	buildRegistrationEmailInput,
 	queueEventRegistrationEmail,
-	scheduleAfterResponse,
 } from "./registration-email";
+export { scheduleAfterResponse } from "../lib/after-response";
 export { formatActivitySessionsText, formatEventDateText } from "./format";
 export {
 	dispatchNotifications,
@@ -103,6 +103,7 @@ export {
 	notifyActivityUpdated,
 	notifyActivityWaitlisted,
 	notifyActivityWaitlistOffered,
+	notifyActivityWaitlistOfferRevoked,
 	notifyActivityWaitlistPromoted,
 	notifyActivityWaitlistRemoved,
 	notifyEventRegistrationRemoved,

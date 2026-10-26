@@ -9,7 +9,7 @@ import type { UpsertFormSectionInput } from "@verific/api/schemas";
 
 import { useDashboard } from "@/components/dashboard/dashboard-context";
 
-import { revalidateActivities } from "@/app/actions";
+import { refreshRoute } from "@/app/actions";
 import { findOrphanHalfIds, groupFieldsBySection } from "@/lib/forms/layout";
 import { trpc } from "@/lib/trpc/react";
 
@@ -108,7 +108,7 @@ export function useFormsBuilder({
 				await utils.getPublishedForm.invalidate();
 				// Só versões de atividade mudam o `hasForm` servido na
 				// programação (cache `activities`): evento passa batido.
-				if (data.activityId) await revalidateActivities();
+				if (data.activityId) await refreshRoute();
 				toast.success("Versão publicada!");
 			},
 			onError: (e) => toast.error(e.message),

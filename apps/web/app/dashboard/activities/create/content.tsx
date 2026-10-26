@@ -1,8 +1,6 @@
 "use client";
 
-// Hooks
 import { useDashboard } from "@/components/dashboard/dashboard-context";
-// Components
 import MutateActivityForm from "@/components/forms/MutateActivityForm";
 
 export function CreateActivityContent() {

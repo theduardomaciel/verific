@@ -16,7 +16,6 @@ import remarkGfm from "remark-gfm";
 import { parseEventTheme } from "@verific/drizzle/theme";
 import { appUrl } from "@verific/env";
 
-// Components
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -231,11 +230,7 @@ function EventPageBody({ project }: { project: EventPageProject }) {
  * fronteira. O `notFound` continua valendo — e o layout acima já barra
  * `eventUrl` desconhecido com 404 real antes disso.
  */
-export default function EventPage({
-	params,
-}: {
-	params: Promise<{ eventUrl: string }>;
-}) {
+export default function EventPage({ params }: PageProps<"/[eventUrl]">) {
 	return (
 		<Suspense fallback={<EventPageSkeleton />}>
 			<EventPageLoader params={params} />
@@ -245,9 +240,7 @@ export default function EventPage({
 
 async function EventPageLoader({
 	params,
-}: {
-	params: Promise<{ eventUrl: string }>;
-}) {
+}: Pick<PageProps<"/[eventUrl]">, "params">) {
 	const { eventUrl } = await params;
 	const result = await getEventLanding(eventUrl);
 

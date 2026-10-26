@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 
-// Icons
 import {
 	ArrowRight,
 	CalendarClock,
@@ -11,12 +10,9 @@ import {
 	Loader2,
 } from "lucide-react";
 
-// Types
 import type { RouterOutput } from "@verific/api";
-// Lib
 import { activityCategoryLabels } from "@verific/drizzle/schema";
 
-// Components
 import { Button } from "@/components/ui/button";
 
 import { ParticipantQuitButton } from "@/components/participant/participant-quit-button";
@@ -321,7 +317,6 @@ export function ActivityCard({
 					{!!participantId && !!userId && !hasEnded && (
 						<ParticipantQuitButton
 							activityId={activity.id}
-							userId={userId}
 							participantId={participantId}
 							projectUrl={activity.project?.url}
 						/>

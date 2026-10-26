@@ -13,16 +13,13 @@ import BadgesGeneratorCallout from "@/components/badges-generator-callout";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
 import { Filter } from "@/components/dashboard/filter";
 import { FiltersPanel } from "@/components/dashboard/filters-panel";
-// Components
 import { DashboardPagination } from "@/components/dashboard/pagination";
 import { Empty } from "@/components/empty";
 import { ParticipantListItem } from "@/components/participant/participant-item";
 import { SearchBar } from "@/components/search-bar";
 import { SortBy } from "@/components/sort-by";
 
-// Hooks
 import { useParsedSearchParams } from "@/hooks/use-parsed-search-params";
-// API
 import { trpc } from "@/lib/trpc/react";
 
 function ParticipantsSkeleton() {

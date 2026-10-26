@@ -31,11 +31,16 @@ const { dbQuery, dbSelect } = vi.hoisted(() => ({
 	dbSelect: vi.fn(() => {
 		const rows: unknown[] = [];
 		// `getActivityAvailability` awaita o `where` e também encadeia
-		// `.groupBy(...)`; o mock precisa suportar as duas formas.
+		// `.groupBy(...)`; o perfil junta tabelas e ordena.
 		const whereResult = Object.assign(Promise.resolve(rows), {
 			groupBy: async () => rows,
+			orderBy: async () => rows,
 		});
-		return { from: () => ({ where: () => whereResult }) };
+		const query = {
+			innerJoin: () => query,
+			where: () => whereResult,
+		};
+		return { from: () => query };
 	}),
 }));
 

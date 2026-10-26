@@ -3,17 +3,14 @@
 import Link from "next/link";
 import { useState } from "react";
 
-// Icons
 import { User } from "lucide-react";
 
-// Utils
 import {
 	normalizeSocialLink,
 	socialDisplayHandle,
 	socialServiceById,
 } from "@verific/drizzle/profile-layout";
 
-// Components
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {

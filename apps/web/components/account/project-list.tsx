@@ -1,12 +1,9 @@
-// Icons
 import { CircleSlash } from "lucide-react";
 
-// Types
 import type { RouterOutput } from "@verific/api";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { CreateProjectDialog } from "./create-project-dialog";
-// Components
 import { AccountEventCard } from "./project-card";
 
 interface Props {

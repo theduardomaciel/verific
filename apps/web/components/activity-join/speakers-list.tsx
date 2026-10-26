@@ -1,9 +1,7 @@
 "use client";
 
-// Icons
 import { User } from "lucide-react";
 
-// Components
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import { cn } from "@/lib/utils";

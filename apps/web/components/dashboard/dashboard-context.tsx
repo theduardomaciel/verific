@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext } from "react";
+import { createContext, use } from "react";
 
 interface DashboardContextValue {
 	projectId: string;
@@ -18,14 +18,14 @@ export function DashboardProvider({
 	children,
 }: DashboardContextValue & { children: React.ReactNode }) {
 	return (
-		<DashboardContext.Provider value={{ projectId, projectUrl, isOwner }}>
+		<DashboardContext value={{ projectId, projectUrl, isOwner }}>
 			{children}
-		</DashboardContext.Provider>
+		</DashboardContext>
 	);
 }
 
 export function useDashboard() {
-	const ctx = useContext(DashboardContext);
+	const ctx = use(DashboardContext);
 
 	if (!ctx) {
 		throw new Error("useDashboard must be used within DashboardProvider");

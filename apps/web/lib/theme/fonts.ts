@@ -11,7 +11,7 @@ import type { FontPreset } from "@verific/drizzle/theme";
 export { FONT_FAMILIES, resolveThemeFontFamily } from "./presets";
 
 /**
- * Fontes com curadoria (Fase 2). Todas via next/font: baixadas no build,
+ * Fontes com curadoria. Todas via next/font: baixadas no build,
  * auto-hospedadas, sem requisição a terceiros em runtime e sem layout shift.
  */
 const hankenGrotesk = Hanken_Grotesk({

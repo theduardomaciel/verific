@@ -1,4 +1,14 @@
+import { Suspense } from "react";
+
 import { SettingsSidebar } from "@/components/settings/sidebar";
+
+import {
+	dashboardProjectId,
+	HydrateQueries,
+	prefetch,
+} from "@/lib/trpc/hydrate";
+
+import { SettingsFormSkeleton } from "./skeleton";
 
 const settingsLinks = [
 	{
@@ -41,6 +51,18 @@ export const metadata: Metadata = {
 	description: "Configurações do projeto",
 };
 
+// As abas leem o evento por `useCurrentProject`
+async function WithProject({ children }: { children: React.ReactNode }) {
+	const id = await dashboardProjectId();
+	return (
+		<HydrateQueries
+			queries={id ? [await prefetch("getProject", { id })] : []}
+		>
+			{children}
+		</HydrateQueries>
+	);
+}
+
 export default async function AccountSettingsLayout({
 	children,
 }: {
@@ -54,7 +76,11 @@ export default async function AccountSettingsLayout({
 
 			<div className="flex h-full flex-col gap-8 md:flex-row">
 				<SettingsSidebar prefix={`/dashboard`} links={settingsLinks} />
-				<div className="min-w-0 flex-1">{children}</div>
+				<div className="min-w-0 flex-1">
+					<Suspense fallback={<SettingsFormSkeleton />}>
+						<WithProject>{children}</WithProject>
+					</Suspense>
+				</div>
 			</div>
 		</main>
 	);

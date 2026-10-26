@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { boolean, pgTable, primaryKey, uuid } from "drizzle-orm/pg-core";
+import { boolean, index, pgTable, primaryKey, uuid } from "drizzle-orm/pg-core";
 
 import { formField } from "./form-field";
 import { participant } from "./participant";
@@ -26,7 +26,10 @@ export const profileFieldVisibility = pgTable(
 			}),
 		visible: boolean("visible").default(true).notNull(),
 	},
-	(table) => [primaryKey({ columns: [table.participantId, table.fieldId] })],
+	(table) => [
+		primaryKey({ columns: [table.participantId, table.fieldId] }),
+		index("profile_field_visibility_field_id_idx").on(table.fieldId),
+	],
 );
 
 export const profileFieldVisibilityRelations = relations(

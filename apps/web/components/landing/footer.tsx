@@ -4,7 +4,6 @@ import { ArrowRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
-// Components
 import { Footer } from "@/components/footer";
 
 export function LandingFooter() {

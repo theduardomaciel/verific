@@ -495,13 +495,22 @@ export function getVisibleSectionIds<
 	return visible;
 }
 
-/** Filters a field list down to fields in visible sections. */
+/**
+ * Filters a field list down to fields in visible sections. `ruleFields`
+ * resolves the rules' source fields when they are not in `fields` (e.g. a
+ * rule on a field that can't be edited after signup).
+ */
 export function filterVisibleFields<
 	F extends { key: string; id?: string; sectionId?: string | null },
 	S extends SectionForVisibility,
->(fields: F[], sections: S[], answers: Record<string, unknown>): F[] {
+>(
+	fields: F[],
+	sections: S[],
+	answers: Record<string, unknown>,
+	ruleFields: Array<{ id?: string; key: string }> = fields,
+): F[] {
 	if (!sections.some((s) => s.visibilityRule)) return fields;
-	const visibleIds = getVisibleSectionIds(sections, fields, answers);
+	const visibleIds = getVisibleSectionIds(sections, ruleFields, answers);
 	return fields.filter((f) => {
 		if (!f.sectionId) return true;
 		if (!sections.some((s) => s.id === f.sectionId)) return true;
@@ -584,6 +593,8 @@ export function validateSectionVisibilityRule(args: {
 	return null;
 }
 
+const blankToUndefined = (value: unknown) => (value === "" ? undefined : value);
+
 function fieldValueSchema(field: FormFieldForValidation) {
 	let base: z.ZodTypeAny;
 
@@ -607,16 +618,19 @@ function fieldValueSchema(field: FormFieldForValidation) {
 			break;
 		}
 		case "number": {
-			base = z.coerce.number();
+			let number = z.coerce.number({ error: "Informe um número." });
 			const v = field.validation;
-			if (typeof v?.min === "number")
-				base = (base as z.ZodCoercedNumber<number>).min(v.min);
-			if (typeof v?.max === "number")
-				base = (base as z.ZodCoercedNumber<number>).max(v.max);
+			if (typeof v?.min === "number") number = number.min(v.min);
+			if (typeof v?.max === "number") number = number.max(v.max);
+			// Vazio é "sem resposta", não 0
+			base = z.preprocess(blankToUndefined, number);
 			break;
 		}
 		case "date": {
-			base = z.coerce.date();
+			base = z.preprocess(
+				blankToUndefined,
+				z.coerce.date({ error: "Informe uma data válida." }),
+			);
 			break;
 		}
 		case "select_single":
@@ -722,7 +736,7 @@ function fieldValueSchema(field: FormFieldForValidation) {
 		}
 		case "phone": {
 			// Stored form is always E.164 (e.g. "+5582999991234"), so no
-			// default region is needed. See DOCS/i18n.md.
+			// default region is needed. See docs/i18n.md.
 			base = z
 				.string({ error: "Obrigatório" })
 				.refine((val) => val === "" || isValidPhoneNumber(val), {
@@ -776,9 +790,8 @@ function fieldValueSchema(field: FormFieldForValidation) {
 	}
 
 	if (!field.required) {
-		return base
-			.optional()
-			.nullable()
+		return z
+			.preprocess(blankToUndefined, base.optional().nullable())
 			.transform((v) => {
 				if (v === "" || v === null) return undefined;
 				if (Array.isArray(v) && v.length === 0) return undefined;
@@ -816,10 +829,11 @@ export function buildAnswersSchema(
 	fields: FormFieldForValidation[],
 	sections?: SectionForVisibility[],
 	answers?: Record<string, unknown>,
+	ruleFields?: Array<{ id?: string; key: string }>,
 ) {
 	const effective =
 		sections && answers
-			? filterVisibleFields(fields, sections, answers)
+			? filterVisibleFields(fields, sections, answers, ruleFields)
 			: fields;
 	const shape: Record<string, z.ZodTypeAny> = {};
 	for (const field of effective) {
@@ -833,14 +847,15 @@ export function validateAnswers(
 	fields: FormFieldForValidation[],
 	answers: Record<string, unknown>,
 	sections?: SectionForVisibility[],
+	ruleFields?: Array<{ id?: string; key: string }>,
 ): {
 	success: boolean;
 	errors?: Record<string, string[]>;
 	data?: Record<string, unknown>;
 } {
-	const schema = buildAnswersSchema(fields, sections, answers);
+	const schema = buildAnswersSchema(fields, sections, answers, ruleFields);
 	const parsed = schema.safeParse(
-		stripHiddenForValidation(fields, sections, answers),
+		stripHiddenForValidation(fields, sections, answers, ruleFields),
 	);
 	if (parsed.success) return { success: true, data: parsed.data };
 	const flat = parsed.error.flatten();
@@ -860,10 +875,13 @@ function stripHiddenForValidation(
 	fields: FormFieldForValidation[],
 	sections: SectionForVisibility[] | undefined,
 	answers: Record<string, unknown>,
+	ruleFields?: Array<{ id?: string; key: string }>,
 ): Record<string, unknown> {
 	if (!sections || !sections.some((s) => s.visibilityRule)) return answers;
 	const visible = new Set(
-		filterVisibleFields(fields, sections, answers).map((f) => f.key),
+		filterVisibleFields(fields, sections, answers, ruleFields).map(
+			(f) => f.key,
+		),
 	);
 	const next: Record<string, unknown> = {};
 	for (const [k, v] of Object.entries(answers)) {
@@ -909,5 +927,5 @@ export function formatAnswerValue(
 		}
 		return value;
 	}
-	return String(value);
+	return JSON.stringify(value) ?? "";
 }

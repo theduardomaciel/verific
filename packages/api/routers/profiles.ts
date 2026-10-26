@@ -22,7 +22,6 @@ import {
 	type StatIconKey,
 } from "@verific/drizzle/profile-layout";
 import {
-	formAnswer,
 	formField,
 	formVersion,
 	participant,
@@ -34,12 +33,14 @@ import {
 } from "@verific/drizzle/schema";
 import { z } from "@verific/zod";
 
+import { eventAnswerRows, latestByKey } from "../lib/event-answers";
 import { evaluateStickers } from "../lib/gamification";
 import {
-	dropVisibilityForFields,
+	dropVisibilityForKeys,
+	getLinkedFieldRows,
 	isCompatible,
+	linkedFieldIds,
 	readProjectLayout,
-	slotForField,
 	writeProjectLayout,
 } from "../lib/profile-links";
 import { requireProjectAccess } from "../lib/project-access";
@@ -47,7 +48,7 @@ import { generateShortId } from "../lib/short-id";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
 /**
- * Preenche shortId ausente (participantes criados antes da Fase 4).
+ * Preenche shortId ausente (participantes criados antes da coluna existir).
  *
  * Caminho quente: quem já tem shortId retorna sem query nem write — as
  * procedures de leitura (`getMyParticipant`, `getMyEnrollmentState`, badges)
@@ -163,6 +164,7 @@ export function resolveProfileSlots(input: {
 	layout: ProfileLayout;
 	fieldsById: Map<string, LinkFieldRow>;
 	answersByKey: Map<string, unknown>;
+	/** Por chave do campo, como as respostas. */
 	visibility: Map<string, boolean>;
 	owner: boolean;
 }): ResolvedProfileSlots {
@@ -188,7 +190,7 @@ export function resolveProfileSlots(input: {
 		if (isEmptyAnswer(raw)) return null;
 		const value = formatProfileValue(raw, field.type);
 		if (!value) return null;
-		const hidden = field.required && visibility.get(fieldId) === false;
+		const hidden = field.required && visibility.get(field.key) === false;
 		if (!owner && hidden) return null;
 		return { value, hidden };
 	}
@@ -206,7 +208,7 @@ export function resolveProfileSlots(input: {
 		if (isEmptyAnswer(raw)) continue;
 		const value = formatProfileValue(raw, field.type);
 		if (!value) continue;
-		const hidden = field.required && visibility.get(item.fieldId) === false;
+		const hidden = field.required && visibility.get(field.key) === false;
 		if (!owner && hidden) continue;
 		out.stats.push({ label: item.label, icon: item.icon, value, hidden });
 	}
@@ -217,8 +219,7 @@ export function resolveProfileSlots(input: {
 			const raw = answersByKey.get(field.key);
 			if (Array.isArray(raw)) {
 				const hidden =
-					field.required &&
-					visibility.get(layout.socialsFieldId) === false;
+					field.required && visibility.get(field.key) === false;
 				if (owner || !hidden) {
 					for (const entry of raw) {
 						if (
@@ -229,14 +230,19 @@ export function resolveProfileSlots(input: {
 						) {
 							continue;
 						}
-						const service = socialServiceById(
-							String((entry as { service: unknown }).service),
-						);
+						const { service: serviceId, value } = entry as {
+							service: unknown;
+							value: unknown;
+						};
+						if (
+							typeof serviceId !== "string" ||
+							typeof value !== "string"
+						) {
+							continue;
+						}
+						const service = socialServiceById(serviceId);
 						if (!service) continue;
-						const url = normalizeSocialLink(
-							service.id,
-							String((entry as { value: unknown }).value ?? ""),
-						);
+						const url = normalizeSocialLink(service.id, value);
 						if (!url) continue;
 						out.socials.push({
 							service: service.id,
@@ -255,32 +261,35 @@ export function resolveProfileSlots(input: {
 }
 
 async function loadParticipantAnswers(participantId: string) {
-	const rows = await db.query.formAnswer.findMany({
-		where: eq(formAnswer.participantId, participantId),
-		with: { field: { columns: { key: true } } },
-	});
-	const byKey = new Map<string, unknown>();
-	const sorted = [...rows].sort(
-		(a, b) =>
-			new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-	);
-	for (const row of sorted) {
-		const key =
-			(row.fieldSnapshot as { key?: string } | null)?.key ??
-			row.field?.key;
-		if (!key || byKey.has(key)) continue;
-		let value: unknown = row.valueJson ?? row.valueNumber ?? row.valueDate;
-		if (value === null || value === undefined) value = row.valueText;
-		byKey.set(key, value);
-	}
-	return byKey;
+	return latestByKey(await eventAnswerRows(participantId));
 }
 
+/**
+ * Visibilidade por pergunta (chave do campo), e não pelo id do campo de uma
+ * versão: a escolha sobrevive a uma nova versão do formulário. Vale a da
+ * versão mais recente.
+ */
 async function loadVisibility(participantId: string) {
-	const rows = await db.query.profileFieldVisibility.findMany({
-		where: eq(profileFieldVisibility.participantId, participantId),
-	});
-	return new Map(rows.map((r) => [r.fieldId, r.visible]));
+	const rows = await db
+		.select({
+			key: formField.key,
+			visible: profileFieldVisibility.visible,
+		})
+		.from(profileFieldVisibility)
+		.innerJoin(formField, eq(formField.id, profileFieldVisibility.fieldId))
+		.innerJoin(formVersion, eq(formVersion.id, formField.formVersionId))
+		.where(
+			and(
+				eq(profileFieldVisibility.participantId, participantId),
+				isNull(formVersion.activityId),
+			),
+		)
+		.orderBy(desc(formVersion.version));
+	const byKey = new Map<string, boolean>();
+	for (const row of rows) {
+		if (!byKey.has(row.key)) byKey.set(row.key, row.visible);
+	}
+	return byKey;
 }
 
 const PROFILE_CONNECTIONS_SAMPLE = 6;
@@ -314,14 +323,24 @@ async function loadProfileConnections(
 			orderBy: desc(profileConnection.createdAt),
 			limit: PROFILE_CONNECTIONS_SAMPLE + 1,
 			with: {
-				viewer: { with: { user: { columns: { name: true } } } },
+				viewer: {
+					with: {
+						user: { columns: { name: true, image_url: true } },
+					},
+				},
 			},
 		}),
 	]);
-	const names = sample
-		.map((r) => r.viewer?.user?.name?.trim())
-		.filter((n): n is string => Boolean(n));
-	return { total: totalRows[0]?.n ?? 0, visitors: names };
+	const visitors = sample
+		.map((r) => {
+			const name = r.viewer?.user?.name?.trim();
+			if (!name) return null;
+			return { name, avatarUrl: r.viewer?.user?.image_url ?? null };
+		})
+		.filter(
+			(v): v is { name: string; avatarUrl: string | null } => v !== null,
+		);
+	return { total: totalRows[0]?.n ?? 0, visitors };
 }
 
 export const profilesRouter = createTRPCRouter({
@@ -409,7 +428,11 @@ export const profilesRouter = createTRPCRouter({
 			return readProjectLayout(projectId);
 		}),
 
-	/** Campos elegíveis p/ links: última versão do formulário do evento. */
+	/**
+	 * Campos elegíveis p/ links: os da versão publicada do formulário do
+	 * evento (um rascunho pode ser excluído e levar o link junto). Sem versão
+	 * publicada, a mais recente.
+	 */
 	getProfileFieldOptions: protectedProcedure
 		.input(z.object({ projectId: z.string().uuid() }))
 		.query(async ({ input, ctx }) => {
@@ -422,7 +445,7 @@ export const profilesRouter = createTRPCRouter({
 				orderBy: desc(formVersion.version),
 				columns: { id: true, version: true, isPublished: true },
 			});
-			const version = versions[0];
+			const version = versions.find((v) => v.isPublished) ?? versions[0];
 			if (!version) return { version: null, fields: [] };
 			const fields = await db.query.formField.findMany({
 				where: and(
@@ -504,19 +527,18 @@ export const profilesRouter = createTRPCRouter({
 				});
 			}
 			const before = await readProjectLayout(input.projectId);
-			const beforeIds = new Set(
-				[
-					before.subtitleFieldId,
-					before.bioFieldId,
-					before.socialsFieldId,
-					before.emailFieldId,
-					...before.stats.map((s) => s.fieldId),
-				].filter((id): id is string => Boolean(id)),
-			);
-			const afterIds = new Set(ids);
-			const removed = [...beforeIds].filter((id) => !afterIds.has(id));
+			const [beforeRows, afterRows] = await Promise.all([
+				getLinkedFieldRows(linkedFieldIds(before)),
+				getLinkedFieldRows(ids),
+			]);
+			// A escolha de visibilidade é por pergunta: só some quando a
+			// pergunta deixa de estar no perfil
+			const afterKeys = new Set(afterRows.map((f) => f.key));
+			const removedKeys = beforeRows
+				.map((f) => f.key)
+				.filter((key) => !afterKeys.has(key));
 			await writeProjectLayout(input.projectId, layout);
-			await dropVisibilityForFields(removed);
+			await dropVisibilityForKeys(input.projectId, removedKeys);
 			return { saved: true };
 		}),
 
@@ -591,7 +613,10 @@ export const profilesRouter = createTRPCRouter({
 					? loadProfileConnections(projectRow.id, row.id)
 					: Promise.resolve({
 							total: 0,
-							visitors: [] as string[],
+							visitors: [] as Array<{
+								name: string;
+								avatarUrl: string | null;
+							}>,
 						}),
 			]);
 			const slots = resolveProfileSlots({
@@ -687,7 +712,14 @@ export const profilesRouter = createTRPCRouter({
 				accountEmail: row.user.email,
 				avatarUrl: row.user.image_url,
 				slots,
+				// Por chave do campo: o formulário de edição mostra a versão
+				// publicada, e o layout pode apontar para outra
 				visibility: Object.fromEntries(visibility),
+				linkedKeys: [
+					...new Set(
+						fields.filter((f) => f.isActive).map((f) => f.key),
+					),
+				],
 				modules: {
 					connectionsEnabled: layout.connectionsEnabled,
 				},
@@ -717,35 +749,61 @@ export const profilesRouter = createTRPCRouter({
 					message: "Inscrição não encontrada.",
 				});
 			}
-			const field = await db.query.formField.findFirst({
-				where: and(
-					eq(formField.id, input.fieldId),
-					eq(formField.projectId, projectId),
-				),
-				columns: { id: true, required: true },
-			});
+			const [field] = await db
+				.select({ key: formField.key, required: formField.required })
+				.from(formField)
+				.innerJoin(
+					formVersion,
+					eq(formVersion.id, formField.formVersionId),
+				)
+				.where(
+					and(
+						eq(formField.id, input.fieldId),
+						eq(formField.projectId, projectId),
+						isNull(formVersion.activityId),
+					),
+				);
 			if (!field) {
 				throw new TRPCError({
 					code: "NOT_FOUND",
 					message: "Campo não encontrado.",
 				});
 			}
-			const layout = await readProjectLayout(projectId);
-			const slot = slotForField(layout, input.fieldId);
-			if (!slot || !field.required) {
+			// O layout pode apontar para o campo de mesma chave de outra versão
+			const linked = await getLinkedFieldRows(
+				linkedFieldIds(await readProjectLayout(projectId)),
+			);
+			if (!field.required || !linked.some((f) => f.key === field.key)) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
 					message:
 						"Visibilidade só existe p/ campos obrigatórios ligados ao perfil.",
 				});
 			}
+			// Mesma escolha em todas as versões da pergunta
+			const sameQuestion = await db
+				.select({ id: formField.id })
+				.from(formField)
+				.innerJoin(
+					formVersion,
+					eq(formVersion.id, formField.formVersionId),
+				)
+				.where(
+					and(
+						eq(formField.projectId, projectId),
+						eq(formField.key, field.key),
+						isNull(formVersion.activityId),
+					),
+				);
 			await db
 				.insert(profileFieldVisibility)
-				.values({
-					participantId: row.id,
-					fieldId: input.fieldId,
-					visible: input.visible,
-				})
+				.values(
+					sameQuestion.map((f) => ({
+						participantId: row.id,
+						fieldId: f.id,
+						visible: input.visible,
+					})),
+				)
 				.onConflictDoUpdate({
 					target: [
 						profileFieldVisibility.participantId,

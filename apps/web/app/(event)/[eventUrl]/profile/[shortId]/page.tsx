@@ -27,9 +27,7 @@ import { resolveProfilePageData } from "@/lib/profile-page-data";
 
 import { ProfilePageSkeleton } from "./skeleton";
 
-interface ProfilePageProps {
-	params: Promise<{ eventUrl: string; shortId: string }>;
-}
+type ProfilePageProps = PageProps<"/[eventUrl]/profile/[shortId]">;
 
 // `shortId` é ilimitado e as ilhas do dono chegam por `?me=1`: a navegação
 // pode bloquear, então opta por "instant = false". O gate `notFound` roda

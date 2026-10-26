@@ -9,6 +9,7 @@ import ActivityEnrollmentCancelledPreview from "./previews/activity-enrollment-c
 import ActivityEnrollmentConfirmedPreview from "./previews/activity-enrollment-confirmed";
 import ActivityEnrollmentRemovedPreview from "./previews/activity-enrollment-removed";
 import ActivityUpdatedPreview from "./previews/activity-updated";
+import ActivityWaitlistOfferRevokedPreview from "./previews/activity-waitlist-offer-revoked";
 import ActivityWaitlistOfferedPreview from "./previews/activity-waitlist-offered";
 import ActivityWaitlistPromotedPreview from "./previews/activity-waitlist-promoted";
 import ActivityWaitlistedPreview from "./previews/activity-waitlisted";
@@ -64,6 +65,15 @@ const CASES: Array<{
 			"Maria Silva",
 			"Vaga oferecida",
 			"11 de abril de 2026 às 20:00",
+		],
+	},
+	{
+		name: "activity-waitlist-offer-revoked",
+		Preview: ActivityWaitlistOfferRevokedPreview,
+		expectedText: [
+			"Maria Silva",
+			"Vaga desfeita",
+			"Você continua na fila de espera",
 		],
 	},
 	{

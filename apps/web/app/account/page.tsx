@@ -1,10 +1,8 @@
 "use client";
 
-// Components
 import { EventsList } from "@/components/account/project-list";
 import { AccountProjectsSkeleton } from "@/components/account/project-skeleton";
 
-// API
 import { trpc } from "@/lib/trpc/react";
 
 export default function Home() {

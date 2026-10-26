@@ -298,6 +298,67 @@ export const activityWaitlistOfferedPreviewProps: ActivityWaitlistOfferedProps =
 	};
 
 /* ------------------------------------------------------------------ */
+/* activity_waitlist_offer_revoked                                     */
+/* ------------------------------------------------------------------ */
+
+export const ACTIVITY_WAITLIST_OFFER_REVOKED_VERSION = "v1" as const;
+
+export type ActivityWaitlistOfferRevokedProps = z.infer<typeof baseSchema>;
+
+export const activityWaitlistOfferRevokedSubject = (props: {
+	activityName: string;
+	eventName: string;
+}) => `Vaga desfeita: ${props.activityName} – ${props.eventName}`;
+
+export function ActivityWaitlistOfferRevokedEmail(
+	props: ActivityWaitlistOfferRevokedProps,
+) {
+	return (
+		<ActivityEmailShell
+			badge="Vaga desfeita"
+			title={props.activityName}
+			preview={activityWaitlistOfferRevokedSubject(props)}
+			props={props}
+			ctaLabel="Ver atividade"
+		>
+			<Text style={emailStyles.paragraph}>
+				A organização reduziu as vagas de{" "}
+				<strong>{props.activityName}</strong>, e a vaga que estava
+				reservada para você deixou de existir. Você continua na fila de
+				espera e recebe um novo aviso se outra vaga abrir.
+			</Text>
+			<ActivityDetails
+				dateText={props.activityDateText}
+				location={props.activityLocation}
+			/>
+		</ActivityEmailShell>
+	);
+}
+
+export async function renderActivityWaitlistOfferRevoked(
+	props: unknown,
+): Promise<RenderedTemplate> {
+	const parsed = baseSchema.parse(props);
+	const element = <ActivityWaitlistOfferRevokedEmail {...parsed} />;
+	return renderBoth(
+		element,
+		activityWaitlistOfferRevokedSubject(parsed),
+		ACTIVITY_WAITLIST_OFFER_REVOKED_VERSION,
+	);
+}
+
+/** Sample props for `react-email dev` and registry previews. */
+export const activityWaitlistOfferRevokedPreviewProps: ActivityWaitlistOfferRevokedProps =
+	{
+		participantName: "Maria Silva",
+		eventName: "SECOMP 2026",
+		activityName: "Oficina de React",
+		activityDateText: "12 de abril de 2026, 14:00 – 18:00",
+		activityLocation: "Laboratório 4",
+		accessUrl: "https://example.com/secomp-2026/schedule/activity-1",
+	};
+
+/* ------------------------------------------------------------------ */
 /* activity_waitlist_promoted                                          */
 /* ------------------------------------------------------------------ */
 

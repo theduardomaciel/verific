@@ -3,11 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 
-// Icons
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-// Components
 import { Button } from "@/components/ui/button";
 
 import { authClient } from "@/lib/auth-client";

@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-// Icons
 import {
 	CircleMinus,
 	Hash,
@@ -13,16 +12,13 @@ import {
 import { parseGamificationConfig } from "@verific/drizzle/gamification";
 
 import { Badge } from "@/components/ui/badge";
-// Components
 import { Button } from "@/components/ui/button";
 // (no dialog primitives needed; rendered both in modal and standalone page)
 import { LogoutForm } from "@/components/ui/logout-form";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { formatWorkload } from "@/lib/date";
-// Utils
 import { getInitials, pluralize } from "@/lib/i18n";
-// API
 import { serverClient } from "@/lib/trpc/server";
 
 import { RemoveParticipantDialog } from "../dialogs/remove-participant";

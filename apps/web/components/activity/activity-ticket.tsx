@@ -1,21 +1,16 @@
 "use client";
 
-import { useState } from "react";
-
-// Icons
 import { Check, User, Clock, Frown } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 
-// API
 import type { RouterOutput } from "@verific/api";
 
-// Components
 import { BadgeScanner } from "@/components/badge-scanner";
-import { ManualParticipantDialog } from "@/components/manual-participant-dialog";
+import { AddParticipantsDialog } from "@/components/dialogs/add-participants-dialog";
 import { ExpandableDescription } from "@/components/shared/expandable-description";
 
-// Utils
+import { useNow } from "@/hooks/use-now";
 import {
 	formatFriendlyDate,
 	getDateString,
@@ -61,9 +56,7 @@ export function ActivityTicket({
 		]);
 	}
 
-	// Congelado na montagem: evita que o selo de expiração oscile em
-	// re-renders não relacionados (não há timer).
-	const [now] = useState(() => new Date());
+	const now = useNow();
 	const sessions = getSessionsSorted(activity.sessions);
 	const attendedCount = sessions.filter((s) => s.joinedAt).length;
 
@@ -73,7 +66,8 @@ export function ActivityTicket({
 		lastEnd && tolerance != null
 			? new Date(lastEnd.getTime() + tolerance * 60 * 1000)
 			: null;
-	const isExpired = endDatePlusTolerance ? now > endDatePlusTolerance : false;
+	const isExpired =
+		now && endDatePlusTolerance ? now > endDatePlusTolerance : false;
 
 	return (
 		<div
@@ -137,7 +131,7 @@ export function ActivityTicket({
 										<Clock className="size-4" />
 										{formatFriendlyDate(
 											new Date(session.startsAt),
-											{ includeHour: true },
+											{ includeHour: true, now },
 										)}
 									</span>
 								)}
@@ -239,38 +233,47 @@ export function ActivityTicket({
 												: "Escanear crachás"
 										}
 									/>
-									<ManualParticipantDialog
+									<AddParticipantsDialog
 										projectId={activity.projectId}
+										activityId={activity.id}
+										alreadyAdded={[]}
+										buttonVariant="outline"
 										buttonLabel={
 											sessions.length > 1
 												? `Credenciar por nome · sessão ${i + 1}`
 												: "Credenciar por nome"
 										}
 										title="Credenciamento manual"
-										description="Selecione um participante para credenciar nesta sessão."
-										onSelect={async (participant) => {
-											if (!participant.shortId) {
-												throw new Error(
-													"Participante sem shortId",
-												);
-											}
-											const checked =
-												await presenceMutation.mutateAsync(
-													{
-														sessionId: session.id,
-														code: participant.shortId,
-														mode: "in",
-													},
-												);
-											await invalidate();
-											const name =
-												checked.name ??
-												participant.user?.name ??
-												"";
-											if (name) {
-												toast.success(
-													`${name} credenciado.`,
-												);
+										description="Selecione os participantes para credenciar nesta sessão."
+										kind="participant"
+										onSubmitSelected={async (
+											participants,
+										) => {
+											for (const participant of participants) {
+												if (!participant.shortId) {
+													throw new Error(
+														"Participante sem shortId",
+													);
+												}
+												const checked =
+													await presenceMutation.mutateAsync(
+														{
+															sessionId:
+																session.id,
+															code: participant.shortId,
+															mode: "in",
+														},
+													);
+												await invalidate();
+												const name =
+													checked.name ??
+													participant.user?.name ??
+													"";
+												if (name) {
+													toast.success(
+														`${name} credenciado.`,
+													);
+												}
 											}
 										}}
 									/>
@@ -286,8 +289,10 @@ export function ActivityTicket({
 														: "Registrar saída"
 												}
 											/>
-											<ManualParticipantDialog
+											<AddParticipantsDialog
 												projectId={activity.projectId}
+												activityId={activity.id}
+												alreadyAdded={[]}
 												buttonVariant="outline"
 												buttonLabel={
 													sessions.length > 1
@@ -295,34 +300,39 @@ export function ActivityTicket({
 														: "Registrar saída por nome"
 												}
 												title="Saída manual"
-												description="Selecione um participante para registrar a saída desta sessão."
-												onSelect={async (
-													participant,
+												description="Selecione os participantes para registrar a saída desta sessão."
+												kind="participant"
+												onSubmitSelected={async (
+													participants,
 												) => {
-													if (!participant.shortId) {
-														throw new Error(
-															"Participante sem shortId",
-														);
-													}
-													const checked =
-														await presenceMutation.mutateAsync(
-															{
-																sessionId:
-																	session.id,
-																code: participant.shortId,
-																mode: "out",
-															},
-														);
-													await invalidate();
-													const name =
-														checked.name ??
-														participant.user
-															?.name ??
-														"";
-													if (name) {
-														toast.success(
-															`${name} saída registrada.`,
-														);
+													for (const participant of participants) {
+														if (
+															!participant.shortId
+														) {
+															throw new Error(
+																"Participante sem shortId",
+															);
+														}
+														const checked =
+															await presenceMutation.mutateAsync(
+																{
+																	sessionId:
+																		session.id,
+																	code: participant.shortId,
+																	mode: "out",
+																},
+															);
+														await invalidate();
+														const name =
+															checked.name ??
+															participant.user
+																?.name ??
+															"";
+														if (name) {
+															toast.success(
+																`${name} saída registrada.`,
+															);
+														}
 													}
 												}}
 											/>

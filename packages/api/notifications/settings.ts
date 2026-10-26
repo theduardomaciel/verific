@@ -145,7 +145,6 @@ export async function updateEventNotificationSettings(
 				],
 				set: {
 					enabled: sql`excluded."enabled"`,
-					updatedAt: new Date(),
 				},
 			});
 	}

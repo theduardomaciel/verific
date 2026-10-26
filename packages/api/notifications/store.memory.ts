@@ -208,7 +208,6 @@ function matchesFilter(
 	row: NotificationRow,
 	filter: NotificationListFilter,
 	now: number,
-	email?: string | null,
 ): boolean {
 	switch (filter) {
 		case "all":

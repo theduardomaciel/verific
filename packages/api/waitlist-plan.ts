@@ -1,7 +1,8 @@
 /**
  * Regra da fila de espera, sem banco: dado o estado de uma atividade,
- * decide quais ofertas expiram, quem recebe oferta e quem sai da fila
- * porque a atividade acabou. `settleActivity` aplica o resultado.
+ * decide quais ofertas expiram, quais voltam para a fila, quem recebe oferta
+ * e quem sai da fila porque a atividade acabou. `settleActivity` aplica o
+ * resultado.
  */
 
 export interface WaitlistEntryState {
@@ -29,6 +30,8 @@ export interface SettlementInput {
 export interface SettlementPlan {
 	/** Ofertas vencidas e entradas encerradas pelo fim da atividade. */
 	expire: string[];
+	/** Ofertas vigentes acima do limite (o limite baixou): voltam a esperar. */
+	revoke: string[];
 	offer: { id: string; expiresAt: Date }[];
 }
 
@@ -70,7 +73,11 @@ export function planSettlement(input: SettlementInput): SettlementPlan {
 		input;
 
 	if (endsAt && now >= endsAt) {
-		return { expire: entries.map((entry) => entry.id), offer: [] };
+		return {
+			expire: entries.map((entry) => entry.id),
+			revoke: [],
+			offer: [],
+		};
 	}
 
 	const expired = entries.filter(
@@ -79,17 +86,23 @@ export function planSettlement(input: SettlementInput): SettlementPlan {
 			(!entry.offerExpiresAt || entry.offerExpiresAt <= now),
 	);
 	const expiredIds = new Set(expired.map((entry) => entry.id));
-	const openOffers = entries.filter(
-		(entry) => entry.status === "offered" && !expiredIds.has(entry.id),
-	).length;
+	const openOffers = entries
+		.filter(
+			(entry) => entry.status === "offered" && !expiredIds.has(entry.id),
+		)
+		.sort(byQueueOrder);
+
+	// Com o limite menor, as últimas ofertas da fila são desfeitas
+	const seatsForOffers =
+		limit == null ? Infinity : Math.max(0, limit - enrolled);
+	const revoke = openOffers.slice(seatsForOffers).map((entry) => entry.id);
 
 	// Depois do início, só o organizador promove (manualmente)
 	if (startsAt && now >= startsAt) {
-		return { expire: [...expiredIds], offer: [] };
+		return { expire: [...expiredIds], revoke, offer: [] };
 	}
 
-	const free =
-		limit == null ? Infinity : Math.max(0, limit - enrolled - openOffers);
+	const free = Math.max(0, seatsForOffers - openOffers.length);
 	const deadline = Math.min(
 		now.getTime() + offerHours * HOUR,
 		startsAt?.getTime() ?? Infinity,
@@ -101,5 +114,5 @@ export function planSettlement(input: SettlementInput): SettlementPlan {
 		.slice(0, free)
 		.map((entry) => ({ id: entry.id, expiresAt: new Date(deadline) }));
 
-	return { expire: [...expiredIds], offer };
+	return { expire: [...expiredIds], revoke, offer };
 }

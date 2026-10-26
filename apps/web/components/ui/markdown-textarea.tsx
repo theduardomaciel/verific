@@ -34,10 +34,13 @@ interface MarkdownTextareaProps extends Omit<
 	onChange?: (value: string) => void;
 }
 
-const MarkdownTextarea = React.forwardRef<
-	HTMLTextAreaElement,
-	MarkdownTextareaProps
->(({ className, value, onChange, ...props }, ref) => {
+function MarkdownTextarea({
+	className,
+	value,
+	onChange,
+	ref,
+	...props
+}: MarkdownTextareaProps) {
 	const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 	const [mode, setMode] = React.useState<"edit" | "preview">("edit");
 
@@ -275,8 +278,6 @@ const MarkdownTextarea = React.forwardRef<
 			</div>
 		</div>
 	);
-});
-
-MarkdownTextarea.displayName = "MarkdownTextarea";
+}
 
 export { MarkdownTextarea };

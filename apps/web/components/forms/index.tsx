@@ -1,4 +1,3 @@
-// Icons
 import {
 	ArrowRightIcon,
 	CheckCircleIcon,
@@ -7,15 +6,12 @@ import {
 } from "lucide-react";
 import { useWatch } from "react-hook-form";
 
-// Components
 import { Button } from "@/components/ui/button";
 import { FormLabel } from "@/components/ui/form";
 
 import { cn } from "@/lib/utils";
-// Utils
 import { scrollToNextSection } from "@/lib/validations";
 
-// Types
 import type { FieldValues, UseFormReturn } from "react-hook-form";
 
 export type GenericForm = UseFormReturn<FieldValues>;

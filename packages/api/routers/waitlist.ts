@@ -42,6 +42,7 @@ import {
 	getActiveEntries,
 	getActivityRange,
 	getEffectiveEntries,
+	getEffectiveEntriesByActivity,
 	queuePositions,
 	resolveEnrolledEntries,
 	settleActivity,
@@ -407,16 +408,14 @@ export const waitlistRouter = createTRPCRouter({
 
 			// Read effective state without settling (no side effects, no e-mails).
 			// Expired offers are computed from offerExpiresAt vs. now.
-			return db.transaction(async (tx) => {
-				const entries = [];
-				for (const { activityId } of active.sort((a, b) =>
-					a.activityId.localeCompare(b.activityId),
-				)) {
-					const queue = await getEffectiveEntries(tx, activityId);
-					const entry = describeEntry(queue, me.id);
-					if (entry) entries.push({ activityId, ...entry });
-				}
-				return entries;
+			const activityIds = active.map((row) => row.activityId).sort();
+			const queues = await getEffectiveEntriesByActivity(db, activityIds);
+			return activityIds.flatMap((activityId) => {
+				const entry = describeEntry(
+					queues.get(activityId) ?? [],
+					me.id,
+				);
+				return entry ? [{ activityId, ...entry }] : [];
 			});
 		}),
 	/**

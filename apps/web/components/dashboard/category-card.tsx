@@ -1,6 +1,5 @@
 import { Clock } from "lucide-react";
 
-// Types
 import type { activityCategories } from "@verific/drizzle/enum/category";
 import { activityCategoryLabels } from "@verific/drizzle/enum/category";
 

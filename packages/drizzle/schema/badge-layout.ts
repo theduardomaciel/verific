@@ -26,7 +26,10 @@ export const badgeLayout = pgTable(
 			}),
 		layout: jsonb("layout").notNull().$type<unknown>(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.defaultNow()
+			.notNull()
+			.$onUpdate(() => new Date()),
 	},
 	(table) => [uniqueIndex().on(table.projectId)],
 );

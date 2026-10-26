@@ -28,7 +28,8 @@ type Status = "idle" | "processing" | "uploading" | "error";
 
 /**
  * Seletor de arquivo com upload direto ao storage (presigned URL).
- * Substitui todos os inputs de URL de imagem. Sem campo de URL.
+ * Substitui todos os inputs de URL de imagem. Sem campo de URL. A imagem
+ * substituída só é apagada pelo servidor, quando o formulário é salvo.
  */
 export function ImageUploader({
 	value,
@@ -45,7 +46,6 @@ export function ImageUploader({
 	const [status, setStatus] = useState<Status>("idle");
 	const [error, setError] = useState<string | null>(null);
 	const requestUpload = trpc.requestImageUpload.useMutation();
-	const deleteImage = trpc.deleteImage.useMutation();
 
 	async function handleFile(file: File | undefined) {
 		if (!file) return;
@@ -66,21 +66,10 @@ export function ImageUploader({
 				headers: { "Content-Type": processed.contentType },
 			});
 			if (!res.ok) throw new Error("Falha no envio. Tente novamente.");
-			const previous = value;
 			onChange(publicUrl, {
 				width: processed.width,
 				height: processed.height,
 			});
-			if (previous && previous !== publicUrl) {
-				try {
-					await deleteImage.mutateAsync({
-						projectId,
-						publicUrlOrKey: previous,
-					});
-				} catch {
-					// Best-effort: o objeto órfão pode ser coletado depois.
-				}
-			}
 			setStatus("idle");
 		} catch (e) {
 			setStatus("error");
@@ -88,17 +77,7 @@ export function ImageUploader({
 		}
 	}
 
-	async function handleRemove() {
-		if (value) {
-			try {
-				await deleteImage.mutateAsync({
-					projectId,
-					publicUrlOrKey: value,
-				});
-			} catch {
-				// Best-effort: limpa o campo mesmo se a exclusão falhar.
-			}
-		}
+	function handleRemove() {
 		onChange("");
 		setError(null);
 		setStatus("idle");
@@ -115,7 +94,10 @@ export function ImageUploader({
 				}`}
 			>
 				{value ? (
+					// Prévia de um upload recém-feito: otimizar gastaria uma
+					// transformação por arquivo enviado
 					<Image
+						unoptimized
 						src={value}
 						alt={label}
 						fill
@@ -169,7 +151,7 @@ export function ImageUploader({
 						variant="ghost"
 						size="sm"
 						disabled={busy}
-						onClick={() => void handleRemove()}
+						onClick={handleRemove}
 					>
 						<Trash2 className="mr-2 h-4 w-4" />
 						Remover

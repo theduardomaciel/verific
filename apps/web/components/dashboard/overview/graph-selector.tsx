@@ -2,12 +2,11 @@
 
 import { useMemo, useState } from "react";
 
-// Icons
 import { CircleOff } from "lucide-react";
 
 import { BREAKDOWN_REGISTRATIONS_SERIES } from "@verific/api/schemas";
 
-import { CardHeader, CardTitle } from "@/components/ui/card";
+import { CardTitle } from "@/components/ui/card";
 import {
 	Select,
 	SelectContent,

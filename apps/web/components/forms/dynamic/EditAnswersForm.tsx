@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye } from "lucide-react";
@@ -12,8 +12,17 @@ import {
 	filterVisibleFields,
 	getVisibleSectionIds,
 } from "@verific/api/schemas";
-import { slotForField } from "@verific/drizzle/profile-layout";
 
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
@@ -36,10 +45,6 @@ export function EditMyAnswersForm({
 	const utils = trpc.useUtils();
 	const published = trpc.getPublishedForm.useQuery({ projectId });
 	const myAnswers = trpc.getMyAnswers.useQuery({ projectId });
-	const layoutQuery = trpc.getProfileLayout.useQuery(
-		{ projectUrl: projectUrl ?? "" },
-		{ enabled: Boolean(projectUrl) },
-	);
 	const myProfile = trpc.getMyProfileData.useQuery(
 		{ projectUrl: projectUrl ?? "" },
 		{ enabled: Boolean(projectUrl), retry: false },
@@ -48,12 +53,17 @@ export function EditMyAnswersForm({
 		onSuccess: () => {
 			void utils.getMyProfileData.invalidate();
 		},
+		onError: (e) => toast.error(e.message),
 	});
-	const layout = layoutQuery.data ?? null;
+	// Por chave do campo: o layout pode apontar para outra versão
 	const visibility = (myProfile.data?.visibility ?? {}) as Record<
 		string,
 		boolean
 	>;
+	const linkedKeys = useMemo(
+		() => new Set(myProfile.data?.linkedKeys ?? []),
+		[myProfile.data],
+	);
 
 	const fields = useMemo(
 		() =>
@@ -64,6 +74,15 @@ export function EditMyAnswersForm({
 	);
 	const sections = useMemo(
 		() => published.data?.sections ?? [],
+		[published.data],
+	);
+	// Uma seção pode depender de um campo que não se edita mais
+	const ruleFields = useMemo(
+		() =>
+			(published.data?.fields ?? []).map((f) => ({
+				id: f.id,
+				key: f.key,
+			})),
 		[published.data],
 	);
 
@@ -133,13 +152,14 @@ export function EditMyAnswersForm({
 				fieldsForValidation,
 				sectionsForVisibility,
 				(values ?? {}) as Record<string, unknown>,
+				ruleFields,
 			);
 			const zod = zodResolver(schema as never);
 			return (
 				zod as (a: unknown, b: unknown, c: unknown) => Promise<unknown>
 			)(values, context, options) as never;
 		};
-	}, [fieldsForValidation, sectionsForVisibility]);
+	}, [fieldsForValidation, sectionsForVisibility, ruleFields]);
 
 	const form = useForm<Record<string, unknown>>({
 		resolver: resolver as never,
@@ -159,16 +179,17 @@ export function EditMyAnswersForm({
 			fields,
 			sectionsForVisibility,
 			watched,
+			ruleFields,
 		);
 		const ids = getVisibleSectionIds(
 			sectionsForVisibility,
-			fieldsForValidation,
+			ruleFields,
 			watched,
 		);
 		return groupFieldsBySection(visible, sections).filter((g) =>
 			ids.has(g.section.id),
 		);
-	}, [fields, sections, sectionsForVisibility, fieldsForValidation, watched]);
+	}, [fields, sections, sectionsForVisibility, ruleFields, watched]);
 
 	useEffect(() => {
 		const allowed = new Set(
@@ -176,6 +197,7 @@ export function EditMyAnswersForm({
 				fieldsForValidation,
 				sectionsForVisibility,
 				watched,
+				ruleFields,
 			).map((f) => f.key),
 		);
 		const hidden = fieldsForValidation
@@ -192,6 +214,50 @@ export function EditMyAnswersForm({
 		onError: (e) => toast.error(e.message),
 	});
 
+	// Respostas guardadas de seções que a edição escondeu: saem ao salvar
+	const [pendingSave, setPendingSave] = useState<{
+		answers: Record<string, unknown>;
+		lostLabels: string[];
+	} | null>(null);
+
+	function save(answers: Record<string, unknown>) {
+		mutation.mutate({
+			projectId,
+			answers: answers as Record<
+				string,
+				string | number | boolean | string[] | null
+			>,
+		});
+	}
+
+	function handleValid(values: Record<string, unknown>) {
+		// `values` só tem os campos editáveis; as regras também leem as
+		// respostas guardadas dos outros
+		const visible = filterVisibleFields(
+			fieldsForValidation,
+			sectionsForVisibility,
+			{ ...form.getValues(), ...values },
+			ruleFields,
+		);
+		const allowed = new Set(visible.map((f) => f.key));
+		const stripped: Record<string, unknown> = {};
+		for (const [k, v] of Object.entries(values)) {
+			if (allowed.has(k)) stripped[k] = v;
+		}
+		const lostLabels = fields
+			.filter(
+				(f) =>
+					!allowed.has(f.key) &&
+					!isBlank(defaultValues[f.key] as unknown),
+			)
+			.map((f) => f.label);
+		if (lostLabels.length > 0) {
+			setPendingSave({ answers: stripped, lostLabels });
+			return;
+		}
+		save(stripped);
+	}
+
 	if (published.isPending || myAnswers.isPending)
 		return <Skeleton className="h-200 w-full" />;
 	if (!myAnswers.data?.participant) return null;
@@ -205,35 +271,7 @@ export function EditMyAnswersForm({
 			<CardContent>
 				<Form {...form}>
 					<form
-						onSubmit={(e) =>
-							void form.handleSubmit((values) => {
-								const visible = filterVisibleFields(
-									fieldsForValidation,
-									sectionsForVisibility,
-									values as Record<string, unknown>,
-								);
-								const allowed = new Set(
-									visible.map((f) => f.key),
-								);
-								const stripped: Record<string, unknown> = {};
-								for (const [k, v] of Object.entries(
-									(values ?? {}) as Record<string, unknown>,
-								)) {
-									if (allowed.has(k)) stripped[k] = v;
-								}
-								mutation.mutate({
-									projectId,
-									answers: stripped as Record<
-										string,
-										| string
-										| number
-										| boolean
-										| string[]
-										| null
-									>,
-								});
-							})(e)
-						}
+						onSubmit={(e) => void form.handleSubmit(handleValid)(e)}
 						className="flex flex-col gap-4"
 					>
 						{grouped.map((group) => (
@@ -258,16 +296,16 @@ export function EditMyAnswersForm({
 										}
 									>
 										{row.fields.map((f) => {
-											const slot = layout
-												? slotForField(layout, f.id)
-												: null;
+											const linked = linkedKeys.has(
+												f.key,
+											);
 											const showToggle = Boolean(
-												slot &&
+												linked &&
 												f.required &&
 												myProfile.data,
 											);
 											const showHint = Boolean(
-												slot && !showToggle,
+												linked && !showToggle,
 											);
 											return (
 												<div
@@ -295,7 +333,7 @@ export function EditMyAnswersForm({
 																id={`profile-visible-${f.id}`}
 																checked={
 																	visibility[
-																		f.id
+																		f.key
 																	] ?? true
 																}
 																onCheckedChange={(
@@ -338,6 +376,43 @@ export function EditMyAnswersForm({
 					</form>
 				</Form>
 			</CardContent>
+			<AlertDialog
+				open={pendingSave !== null}
+				onOpenChange={(open) => {
+					if (!open) setPendingSave(null);
+				}}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Apagar respostas?</AlertDialogTitle>
+						<AlertDialogDescription>
+							Com essa mudança, estas perguntas deixam de se
+							aplicar e as respostas delas serão apagadas:{" "}
+							{pendingSave?.lostLabels.join(", ")}.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Voltar</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={() => {
+								if (pendingSave) save(pendingSave.answers);
+								setPendingSave(null);
+							}}
+						>
+							Salvar e apagar
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</Card>
+	);
+}
+
+function isBlank(value: unknown) {
+	return (
+		value === undefined ||
+		value === null ||
+		value === "" ||
+		(Array.isArray(value) && value.length === 0)
 	);
 }

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-// Components
 import { ExternalLinkIcon } from "lucide-react";
 
 import {
@@ -17,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { ActivityTicket } from "@/components/activity/activity-ticket";
 import { Empty } from "@/components/empty";
 
-// Utils
+import { useToday } from "@/hooks/use-now";
 import { categorizeByDate, getFirstSessionStart } from "@/lib/date";
 
 interface AccountWrapperProps {
@@ -34,15 +33,17 @@ export function AccountWrapper({
 	checkoutEnabled = false,
 }: AccountWrapperProps) {
 	const fallbackDate = useState(() => new Date())[0];
+	const today = useToday();
 	const { grouped, categories, initialExpanded } = useMemo(() => {
 		const { grouped, categories } = categorizeByDate(
 			activities,
 			(item) => getFirstSessionStart(item.sessions) ?? fallbackDate,
+			today,
 		);
 		const hasToday = categories.includes("Hoje");
 		const initialExpanded = hasToday ? ["Hoje"] : categories;
 		return { grouped, categories, initialExpanded };
-	}, [activities, fallbackDate]);
+	}, [activities, fallbackDate, today]);
 
 	const [expandedCategories, setExpandedCategories] =
 		useState<string[]>(initialExpanded);
@@ -70,8 +71,9 @@ export function AccountWrapper({
 							<AccordionTrigger className="text-foreground font-subtitle text-xl font-bold">
 								{category}
 							</AccordionTrigger>
-							<AccordionContent>
-								<ul className="flex w-full flex-col gap-4">
+							{/* Folga para a sombra dos ingressos: o conteúdo corta o que passa da borda */}
+							<AccordionContent className="-mx-4 px-4 pb-8">
+								<ul className="flex w-full flex-col gap-8">
 									{grouped.get(category)!.map((activity) => (
 										<li
 											key={activity.id}

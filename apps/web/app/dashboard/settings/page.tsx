@@ -1,9 +1,7 @@
 "use client";
 
-// API
 import { useCurrentProject } from "@/hooks/use-current-project";
 
-// Components
 import { ProjectSettingsGeneral } from "./form";
 import { SettingsFormSkeleton } from "./skeleton";
 

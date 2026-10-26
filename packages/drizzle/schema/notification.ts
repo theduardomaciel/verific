@@ -64,7 +64,10 @@ export const notification = pgTable(
 		/** Why a row was skipped instead of sent (see notification SkipReason). */
 		skipReason: text("skip_reason"),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.defaultNow()
+			.notNull()
+			.$onUpdate(() => new Date()),
 		sentAt: timestamp("sent_at"),
 	},
 	(table) => [
@@ -76,6 +79,11 @@ export const notification = pgTable(
 		index("notifications_event_id_status_idx").on(
 			table.eventId,
 			table.status,
+		),
+		// Uso das últimas 24 h (limite diário de e-mails)
+		index("notifications_status_sent_at_idx").on(
+			table.status,
+			table.sentAt,
 		),
 	],
 );
@@ -98,7 +106,10 @@ export const projectNotificationSetting = pgTable(
 		type: text("type").notNull(),
 		enabled: boolean("enabled").notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.defaultNow()
+			.notNull()
+			.$onUpdate(() => new Date()),
 	},
 	(table) => [
 		uniqueIndex("project_notification_settings_project_type_unique").on(

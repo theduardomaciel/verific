@@ -1,9 +1,9 @@
-// API
 import { TRPCError } from "@trpc/server";
 
 import { db } from "@verific/drizzle";
 import { and, eq, like, or } from "@verific/drizzle/orm";
 import {
+	activity,
 	participant,
 	project,
 	projectModerator,
@@ -13,6 +13,7 @@ import { slugify } from "@verific/drizzle/slug";
 import { eventThemeSchema } from "@verific/drizzle/theme";
 import { z } from "@verific/zod";
 
+import { deleteReplacedImages } from "../lib/image-cleanup";
 import {
 	requireProjectAccess,
 	requireProjectOwner,
@@ -63,6 +64,15 @@ function isUniqueViolation(error: unknown) {
 		(error.cause as { code?: string } | undefined)?.code === "23505"
 	);
 }
+
+const PROJECT_IMAGE_COLUMNS = [
+	"logoUrl",
+	"logoDarkUrl",
+	"largeLogoUrl",
+	"largeLogoDarkUrl",
+	"coverUrl",
+	"thumbnailUrl",
+] as const;
 
 // Pastas de `apps/web/app`: têm prioridade sobre a rota do evento
 const RESERVED_URLS = ["account", "api", "auth", "dashboard", "dev"];
@@ -209,6 +219,13 @@ export const projectsRouter = createTRPCRouter({
 				}
 				throw error;
 			}
+			const images = (row: Partial<typeof current>) =>
+				PROJECT_IMAGE_COLUMNS.map((column) => row[column]);
+			await deleteReplacedImages(
+				id,
+				images(current),
+				images({ ...current, ...updateData }),
+			);
 			return { updated: true, url: rest.url ?? current.url };
 		}),
 
@@ -324,7 +341,13 @@ export const projectsRouter = createTRPCRouter({
 				.where(eq(user.id, ctx.session.user.id));
 			const deletedByName = ownerRows[0]?.name?.trim() || undefined;
 
-			await db.delete(project).where(eq(project.id, input.id));
+			// activities.project_id é RESTRICT
+			await db.transaction(async (tx) => {
+				await tx
+					.delete(activity)
+					.where(eq(activity.projectId, input.id));
+				await tx.delete(project).where(eq(project.id, input.id));
+			});
 
 			void notifyProjectDeleted({
 				projectId: input.id,

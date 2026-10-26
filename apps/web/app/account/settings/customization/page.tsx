@@ -1,6 +1,5 @@
 import { Fragment } from "react";
 
-// Components
 import { SettingsCard } from "@/components/settings/settings-card";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 

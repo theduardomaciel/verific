@@ -8,7 +8,7 @@ import {
 	user,
 } from "@verific/drizzle/schema";
 
-import { scheduleAfterResponse } from "./registration-email";
+import { scheduleAfterResponse } from "../lib/after-response";
 import {
 	createBuildContext,
 	getNotificationDefinition,
@@ -40,6 +40,7 @@ const TYPE_PRIORITY: Record<string, number> = {
 	activity_enrollment_confirmed: 1,
 	activity_waitlisted: 1,
 	activity_waitlist_offered: 1,
+	activity_waitlist_offer_revoked: 1,
 	activity_updated: 2,
 };
 
@@ -100,7 +101,7 @@ function dispatchAfterResponse(inputs: SendNotificationInput[]): Promise<void> {
  */
 function makeInput(args: {
 	type: SendNotificationInput["type"];
-	eventId: string;
+	eventId: string | null;
 	to: string;
 	entityRefs: EntityRefs;
 }): SendNotificationInput | null {
@@ -204,6 +205,7 @@ export async function loadEnrolledAudience(
 export function notifyEventRegistrationRemoved(args: {
 	eventId: string;
 	registrationId: string;
+	participantName: string;
 	to: string;
 	reason?: string;
 }): Promise<void> {
@@ -213,6 +215,8 @@ export function notifyEventRegistrationRemoved(args: {
 		to: args.to,
 		entityRefs: {
 			registrationId: args.registrationId,
+			projectId: args.eventId,
+			participantName: args.participantName,
 			...(args.reason ? { reason: args.reason } : {}),
 		},
 	});
@@ -325,6 +329,38 @@ export function notifyActivityWaitlistOffered(args: {
 					enrollmentId: offer.enrollmentId,
 					offeredAt: offer.offeredAt.toISOString(),
 					offerExpiresAt: offer.expiresAt.toISOString(),
+				},
+			});
+			return input ? [input] : [];
+		});
+		await dispatchNotifications(inputs);
+	});
+}
+
+/** Ofertas desfeitas porque o limite baixou: a pessoa volta a esperar. */
+export function notifyActivityWaitlistOfferRevoked(args: {
+	eventId: string;
+	activityId: string;
+	revoked: Array<{ participantId: string; enrollmentId: string }>;
+	revokedAt: Date;
+}): Promise<void> {
+	if (args.revoked.length === 0) return Promise.resolve();
+	return scheduleAfterResponse(async () => {
+		const contacts = await loadNotificationRecipients(
+			args.revoked.map((entry) => entry.participantId),
+		);
+		const inputs = args.revoked.flatMap((entry) => {
+			const to = contacts.get(entry.participantId);
+			if (!to) return [];
+			const input = makeInput({
+				type: "activity_waitlist_offer_revoked",
+				eventId: args.eventId,
+				to,
+				entityRefs: {
+					activityId: args.activityId,
+					participantId: entry.participantId,
+					enrollmentId: entry.enrollmentId,
+					revokedAt: args.revokedAt.toISOString(),
 				},
 			});
 			return input ? [input] : [];
@@ -495,7 +531,8 @@ export function notifyProjectDeleted(args: {
 		if (!to) return [];
 		const input = makeInput({
 			type: "project_deleted",
-			eventId: args.projectId,
+			// O evento já foi apagado: a linha não pode referenciá-lo
+			eventId: null,
 			to,
 			entityRefs: {
 				projectId: args.projectId,

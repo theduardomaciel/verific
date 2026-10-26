@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 
-// Components
 import { CreateActivityContent } from "./content";
 
 export const metadata: Metadata = {

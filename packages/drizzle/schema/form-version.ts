@@ -1,11 +1,12 @@
 import { relations, sql } from "drizzle-orm";
 import {
 	boolean,
+	index,
+	integer,
 	pgTable,
 	timestamp,
 	uniqueIndex,
 	uuid,
-	integer,
 } from "drizzle-orm/pg-core";
 
 import { activity } from "./activity";
@@ -51,6 +52,7 @@ export const formVersion = pgTable(
 		uniqueIndex("form_versions_activity_project_version_unique")
 			.on(table.projectId, table.activityId, table.version)
 			.where(sql`${table.activityId} is not null`),
+		index("form_versions_activity_id_idx").on(table.activityId),
 	],
 );
 

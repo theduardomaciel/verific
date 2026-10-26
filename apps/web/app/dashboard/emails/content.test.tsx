@@ -136,11 +136,10 @@ describe("EmailsContent filters", () => {
 			});
 		});
 		expect(falhas).toHaveAttribute("aria-pressed", "true");
-		expect(
-			screen.getByRole("button", { name: /Limpar filtro/ }),
-		).toBeTruthy();
 
-		fireEvent.click(screen.getByRole("button", { name: /Limpar filtro/ }));
+		fireEvent.click(
+			screen.getByRole("button", { name: /^Precisam de atenção/ }),
+		);
 		await waitFor(() => {
 			expect(listQueryMock.mock.calls.at(-1)?.[0]).toMatchObject({
 				filter: "attention",
@@ -212,17 +211,13 @@ describe("EmailsContent copy actions", () => {
 		);
 	});
 
-	it("expands a long error without leaving the page", async () => {
-		state.items = [row()];
+	it("keeps the full error in the truncated cell", () => {
+		const item = row();
+		state.items = [item];
 		render(<EmailsContent />);
 
-		const errorText = screen.getByTestId("error-text");
-		expect(errorText.className).toContain("line-clamp-2");
-
-		fireEvent.click(screen.getByTestId("error-toggle"));
-
-		expect(screen.getByTestId("error-text").className).not.toContain(
-			"line-clamp-2",
+		expect(screen.getByTestId("error-text").textContent).toBe(
+			item.lastError,
 		);
 	});
 });
@@ -277,7 +272,7 @@ describe("EmailsContent reprocess button", () => {
 	});
 });
 
-describe("EmailsContent reload and auto-refresh", () => {
+describe("EmailsContent reload", () => {
 	it("reloads the list and the counters and debounces repeat clicks", async () => {
 		state.items = [row()];
 		render(<EmailsContent />);
@@ -292,29 +287,6 @@ describe("EmailsContent reload and auto-refresh", () => {
 
 		fireEvent.click(reload);
 		expect(state.invalidate).toHaveBeenCalledTimes(2);
-	});
-
-	it("enables the automatic refresh interval when the switch is toggled", () => {
-		state.items = [row()];
-		render(<EmailsContent />);
-
-		expect(
-			(
-				listQueryMock.mock.calls.at(-1)?.[1] as {
-					refetchInterval?: unknown;
-				}
-			)?.refetchInterval,
-		).toBe(false);
-
-		fireEvent.click(screen.getByLabelText("Atualização automática"));
-
-		expect(
-			(
-				listQueryMock.mock.calls.at(-1)?.[1] as {
-					refetchInterval?: unknown;
-				}
-			)?.refetchInterval,
-		).toBe(15_000);
 	});
 });
 

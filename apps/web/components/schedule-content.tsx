@@ -5,10 +5,8 @@ import { useMemo, useState } from "react";
 
 import { toast } from "sonner";
 
-// Types
 import type { RouterOutput } from "@verific/api";
 import { sortOptions, sortOptionsLabels } from "@verific/api/utils";
-// Enums
 import {
 	activityCategories,
 	activityCategoryLabels,
@@ -21,7 +19,6 @@ import {
 	AccordionTrigger,
 } from "@/components/ui/accordion";
 
-// Components
 import { ActivityCard } from "@/components/activity/activity-card";
 import {
 	QuickJoinDialog,
@@ -29,15 +26,13 @@ import {
 	type QuickJoinActivity,
 } from "@/components/activity/quick-join-dialog";
 import { Empty } from "@/components/empty";
-// Icons
 import { FilterBy } from "@/components/filter-by";
 import { SearchBar } from "@/components/search-bar";
 import { SortBy } from "@/components/sort-by";
 
-// Hooks
 import { useActivityAvailability } from "@/hooks/use-activity-availability";
+import { useToday } from "@/hooks/use-now";
 import { useSubscribedActivities } from "@/hooks/use-subscribed-activities";
-// Utils
 import {
 	categorizeByDate,
 	expandSessionOccurrences,
@@ -46,7 +41,6 @@ import {
 } from "@/lib/date";
 import { fuzzyFilter } from "@/lib/fuzzy-search";
 import { findScheduleConflicts, type Conflict } from "@/lib/schedule/conflicts";
-// API
 import { trpc } from "@/lib/trpc/react";
 
 interface ScheduleContentProps {
@@ -296,28 +290,32 @@ export function ScheduleContent({
 		return sorted;
 	}, [displayActivities, searchQuery, categoryFilter, tagFilter, sortBy]);
 
+	const today = useToday();
 	const { grouped, categories, initialExpanded } = useMemo(() => {
 		const occurrences = expandSessionOccurrences(filteredActivities);
 		const { grouped, categories } = categorizeByDate(
 			occurrences,
 			(occurrence) => occurrence.session.startsAt,
+			today,
 		);
 		const hasToday = categories.includes("Hoje");
 		const initialExpanded = hasToday ? ["Hoje"] : categories;
 		return { grouped, categories, initialExpanded };
-	}, [filteredActivities]);
+	}, [filteredActivities, today]);
 
 	const [expandedCategories, setExpandedCategories] =
 		useState<string[]>(initialExpanded);
 
-	// Só reage a mudanças de filtro/busca: recargas de dados (ex.: a
-	// disponibilidade após uma inscrição) não fecham o que o usuário abriu.
+	// Só reage a mudanças de filtro/busca e ao surgimento de "Hoje" (que só
+	// existe no cliente): recargas de dados (ex.: a disponibilidade após uma
+	// inscrição) não fecham o que o usuário abriu.
 	// Ajuste durante a renderização em vez de efeito: sem render cascata.
 	const filterKey = JSON.stringify([
 		searchQuery,
 		sortBy,
 		categoryFilter,
 		tagFilter,
+		categories.includes("Hoje"),
 	]);
 	const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
 	if (prevFilterKey !== filterKey) {

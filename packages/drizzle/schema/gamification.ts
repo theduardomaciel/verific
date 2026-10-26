@@ -117,7 +117,10 @@ export const participantPoints = pgTable(
 				onUpdate: "cascade",
 			}),
 		total: integer("total").default(0).notNull(),
-		updatedAt: timestamp("updated_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.defaultNow()
+			.notNull()
+			.$onUpdate(() => new Date()),
 	},
 	(table) => [
 		index("participant_points_project_total_idx").on(

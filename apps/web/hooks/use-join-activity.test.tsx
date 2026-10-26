@@ -11,15 +11,13 @@ const {
 	invalidateSubscribedMock,
 	invalidateActivitiesMock,
 	invalidateAvailabilityMock,
-	revalidateSubscribedMock,
-	revalidateActivitiesMock,
+	refreshRouteMock,
 } = vi.hoisted(() => ({
 	mutateAsyncMock: vi.fn(),
 	invalidateSubscribedMock: vi.fn(),
 	invalidateActivitiesMock: vi.fn(),
 	invalidateAvailabilityMock: vi.fn(),
-	revalidateSubscribedMock: vi.fn(),
-	revalidateActivitiesMock: vi.fn(),
+	refreshRouteMock: vi.fn(),
 }));
 
 vi.mock("@/lib/trpc/react", () => ({
@@ -42,15 +40,13 @@ vi.mock("@/lib/trpc/react", () => ({
 }));
 
 vi.mock("@/app/actions", () => ({
-	revalidateSubscribedActivitiesIdsFromParticipant: revalidateSubscribedMock,
-	revalidateParticipantActivities: revalidateActivitiesMock,
+	refreshRoute: refreshRouteMock,
 }));
 
 function setup() {
 	vi.clearAllMocks();
 	mutateAsyncMock.mockResolvedValue({ ok: true });
-	revalidateSubscribedMock.mockResolvedValue(undefined);
-	revalidateActivitiesMock.mockResolvedValue(undefined);
+	refreshRouteMock.mockResolvedValue(undefined);
 	invalidateSubscribedMock.mockResolvedValue(undefined);
 	invalidateActivitiesMock.mockResolvedValue(undefined);
 	invalidateAvailabilityMock.mockResolvedValue(undefined);
@@ -98,8 +94,7 @@ describe("useJoinActivity", () => {
 			activityId: "act-1",
 			participantsIdsToAdd: ["part-1"],
 		});
-		expect(revalidateSubscribedMock).toHaveBeenCalledWith("user-1");
-		expect(revalidateActivitiesMock).toHaveBeenCalledWith("user-1");
+		expect(refreshRouteMock).toHaveBeenCalledOnce();
 		expect(invalidateSubscribedMock).toHaveBeenCalled();
 		expect(invalidateActivitiesMock).toHaveBeenCalled();
 		expect(invalidateAvailabilityMock).toHaveBeenCalled();

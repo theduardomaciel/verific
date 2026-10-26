@@ -1,14 +1,7 @@
 /**
- * Rascunho local do formulário de inscrição (`JoinForm`).
- *
- * O estado do formulário vive em memória (react-hook-form): qualquer
- * remontagem do `JoinForm` o descarta. Remontagens acontecem em fluxos
- * normais — ex.: o `better-auth` refaz `fetch` da sessão ao trocar de aba
- * (`refetchOnWindowFocus`) e, para visitantes deslogados (`data === null`),
- * isso alterna `session.isPending` para `true`, o que já trocou o
- * formulário pelo esqueleto e apagou tudo. Persistir o rascunho por
- * projeto garante que o progresso sobreviva a remontagens, reloads e ao
- * login feito no meio do preenchimento (troca de conta).
+ * Rascunho local do formulário de inscrição (`JoinForm`), por projeto: o
+ * estado do react-hook-form some quando o formulário remonta, e o rascunho
+ * mantém o progresso em reloads e no login feito no meio do preenchimento.
  */
 
 export interface JoinDraft {
