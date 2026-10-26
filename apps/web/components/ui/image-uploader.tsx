@@ -94,7 +94,10 @@ export function ImageUploader({
 				}`}
 			>
 				{value ? (
+					// Prévia de um upload recém-feito: otimizar gastaria uma
+					// transformação por arquivo enviado
 					<Image
+						unoptimized
 						src={value}
 						alt={label}
 						fill
