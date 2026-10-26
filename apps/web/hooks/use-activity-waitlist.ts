@@ -83,6 +83,12 @@ export function useActivityWaitlist({
 		},
 	});
 
+	const settleMutation = trpc.settleActivityWaitlist.useMutation({
+		onSuccess: () => {
+			void utils.getActivityWaitlist.invalidate({ activityId });
+		},
+	});
+
 	return {
 		...query,
 		promote: (args: {
@@ -95,7 +101,10 @@ export function useActivityWaitlist({
 			participantId: string;
 			reason?: string;
 		}) => removeMutation.mutateAsync(args) as unknown as Promise<void>,
+		settle: (args: { activityId: string }) =>
+			settleMutation.mutateAsync(args) as unknown as Promise<void>,
 		isPromoting: promoteMutation.isPending,
 		isRemoving: removeMutation.isPending,
+		isSettling: settleMutation.isPending,
 	};
 }

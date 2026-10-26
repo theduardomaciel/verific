@@ -2,6 +2,7 @@
 
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
 
 import type { RouterOutput } from "@verific/api";
 
@@ -28,8 +29,10 @@ interface WaitlistListProps {
 		participantId: string;
 		reason?: string;
 	}) => Promise<void>;
+	settle?: (args: { activityId: string }) => Promise<void>;
 	isPromoting: boolean;
 	isRemoving: boolean;
+	isSettling?: boolean;
 }
 
 // Position | Participant | Status | Joined | Actions
@@ -44,8 +47,10 @@ export function WaitlistList({
 	waitlistData,
 	promote,
 	remove,
+	settle,
 	isPromoting,
 	isRemoving,
+	isSettling,
 }: WaitlistListProps) {
 	const { participantsLimit, enrolled, freeSeats, entries } = waitlistData;
 
@@ -56,6 +61,29 @@ export function WaitlistList({
 
 	return (
 		<div className="flex w-full min-w-0 flex-col gap-4">
+			{settle && (
+				<div className="flex justify-end">
+					<Button
+						size="sm"
+						variant="outline"
+						disabled={isSettling}
+						onClick={async () => {
+							try {
+								await settle({ activityId });
+								toast.success("Fila de espera processada");
+							} catch {
+								toast.error(
+									"Erro ao processar a fila de espera",
+								);
+							}
+						}}
+					>
+						{isSettling
+							? "Processando..."
+							: "Processar fila (expirar ofertas)"}
+					</Button>
+				</div>
+			)}
 			{/* Summary Cards */}
 			<div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 lg:gap-4">
 				<div className="bg-card flex min-w-0 flex-col gap-1 rounded-lg border p-4">

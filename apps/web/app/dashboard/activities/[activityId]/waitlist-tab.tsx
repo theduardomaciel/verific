@@ -18,8 +18,10 @@ export function WaitlistTab({
 		isPending,
 		promote,
 		remove,
+		settle,
 		isPromoting,
 		isRemoving,
+		isSettling,
 	} = useActivityWaitlist({
 		activityId,
 		participantsLimit,
@@ -41,8 +43,10 @@ export function WaitlistTab({
 			waitlistData={waitlistData!}
 			promote={promote}
 			remove={remove}
+			settle={settle}
 			isPromoting={isPromoting}
 			isRemoving={isRemoving}
+			isSettling={isSettling}
 		/>
 	);
 }

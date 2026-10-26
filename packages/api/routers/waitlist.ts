@@ -636,4 +636,23 @@ export const waitlistRouter = createTRPCRouter({
 
 			return { success: true };
 		}),
+
+	/**
+	 * Processa manualmente a fila da atividade: expira ofertas vencidas e
+	 * oferece as vagas livres ao próximo da fila. Útil quando o agendador
+	 * (QStash/sweep) não disparou a tempo.
+	 */
+	settleActivityWaitlist: protectedProcedure
+		.input(z.object({ activityId: z.uuid() }))
+		.mutation(async ({ input, ctx }) => {
+			await assertCanManageActivity(
+				input.activityId,
+				ctx.session.user.id,
+			);
+			await db.transaction(async (tx) => {
+				const locked = await lockActivity(tx, input.activityId);
+				await settleActivity(tx, locked);
+			});
+			return { success: true };
+		}),
 });
