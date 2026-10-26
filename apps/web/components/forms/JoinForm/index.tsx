@@ -94,7 +94,7 @@ export default function JoinForm({
 	const sections = useMemo(() => formData?.sections ?? [], [formData]);
 
 	// Rascunho salvo em `localStorage`: o estado do formulário é
-	// descartado a cada remontagem (troca de aba, login no meio do
+	// descartado a cada remontagem (reload, login no meio do
 	// preenchimento), então o progresso é restaurado daqui.
 	const [initialDraft] = useState(() => {
 		const knownKeys = new Set(
@@ -209,8 +209,8 @@ export default function JoinForm({
 		useWatch({ control: form.control, name: "answers" }) ?? {};
 	const watchedName = useWatch({ control: form.control, name: "name" }) ?? "";
 
-	// Persiste cada alteração: remontagens (troca de aba, login/logout)
-	// recriam o `useForm` e o rascunho é restaurado em `defaultValues`.
+	// Persiste cada alteração: remontagens (reload, login/logout) recriam o
+	// `useForm` e o rascunho é restaurado em `defaultValues`.
 	useEffect(() => {
 		if (submissionStartedRef.current || currentState === "submitted") {
 			clearJoinDraft(project.id);
@@ -284,9 +284,17 @@ export default function JoinForm({
 		/>
 	);
 
+	// Na montagem vale o rascunho. Numa troca de conta, o nome acompanha a
+	// conta, a menos que a pessoa tenha digitado outro.
+	const previousUserRef = useRef(user);
 	useEffect(() => {
-		if (user?.name) form.setValue("name", user.name);
-	}, [user?.name, form]);
+		const previous = previousUserRef.current;
+		previousUserRef.current = user;
+		if (previous?.id === user?.id) return;
+		const typed = form.getValues("name");
+		if (typed && typed !== (previous?.name ?? "")) return;
+		form.setValue("name", user?.name ?? "");
+	}, [user, form]);
 
 	useEffect(() => {
 		if (!hasConditional) return;
@@ -298,10 +306,6 @@ export default function JoinForm({
 			form.clearErrors(hidden.map((k) => `answers.${k}` as never));
 		}
 	}, [visibleFields, fieldsForValidation, hasConditional, form]);
-
-	useEffect(() => {
-		if (!user) form.setValue("name", "");
-	}, [user, form]);
 
 	// Com login o aviso perde o sentido (ajuste durante a renderização).
 	if (user && needsLogin) {

@@ -248,4 +248,46 @@ describe("JoinForm wizard", () => {
 		expect((restored[0] as HTMLInputElement).value).toBe("Fulano da Silva");
 		expect((restored[1] as HTMLInputElement).value).toBe("fulana");
 	});
+
+	it.each([mockUser, undefined])(
+		"não troca o nome digitado ao remontar (usuário %#)",
+		(user) => {
+			const draftProject = {
+				id: `p-name-${user ? "in" : "out"}`,
+				url: "e",
+			};
+			const props = {
+				project: draftProject,
+				formData,
+				profileLayout: null,
+				user: user as never,
+			};
+			const { unmount } = render(<JoinForm {...props} />);
+			fireEvent.change(screen.getAllByRole("textbox")[0]!, {
+				target: { value: "Outro Nome" },
+			});
+
+			unmount();
+			render(<JoinForm {...props} />);
+
+			expect(
+				(screen.getAllByRole("textbox")[0] as HTMLInputElement).value,
+			).toBe("Outro Nome");
+		},
+	);
+
+	it("preenche o nome da conta no login feito no meio do preenchimento", () => {
+		const props = {
+			project: { id: "p-login", url: "e" },
+			formData,
+			profileLayout: null,
+		};
+		const { rerender } = render(<JoinForm {...props} />);
+
+		rerender(<JoinForm {...props} user={mockUser as never} />);
+
+		expect(
+			(screen.getAllByRole("textbox")[0] as HTMLInputElement).value,
+		).toBe(mockUser.name);
+	});
 });
