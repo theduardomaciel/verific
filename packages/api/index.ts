@@ -11,7 +11,6 @@ import { projectsRouter } from "./routers/projects";
 import { speakersRouter } from "./routers/speakers";
 import { tagsRouter } from "./routers/tags";
 import { uploadsRouter } from "./routers/uploads";
-// Routers
 import { usersRouter } from "./routers/users";
 import { waitlistRouter } from "./routers/waitlist";
 import { createCallerFactory, mergeRouters } from "./trpc";

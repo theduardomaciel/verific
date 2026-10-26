@@ -2,10 +2,8 @@
 import { Image } from "lucide-react";
 import { toast } from "sonner";
 
-// API
 import type { RouterOutput } from "@verific/api";
 
-// Components
 import { Button } from "@/components/ui/button";
 import {
 	FormField,
@@ -19,7 +17,6 @@ import { SettingsCard } from "@/components/settings/settings-card";
 import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
 
 import { trpc } from "@/lib/trpc/react";
-// Validations
 import { nameSchema } from "@/lib/validations/forms/settings-form/project/general-form";
 
 interface Props {

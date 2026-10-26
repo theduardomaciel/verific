@@ -5,7 +5,6 @@ import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-// Components
 import { Button } from "@/components/ui/button";
 import {
 	Drawer,

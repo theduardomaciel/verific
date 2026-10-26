@@ -1,4 +1,3 @@
-// tRPC
 import { TRPCError } from "@trpc/server";
 
 import { db } from "@verific/drizzle";
@@ -42,7 +41,6 @@ import {
 } from "@verific/drizzle/schema";
 import { z } from "@verific/zod";
 
-// Utils
 import {
 	assertNoScheduleConflict,
 	lockParticipant,
@@ -96,7 +94,6 @@ import { hasPublishedActivityForm } from "./forms";
 export { activitySort, getActivitiesParams, getActivityParams };
 
 import { activityAudiences } from "@verific/drizzle/enum/audience";
-// Enums
 import { activityCategories } from "@verific/drizzle/enum/category";
 
 const activitySessionSchema = z.object({

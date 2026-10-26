@@ -1,4 +1,3 @@
-// tRPC
 import { TRPCError } from "@trpc/server";
 
 import { db } from "@verific/drizzle";

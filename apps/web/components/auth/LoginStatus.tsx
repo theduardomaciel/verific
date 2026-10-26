@@ -1,13 +1,10 @@
 import type { ReactNode } from "react";
 import { useTransition } from "react";
 
-// Icons
 import { LoaderCircle, LogOut } from "lucide-react";
 
-// Components
 import { Panel } from "@/components/forms";
 
-// Actions
 import { signOutAction } from "@/app/actions";
 import { cn } from "@/lib/utils";
 

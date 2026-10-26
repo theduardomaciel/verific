@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-// Icons
 import {
 	Check,
 	BookUser,
@@ -11,15 +10,12 @@ import {
 	CircleMinus,
 } from "lucide-react";
 
-// API
 import type { RouterOutput } from "@verific/api";
 
-// Utils
 import { getTimeString } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
 import { RemoveParticipantDialog } from "../dialogs/remove-participant";
-// Components
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Button } from "../ui/button";
 import { ParticipantQuitButton } from "./participant-quit-button";

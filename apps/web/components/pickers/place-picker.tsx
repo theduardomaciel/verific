@@ -2,10 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
-// Icons
 import { Loader2, MapPin, Search } from "lucide-react";
 
-// Components
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {

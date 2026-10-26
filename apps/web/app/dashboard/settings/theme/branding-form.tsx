@@ -2,7 +2,6 @@
 import { useState } from "react";
 
 import { type UseFormReturn } from "react-hook-form";
-// Components
 import { toast } from "sonner";
 
 import type { RouterOutput } from "@verific/api";
@@ -18,9 +17,7 @@ import {
 	type ImageDims,
 	type LogoUrlField,
 } from "@/lib/images/logo-dims";
-// tRPC
 import { trpc } from "@/lib/trpc/react";
-// Validations
 import { brandingSchema } from "@/lib/validations/forms/settings-form/project/preferences-form";
 
 interface Props {

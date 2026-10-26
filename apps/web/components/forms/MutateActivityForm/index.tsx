@@ -6,10 +6,8 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
-// Types
 import type { RouterOutput } from "@verific/api";
 
-// Components
 import { Form } from "@/components/ui/form";
 
 import {
@@ -17,15 +15,11 @@ import {
 	LoadingDialog,
 	SuccessDialog,
 } from "@/components/forms/dialogs";
-// Content
 import { MutateActivityFormContent } from "@/components/forms/MutateActivityForm/Content";
 import { dateToTimeString } from "@/components/pickers/time-picker";
 
-// Actions
 import { refreshRoute } from "@/app/actions";
-// API
 import { trpc } from "@/lib/trpc/react";
-// Validation
 import {
 	type MutateActivityFormSchema,
 	mutateActivityFormSchema,

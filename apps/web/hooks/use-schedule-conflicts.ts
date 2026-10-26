@@ -2,12 +2,9 @@
 
 import { useMemo, useState } from "react";
 
-// Types
 import type { ActivityDetail } from "@/components/activity-join/use-activity-enrollment-state";
 
-// Lib
 import { findScheduleConflicts, type Conflict } from "@/lib/schedule/conflicts";
-// API
 import { trpc } from "@/lib/trpc/react";
 
 interface MembershipState {

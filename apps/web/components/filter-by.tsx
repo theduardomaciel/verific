@@ -4,7 +4,6 @@ import { useCallback } from "react";
 
 import { Check, ChevronsUpDown } from "lucide-react";
 
-// Components
 import { Button } from "@/components/ui/button";
 import {
 	Command,
@@ -20,7 +19,6 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 
-// Hooks
 import { useControlledParam } from "@/hooks/use-controlled-param";
 import { listToString } from "@/lib/i18n";
 import { cn } from "@/lib/utils";

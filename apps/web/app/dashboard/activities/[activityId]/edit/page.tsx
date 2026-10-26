@@ -3,7 +3,6 @@ import { Suspense } from "react";
 
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Components
 import { EditActivityContent } from "./content";
 
 export const metadata: Metadata = {

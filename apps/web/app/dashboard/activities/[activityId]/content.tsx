@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { keepPreviousData } from "@tanstack/react-query";
-// Icons
 import {
 	Calendar,
 	Clock,
@@ -32,23 +31,19 @@ import { AddMonitorDialog } from "@/components/dialogs/add-monitor-dialog";
 import { ActivityDeleteDialog } from "@/components/dialogs/delete-dialog";
 import { ShareDialog } from "@/components/dialogs/share-dialog";
 import { ExportParticipantsButton } from "@/components/participant/export-button";
-// Components
 import * as ParticipantsList from "@/components/participant/participants-list";
 import { SearchBar } from "@/components/search-bar";
 import { CollapsibleDescription } from "@/components/shared/collapsible-description";
 import { SortBy } from "@/components/sort-by";
 
-// Hooks
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useParsedSearchParams } from "@/hooks/use-parsed-search-params";
-// Data
 import {
 	getSessionsDateString,
 	getSessionTimeString,
 	getSessionsSorted,
 } from "@/lib/date";
 import { listToString } from "@/lib/i18n";
-// API
 import { trpc } from "@/lib/trpc/react";
 
 import { WaitlistTab } from "./waitlist-tab";

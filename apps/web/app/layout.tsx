@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-// Fonts
 import { Hanken_Grotesk } from "next/font/google";
 
 import "./globals.css";
@@ -27,7 +26,6 @@ export const viewport: Viewport = {
 	viewportFit: "cover",
 };
 
-// Components
 import { Providers } from "@/components/providers";
 
 export default function RootLayout({

@@ -2,11 +2,9 @@
 
 import { type Dispatch, type SetStateAction, useState } from "react";
 
-// Icons
 import { ChevronUp, CircleOff } from "lucide-react";
 
 import { Checkbox } from "@/components/ui/checkbox";
-// Components
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -18,7 +16,6 @@ import {
 	SelectItem,
 } from "@/components/ui/select";
 
-// Utils
 import { useControlledParam } from "@/hooks/use-controlled-param";
 import { cn } from "@/lib/utils";
 

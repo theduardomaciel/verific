@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-// Components
 import { ExternalLinkIcon } from "lucide-react";
 
 import {
@@ -17,7 +16,6 @@ import { Button } from "@/components/ui/button";
 import { ActivityTicket } from "@/components/activity/activity-ticket";
 import { Empty } from "@/components/empty";
 
-// Utils
 import { useToday } from "@/hooks/use-now";
 import { categorizeByDate, getFirstSessionStart } from "@/lib/date";
 

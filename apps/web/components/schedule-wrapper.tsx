@@ -1,7 +1,5 @@
-// Data
 import { getCachedActivities } from "@/lib/data";
 
-// Components
 import { ScheduleContent } from "./schedule-content";
 
 interface Props {

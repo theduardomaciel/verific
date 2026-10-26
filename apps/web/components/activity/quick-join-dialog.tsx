@@ -3,13 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-// Icons
 import { Calendar, CircleAlert, Loader2, CheckCircle2 } from "lucide-react";
 
-// Types
 import type { RouterOutput } from "@verific/api";
 
-// Components
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
 	AlertDialog,
@@ -23,9 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 import { useDialogConfetti } from "@/hooks/use-dialog-confetti";
-// Hooks
 import { useJoinActivity, type JoinError } from "@/hooks/use-join-activity";
-// Lib
 import {
 	getSessionsDateString,
 	getSessionsSorted,

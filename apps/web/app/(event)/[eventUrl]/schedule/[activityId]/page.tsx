@@ -2,10 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
-// Icons
 import { ArrowLeft } from "lucide-react";
 
-// Components
 import { Button } from "@/components/ui/button";
 
 import {
@@ -15,7 +13,6 @@ import {
 } from "@/components/activity-join";
 import * as EventContainer from "@/components/landing/event-container";
 
-// API
 import { getActivityStaticParams, getCachedActivity } from "@/lib/data";
 
 /**

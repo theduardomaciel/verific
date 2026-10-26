@@ -16,7 +16,6 @@ import remarkGfm from "remark-gfm";
 import { parseEventTheme } from "@verific/drizzle/theme";
 import { appUrl } from "@verific/env";
 
-// Components
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";

@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-// Lib
 import {
 	getSessionsDateString,
 	getSessionTimeString,
@@ -8,7 +7,6 @@ import {
 } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
-// Types
 import type { Conflict } from "@/lib/schedule/conflicts";
 
 const MAX_LINES = 3;

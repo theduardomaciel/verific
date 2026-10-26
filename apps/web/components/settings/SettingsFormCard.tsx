@@ -1,9 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-// Icons
 import { LoaderCircle } from "lucide-react";
-// Forms
 import {
 	FormProvider,
 	useForm,
@@ -11,10 +9,8 @@ import {
 	type UseFormReturn,
 } from "react-hook-form";
 
-// Validations
 import type z from "@verific/zod";
 
-// Components
 import { Button } from "@/components/ui/button";
 
 import {

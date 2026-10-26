@@ -1,19 +1,15 @@
 import Link from "next/link";
 
-// Icons
 import { User, Users } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-// Types
 import type { RouterOutput } from "@verific/api";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-// Components
 import { CategoryLabel } from "@/components/dashboard/category-card";
 
-// Lib
 import { listToString } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 

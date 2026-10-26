@@ -5,7 +5,6 @@ import React, { useState } from "react";
 
 import { Menu, X } from "lucide-react";
 
-// Components
 import { Button } from "@/components/ui/button";
 
 import type { MainNavProps } from "@/components/header/main-nav";

@@ -1,9 +1,7 @@
 "use client";
 
-// Icons
 import { RefreshCcw } from "lucide-react";
 
-// Components
 import { Button } from "@/components/ui/button";
 
 export default function ErrorPage({

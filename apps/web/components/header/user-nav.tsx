@@ -1,12 +1,9 @@
 import Link from "next/link";
 
-// Icons
 import { Cloud, LifeBuoy, LogOut, UserIcon } from "lucide-react";
 
-// Types
 import type { User } from "@verific/auth";
 
-// Components
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,10 +16,8 @@ import {
 	DropdownMenuShortcut,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-// Actions
 import { LogoutForm } from "@/components/ui/logout-form";
 
-// Lib
 import { getInitials } from "@/lib/i18n";
 
 // Auth

@@ -1,10 +1,8 @@
 import { Calendar, Timer } from "lucide-react";
 
-// Components
 import { Badge } from "@/components/ui/badge";
 
 import { useNow } from "@/hooks/use-now";
-// Data
 import {
 	formatFriendlyDate,
 	getLiveSession,

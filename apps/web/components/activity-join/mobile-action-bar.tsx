@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from "react";
 
-// Components
 import { Button } from "@/components/ui/button";
 
-// Lib
 import { cn } from "@/lib/utils";
 
 interface MobileActionBarProps {

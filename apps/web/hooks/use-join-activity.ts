@@ -5,7 +5,6 @@ import { useCallback, useRef, useState } from "react";
 import { JOIN_ERROR_CODES, type JoinErrorCode } from "@verific/api/schemas";
 
 import { refreshRoute } from "@/app/actions";
-// API
 import { trpc } from "@/lib/trpc/react";
 
 export type JoinError =

@@ -7,7 +7,6 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 
-// Enums
 import { roleEnum } from "../enum/role";
 import { activity } from "./activity";
 import { participant } from "./participant";

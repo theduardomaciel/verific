@@ -1,10 +1,7 @@
-// Icons
 import { Calendar, Clock, MapPin } from "lucide-react";
 
-// Components
 import { Badge } from "@/components/ui/badge";
 
-// Lib
 import {
 	getSessionsDateString,
 	getSessionTimeString,

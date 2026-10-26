@@ -4,12 +4,9 @@ import { useState } from "react";
 
 import { toast } from "sonner";
 
-// Hooks
 import { useWaitlist } from "@/hooks/use-waitlist";
-// Lib
 import { describeSeats } from "@/lib/activity-seats";
 
-// Components
 import { ActivityEnrollmentForm } from "./activity-enrollment-form";
 import {
 	AlreadySubscribedStatus,
@@ -25,7 +22,6 @@ import {
 } from "./enrollment-status";
 import { MobileActionBar } from "./mobile-action-bar";
 import { EnrollmentPanelSkeleton } from "./page-skeleton";
-// Types
 import {
 	useActivityEnrollmentState,
 	type ActivityDetail,

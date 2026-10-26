@@ -4,7 +4,6 @@ import { useCallback, useState } from "react";
 
 import { refreshRoute } from "@/app/actions";
 import { toJoinError, type JoinAnswers } from "@/hooks/use-join-activity";
-// API
 import { trpc } from "@/lib/trpc/react";
 
 export type WaitlistAction = "join" | "leave" | "confirm";

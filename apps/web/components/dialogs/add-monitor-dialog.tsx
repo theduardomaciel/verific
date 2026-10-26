@@ -2,11 +2,9 @@
 
 import { useEffect, useState, useTransition, useMemo } from "react";
 
-// Icons
 import { Loader2, UserPlus, Search } from "lucide-react";
 import { toast } from "sonner";
 
-// Components
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -21,11 +19,9 @@ import {
 import { Input } from "@/components/ui/input";
 
 import { refreshRoute } from "@/app/actions";
-// Hooks
 import { useParticipantSearch } from "@/hooks/participant/use-participant-search";
 import { useParticipantSelection } from "@/hooks/participant/use-participant-selection";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
-// Types
 import { trpc } from "@/lib/trpc/react";
 
 import { ParticipantItem } from "../participant-item";

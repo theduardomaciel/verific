@@ -1,20 +1,16 @@
 "use client";
 
-// Icons
 import { Check, User, Clock, Frown } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 
-// API
 import type { RouterOutput } from "@verific/api";
 
-// Components
 import { BadgeScanner } from "@/components/badge-scanner";
 import { ManualParticipantDialog } from "@/components/manual-participant-dialog";
 import { ExpandableDescription } from "@/components/shared/expandable-description";
 
 import { useNow } from "@/hooks/use-now";
-// Utils
 import {
 	formatFriendlyDate,
 	getDateString,

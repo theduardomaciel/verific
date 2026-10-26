@@ -2,11 +2,9 @@
 
 import { useState } from "react";
 
-// Form
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type UseFormReturn } from "react-hook-form";
 
-// Types
 import type { RouterOutput } from "@verific/api";
 import {
 	SOCIAL_SERVICES,
@@ -16,7 +14,6 @@ import {
 import { z } from "@verific/zod";
 
 import { Button } from "@/components/ui/button";
-// Components
 import {
 	Dialog,
 	DialogClose,
@@ -51,9 +48,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { SocialLinksEditor } from "@/components/forms/dynamic/SocialLinksEditor";
 
-// Hooks
 import { useMediaQuery } from "@/hooks/use-media-query";
-// tRPC
 import { trpc } from "@/lib/trpc/react";
 
 import { ErrorDialog, LoadingDialog, SuccessDialog } from "../forms/dialogs";

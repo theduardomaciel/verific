@@ -3,7 +3,6 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 
-// Components
 import {
 	Pagination,
 	PaginationContent,

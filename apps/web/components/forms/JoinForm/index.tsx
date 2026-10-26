@@ -8,13 +8,11 @@ import { Eye } from "lucide-react";
 import { useForm, useWatch } from "react-hook-form";
 
 import type { RouterOutput } from "@verific/api";
-// Validation
 import {
 	buildAnswersSchema,
 	filterVisibleFields,
 	getVisibleSectionIds,
 } from "@verific/api/schemas";
-// Types
 import type { User } from "@verific/auth";
 import { isFieldLinked } from "@verific/drizzle/profile-layout";
 import { z } from "@verific/zod";
@@ -30,7 +28,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 
-// Components
 import { FormSection, SectionFooter } from "@/components/forms";
 import {
 	ErrorDialog,
@@ -50,7 +47,6 @@ import {
 	groupFieldsBySection,
 	planFormSections,
 } from "@/lib/forms/layout";
-// API
 import { trpc } from "@/lib/trpc/react";
 import { scrollToNextSection } from "@/lib/validations";
 

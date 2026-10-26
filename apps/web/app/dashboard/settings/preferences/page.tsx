@@ -1,10 +1,8 @@
 "use client";
 
-// API
 import { useCurrentProject } from "@/hooks/use-current-project";
 
 import { SettingsFormSkeleton } from "../skeleton";
-// Components
 import { ProjectSettingsPreferencesForm } from "./form";
 
 export default function PreferencesSettingsPage() {

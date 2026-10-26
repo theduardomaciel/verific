@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 
-// Icons
 import { Activity, BarChart3, Clock, Globe, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";

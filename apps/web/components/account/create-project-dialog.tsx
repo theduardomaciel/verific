@@ -3,15 +3,12 @@
 import { useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-// Icons
 import { Plus } from "lucide-react";
 import { useForm, type UseFormReturn } from "react-hook-form";
 
-// Form
 import { z } from "@verific/zod";
 
 import { Button } from "@/components/ui/button";
-// Components
 import {
 	Dialog,
 	DialogClose,
@@ -47,9 +44,7 @@ import { DateRangePicker } from "@/components/pickers/date-range-picker";
 import { PlacePicker } from "@/components/pickers/place-picker";
 
 import { revalidateProjects, updateProjectCookies } from "@/app/actions";
-// Hooks
 import { useMediaQuery } from "@/hooks/use-media-query";
-// API
 import { trpc } from "@/lib/trpc/react";
 
 import { ErrorDialog, LoadingDialog } from "../forms/dialogs";

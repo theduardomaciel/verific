@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 
-// Icons
 import {
 	BellRing,
 	BookLock,
@@ -18,7 +17,6 @@ import {
 	TicketX,
 } from "lucide-react";
 
-// Components
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
@@ -26,7 +24,6 @@ import { ConflictList } from "@/components/activity/conflict-list";
 import { ParticipantQuitButton } from "@/components/participant/participant-quit-button";
 
 import { useToday } from "@/hooks/use-now";
-// Lib
 import {
 	formatFriendlyDate,
 	getSessionsDateString,
@@ -36,7 +33,6 @@ import {
 } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
-// Types
 import type { ActivityDetail } from "./use-activity-enrollment-state";
 import type { Conflict } from "@/lib/schedule/conflicts";
 

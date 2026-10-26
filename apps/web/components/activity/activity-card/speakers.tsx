@@ -3,10 +3,8 @@
 import Autoplay from "embla-carousel-autoplay";
 import { SquareUser, User } from "lucide-react";
 
-// Types
 import type { RouterOutput } from "@verific/api";
 
-// Components
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	Carousel,

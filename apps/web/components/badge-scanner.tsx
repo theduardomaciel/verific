@@ -3,12 +3,10 @@
 import { useState } from "react";
 
 import { Scanner } from "@yudiel/react-qr-scanner";
-// Icons
 import { BarcodeIcon, Loader2, XIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-// Components
 import { FullScreenDrawer } from "@/components/ui/fullscreen-drawer";
 
 import { trpc } from "@/lib/trpc/react";

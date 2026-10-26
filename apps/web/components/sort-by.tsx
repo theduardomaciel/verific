@@ -2,7 +2,6 @@
 
 import { useCallback } from "react";
 
-// Components
 import {
 	Select,
 	SelectContent,
@@ -11,7 +10,6 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 
-// Hooks
 import { useControlledParam } from "@/hooks/use-controlled-param";
 
 interface SortByProps {

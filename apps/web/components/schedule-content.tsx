@@ -5,10 +5,8 @@ import { useMemo, useState } from "react";
 
 import { toast } from "sonner";
 
-// Types
 import type { RouterOutput } from "@verific/api";
 import { sortOptions, sortOptionsLabels } from "@verific/api/utils";
-// Enums
 import {
 	activityCategories,
 	activityCategoryLabels,
@@ -21,7 +19,6 @@ import {
 	AccordionTrigger,
 } from "@/components/ui/accordion";
 
-// Components
 import { ActivityCard } from "@/components/activity/activity-card";
 import {
 	QuickJoinDialog,
@@ -29,16 +26,13 @@ import {
 	type QuickJoinActivity,
 } from "@/components/activity/quick-join-dialog";
 import { Empty } from "@/components/empty";
-// Icons
 import { FilterBy } from "@/components/filter-by";
 import { SearchBar } from "@/components/search-bar";
 import { SortBy } from "@/components/sort-by";
 
-// Hooks
 import { useActivityAvailability } from "@/hooks/use-activity-availability";
 import { useToday } from "@/hooks/use-now";
 import { useSubscribedActivities } from "@/hooks/use-subscribed-activities";
-// Utils
 import {
 	categorizeByDate,
 	expandSessionOccurrences,
@@ -47,7 +41,6 @@ import {
 } from "@/lib/date";
 import { fuzzyFilter } from "@/lib/fuzzy-search";
 import { findScheduleConflicts, type Conflict } from "@/lib/schedule/conflicts";
-// API
 import { trpc } from "@/lib/trpc/react";
 
 interface ScheduleContentProps {

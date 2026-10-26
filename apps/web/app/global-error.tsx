@@ -5,10 +5,8 @@ import { useState } from "react";
 
 import { RefreshCcw } from "lucide-react";
 
-// Components
 import { Button } from "@/components/ui/button";
 
-// Icons
 import Logo from "@/public/logo.svg";
 
 export const metadata: Metadata = {

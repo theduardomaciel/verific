@@ -1,12 +1,9 @@
 "use client";
 
-// Icons
 import { Search, Loader2, X } from "lucide-react";
 
-// Components
 import { Input } from "@/components/ui/input";
 
-// Hooks
 import { useControlledParam } from "@/hooks/use-controlled-param";
 import { cn } from "@/lib/utils";
 

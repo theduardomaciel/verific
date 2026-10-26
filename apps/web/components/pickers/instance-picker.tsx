@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useState } from "react";
 
-// Components
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Check, ChevronsUpDown, Loader2, Plus, User } from "lucide-react";
 
@@ -28,7 +27,6 @@ import {
 } from "@/components/ui/popover";
 
 import { useDebounce } from "@/hooks/use-debounce";
-// Hooks
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 

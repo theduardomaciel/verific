@@ -6,7 +6,6 @@ import type React from "react";
 import { Check, X } from "lucide-react";
 import Confetti from "react-confetti-boom";
 
-// Components
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
