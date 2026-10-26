@@ -31,7 +31,8 @@ export function ParticipantQuitButton({
 			participantId,
 			projectUrl,
 		});
-		await refreshRoute();
+		// Já cancelada: uma falha ao atualizar a tela não vira erro
+		void refreshRoute().catch(console.error);
 		await utils.getActivityAvailability.invalidate();
 	}
 

@@ -137,8 +137,6 @@ export function MutateSpeakerDialog({
 	async function onSubmit(data: z.infer<typeof formSchema>) {
 		setCurrentState("submitting");
 
-		console.log("data: ", data);
-
 		try {
 			let speakerId = speaker?.id;
 

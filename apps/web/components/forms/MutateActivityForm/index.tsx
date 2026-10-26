@@ -174,7 +174,7 @@ export default function MutateActivityForm({
 
 				if (configureAfterSave.current) {
 					configureAfterSave.current = false;
-					await refreshRoute();
+					void refreshRoute().catch(console.error);
 					void utils.getActivities.invalidate();
 					router.push(`/dashboard/activities/${activityId}/form`);
 					return;
@@ -183,17 +183,19 @@ export default function MutateActivityForm({
 				setCurrentState("submitted");
 				shouldResetAfterHide.current = true;
 			}
-
-			await refreshRoute();
-			void utils.getActivities.invalidate();
-			void utils.getActivity.invalidate();
-			void utils.getDashboardStats.invalidate();
 		} catch (error) {
 			console.error(error);
 			setCurrentState("error");
+			return;
 		} finally {
 			isSubmitting.current = false;
 		}
+
+		// Já salvo: uma falha ao atualizar a tela não vira erro de envio
+		void refreshRoute().catch(console.error);
+		void utils.getActivities.invalidate();
+		void utils.getActivity.invalidate();
+		void utils.getDashboardStats.invalidate();
 	}
 
 	return (

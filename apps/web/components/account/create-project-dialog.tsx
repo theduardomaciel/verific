@@ -109,9 +109,9 @@ export function CreateProjectDialog() {
 
 		const { date, location, ...rest } = data;
 
-		// console.log(data);
+		let created;
 		try {
-			const { id, url } = await createMutation.mutateAsync({
+			created = await createMutation.mutateAsync({
 				startDate: date.from,
 				endDate: date.to,
 				address: location.address,
@@ -119,14 +119,16 @@ export function CreateProjectDialog() {
 				longitude: location.longitude,
 				...rest,
 			});
-
-			// Atualiza o cookie com as informações do projeto
-			await revalidateProjects(url);
-			void updateProjectCookies(id);
 		} catch (error) {
 			console.error(error);
 			setCurrentState("error");
+			return;
 		}
+
+		// O evento já existe: uma falha aqui não pode sugerir criar de novo
+		await revalidateProjects(created.url).catch(console.error);
+		// Grava o evento no cookie e vai para o dashboard
+		void updateProjectCookies(created.id);
 	}
 
 	if (isDesktop) {

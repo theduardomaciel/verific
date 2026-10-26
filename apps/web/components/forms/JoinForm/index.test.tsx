@@ -21,8 +21,11 @@ vi.mock("@/public/icons/google.svg", () => ({
 vi.mock("next/navigation", () => ({
 	useRouter: () => ({ push: vi.fn() }),
 }));
+const { refreshRouteMock } = vi.hoisted(() => ({
+	refreshRouteMock: vi.fn(async () => {}),
+}));
 vi.mock("@/app/actions", () => ({
-	refreshRoute: vi.fn(),
+	refreshRoute: refreshRouteMock,
 	signOutAction: vi.fn(),
 }));
 vi.mock("@/lib/validations", async (importOriginal) => {
@@ -289,5 +292,22 @@ describe("JoinForm wizard", () => {
 		expect(
 			(screen.getAllByRole("textbox")[0] as HTMLInputElement).value,
 		).toBe(mockUser.name);
+	});
+
+	it("confirma a inscrição mesmo se a atualização da rota falhar", async () => {
+		mockMutateAsync.mockResolvedValue({ shortId: "abc123" });
+		refreshRouteMock.mockRejectedValueOnce(new Error("rede"));
+		vi.spyOn(console, "error").mockImplementation(() => {});
+		renderForm(mockUser);
+
+		const boxes = screen.getAllByRole("textbox");
+		fireEvent.change(boxes[0]!, { target: { value: "Fulano da Silva" } });
+		fireEvent.change(boxes[1]!, { target: { value: "fulana" } });
+		fireEvent.change(boxes[2]!, { target: { value: "aceito" } });
+		fireEvent.click(screen.getByRole("button", { name: "Concluir" }));
+
+		expect(
+			await screen.findByText(/Sua inscrição foi confirmada/),
+		).toBeInTheDocument();
 	});
 });

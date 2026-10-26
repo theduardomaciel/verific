@@ -120,7 +120,8 @@ export function RemoveParticipantDialog({
 						: previous,
 			);
 			void utils.getParticipants.invalidate();
-			await refreshRoute();
+			// Já removido: uma falha ao atualizar a tela não vira erro
+			void refreshRoute().catch(console.error);
 			toast.success("Participante removido do evento");
 			setOpen(false);
 			userRouter.back();

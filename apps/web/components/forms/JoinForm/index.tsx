@@ -390,9 +390,10 @@ export default function JoinForm({
 			setCurrentState("error");
 			return;
 		}
-		await refreshRoute();
 		clearJoinDraft(project.id);
 		setCurrentState("submitted");
+		// A inscrição já foi gravada: uma falha aqui não muda o resultado
+		void refreshRoute().catch(console.error);
 	}
 
 	const successDescription = `Enviaremos um e-mail de confirmação${
@@ -522,8 +523,6 @@ export default function JoinForm({
 				isOpen={currentState === "submitted"}
 				onClose={() => {
 					setCurrentState(false);
-					// Ponto de integração do e-mail de confirmação (sem provider
-					// ainda): link do perfil `/${project.url}/profile/${shortId}`.
 					router.push(
 						createdShortId
 							? `/${project.url}/profile/${createdShortId}?me=1`
