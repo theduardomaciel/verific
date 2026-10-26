@@ -318,14 +318,24 @@ async function loadProfileConnections(
 			orderBy: desc(profileConnection.createdAt),
 			limit: PROFILE_CONNECTIONS_SAMPLE + 1,
 			with: {
-				viewer: { with: { user: { columns: { name: true } } } },
+				viewer: {
+					with: {
+						user: { columns: { name: true, image_url: true } },
+					},
+				},
 			},
 		}),
 	]);
-	const names = sample
-		.map((r) => r.viewer?.user?.name?.trim())
-		.filter((n): n is string => Boolean(n));
-	return { total: totalRows[0]?.n ?? 0, visitors: names };
+	const visitors = sample
+		.map((r) => {
+			const name = r.viewer?.user?.name?.trim();
+			if (!name) return null;
+			return { name, avatarUrl: r.viewer?.user?.image_url ?? null };
+		})
+		.filter(
+			(v): v is { name: string; avatarUrl: string | null } => v !== null,
+		);
+	return { total: totalRows[0]?.n ?? 0, visitors };
 }
 
 export const profilesRouter = createTRPCRouter({
@@ -598,7 +608,10 @@ export const profilesRouter = createTRPCRouter({
 					? loadProfileConnections(projectRow.id, row.id)
 					: Promise.resolve({
 							total: 0,
-							visitors: [] as string[],
+							visitors: [] as Array<{
+								name: string;
+								avatarUrl: string | null;
+							}>,
 						}),
 			]);
 			const slots = resolveProfileSlots({
