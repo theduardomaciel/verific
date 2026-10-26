@@ -1,4 +1,5 @@
 import "server-only";
+import { scheduleAfterResponse } from "../lib/after-response";
 import { getNotificationDefinition } from "./registry";
 import { sendNotification } from "./service";
 
@@ -38,43 +39,6 @@ export function buildRegistrationEmailInput(
 		eventId: args.eventId,
 		entityRefs,
 	};
-}
-
-/**
- * Runs work after the response when a Next.js runtime is available
- * (`after()` keeps serverless work from being cut off); otherwise awaits it
- * inline. Never throws and never lets background failures surface.
- */
-export async function scheduleAfterResponse(
-	work: () => Promise<void>,
-): Promise<void> {
-	let scheduled = false;
-	try {
-		const { after } = await import("next/server");
-		if (typeof after === "function") {
-			after(() => {
-				work().catch((err: unknown) => {
-					console.error(
-						"[notifications] background email failed:",
-						err instanceof Error ? err.message : String(err),
-					);
-				});
-			});
-			scheduled = true;
-		}
-	} catch {
-		// No Next runtime (tests, scripts): fall through to inline below.
-	}
-	if (!scheduled) {
-		try {
-			await work();
-		} catch (err) {
-			console.error(
-				"[notifications] background email failed:",
-				err instanceof Error ? err.message : String(err),
-			);
-		}
-	}
 }
 
 /**

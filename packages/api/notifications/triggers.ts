@@ -8,7 +8,7 @@ import {
 	user,
 } from "@verific/drizzle/schema";
 
-import { scheduleAfterResponse } from "./registration-email";
+import { scheduleAfterResponse } from "../lib/after-response";
 import {
 	createBuildContext,
 	getNotificationDefinition,
