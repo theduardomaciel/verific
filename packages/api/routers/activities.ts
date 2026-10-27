@@ -1977,7 +1977,7 @@ export const activitiesRouter = createTRPCRouter({
 				const locked = await lockActivity(tx, input.activityId);
 				await tx
 					.update(participantOnActivity)
-					.set({ noShow: true, noShowAt: now })
+					.set({ noShow: true })
 					.where(
 						and(
 							eq(

@@ -9,7 +9,16 @@ import {
 	parseGamificationConfig,
 	stickerByKey,
 } from "@verific/drizzle/gamification";
-import { and, count, desc, eq } from "@verific/drizzle/orm";
+import {
+	aliasedTable,
+	and,
+	count,
+	countDistinct,
+	desc,
+	eq,
+	lt,
+	notExists,
+} from "@verific/drizzle/orm";
 import {
 	participant,
 	participantCheckin,
@@ -335,7 +344,12 @@ export const gamificationRouter = createTRPCRouter({
 			const config = parseGamificationConfig(row.gamification);
 			const day = eventDayKey(new Date());
 
-			const [today, total] = await Promise.all([
+			const priorCheckins = aliasedTable(
+				participantCheckin,
+				"prior_checkins",
+			);
+
+			const [today, total, uniqueTotal, newToday] = await Promise.all([
 				db
 					.select({ amount: count() })
 					.from(participantCheckin)
@@ -349,12 +363,43 @@ export const gamificationRouter = createTRPCRouter({
 					.select({ amount: count() })
 					.from(participantCheckin)
 					.where(eq(participantCheckin.projectId, input.projectId)),
+				db
+					.select({
+						amount: countDistinct(participantCheckin.participantId),
+					})
+					.from(participantCheckin)
+					.where(eq(participantCheckin.projectId, input.projectId)),
+				db
+					.select({ amount: count() })
+					.from(participantCheckin)
+					.where(
+						and(
+							eq(participantCheckin.projectId, input.projectId),
+							eq(participantCheckin.day, day),
+							notExists(
+								db
+									.select({ id: priorCheckins.id })
+									.from(priorCheckins)
+									.where(
+										and(
+											eq(
+												priorCheckins.participantId,
+												participantCheckin.participantId,
+											),
+											lt(priorCheckins.day, day),
+										),
+									),
+							),
+						),
+					),
 			]);
 
 			return {
 				day,
 				todayCount: Number(today[0]?.amount ?? 0),
 				totalCount: Number(total[0]?.amount ?? 0),
+				totalUniqueCount: Number(uniqueTotal[0]?.amount ?? 0),
+				newTodayCount: Number(newToday[0]?.amount ?? 0),
 				eventDays: eventDayCount(row.startDate, row.endDate),
 				config,
 			};

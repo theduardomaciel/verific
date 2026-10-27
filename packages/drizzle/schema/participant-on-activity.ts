@@ -52,7 +52,6 @@ export const participantOnActivity = pgTable(
 		 * a vaga (overbooking) quando a organização decidir.
 		 */
 		noShow: boolean("no_show").notNull().default(false),
-		noShowAt: timestamp("no_show_at"),
 	},
 	(table) => [
 		uniqueIndex().on(table.participantId, table.activityId),

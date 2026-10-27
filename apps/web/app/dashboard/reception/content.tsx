@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { CalendarCheck, Settings, Users } from "lucide-react";
+import { CalendarCheck, Settings, UserPlus, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -68,7 +68,14 @@ export function ReceptionPage() {
 		);
 	}
 
-	const { config, day, todayCount, totalCount, eventDays } = summary.data;
+	const {
+		config,
+		day,
+		todayCount,
+		totalUniqueCount,
+		newTodayCount,
+		eventDays,
+	} = summary.data;
 
 	if (!config.enabled) {
 		return (
@@ -105,12 +112,28 @@ export function ReceptionPage() {
 				</p>
 			</div>
 
-			<div className="grid gap-4 sm:grid-cols-2">
+			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+				<Card>
+					<CardHeader>
+						<CardTitle className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
+							<UserPlus className="size-4" />
+							Novos hoje
+						</CardTitle>
+					</CardHeader>
+					<CardContent className="flex flex-col gap-1">
+						<span className="text-4xl font-bold tabular-nums">
+							{newTodayCount}
+						</span>
+						<span className="text-muted-foreground text-xs capitalize">
+							primeiro credenciamento
+						</span>
+					</CardContent>
+				</Card>
 				<Card>
 					<CardHeader>
 						<CardTitle className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
 							<CalendarCheck className="size-4" />
-							Hoje
+							Credenciados hoje
 						</CardTitle>
 					</CardHeader>
 					<CardContent className="flex flex-col gap-1">
@@ -126,12 +149,12 @@ export function ReceptionPage() {
 					<CardHeader>
 						<CardTitle className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
 							<Users className="size-4" />
-							Total no evento
+							Indivíduos no evento
 						</CardTitle>
 					</CardHeader>
 					<CardContent className="flex flex-col gap-1">
 						<span className="text-4xl font-bold tabular-nums">
-							{totalCount}
+							{totalUniqueCount}
 						</span>
 						<span className="text-muted-foreground text-xs">
 							{eventDays}{" "}
