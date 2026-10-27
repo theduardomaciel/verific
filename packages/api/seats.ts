@@ -178,7 +178,6 @@ export async function normalizeOverbooked(
 	const overbookedRows = await tx
 		.select({
 			participantId: participantOnActivity.participantId,
-			subscribedAt: participantOnActivity.subscribedAt,
 		})
 		.from(participantOnActivity)
 		.where(
@@ -188,17 +187,13 @@ export async function normalizeOverbooked(
 				eq(participantOnActivity.noShow, false),
 				eq(participantOnActivity.overbooked, true),
 			),
-		);
-	const sorted = [...overbookedRows].sort((a, b) => {
-		const left = a.subscribedAt ? new Date(a.subscribedAt).getTime() : 0;
-		const right = b.subscribedAt ? new Date(b.subscribedAt).getTime() : 0;
-		return left - right;
-	});
+		)
+		.orderBy(asc(participantOnActivity.subscribedAt));
 	const totalActive = await countEnrolled(tx, activityId);
 	const excess = Math.max(0, totalActive - limit);
-	if (sorted.length <= excess) return;
-	const toClear = sorted
-		.slice(0, sorted.length - excess)
+	if (overbookedRows.length <= excess) return;
+	const toClear = overbookedRows
+		.slice(0, overbookedRows.length - excess)
 		.map((row) => row.participantId);
 	if (toClear.length === 0) return;
 	await tx

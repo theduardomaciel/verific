@@ -55,13 +55,19 @@ function makeTx(args: {
 	return {
 		select: () => ({
 			from: (table: unknown) => ({
-				where: async () => {
-					if (table === activityWaitlist) return entries;
-					if (table === activitySession)
-						return [{ startsAt, endsAt }];
-					if (table === participantOnActivity)
-						return [{ amount: enrolled }];
-					return [];
+				where: () => {
+					const result =
+						table === activityWaitlist
+							? entries
+							: table === activitySession
+								? [{ startsAt, endsAt }]
+								: table === participantOnActivity
+									? [{ amount: enrolled }]
+									: [];
+					const promise = Promise.resolve(result);
+					(promise as unknown as { orderBy: () => unknown }).orderBy =
+						() => promise;
+					return promise;
 				},
 			}),
 		}),
