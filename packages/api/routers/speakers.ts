@@ -10,7 +10,7 @@ import { participant, speaker, user } from "@verific/drizzle/schema";
 import { z } from "@verific/zod";
 
 import { deleteReplacedImages } from "../lib/image-cleanup";
-import { requireProjectAccess } from "../lib/project-access";
+import { requireProjectPermission } from "../lib/project-access";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 /** Normalizes organizer-typed email to lowercase, or null when empty. */
@@ -148,7 +148,11 @@ export const speakersRouter = createTRPCRouter({
 		)
 		.mutation(async ({ input, ctx }) => {
 			const { name, description, imageUrl, projectId } = input;
-			await requireProjectAccess(projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				projectId,
+				ctx.session.user.id,
+				"activities.manage",
+			);
 
 			const email = normalizeSpeakerEmail(input.email ?? null);
 			const participantId = email
@@ -190,7 +194,11 @@ export const speakersRouter = createTRPCRouter({
 		)
 		.mutation(async ({ input, ctx }) => {
 			const { id, name, description, imageUrl, projectId } = input;
-			await requireProjectAccess(projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				projectId,
+				ctx.session.user.id,
+				"activities.manage",
+			);
 
 			const existing = await db.query.speaker.findFirst({
 				where: eq(speaker.id, id),
@@ -270,9 +278,10 @@ export const speakersRouter = createTRPCRouter({
 				throw new Error("Speaker not found");
 			}
 			// Speakers carry the linking email: organizer-only.
-			await requireProjectAccess(
+			await requireProjectPermission(
 				speakerData.projectId,
 				ctx.session.user.id,
+				"activities.manage",
 			);
 			return speakerData;
 		}),
@@ -280,7 +289,11 @@ export const speakersRouter = createTRPCRouter({
 	getSpeakers: protectedProcedure
 		.input(z.object({ projectId: z.string().uuid() }))
 		.query(async ({ input, ctx }) => {
-			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				input.projectId,
+				ctx.session.user.id,
+				"activities.manage",
+			);
 			return db.query.speaker.findMany({
 				where: eq(speaker.projectId, input.projectId),
 				with: {
@@ -315,7 +328,11 @@ export const speakersRouter = createTRPCRouter({
 					message: "Sem permissão neste evento.",
 				});
 			}
-			await requireProjectAccess(existing.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				existing.projectId,
+				ctx.session.user.id,
+				"activities.manage",
+			);
 			await db.delete(speaker).where(eq(speaker.id, input.id));
 			return { success: true };
 		}),
@@ -334,7 +351,11 @@ export const speakersRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				input.projectId,
+				ctx.session.user.id,
+				"activities.manage",
+			);
 			const email = normalizeSpeakerEmail(input.email);
 			if (!email) return { claimed: 0 };
 			const candidates = await db.query.speaker.findMany({

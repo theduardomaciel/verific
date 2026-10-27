@@ -55,13 +55,19 @@ function makeTx(args: {
 	return {
 		select: () => ({
 			from: (table: unknown) => ({
-				where: async () => {
-					if (table === activityWaitlist) return entries;
-					if (table === activitySession)
-						return [{ startsAt, endsAt }];
-					if (table === participantOnActivity)
-						return [{ amount: enrolled }];
-					return [];
+				where: () => {
+					const result =
+						table === activityWaitlist
+							? entries
+							: table === activitySession
+								? [{ startsAt, endsAt }]
+								: table === participantOnActivity
+									? [{ amount: enrolled }]
+									: [];
+					const promise = Promise.resolve(result);
+					(promise as unknown as { orderBy: () => unknown }).orderBy =
+						() => promise;
+					return promise;
 				},
 			}),
 		}),
@@ -108,6 +114,7 @@ describe("settleActivity offer notification", () => {
 			participantsLimit: 1,
 			waitlistEnabled: true,
 			waitlistOfferHours: 12,
+			waitlistOfferMinutes: null,
 			cancelledAt: null,
 		};
 
@@ -165,6 +172,7 @@ describe("settleActivity offer notification", () => {
 			participantsLimit: 2,
 			waitlistEnabled: true,
 			waitlistOfferHours: 12,
+			waitlistOfferMinutes: null,
 			cancelledAt: null,
 		};
 
@@ -210,6 +218,7 @@ describe("settleActivity with a lowered limit", () => {
 				participantsLimit: 1,
 				waitlistEnabled: true,
 				waitlistOfferHours: 12,
+				waitlistOfferMinutes: null,
 				cancelledAt: null,
 			},
 			now,

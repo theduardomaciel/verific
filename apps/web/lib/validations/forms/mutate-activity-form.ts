@@ -70,7 +70,12 @@ export const mutateActivityFormSchema = z
 					.nullable(),
 			)
 			.optional(),
-		waitlistOfferHours: z.coerce.number().int().min(1).max(168).optional(),
+		waitlistOfferMinutes: z.coerce
+			.number()
+			.int()
+			.min(1)
+			.max(10_080)
+			.optional(),
 		workload: z.coerce
 			.number()
 			.optional()

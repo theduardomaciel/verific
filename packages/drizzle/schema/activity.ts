@@ -43,6 +43,12 @@ export const activity = pgTable(
 		waitlistOfferHours: integer("waitlist_offer_hours")
 			.notNull()
 			.default(12),
+		/**
+		 * Prazo da oferta em minutos. Quando definido, tem prioridade sobre
+		 * `waitlistOfferHours` (mantido para compatibilidade e para prazos
+		 * longos). Permite janelas curtas, como 10 minutos.
+		 */
+		waitlistOfferMinutes: integer("waitlist_offer_minutes"),
 
 		address: text("address"),
 		latitude: doublePrecision("latitude"),

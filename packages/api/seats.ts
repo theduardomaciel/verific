@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 
 import type { db } from "@verific/drizzle";
-import { and, count, eq, gt, inArray } from "@verific/drizzle/orm";
+import { and, asc, count, eq, gt, inArray } from "@verific/drizzle/orm";
 import {
 	activity,
 	activityWaitlist,
@@ -26,6 +26,7 @@ export async function lockActivity(tx: Tx, activityId: string) {
 			participantsLimit: activity.participantsLimit,
 			waitlistEnabled: activity.waitlistEnabled,
 			waitlistOfferHours: activity.waitlistOfferHours,
+			waitlistOfferMinutes: activity.waitlistOfferMinutes,
 			cancelledAt: activity.cancelledAt,
 		})
 		.from(activity)
@@ -75,6 +76,7 @@ export async function countEnrolled(tx: Tx, activityId: string) {
 			and(
 				eq(participantOnActivity.activityId, activityId),
 				eq(participantOnActivity.role, "participant"),
+				eq(participantOnActivity.noShow, false),
 			),
 		);
 	return row?.amount ?? 0;
@@ -93,7 +95,10 @@ export async function checkSeats(
 	locked: LockedActivity,
 	queue: Pick<ActiveEntry, "participantId" | "status">[],
 	participantIds: string[],
-	{ queueFirst = false } = {},
+	{
+		queueFirst = false,
+		allowOverCapacity = false,
+	}: { queueFirst?: boolean; allowOverCapacity?: boolean } = {},
 ) {
 	const linked = await tx
 		.select({ participantId: participantOnActivity.participantId })
@@ -114,6 +119,11 @@ export async function checkSeats(
 		(entry) =>
 			entry.status === "offered" && !isNewcomer(entry.participantId),
 	).length;
+
+	// A organização pode furar a fila e o limite de vagas de propósito
+	// (overbooking); nesse caso as duas checagens são ignoradas, mas quem já
+	// estava na fila continua sendo resolvido como promoção.
+	if (allowOverCapacity) return { ok: true, queued };
 
 	if (queueFirst) {
 		const holdsOffer = (id: string) =>
@@ -152,4 +162,52 @@ export async function assertSeatsAvailable(
 		});
 	}
 	return queued;
+}
+
+/**
+ * Limpa a marcação de overbooking das inscrições que agora cabem no limite.
+ * Mantém a flag apenas para o excesso real (últimas inscritas), preservando
+ * a auditoria de quem ainda está acima da capacidade.
+ */
+export async function normalizeOverbooked(
+	tx: Tx,
+	activityId: string,
+	limit: number | null,
+) {
+	if (limit == null) return;
+	const overbookedRows = await tx
+		.select({
+			participantId: participantOnActivity.participantId,
+		})
+		.from(participantOnActivity)
+		.where(
+			and(
+				eq(participantOnActivity.activityId, activityId),
+				eq(participantOnActivity.role, "participant"),
+				eq(participantOnActivity.noShow, false),
+				eq(participantOnActivity.overbooked, true),
+			),
+		)
+		.orderBy(asc(participantOnActivity.subscribedAt));
+	const totalActive = await countEnrolled(tx, activityId);
+	const excess = Math.max(0, totalActive - limit);
+	if (overbookedRows.length <= excess) return;
+	const toClear = overbookedRows
+		.slice(0, overbookedRows.length - excess)
+		.map((row) => row.participantId);
+	if (toClear.length === 0) return;
+	await tx
+		.update(participantOnActivity)
+		.set({
+			overbooked: false,
+			overbookReason: null,
+			overbookedByUserId: null,
+			overbookedAt: null,
+		})
+		.where(
+			and(
+				eq(participantOnActivity.activityId, activityId),
+				inArray(participantOnActivity.participantId, toClear),
+			),
+		);
 }

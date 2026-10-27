@@ -42,7 +42,7 @@ import {
 	isCompatible,
 	readProjectLayout,
 } from "../lib/profile-links";
-import { requireProjectAccess } from "../lib/project-access";
+import { requireProjectPermission } from "../lib/project-access";
 import { generateShortId } from "../lib/short-id";
 import { userOwnedProjectIds, userProfileRefs } from "../lib/user-public-scope";
 import { queueEventRegistrationEmail } from "../notifications";
@@ -484,7 +484,11 @@ export const formsRouter = createTRPCRouter({
 			z.object({ projectId: z.uuid(), activityId: z.uuid().optional() }),
 		)
 		.query(async ({ input, ctx }) => {
-			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				input.projectId,
+				ctx.session.user.id,
+				"event.manage",
+			);
 			if (input.activityId) {
 				await requireActivityInProject(
 					input.activityId,
@@ -528,7 +532,11 @@ export const formsRouter = createTRPCRouter({
 					code: "NOT_FOUND",
 					message: "Versão não encontrada.",
 				});
-			await requireProjectAccess(version.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				version.projectId,
+				ctx.session.user.id,
+				"event.manage",
+			);
 			const [fields, sections, fieldsCount] = await Promise.all([
 				db.query.formField.findMany({
 					where: eq(formField.formVersionId, version.id),
@@ -567,7 +575,11 @@ export const formsRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				input.projectId,
+				ctx.session.user.id,
+				"event.manage",
+			);
 			if (input.activityId) {
 				await requireActivityInProject(
 					input.activityId,
@@ -645,7 +657,11 @@ export const formsRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				input.projectId,
+				ctx.session.user.id,
+				"event.manage",
+			);
 			if (input.activityId) {
 				await requireActivityInProject(
 					input.activityId,
@@ -837,7 +853,11 @@ export const formsRouter = createTRPCRouter({
 					code: "NOT_FOUND",
 					message: "Versão não encontrada.",
 				});
-			await requireProjectAccess(version.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				version.projectId,
+				ctx.session.user.id,
+				"event.manage",
+			);
 			if (version.isPublished) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
@@ -1075,7 +1095,11 @@ export const formsRouter = createTRPCRouter({
 					code: "NOT_FOUND",
 					message: "Campo não encontrado.",
 				});
-			await requireProjectAccess(field.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				field.projectId,
+				ctx.session.user.id,
+				"event.manage",
+			);
 			if (field.version.isPublished) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
@@ -1126,7 +1150,11 @@ export const formsRouter = createTRPCRouter({
 					code: "NOT_FOUND",
 					message: "Versão não encontrada.",
 				});
-			await requireProjectAccess(version.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				version.projectId,
+				ctx.session.user.id,
+				"event.manage",
+			);
 			if (version.isPublished) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
@@ -1205,7 +1233,11 @@ export const formsRouter = createTRPCRouter({
 					code: "NOT_FOUND",
 					message: "Versão não encontrada.",
 				});
-			await requireProjectAccess(version.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				version.projectId,
+				ctx.session.user.id,
+				"event.manage",
+			);
 			if (version.isPublished) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
@@ -1292,7 +1324,11 @@ export const formsRouter = createTRPCRouter({
 					code: "NOT_FOUND",
 					message: "Seção não encontrada.",
 				});
-			await requireProjectAccess(section.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				section.projectId,
+				ctx.session.user.id,
+				"event.manage",
+			);
 			if (section.version.isPublished) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
@@ -1338,7 +1374,11 @@ export const formsRouter = createTRPCRouter({
 					code: "NOT_FOUND",
 					message: "Versão não encontrada.",
 				});
-			await requireProjectAccess(version.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				version.projectId,
+				ctx.session.user.id,
+				"event.manage",
+			);
 			if (version.isPublished) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
@@ -1372,7 +1412,11 @@ export const formsRouter = createTRPCRouter({
 					code: "NOT_FOUND",
 					message: "Versão não encontrada.",
 				});
-			await requireProjectAccess(version.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				version.projectId,
+				ctx.session.user.id,
+				"event.manage",
+			);
 			await db.transaction(async (tx) => {
 				await tx
 					.update(formVersion)
@@ -1406,7 +1450,11 @@ export const formsRouter = createTRPCRouter({
 					code: "NOT_FOUND",
 					message: "Versão não encontrada.",
 				});
-			await requireProjectAccess(version.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				version.projectId,
+				ctx.session.user.id,
+				"event.manage",
+			);
 			if (version.isPublished) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
@@ -1457,7 +1505,11 @@ export const formsRouter = createTRPCRouter({
 					code: "NOT_FOUND",
 					message: "Versão não encontrada.",
 				});
-			await requireProjectAccess(version.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				version.projectId,
+				ctx.session.user.id,
+				"event.manage",
+			);
 			await db
 				.update(formVersion)
 				.set({ isPublished: false })
@@ -1497,9 +1549,10 @@ export const formsRouter = createTRPCRouter({
 					code: "NOT_FOUND",
 					message: "Atividade não encontrada.",
 				});
-			await requireProjectAccess(
+			await requireProjectPermission(
 				foundActivity.projectId,
 				ctx.session.user.id,
+				"event.manage",
 			);
 
 			const latest = await db.query.formVersion.findFirst({
@@ -2040,7 +2093,11 @@ export const formsRouter = createTRPCRouter({
 			}),
 		)
 		.query(async ({ input, ctx }) => {
-			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				input.projectId,
+				ctx.session.user.id,
+				"event.manage",
+			);
 			if (input.activityId) {
 				await requireActivityInProject(
 					input.activityId,
@@ -2152,7 +2209,11 @@ export const formsRouter = createTRPCRouter({
 			}),
 		)
 		.query(async ({ input, ctx }) => {
-			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				input.projectId,
+				ctx.session.user.id,
+				"event.manage",
+			);
 			if (input.activityId) {
 				await requireActivityInProject(
 					input.activityId,

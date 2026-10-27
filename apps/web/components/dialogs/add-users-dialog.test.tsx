@@ -1,10 +1,8 @@
-import { Component, type ReactNode } from "react";
-
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { AddParticipantsDialog } from "@/components/dialogs/add-participants-dialog";
+import { AddUsersDialog } from "@/components/dialogs/add-users-dialog";
 
 afterEach(cleanup);
 
@@ -62,28 +60,18 @@ vi.mock("../participant-item", () => ({
 	ParticipantItem: () => <li>Ana</li>,
 }));
 
-class Boundary extends Component<{ children: ReactNode }, { error: boolean }> {
-	state = { error: false };
-	static getDerivedStateFromError() {
-		return { error: true };
-	}
-	render() {
-		return this.state.error ? <p>quebrou</p> : this.props.children;
-	}
-}
-
-describe("AddParticipantsDialog", () => {
+describe("AddUsersDialog", () => {
 	it("mostra o erro da mutação sem derrubar a página", async () => {
 		mutateAsyncMock.mockRejectedValue(new Error("FORBIDDEN"));
 		vi.spyOn(console, "error").mockImplementation(() => {});
 		render(
-			<Boundary>
-				<AddParticipantsDialog
-					projectId="project-1"
-					activityId="activity-1"
-					alreadyAdded={[]}
-				/>
-			</Boundary>,
+			<AddUsersDialog
+				projectId="project-1"
+				activityId="activity-1"
+				alreadyAdded={[]}
+			>
+				<button type="button">Adicionar monitores</button>
+			</AddUsersDialog>,
 		);
 
 		fireEvent.click(screen.getByText("Adicionar monitores"));

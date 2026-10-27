@@ -9,7 +9,16 @@ import {
 	parseGamificationConfig,
 	stickerByKey,
 } from "@verific/drizzle/gamification";
-import { and, count, desc, eq } from "@verific/drizzle/orm";
+import {
+	aliasedTable,
+	and,
+	count,
+	countDistinct,
+	desc,
+	eq,
+	lt,
+	notExists,
+} from "@verific/drizzle/orm";
 import {
 	participant,
 	participantCheckin,
@@ -31,7 +40,7 @@ import {
 	projectConfig,
 	type GamificationProject,
 } from "../lib/gamification";
-import { requireProjectAccess } from "../lib/project-access";
+import { requireProjectPermission } from "../lib/project-access";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
 /**
@@ -55,7 +64,9 @@ function publicProject(projectUrl: string) {
 			profilesEnabled: true,
 		},
 		with: {
-			moderators: { columns: { userId: true } },
+			moderators: {
+				columns: { userId: true, includeInRanking: true },
+			},
 		},
 	});
 }
@@ -198,9 +209,10 @@ export const gamificationRouter = createTRPCRouter({
 	getGamificationSettings: protectedProcedure
 		.input(z.object({ projectId: z.string().uuid() }))
 		.query(async ({ input, ctx }) => {
-			const row = await requireProjectAccess(
+			const row = await requireProjectPermission(
 				input.projectId,
 				ctx.session.user.id,
+				"ranking.manage",
 			);
 			return {
 				config: parseGamificationConfig(row.gamification),
@@ -219,9 +231,10 @@ export const gamificationRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			const row = await requireProjectAccess(
+			const row = await requireProjectPermission(
 				input.projectId,
 				ctx.session.user.id,
+				"ranking.manage",
 			);
 			if (input.config.enabled && !row.profilesEnabled) {
 				throw new TRPCError({
@@ -248,9 +261,10 @@ export const gamificationRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			const projectRow = await requireProjectAccess(
+			const projectRow = await requireProjectPermission(
 				input.projectId,
 				ctx.session.user.id,
+				"reception.manage",
 			);
 			const config = projectConfig(projectRow);
 			if (!config.enabled) {
@@ -322,33 +336,88 @@ export const gamificationRouter = createTRPCRouter({
 	getReceptionSummary: protectedProcedure
 		.input(z.object({ projectId: z.string().uuid() }))
 		.query(async ({ input, ctx }) => {
-			const row = await requireProjectAccess(
+			const row = await requireProjectPermission(
 				input.projectId,
 				ctx.session.user.id,
+				"reception.manage",
 			);
 			const config = parseGamificationConfig(row.gamification);
 			const day = eventDayKey(new Date());
 
-			const [today, total] = await Promise.all([
-				db
-					.select({ amount: count() })
-					.from(participantCheckin)
-					.where(
-						and(
-							eq(participantCheckin.projectId, input.projectId),
-							eq(participantCheckin.day, day),
+			const priorCheckins = aliasedTable(
+				participantCheckin,
+				"prior_checkins",
+			);
+
+			const [today, total, uniqueTotal, newToday, registered] =
+				await Promise.all([
+					db
+						.select({ amount: count() })
+						.from(participantCheckin)
+						.where(
+							and(
+								eq(
+									participantCheckin.projectId,
+									input.projectId,
+								),
+								eq(participantCheckin.day, day),
+							),
 						),
-					),
-				db
-					.select({ amount: count() })
-					.from(participantCheckin)
-					.where(eq(participantCheckin.projectId, input.projectId)),
-			]);
+					db
+						.select({ amount: count() })
+						.from(participantCheckin)
+						.where(
+							eq(participantCheckin.projectId, input.projectId),
+						),
+					db
+						.select({
+							amount: countDistinct(
+								participantCheckin.participantId,
+							),
+						})
+						.from(participantCheckin)
+						.where(
+							eq(participantCheckin.projectId, input.projectId),
+						),
+					db
+						.select({ amount: count() })
+						.from(participantCheckin)
+						.where(
+							and(
+								eq(
+									participantCheckin.projectId,
+									input.projectId,
+								),
+								eq(participantCheckin.day, day),
+								notExists(
+									db
+										.select({ id: priorCheckins.id })
+										.from(priorCheckins)
+										.where(
+											and(
+												eq(
+													priorCheckins.participantId,
+													participantCheckin.participantId,
+												),
+												lt(priorCheckins.day, day),
+											),
+										),
+								),
+							),
+						),
+					db
+						.select({ amount: count() })
+						.from(participant)
+						.where(eq(participant.projectId, input.projectId)),
+				]);
 
 			return {
 				day,
 				todayCount: Number(today[0]?.amount ?? 0),
 				totalCount: Number(total[0]?.amount ?? 0),
+				totalUniqueCount: Number(uniqueTotal[0]?.amount ?? 0),
+				newTodayCount: Number(newToday[0]?.amount ?? 0),
+				totalParticipants: Number(registered[0]?.amount ?? 0),
 				eventDays: eventDayCount(row.startDate, row.endDate),
 				config,
 			};
@@ -421,9 +490,10 @@ export const gamificationRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			const projectRow = await requireProjectAccess(
+			const projectRow = await requireProjectPermission(
 				input.projectId,
 				ctx.session.user.id,
+				"ranking.manage",
 			);
 			const config = projectConfig(projectRow);
 			if (!config.enabled) {
@@ -479,7 +549,11 @@ export const gamificationRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				input.projectId,
+				ctx.session.user.id,
+				"ranking.manage",
+			);
 			if (!stickerByKey(input.stickerKey)) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
@@ -519,9 +593,10 @@ export const gamificationRouter = createTRPCRouter({
 			}),
 		)
 		.query(async ({ input, ctx }) => {
-			const projectRow = await requireProjectAccess(
+			const projectRow = await requireProjectPermission(
 				input.projectId,
 				ctx.session.user.id,
+				"ranking.manage",
 			);
 			const target = await db.query.participant.findFirst({
 				where: and(

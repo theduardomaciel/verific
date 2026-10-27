@@ -21,3 +21,8 @@ export const publicClient: Client = createClient(async () => ({
 
 /** `getProjects` memoizado por requisição: os layouts da conta e do dashboard. */
 export const getCachedAccountProjects = cache(() => serverClient.getProjects());
+
+/** Permissões do evento aberto, memoizadas por requisição. */
+export const getCachedProjectAccess = cache((projectId: string) =>
+	serverClient.getMyProjectAccess({ projectId }),
+);

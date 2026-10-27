@@ -95,6 +95,7 @@ export function useActivityWaitlist({
 			activityId: string;
 			participantIds: string[];
 			reason?: string;
+			allowOverCapacity?: boolean;
 		}) => promoteMutation.mutateAsync(args) as unknown as Promise<void>,
 		remove: (args: {
 			activityId: string;

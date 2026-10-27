@@ -31,7 +31,7 @@ import { z } from "@verific/zod";
 
 import { matchBadgeAnswers } from "../lib/badge-answers";
 import { deleteReplacedImages } from "../lib/image-cleanup";
-import { requireProjectAccess } from "../lib/project-access";
+import { requireProjectPermission } from "../lib/project-access";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { ensureShortId } from "./profiles";
 
@@ -93,9 +93,10 @@ export const badgesRouter = createTRPCRouter({
 	getLayout: protectedProcedure
 		.input(z.object({ projectId: z.string().uuid() }))
 		.query(async ({ input, ctx }) => {
-			const event = await requireProjectAccess(
+			const event = await requireProjectPermission(
 				input.projectId,
 				ctx.session.user.id,
+				"event.manage",
 			);
 			return {
 				layout: await readStoredLayout(input.projectId),
@@ -113,7 +114,11 @@ export const badgesRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				input.projectId,
+				ctx.session.user.id,
+				"event.manage",
+			);
 			const layout = input.layout;
 			const ids = boundFieldIds(layout);
 			if (ids.length > 0) {
@@ -173,7 +178,11 @@ export const badgesRouter = createTRPCRouter({
 	getBadgeFieldOptions: protectedProcedure
 		.input(z.object({ projectId: z.string().uuid() }))
 		.query(async ({ input, ctx }) => {
-			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				input.projectId,
+				ctx.session.user.id,
+				"event.manage",
+			);
 			const versions = await db.query.formVersion.findMany({
 				where: and(
 					eq(formVersion.projectId, input.projectId),
@@ -229,9 +238,10 @@ export const badgesRouter = createTRPCRouter({
 });
 
 export async function getBadgeBatchImpl(input: any, ctx: any) {
-	const event = await requireProjectAccess(
+	const event = await requireProjectPermission(
 		input.projectId,
 		ctx.session.user.id,
+		"event.manage",
 	);
 	const layout =
 		(await readStoredLayout(input.projectId)) ??

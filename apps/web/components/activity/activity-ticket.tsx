@@ -6,8 +6,10 @@ import { toast } from "sonner";
 
 import type { RouterOutput } from "@verific/api";
 
+import { Button } from "@/components/ui/button";
+
 import { BadgeScanner } from "@/components/badge-scanner";
-import { AddParticipantsDialog } from "@/components/dialogs/add-participants-dialog";
+import { AddUsersDialog } from "@/components/dialogs/add-users-dialog";
 import { ExpandableDescription } from "@/components/shared/expandable-description";
 
 import { useNow } from "@/hooks/use-now";
@@ -233,19 +235,12 @@ export function ActivityTicket({
 												: "Escanear crachás"
 										}
 									/>
-									<AddParticipantsDialog
+									<AddUsersDialog
 										projectId={activity.projectId}
 										activityId={activity.id}
 										alreadyAdded={[]}
-										buttonVariant="outline"
-										buttonLabel={
-											sessions.length > 1
-												? `Credenciar por nome · sessão ${i + 1}`
-												: "Credenciar por nome"
-										}
 										title="Credenciamento manual"
 										description="Selecione os participantes para credenciar nesta sessão."
-										kind="participant"
 										onSubmitSelected={async (
 											participants,
 										) => {
@@ -276,7 +271,16 @@ export function ActivityTicket({
 												}
 											}
 										}}
-									/>
+									>
+										<Button
+											variant="outline"
+											className="w-full"
+										>
+											{sessions.length > 1
+												? `Credenciar por nome · sessão ${i + 1}`
+												: "Credenciar por nome"}
+										</Button>
+									</AddUsersDialog>
 									{checkoutEnabled && (
 										<>
 											<BadgeScanner
@@ -289,19 +293,12 @@ export function ActivityTicket({
 														: "Registrar saída"
 												}
 											/>
-											<AddParticipantsDialog
+											<AddUsersDialog
 												projectId={activity.projectId}
 												activityId={activity.id}
 												alreadyAdded={[]}
-												buttonVariant="outline"
-												buttonLabel={
-													sessions.length > 1
-														? `Saída por nome · sessão ${i + 1}`
-														: "Registrar saída por nome"
-												}
 												title="Saída manual"
 												description="Selecione os participantes para registrar a saída desta sessão."
-												kind="participant"
 												onSubmitSelected={async (
 													participants,
 												) => {
@@ -335,7 +332,16 @@ export function ActivityTicket({
 														}
 													}
 												}}
-											/>
+											>
+												<Button
+													variant="outline"
+													className="w-full"
+												>
+													{sessions.length > 1
+														? `Saída por nome · sessão ${i + 1}`
+														: "Registrar saída por nome"}
+												</Button>
+											</AddUsersDialog>
 										</>
 									)}
 								</div>

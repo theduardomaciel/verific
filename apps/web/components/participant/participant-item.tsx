@@ -103,6 +103,14 @@ function ActivityParticipantItem({
 					<div className="text-foreground flex flex-col items-start justify-start gap-2">
 						{participant.role === "participant" ? (
 							<>
+								{participant.overbooked ? (
+									<span className="rounded-md border border-amber-600/30 bg-amber-600/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-500">
+										Acima do limite
+										{participant.overbookReason
+											? ` · ${participant.overbookReason}`
+											: ""}
+									</span>
+								) : null}
 								<p className="text-left text-sm leading-tight font-medium">
 									{attendedCount > 0 ? (
 										<>
@@ -117,36 +125,42 @@ function ActivityParticipantItem({
 									)}
 								</p>
 								{sessions && sessions.length > 0 ? (
-									<div className="flex flex-wrap gap-1.5">
-										{sessions.map((session, i) => {
-											const attended =
-												attendedSessionIds.has(
-													session.id,
+									participant.noShow ? (
+										<span className="border-destructive/30 bg-destructive/10 text-destructive-foreground rounded-md border px-2 py-0.5 text-xs font-medium">
+											Ausente
+										</span>
+									) : (
+										<div className="flex flex-wrap gap-1.5">
+											{sessions.map((session, i) => {
+												const attended =
+													attendedSessionIds.has(
+														session.id,
+													);
+												return (
+													<span
+														key={session.id}
+														className={cn(
+															"flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium",
+															attended
+																? "border-green-600/30 bg-green-600/10 text-green-700 dark:text-green-500"
+																: "text-muted-foreground",
+														)}
+													>
+														{attended ? (
+															<Check className="h-3 w-3" />
+														) : (
+															<X className="h-3 w-3" />
+														)}
+														S{i + 1} ·{" "}
+														{getTimeString(
+															session.startsAt,
+															true,
+														)}
+													</span>
 												);
-											return (
-												<span
-													key={session.id}
-													className={cn(
-														"flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium",
-														attended
-															? "border-green-600/30 bg-green-600/10 text-green-700 dark:text-green-500"
-															: "text-muted-foreground",
-													)}
-												>
-													{attended ? (
-														<Check className="h-3 w-3" />
-													) : (
-														<X className="h-3 w-3" />
-													)}
-													S{i + 1} ·{" "}
-													{getTimeString(
-														session.startsAt,
-														true,
-													)}
-												</span>
-											);
-										})}
-									</div>
+											})}
+										</div>
+									)
 								) : null}
 							</>
 						) : (
@@ -175,9 +189,7 @@ function ActivityParticipantItem({
 								<span className="sr-only">Ver detalhes</span>
 							</Link>
 						</Button>
-						{participant.role ===
-						"monitor" ? null : participant.id ===
-						  currentParticipantId ? (
+						{participant.id === currentParticipantId ? (
 							<ParticipantQuitButton
 								activityId={participant.activityId}
 								participantId={participant.id}

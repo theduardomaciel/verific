@@ -68,7 +68,8 @@ export function ActivityEnrollmentPanel({
 		activityId: activity.id,
 		userId: userId ?? "",
 	});
-	const offerHours = activity.waitlistOfferHours;
+	const offerMinutes =
+		activity.waitlistOfferMinutes ?? activity.waitlistOfferHours * 60;
 
 	async function confirmOffer() {
 		const { error } = await waitlist.confirm();
@@ -164,7 +165,7 @@ export function ActivityEnrollmentPanel({
 							position={
 								enrollment.waitlistEntry?.position ?? null
 							}
-							offerHours={offerHours}
+							offerMinutes={offerMinutes}
 							onLeave={() => void leaveQueue()}
 							leaving={waitlist.pending === "leave"}
 						/>
@@ -179,7 +180,7 @@ export function ActivityEnrollmentPanel({
 						<FullStatus />
 					) : state === "waitlist" ? (
 						<div className="flex flex-col gap-4">
-							<WaitlistIntro offerHours={offerHours} />
+							<WaitlistIntro offerMinutes={offerMinutes} />
 							<ActivityEnrollmentForm
 								activity={activity}
 								participantId={participantId ?? ""}

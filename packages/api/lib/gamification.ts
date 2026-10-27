@@ -68,7 +68,7 @@ export interface GamificationProject {
 	endDate: Date;
 	gamification: unknown;
 	profilesEnabled?: boolean | null;
-	moderators?: Array<{ userId: string }>;
+	moderators?: Array<{ userId: string; includeInRanking?: boolean }>;
 }
 
 export interface StickerAward {
@@ -323,7 +323,10 @@ export async function loadParticipantStats(
 	const moderatorRowsPromise = project.moderators
 		? Promise.resolve(project.moderators)
 		: tx
-				.select({ userId: projectModerator.userId })
+				.select({
+					userId: projectModerator.userId,
+					includeInRanking: projectModerator.includeInRanking,
+				})
 				.from(projectModerator)
 				.where(eq(projectModerator.projectId, project.id));
 
@@ -427,15 +430,30 @@ export async function loadParticipantStats(
 	};
 }
 
-/** Dono + moderadores do evento (fonte única para excluir staff do ranking). */
+/**
+ * Dono + membros da equipe que ficam fora do ranking. Um membro pode optar
+ * por concorrer (`includeInRanking`), o que resolve o caso de monitores que
+ * também querem aparecer na classificação.
+ */
 function staffUserIds(
 	project: GamificationProject,
-	moderatorRows: Array<{ userId: string }>,
+	moderatorRows: Array<{ userId: string; includeInRanking?: boolean }>,
 ): string[] {
+	const moderators = new Map<
+		string,
+		{ userId: string; includeInRanking?: boolean }
+	>();
+	for (const moderator of project.moderators ?? []) {
+		moderators.set(moderator.userId, moderator);
+	}
+	for (const row of moderatorRows) {
+		moderators.set(row.userId, row);
+	}
 	return [
 		project.ownerId,
-		...(project.moderators?.map((moderator) => moderator.userId) ?? []),
-		...moderatorRows.map((row) => row.userId),
+		...[...moderators.values()]
+			.filter((moderator) => moderator.includeInRanking !== true)
+			.map((moderator) => moderator.userId),
 	];
 }
 
@@ -991,7 +1009,10 @@ async function loadRankingTotal(
 	const moderatorRows = project.moderators
 		? project.moderators
 		: await tx
-				.select({ userId: projectModerator.userId })
+				.select({
+					userId: projectModerator.userId,
+					includeInRanking: projectModerator.includeInRanking,
+				})
 				.from(projectModerator)
 				.where(eq(projectModerator.projectId, project.id));
 	const filters = rankingFilters(
@@ -1022,7 +1043,10 @@ export async function loadRanking(
 	const moderatorRows = project.moderators
 		? project.moderators
 		: await tx
-				.select({ userId: projectModerator.userId })
+				.select({
+					userId: projectModerator.userId,
+					includeInRanking: projectModerator.includeInRanking,
+				})
 				.from(projectModerator)
 				.where(eq(projectModerator.projectId, project.id));
 	const filters = rankingFilters(

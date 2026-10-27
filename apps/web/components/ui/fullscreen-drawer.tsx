@@ -83,5 +83,5 @@ export function FullScreenDrawer({
 	);
 
 	if (!mounted) return null;
-	return createPortal(drawer, document.body);
+	return createPortal(drawer, document?.body);
 }

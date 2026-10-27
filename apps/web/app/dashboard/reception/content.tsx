@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { CalendarCheck, Settings, Users } from "lucide-react";
+import { CalendarCheck, Settings, UserPlus, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { BadgeScanner } from "@/components/badge-scanner";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
-import { AddParticipantsDialog } from "@/components/dialogs/add-participants-dialog";
+import { AddUsersDialog } from "@/components/dialogs/add-users-dialog";
 
 import { trpc } from "@/lib/trpc/react";
 
@@ -68,7 +68,23 @@ export function ReceptionPage() {
 		);
 	}
 
-	const { config, day, todayCount, totalCount, eventDays } = summary.data;
+	const {
+		config,
+		day,
+		todayCount,
+		totalUniqueCount,
+		newTodayCount,
+		totalParticipants,
+		eventDays,
+	} = summary.data;
+	// "Ainda não credenciados" antes de hoje: total - (únicos já credenciados
+	// excluindo os novos de hoje).
+	const notYetCheckedIn =
+		totalParticipants - (totalUniqueCount - newTodayCount);
+	const newTodayPercentage =
+		notYetCheckedIn > 0
+			? Math.round((newTodayCount / notYetCheckedIn) * 100)
+			: 0;
 
 	if (!config.enabled) {
 		return (
@@ -105,12 +121,28 @@ export function ReceptionPage() {
 				</p>
 			</div>
 
-			<div className="grid gap-4 sm:grid-cols-2">
+			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+				<Card>
+					<CardHeader>
+						<CardTitle className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
+							<UserPlus className="size-4" />
+							Novos hoje
+						</CardTitle>
+					</CardHeader>
+					<CardContent className="flex flex-col gap-1">
+						<span className="text-4xl font-bold tabular-nums">
+							{newTodayCount}
+						</span>
+						<span className="text-muted-foreground text-xs">
+							{newTodayPercentage}% do total restante
+						</span>
+					</CardContent>
+				</Card>
 				<Card>
 					<CardHeader>
 						<CardTitle className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
 							<CalendarCheck className="size-4" />
-							Hoje
+							Credenciados hoje
 						</CardTitle>
 					</CardHeader>
 					<CardContent className="flex flex-col gap-1">
@@ -126,12 +158,12 @@ export function ReceptionPage() {
 					<CardHeader>
 						<CardTitle className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
 							<Users className="size-4" />
-							Total no evento
+							Indivíduos no evento
 						</CardTitle>
 					</CardHeader>
 					<CardContent className="flex flex-col gap-1">
 						<span className="text-4xl font-bold tabular-nums">
-							{totalCount}
+							{totalUniqueCount}
 						</span>
 						<span className="text-muted-foreground text-xs">
 							{eventDays}{" "}
@@ -150,13 +182,11 @@ export function ReceptionPage() {
 						mode="reception"
 						buttonLabel="Fazer check-in de hoje"
 					/>
-					<AddParticipantsDialog
+					<AddUsersDialog
 						projectId={projectId}
 						alreadyAdded={[]}
-						buttonLabel="Adicionar por nome"
 						title="Check-in manual"
 						description="Selecione os participantes para registrar o check-in de hoje."
-						kind="participant"
 						onSubmitSelected={async (participants) => {
 							for (const participant of participants) {
 								if (!participant.shortId) {
@@ -182,7 +212,12 @@ export function ReceptionPage() {
 								}
 							}
 						}}
-					/>
+					>
+						<Button variant="outline" className="w-full">
+							<UserPlus size={16} className="mr-2" />
+							Adicionar por nome
+						</Button>
+					</AddUsersDialog>
 					<p className="text-muted-foreground text-center text-xs">
 						O mesmo QR do ingresso/crachá é usado. Repetir o scan no
 						mesmo dia não soma pontos de novo.

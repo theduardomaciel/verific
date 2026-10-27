@@ -15,7 +15,7 @@ vi.mock("@/components/badge-scanner", () => ({
 	),
 }));
 vi.mock("@/components/dialogs/add-participants-dialog", () => ({
-	AddParticipantsDialog: () => null,
+	AddUsersDialog: () => null,
 }));
 vi.mock("@/lib/trpc/react", () => ({
 	trpc: {

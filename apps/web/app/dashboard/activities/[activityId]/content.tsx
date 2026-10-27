@@ -9,11 +9,13 @@ import {
 	Clock,
 	Edit,
 	ClipboardList,
+	UserPlus,
 	Megaphone,
 	MapPin,
 	Share2,
 	Trash,
 } from "lucide-react";
+import { toast } from "sonner";
 
 // Validation (client-safe: no db / server env imports)
 import { getActivityParams } from "@verific/api/schemas";
@@ -21,13 +23,17 @@ import { appUrl } from "@verific/env";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+	ConfirmDialog,
+	useConfirmDialog,
+} from "@/components/ui/confirm-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { CategoryCard } from "@/components/dashboard/category-card";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
 import { DashboardPagination } from "@/components/dashboard/pagination";
-import { AddParticipantsDialog } from "@/components/dialogs/add-participants-dialog";
+import { AddUsersDialog } from "@/components/dialogs/add-users-dialog";
 import { ActivityDeleteDialog } from "@/components/dialogs/delete-dialog";
 import { ShareDialog } from "@/components/dialogs/share-dialog";
 import { ExportParticipantsButton } from "@/components/participant/export-button";
@@ -37,6 +43,7 @@ import { CollapsibleDescription } from "@/components/shared/collapsible-descript
 import { SortBy } from "@/components/sort-by";
 
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { useNow } from "@/hooks/use-now";
 import { useParsedSearchParams } from "@/hooks/use-parsed-search-params";
 import {
 	getSessionsDateString,
@@ -51,7 +58,10 @@ import { WaitlistTab } from "./waitlist-tab";
 type ActivityTab = "participants" | "monitors" | "waitlist";
 
 export function ActivityContent({ activityId }: { activityId: string }) {
-	const { projectId, isOwner } = useDashboard();
+	const { projectId, isOwner, can } = useDashboard();
+	const utils = trpc.useUtils();
+	const releaseNoShowMutation = trpc.releaseNoShowSeats.useMutation();
+	const { confirm, dialogProps } = useConfirmDialog();
 	const parsedParams = useParsedSearchParams((raw) =>
 		getActivityParams.parse(raw),
 	);
@@ -60,6 +70,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 	// Keep in sync with the `lg:` classes used in this file and in waitlist-list.tsx.
 	const isDesktop = useMediaQuery("(min-width: 1024px)");
 	const [tab, setTab] = useState<ActivityTab>("participants");
+	const now = useNow();
 
 	const { data, isPending, isError } = trpc.getActivity.useQuery(
 		{
@@ -94,12 +105,25 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 		);
 	}
 
-	const { activity, participantsAmount, pageCount } = data;
+	const { activity, participantsAmount, overbookedAmount, pageCount } = data;
+	const isFull =
+		!!activity.participantsLimit &&
+		(participantsAmount ?? 0) >= activity.participantsLimit;
 
 	const monitors = activity.participants.filter((t) => t.role === "monitor");
 
 	const participants = activity.participants.filter(
 		(t) => t.role === "participant",
+	);
+
+	const activityEnded =
+		now !== null &&
+		activity.sessions.length > 0 &&
+		activity.sessions.every((session) => new Date(session.endsAt) <= now);
+	const hasNoShowCandidates = participants.some(
+		(participant) =>
+			!participant.noShow &&
+			(participant.sessionAttendances?.length ?? 0) === 0,
 	);
 
 	const sessions = getSessionsSorted(activity.sessions);
@@ -129,7 +153,13 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 						{participantsAmount &&
 						activity.participantsLimit &&
 						activity.participantsLimit > 0
-							? `Vagas disponíveis: ${activity.participantsLimit - participantsAmount}/${activity.participantsLimit}`
+							? overbookedAmount > 0
+								? `${overbookedAmount} acima do limite (${participantsAmount}/${activity.participantsLimit})`
+								: `Vagas disponíveis: ${Math.max(
+										0,
+										activity.participantsLimit -
+											participantsAmount,
+									)}/${activity.participantsLimit}`
 							: participantsAmount && participantsAmount > 0
 								? `${participantsAmount} participante${
 										participantsAmount !== 1 ? "s" : ""
@@ -172,6 +202,26 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 								createdAt: p.subscribedAt,
 							}))}
 						/>
+						<AddUsersDialog
+							projectId={projectId}
+							activityId={activityId}
+							alreadyAdded={activity.participants.map(
+								(t) => t.id,
+							)}
+							mode="participants"
+							title="Adicionar participantes"
+							description="Selecione os participantes para adicionar à atividade."
+							allowOverCapacity={can("activities.manage")}
+							isFull={isFull}
+						>
+							<Button
+								size="icon"
+								variant="outline"
+								className="h-10 min-h-10 w-10 shrink-0"
+							>
+								<UserPlus size={20} />
+							</Button>
+						</AddUsersDialog>
 					</div>
 				</div>
 				<ParticipantsList.List
@@ -214,6 +264,36 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 			</ParticipantsList.Holder>
 		</div>
 	);
+
+	async function handleReleaseNoShow() {
+		const ok = await confirm({
+			title: "Liberar vagas de ausentes",
+			description:
+				"Participantes sem presença em nenhuma sessão encerrada serão marcados como ausentes e suas vagas liberadas. Continuar?",
+			confirmLabel: "Liberar",
+			confirmVariant: "destructive",
+		});
+		if (!ok) return;
+		try {
+			const result = await releaseNoShowMutation.mutateAsync({
+				activityId,
+			});
+			toast.success(
+				result.released > 0
+					? `${result.released} vaga(s) liberada(s) por ausência.`
+					: "Nenhum ausente encontrado.",
+			);
+			await utils.getActivity.invalidate({
+				activityId,
+			});
+		} catch (error) {
+			toast.error(
+				error instanceof Error
+					? error.message
+					: "Não foi possível liberar as vagas.",
+			);
+		}
+	}
 
 	return (
 		<main className="py-container-v container-p flex min-h-[calc(100dvh-var(--dashboard-header-height))] flex-col items-center justify-start gap-9">
@@ -341,13 +421,38 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 							</Link>
 						</Button>
 					</div>
-					<AddParticipantsDialog
+					<AddUsersDialog
 						projectId={projectId}
 						activityId={activityId}
 						alreadyAdded={activity.participants
 							.filter((t) => t.role === "monitor")
 							.map((t) => t.id)}
-					/>
+						mode="monitors"
+						title="Adicionar monitores"
+						description="Selecione os participantes para adicionar como monitores."
+					>
+						<Button
+							size="lg"
+							variant="default"
+							className="h-10 min-h-10 flex-1 shrink-0"
+						>
+							<UserPlus size={20} />
+							Adicionar monitores
+						</Button>
+					</AddUsersDialog>
+					{can("activities.manage") &&
+					activityEnded &&
+					hasNoShowCandidates ? (
+						<Button
+							variant="outline"
+							size="lg"
+							className="h-10 min-h-10 flex-1 shrink-0"
+							onClick={handleReleaseNoShow}
+						>
+							Liberar vagas de ausentes
+						</Button>
+					) : null}
+					<ConfirmDialog {...dialogProps} />
 				</div>
 			</div>
 			<Tabs

@@ -3,6 +3,11 @@ import { TRPCError } from "@trpc/server";
 import { db } from "@verific/drizzle";
 import { and, eq, like, or } from "@verific/drizzle/orm";
 import {
+	PROJECT_PERMISSIONS,
+	projectMemberRoles,
+	resolveProjectPermissions,
+} from "@verific/drizzle/permissions";
+import {
 	activity,
 	participant,
 	project,
@@ -15,8 +20,10 @@ import { z } from "@verific/zod";
 
 import { deleteReplacedImages } from "../lib/image-cleanup";
 import {
+	getProjectAccess,
 	requireProjectAccess,
 	requireProjectOwner,
+	requireProjectPermission,
 } from "../lib/project-access";
 import { generateShortId } from "../lib/short-id";
 import { normalizeThemeFonts } from "../lib/theme-fonts";
@@ -55,6 +62,15 @@ export const updateProjectSchema = z.object({
 	profilesEnabled: z.boolean().optional(),
 	startDate: z.coerce.date().optional(),
 	endDate: z.coerce.date().optional(),
+});
+
+const projectPermissionsSchema = z.array(z.enum(PROJECT_PERMISSIONS));
+
+const projectMemberInputSchema = z.object({
+	role: z.enum(projectMemberRoles).default("staff"),
+	/** `undefined` = usar os padrões do papel. */
+	permissions: projectPermissionsSchema.optional(),
+	includeInRanking: z.boolean().optional(),
 });
 
 /** O Drizzle 0.45 embrulha o erro do Postgres; o código fica em `cause`. */
@@ -171,7 +187,11 @@ export const projectsRouter = createTRPCRouter({
 		.mutation(async ({ input, ctx }) => {
 			const { id, ...rest } = input;
 
-			const current = await requireProjectAccess(id, ctx.session.user.id);
+			const current = await requireProjectPermission(
+				id,
+				ctx.session.user.id,
+				"event.manage",
+			);
 
 			// URLs antigas podem ter acento; só uma URL nova é normalizada
 			if (rest.url !== undefined && rest.url !== current.url) {
@@ -284,6 +304,32 @@ export const projectsRouter = createTRPCRouter({
 			};
 		}),
 
+	/**
+	 * Permissões efetivas do usuário no evento aberto no dashboard. O layout
+	 * usa para filtrar a navegação e as telas usam para esconder ações que o
+	 * servidor recusaria.
+	 */
+	getMyProjectAccess: protectedProcedure
+		.input(z.object({ projectId: z.string().uuid() }))
+		.query(async ({ input, ctx }) => {
+			const access = await getProjectAccess(
+				input.projectId,
+				ctx.session.user.id,
+			);
+			if (!access) {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "Sem permissão neste evento.",
+				});
+			}
+			return {
+				isOwner: access.isOwner,
+				role: access.role,
+				permissions: access.permissions,
+				includeInRanking: access.membership?.includeInRanking ?? false,
+			};
+		}),
+
 	getProjects: protectedProcedure.query(async ({ ctx }) => {
 		const userId = ctx.session.user.id;
 
@@ -368,28 +414,44 @@ export const projectsRouter = createTRPCRouter({
 	listProjectContributors: protectedProcedure
 		.input(z.object({ projectId: z.string().uuid() }))
 		.query(async ({ input, ctx }) => {
-			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			const projectRow = await requireProjectAccess(
+				input.projectId,
+				ctx.session.user.id,
+			);
 			const rows = await db.query.projectModerator.findMany({
 				where: eq(projectModerator.projectId, input.projectId),
 				with: { user: true },
 			});
-			return rows.map((row) => ({
-				userId: row.userId,
-				name: row.user?.name ?? null,
-				email: row.user?.email ?? null,
-				assignedAt: row.assignedAt,
-			}));
+			return {
+				ownerId: projectRow.ownerId,
+				contributors: rows.map((row) => ({
+					userId: row.userId,
+					name: row.user?.name ?? null,
+					email: row.user?.email ?? null,
+					role: row.role,
+					permissions: resolveProjectPermissions(
+						row.role,
+						row.permissions,
+					),
+					includeInRanking: row.includeInRanking,
+					assignedAt: row.assignedAt,
+				})),
+			};
 		}),
 
 	addProjectContributor: protectedProcedure
 		.input(
-			z.object({
+			projectMemberInputSchema.extend({
 				projectId: z.string().uuid(),
 				email: z.string().email(),
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			await requireProjectOwner(input.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				input.projectId,
+				ctx.session.user.id,
+				"team.manage",
+			);
 
 			const userRows = await db
 				.select({
@@ -427,13 +489,16 @@ export const projectsRouter = createTRPCRouter({
 			if (existing) {
 				throw new TRPCError({
 					code: "CONFLICT",
-					message: "Este usuário já é contribuidor do projeto.",
+					message: "Este usuário já é membro da equipe do projeto.",
 				});
 			}
 
 			await db.insert(projectModerator).values({
 				projectId: input.projectId,
 				userId: contributor.id,
+				role: input.role,
+				permissions: input.permissions ?? null,
+				includeInRanking: input.includeInRanking ?? false,
 			});
 
 			const contributorEmail = contributor.email?.trim();
@@ -446,7 +511,75 @@ export const projectsRouter = createTRPCRouter({
 				});
 			}
 
-			return { added: true, userId: contributor.id };
+			return {
+				added: true,
+				userId: contributor.id,
+				role: input.role,
+				permissions: resolveProjectPermissions(
+					input.role,
+					input.permissions,
+				),
+			};
+		}),
+
+	updateProjectContributor: protectedProcedure
+		.input(
+			projectMemberInputSchema.partial().extend({
+				projectId: z.string().uuid(),
+				userId: z.string().uuid(),
+			}),
+		)
+		.mutation(async ({ input, ctx }) => {
+			const projectRow = await requireProjectPermission(
+				input.projectId,
+				ctx.session.user.id,
+				"team.manage",
+			);
+
+			if (projectRow.ownerId === input.userId) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "O dono do projeto já tem todas as permissões.",
+				});
+			}
+
+			const existing = await db.query.projectModerator.findFirst({
+				where: and(
+					eq(projectModerator.projectId, input.projectId),
+					eq(projectModerator.userId, input.userId),
+				),
+			});
+			if (!existing) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Membro da equipe não encontrado.",
+				});
+			}
+
+			const role = input.role ?? existing.role;
+			const permissions =
+				input.permissions !== undefined
+					? input.permissions
+					: existing.permissions;
+			const includeInRanking =
+				input.includeInRanking ?? existing.includeInRanking;
+
+			await db
+				.update(projectModerator)
+				.set({ role, permissions, includeInRanking })
+				.where(
+					and(
+						eq(projectModerator.projectId, input.projectId),
+						eq(projectModerator.userId, input.userId),
+					),
+				);
+
+			return {
+				updated: true,
+				role,
+				permissions: resolveProjectPermissions(role, permissions),
+				includeInRanking,
+			};
 		}),
 
 	leaveProjectContributor: protectedProcedure
@@ -471,10 +604,18 @@ export const projectsRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			const projectRow = await requireProjectOwner(
+			const projectRow = await requireProjectPermission(
 				input.projectId,
 				ctx.session.user.id,
+				"team.manage",
 			);
+
+			if (projectRow.ownerId === input.userId) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "O dono do projeto não pode ser removido.",
+				});
+			}
 
 			const contributorRows = await db
 				.select({ name: user.name, email: user.email })
