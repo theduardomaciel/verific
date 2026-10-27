@@ -20,6 +20,7 @@ import { insertNotificationFixtures } from "./notification-fixtures";
 import {
 	buildAnswerRows,
 	buildRegistrationAnswers,
+	ACTIVITY_FORM_FIELDS,
 	buildRegistrationForm,
 } from "./registration-form";
 import { addDays, addMinutes, insertInChunks, type SeedDb } from "./utils";
@@ -45,6 +46,8 @@ export interface ActivitySpec {
 	// Lota a atividade e põe gente na fila; os `offered` primeiros já têm
 	// vaga oferecida. Só vale para atividades que ainda não começaram.
 	waitlist?: { waiting: number; offered?: number };
+	// Formulário próprio (ACTIVITY_FORM_FIELDS), sem respostas semeadas
+	form?: boolean;
 }
 
 export interface EventSpec {
@@ -287,6 +290,22 @@ export async function seedEvent(
 	});
 	await insertInChunks(db, schema.activity, activities);
 	await insertInChunks(db, schema.activitySession, sessions);
+
+	// Formulário próprio, respondido ao se inscrever na atividade
+	for (const [i, activitySpec] of spec.activities.entries()) {
+		if (!activitySpec.form) continue;
+		const activityForm = buildRegistrationForm(faker, {
+			projectId: project.id,
+			activityId: activities[i]!.id,
+			createdBy: params.ownerId,
+			publishedAt,
+			title: "Inscrição na atividade",
+			fields: ACTIVITY_FORM_FIELDS,
+		});
+		await db.insert(schema.formVersion).values(activityForm.version);
+		await db.insert(schema.formSection).values(activityForm.section);
+		await db.insert(schema.formField).values(activityForm.fields);
+	}
 
 	await insertInChunks(
 		db,

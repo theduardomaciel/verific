@@ -40,13 +40,46 @@ export type RegistrationAnswers = Record<
 	string
 >;
 
+// Formulário próprio de uma atividade, respondido ao se inscrever nela
+export const ACTIVITY_FORM_FIELDS = [
+	{
+		key: "experiencia",
+		label: "Experiência com o tema",
+		type: "select_single",
+		required: true,
+		options: ["Nenhuma", "Básica", "Intermediária", "Avançada"],
+	},
+	{
+		key: "motivacao",
+		label: "Por que quer participar?",
+		type: "textarea",
+		required: false,
+	},
+] as const satisfies Pick<
+	FieldInsert,
+	"key" | "label" | "type" | "required" | "options"
+>[];
+
+type FormFieldSpec =
+	| (typeof REGISTRATION_FIELDS)[number]
+	| (typeof ACTIVITY_FORM_FIELDS)[number];
+
 export function buildRegistrationForm(
 	faker: Faker,
-	params: { projectId: string; createdBy: string; publishedAt: Date },
+	params: {
+		projectId: string;
+		createdBy: string;
+		publishedAt: Date;
+		// Com atividade, vira o formulário dela em vez do evento
+		activityId?: string;
+		title?: string;
+		fields?: readonly FormFieldSpec[];
+	},
 ) {
 	const version = {
 		id: faker.string.uuid(),
 		projectId: params.projectId,
+		...(params.activityId && { activityId: params.activityId }),
 		version: 1,
 		isPublished: true,
 		createdBy: params.createdBy,
@@ -57,11 +90,11 @@ export function buildRegistrationForm(
 		id: faker.string.uuid(),
 		formVersionId: version.id,
 		projectId: params.projectId,
-		title: "Dados da inscrição",
+		title: params.title ?? "Dados da inscrição",
 		order: 0,
 	} satisfies typeof schema.formSection.$inferInsert;
 
-	const fields = REGISTRATION_FIELDS.map(
+	const fields = (params.fields ?? REGISTRATION_FIELDS).map(
 		(field, order) =>
 			({
 				id: faker.string.uuid(),
