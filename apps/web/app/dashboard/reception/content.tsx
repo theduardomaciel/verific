@@ -74,8 +74,17 @@ export function ReceptionPage() {
 		todayCount,
 		totalUniqueCount,
 		newTodayCount,
+		totalParticipants,
 		eventDays,
 	} = summary.data;
+	// "Ainda não credenciados" antes de hoje: total - (únicos já credenciados
+	// excluindo os novos de hoje).
+	const notYetCheckedIn =
+		totalParticipants - (totalUniqueCount - newTodayCount);
+	const newTodayPercentage =
+		notYetCheckedIn > 0
+			? Math.round((newTodayCount / notYetCheckedIn) * 100)
+			: 0;
 
 	if (!config.enabled) {
 		return (
@@ -125,7 +134,7 @@ export function ReceptionPage() {
 							{newTodayCount}
 						</span>
 						<span className="text-muted-foreground text-xs capitalize">
-							primeiro credenciamento
+							{newTodayPercentage}% do total restante
 						</span>
 					</CardContent>
 				</Card>

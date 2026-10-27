@@ -349,50 +349,67 @@ export const gamificationRouter = createTRPCRouter({
 				"prior_checkins",
 			);
 
-			const [today, total, uniqueTotal, newToday] = await Promise.all([
-				db
-					.select({ amount: count() })
-					.from(participantCheckin)
-					.where(
-						and(
-							eq(participantCheckin.projectId, input.projectId),
-							eq(participantCheckin.day, day),
-						),
-					),
-				db
-					.select({ amount: count() })
-					.from(participantCheckin)
-					.where(eq(participantCheckin.projectId, input.projectId)),
-				db
-					.select({
-						amount: countDistinct(participantCheckin.participantId),
-					})
-					.from(participantCheckin)
-					.where(eq(participantCheckin.projectId, input.projectId)),
-				db
-					.select({ amount: count() })
-					.from(participantCheckin)
-					.where(
-						and(
-							eq(participantCheckin.projectId, input.projectId),
-							eq(participantCheckin.day, day),
-							notExists(
-								db
-									.select({ id: priorCheckins.id })
-									.from(priorCheckins)
-									.where(
-										and(
-											eq(
-												priorCheckins.participantId,
-												participantCheckin.participantId,
-											),
-											lt(priorCheckins.day, day),
-										),
-									),
+			const [today, total, uniqueTotal, newToday, registered] =
+				await Promise.all([
+					db
+						.select({ amount: count() })
+						.from(participantCheckin)
+						.where(
+							and(
+								eq(
+									participantCheckin.projectId,
+									input.projectId,
+								),
+								eq(participantCheckin.day, day),
 							),
 						),
-					),
-			]);
+					db
+						.select({ amount: count() })
+						.from(participantCheckin)
+						.where(
+							eq(participantCheckin.projectId, input.projectId),
+						),
+					db
+						.select({
+							amount: countDistinct(
+								participantCheckin.participantId,
+							),
+						})
+						.from(participantCheckin)
+						.where(
+							eq(participantCheckin.projectId, input.projectId),
+						),
+					db
+						.select({ amount: count() })
+						.from(participantCheckin)
+						.where(
+							and(
+								eq(
+									participantCheckin.projectId,
+									input.projectId,
+								),
+								eq(participantCheckin.day, day),
+								notExists(
+									db
+										.select({ id: priorCheckins.id })
+										.from(priorCheckins)
+										.where(
+											and(
+												eq(
+													priorCheckins.participantId,
+													participantCheckin.participantId,
+												),
+												lt(priorCheckins.day, day),
+											),
+										),
+								),
+							),
+						),
+					db
+						.select({ amount: count() })
+						.from(participant)
+						.where(eq(participant.projectId, input.projectId)),
+				]);
 
 			return {
 				day,
@@ -400,6 +417,7 @@ export const gamificationRouter = createTRPCRouter({
 				totalCount: Number(total[0]?.amount ?? 0),
 				totalUniqueCount: Number(uniqueTotal[0]?.amount ?? 0),
 				newTodayCount: Number(newToday[0]?.amount ?? 0),
+				totalParticipants: Number(registered[0]?.amount ?? 0),
 				eventDays: eventDayCount(row.startDate, row.endDate),
 				config,
 			};
