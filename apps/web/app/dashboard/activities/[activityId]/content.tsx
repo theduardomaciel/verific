@@ -265,6 +265,36 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 		</div>
 	);
 
+	async function handleReleaseNoShow() {
+		const ok = await confirm({
+			title: "Liberar vagas de ausentes",
+			description:
+				"Participantes sem presença em nenhuma sessão encerrada serão marcados como ausentes e suas vagas liberadas. Continuar?",
+			confirmLabel: "Liberar",
+			confirmVariant: "destructive",
+		});
+		if (!ok) return;
+		try {
+			const result = await releaseNoShowMutation.mutateAsync({
+				activityId,
+			});
+			toast.success(
+				result.released > 0
+					? `${result.released} vaga(s) liberada(s) por ausência.`
+					: "Nenhum ausente encontrado.",
+			);
+			await utils.getActivity.invalidate({
+				activityId,
+			});
+		} catch (error) {
+			toast.error(
+				error instanceof Error
+					? error.message
+					: "Não foi possível liberar as vagas.",
+			);
+		}
+	}
+
 	return (
 		<main className="py-container-v container-p flex min-h-[calc(100dvh-var(--dashboard-header-height))] flex-col items-center justify-start gap-9">
 			<div className="flex w-full flex-col items-start justify-start gap-4">
@@ -417,36 +447,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 							variant="outline"
 							size="lg"
 							className="h-10 min-h-10 flex-1 shrink-0"
-							onClick={async () => {
-								const ok = await confirm({
-									title: "Liberar vagas de ausentes",
-									description:
-										"Participantes sem presença em nenhuma sessão encerrada serão marcados como ausentes e suas vagas liberadas. Continuar?",
-									confirmLabel: "Liberar",
-									confirmVariant: "destructive",
-								});
-								if (!ok) return;
-								try {
-									const result =
-										await releaseNoShowMutation.mutateAsync(
-											{ activityId },
-										);
-									toast.success(
-										result.released > 0
-											? `${result.released} vaga(s) liberada(s) por ausência.`
-											: "Nenhum ausente encontrado.",
-									);
-									await utils.getActivity.invalidate({
-										activityId,
-									});
-								} catch (error) {
-									toast.error(
-										error instanceof Error
-											? error.message
-											: "Não foi possível liberar as vagas.",
-									);
-								}
-							}}
+							onClick={handleReleaseNoShow}
 						>
 							Liberar vagas de ausentes
 						</Button>
