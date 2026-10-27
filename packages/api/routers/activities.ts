@@ -1940,37 +1940,34 @@ export const activitiesRouter = createTRPCRouter({
 			}
 
 			const sessionIds = found.sessions.map((session) => session.id);
-			const enrollments = await db
+			const attendanceRows = await db
 				.select({
 					participantId: participantOnActivity.participantId,
+					attendanceCount: count(sessionAttendance.sessionId),
 				})
 				.from(participantOnActivity)
+				.leftJoin(
+					sessionAttendance,
+					and(
+						eq(
+							sessionAttendance.participantId,
+							participantOnActivity.participantId,
+						),
+						inArray(sessionAttendance.sessionId, sessionIds),
+					),
+				)
 				.where(
 					and(
 						eq(participantOnActivity.activityId, input.activityId),
 						eq(participantOnActivity.role, "participant"),
 						eq(participantOnActivity.noShow, false),
 					),
-				);
+				)
+				.groupBy(participantOnActivity.participantId);
 
-			const noShowIds: string[] = [];
-			for (const enrollment of enrollments) {
-				const [attendance] = await db
-					.select({ amount: count() })
-					.from(sessionAttendance)
-					.where(
-						and(
-							eq(
-								sessionAttendance.participantId,
-								enrollment.participantId,
-							),
-							inArray(sessionAttendance.sessionId, sessionIds),
-						),
-					);
-				if ((attendance?.amount ?? 0) === 0) {
-					noShowIds.push(enrollment.participantId);
-				}
-			}
+			const noShowIds = attendanceRows
+				.filter((row) => Number(row.attendanceCount ?? 0) === 0)
+				.map((row) => row.participantId);
 
 			if (noShowIds.length === 0) {
 				return { released: 0 };
