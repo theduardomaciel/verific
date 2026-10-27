@@ -218,6 +218,29 @@ describe("QuickJoinDialog", () => {
 		expect(retry).toBeEnabled();
 	});
 
+	it("muita procura fica inline com retry, sem bloquear", async () => {
+		const { onBlocked } = setup();
+		mutateAsyncMock.mockRejectedValueOnce({
+			data: { reason: "BUSY" },
+			message: "ocupado",
+		});
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Confirmar inscrição" }),
+		);
+
+		await screen.findByRole("alert");
+		expect(
+			screen.getByText(
+				"Muita gente está se inscrevendo agora. Tente de novo em instantes.",
+			),
+		).toBeInTheDocument();
+		expect(onBlocked).not.toHaveBeenCalled();
+		expect(
+			screen.getByRole("button", { name: "Confirmar inscrição" }),
+		).toBeEnabled();
+	});
+
 	it("lotada, fechada e formulário sobem como bloqueio tipado", async () => {
 		for (const [reason, code] of [
 			["ACTIVITY_FULL", "full"],

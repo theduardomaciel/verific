@@ -30,7 +30,7 @@ import {
 export type QuickJoinActivity =
 	RouterOutput["getActivities"]["activities"][number];
 
-export type JoinBlockReason = Exclude<JoinError, "unknown">;
+export type JoinBlockReason = Exclude<JoinError, "unknown" | "busy">;
 
 interface QuickJoinDialogProps {
 	activity: QuickJoinActivity | null;
@@ -48,7 +48,7 @@ interface QuickJoinDialogProps {
  * `ScheduleContent` injeta a atividade selecionada). Atividades
  * bloqueadas por conflito nunca abrem o diálogo (o card nem oferece o
  * botão); se a corrida rejeitar, o motivo sobe via `onBlocked`. Erro
- * desconhecido fica inline com retry.
+ * desconhecido ou excesso de procura fica inline com retry.
  */
 export function QuickJoinDialog({
 	activity,
@@ -62,7 +62,7 @@ export function QuickJoinDialog({
 }: QuickJoinDialogProps) {
 	const cancelRef = useRef<HTMLButtonElement>(null);
 	const router = useRouter();
-	const { join, status, reset } = useJoinActivity({
+	const { join, status, error, reset } = useJoinActivity({
 		activityId: activity?.id ?? "",
 		participantId,
 		userId,
@@ -90,7 +90,7 @@ export function QuickJoinDialog({
 		const joinError = await join();
 		if (!joinError) {
 			setShowSuccess(true);
-		} else if (joinError !== "unknown") {
+		} else if (joinError !== "unknown" && joinError !== "busy") {
 			onBlocked(activity, joinError);
 		}
 	}
@@ -239,8 +239,9 @@ export function QuickJoinDialog({
 										Não foi possível concluir
 									</AlertTitle>
 									<AlertDescription>
-										Não foi possível concluir a inscrição.
-										Tente novamente.
+										{error === "busy"
+											? "Muita gente está se inscrevendo agora. Tente de novo em instantes."
+											: "Não foi possível concluir a inscrição. Tente novamente."}
 									</AlertDescription>
 								</Alert>
 							) : null}

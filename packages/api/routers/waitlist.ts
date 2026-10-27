@@ -32,6 +32,7 @@ import {
 	assertActivityOpen,
 	assertSeatsAvailable,
 	checkSeats,
+	contendedTransaction,
 	countEnrolled,
 	lockActivity,
 	normalizeOverbooked,
@@ -164,7 +165,7 @@ export const waitlistRouter = createTRPCRouter({
 				subscribesSelf: true,
 			});
 
-			const result = await db.transaction(async (tx) => {
+			const result = await contendedTransaction(async (tx) => {
 				await lockParticipant(tx, participantId);
 				await assertNoScheduleConflict(tx, activityId, participantId);
 

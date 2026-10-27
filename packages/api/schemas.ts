@@ -37,14 +37,16 @@ export const activitySort = ["asc", "desc", "name_asc", "name_desc"] as const;
 /**
  * Códigos legíveis por máquina para falhas de inscrição em atividades.
  * Viajam no `data.reason` da resposta tRPC (ver `errorFormatter` em
- * `trpc.ts`): o `code` padrão continua sendo `BAD_REQUEST` e as mensagens
- * humanas não mudam — o cliente distingue os casos por este código.
+ * `trpc.ts`): o `code` padrão continua sendo `BAD_REQUEST` (`BUSY` usa
+ * `TOO_MANY_REQUESTS`) e as mensagens humanas não mudam — o cliente
+ * distingue os casos por este código.
  */
 export const JOIN_ERROR_CODES = [
 	"FORM_REQUIRED",
 	"ACTIVITY_FULL",
 	"REGISTRATION_CLOSED",
 	"SCHEDULE_CONFLICT",
+	"BUSY",
 ] as const;
 
 export type JoinErrorCode = (typeof JOIN_ERROR_CODES)[number];

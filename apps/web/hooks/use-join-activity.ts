@@ -13,6 +13,7 @@ export type JoinError =
 	| "closed"
 	| "conflict"
 	| "disabled"
+	| "busy"
 	| "unknown";
 export type JoinStatus = "idle" | "pending" | "success" | "error";
 
@@ -21,6 +22,7 @@ const REASON_TO_JOIN_ERROR: Record<JoinErrorCode, JoinError> = {
 	ACTIVITY_FULL: "full",
 	REGISTRATION_CLOSED: "closed",
 	SCHEDULE_CONFLICT: "conflict",
+	BUSY: "busy",
 };
 
 /**

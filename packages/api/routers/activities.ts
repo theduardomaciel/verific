@@ -79,6 +79,7 @@ import {
 import {
 	assertActivityOpen,
 	assertSeatsAvailable,
+	contendedTransaction,
 	countEnrolled,
 	lockActivity,
 	normalizeOverbooked,
@@ -1722,8 +1723,8 @@ export const activitiesRouter = createTRPCRouter({
 					participantsIdsToAdd.includes(requesterParticipantId),
 			});
 
-			const { inserted, resolved, pointsAwarded } = await db.transaction(
-				async (tx) => {
+			const { inserted, resolved, pointsAwarded } =
+				await contendedTransaction(async (tx) => {
 					if (isSelfServiceJoin && requesterParticipantId) {
 						// Checagem de conflito + inserção atômicas: dois joins
 						// concorrentes do mesmo participante serializam e no
@@ -1787,8 +1788,7 @@ export const activitiesRouter = createTRPCRouter({
 						},
 					);
 					return { inserted, resolved, pointsAwarded };
-				},
-			);
+				});
 
 			// Só quem realmente ganhou vínculo novo recebe confirmação; quem
 			// saiu da fila recebe a promoção (nunca os dois).

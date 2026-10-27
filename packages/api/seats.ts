@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 
-import type { db } from "@verific/drizzle";
-import { and, asc, count, eq, gt, inArray } from "@verific/drizzle/orm";
+import { db } from "@verific/drizzle";
+import { and, asc, count, eq, gt, inArray, sql } from "@verific/drizzle/orm";
 import {
 	activity,
 	activityWaitlist,
@@ -11,6 +11,45 @@ import {
 import type { ActiveEntry } from "./waitlist";
 
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+// Numa rajada, quem espera a trava segura uma conexão do pool: passado este
+// prazo, desiste e a devolve
+const LOCK_TIMEOUT = "5s";
+// `lock_not_available`, lançado quando o `lock_timeout` estoura
+const LOCK_NOT_AVAILABLE = "55P03";
+
+function isLockTimeout(error: unknown) {
+	for (let e = error, depth = 0; e && depth < 5; depth++) {
+		if ((e as { code?: unknown }).code === LOCK_NOT_AVAILABLE) return true;
+		e = (e as { cause?: unknown }).cause;
+	}
+	return false;
+}
+
+/**
+ * Transação para inscrições disputadas: espera no máximo `LOCK_TIMEOUT`
+ * pelas travas e, se estourar, recusa com `BUSY` para a pessoa tentar de
+ * novo.
+ */
+export async function contendedTransaction<T>(
+	work: (tx: Tx) => Promise<T>,
+): Promise<T> {
+	try {
+		return await db.transaction(async (tx) => {
+			await tx.execute(
+				sql`SELECT set_config('lock_timeout', ${LOCK_TIMEOUT}, true)`,
+			);
+			return work(tx);
+		});
+	} catch (error) {
+		if (!isLockTimeout(error)) throw error;
+		throw new TRPCError({
+			message: "Muita gente se inscrevendo agora. Tente de novo.",
+			code: "TOO_MANY_REQUESTS",
+			cause: { code: "BUSY" },
+		});
+	}
+}
 
 /**
  * Trava a atividade até o fim da transação. Toda operação que ocupa ou
