@@ -1722,68 +1722,73 @@ export const activitiesRouter = createTRPCRouter({
 					participantsIdsToAdd.includes(requesterParticipantId),
 			});
 
-			const { inserted, resolved } = await db.transaction(async (tx) => {
-				if (isSelfServiceJoin && requesterParticipantId) {
-					// Checagem de conflito + inserção atômicas: dois joins
-					// concorrentes do mesmo participante serializam e no
-					// máximo um vence. Inscrições existentes nunca são tocadas.
-					await lockParticipant(tx, requesterParticipantId);
-					await assertNoScheduleConflict(
+			const { inserted, resolved, pointsAwarded } = await db.transaction(
+				async (tx) => {
+					if (isSelfServiceJoin && requesterParticipantId) {
+						// Checagem de conflito + inserção atômicas: dois joins
+						// concorrentes do mesmo participante serializam e no
+						// máximo um vence. Inscrições existentes nunca são tocadas.
+						await lockParticipant(tx, requesterParticipantId);
+						await assertNoScheduleConflict(
+							tx,
+							activityId,
+							requesterParticipantId,
+						);
+					}
+
+					// Quem se inscreve sozinho não passa à frente da fila; quem
+					// tem oferta em aberto usa a vaga reservada para si.
+					const locked = await lockActivity(tx, activityId);
+					assertActivityOpen(locked);
+					const queue = await settleActivity(tx, locked);
+					const queued = await assertSeatsAvailable(
+						tx,
+						locked,
+						queue,
+						participantsIdsToAdd,
+						{
+							queueFirst: isSelfServiceJoin,
+							allowOverCapacity:
+								allowOverCapacity && !isSelfServiceJoin,
+						},
+					);
+
+					const { inserted, pointsAwarded } = await persistEnrollment(
+						tx,
+						{
+							projectId: locked.projectId,
+							activityId,
+							participantIds: participantsIdsToAdd,
+							answerRows,
+							...(allowOverCapacity && !isSelfServiceJoin
+								? {
+										overCapacity: {
+											actorUserId: ctx.session.user.id,
+											reason: overCapacityReason ?? null,
+										},
+									}
+								: {}),
+						},
+					);
+					await normalizeOverbooked(
 						tx,
 						activityId,
-						requesterParticipantId,
+						locked.participantsLimit,
 					);
-				}
-
-				// Quem se inscreve sozinho não passa à frente da fila; quem
-				// tem oferta em aberto usa a vaga reservada para si.
-				const locked = await lockActivity(tx, activityId);
-				assertActivityOpen(locked);
-				const queue = await settleActivity(tx, locked);
-				const queued = await assertSeatsAvailable(
-					tx,
-					locked,
-					queue,
-					participantsIdsToAdd,
-					{
-						queueFirst: isSelfServiceJoin,
-						allowOverCapacity:
-							allowOverCapacity && !isSelfServiceJoin,
-					},
-				);
-
-				const inserted = await persistEnrollment(tx, {
-					projectId: locked.projectId,
-					activityId,
-					participantIds: participantsIdsToAdd,
-					answerRows,
-					...(allowOverCapacity && !isSelfServiceJoin
-						? {
-								overCapacity: {
-									actorUserId: ctx.session.user.id,
-									reason: overCapacityReason ?? null,
-								},
-							}
-						: {}),
-				});
-				await normalizeOverbooked(
-					tx,
-					activityId,
-					locked.participantsLimit,
-				);
-				const resolved = await resolveEnrolledEntries(
-					tx,
-					activityId,
-					queued,
-					{
-						type: isSelfServiceJoin ? "confirmed" : "promoted",
-						actorUserId: isSelfServiceJoin
-							? null
-							: ctx.session.user.id,
-					},
-				);
-				return { inserted, resolved };
-			});
+					const resolved = await resolveEnrolledEntries(
+						tx,
+						activityId,
+						queued,
+						{
+							type: isSelfServiceJoin ? "confirmed" : "promoted",
+							actorUserId: isSelfServiceJoin
+								? null
+								: ctx.session.user.id,
+						},
+					);
+					return { inserted, resolved, pointsAwarded };
+				},
+			);
 
 			// Só quem realmente ganhou vínculo novo recebe confirmação; quem
 			// saiu da fila recebe a promoção (nunca os dois).
@@ -1810,7 +1815,12 @@ export const activitiesRouter = createTRPCRouter({
 				resolved,
 			});
 
-			return { success: true, projectId: foundActivity.projectId };
+			return {
+				success: true,
+				projectId: foundActivity.projectId,
+				// Ranking e perfis só mudam quando a inscrição rende pontos
+				gamificationChanged: pointsAwarded,
+			};
 		}),
 
 	addMonitorsToActivity: protectedProcedure

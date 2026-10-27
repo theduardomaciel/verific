@@ -193,7 +193,7 @@ export const waitlistRouter = createTRPCRouter({
 					},
 				);
 				if (seats.ok) {
-					const enrolled = await persistEnrollment(tx, {
+					const { inserted: enrolled } = await persistEnrollment(tx, {
 						projectId: locked.projectId,
 						activityId,
 						participantIds: [participantId],
