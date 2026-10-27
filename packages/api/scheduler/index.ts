@@ -34,14 +34,34 @@ export function buildDeduplicationId(
 	return `offer-expiry:${enrollmentId}:${offeredAt}`;
 }
 
+export interface ScheduleNotificationRetryArgs {
+	notificationId: string;
+	/** Rodada de envio que esta entrega vai executar (2 = primeiro reenvio). */
+	round: number;
+	/** Quando a rodada pode rodar (UTC). */
+	notBefore: Date;
+}
+
+/**
+ * Reenvio de notificações que falharam por erro temporário (limite de
+ * taxa do provedor, 5xx). Implementações: qstash (produção), console.
+ */
+export interface NotificationRetryScheduler {
+	scheduleRetry(
+		args: ScheduleNotificationRetryArgs,
+	): Promise<ScheduleOfferExpiryResult>;
+}
+
+function schedulerProvider() {
+	return env.SCHEDULER_PROVIDER ?? (env.QSTASH_TOKEN ? "qstash" : "console");
+}
+
 /**
  * Resolves the active scheduler based on env.
  * Defaults to console when QSTASH_TOKEN is not set.
  */
 export async function getOfferExpiryScheduler(): Promise<OfferExpiryScheduler> {
-	const provider =
-		env.SCHEDULER_PROVIDER ?? (env.QSTASH_TOKEN ? "qstash" : "console");
-	switch (provider) {
+	switch (schedulerProvider()) {
 		case "qstash": {
 			const { createQStashScheduler } = await import("./qstash");
 			return createQStashScheduler();
@@ -50,6 +70,22 @@ export async function getOfferExpiryScheduler(): Promise<OfferExpiryScheduler> {
 		default: {
 			const { createConsoleScheduler } = await import("./console");
 			return createConsoleScheduler();
+		}
+	}
+}
+
+export async function getNotificationRetryScheduler(): Promise<NotificationRetryScheduler> {
+	switch (schedulerProvider()) {
+		case "qstash": {
+			const { createQStashNotificationRetryScheduler } =
+				await import("./qstash");
+			return createQStashNotificationRetryScheduler();
+		}
+		case "console":
+		default: {
+			const { createConsoleNotificationRetryScheduler } =
+				await import("./console");
+			return createConsoleNotificationRetryScheduler();
 		}
 	}
 }

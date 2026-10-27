@@ -112,7 +112,9 @@ import {
 	getEmailUsage,
 	processNotification,
 	processQueuedNotifications,
+	processScheduledRetry,
 	enqueueNotifications,
+	RETRY_ROUND_DELAYS_MS,
 	sendNotification,
 	truncateMessage,
 } from "./service";
@@ -129,6 +131,8 @@ import type {
 
 const isNotificationEnabledMock = vi.mocked(isNotificationEnabled);
 const getNotificationEnabledMapMock = vi.mocked(getNotificationEnabledMap);
+
+const NOW = new Date("2026-11-10T12:00:00Z");
 
 function setup(options?: {
 	sendImpl?: (call: number) => SendResult | Promise<SendResult>;
@@ -155,6 +159,8 @@ function setup(options?: {
 			dailyLimit: options?.dailyLimit,
 		},
 		sleep: vi.fn(async () => {}),
+		scheduleRetry: vi.fn(async () => {}),
+		random: () => 0,
 	};
 	const input: SendNotificationInput = {
 		type: "event_registration_confirmation",
@@ -265,6 +271,89 @@ describe("sendNotification", () => {
 		expect(notification?.attempts).toBe(1);
 		expect(notification?.lastError).toContain("validation_error");
 		expect(notification?.lastErrorRetryable).toBe(false);
+		expect(deps.scheduleRetry).not.toHaveBeenCalled();
+	});
+
+	it("a round of retryable failures schedules the next round", async () => {
+		const { send, deps, input } = setup({
+			sendImpl: () => ({
+				ok: false,
+				retryable: true,
+				code: "ses_throttled",
+				message: "slow down",
+			}),
+		});
+
+		const { notification } = await sendNotification(input, {
+			...deps,
+			now: () => NOW,
+		});
+
+		expect(send).toHaveBeenCalledTimes(3);
+		expect(notification?.status).toBe("failed");
+		expect(notification?.lastErrorRetryable).toBe(true);
+		expect(deps.scheduleRetry).toHaveBeenCalledWith({
+			notificationId: notification?.id,
+			round: 2,
+			notBefore: new Date(NOW.getTime() + RETRY_ROUND_DELAYS_MS[0]!),
+		});
+	});
+
+	it("a scheduled retry is a no-op once the row is no longer a retryable failure", async () => {
+		let failing = true;
+		const { send, deps, input } = setup({
+			sendImpl: () =>
+				failing
+					? {
+							ok: false,
+							retryable: true,
+							code: "ses_throttled",
+							message: "slow down",
+						}
+					: { ok: true, providerMessageId: "msg-ok" },
+		});
+		const { notification } = await sendNotification(input, deps);
+		failing = false;
+
+		await expect(
+			processScheduledRetry(notification!.id, deps),
+		).resolves.toEqual({ status: "processed" });
+		await expect(
+			processScheduledRetry(notification!.id, deps),
+		).resolves.toEqual({ status: "no-op" });
+
+		expect(send).toHaveBeenCalledTimes(4);
+		expect((await deps.store.getById(notification!.id))?.status).toBe(
+			"sent",
+		);
+	});
+
+	it("scheduled rounds accumulate attempts and stop after the last one", async () => {
+		const { deps, input } = setup({
+			sendImpl: () => ({
+				ok: false,
+				retryable: true,
+				code: "ses_throttled",
+				message: "slow down",
+			}),
+		});
+
+		const { notification } = await sendNotification(input, deps);
+		for (
+			let round = 2;
+			round <= RETRY_ROUND_DELAYS_MS.length + 1;
+			round++
+		) {
+			await processNotification(notification!.id, deps);
+		}
+		const last = await deps.store.getById(notification!.id);
+
+		const rounds = RETRY_ROUND_DELAYS_MS.length + 1;
+		expect(last?.attempts).toBe(rounds * 3);
+		expect(deps.scheduleRetry).toHaveBeenCalledTimes(rounds - 1);
+		expect(deps.scheduleRetry).toHaveBeenLastCalledWith(
+			expect.objectContaining({ round: rounds }),
+		);
 	});
 
 	it("provider_quota ends blocked_quota without further retries", async () => {

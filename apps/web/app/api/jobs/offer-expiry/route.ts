@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-import { Receiver } from "@upstash/qstash";
-
 import { lockActivity } from "@verific/api/seats";
 import { settleActivity } from "@verific/api/waitlist";
 import { db } from "@verific/drizzle";
 import { and, eq } from "@verific/drizzle/orm";
 import { activityWaitlist } from "@verific/drizzle/schema";
 import { env } from "@verific/env";
+
+import { readVerifiedQStashBody } from "@/lib/qstash";
 
 // A delivery up to this early is treated as due (clock skew), not rescheduled
 const GRACE_MS = 2 * 60 * 1000;
@@ -23,35 +23,8 @@ interface OfferExpiryPayload {
 async function verifySignature(
 	request: NextRequest,
 ): Promise<{ valid: boolean; payload: OfferExpiryPayload | null }> {
-	const currentKey = env.QSTASH_CURRENT_SIGNING_KEY;
-	const nextKey = env.QSTASH_NEXT_SIGNING_KEY;
-
-	if (!currentKey) {
-		console.error(
-			"[offer-expiry] QSTASH_CURRENT_SIGNING_KEY not configured",
-		);
-		return { valid: false, payload: null };
-	}
-
-	const receiver = new Receiver({
-		currentSigningKey: currentKey,
-		nextSigningKey: nextKey,
-	});
-	// @upstash/qstash receiver.verify() expects the raw body and signature headers
-	const signature = request.headers.get("upstash-signature");
-	const body = await request.text();
-
-	if (!signature) {
-		return { valid: false, payload: null };
-	}
-
-	try {
-		// The SDK's verify method checks the signature
-		await receiver.verify({
-			signature,
-			body,
-		});
-	} catch {
+	const body = await readVerifiedQStashBody(request);
+	if (body === null) {
 		return { valid: false, payload: null };
 	}
 

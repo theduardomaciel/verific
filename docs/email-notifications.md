@@ -83,6 +83,13 @@ caminho a partir do passo 2.
    `retryable`. Depois da validação de refs, nada disso lança exceção para
    o chamador — tudo é gravado na linha (`status`, `attempts`, `lastError`,
    `provider`, `providerMessageId`, `sentAt`, `templateVersion`).
+   Se as 3 tentativas falham por erro `retryable` (limite de taxa do
+   provedor, 5xx), a linha fica `failed` e uma nova rodada é agendada no
+   QStash para `/api/jobs/notification-retry`, depois de 1 min, 5 min,
+   30 min e 2 h (mais até 50% aleatórios, para uma rajada de inscrições não
+   voltar toda junta). `attempts` acumula entre as rodadas. Sem
+   `QSTASH_TOKEN` o agendamento só é logado, e a linha continua
+   reprocessável pelo painel.
 3. Os props nunca são armazenados: todo attempt reconstrói os props do
    banco a partir de `entityRefs` (a linha guarda `propsHash`, sha256 dos
    props usados, só como auditoria), então uma falha pode ser
