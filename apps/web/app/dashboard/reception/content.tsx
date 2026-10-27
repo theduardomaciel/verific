@@ -133,7 +133,7 @@ export function ReceptionPage() {
 						<span className="text-4xl font-bold tabular-nums">
 							{newTodayCount}
 						</span>
-						<span className="text-muted-foreground text-xs capitalize">
+						<span className="text-muted-foreground text-xs">
 							{newTodayPercentage}% do total restante
 						</span>
 					</CardContent>

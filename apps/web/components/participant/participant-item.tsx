@@ -111,11 +111,6 @@ function ActivityParticipantItem({
 											: ""}
 									</span>
 								) : null}
-								{participant.noShow ? (
-									<span className="border-destructive/30 bg-destructive/10 text-destructive rounded-md border px-2 py-0.5 text-xs font-medium">
-										Ausente
-									</span>
-								) : null}
 								<p className="text-left text-sm leading-tight font-medium">
 									{attendedCount > 0 ? (
 										<>
@@ -130,36 +125,42 @@ function ActivityParticipantItem({
 									)}
 								</p>
 								{sessions && sessions.length > 0 ? (
-									<div className="flex flex-wrap gap-1.5">
-										{sessions.map((session, i) => {
-											const attended =
-												attendedSessionIds.has(
-													session.id,
+									participant.noShow ? (
+										<span className="border-destructive/30 bg-destructive/10 text-destructive rounded-md border px-2 py-0.5 text-xs font-medium">
+											Ausente
+										</span>
+									) : (
+										<div className="flex flex-wrap gap-1.5">
+											{sessions.map((session, i) => {
+												const attended =
+													attendedSessionIds.has(
+														session.id,
+													);
+												return (
+													<span
+														key={session.id}
+														className={cn(
+															"flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium",
+															attended
+																? "border-green-600/30 bg-green-600/10 text-green-700 dark:text-green-500"
+																: "text-muted-foreground",
+														)}
+													>
+														{attended ? (
+															<Check className="h-3 w-3" />
+														) : (
+															<X className="h-3 w-3" />
+														)}
+														S{i + 1} ·{" "}
+														{getTimeString(
+															session.startsAt,
+															true,
+														)}
+													</span>
 												);
-											return (
-												<span
-													key={session.id}
-													className={cn(
-														"flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium",
-														attended
-															? "border-green-600/30 bg-green-600/10 text-green-700 dark:text-green-500"
-															: "text-muted-foreground",
-													)}
-												>
-													{attended ? (
-														<Check className="h-3 w-3" />
-													) : (
-														<X className="h-3 w-3" />
-													)}
-													S{i + 1} ·{" "}
-													{getTimeString(
-														session.startsAt,
-														true,
-													)}
-												</span>
-											);
-										})}
-									</div>
+											})}
+										</div>
+									)
 								) : null}
 							</>
 						) : (

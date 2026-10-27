@@ -23,6 +23,10 @@ import { appUrl } from "@verific/env";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+	ConfirmDialog,
+	useConfirmDialog,
+} from "@/components/ui/confirm-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -56,6 +60,8 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 	const { projectId, isOwner, can } = useDashboard();
 	const utils = trpc.useUtils();
 	const releaseNoShowMutation = trpc.releaseNoShowSeats.useMutation();
+	const { confirm, dialogProps } = useConfirmDialog();
+	const [noShowReleased, setNoShowReleased] = useState(false);
 	const parsedParams = useParsedSearchParams((raw) =>
 		getActivityParams.parse(raw),
 	);
@@ -393,12 +399,20 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 							Adicionar monitores
 						</Button>
 					</AddUsersDialog>
-					{can("activities.manage") ? (
+					{can("activities.manage") && !noShowReleased ? (
 						<Button
 							variant="outline"
 							size="lg"
 							className="h-10 min-h-10 flex-1 shrink-0"
 							onClick={async () => {
+								const ok = await confirm({
+									title: "Liberar vagas de ausentes",
+									description:
+										"Participantes sem presença em nenhuma sessão encerrada serão marcados como ausentes e suas vagas liberadas. Continuar?",
+									confirmLabel: "Liberar",
+									confirmVariant: "destructive",
+								});
+								if (!ok) return;
 								try {
 									const result =
 										await releaseNoShowMutation.mutateAsync(
@@ -409,6 +423,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 											? `${result.released} vaga(s) liberada(s) por ausência.`
 											: "Nenhum ausente encontrado.",
 									);
+									setNoShowReleased(true);
 									await utils.getActivity.invalidate({
 										activityId,
 									});
@@ -424,6 +439,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 							Liberar vagas de ausentes
 						</Button>
 					) : null}
+					<ConfirmDialog {...dialogProps} />
 				</div>
 			</div>
 			<Tabs
