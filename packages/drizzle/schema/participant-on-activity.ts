@@ -46,6 +46,13 @@ export const participantOnActivity = pgTable(
 			},
 		),
 		overbookedAt: timestamp("overbooked_at"),
+		/**
+		 * Marcado quando o participante não registrou presença em nenhuma
+		 * sessão encerrada da atividade. Usado para relatório e para liberar
+		 * a vaga (overbooking) quando a organização decidir.
+		 */
+		noShow: boolean("no_show").notNull().default(false),
+		noShowAt: timestamp("no_show_at"),
 	},
 	(table) => [
 		uniqueIndex().on(table.participantId, table.activityId),

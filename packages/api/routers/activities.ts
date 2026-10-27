@@ -60,6 +60,7 @@ import {
 	loadNotificationRecipients,
 	notifyActivityCancelled,
 	notifyActivityEnrollmentConfirmed,
+	notifyActivityEnrollmentRemoved,
 	notifyActivityUpdated,
 	notifyActivityWaitlistPromoted,
 } from "../notifications";
@@ -640,7 +641,12 @@ export const activitiesRouter = createTRPCRouter({
 						eq(participantOnActivity.participantId, participant.id),
 					)
 					.innerJoin(user, eq(participant.userId, user.id))
-					.where(and(...nonMonitorWhere)),
+					.where(
+						and(
+							...nonMonitorWhere,
+							eq(participantOnActivity.noShow, false),
+						),
+					),
 				db
 					.select({ amount: count() })
 					.from(participantOnActivity)
@@ -649,6 +655,7 @@ export const activitiesRouter = createTRPCRouter({
 							eq(participantOnActivity.activityId, activityId),
 							eq(participantOnActivity.role, "participant"),
 							eq(participantOnActivity.overbooked, true),
+							eq(participantOnActivity.noShow, false),
 						),
 					),
 			]);
@@ -994,6 +1001,7 @@ export const activitiesRouter = createTRPCRouter({
 											participantOnActivity.role,
 											"participant",
 										),
+										eq(participantOnActivity.noShow, false),
 									),
 								)
 								.where(
@@ -1881,6 +1889,120 @@ export const activitiesRouter = createTRPCRouter({
 				await settleActivity(tx, locked);
 			});
 		}),
+	releaseNoShowSeats: protectedProcedure
+		.input(z.object({ activityId: z.string().uuid() }))
+		.mutation(async ({ input, ctx }) => {
+			await requireActivityPermission(
+				input.activityId,
+				ctx.session.user.id,
+				"activities.manage",
+			);
+
+			const found = await db.query.activity.findFirst({
+				where: eq(activity.id, input.activityId),
+				columns: { id: true, projectId: true },
+				with: {
+					sessions: {
+						columns: { id: true, endsAt: true },
+					},
+				},
+			});
+			if (!found) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Atividade não encontrada.",
+				});
+			}
+
+			const now = new Date();
+			if (
+				found.sessions.length === 0 ||
+				!found.sessions.every(
+					(session) => new Date(session.endsAt) <= now,
+				)
+			) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message:
+						"A atividade ainda não terminou; não é possível liberar vagas por ausência.",
+				});
+			}
+
+			const sessionIds = found.sessions.map((session) => session.id);
+			const enrollments = await db
+				.select({
+					participantId: participantOnActivity.participantId,
+				})
+				.from(participantOnActivity)
+				.where(
+					and(
+						eq(participantOnActivity.activityId, input.activityId),
+						eq(participantOnActivity.role, "participant"),
+						eq(participantOnActivity.noShow, false),
+					),
+				);
+
+			const noShowIds: string[] = [];
+			for (const enrollment of enrollments) {
+				const [attendance] = await db
+					.select({ amount: count() })
+					.from(sessionAttendance)
+					.where(
+						and(
+							eq(
+								sessionAttendance.participantId,
+								enrollment.participantId,
+							),
+							inArray(sessionAttendance.sessionId, sessionIds),
+						),
+					);
+				if ((attendance?.amount ?? 0) === 0) {
+					noShowIds.push(enrollment.participantId);
+				}
+			}
+
+			if (noShowIds.length === 0) {
+				return { released: 0 };
+			}
+
+			await db.transaction(async (tx) => {
+				const locked = await lockActivity(tx, input.activityId);
+				await tx
+					.update(participantOnActivity)
+					.set({ noShow: true, noShowAt: now })
+					.where(
+						and(
+							eq(
+								participantOnActivity.activityId,
+								input.activityId,
+							),
+							inArray(
+								participantOnActivity.participantId,
+								noShowIds,
+							),
+						),
+					);
+				await settleActivity(tx, locked);
+			});
+
+			const contacts = await loadNotificationRecipients(noShowIds);
+			for (const participantId of noShowIds) {
+				const to = contacts.get(participantId);
+				if (to) {
+					void notifyActivityEnrollmentRemoved({
+						eventId: found.projectId,
+						activityId: input.activityId,
+						participantId,
+						to,
+						removedAt: now,
+						reason: "Não compareceu à atividade.",
+					});
+				}
+			}
+
+			return { released: noShowIds.length };
+		}),
+
 	deleteActivity: protectedProcedure
 		.input(z.object({ activityId: z.string().uuid() }))
 		.mutation(async ({ input, ctx }) => {
@@ -2016,6 +2138,7 @@ export const activitiesRouter = createTRPCRouter({
 				participantOnActivity,
 				and(
 					eq(participantOnActivity.role, "participant"),
+					eq(participantOnActivity.noShow, false),
 					inArray(
 						participantOnActivity.activityId,
 						db

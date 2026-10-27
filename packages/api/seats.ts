@@ -76,6 +76,7 @@ export async function countEnrolled(tx: Tx, activityId: string) {
 			and(
 				eq(participantOnActivity.activityId, activityId),
 				eq(participantOnActivity.role, "participant"),
+				eq(participantOnActivity.noShow, false),
 			),
 		);
 	return row?.amount ?? 0;

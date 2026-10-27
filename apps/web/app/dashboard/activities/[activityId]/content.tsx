@@ -14,6 +14,7 @@ import {
 	Share2,
 	Trash,
 } from "lucide-react";
+import { toast } from "sonner";
 
 // Validation (client-safe: no db / server env imports)
 import { getActivityParams } from "@verific/api/schemas";
@@ -52,6 +53,8 @@ type ActivityTab = "participants" | "monitors" | "waitlist";
 
 export function ActivityContent({ activityId }: { activityId: string }) {
 	const { projectId, isOwner, can } = useDashboard();
+	const utils = trpc.useUtils();
+	const releaseNoShowMutation = trpc.releaseNoShowSeats.useMutation();
 	const parsedParams = useParsedSearchParams((raw) =>
 		getActivityParams.parse(raw),
 	);
@@ -355,6 +358,37 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 							.map((t) => t.id)}
 						allowOverCapacity={can("activities.manage")}
 					/>
+					{can("activities.manage") ? (
+						<Button
+							variant="outline"
+							size="lg"
+							className="h-10 min-h-10"
+							onClick={async () => {
+								try {
+									const result =
+										await releaseNoShowMutation.mutateAsync(
+											{ activityId },
+										);
+									toast.success(
+										result.released > 0
+											? `${result.released} vaga(s) liberada(s) por ausência.`
+											: "Nenhum ausente encontrado.",
+									);
+									await utils.getActivity.invalidate({
+										activityId,
+									});
+								} catch (error) {
+									toast.error(
+										error instanceof Error
+											? error.message
+											: "Não foi possível liberar as vagas.",
+									);
+								}
+							}}
+						>
+							Liberar vagas de ausentes
+						</Button>
+					) : null}
 				</div>
 			</div>
 			<Tabs

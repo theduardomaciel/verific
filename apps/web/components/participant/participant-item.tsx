@@ -111,6 +111,11 @@ function ActivityParticipantItem({
 											: ""}
 									</span>
 								) : null}
+								{participant.noShow ? (
+									<span className="border-destructive/30 bg-destructive/10 text-destructive rounded-md border px-2 py-0.5 text-xs font-medium">
+										Ausente
+									</span>
+								) : null}
 								<p className="text-left text-sm leading-tight font-medium">
 									{attendedCount > 0 ? (
 										<>

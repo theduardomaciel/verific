@@ -64,6 +64,7 @@ export const availabilityRouter = createTRPCRouter({
 									activityIds,
 								),
 								eq(participantOnActivity.role, "participant"),
+								eq(participantOnActivity.noShow, false),
 							),
 						)
 						.groupBy(participantOnActivity.activityId),
