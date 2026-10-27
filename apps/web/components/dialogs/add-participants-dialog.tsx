@@ -42,6 +42,8 @@ interface AddParticipantsDialogProps {
 	onSelect?: (participants: any[]) => Promise<void>;
 	/** Mostra a opção de inscrever além do limite de vagas. */
 	allowOverCapacity?: boolean;
+	/** A atividade está lotada: só nesse caso a confirmação de overbooking aparece. */
+	isFull?: boolean;
 }
 
 export function AddParticipantsDialog({
@@ -57,6 +59,7 @@ export function AddParticipantsDialog({
 	onAdd,
 	onSelect,
 	allowOverCapacity = false,
+	isFull = false,
 }: AddParticipantsDialogProps) {
 	const resolvedRole: DialogRole = kind ?? "monitor";
 
@@ -305,7 +308,7 @@ export function AddParticipantsDialog({
 							)}
 						</div>
 
-						{allowOverCapacity ? (
+						{allowOverCapacity && isFull ? (
 							<div className="flex w-full flex-col gap-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-3">
 								<label className="flex cursor-pointer items-start gap-3">
 									<input
@@ -401,7 +404,9 @@ export function AddParticipantsDialog({
 							className="flex h-10 min-h-10 flex-1 shrink-0"
 							size={"lg"}
 							type="submit"
-							disabled={isMutating}
+							disabled={
+								isMutating || selectedParticipants.length === 0
+							}
 						>
 							{isMutating ? (
 								<Loader2 className="h-6 w-6 animate-spin" />

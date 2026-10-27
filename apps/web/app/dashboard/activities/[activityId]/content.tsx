@@ -98,6 +98,9 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 	}
 
 	const { activity, participantsAmount, overbookedAmount, pageCount } = data;
+	const isFull =
+		!!activity.participantsLimit &&
+		(participantsAmount ?? 0) >= activity.participantsLimit;
 
 	const monitors = activity.participants.filter((t) => t.role === "monitor");
 
@@ -191,6 +194,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 							buttonLabel=""
 							buttonVariant="outline"
 							allowOverCapacity={can("activities.manage")}
+							isFull={isFull}
 						/>
 					</div>
 				</div>
