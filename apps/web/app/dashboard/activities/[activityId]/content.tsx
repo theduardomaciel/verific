@@ -181,6 +181,17 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 								createdAt: p.subscribedAt,
 							}))}
 						/>
+						<AddParticipantsDialog
+							projectId={projectId}
+							activityId={activityId}
+							alreadyAdded={activity.participants.map(
+								(t) => t.id,
+							)}
+							kind="participant"
+							buttonLabel=""
+							buttonVariant="outline"
+							allowOverCapacity={can("activities.manage")}
+						/>
 					</div>
 				</div>
 				<ParticipantsList.List
@@ -356,13 +367,12 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 						alreadyAdded={activity.participants
 							.filter((t) => t.role === "monitor")
 							.map((t) => t.id)}
-						allowOverCapacity={can("activities.manage")}
 					/>
 					{can("activities.manage") ? (
 						<Button
 							variant="outline"
 							size="lg"
-							className="h-10 min-h-10"
+							className="h-10 min-h-10 flex-1 shrink-0"
 							onClick={async () => {
 								try {
 									const result =
