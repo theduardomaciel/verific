@@ -1,10 +1,20 @@
 import { TRPCError } from "@trpc/server";
 
 import { db } from "@verific/drizzle";
-import { and, asc, count, eq, gt, inArray, sql } from "@verific/drizzle/orm";
+import {
+	and,
+	asc,
+	count,
+	eq,
+	exists,
+	gt,
+	inArray,
+	sql,
+} from "@verific/drizzle/orm";
 import {
 	activity,
 	activityWaitlist,
+	participant,
 	participantOnActivity,
 } from "@verific/drizzle/schema";
 
@@ -188,18 +198,20 @@ export async function checkSeats(
 	return { ok: true, queued };
 }
 
+function activityFullError() {
+	return new TRPCError({
+		message: "Adding these participants exceeds the activity limit.",
+		code: "BAD_REQUEST",
+		cause: { code: "ACTIVITY_FULL" },
+	});
+}
+
 /** Como `checkSeats`, mas recusa com `ACTIVITY_FULL` e devolve `queued`. */
 export async function assertSeatsAvailable(
 	...args: Parameters<typeof checkSeats>
 ) {
 	const { ok, queued } = await checkSeats(...args);
-	if (!ok) {
-		throw new TRPCError({
-			message: "Adding these participants exceeds the activity limit.",
-			code: "BAD_REQUEST",
-			cause: { code: "ACTIVITY_FULL" },
-		});
-	}
+	if (!ok) throw activityFullError();
 	return queued;
 }
 
@@ -249,4 +261,68 @@ export async function normalizeOverbooked(
 				inArray(participantOnActivity.participantId, toClear),
 			),
 		);
+}
+
+/**
+ * Lotação da atividade vista sem trava, como colunas a somar à leitura do
+ * participante (`participant.id`), sem ida a mais ao banco. `involved` diz
+ * se ele já tem vínculo ou lugar na fila.
+ */
+export function occupancyColumns(activityId: string, now = new Date()) {
+	const linked = db
+		.select({ one: sql`1` })
+		.from(participantOnActivity)
+		.where(
+			and(
+				eq(participantOnActivity.activityId, activityId),
+				eq(participantOnActivity.participantId, participant.id),
+			),
+		);
+	const queued = db
+		.select({ one: sql`1` })
+		.from(activityWaitlist)
+		.where(
+			and(
+				eq(activityWaitlist.activityId, activityId),
+				eq(activityWaitlist.participantId, participant.id),
+				inArray(activityWaitlist.status, ["waiting", "offered"]),
+			),
+		);
+	return {
+		involved: sql<boolean>`(${exists(linked)} or ${exists(queued)})`,
+		enrolled: db.$count(
+			participantOnActivity,
+			and(
+				eq(participantOnActivity.activityId, activityId),
+				eq(participantOnActivity.role, "participant"),
+				eq(participantOnActivity.noShow, false),
+			),
+		),
+		openOffers: db.$count(
+			activityWaitlist,
+			and(
+				eq(activityWaitlist.activityId, activityId),
+				openOfferWhere(now),
+			),
+		),
+	};
+}
+
+/**
+ * Recusa antes da trava quem chega sem vínculo nem lugar na fila a uma
+ * atividade já cheia, para a rajada de quem não vai conseguir vaga não
+ * esperar por ela. Ofertas vencidas não contam, então só recusa a mais
+ * quando alguém libera a vaga no mesmo instante; a checagem sob a trava
+ * continua valendo para quem passa.
+ */
+export function assertNotFullBeforeLock(
+	found: Pick<LockedActivity, "participantsLimit" | "cancelledAt">,
+	occupancy: { involved: boolean; enrolled: number; openOffers: number },
+) {
+	// Cancelada: a checagem sob a trava responde com o motivo certo
+	if (found.participantsLimit == null || found.cancelledAt) return;
+	if (occupancy.involved) return;
+	if (occupancy.enrolled + occupancy.openOffers >= found.participantsLimit) {
+		throw activityFullError();
+	}
 }

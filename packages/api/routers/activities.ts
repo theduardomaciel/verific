@@ -43,6 +43,7 @@ import { z } from "@verific/zod";
 
 import {
 	assertNoScheduleConflict,
+	findJoinRequester,
 	lockParticipant,
 	persistEnrollment,
 	prepareActivityAnswers,
@@ -78,6 +79,7 @@ import {
 } from "../schemas";
 import {
 	assertActivityOpen,
+	assertNotFullBeforeLock,
 	assertSeatsAvailable,
 	contendedTransaction,
 	countEnrolled,
@@ -1680,15 +1682,13 @@ export const activitiesRouter = createTRPCRouter({
 			}
 
 			// Participante do requisitante no evento (uma única leitura,
-			// reutilizada pelo probe do formulário e pelo gate de
-			// auto-inscrição abaixo).
-			const requesterParticipant = await db.query.participant.findFirst({
-				where: and(
-					eq(participant.projectId, foundActivity.projectId),
-					eq(participant.userId, ctx.session.user.id),
-				),
-				columns: { id: true },
-			});
+			// reutilizada pelo probe do formulário, pelo gate de
+			// auto-inscrição e pela recusa antes da trava abaixo).
+			const requesterParticipant = await findJoinRequester(
+				foundActivity.projectId,
+				ctx.session.user.id,
+				activityId,
+			);
 			const requesterParticipantId = requesterParticipant?.id ?? null;
 
 			// Auto-inscrição: o requisitante inscreve SOMENTE a si mesmo.
@@ -1699,6 +1699,9 @@ export const activitiesRouter = createTRPCRouter({
 				!!requesterParticipantId &&
 				participantsIdsToAdd.length === 1 &&
 				participantsIdsToAdd.includes(requesterParticipantId);
+			if (isSelfServiceJoin && requesterParticipant) {
+				assertNotFullBeforeLock(foundActivity, requesterParticipant);
+			}
 			// A organização vem antes: sem ela, a resposta diria quem é do evento
 			if (!isSelfServiceJoin) {
 				await requireProjectPermission(
