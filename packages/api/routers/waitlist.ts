@@ -34,6 +34,7 @@ import {
 	checkSeats,
 	countEnrolled,
 	lockActivity,
+	normalizeOverbooked,
 } from "../seats";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import {
@@ -564,6 +565,11 @@ export const waitlistRouter = createTRPCRouter({
 							}
 						: {}),
 				});
+				await normalizeOverbooked(
+					tx,
+					activityId,
+					locked.participantsLimit,
+				);
 				return resolveEnrolledEntries(tx, activityId, queued, {
 					type: "promoted",
 					actorUserId: ctx.session.user.id,

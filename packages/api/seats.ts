@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 
 import type { db } from "@verific/drizzle";
-import { and, count, eq, gt, inArray } from "@verific/drizzle/orm";
+import { and, asc, count, eq, gt, inArray } from "@verific/drizzle/orm";
 import {
 	activity,
 	activityWaitlist,
@@ -162,4 +162,57 @@ export async function assertSeatsAvailable(
 		});
 	}
 	return queued;
+}
+
+/**
+ * Limpa a marcação de overbooking das inscrições que agora cabem no limite.
+ * Mantém a flag apenas para o excesso real (últimas inscritas), preservando
+ * a auditoria de quem ainda está acima da capacidade.
+ */
+export async function normalizeOverbooked(
+	tx: Tx,
+	activityId: string,
+	limit: number | null,
+) {
+	if (limit == null) return;
+	const overbookedRows = await tx
+		.select({
+			participantId: participantOnActivity.participantId,
+			subscribedAt: participantOnActivity.subscribedAt,
+		})
+		.from(participantOnActivity)
+		.where(
+			and(
+				eq(participantOnActivity.activityId, activityId),
+				eq(participantOnActivity.role, "participant"),
+				eq(participantOnActivity.noShow, false),
+				eq(participantOnActivity.overbooked, true),
+			),
+		);
+	const sorted = [...overbookedRows].sort((a, b) => {
+		const left = a.subscribedAt ? new Date(a.subscribedAt).getTime() : 0;
+		const right = b.subscribedAt ? new Date(b.subscribedAt).getTime() : 0;
+		return left - right;
+	});
+	const totalActive = await countEnrolled(tx, activityId);
+	const excess = Math.max(0, totalActive - limit);
+	if (sorted.length <= excess) return;
+	const toClear = sorted
+		.slice(0, sorted.length - excess)
+		.map((row) => row.participantId);
+	if (toClear.length === 0) return;
+	await tx
+		.update(participantOnActivity)
+		.set({
+			overbooked: false,
+			overbookReason: null,
+			overbookedByUserId: null,
+			overbookedAt: null,
+		})
+		.where(
+			and(
+				eq(participantOnActivity.activityId, activityId),
+				inArray(participantOnActivity.participantId, toClear),
+			),
+		);
 }

@@ -80,6 +80,7 @@ import {
 	assertSeatsAvailable,
 	countEnrolled,
 	lockActivity,
+	normalizeOverbooked,
 	openOfferWhere,
 } from "../seats";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
@@ -1612,6 +1613,11 @@ export const activitiesRouter = createTRPCRouter({
 							actorUserId: ctx.session.user.id,
 						},
 					);
+					await normalizeOverbooked(
+						tx,
+						activityId,
+						locked.participantsLimit,
+					);
 					return { inserted, resolved, projectId: locked.projectId };
 				},
 			);
@@ -1785,6 +1791,11 @@ export const activitiesRouter = createTRPCRouter({
 							}
 						: {}),
 				});
+				await normalizeOverbooked(
+					tx,
+					activityId,
+					locked.participantsLimit,
+				);
 				const resolved = await resolveEnrolledEntries(
 					tx,
 					activityId,

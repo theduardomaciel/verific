@@ -12,7 +12,12 @@ import {
 	notifyActivityWaitlistOffered,
 	notifyActivityWaitlistOfferRevoked,
 } from "./notifications";
-import { countEnrolled, type LockedActivity, type Tx } from "./seats";
+import {
+	countEnrolled,
+	normalizeOverbooked,
+	type LockedActivity,
+	type Tx,
+} from "./seats";
 import { byQueueOrder, planSettlement } from "./waitlist-plan";
 
 const ACTIVE = ["waiting", "offered"] as const;
@@ -254,6 +259,11 @@ export async function settleActivity(
 	const expired = new Set(plan.expire);
 	const revoked = new Set(plan.revoke);
 	const offered = new Map(plan.offer.map((o) => [o.id, o.expiresAt]));
+
+	// Capacidade pode ter mudado (remoção, no-show, aumento de limite):
+	// quem agora cabe no limite deixa de ser overbooking.
+	await normalizeOverbooked(tx, locked.id, locked.participantsLimit);
+
 	return entries
 		.filter((entry) => !expired.has(entry.id))
 		.map((entry) =>
