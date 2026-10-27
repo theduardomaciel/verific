@@ -4,6 +4,7 @@ ALTER TABLE "participant_activities" ADD COLUMN "overbooked" boolean DEFAULT fal
 ALTER TABLE "participant_activities" ADD COLUMN "overbook_reason" text;--> statement-breakpoint
 ALTER TABLE "participant_activities" ADD COLUMN "overbooked_by_user_id" uuid;--> statement-breakpoint
 ALTER TABLE "participant_activities" ADD COLUMN "overbooked_at" timestamp;--> statement-breakpoint
+ALTER TABLE "participant_activities" ADD COLUMN "no_show" boolean DEFAULT false NOT NULL;--> statement-breakpoint
 ALTER TABLE "project_moderators" ADD COLUMN "role" "project_member_role" DEFAULT 'admin' NOT NULL;--> statement-breakpoint
 ALTER TABLE "project_moderators" ADD COLUMN "permissions" jsonb;--> statement-breakpoint
 ALTER TABLE "project_moderators" ADD COLUMN "include_in_ranking" boolean DEFAULT false NOT NULL;--> statement-breakpoint

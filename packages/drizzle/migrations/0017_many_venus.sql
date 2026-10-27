@@ -1,1 +1,0 @@
-ALTER TABLE "participant_activities" DROP COLUMN "no_show_at";

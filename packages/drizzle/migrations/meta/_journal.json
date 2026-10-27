@@ -110,22 +110,8 @@
 		{
 			"idx": 15,
 			"version": "7",
-			"when": 1793124104676,
-			"tag": "0015_outstanding_ravenous",
-			"breakpoints": true
-		},
-		{
-			"idx": 16,
-			"version": "7",
-			"when": 1793125772432,
-			"tag": "0016_outstanding_ricochet",
-			"breakpoints": true
-		},
-		{
-			"idx": 17,
-			"version": "7",
-			"when": 1793128598165,
-			"tag": "0017_many_venus",
+			"when": 1793128764921,
+			"tag": "0015_combined_permissions",
 			"breakpoints": true
 		}
 	]
