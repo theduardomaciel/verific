@@ -41,12 +41,7 @@ import {
 } from "@verific/drizzle/schema";
 import { z } from "@verific/zod";
 
-import {
-	assertNoScheduleConflict,
-	lockParticipant,
-	persistEnrollment,
-	prepareActivityAnswers,
-} from "../enrollment";
+import { persistEnrollment, prepareActivityAnswers } from "../enrollment";
 import {
 	hasProjectAccess,
 	requireActivityPermission,
@@ -1282,32 +1277,6 @@ export const activitiesRouter = createTRPCRouter({
 				return activityId;
 			});
 
-			// We add the user as a monitor by default
-			const participantFromUser = await db
-				.select({
-					id: participant.id,
-				})
-				.from(participant)
-				.where(
-					and(
-						eq(participant.userId, userId),
-						eq(participant.projectId, projectId),
-					),
-				);
-
-			if (!participantFromUser[0]?.id) {
-				throw new TRPCError({
-					message: "User not found in participants.",
-					code: "NOT_FOUND",
-				});
-			}
-
-			await db.insert(participantOnActivity).values({
-				activityId: insertedActivityId,
-				participantId: participantFromUser[0]?.id,
-				role: "monitor",
-			});
-
 			if (speakerIds && speakerIds.length > 0) {
 				await db.insert(speakerOnActivity).values(
 					speakerIds.map((speakerId) => ({
@@ -1704,8 +1673,7 @@ export const activitiesRouter = createTRPCRouter({
 			}
 
 			// Participante do requisitante no evento (uma única leitura,
-			// reutilizada pelo probe do formulário e pelo gate de
-			// auto-inscrição abaixo).
+			// reutilizada pelo probe do formulário).
 			const requesterParticipant = await db.query.participant.findFirst({
 				where: and(
 					eq(participant.projectId, foundActivity.projectId),
@@ -1715,26 +1683,17 @@ export const activitiesRouter = createTRPCRouter({
 			});
 			const requesterParticipantId = requesterParticipant?.id ?? null;
 
-			// Auto-inscrição: o requisitante inscreve SOMENTE a si mesmo.
-			// Lote misto ou terceiros = fluxo de organizador (sem checagem
-			// de conflito). Um organizador inscrevendo só a si mesmo cai
-			// aqui — nenhum fluxo de UI faz isso hoje.
-			const isSelfServiceJoin =
-				!!requesterParticipantId &&
-				participantsIdsToAdd.length === 1 &&
-				participantsIdsToAdd.includes(requesterParticipantId);
-			// A organização vem antes: sem ela, a resposta diria quem é do evento
-			if (!isSelfServiceJoin) {
-				await requireProjectPermission(
-					foundActivity.projectId,
-					ctx.session.user.id,
-					"activities.manage",
-				);
-				await requireParticipantsInProject(
-					foundActivity.projectId,
-					participantsIdsToAdd,
-				);
-			}
+			// Auto-inscrição desabilitada: toda inscrição exige permissão de
+			// organização. Participantes não se adicionam mais a atividades.
+			await requireProjectPermission(
+				foundActivity.projectId,
+				ctx.session.user.id,
+				"activities.manage",
+			);
+			await requireParticipantsInProject(
+				foundActivity.projectId,
+				participantsIdsToAdd,
+			);
 
 			// Respostas do formulário de inscrição da atividade (quando houver)
 			const answerRows = await prepareActivityAnswers({
@@ -1748,20 +1707,7 @@ export const activitiesRouter = createTRPCRouter({
 			});
 
 			const { inserted, resolved } = await db.transaction(async (tx) => {
-				if (isSelfServiceJoin && requesterParticipantId) {
-					// Checagem de conflito + inserção atômicas: dois joins
-					// concorrentes do mesmo participante serializam e no
-					// máximo um vence. Inscrições existentes nunca são tocadas.
-					await lockParticipant(tx, requesterParticipantId);
-					await assertNoScheduleConflict(
-						tx,
-						activityId,
-						requesterParticipantId,
-					);
-				}
-
-				// Quem se inscreve sozinho não passa à frente da fila; quem
-				// tem oferta em aberto usa a vaga reservada para si.
+				// Quem tem oferta em aberto usa a vaga reservada para si.
 				const locked = await lockActivity(tx, activityId);
 				assertActivityOpen(locked);
 				const queue = await settleActivity(tx, locked);
@@ -1771,9 +1717,8 @@ export const activitiesRouter = createTRPCRouter({
 					queue,
 					participantsIdsToAdd,
 					{
-						queueFirst: isSelfServiceJoin,
-						allowOverCapacity:
-							allowOverCapacity && !isSelfServiceJoin,
+						queueFirst: false,
+						allowOverCapacity,
 					},
 				);
 
@@ -1782,7 +1727,7 @@ export const activitiesRouter = createTRPCRouter({
 					activityId,
 					participantIds: participantsIdsToAdd,
 					answerRows,
-					...(allowOverCapacity && !isSelfServiceJoin
+					...(allowOverCapacity
 						? {
 								overCapacity: {
 									actorUserId: ctx.session.user.id,
@@ -1801,10 +1746,8 @@ export const activitiesRouter = createTRPCRouter({
 					activityId,
 					queued,
 					{
-						type: isSelfServiceJoin ? "confirmed" : "promoted",
-						actorUserId: isSelfServiceJoin
-							? null
-							: ctx.session.user.id,
+						type: "promoted",
+						actorUserId: ctx.session.user.id,
 					},
 				);
 				return { inserted, resolved };

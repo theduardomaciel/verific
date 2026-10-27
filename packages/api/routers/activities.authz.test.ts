@@ -169,6 +169,11 @@ describe("activities: só a organização do evento altera", () => {
 	});
 
 	it("addActivityParticipants conta um id repetido uma vez só", async () => {
+		findProject.mockResolvedValue({
+			id: PROJECT_ID,
+			ownerId: "intruder",
+			moderators: [],
+		});
 		selectMock.mockReturnValue(selectChain([{ id: SELF_PARTICIPANT }]));
 		findParticipant.mockResolvedValue({ id: SELF_PARTICIPANT });
 		transactionMock.mockRejectedValue(new Error("chegou à inscrição"));
@@ -180,8 +185,6 @@ describe("activities: só a organização do evento altera", () => {
 				participantsIdsToAdd: [SELF_PARTICIPANT, SELF_PARTICIPANT],
 			}),
 		).rejects.toThrow("chegou à inscrição");
-		// Auto-inscrição: não passa pela checagem de organizador
-		expect(findProject).not.toHaveBeenCalled();
 	});
 
 	it("aceita palestrante repetido uma vez só", () => {

@@ -189,9 +189,7 @@ function ActivityParticipantItem({
 								<span className="sr-only">Ver detalhes</span>
 							</Link>
 						</Button>
-						{participant.role ===
-						"monitor" ? null : participant.id ===
-						  currentParticipantId ? (
+						{participant.id === currentParticipantId ? (
 							<ParticipantQuitButton
 								activityId={participant.activityId}
 								participantId={participant.id}
