@@ -41,7 +41,12 @@ import {
 } from "@verific/drizzle/schema";
 import { z } from "@verific/zod";
 
-import { persistEnrollment, prepareActivityAnswers } from "../enrollment";
+import {
+	assertNoScheduleConflict,
+	lockParticipant,
+	persistEnrollment,
+	prepareActivityAnswers,
+} from "../enrollment";
 import {
 	hasProjectAccess,
 	requireActivityPermission,
@@ -1673,7 +1678,8 @@ export const activitiesRouter = createTRPCRouter({
 			}
 
 			// Participante do requisitante no evento (uma única leitura,
-			// reutilizada pelo probe do formulário).
+			// reutilizada pelo probe do formulário e pelo gate de
+			// auto-inscrição abaixo).
 			const requesterParticipant = await db.query.participant.findFirst({
 				where: and(
 					eq(participant.projectId, foundActivity.projectId),
@@ -1683,17 +1689,26 @@ export const activitiesRouter = createTRPCRouter({
 			});
 			const requesterParticipantId = requesterParticipant?.id ?? null;
 
-			// Auto-inscrição desabilitada: toda inscrição exige permissão de
-			// organização. Participantes não se adicionam mais a atividades.
-			await requireProjectPermission(
-				foundActivity.projectId,
-				ctx.session.user.id,
-				"activities.manage",
-			);
-			await requireParticipantsInProject(
-				foundActivity.projectId,
-				participantsIdsToAdd,
-			);
+			// Auto-inscrição: o requisitante inscreve SOMENTE a si mesmo.
+			// Lote misto ou terceiros = fluxo de organizador (sem checagem
+			// de conflito). Um organizador inscrevendo só a si mesmo cai
+			// aqui — nenhum fluxo de UI faz isso hoje.
+			const isSelfServiceJoin =
+				!!requesterParticipantId &&
+				participantsIdsToAdd.length === 1 &&
+				participantsIdsToAdd.includes(requesterParticipantId);
+			// A organização vem antes: sem ela, a resposta diria quem é do evento
+			if (!isSelfServiceJoin) {
+				await requireProjectPermission(
+					foundActivity.projectId,
+					ctx.session.user.id,
+					"activities.manage",
+				);
+				await requireParticipantsInProject(
+					foundActivity.projectId,
+					participantsIdsToAdd,
+				);
+			}
 
 			// Respostas do formulário de inscrição da atividade (quando houver)
 			const answerRows = await prepareActivityAnswers({
@@ -1707,7 +1722,20 @@ export const activitiesRouter = createTRPCRouter({
 			});
 
 			const { inserted, resolved } = await db.transaction(async (tx) => {
-				// Quem tem oferta em aberto usa a vaga reservada para si.
+				if (isSelfServiceJoin && requesterParticipantId) {
+					// Checagem de conflito + inserção atômicas: dois joins
+					// concorrentes do mesmo participante serializam e no
+					// máximo um vence. Inscrições existentes nunca são tocadas.
+					await lockParticipant(tx, requesterParticipantId);
+					await assertNoScheduleConflict(
+						tx,
+						activityId,
+						requesterParticipantId,
+					);
+				}
+
+				// Quem se inscreve sozinho não passa à frente da fila; quem
+				// tem oferta em aberto usa a vaga reservada para si.
 				const locked = await lockActivity(tx, activityId);
 				assertActivityOpen(locked);
 				const queue = await settleActivity(tx, locked);
@@ -1717,8 +1745,9 @@ export const activitiesRouter = createTRPCRouter({
 					queue,
 					participantsIdsToAdd,
 					{
-						queueFirst: false,
-						allowOverCapacity,
+						queueFirst: isSelfServiceJoin,
+						allowOverCapacity:
+							allowOverCapacity && !isSelfServiceJoin,
 					},
 				);
 
@@ -1727,7 +1756,7 @@ export const activitiesRouter = createTRPCRouter({
 					activityId,
 					participantIds: participantsIdsToAdd,
 					answerRows,
-					...(allowOverCapacity
+					...(allowOverCapacity && !isSelfServiceJoin
 						? {
 								overCapacity: {
 									actorUserId: ctx.session.user.id,
@@ -1746,8 +1775,10 @@ export const activitiesRouter = createTRPCRouter({
 					activityId,
 					queued,
 					{
-						type: "promoted",
-						actorUserId: ctx.session.user.id,
+						type: isSelfServiceJoin ? "confirmed" : "promoted",
+						actorUserId: isSelfServiceJoin
+							? null
+							: ctx.session.user.id,
 					},
 				);
 				return { inserted, resolved };
