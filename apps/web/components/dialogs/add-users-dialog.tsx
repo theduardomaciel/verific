@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition, useMemo } from "react";
 
-import { Loader2, UserPlus, Search } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -26,17 +26,16 @@ import { trpc } from "@/lib/trpc/react";
 
 import { ParticipantItem } from "../participant-item";
 
-type DialogRole = "monitor" | "participant";
+type SubmitMode = "participants" | "monitors";
 
-interface AddParticipantsDialogProps {
+interface AddUsersDialogProps {
 	projectId: string;
 	activityId?: string;
 	alreadyAdded?: string[];
-	kind?: DialogRole;
-	buttonLabel?: string;
-	buttonVariant?: "default" | "outline";
 	title?: string;
 	description?: string;
+	/** Elemento que abre o diálogo (botão/ícone). */
+	children: React.ReactNode;
 	onSubmitSelected?: (participants: any[]) => Promise<void>;
 	onAdd?: (participants: any[]) => Promise<void>;
 	onSelect?: (participants: any[]) => Promise<void>;
@@ -44,37 +43,25 @@ interface AddParticipantsDialogProps {
 	allowOverCapacity?: boolean;
 	/** A atividade está lotada: só nesse caso a confirmação de overbooking aparece. */
 	isFull?: boolean;
+	/** Qual mutation padrão usar quando não há handler customizado. */
+	mode?: SubmitMode;
 }
 
-export function AddParticipantsDialog({
+export function AddUsersDialog({
 	projectId,
 	activityId,
 	alreadyAdded = [],
-	kind,
-	buttonLabel,
-	buttonVariant = "default",
 	title,
 	description,
+	children,
 	onSubmitSelected,
 	onAdd,
 	onSelect,
 	allowOverCapacity = false,
 	isFull = false,
-}: AddParticipantsDialogProps) {
-	const resolvedRole: DialogRole = kind ?? "monitor";
-
-	const defaultButtonLabel =
-		resolvedRole === "participant"
-			? "Adicionar participantes"
-			: "Adicionar monitores";
-	const defaultTitle =
-		resolvedRole === "participant"
-			? "Adicionar participantes"
-			: "Adicionar monitores";
-
-	const resolvedButtonLabel = buttonLabel ?? defaultButtonLabel;
-	const resolvedTitle = title ?? defaultTitle;
-
+	mode = "participants",
+}: AddUsersDialogProps) {
+	const resolvedTitle = title ?? "Adicionar usuários";
 	const customHandler = onSubmitSelected ?? onAdd ?? onSelect;
 
 	const [currentDate] = useState(() => new Date());
@@ -163,7 +150,7 @@ export function AddParticipantsDialog({
 
 	const utils = trpc.useUtils();
 	const mutations: any =
-		resolvedRole === "participant"
+		mode === "participants"
 			? (trpc.addActivityParticipants?.useMutation?.({
 					onSuccess: () => {
 						void utils?.getActivity?.invalidate?.();
@@ -190,7 +177,7 @@ export function AddParticipantsDialog({
 
 		if (selectedParticipantsIds.length === 0) {
 			toast.warning(
-				"Nenhum participante selecionado. Selecione ao menos um para adicionar.",
+				"Nenhum usuário selecionado. Selecione ao menos um para adicionar.",
 			);
 			return;
 		}
@@ -216,14 +203,12 @@ export function AddParticipantsDialog({
 				await refreshRoute();
 			} catch (error) {
 				console.error(error);
-				const noun =
-					resolvedRole === "participant" ? "participante" : "monitor";
 				const message = error instanceof Error ? error.message : "";
-				toast.error(`Erro ao adicionar ${noun}`, {
+				toast.error("Erro ao adicionar", {
 					description:
 						message.includes("limit") && allowOverCapacity
 							? "A atividade está lotada. Marque a opção de exceder as vagas para continuar."
-							: `Ocorreu um erro ao adicionar o ${noun}. Tente novamente mais tarde.`,
+							: "Ocorreu um erro ao adicionar. Tente novamente mais tarde.",
 				});
 			}
 		});
@@ -249,34 +234,22 @@ export function AddParticipantsDialog({
 
 	useEffect(() => {
 		if (isMutating === false && addedUsersAmount) {
-			const isMonitor = resolvedRole === "monitor";
-			const plural = isMonitor ? "Monitores" : "Participantes";
-			const singular = isMonitor ? "Monitor" : "Participante";
 			const titleText =
 				addedUsersAmount > 1
-					? `${plural} adicionados!`
-					: `${singular} adicionado!`;
+					? "Usuários adicionados!"
+					: "Usuário adicionado!";
 			const descriptionText =
 				addedUsersAmount > 1
-					? `Os ${isMonitor ? "monitores" : "participantes"} foram adicionados com sucesso.`
-					: `O ${isMonitor ? "monitor" : "participante"} foi adicionado com sucesso.`;
+					? "Os usuários foram adicionados com sucesso."
+					: "O usuário foi adicionado com sucesso.";
 
 			toast.success(titleText, { description: descriptionText });
 		}
-	}, [isMutating, addedUsersAmount, resolvedRole]);
+	}, [isMutating, addedUsersAmount]);
 
 	return (
 		<Dialog open={isOpen} onOpenChange={setIsOpen}>
-			<DialogTrigger asChild>
-				<Button
-					size={"lg"}
-					variant={buttonVariant}
-					className="h-10 min-h-10 flex-1 shrink-0"
-				>
-					<UserPlus size={20} />
-					{resolvedButtonLabel}
-				</Button>
-			</DialogTrigger>
+			<DialogTrigger asChild>{children}</DialogTrigger>
 			<DialogContent className="w-full overflow-hidden sm:max-w-lg">
 				<DialogHeader>
 					<DialogTitle>{resolvedTitle}</DialogTitle>
@@ -299,7 +272,7 @@ export function AddParticipantsDialog({
 							<Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
 							<Input
 								className="w-full pr-10 pl-10"
-								placeholder="Pesquisar participantes"
+								placeholder="Pesquisar usuários"
 								value={search}
 								onChange={(e) => setSearch(e.target.value)}
 							/>
@@ -384,7 +357,7 @@ export function AddParticipantsDialog({
 								<Loader2 className="origin-center animate-spin" />
 							</div>
 						) : (
-							<p>Nenhum participante encontrado.</p>
+							<p>Nenhum usuário encontrado.</p>
 						)}
 					</div>
 
@@ -411,10 +384,7 @@ export function AddParticipantsDialog({
 							{isMutating ? (
 								<Loader2 className="h-6 w-6 animate-spin" />
 							) : (
-								<>
-									Adicionar
-									<UserPlus className="h-6 w-6" />
-								</>
+								<>Adicionar</>
 							)}
 						</Button>
 					</DialogFooter>
@@ -424,4 +394,4 @@ export function AddParticipantsDialog({
 	);
 }
 
-export { AddParticipantsDialog as default };
+export { AddUsersDialog as default };

@@ -9,6 +9,7 @@ import {
 	Clock,
 	Edit,
 	ClipboardList,
+	UserPlus,
 	Megaphone,
 	MapPin,
 	Share2,
@@ -28,7 +29,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CategoryCard } from "@/components/dashboard/category-card";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
 import { DashboardPagination } from "@/components/dashboard/pagination";
-import { AddParticipantsDialog } from "@/components/dialogs/add-participants-dialog";
+import { AddUsersDialog } from "@/components/dialogs/add-users-dialog";
 import { ActivityDeleteDialog } from "@/components/dialogs/delete-dialog";
 import { ShareDialog } from "@/components/dialogs/share-dialog";
 import { ExportParticipantsButton } from "@/components/participant/export-button";
@@ -184,18 +185,26 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 								createdAt: p.subscribedAt,
 							}))}
 						/>
-						<AddParticipantsDialog
+						<AddUsersDialog
 							projectId={projectId}
 							activityId={activityId}
 							alreadyAdded={activity.participants.map(
 								(t) => t.id,
 							)}
-							kind="participant"
-							buttonLabel=""
-							buttonVariant="outline"
+							mode="participants"
+							title="Adicionar participantes"
+							description="Selecione os participantes para adicionar à atividade."
 							allowOverCapacity={can("activities.manage")}
 							isFull={isFull}
-						/>
+						>
+							<Button
+								size="icon"
+								variant="outline"
+								className="h-10 min-h-10 w-10 shrink-0"
+							>
+								<UserPlus size={20} />
+							</Button>
+						</AddUsersDialog>
 					</div>
 				</div>
 				<ParticipantsList.List
@@ -365,13 +374,25 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 							</Link>
 						</Button>
 					</div>
-					<AddParticipantsDialog
+					<AddUsersDialog
 						projectId={projectId}
 						activityId={activityId}
 						alreadyAdded={activity.participants
 							.filter((t) => t.role === "monitor")
 							.map((t) => t.id)}
-					/>
+						mode="monitors"
+						title="Adicionar monitores"
+						description="Selecione os participantes para adicionar como monitores."
+					>
+						<Button
+							size="lg"
+							variant="default"
+							className="h-10 min-h-10 flex-1 shrink-0"
+						>
+							<UserPlus size={20} />
+							Adicionar monitores
+						</Button>
+					</AddUsersDialog>
 					{can("activities.manage") ? (
 						<Button
 							variant="outline"

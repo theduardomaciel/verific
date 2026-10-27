@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { BadgeScanner } from "@/components/badge-scanner";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
-import { AddParticipantsDialog } from "@/components/dialogs/add-participants-dialog";
+import { AddUsersDialog } from "@/components/dialogs/add-users-dialog";
 
 import { trpc } from "@/lib/trpc/react";
 
@@ -173,13 +173,11 @@ export function ReceptionPage() {
 						mode="reception"
 						buttonLabel="Fazer check-in de hoje"
 					/>
-					<AddParticipantsDialog
+					<AddUsersDialog
 						projectId={projectId}
 						alreadyAdded={[]}
-						buttonLabel="Adicionar por nome"
 						title="Check-in manual"
 						description="Selecione os participantes para registrar o check-in de hoje."
-						kind="participant"
 						onSubmitSelected={async (participants) => {
 							for (const participant of participants) {
 								if (!participant.shortId) {
@@ -205,7 +203,12 @@ export function ReceptionPage() {
 								}
 							}
 						}}
-					/>
+					>
+						<Button variant="outline" className="w-full">
+							<UserPlus size={16} className="mr-2" />
+							Adicionar por nome
+						</Button>
+					</AddUsersDialog>
 					<p className="text-muted-foreground text-center text-xs">
 						O mesmo QR do ingresso/crachá é usado. Repetir o scan no
 						mesmo dia não soma pontos de novo.
