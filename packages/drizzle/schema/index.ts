@@ -32,4 +32,6 @@ export * from "../enum/audience";
 export * from "../enum/category";
 export * from "../enum/form-field-type";
 export * from "../enum/role";
+export * from "../enum/project-role";
 export * from "../enum/waitlist";
+export * from "../permissions";

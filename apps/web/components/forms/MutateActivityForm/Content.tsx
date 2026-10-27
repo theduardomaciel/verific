@@ -196,39 +196,30 @@ function RegistrationSettings({
 				{waitlistEnabled ? (
 					<FormField
 						control={form.control}
-						name="waitlistOfferHours"
+						name="waitlistOfferMinutes"
 						render={({ field }) => (
 							<FormItem>
 								<FormLabel>
 									Prazo para confirmar vaga da fila
 								</FormLabel>
-								<Select
-									onValueChange={field.onChange}
-									value={field.value?.toString() ?? ""}
-								>
-									<FormControl>
-										<SelectTrigger className="w-full">
-											<SelectValue placeholder="Selecione" />
-										</SelectTrigger>
-									</FormControl>
-									<SelectContent>
-										{[1, 2, 6, 12, 24, 48].map((hours) => (
-											<SelectItem
-												key={hours}
-												value={hours.toString()}
-											>
-												{hours === 1
-													? "1 hora"
-													: `${hours} horas`}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+								<FormControl>
+									<InputWithSuffix
+										suffix=" minutos"
+										className="w-full"
+										type="number"
+										min={1}
+										max={10080}
+										placeholder="720"
+										{...field}
+										value={field.value ?? ""}
+									/>
+								</FormControl>
 								<p className="text-muted-foreground text-sm">
 									Com as vagas esgotadas, quem entra na fila
 									recebe a vaga que abrir e tem este prazo
 									para confirmar, sempre antes do início da
-									atividade.
+									atividade. Use 10 para dez minutos; 720
+									equivale a 12 horas.
 								</p>
 								<FormMessage />
 							</FormItem>

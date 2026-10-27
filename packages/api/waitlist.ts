@@ -167,6 +167,7 @@ export async function settleActivity(
 		now,
 		...range,
 		offerHours: locked.waitlistOfferHours,
+		offerMinutes: locked.waitlistOfferMinutes,
 	});
 
 	const participantOf = (ids: string[]) =>

@@ -51,7 +51,7 @@ import { WaitlistTab } from "./waitlist-tab";
 type ActivityTab = "participants" | "monitors" | "waitlist";
 
 export function ActivityContent({ activityId }: { activityId: string }) {
-	const { projectId, isOwner } = useDashboard();
+	const { projectId, isOwner, can } = useDashboard();
 	const parsedParams = useParsedSearchParams((raw) =>
 		getActivityParams.parse(raw),
 	);
@@ -94,7 +94,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 		);
 	}
 
-	const { activity, participantsAmount, pageCount } = data;
+	const { activity, participantsAmount, overbookedAmount, pageCount } = data;
 
 	const monitors = activity.participants.filter((t) => t.role === "monitor");
 
@@ -129,7 +129,13 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 						{participantsAmount &&
 						activity.participantsLimit &&
 						activity.participantsLimit > 0
-							? `Vagas disponíveis: ${activity.participantsLimit - participantsAmount}/${activity.participantsLimit}`
+							? overbookedAmount > 0
+								? `${overbookedAmount} acima do limite (${participantsAmount}/${activity.participantsLimit})`
+								: `Vagas disponíveis: ${Math.max(
+										0,
+										activity.participantsLimit -
+											participantsAmount,
+									)}/${activity.participantsLimit}`
 							: participantsAmount && participantsAmount > 0
 								? `${participantsAmount} participante${
 										participantsAmount !== 1 ? "s" : ""
@@ -347,6 +353,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 						alreadyAdded={activity.participants
 							.filter((t) => t.role === "monitor")
 							.map((t) => t.id)}
+						allowOverCapacity={can("activities.manage")}
 					/>
 				</div>
 			</div>

@@ -20,8 +20,7 @@ import {
 } from "./routers/forms";
 import { findScheduleConflicts } from "./schedule-conflicts";
 import { validateAnswers, type answerValueSchema } from "./schemas";
-
-import type { Tx } from "./seats";
+import { countEnrolled, type Tx } from "./seats";
 
 export type FormAnswersInput = {
 	answers: Record<string, z.infer<typeof answerValueSchema>>;
@@ -197,9 +196,28 @@ export async function persistEnrollment(
 		activityId: string;
 		participantIds: string[];
 		answerRows: Awaited<ReturnType<typeof prepareActivityAnswers>>;
+		/**
+		 * Inscrição autorizada além do limite. As linhas que efetivamente
+		 * excederem as vagas são marcadas para a organização enxergar o
+		 * overbooking e decidir como agir.
+		 */
+		overCapacity?: {
+			actorUserId: string;
+			reason?: string | null;
+		};
 	},
-): Promise<Array<{ participantId: string; subscribedAt: Date }>> {
+): Promise<
+	Array<{ participantId: string; subscribedAt: Date; overbooked: boolean }>
+> {
 	const { projectId, activityId, participantIds, answerRows } = args;
+
+	const [activityRow] = await tx
+		.select({ participantsLimit: activity.participantsLimit })
+		.from(activity)
+		.where(eq(activity.id, activityId));
+	const enrolledBefore = args.overCapacity
+		? await countEnrolled(tx, activityId)
+		: 0;
 
 	const inserted = await tx
 		.insert(participantOnActivity)
@@ -214,6 +232,39 @@ export async function persistEnrollment(
 			participantId: participantOnActivity.participantId,
 			subscribedAt: participantOnActivity.subscribedAt,
 		});
+
+	const overbookedIds = new Set<string>();
+	if (args.overCapacity && activityRow?.participantsLimit != null) {
+		const overflow = Math.max(
+			0,
+			enrolledBefore + inserted.length - activityRow.participantsLimit,
+		);
+		// `returning` preserva a ordem dos valores inseridos no Postgres; os
+		// últimos são os que de fato excederam o limite.
+		if (overflow > 0) {
+			for (const row of inserted.slice(-overflow)) {
+				overbookedIds.add(row.participantId);
+			}
+		}
+		if (overbookedIds.size > 0) {
+			await tx
+				.update(participantOnActivity)
+				.set({
+					overbooked: true,
+					overbookReason: args.overCapacity.reason ?? null,
+					overbookedByUserId: args.overCapacity.actorUserId,
+					overbookedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(participantOnActivity.activityId, activityId),
+						inArray(participantOnActivity.participantId, [
+							...overbookedIds,
+						]),
+					),
+				);
+		}
+	}
 
 	await saveActivityAnswers(tx, answerRows);
 
@@ -248,7 +299,10 @@ export async function persistEnrollment(
 		}
 	}
 
-	return inserted;
+	return inserted.map((row) => ({
+		...row,
+		overbooked: overbookedIds.has(row.participantId),
+	}));
 }
 
 export async function deleteActivityAnswers(

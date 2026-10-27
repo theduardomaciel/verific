@@ -5,7 +5,7 @@ import { asc, eq } from "@verific/drizzle/orm";
 import { tag } from "@verific/drizzle/schema";
 import { z } from "@verific/zod";
 
-import { requireProjectAccess } from "../lib/project-access";
+import { requireProjectPermission } from "../lib/project-access";
 import { tagColorSchema } from "../schemas";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
@@ -20,7 +20,11 @@ async function requireTagAccess(tagId: string, userId: string) {
 			code: "NOT_FOUND",
 		});
 	}
-	await requireProjectAccess(found.projectId, userId);
+	await requireProjectPermission(
+		found.projectId,
+		userId,
+		"activities.manage",
+	);
 }
 
 export const tagsRouter = createTRPCRouter({
@@ -42,7 +46,11 @@ export const tagsRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				input.projectId,
+				ctx.session.user.id,
+				"activities.manage",
+			);
 
 			try {
 				const created = await db

@@ -25,6 +25,8 @@ export interface SettlementInput {
 	startsAt: Date | null;
 	endsAt: Date | null;
 	offerHours: number;
+	/** Prazo em minutos; quando presente, vence `offerHours`. */
+	offerMinutes?: number | null;
 }
 
 export interface SettlementPlan {
@@ -35,7 +37,17 @@ export interface SettlementPlan {
 	offer: { id: string; expiresAt: Date }[];
 }
 
-const HOUR = 60 * 60 * 1000;
+const MINUTE = 60 * 1000;
+
+/** Prazo efetivo da oferta: minutos quando configurado, senão horas. */
+export function offerWindowMinutes(input: {
+	offerHours: number;
+	offerMinutes?: number | null;
+}) {
+	return input.offerMinutes != null && input.offerMinutes > 0
+		? input.offerMinutes
+		: input.offerHours * 60;
+}
 
 /** Ordem da fila: entrada mais antiga primeiro; o id desempata. */
 export function byQueueOrder(
@@ -69,8 +81,16 @@ export function seatsTaken({
 }
 
 export function planSettlement(input: SettlementInput): SettlementPlan {
-	const { limit, enrolled, entries, now, startsAt, endsAt, offerHours } =
-		input;
+	const {
+		limit,
+		enrolled,
+		entries,
+		now,
+		startsAt,
+		endsAt,
+		offerHours,
+		offerMinutes,
+	} = input;
 
 	if (endsAt && now >= endsAt) {
 		return {
@@ -104,7 +124,8 @@ export function planSettlement(input: SettlementInput): SettlementPlan {
 
 	const free = Math.max(0, seatsForOffers - openOffers.length);
 	const deadline = Math.min(
-		now.getTime() + offerHours * HOUR,
+		now.getTime() +
+			offerWindowMinutes({ offerHours, offerMinutes }) * MINUTE,
 		startsAt?.getTime() ?? Infinity,
 	);
 

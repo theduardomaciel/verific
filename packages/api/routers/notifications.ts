@@ -1,7 +1,7 @@
 import "server-only";
 import { TRPCError } from "@trpc/server";
 
-import { requireProjectAccess } from "../lib/project-access";
+import { requireProjectPermission } from "../lib/project-access";
 import {
 	getEventNotificationSettings,
 	updateEventNotificationSettings,
@@ -30,7 +30,11 @@ export const notificationsRouter = createTRPCRouter({
 	listNotifications: protectedProcedure
 		.input(listNotificationsInput)
 		.query(async ({ input, ctx }) => {
-			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				input.projectId,
+				ctx.session.user.id,
+				"emails.manage",
+			);
 			const store = new DrizzleNotificationStore();
 			return store.listPage({
 				eventId: input.projectId,
@@ -44,7 +48,11 @@ export const notificationsRouter = createTRPCRouter({
 	statsNotifications: protectedProcedure
 		.input(notificationStatsInput)
 		.query(async ({ input, ctx }) => {
-			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				input.projectId,
+				ctx.session.user.id,
+				"emails.manage",
+			);
 			const store = new DrizzleNotificationStore();
 			const [counts, usage] = await Promise.all([
 				store.statusCounts(input.projectId),
@@ -56,7 +64,11 @@ export const notificationsRouter = createTRPCRouter({
 	reprocessOneNotification: protectedProcedure
 		.input(reprocessOneNotificationInput)
 		.mutation(async ({ input, ctx }) => {
-			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				input.projectId,
+				ctx.session.user.id,
+				"emails.manage",
+			);
 			const { notification } = await reprocessOneNotification({
 				eventId: input.projectId,
 				id: input.id,
@@ -73,7 +85,11 @@ export const notificationsRouter = createTRPCRouter({
 	reprocessBatchNotifications: protectedProcedure
 		.input(reprocessBatchNotificationsInput)
 		.mutation(async ({ input, ctx }) => {
-			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				input.projectId,
+				ctx.session.user.id,
+				"emails.manage",
+			);
 			return reprocessBatchNotifications({
 				eventId: input.projectId,
 				filter: input.filter,
@@ -86,7 +102,11 @@ export const notificationsRouter = createTRPCRouter({
 	getNotificationSettings: protectedProcedure
 		.input(notificationStatsInput)
 		.query(async ({ input, ctx }) => {
-			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				input.projectId,
+				ctx.session.user.id,
+				"emails.manage",
+			);
 			return {
 				settings: await getEventNotificationSettings(input.projectId),
 			};
@@ -95,7 +115,11 @@ export const notificationsRouter = createTRPCRouter({
 	updateNotificationSettings: protectedProcedure
 		.input(updateNotificationSettingsInput)
 		.mutation(async ({ input, ctx }) => {
-			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				input.projectId,
+				ctx.session.user.id,
+				"emails.manage",
+			);
 			return {
 				settings: await updateEventNotificationSettings(
 					input.projectId,

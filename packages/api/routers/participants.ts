@@ -32,7 +32,11 @@ import {
 	awardSessionCompletion,
 	type StickerAward,
 } from "../lib/gamification";
-import { requireProjectAccess } from "../lib/project-access";
+import {
+	accessHasPermission,
+	getProjectAccess,
+	requireProjectPermission,
+} from "../lib/project-access";
 import {
 	loadNotificationRecipients,
 	notifyEventRegistrationRemoved,
@@ -187,7 +191,11 @@ export const participantsRouter = createTRPCRouter({
 				pageSize,
 			} = input;
 
-			await requireProjectAccess(projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				projectId,
+				ctx.session.user.id,
+				"participants.view",
+			);
 
 			let roleFilter: SQL | undefined;
 			if (role && role.length > 0) {
@@ -408,9 +416,10 @@ export const participantsRouter = createTRPCRouter({
 			const event = session.activity.project;
 			const activityId = session.activity.id;
 
-			const isEventStaff =
-				event.ownerId === staffUserId ||
-				event.moderators.some((m) => m.userId === staffUserId);
+			const access = await getProjectAccess(event.id, staffUserId);
+			const isEventStaff = access
+				? accessHasPermission(access, "reception.manage")
+				: false;
 
 			// Verifica se o usuário atual é monitor desta atividade
 			const staffParticipant = await db.query.participant.findFirst({
@@ -718,18 +727,11 @@ export const participantsRouter = createTRPCRouter({
 				});
 			}
 
-			const isModerator =
-				participantData.project.moderators.some(
-					(mod) => mod.userId === requestUserId,
-				) || participantData.project.ownerId === requestUserId;
-
-			if (!isModerator) {
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message:
-						"You do not have permission to remove this participant",
-				});
-			}
+			await requireProjectPermission(
+				participantData.project.id,
+				requestUserId,
+				"participants.manage",
+			);
 
 			// Capturado antes do delete: a linha de participante some na
 			// transação e o e-mail de aviso precisa de um destinatário.

@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 
 import { z } from "@verific/zod";
 
-import { requireProjectAccess } from "../lib/project-access";
+import { requireProjectPermission } from "../lib/project-access";
 import {
 	extensionForContentType,
 	storage,
@@ -38,7 +38,13 @@ export const uploadsRouter = createTRPCRouter({
 				contentType: input.contentType,
 				contentLength: input.contentLength,
 			});
-			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				input.projectId,
+				ctx.session.user.id,
+				purpose === "speaker" || purpose === "activity-banner"
+					? "activities.manage"
+					: "event.manage",
+			);
 			if (!storage.isConfigured()) {
 				throw new TRPCError({
 					code: "PRECONDITION_FAILED",

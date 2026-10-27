@@ -31,7 +31,7 @@ import {
 	projectConfig,
 	type GamificationProject,
 } from "../lib/gamification";
-import { requireProjectAccess } from "../lib/project-access";
+import { requireProjectPermission } from "../lib/project-access";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
 /**
@@ -55,7 +55,9 @@ function publicProject(projectUrl: string) {
 			profilesEnabled: true,
 		},
 		with: {
-			moderators: { columns: { userId: true } },
+			moderators: {
+				columns: { userId: true, includeInRanking: true },
+			},
 		},
 	});
 }
@@ -198,9 +200,10 @@ export const gamificationRouter = createTRPCRouter({
 	getGamificationSettings: protectedProcedure
 		.input(z.object({ projectId: z.string().uuid() }))
 		.query(async ({ input, ctx }) => {
-			const row = await requireProjectAccess(
+			const row = await requireProjectPermission(
 				input.projectId,
 				ctx.session.user.id,
+				"ranking.manage",
 			);
 			return {
 				config: parseGamificationConfig(row.gamification),
@@ -219,9 +222,10 @@ export const gamificationRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			const row = await requireProjectAccess(
+			const row = await requireProjectPermission(
 				input.projectId,
 				ctx.session.user.id,
+				"ranking.manage",
 			);
 			if (input.config.enabled && !row.profilesEnabled) {
 				throw new TRPCError({
@@ -248,9 +252,10 @@ export const gamificationRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			const projectRow = await requireProjectAccess(
+			const projectRow = await requireProjectPermission(
 				input.projectId,
 				ctx.session.user.id,
+				"reception.manage",
 			);
 			const config = projectConfig(projectRow);
 			if (!config.enabled) {
@@ -322,9 +327,10 @@ export const gamificationRouter = createTRPCRouter({
 	getReceptionSummary: protectedProcedure
 		.input(z.object({ projectId: z.string().uuid() }))
 		.query(async ({ input, ctx }) => {
-			const row = await requireProjectAccess(
+			const row = await requireProjectPermission(
 				input.projectId,
 				ctx.session.user.id,
+				"reception.manage",
 			);
 			const config = parseGamificationConfig(row.gamification);
 			const day = eventDayKey(new Date());
@@ -421,9 +427,10 @@ export const gamificationRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			const projectRow = await requireProjectAccess(
+			const projectRow = await requireProjectPermission(
 				input.projectId,
 				ctx.session.user.id,
+				"ranking.manage",
 			);
 			const config = projectConfig(projectRow);
 			if (!config.enabled) {
@@ -479,7 +486,11 @@ export const gamificationRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				input.projectId,
+				ctx.session.user.id,
+				"ranking.manage",
+			);
 			if (!stickerByKey(input.stickerKey)) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
@@ -519,9 +530,10 @@ export const gamificationRouter = createTRPCRouter({
 			}),
 		)
 		.query(async ({ input, ctx }) => {
-			const projectRow = await requireProjectAccess(
+			const projectRow = await requireProjectPermission(
 				input.projectId,
 				ctx.session.user.id,
+				"ranking.manage",
 			);
 			const target = await db.query.participant.findFirst({
 				where: and(

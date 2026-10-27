@@ -49,9 +49,10 @@ import {
 } from "../enrollment";
 import {
 	hasProjectAccess,
-	requireActivityAccess,
+	requireActivityPermission,
 	requireParticipantsInProject,
 	requireProjectAccess,
+	requireProjectPermission,
 } from "../lib/project-access";
 import { planSessionDiff } from "../lib/session-diff";
 import {
@@ -76,6 +77,7 @@ import {
 import {
 	assertActivityOpen,
 	assertSeatsAvailable,
+	countEnrolled,
 	lockActivity,
 	openOfferWhere,
 } from "../seats";
@@ -322,6 +324,14 @@ const mutateActivityParams = z.object({
 	allowOverlap: z.boolean().optional(),
 	waitlistEnabled: z.boolean().optional(),
 	waitlistOfferHours: z.coerce.number().int().min(1).max(168).optional(),
+	/** Prazo em minutos; tem prioridade sobre `waitlistOfferHours`. */
+	waitlistOfferMinutes: z.coerce
+		.number()
+		.int()
+		.min(1)
+		.max(10_080)
+		.nullable()
+		.optional(),
 	projectId: z.uuid(),
 });
 
@@ -547,6 +557,7 @@ export const activitiesRouter = createTRPCRouter({
 							waiting: queueAmount("waiting"),
 						}),
 					},
+					overbookedAmount: 0,
 					pageCount: 0,
 					participantId: null,
 				};
@@ -620,17 +631,30 @@ export const activitiesRouter = createTRPCRouter({
 				.limit(pageSize);
 
 			// Buscar total de participantes não moderadores para paginação
-			const countResult = await db
-				.select({ amount: count() })
-				.from(participantOnActivity)
-				.innerJoin(
-					participant,
-					eq(participantOnActivity.participantId, participant.id),
-				)
-				.innerJoin(user, eq(participant.userId, user.id))
-				.where(and(...nonMonitorWhere));
+			const [countResult, overbookedResult] = await Promise.all([
+				db
+					.select({ amount: count() })
+					.from(participantOnActivity)
+					.innerJoin(
+						participant,
+						eq(participantOnActivity.participantId, participant.id),
+					)
+					.innerJoin(user, eq(participant.userId, user.id))
+					.where(and(...nonMonitorWhere)),
+				db
+					.select({ amount: count() })
+					.from(participantOnActivity)
+					.where(
+						and(
+							eq(participantOnActivity.activityId, activityId),
+							eq(participantOnActivity.role, "participant"),
+							eq(participantOnActivity.overbooked, true),
+						),
+					),
+			]);
 
 			const amount = countResult?.[0]?.amount ?? 0;
+			const overbookedAmount = overbookedResult?.[0]?.amount ?? 0;
 			const pageCount = Math.ceil(amount / pageSize);
 
 			const allParticipants = [
@@ -753,6 +777,7 @@ export const activitiesRouter = createTRPCRouter({
 					),
 				},
 				participantsAmount: amount,
+				overbookedAmount,
 				pageCount,
 				participantId: allParticipants.find(
 					(participant) => participant.userId === userId,
@@ -1186,13 +1211,18 @@ export const activitiesRouter = createTRPCRouter({
 				allowOverlap,
 				waitlistEnabled,
 				waitlistOfferHours,
+				waitlistOfferMinutes,
 				address,
 				latitude,
 				longitude,
 				projectId,
 			} = input;
 
-			await requireProjectAccess(projectId, userId);
+			await requireProjectPermission(
+				projectId,
+				userId,
+				"activities.manage",
+			);
 			if (speakerIds)
 				await assertSpeakersInProject(speakerIds, projectId);
 
@@ -1210,6 +1240,7 @@ export const activitiesRouter = createTRPCRouter({
 						allowOverlap,
 						waitlistEnabled,
 						waitlistOfferHours,
+						waitlistOfferMinutes,
 						address,
 						latitude,
 						longitude,
@@ -1303,6 +1334,7 @@ export const activitiesRouter = createTRPCRouter({
 				allowOverlap,
 				waitlistEnabled,
 				waitlistOfferHours,
+				waitlistOfferMinutes,
 				address,
 				latitude,
 				longitude,
@@ -1330,7 +1362,11 @@ export const activitiesRouter = createTRPCRouter({
 				});
 			}
 
-			await requireProjectAccess(existing.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				existing.projectId,
+				ctx.session.user.id,
+				"activities.manage",
+			);
 			if (speakerIds) {
 				await assertSpeakersInProject(speakerIds, existing.projectId);
 			}
@@ -1352,6 +1388,7 @@ export const activitiesRouter = createTRPCRouter({
 						allowOverlap,
 						waitlistEnabled,
 						waitlistOfferHours,
+						waitlistOfferMinutes,
 						address,
 						latitude,
 						longitude,
@@ -1461,10 +1498,18 @@ export const activitiesRouter = createTRPCRouter({
 				participantsIdsToMutate: z
 					.union([z.array(z.uuid()), z.uuid()])
 					.transform(toUniqueIds),
+				/** Organização pode inscrever além do limite de vagas. */
+				allowOverCapacity: z.boolean().optional(),
+				overCapacityReason: z.string().trim().max(500).optional(),
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			const { activityId, participantsIdsToMutate } = input;
+			const {
+				activityId,
+				participantsIdsToMutate,
+				allowOverCapacity = false,
+				overCapacityReason,
+			} = input;
 
 			if (!participantsIdsToMutate) {
 				throw new TRPCError({
@@ -1473,9 +1518,10 @@ export const activitiesRouter = createTRPCRouter({
 				});
 			}
 
-			const access = await requireActivityAccess(
+			const access = await requireActivityPermission(
 				activityId,
 				ctx.session.user.id,
+				"activities.manage",
 			);
 			await requireParticipantsInProject(
 				access.projectId,
@@ -1492,6 +1538,7 @@ export const activitiesRouter = createTRPCRouter({
 						locked,
 						queue,
 						participantsIdsToMutate,
+						{ allowOverCapacity },
 					);
 
 					const inserted = await tx
@@ -1507,6 +1554,47 @@ export const activitiesRouter = createTRPCRouter({
 							participantId: participantOnActivity.participantId,
 							subscribedAt: participantOnActivity.subscribedAt,
 						});
+
+					if (
+						allowOverCapacity &&
+						locked.participantsLimit != null &&
+						inserted.length > 0
+					) {
+						const enrolledAfter = await countEnrolled(
+							tx,
+							activityId,
+						);
+						const overflow = Math.max(
+							0,
+							enrolledAfter - locked.participantsLimit,
+						);
+						const overbooked = inserted.slice(-overflow);
+						if (overflow > 0 && overbooked.length > 0) {
+							await tx
+								.update(participantOnActivity)
+								.set({
+									overbooked: true,
+									overbookReason: overCapacityReason ?? null,
+									overbookedByUserId: ctx.session.user.id,
+									overbookedAt: new Date(),
+								})
+								.where(
+									and(
+										eq(
+											participantOnActivity.activityId,
+											activityId,
+										),
+										inArray(
+											participantOnActivity.participantId,
+											overbooked.map(
+												(row) => row.participantId,
+											),
+										),
+									),
+								);
+						}
+					}
+
 					const resolved = await resolveEnrolledEntries(
 						tx,
 						activityId,
@@ -1558,10 +1646,22 @@ export const activitiesRouter = createTRPCRouter({
 						answers: z.record(z.string(), answerValueSchema),
 					})
 					.optional(),
+				/**
+				 * Organização pode inscrever mesmo com a atividade lotada. O
+				 * vínculo fica marcado como overbooking para revisão.
+				 */
+				allowOverCapacity: z.boolean().optional(),
+				overCapacityReason: z.string().trim().max(500).optional(),
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			const { activityId, participantsIdsToAdd, formAnswers } = input;
+			const {
+				activityId,
+				participantsIdsToAdd,
+				formAnswers,
+				allowOverCapacity = false,
+				overCapacityReason,
+			} = input;
 
 			if (!participantsIdsToAdd) {
 				throw new TRPCError({
@@ -1611,9 +1711,10 @@ export const activitiesRouter = createTRPCRouter({
 				participantsIdsToAdd.includes(requesterParticipantId);
 			// A organização vem antes: sem ela, a resposta diria quem é do evento
 			if (!isSelfServiceJoin) {
-				await requireProjectAccess(
+				await requireProjectPermission(
 					foundActivity.projectId,
 					ctx.session.user.id,
+					"activities.manage",
 				);
 				await requireParticipantsInProject(
 					foundActivity.projectId,
@@ -1655,7 +1756,11 @@ export const activitiesRouter = createTRPCRouter({
 					locked,
 					queue,
 					participantsIdsToAdd,
-					{ queueFirst: isSelfServiceJoin },
+					{
+						queueFirst: isSelfServiceJoin,
+						allowOverCapacity:
+							allowOverCapacity && !isSelfServiceJoin,
+					},
 				);
 
 				const inserted = await persistEnrollment(tx, {
@@ -1663,6 +1768,14 @@ export const activitiesRouter = createTRPCRouter({
 					activityId,
 					participantIds: participantsIdsToAdd,
 					answerRows,
+					...(allowOverCapacity && !isSelfServiceJoin
+						? {
+								overCapacity: {
+									actorUserId: ctx.session.user.id,
+									reason: overCapacityReason ?? null,
+								},
+							}
+						: {}),
 				});
 				const resolved = await resolveEnrolledEntries(
 					tx,
@@ -1725,9 +1838,10 @@ export const activitiesRouter = createTRPCRouter({
 				});
 			}
 
-			const access = await requireActivityAccess(
+			const access = await requireActivityPermission(
 				activityId,
 				ctx.session.user.id,
+				"activities.manage",
 			);
 			await requireParticipantsInProject(
 				access.projectId,
@@ -1781,11 +1895,9 @@ export const activitiesRouter = createTRPCRouter({
 				});
 			}
 
-			// Só o dono do evento pode cancelar a atividade.
 			const found = await db.query.activity.findFirst({
 				where: eq(activity.id, activityId),
 				columns: { id: true, projectId: true, cancelledAt: true },
-				with: { project: { columns: { ownerId: true } } },
 			});
 
 			if (!found) {
@@ -1795,12 +1907,13 @@ export const activitiesRouter = createTRPCRouter({
 				});
 			}
 
-			if (found.project.ownerId !== userId) {
-				throw new TRPCError({
-					message: "User not authorized to delete this activity.",
-					code: "FORBIDDEN",
-				});
-			}
+			// Cancelar é irreversível; por padrão só o dono, mas pode ser
+			// delegado com a permissão `activities.cancel`.
+			await requireProjectPermission(
+				found.projectId,
+				userId,
+				"activities.cancel",
+			);
 
 			// Idempotente: cancelar duas vezes não reenvia e-mails.
 			if (found.cancelledAt) return { success: true };
@@ -2361,7 +2474,11 @@ export const activitiesRouter = createTRPCRouter({
 	getReleasableActivities: protectedProcedure
 		.input(z.object({ projectId: z.uuid() }))
 		.query(async ({ input, ctx }) => {
-			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				input.projectId,
+				ctx.session.user.id,
+				"activities.manage",
+			);
 
 			// Closed registrations, and not yet ended
 			const rows = await db.query.activity.findMany({
@@ -2411,7 +2528,11 @@ export const activitiesRouter = createTRPCRouter({
 			const { projectId, isRegistrationOpen } = input;
 			const activityIds = [...new Set(input.activityIds)];
 
-			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				input.projectId,
+				ctx.session.user.id,
+				"activities.manage",
+			);
 
 			await db.transaction(async (tx) => {
 				const updated = await tx

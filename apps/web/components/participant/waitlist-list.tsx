@@ -25,6 +25,7 @@ interface WaitlistListProps {
 		activityId: string;
 		participantIds: string[];
 		reason?: string;
+		allowOverCapacity?: boolean;
 	}) => Promise<void>;
 	remove: (args: {
 		activityId: string;
@@ -54,7 +55,8 @@ export function WaitlistList({
 	isRemoving,
 	isSettling,
 }: WaitlistListProps) {
-	const { participantsLimit, enrolled, freeSeats, entries } = waitlistData;
+	const { participantsLimit, enrolled, freeSeats, overbooked, entries } =
+		waitlistData;
 
 	const waitingEntries = entries.filter((e) => e.status === "waiting");
 	const offeredEntries = entries.filter((e) => e.status === "offered");
@@ -87,6 +89,11 @@ export function WaitlistList({
 						Inscritos
 					</p>
 					<p className="text-2xl font-bold">{enrolled}</p>
+					{overbooked > 0 ? (
+						<p className="text-xs font-medium text-amber-600">
+							{overbooked} acima do limite
+						</p>
+					) : null}
 				</div>
 				<div className="bg-card flex min-w-0 flex-col gap-1 rounded-lg border p-4">
 					<p className="text-muted-foreground text-sm font-medium">
@@ -224,11 +231,15 @@ export function WaitlistList({
 
 								{/* Actions */}
 								<div className="flex flex-wrap items-center gap-2 lg:justify-end">
-									{entry.status === "waiting" &&
-										canPromote && (
-											<WaitlistActionDialog
-												title="Promover da fila de espera"
-												description={
+									{entry.status === "waiting" && (
+										<WaitlistActionDialog
+											title={
+												canPromote
+													? "Promover da fila de espera"
+													: "Promover sem vaga livre"
+											}
+											description={
+												canPromote ? (
 													<>
 														Tem certeza que deseja
 														promover{" "}
@@ -242,33 +253,63 @@ export function WaitlistList({
 														participante será
 														notificado por e-mail.
 													</>
+												) : (
+													<>
+														A atividade está lotada.
+														Promover{" "}
+														<strong>
+															{entry.name ??
+																"Participante"}
+														</strong>{" "}
+														vai criar uma vaga acima
+														do limite (overbooking).
+														A organização poderá
+														revisar e remover
+														depois. A fila de espera
+														continua parada até a
+														lotação voltar ao
+														limite.
+													</>
+												)
+											}
+											confirmLabel={
+												canPromote
+													? "Sim, promover"
+													: "Sim, exceder o limite"
+											}
+											pendingLabel="Promovendo..."
+											variant="default"
+											successMessage={`${entry.name ?? "Participante"} promovido da fila de espera`}
+											errorMessage="Erro ao promover participante"
+											onConfirm={async (reason) => {
+												await promote({
+													activityId,
+													participantIds: [
+														entry.participantId,
+													],
+													reason,
+													allowOverCapacity:
+														!canPromote,
+												});
+											}}
+											isPending={isPromoting}
+										>
+											<Button
+												size="sm"
+												variant={
+													canPromote
+														? "default"
+														: "outline"
 												}
-												confirmLabel="Sim, promover"
-												pendingLabel="Promovendo..."
-												variant="default"
-												successMessage={`${entry.name ?? "Participante"} promovido da fila de espera`}
-												errorMessage="Erro ao promover participante"
-												onConfirm={async (reason) => {
-													await promote({
-														activityId,
-														participantIds: [
-															entry.participantId,
-														],
-														reason,
-													});
-												}}
-												isPending={isPromoting}
+												className="max-lg:flex-1"
+												disabled={isPromoting}
 											>
-												<Button
-													size="sm"
-													variant="default"
-													className="max-lg:flex-1"
-													disabled={isPromoting}
-												>
-													Promover
-												</Button>
-											</WaitlistActionDialog>
-										)}
+												{canPromote
+													? "Promover"
+													: "Promover mesmo assim"}
+											</Button>
+										</WaitlistActionDialog>
+									)}
 									{entry.status === "offered" && (
 										<WaitlistActionDialog
 											title="Remover oferta"

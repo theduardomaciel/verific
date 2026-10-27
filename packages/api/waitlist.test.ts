@@ -108,6 +108,7 @@ describe("settleActivity offer notification", () => {
 			participantsLimit: 1,
 			waitlistEnabled: true,
 			waitlistOfferHours: 12,
+			waitlistOfferMinutes: null,
 			cancelledAt: null,
 		};
 
@@ -165,6 +166,7 @@ describe("settleActivity offer notification", () => {
 			participantsLimit: 2,
 			waitlistEnabled: true,
 			waitlistOfferHours: 12,
+			waitlistOfferMinutes: null,
 			cancelledAt: null,
 		};
 
@@ -210,6 +212,7 @@ describe("settleActivity with a lowered limit", () => {
 				participantsLimit: 1,
 				waitlistEnabled: true,
 				waitlistOfferHours: 12,
+				waitlistOfferMinutes: null,
 				cancelledAt: null,
 			},
 			now,

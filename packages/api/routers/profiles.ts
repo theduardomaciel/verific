@@ -43,7 +43,7 @@ import {
 	readProjectLayout,
 	writeProjectLayout,
 } from "../lib/profile-links";
-import { requireProjectAccess } from "../lib/project-access";
+import { requireProjectPermission } from "../lib/project-access";
 import { generateShortId } from "../lib/short-id";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
@@ -436,7 +436,11 @@ export const profilesRouter = createTRPCRouter({
 	getProfileFieldOptions: protectedProcedure
 		.input(z.object({ projectId: z.string().uuid() }))
 		.query(async ({ input, ctx }) => {
-			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				input.projectId,
+				ctx.session.user.id,
+				"event.manage",
+			);
 			const versions = await db.query.formVersion.findMany({
 				where: and(
 					eq(formVersion.projectId, input.projectId),
@@ -480,7 +484,11 @@ export const profilesRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			await requireProjectAccess(input.projectId, ctx.session.user.id);
+			await requireProjectPermission(
+				input.projectId,
+				ctx.session.user.id,
+				"event.manage",
+			);
 			const layout = input.layout;
 			const ids = [
 				layout.subtitleFieldId,

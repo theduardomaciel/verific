@@ -40,6 +40,8 @@ interface AddParticipantsDialogProps {
 	onSubmitSelected?: (participants: any[]) => Promise<void>;
 	onAdd?: (participants: any[]) => Promise<void>;
 	onSelect?: (participants: any[]) => Promise<void>;
+	/** Mostra a opção de inscrever além do limite de vagas. */
+	allowOverCapacity?: boolean;
 }
 
 export function AddParticipantsDialog({
@@ -54,6 +56,7 @@ export function AddParticipantsDialog({
 	onSubmitSelected,
 	onAdd,
 	onSelect,
+	allowOverCapacity = false,
 }: AddParticipantsDialogProps) {
 	const resolvedRole: DialogRole = kind ?? "monitor";
 
@@ -74,6 +77,8 @@ export function AddParticipantsDialog({
 	const [currentDate] = useState(() => new Date());
 
 	const [isOpen, setIsOpen] = useState(false);
+	const [overbook, setOverbook] = useState(false);
+	const [overbookReason, setOverbookReason] = useState("");
 
 	const [addedUsersAmount, setAddedUsersAmount] = useState<
 		number | undefined
@@ -195,6 +200,13 @@ export function AddParticipantsDialog({
 					await mutations.mutateAsync({
 						activityId,
 						participantsIdsToAdd: selectedParticipantsIds,
+						...(allowOverCapacity && overbook
+							? {
+									allowOverCapacity: true,
+									overCapacityReason:
+										overbookReason.trim() || undefined,
+								}
+							: {}),
 					});
 				}
 				setAddedUsersAmount(selectedParticipantsIds.length);
@@ -203,8 +215,12 @@ export function AddParticipantsDialog({
 				console.error(error);
 				const noun =
 					resolvedRole === "participant" ? "participante" : "monitor";
+				const message = error instanceof Error ? error.message : "";
 				toast.error(`Erro ao adicionar ${noun}`, {
-					description: `Ocorreu um erro ao adicionar o ${noun}. Tente novamente mais tarde.`,
+					description:
+						message.includes("limit") && allowOverCapacity
+							? "A atividade está lotada. Marque a opção de exceder as vagas para continuar."
+							: `Ocorreu um erro ao adicionar o ${noun}. Tente novamente mais tarde.`,
 				});
 			}
 		});
@@ -288,6 +304,44 @@ export function AddParticipantsDialog({
 								<Loader2 className="text-muted-foreground absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 animate-spin" />
 							)}
 						</div>
+
+						{allowOverCapacity ? (
+							<div className="flex w-full flex-col gap-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-3">
+								<label className="flex cursor-pointer items-start gap-3">
+									<input
+										type="checkbox"
+										id="overbook-checkbox"
+										aria-label="Adicionar mesmo sem vagas"
+										className="mt-1"
+										checked={overbook}
+										onChange={(e) =>
+											setOverbook(e.target.checked)
+										}
+									/>
+									<span className="flex flex-col gap-0.5">
+										<span className="text-sm font-medium">
+											Adicionar mesmo sem vagas
+										</span>
+										<span className="text-muted-foreground text-xs">
+											O vínculo fica marcado como
+											overbooking e a fila de espera não é
+											chamada. Use quando a organização
+											decidir acomodar alguém.
+										</span>
+									</span>
+								</label>
+								{overbook ? (
+									<Input
+										placeholder="Motivo (opcional)"
+										value={overbookReason}
+										onChange={(e) =>
+											setOverbookReason(e.target.value)
+										}
+										maxLength={500}
+									/>
+								) : null}
+							</div>
+						) : null}
 
 						{displayedParticipants &&
 						displayedParticipants.length > 0 ? (

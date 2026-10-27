@@ -230,13 +230,20 @@ export function ToleranceNotice({ tolerance }: { tolerance: number }) {
 	);
 }
 
+/** Formata a janela da oferta (minutos → 10min, 2h, 1d). */
+export function formatOfferWindow(minutes: number): string {
+	if (minutes % 1440 === 0) return `${minutes / 1440}d`;
+	if (minutes % 60 === 0) return `${minutes / 60}h`;
+	return `${minutes}min`;
+}
+
 /** Atividade lotada: o formulário abaixo coloca a pessoa na fila. */
-export function WaitlistIntro({ offerHours }: { offerHours: number }) {
+export function WaitlistIntro({ offerMinutes }: { offerMinutes: number }) {
 	return (
 		<StatusShell
 			icon={<TicketX className="h-5 w-5" />}
 			title="Vagas esgotadas"
-			message={`Entre na fila de espera. Se uma vaga abrir, ela será oferecida a você pela ordem de chegada, e você terá até ${offerHours}h para confirmar.`}
+			message={`Entre na fila de espera. Se uma vaga abrir, ela será oferecida a você pela ordem de chegada, e você terá até ${formatOfferWindow(offerMinutes)} para confirmar.`}
 		/>
 	);
 }
@@ -254,12 +261,12 @@ export function FullStatus() {
 
 export function WaitlistedStatus({
 	position,
-	offerHours,
+	offerMinutes,
 	onLeave,
 	leaving,
 }: {
 	position: number | null;
-	offerHours: number;
+	offerMinutes: number;
 	onLeave: () => void;
 	leaving: boolean;
 }) {
@@ -271,7 +278,7 @@ export function WaitlistedStatus({
 					? `Você está na fila: ${position}º lugar`
 					: "Você está na fila de espera"
 			}
-			message={`Quando uma vaga abrir, ela será oferecida a você e você terá até ${offerHours}h para confirmar. Volte a esta página para acompanhar.`}
+			message={`Quando uma vaga abrir, ela será oferecida a você e você terá até ${formatOfferWindow(offerMinutes)} para confirmar. Volte a esta página para acompanhar.`}
 			action={
 				<Button
 					variant="outline"

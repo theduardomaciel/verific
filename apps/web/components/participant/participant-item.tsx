@@ -103,6 +103,14 @@ function ActivityParticipantItem({
 					<div className="text-foreground flex flex-col items-start justify-start gap-2">
 						{participant.role === "participant" ? (
 							<>
+								{participant.overbooked ? (
+									<span className="rounded-md border border-amber-600/30 bg-amber-600/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-500">
+										Acima do limite
+										{participant.overbookReason
+											? ` · ${participant.overbookReason}`
+											: ""}
+									</span>
+								) : null}
 								<p className="text-left text-sm leading-tight font-medium">
 									{attendedCount > 0 ? (
 										<>

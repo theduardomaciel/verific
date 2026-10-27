@@ -8,7 +8,6 @@ import {
 	activityWaitlistEvent,
 	participant,
 	project,
-	projectModerator,
 	user,
 } from "@verific/drizzle/schema";
 import { z } from "@verific/zod";
@@ -20,6 +19,7 @@ import {
 	prepareActivityAnswers,
 	saveActivityAnswers,
 } from "../enrollment";
+import { requireActivityAnyPermission } from "../lib/project-access";
 import {
 	loadNotificationRecipients,
 	notifyActivityEnrollmentConfirmed,
@@ -75,36 +75,12 @@ async function findActivity(activityId: string) {
 	return found;
 }
 
-/** Só o dono do evento ou um moderador opera a fila da atividade. */
+/** A fila exige `waitlist.manage` ou `activities.manage` (dono sempre passa). */
 async function assertCanManageActivity(activityId: string, userId: string) {
-	const found = await db.query.activity.findFirst({
-		where: eq(activity.id, activityId),
-		columns: { id: true },
-		with: {
-			project: {
-				columns: { ownerId: true },
-				with: {
-					moderators: {
-						where: eq(projectModerator.userId, userId),
-						columns: { userId: true },
-					},
-				},
-			},
-		},
-	});
-	if (!found) {
-		throw new TRPCError({
-			message: "Atividade não encontrada.",
-			code: "NOT_FOUND",
-		});
-	}
-	const { ownerId, moderators } = found.project;
-	if (ownerId !== userId && moderators.length === 0) {
-		throw new TRPCError({
-			message: "Você não pode gerenciar a fila desta atividade.",
-			code: "FORBIDDEN",
-		});
-	}
+	await requireActivityAnyPermission(activityId, userId, [
+		"waitlist.manage",
+		"activities.manage",
+	]);
 }
 
 /** Participante do usuário no evento da atividade. */
@@ -464,6 +440,11 @@ export const waitlistRouter = createTRPCRouter({
 			return {
 				participantsLimit: locked.participantsLimit,
 				enrolled,
+				/** Inscrições acima do limite autorizadas pela organização. */
+				overbooked:
+					locked.participantsLimit == null
+						? 0
+						: Math.max(0, enrolled - locked.participantsLimit),
 				freeSeats:
 					locked.participantsLimit == null
 						? null
@@ -526,10 +507,12 @@ export const waitlistRouter = createTRPCRouter({
 				activityId: z.uuid(),
 				participantIds: z.array(z.uuid()).min(1),
 				reason: z.string().trim().max(500).optional(),
+				/** Promove mesmo sem vagas livres (overbooking). */
+				allowOverCapacity: z.boolean().optional(),
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
-			const { activityId, reason } = input;
+			const { activityId, reason, allowOverCapacity = false } = input;
 			const participantIds = [...new Set(input.participantIds)].sort();
 			await assertCanManageActivity(activityId, ctx.session.user.id);
 			const found = await findActivity(activityId);
@@ -564,6 +547,7 @@ export const waitlistRouter = createTRPCRouter({
 					locked,
 					queue,
 					participantIds,
+					{ allowOverCapacity },
 				);
 				// As respostas foram salvas ao entrar na fila
 				await persistEnrollment(tx, {
@@ -571,6 +555,14 @@ export const waitlistRouter = createTRPCRouter({
 					activityId,
 					participantIds,
 					answerRows: [],
+					...(allowOverCapacity
+						? {
+								overCapacity: {
+									actorUserId: ctx.session.user.id,
+									reason: reason ?? null,
+								},
+							}
+						: {}),
 				});
 				return resolveEnrolledEntries(tx, activityId, queued, {
 					type: "promoted",
