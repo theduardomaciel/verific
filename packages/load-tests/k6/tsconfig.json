@@ -1,0 +1,10 @@
+{
+	"extends": "@verific/typescript-config/base.json",
+	"compilerOptions": {
+		"types": ["k6", "node"],
+		"allowImportingTsExtensions": true,
+		// Os tipos do AppRouter puxam os templates de e-mail do @verific/api
+		"jsx": "react-jsx"
+	},
+	"include": ["."]
+}
