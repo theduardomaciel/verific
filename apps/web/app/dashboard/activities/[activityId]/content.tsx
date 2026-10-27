@@ -43,6 +43,7 @@ import { CollapsibleDescription } from "@/components/shared/collapsible-descript
 import { SortBy } from "@/components/sort-by";
 
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { useNow } from "@/hooks/use-now";
 import { useParsedSearchParams } from "@/hooks/use-parsed-search-params";
 import {
 	getSessionsDateString,
@@ -61,7 +62,6 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 	const utils = trpc.useUtils();
 	const releaseNoShowMutation = trpc.releaseNoShowSeats.useMutation();
 	const { confirm, dialogProps } = useConfirmDialog();
-	const [noShowReleased, setNoShowReleased] = useState(false);
 	const parsedParams = useParsedSearchParams((raw) =>
 		getActivityParams.parse(raw),
 	);
@@ -70,6 +70,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 	// Keep in sync with the `lg:` classes used in this file and in waitlist-list.tsx.
 	const isDesktop = useMediaQuery("(min-width: 1024px)");
 	const [tab, setTab] = useState<ActivityTab>("participants");
+	const now = useNow();
 
 	const { data, isPending, isError } = trpc.getActivity.useQuery(
 		{
@@ -113,6 +114,16 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 
 	const participants = activity.participants.filter(
 		(t) => t.role === "participant",
+	);
+
+	const activityEnded =
+		now !== null &&
+		activity.sessions.length > 0 &&
+		activity.sessions.every((session) => new Date(session.endsAt) <= now);
+	const hasNoShowCandidates = participants.some(
+		(participant) =>
+			!participant.noShow &&
+			(participant.sessionAttendances?.length ?? 0) === 0,
 	);
 
 	const sessions = getSessionsSorted(activity.sessions);
@@ -399,7 +410,9 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 							Adicionar monitores
 						</Button>
 					</AddUsersDialog>
-					{can("activities.manage") && !noShowReleased ? (
+					{can("activities.manage") &&
+					activityEnded &&
+					hasNoShowCandidates ? (
 						<Button
 							variant="outline"
 							size="lg"
@@ -423,7 +436,6 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 											? `${result.released} vaga(s) liberada(s) por ausência.`
 											: "Nenhum ausente encontrado.",
 									);
-									setNoShowReleased(true);
 									await utils.getActivity.invalidate({
 										activityId,
 									});
