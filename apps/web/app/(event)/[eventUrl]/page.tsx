@@ -121,9 +121,9 @@ function EventPageBody({ project }: { project: EventPageProject }) {
 						src={project.thumbnailUrl || "/images/cover.png"}
 						alt={`Imagem de divulgação de ${project.name}`}
 						width={400}
-						height={240}
+						height={225}
 						sizes="(max-width: 768px) 100vw, 400px"
-						className="border-primary max-w-md overflow-hidden rounded-3xl border-2"
+						className="border-primary aspect-video max-w-md overflow-hidden rounded-3xl border-2 object-cover"
 						loading="eager"
 					/>
 					<ShareDialog
