@@ -61,15 +61,20 @@ describe("getActivityLog", () => {
 	});
 
 	it("maps rows into entries with a detail and no cursor when exhausted", async () => {
-		selectResult.rows = [row()];
+		selectResult.rows = [
+			row({
+				type: "enrollment.removed",
+				metadata: { reason: "Faltou ao encontro" },
+			}),
+		];
 
 		const result = await caller.getActivityLog({ projectId: PROJECT_ID });
 
 		expect(result.entries).toEqual([
 			expect.objectContaining({
-				type: "reception.checkin",
+				type: "enrollment.removed",
 				participantName: "Ana",
-				detail: "Dia 2026-01-01",
+				detail: "Faltou ao encontro",
 			}),
 		]);
 		expect(result.nextCursor).toBeNull();

@@ -29,17 +29,10 @@ const cursorSchema = z
 	.object({ createdAt: z.date(), id: z.string().uuid() })
 	.nullish();
 
-function detailOf(
-	type: EventLogType,
-	metadata: Record<string, unknown>,
-): string | null {
+function detailOf(metadata: Record<string, unknown>): string | null {
 	const reason =
 		typeof metadata.reason === "string" ? metadata.reason.trim() : "";
-	if (reason) return reason;
-	if (type === "reception.checkin" && typeof metadata.day === "string") {
-		return `Dia ${metadata.day}`;
-	}
-	return null;
+	return reason || null;
 }
 
 /**
@@ -114,7 +107,7 @@ export const logsRouter = createTRPCRouter({
 						activityId: row.activityId,
 						activityName: row.activityName,
 						actorName: row.actorName,
-						detail: detailOf(row.type, row.metadata),
+						detail: detailOf(row.metadata),
 						metadata: row.metadata,
 					})),
 					nextCursor:

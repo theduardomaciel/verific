@@ -25,6 +25,7 @@
 		"db:drop": "turbo run db:drop",
 		"db:seed": "turbo run db:seed",
 		"db:seed:notifications": "turbo run db:seed:notifications",
+		"db:seed:logs": "turbo run db:seed:logs",
 		"db:seed:prod": "turbo run db:seed:prod",
 		"db:seed:minimal:prod": "turbo run db:seed:minimal:prod",
 		"prepare": "husky"

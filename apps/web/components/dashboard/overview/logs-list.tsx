@@ -24,6 +24,7 @@ import {
 import type { RouterOutput } from "@verific/api";
 import type { EventLogType } from "@verific/drizzle/schema";
 
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 
 import { useDashboard } from "@/components/dashboard/dashboard-context";
@@ -118,6 +119,7 @@ const FILTER_GROUPS: Array<{ label: string; types: EventLogType[] }> = [
 ];
 
 const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
+	timeZone: "America/Sao_Paulo",
 	day: "2-digit",
 	month: "short",
 	hour: "2-digit",
@@ -182,41 +184,40 @@ export function LogsList({ className }: { className?: string }) {
 	return (
 		<div
 			className={cn(
-				"flex min-h-0 flex-1 flex-col gap-4 rounded-lg border p-6",
+				"flex min-h-0 flex-1 flex-col rounded-lg border pt-6",
 				className,
 			)}
 		>
 			<div className="flex shrink-0 flex-col gap-3">
-				<h2 className="text-base font-medium">
-					Log de atividades e recepção
-				</h2>
-				<div className="relative w-full">
-					<Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-					<Input
-						className="w-full pl-9"
-						placeholder="Pesquisar por participante, atividade ou autor"
-						value={search}
-						onChange={(event) => setSearch(event.target.value)}
-					/>
+				<h2 className="px-6 text-base font-medium">Logs do evento</h2>
+				<div className="px-6">
+					<div className="relative w-full">
+						<Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+						<Input
+							className="w-full pl-9"
+							placeholder="Pesquisar por participante, atividade ou autor"
+							value={search}
+							onChange={(event) => setSearch(event.target.value)}
+						/>
+					</div>
 				</div>
-				<div className="flex flex-wrap gap-2">
+				<div className="flex flex-wrap gap-2 border-b px-6 pb-3">
 					{FILTER_GROUPS.map((group) => {
 						const active = selectedGroups.includes(group.label);
 						return (
-							<button
+							<Badge
 								key={group.label}
-								type="button"
 								onClick={() => toggleGroup(group.label)}
 								aria-pressed={active}
 								className={cn(
-									"rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+									"cursor-pointer px-2.5 py-2.5",
 									active
-										? "bg-primary text-primary-foreground border-primary"
-										: "text-muted-foreground hover:bg-muted border-transparent",
+										? "bg-primary text-primary-foreground"
+										: "bg-muted text-muted-foreground",
 								)}
 							>
 								{group.label}
-							</button>
+							</Badge>
 						);
 					})}
 				</div>
@@ -224,15 +225,15 @@ export function LogsList({ className }: { className?: string }) {
 
 			<div className="min-h-0 flex-1 overflow-y-auto">
 				{query.isPending ? (
-					<p className="text-muted-foreground text-sm">
+					<p className="text-muted-foreground pt-6 text-center text-sm">
 						Carregando log...
 					</p>
 				) : query.isError ? (
-					<p className="text-muted-foreground text-sm">
+					<p className="text-muted-foreground pt-6 text-center text-sm">
 						Não foi possível carregar o log.
 					</p>
 				) : entries.length === 0 ? (
-					<p className="text-muted-foreground text-sm">
+					<p className="text-muted-foreground pt-6 text-center text-sm">
 						Nenhum registro encontrado.
 					</p>
 				) : (
@@ -257,7 +258,7 @@ function LogRow({ entry }: { entry: LogEntry }) {
 	const meta = TYPE_META[entry.type];
 	const Icon = meta.icon;
 	return (
-		<li className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
+		<li className="flex items-center gap-3 px-6 py-3">
 			<span className="bg-muted text-muted-foreground flex size-9 shrink-0 items-center justify-center rounded-full">
 				<Icon className="size-4" />
 			</span>
