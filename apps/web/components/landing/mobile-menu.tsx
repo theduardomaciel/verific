@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -34,6 +35,16 @@ export function MobileMenu({
 	eventTheme = false,
 }: MobileMenuProps) {
 	const pathname = usePathname();
+
+	// Trava o scroll da página enquanto o painel em tela cheia está aberto.
+	useEffect(() => {
+		if (!isOpen) return;
+		const previous = document.body.style.overflow;
+		document.body.style.overflow = "hidden";
+		return () => {
+			document.body.style.overflow = previous;
+		};
+	}, [isOpen]);
 
 	const isLinkActive = (href: string): boolean => {
 		if (href === prefix) {

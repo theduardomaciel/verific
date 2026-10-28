@@ -30,8 +30,10 @@ vi.mock("./enrollment", () => ({
 }));
 
 import {
+	activity,
 	activitySession,
 	activityWaitlist,
+	activityWaitlistEvent,
 	participantOnActivity,
 } from "@verific/drizzle/schema";
 
@@ -52,23 +54,28 @@ function makeTx(args: {
 	inserted?: unknown[];
 }) {
 	const { entries, enrolled, startsAt, endsAt, inserted = [] } = args;
+	const promiseFor = (table: unknown) => {
+		const result =
+			table === activityWaitlist
+				? entries
+				: table === activitySession
+					? [{ startsAt, endsAt }]
+					: table === participantOnActivity
+						? [{ amount: enrolled }]
+						: table === activity
+							? [{ projectId: "pr1" }]
+							: [];
+		const promise = Promise.resolve(result);
+		(promise as unknown as { orderBy: () => unknown }).orderBy = () =>
+			promise;
+		return promise;
+	};
 	return {
 		select: () => ({
 			from: (table: unknown) => ({
-				where: () => {
-					const result =
-						table === activityWaitlist
-							? entries
-							: table === activitySession
-								? [{ startsAt, endsAt }]
-								: table === participantOnActivity
-									? [{ amount: enrolled }]
-									: [];
-					const promise = Promise.resolve(result);
-					(promise as unknown as { orderBy: () => unknown }).orderBy =
-						() => promise;
-					return promise;
-				},
+				where: () => promiseFor(table),
+				// `recordParticipantEvents` resolve nomes com um join.
+				innerJoin: () => ({ where: () => promiseFor(table) }),
 			}),
 		}),
 		update: () => ({
@@ -79,9 +86,10 @@ function makeTx(args: {
 				},
 			}),
 		}),
-		insert: () => ({
+		insert: (table: unknown) => ({
 			values: async (rows: unknown[]) => {
-				inserted.push(...rows);
+				// Só a tabela da fila é observada pelos testes.
+				if (table === activityWaitlistEvent) inserted.push(...rows);
 			},
 		}),
 	} as never;

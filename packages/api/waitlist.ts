@@ -4,10 +4,12 @@ import {
 	activitySession,
 	activityWaitlist,
 	activityWaitlistEvent,
+	type EventLogType,
 	type WaitlistEventType,
 } from "@verific/drizzle/schema";
 
 import { deleteActivityAnswers } from "./enrollment";
+import { recordParticipantEvents } from "./lib/event-log";
 import {
 	notifyActivityWaitlistOffered,
 	notifyActivityWaitlistOfferRevoked,
@@ -21,6 +23,17 @@ import {
 import { byQueueOrder, planSettlement } from "./waitlist-plan";
 
 const ACTIVE = ["waiting", "offered"] as const;
+
+const WAITLIST_LOG_TYPE: Record<WaitlistEventType, EventLogType> = {
+	joined: "waitlist.joined",
+	left: "waitlist.left",
+	offered: "waitlist.offered",
+	confirmed: "waitlist.confirmed",
+	expired: "waitlist.expired",
+	promoted: "waitlist.promoted",
+	removed: "waitlist.removed",
+	revoked: "waitlist.revoked",
+};
 
 async function recordEvents(
 	tx: Tx,
@@ -39,6 +52,16 @@ async function recordEvents(
 			actorUserId,
 			reason: reason ?? null,
 		})),
+	);
+	await recordParticipantEvents(
+		tx,
+		{
+			activityId,
+			type: WAITLIST_LOG_TYPE[type],
+			actorUserId,
+			metadata: { reason: reason ?? null, waitlistStatus: type },
+		},
+		participantIds,
 	);
 }
 

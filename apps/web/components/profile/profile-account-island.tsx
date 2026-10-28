@@ -23,6 +23,7 @@ import { trpc } from "@/lib/trpc/react";
 
 import { ProfileBanner } from "./profile-banner";
 import { ProfileOwnerTickets } from "./profile-owner-tickets";
+import { ProfileQrButton } from "./profile-qr-button";
 
 interface ProfileAccountIslandProps {
 	eventUrl: string;
@@ -113,6 +114,10 @@ function ProfileAccountIslandInner({
 								/>
 							</DialogContent>
 						</Dialog>
+						<ProfileQrButton
+							eventUrl={eventUrl}
+							shortId={shortId}
+						/>
 						<LogoutForm redirectTo={`/${eventUrl}`}>
 							<Button
 								type="submit"

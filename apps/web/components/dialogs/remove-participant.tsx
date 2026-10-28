@@ -30,6 +30,8 @@ interface RemoveParticipantDialogProps {
 	activityId?: string;
 	projectUrl: string;
 	userEmail: string;
+	/** Confirmação simples (sem aviso longo nem motivo), ex.: monitores. */
+	simple?: boolean;
 }
 
 export function RemoveParticipantDialog({
@@ -38,6 +40,7 @@ export function RemoveParticipantDialog({
 	activityId,
 	projectUrl,
 	userEmail,
+	simple = false,
 }: RemoveParticipantDialogProps) {
 	const [open, setOpen] = useState(false);
 	const [reason, setReason] = useState("");
@@ -144,43 +147,62 @@ export function RemoveParticipantDialog({
 			<DialogContent>
 				<DialogHeader>
 					<Ban className="h-8 w-8" />
-					<DialogTitle>Remover Participante</DialogTitle>
+					<DialogTitle>
+						{simple ? "Remover monitor" : "Remover Participante"}
+					</DialogTitle>
 					<DialogDescription className="flex flex-col gap-4">
-						Ao remover este participante, ele perderá acesso ao{" "}
-						{activityId ? "conteúdo da atividade" : "evento"} e será
-						notificado por e-mail, caso essa notificação esteja
-						habilitada nas configurações do evento.
+						{simple ? (
+							<>
+								Remover <strong>{userEmail}</strong> como
+								monitor desta atividade?
+							</>
+						) : (
+							<>
+								Ao remover este participante, ele perderá acesso
+								ao{" "}
+								{activityId
+									? "conteúdo da atividade"
+									: "evento"}{" "}
+								e será notificado por e-mail, caso essa
+								notificação esteja habilitada nas configurações
+								do evento.
+							</>
+						)}
 					</DialogDescription>
-					<div className="flex flex-col items-start justify-center gap-4">
-						<strong className="text-sm font-semibold">
-							E-mail do participante:
-						</strong>
-						<code className="bg-muted w-full rounded p-2 text-center">
-							&nbsp;{userEmail}
-						</code>
-						<p className="text-muted-foreground text-sm">
-							Tem certeza de que deseja continuar?
-						</p>
-					</div>
-					<div className="flex flex-col gap-2">
-						<label
-							htmlFor="remove-participant-reason"
-							className="text-sm font-semibold"
-						>
-							Motivo (opcional)
-						</label>
-						<Textarea
-							id="remove-participant-reason"
-							placeholder="Ex.: Conflito de horário com outra atividade."
-							value={reason}
-							onChange={(e) => setReason(e.target.value)}
-							maxLength={500}
-							rows={3}
-						/>
-						<p className="text-muted-foreground text-right text-xs">
-							{reason.length}/500
-						</p>
-					</div>
+					{simple ? null : (
+						<>
+							<div className="flex flex-col items-start justify-center gap-4">
+								<strong className="text-sm font-semibold">
+									E-mail do participante:
+								</strong>
+								<code className="bg-muted w-full rounded p-2 text-center">
+									&nbsp;{userEmail}
+								</code>
+								<p className="text-muted-foreground text-sm">
+									Tem certeza de que deseja continuar?
+								</p>
+							</div>
+							<div className="flex flex-col gap-2">
+								<label
+									htmlFor="remove-participant-reason"
+									className="text-sm font-semibold"
+								>
+									Motivo (opcional)
+								</label>
+								<Textarea
+									id="remove-participant-reason"
+									placeholder="Ex.: Conflito de horário com outra atividade."
+									value={reason}
+									onChange={(e) => setReason(e.target.value)}
+									maxLength={500}
+									rows={3}
+								/>
+								<p className="text-muted-foreground text-right text-xs">
+									{reason.length}/500
+								</p>
+							</div>
+						</>
+					)}
 				</DialogHeader>
 				<DialogFooter className="flex gap-2">
 					<Button

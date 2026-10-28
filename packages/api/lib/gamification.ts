@@ -43,6 +43,8 @@ import {
 	user,
 } from "@verific/drizzle/schema";
 
+import { recordEvent } from "./event-log";
+
 import type { Tx } from "../seats";
 
 /** Subconjunto do cliente drizzle usado aqui (raiz ou transação). */
@@ -757,6 +759,14 @@ export async function checkInAtReception(
 			unlockedStickers: [],
 		};
 	}
+
+	await recordEvent(tx, {
+		projectId: input.project.id,
+		participantId: input.participantId,
+		actorUserId: input.actorUserId,
+		type: "reception.checkin",
+		metadata: { day },
+	});
 
 	const [countRow] = await tx
 		.select({ amount: count() })

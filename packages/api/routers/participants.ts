@@ -26,6 +26,7 @@ import {
 import { z } from "@verific/zod";
 
 import { parseCheckInCode } from "../lib/checkin-code";
+import { recordEvent } from "../lib/event-log";
 import {
 	awardSessionAttendance,
 	awardSessionCompletion,
@@ -43,7 +44,7 @@ import {
 	notifyEventRegistrationRemoved,
 } from "../notifications";
 import { getParticipantsParams } from "../schemas";
-import { lockActivity } from "../seats";
+import { countEnrolled, lockActivity } from "../seats";
 import { settleActivity } from "../waitlist";
 
 // Re-export client-safe schema so existing server imports keep working.
@@ -575,32 +576,49 @@ export const participantsRouter = createTRPCRouter({
 			const participantId = row.id;
 			const participantName = row.user.name;
 
-			// Só permite credenciar quem está inscrito na atividade,
-			// exceto se o credenciador for monitor da atividade
-			if (mode === "in" && !isMonitor) {
-				const subscription = await db
-					.select({ amount: count() })
+			// Papel do participante nesta atividade, resolvido uma única vez:
+			// nulo = não inscrito, "participant" = inscrito, "monitor" = monitor.
+			let enrollmentRole: "participant" | "monitor" | null = null;
+			if (mode === "in") {
+				const [enrollment] = await db
+					.select({ role: participantOnActivity.role })
 					.from(participantOnActivity)
 					.where(
 						and(
-							eq(
-								participantOnActivity.activityId,
-								session.activityId,
-							),
+							eq(participantOnActivity.activityId, activityId),
 							eq(
 								participantOnActivity.participantId,
 								participantId,
 							),
 						),
 					);
-
-				if ((subscription?.[0]?.amount ?? 0) === 0) {
-					throw new TRPCError({
-						code: "BAD_REQUEST",
-						message: "Participante não está inscrito na atividade",
-					});
-				}
+				enrollmentRole = enrollment?.role ?? null;
 			}
+
+			// Monitores não são participantes. Credenciá-los (inclusive a si
+			// mesmos) criaria presença sem inscrição de participante, inflando
+			// a contagem de presentes. Bloqueamos o check-in de monitores.
+			if (enrollmentRole === "monitor") {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message:
+						"Monitores não podem ser credenciados como participantes.",
+				});
+			}
+
+			// Só permite credenciar quem está inscrito na atividade,
+			// exceto se o credenciador for monitor da atividade
+			if (mode === "in" && !isMonitor && enrollmentRole === null) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Participante não está inscrito na atividade",
+				});
+			}
+
+			// Monitor credencia quem não está inscrito: marcamos para criar o vínculo
+			// (enrollment) dentro da transação, permitindo overbooking quando cheio.
+			const autoEnroll =
+				mode === "in" && isMonitor && enrollmentRole === null;
 
 			const sessionRef = {
 				id: session.id,
@@ -615,6 +633,31 @@ export const participantsRouter = createTRPCRouter({
 				let pointsAwarded = 0;
 				let totalPoints = 0;
 				let unlockedStickers: StickerAward[] = [];
+
+				// Monitor credencia não-inscrito: cria o vínculo (enrollment),
+				// permitindo overbooking quando a atividade está cheia.
+				if (autoEnroll) {
+					const locked = await lockActivity(tx, activityId);
+					const enrolledCount = await countEnrolled(tx, activityId);
+					const full =
+						locked.participantsLimit != null &&
+						enrolledCount >= locked.participantsLimit;
+					await tx
+						.insert(participantOnActivity)
+						.values({
+							activityId,
+							participantId,
+							role: "participant",
+							noShow: false,
+							overbooked: full,
+							overbookReason: full
+								? "Credenciamento pelo monitor."
+								: null,
+							overbookedByUserId: full ? staffUserId : null,
+							overbookedAt: full ? new Date() : null,
+						})
+						.onConflictDoNothing();
+				}
 
 				if (mode === "in") {
 					const inserted = await tx
@@ -756,6 +799,26 @@ export const participantsRouter = createTRPCRouter({
 					}
 				}
 
+				if (mode === "in" && !alreadyPresent) {
+					await recordEvent(tx, {
+						projectId: event.id,
+						activityId,
+						participantId,
+						actorUserId: staffUserId,
+						type: "session.checkin",
+						metadata: { sessionId },
+					});
+				} else if (mode === "out" && !alreadyCheckedOut) {
+					await recordEvent(tx, {
+						projectId: event.id,
+						activityId,
+						participantId,
+						actorUserId: staffUserId,
+						type: "session.checkout",
+						metadata: { sessionId },
+					});
+				}
+
 				return {
 					success: true as const,
 					participantId,
@@ -859,6 +922,17 @@ export const participantsRouter = createTRPCRouter({
 					locked.push(await lockActivity(tx, activityId));
 				}
 
+				// Grava antes do delete: o snapshot do nome preserva o registro
+				// e a FK é anulada em cascata.
+				await recordEvent(tx, {
+					projectId: participantData.project.id,
+					participantId,
+					actorUserId: requestUserId,
+					type: "participant.removed_event",
+					participantName: participantData.user.name,
+					metadata: { reason: reason ?? null, activityIds },
+				});
+
 				await tx
 					.delete(participant)
 					.where(eq(participant.id, participantId));
@@ -958,6 +1032,14 @@ export const participantsRouter = createTRPCRouter({
 				for (const activityId of activityIds) {
 					locked.push(await lockActivity(tx, activityId));
 				}
+
+				await recordEvent(tx, {
+					projectId,
+					participantId,
+					actorUserId: requestUserId,
+					type: "participant.removed_event",
+					metadata: { self: true, activityIds },
+				});
 
 				await tx
 					.delete(participant)

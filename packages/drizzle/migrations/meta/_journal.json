@@ -120,6 +120,13 @@
 			"when": 1793194131678,
 			"tag": "0016_many_otto_octavius",
 			"breakpoints": true
+		},
+		{
+			"idx": 17,
+			"version": "7",
+			"when": 1793223232262,
+			"tag": "0017_typical_firestar",
+			"breakpoints": true
 		}
 	]
 }

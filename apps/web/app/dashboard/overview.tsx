@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 
 import { Activity, BarChart3, Clock, Globe, Users } from "lucide-react";
 
@@ -12,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
 import { ActivitiesList } from "@/components/dashboard/overview/activities-list";
 import { GraphSelector } from "@/components/dashboard/overview/graph-selector";
+import { LogsList } from "@/components/dashboard/overview/logs-list";
 import { MetricCard } from "@/components/dashboard/overview/metric-card";
 
 import { formatWorkload } from "@/lib/date";
@@ -35,7 +37,11 @@ export function DashboardSkeleton() {
 }
 
 export function Overview() {
-	const { projectId, projectUrl } = useDashboard();
+	const { projectId, projectUrl, can } = useDashboard();
+	const [tab, setTab] = useState("overview");
+
+	// Staff (monitores) e admins já têm `participants.view`/`reception.manage`.
+	const canSeeLogs = can("participants.view") || can("reception.manage");
 
 	const activitiesQuery = trpc.getActivities.useQuery(
 		{ projectId, sort: "asc", pageSize: 5 },
@@ -45,7 +51,6 @@ export function Overview() {
 		{ projectId },
 		{ staleTime: 2 * 60 * 1000, refetchOnWindowFocus: false },
 	);
-
 	if (activitiesQuery.isPending || statsQuery.isPending) {
 		return <DashboardSkeleton />;
 	}
@@ -67,7 +72,8 @@ export function Overview() {
 	return (
 		<main className="container-d py-container-v flex min-h-[calc(100dvh-var(--dashboard-header-height))] w-full flex-1 flex-col items-center justify-start gap-8 md:max-h-[calc(100dvh-var(--dashboard-header-height))]">
 			<Tabs
-				defaultValue="overview"
+				value={tab}
+				onValueChange={setTab}
 				className="flex w-full flex-1 flex-col lg:min-h-0"
 			>
 				<div className="mb-4 flex w-full flex-wrap items-center justify-between space-y-2">
@@ -84,7 +90,7 @@ export function Overview() {
 							<TabsTrigger value="analytics" disabled>
 								Relatórios
 							</TabsTrigger>
-							<TabsTrigger value="reports" disabled>
+							<TabsTrigger value="logs" disabled={!canSeeLogs}>
 								Logs
 							</TabsTrigger>
 						</TabsList>
@@ -136,7 +142,11 @@ export function Overview() {
 						<MetricCard
 							title="Taxa de ocupação"
 							value={`${stats.occupancyRate.toFixed(1)}%`}
-							change={`+${stats.occupancyRate.toFixed(1)}% do último dia`}
+							change={
+								stats.totalPossibleSeats > 0
+									? `${stats.totalEnrollments} de ${stats.totalPossibleSeats} vagas ocupadas`
+									: "Sem vagas limitadas"
+							}
 							icon={
 								<BarChart3 className="text-muted-foreground h-4 w-4" />
 							}
@@ -155,6 +165,13 @@ export function Overview() {
 							className="min-h-0 overflow-hidden lg:h-full lg:min-h-0"
 						/>
 					</div>
+				</TabsContent>
+
+				<TabsContent
+					value="logs"
+					className="flex min-h-0 flex-1 flex-col"
+				>
+					<LogsList className="min-h-0" />
 				</TabsContent>
 			</Tabs>
 		</main>

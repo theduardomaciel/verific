@@ -13,6 +13,7 @@ import {
 } from "@verific/drizzle/schema";
 import type { z } from "@verific/zod";
 
+import { recordParticipantEvents } from "./lib/event-log";
 import { awardEnrollment } from "./lib/gamification";
 import {
 	buildAnswerRows,
@@ -293,6 +294,27 @@ export async function persistEnrollment(
 	}
 
 	await saveActivityAnswers(tx, answerRows);
+
+	if (inserted.length > 0) {
+		await recordParticipantEvents(
+			tx,
+			{ projectId, activityId, type: "enrollment.created" },
+			inserted.map((row) => row.participantId),
+		);
+		if (overbookedIds.size > 0) {
+			await recordParticipantEvents(
+				tx,
+				{
+					projectId,
+					activityId,
+					type: "enrollment.overbooked",
+					actorUserId: args.overCapacity?.actorUserId ?? null,
+					metadata: { reason: args.overCapacity?.reason ?? null },
+				},
+				[...overbookedIds],
+			);
+		}
+	}
 
 	// Gamificação é acessória: roda num savepoint e nunca desfaz a
 	// inscrição. Só pontua vínculos realmente novos.

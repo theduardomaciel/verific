@@ -48,6 +48,7 @@ import {
 	persistEnrollment,
 	prepareActivityAnswers,
 } from "../enrollment";
+import { recordEvent, recordParticipantEvents } from "../lib/event-log";
 import { containsPattern } from "../lib/like";
 import {
 	hasProjectAccess,
@@ -1300,6 +1301,15 @@ export const activitiesRouter = createTRPCRouter({
 					await setActivityTags(tx, activityId, tagIds, projectId);
 				}
 
+				await recordEvent(tx, {
+					projectId,
+					activityId,
+					actorUserId: userId,
+					type: "activity.created",
+					activityName: name,
+					metadata: { category, audience },
+				});
+
 				return activityId;
 			});
 
@@ -1474,6 +1484,14 @@ export const activitiesRouter = createTRPCRouter({
 
 				// Limite ou horários novos podem abrir vagas na fila
 				await settleActivity(tx, await lockActivity(tx, activityId));
+
+				await recordEvent(tx, {
+					projectId: existing.projectId,
+					activityId,
+					actorUserId: ctx.session.user.id,
+					type: "activity.updated",
+					activityName: name ?? null,
+				});
 			});
 
 			// E-mail de atualização só quando data/horário ou local mudam de
@@ -1903,6 +1921,16 @@ export const activitiesRouter = createTRPCRouter({
 					});
 				}
 				await settleActivity(tx, locked);
+				await recordParticipantEvents(
+					tx,
+					{
+						projectId: access.projectId,
+						activityId,
+						type: "activity.monitor_added",
+						actorUserId: ctx.session.user.id,
+					},
+					participantsIdsToAdd,
+				);
 			});
 		}),
 	releaseNoShowSeats: protectedProcedure
@@ -1996,6 +2024,16 @@ export const activitiesRouter = createTRPCRouter({
 						),
 					);
 				await settleActivity(tx, locked);
+				await recordParticipantEvents(
+					tx,
+					{
+						projectId: found.projectId,
+						activityId: input.activityId,
+						type: "enrollment.no_show_released",
+						actorUserId: ctx.session.user.id,
+					},
+					noShowIds,
+				);
 			});
 
 			const contacts = await loadNotificationRecipients(noShowIds);
@@ -2091,6 +2129,14 @@ export const activitiesRouter = createTRPCRouter({
 						})),
 					);
 				}
+
+				await recordEvent(tx, {
+					projectId: found.projectId,
+					activityId,
+					actorUserId: userId,
+					type: "activity.cancelled",
+					metadata: { waitlistClosed: closed.length },
+				});
 			});
 
 			void notifyActivityCancelled({
@@ -2263,6 +2309,8 @@ export const activitiesRouter = createTRPCRouter({
 				activeParticipants,
 				activeParticipantsInLastDay,
 				occupancyRate,
+				totalEnrollments,
+				totalPossibleSeats: Number(totalPossible),
 				graphData,
 				coursesData: [] as Array<{ course: string; count: number }>,
 			};

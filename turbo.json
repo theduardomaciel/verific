@@ -71,6 +71,9 @@
 		"db:seed:notifications": {
 			"cache": false
 		},
+		"db:seed:logs": {
+			"cache": false
+		},
 		"db:seed:prod": {
 			"cache": false
 		},

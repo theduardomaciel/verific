@@ -53,6 +53,7 @@ function List({
 	participants,
 	sessions,
 	activityId,
+	projectUrl,
 	currentParticipantId,
 	className,
 	emptyMessage,
@@ -84,6 +85,7 @@ function List({
 					sessions={sessions}
 					showJoinedAt={hasActivity}
 					url={participantUrl}
+					projectUrl={projectUrl}
 					currentParticipantId={currentParticipantId}
 				/>
 			))}

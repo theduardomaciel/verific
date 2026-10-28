@@ -3,6 +3,7 @@ import { availabilityRouter } from "./routers/availability";
 import { badgesRouter } from "./routers/badges";
 import { formsRouter } from "./routers/forms";
 import { gamificationRouter } from "./routers/gamification";
+import { logsRouter } from "./routers/logs";
 import { notificationsRouter } from "./routers/notifications";
 import { participantOnActivitiesRouter } from "./routers/participantOnActivities";
 import { participantsRouter } from "./routers/participants";
@@ -33,6 +34,7 @@ export const appRouter = mergeRouters(
 	gamificationRouter,
 	waitlistRouter,
 	notificationsRouter,
+	logsRouter,
 );
 
 export { createCallerFactory };

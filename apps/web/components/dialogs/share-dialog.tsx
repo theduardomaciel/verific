@@ -26,6 +26,8 @@ interface ShareDialogProps {
 	url: string;
 	title?: string;
 	description?: string;
+	/** Abre sempre o diálogo (QR + link) em vez da folha nativa de share. */
+	alwaysShowDialog?: boolean;
 }
 
 export function ShareDialog({
@@ -33,13 +35,14 @@ export function ShareDialog({
 	children,
 	title = "Compartilhar",
 	description = "Use o QR code ou copie o link para compartilhar",
+	alwaysShowDialog = false,
 }: ShareDialogProps) {
 	const [open, setOpen] = useState(false);
 
 	const shareData = { title, text: description, url };
 
 	const handleClick = async () => {
-		if (navigator.share) {
+		if (!alwaysShowDialog && navigator.share) {
 			try {
 				await navigator.share(shareData);
 			} catch {

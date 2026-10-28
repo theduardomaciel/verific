@@ -34,6 +34,8 @@ interface BaseProps {
 interface ActivityParticipantCardProps extends BaseProps {
 	participant: ActivityParticipant;
 	sessions?: RouterOutput["getActivity"]["activity"]["sessions"];
+	/** Slug do evento, usado nas mutations (não é a URL da lista). */
+	projectUrl: string;
 	/** Id do participante do usuário logado nesta atividade. Na própria
 	 * linha, em vez de remover, oferecemos a saída da atividade. */
 	currentParticipantId?: string | null;
@@ -77,6 +79,7 @@ function ActivityParticipantItem({
 	participant,
 	sessions,
 	url,
+	projectUrl,
 	currentParticipantId,
 }: ActivityParticipantCardProps) {
 	const attendances = participant.sessionAttendances ?? [];
@@ -193,14 +196,15 @@ function ActivityParticipantItem({
 							<ParticipantQuitButton
 								activityId={participant.activityId}
 								participantId={participant.id}
-								projectUrl={url}
+								projectUrl={projectUrl}
 							/>
 						) : (
 							<RemoveParticipantDialog
 								participantId={participant.id}
 								activityId={participant.activityId}
-								projectUrl={url}
+								projectUrl={projectUrl}
 								userEmail={participant.user.email}
+								simple={participant.role !== "participant"}
 							>
 								<Button variant="ghost" size="icon">
 									{participant.role === "participant" ? (

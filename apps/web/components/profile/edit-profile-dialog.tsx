@@ -81,33 +81,43 @@ export function EditProfileDialog({
 				<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-160">
 					<DialogHeader>
 						<DialogTitle>Editar perfil</DialogTitle>
+						<DialogDescription>
+							Atualize suas respostas e preferências de
+							privacidade.
+						</DialogDescription>
 					</DialogHeader>
-					<EditMyAnswersForm
-						projectId={projectId}
-						projectUrl={eventUrl}
-					/>
-					<div className="mt-6 border-t pt-4">
-						<div className="mb-4">
+					<div className="flex flex-col gap-6">
+						<EditMyAnswersForm
+							projectId={projectId}
+							projectUrl={eventUrl}
+						/>
+						<section className="flex flex-col gap-3 rounded-lg border p-4">
+							<h3 className="text-sm font-bold">Privacidade</h3>
 							<RankingPrivacyToggle
 								projectId={projectId}
 								eventUrl={eventUrl}
 								shortId={shortId}
 							/>
-						</div>
-						<Button
-							variant="destructive"
-							className="w-full"
-							onClick={() => setRemoveOpen(true)}
-							disabled={removeSelfMutation.isPending}
-						>
-							<LogOut className="mr-2 h-4 w-4" />
-							Sair do evento
-						</Button>
-						<p className="text-muted-foreground mt-2 text-center text-xs">
-							Esta ação é irreversível. Você perderá acesso ao
-							evento e todas as suas inscrições em atividades
-							serão canceladas.
-						</p>
+						</section>
+						<section className="border-destructive/40 bg-destructive/5 flex flex-col gap-2 rounded-lg border p-4">
+							<h3 className="text-destructive text-sm font-bold">
+								Zona de perigo
+							</h3>
+							<p className="text-muted-foreground text-xs">
+								Sair do evento é irreversível: você perde o
+								acesso e todas as suas inscrições em atividades
+								são canceladas.
+							</p>
+							<Button
+								variant="destructive"
+								className="w-full"
+								onClick={() => setRemoveOpen(true)}
+								disabled={removeSelfMutation.isPending}
+							>
+								<LogOut className="mr-2 h-4 w-4" />
+								Sair do evento
+							</Button>
+						</section>
 					</div>
 				</DialogContent>
 			</Dialog>
