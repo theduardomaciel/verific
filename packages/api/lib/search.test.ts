@@ -30,10 +30,14 @@ describe("fuzzySearch", () => {
 			"joao",
 		)!.toQuery(renderConfig);
 
-		expect(sql).toContain(`unaccent('unaccent', lower("users"."name"))`);
-		expect(sql).toContain(`unaccent('unaccent', lower("users"."email"))`);
+		expect(sql).toContain(
+			`public.immutable_unaccent(lower("users"."name"))`,
+		);
+		expect(sql).toContain(
+			`public.immutable_unaccent(lower("users"."email"))`,
+		);
 		expect(sql).toContain("ilike");
-		expect(sql).toContain("<%");
+		expect(sql).toContain("word_similarity");
 		expect(params).toContain("joao");
 	});
 
@@ -41,7 +45,7 @@ describe("fuzzySearch", () => {
 		const { sql } = fuzzySearch([user.name], "jo")!.toQuery(renderConfig);
 
 		expect(sql).toContain("ilike");
-		expect(sql).not.toContain("<%");
+		expect(sql).not.toContain("word_similarity");
 	});
 
 	it("requires every token to match", () => {

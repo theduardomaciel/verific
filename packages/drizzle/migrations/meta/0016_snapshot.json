@@ -1,5 +1,5 @@
 {
-	"id": "e8ae4d8d-ac39-42aa-8f9c-35e0afe1b9cd",
+	"id": "0efa1f64-ebe6-4751-ac02-ce9a818bf98f",
 	"prevId": "95028107-8ed7-4307-bb0e-e2a02818762e",
 	"version": "7",
 	"dialect": "postgresql",
@@ -2412,36 +2412,6 @@
 					"isUnique": true,
 					"concurrently": false,
 					"method": "btree",
-					"with": {}
-				},
-				"users_name_trgm_idx": {
-					"name": "users_name_trgm_idx",
-					"columns": [
-						{
-							"expression": "unaccent('unaccent', lower(\"name\")) gin_trgm_ops",
-							"asc": true,
-							"isExpression": true,
-							"nulls": "last"
-						}
-					],
-					"isUnique": false,
-					"concurrently": false,
-					"method": "gin",
-					"with": {}
-				},
-				"users_email_trgm_idx": {
-					"name": "users_email_trgm_idx",
-					"columns": [
-						{
-							"expression": "unaccent('unaccent', lower(\"email\")) gin_trgm_ops",
-							"asc": true,
-							"isExpression": true,
-							"nulls": "last"
-						}
-					],
-					"isUnique": false,
-					"concurrently": false,
-					"method": "gin",
 					"with": {}
 				}
 			},

@@ -3,20 +3,22 @@ import { type SQL, type SQLWrapper, and, or, sql } from "@verific/drizzle/orm";
 /**
  * Busca aproximada com Postgres (`pg_trgm` + `unaccent`).
  *
- * As colunas indexadas precisam usar exatamente a expressão de
- * `normalizedText` (ver `users_name_trgm_idx`/`users_email_trgm_idx`) para o
- * planner aproveitar o índice GIN.
+ * Não há índice: `word_similarity()` é função, e só os operadores do
+ * `pg_trgm` usam índice GIN. Varrer `users` custa poucos ms na escala atual.
  */
 
 /** Abaixo de 3 caracteres não há trigrama útil: cai para substring. */
 const MIN_FUZZY_TERM_LENGTH = 3;
+
+/** Similaridade mínima para aceitar um typo (0..1). */
+const MIN_WORD_SIMILARITY = 0.35;
 
 /** Limita a query para uma entrada patológica não explodir em condições. */
 const MAX_TERMS = 5;
 
 /** Forma sem acento e minúscula de uma coluna de texto. */
 export function normalizedText(value: SQLWrapper): SQL {
-	return sql`unaccent('unaccent', lower(${value}))`;
+	return sql`public.immutable_unaccent(lower(${value}))`;
 }
 
 function tokenize(query: string | undefined) {
@@ -45,8 +47,12 @@ export function fuzzySearch(
 			const haystack = normalizedText(column);
 			const substring = sql`${haystack} ilike '%' || ${needle} || '%'`;
 			if (term.length < MIN_FUZZY_TERM_LENGTH) return substring;
-			// `<%` é o operador indexável de `word_similarity`.
-			return or(substring, sql`${needle} <% ${haystack}`)!;
+			// Limiar explícito: o operador `<%` usaria o GUC global do banco
+			// (padrão 0.6, alto demais para typos como "edurado").
+			return or(
+				substring,
+				sql`word_similarity(${needle}, ${haystack}) >= ${MIN_WORD_SIMILARITY}`,
+			)!;
 		});
 		return or(...matches)!;
 	});
