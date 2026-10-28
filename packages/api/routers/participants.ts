@@ -575,39 +575,12 @@ export const participantsRouter = createTRPCRouter({
 			const participantId = row.id;
 			const participantName = row.user.name;
 
-			// Só permite credenciar quem está inscrito na atividade,
-			// exceto se o credenciador for monitor da atividade
-			if (mode === "in" && !isMonitor) {
-				const subscription = await db
-					.select({ amount: count() })
-					.from(participantOnActivity)
-					.where(
-						and(
-							eq(
-								participantOnActivity.activityId,
-								session.activityId,
-							),
-							eq(
-								participantOnActivity.participantId,
-								participantId,
-							),
-						),
-					);
-
-				if ((subscription?.[0]?.amount ?? 0) === 0) {
-					throw new TRPCError({
-						code: "BAD_REQUEST",
-						message: "Participante não está inscrito na atividade",
-					});
-				}
-			}
-
-			// Monitor credencia quem não está inscrito: marcamos para criar o vínculo
-			// (enrollment) dentro da transação, permitindo overbooking quando cheio.
-			let autoEnroll = false;
-			if (mode === "in" && isMonitor) {
-				const existing = await db
-					.select({ amount: count() })
+			// Papel do participante nesta atividade, resolvido uma única vez:
+			// nulo = não inscrito, "participant" = inscrito, "monitor" = monitor.
+			let enrollmentRole: "participant" | "monitor" | null = null;
+			if (mode === "in") {
+				const [enrollment] = await db
+					.select({ role: participantOnActivity.role })
 					.from(participantOnActivity)
 					.where(
 						and(
@@ -618,8 +591,33 @@ export const participantsRouter = createTRPCRouter({
 							),
 						),
 					);
-				autoEnroll = (existing?.[0]?.amount ?? 0) === 0;
+				enrollmentRole = enrollment?.role ?? null;
 			}
+
+			// Monitores não são participantes. Credenciá-los (inclusive a si
+			// mesmos) criaria presença sem inscrição de participante, inflando
+			// a contagem de presentes. Bloqueamos o check-in de monitores.
+			if (enrollmentRole === "monitor") {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message:
+						"Monitores não podem ser credenciados como participantes.",
+				});
+			}
+
+			// Só permite credenciar quem está inscrito na atividade,
+			// exceto se o credenciador for monitor da atividade
+			if (mode === "in" && !isMonitor && enrollmentRole === null) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Participante não está inscrito na atividade",
+				});
+			}
+
+			// Monitor credencia quem não está inscrito: marcamos para criar o vínculo
+			// (enrollment) dentro da transação, permitindo overbooking quando cheio.
+			const autoEnroll =
+				mode === "in" && isMonitor && enrollmentRole === null;
 
 			const sessionRef = {
 				id: session.id,

@@ -40,7 +40,7 @@ export function ProfileBanner({
 		<header
 			className={cn(
 				"relative flex w-full flex-col items-start justify-start gap-4 overflow-hidden rounded-3xl p-8",
-				[showBioAndSocials && bio && "md:h-96"],
+				[showBioAndSocials && bio && "md:min-h-96"],
 			)}
 		>
 			<div

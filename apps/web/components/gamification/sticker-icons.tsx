@@ -1,9 +1,9 @@
 import {
-	BadgeCheck,
 	CalendarCheck,
 	CalendarDays,
 	Compass,
 	Flag,
+	QrCode,
 	Sunrise,
 	Timer,
 	Trophy,
@@ -14,7 +14,7 @@ import {
 import type { StickerIconKey } from "@verific/drizzle/gamification";
 
 const STICKER_ICONS: Record<StickerIconKey, LucideIcon> = {
-	"badge-check": BadgeCheck,
+	"qr-code": QrCode,
 	compass: Compass,
 	timer: Timer,
 	users: Users,
@@ -34,6 +34,6 @@ export function StickerIcon({
 	className?: string;
 	style?: React.CSSProperties;
 }) {
-	const Icon = STICKER_ICONS[icon] ?? BadgeCheck;
+	const Icon = STICKER_ICONS[icon] ?? QrCode;
 	return <Icon className={className} style={style} aria-hidden />;
 }

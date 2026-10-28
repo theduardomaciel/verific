@@ -292,7 +292,7 @@ export const GAMIFICATION_STICKERS: readonly StickerDefinition[] = [
 		key: "checkin",
 		name: "Credenciado",
 		description: "Fez o primeiro check-in no evento.",
-		icon: "badge-check",
+		icon: "qr-code",
 		tier: "bronze",
 		criterion: { type: "checkin" },
 	},
