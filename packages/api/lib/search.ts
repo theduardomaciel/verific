@@ -1,5 +1,7 @@
 import { type SQL, type SQLWrapper, and, or, sql } from "@verific/drizzle/orm";
 
+import { containsPattern } from "./like";
+
 /**
  * Busca aproximada com Postgres (`pg_trgm` + `unaccent`).
  *
@@ -43,9 +45,12 @@ export function fuzzySearch(
 
 	const conditions = terms.map((term) => {
 		const needle = normalizedText(sql`${term}::text`);
+		// `containsPattern` mantém `%`/`_` literais; o padrão também é
+		// normalizado para casar com a coluna sem acento.
+		const pattern = sql`public.immutable_unaccent(lower(${containsPattern(term)}))`;
 		const matches = columns.map((column) => {
 			const haystack = normalizedText(column);
-			const substring = sql`${haystack} ilike '%' || ${needle} || '%'`;
+			const substring = sql`${haystack} ilike ${pattern}`;
 			if (term.length < MIN_FUZZY_TERM_LENGTH) return substring;
 			// Limiar explícito: o operador `<%` usaria o GUC global do banco
 			// (padrão 0.6, alto demais para typos como "edurado").

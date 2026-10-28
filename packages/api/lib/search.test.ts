@@ -38,7 +38,15 @@ describe("fuzzySearch", () => {
 		);
 		expect(sql).toContain("ilike");
 		expect(sql).toContain("word_similarity");
-		expect(params).toContain("joao");
+		expect(params).toContain("%joao%");
+	});
+
+	it("keeps LIKE wildcards from the query literal", () => {
+		const { params } = fuzzySearch([user.name], "a_b%")!.toQuery(
+			renderConfig,
+		);
+
+		expect(params).toContain("%a\\_b\\%%");
 	});
 
 	it("falls back to substring for terms shorter than a trigram", () => {

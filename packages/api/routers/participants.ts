@@ -10,6 +10,7 @@ import {
 	exists,
 	inArray,
 	isNull,
+	or,
 	sql,
 } from "@verific/drizzle/orm";
 import {
