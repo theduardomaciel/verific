@@ -35,6 +35,7 @@ import {
 import {
 	accessHasPermission,
 	getProjectAccess,
+	isActivityMonitor,
 	requireProjectPermission,
 } from "../lib/project-access";
 import {
@@ -269,7 +270,8 @@ export const participantsRouter = createTRPCRouter({
 						.from(participant)
 						.leftJoin(user, eq(participant.userId, user.id))
 						.where(and(...whereClauses.filter(Boolean)))
-						.orderBy(orderByClause)
+						// O id desempata nomes iguais e mantém a paginação estável
+						.orderBy(orderByClause, asc(participant.id))
 						.limit(pageSize)
 						.offset(pageIndex ? (pageIndex - 1) * pageSize : 0),
 					db
@@ -299,6 +301,81 @@ export const participantsRouter = createTRPCRouter({
 				emailDomains: emailDomains.map(
 					(ed) => ed.emailDomain,
 				) as string[],
+			};
+		}),
+
+	/**
+	 * Busca para o credenciamento manual. Liberada para quem credencia na
+	 * recepção e para monitores da atividade, que não veem contatos: a
+	 * resposta não traz e-mail, e só quem pode ver participantes busca por ele.
+	 */
+	searchCheckInCandidates: protectedProcedure
+		.input(
+			z.object({
+				projectId: z.string().uuid(),
+				activityId: z.string().uuid().optional(),
+				query: z.string().trim().max(200).optional(),
+				page: z.number().int().min(0).default(0),
+				pageSize: z.number().int().min(1).max(50).default(20),
+			}),
+		)
+		.query(async ({ input, ctx }) => {
+			const { projectId, activityId, query, page, pageSize } = input;
+			const userId = ctx.session.user.id;
+
+			const access = await getProjectAccess(projectId, userId);
+			const canCheckIn =
+				(access && accessHasPermission(access, "reception.manage")) ||
+				(activityId !== undefined &&
+					(await isActivityMonitor(projectId, activityId, userId)));
+			if (!canCheckIn) {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "Você não tem permissão para credenciar.",
+				});
+			}
+			const canSeeContacts =
+				access !== null &&
+				accessHasPermission(access, "participants.view");
+
+			const where = and(
+				eq(participant.projectId, projectId),
+				query
+					? or(
+							ilike(user.name, `%${query}%`),
+							eq(participant.shortId, query),
+							canSeeContacts
+								? ilike(user.email, `%${query}%`)
+								: undefined,
+						)
+					: undefined,
+			);
+
+			const [participants, countResult] = await Promise.all([
+				db
+					.select({
+						id: participant.id,
+						shortId: participant.shortId,
+						user: { name: user.name, image_url: user.image_url },
+					})
+					.from(participant)
+					.leftJoin(user, eq(participant.userId, user.id))
+					.where(where)
+					.orderBy(asc(user.name), asc(participant.id))
+					.limit(pageSize)
+					.offset(page * pageSize),
+				db
+					.select({ amount: count() })
+					.from(participant)
+					.leftJoin(user, eq(participant.userId, user.id))
+					.where(where),
+			]);
+
+			const amount = countResult[0]?.amount ?? 0;
+			return {
+				participants,
+				amount,
+				pageCount: Math.ceil(amount / pageSize),
 			};
 		}),
 
@@ -421,33 +498,13 @@ export const participantsRouter = createTRPCRouter({
 				? accessHasPermission(access, "reception.manage")
 				: false;
 
-			// Verifica se o usuário atual é monitor desta atividade
-			const staffParticipant = await db.query.participant.findFirst({
-				where: and(
-					eq(participant.projectId, event.id),
-					eq(participant.userId, staffUserId),
-				),
-				columns: { id: true },
-			});
+			const isMonitor = await isActivityMonitor(
+				event.id,
+				activityId,
+				staffUserId,
+			);
 
-			let isActivityMonitor = false;
-			if (staffParticipant) {
-				const monitorLink =
-					await db.query.participantOnActivity.findFirst({
-						where: and(
-							eq(participantOnActivity.activityId, activityId),
-							eq(
-								participantOnActivity.participantId,
-								staffParticipant.id,
-							),
-							eq(participantOnActivity.role, "monitor"),
-						),
-						columns: { participantId: true },
-					});
-				isActivityMonitor = !!monitorLink;
-			}
-
-			if (!isEventStaff && !isActivityMonitor) {
+			if (!isEventStaff && !isMonitor) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
 					message:
@@ -490,7 +547,7 @@ export const participantsRouter = createTRPCRouter({
 
 			// Só permite credenciar quem está inscrito na atividade,
 			// exceto se o credenciador for monitor da atividade
-			if (mode === "in" && !isActivityMonitor) {
+			if (mode === "in" && !isMonitor) {
 				const subscription = await db
 					.select({ amount: count() })
 					.from(participantOnActivity)
