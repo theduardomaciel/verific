@@ -8,10 +8,8 @@ import {
 	desc,
 	eq,
 	exists,
-	ilike,
 	inArray,
 	isNull,
-	or,
 	sql,
 } from "@verific/drizzle/orm";
 import {
@@ -32,13 +30,13 @@ import {
 	awardSessionCompletion,
 	type StickerAward,
 } from "../lib/gamification";
-import { containsPattern } from "../lib/like";
 import {
 	accessHasPermission,
 	getProjectAccess,
 	isActivityMonitor,
 	requireProjectPermission,
 } from "../lib/project-access";
+import { fuzzyRank, fuzzySearch } from "../lib/search";
 import {
 	loadNotificationRecipients,
 	notifyEventRegistrationRemoved,
@@ -199,6 +197,10 @@ export const participantsRouter = createTRPCRouter({
 				"participants.view",
 			);
 
+			const searchColumns = [user.name, user.email];
+			const searchWhere = fuzzySearch(searchColumns, search);
+			const searchRank = fuzzyRank(searchColumns, search);
+
 			let roleFilter: SQL | undefined;
 			if (role && role.length > 0) {
 				roleFilter = exists(
@@ -224,12 +226,7 @@ export const participantsRouter = createTRPCRouter({
 
 			const whereClauses = [
 				eq(participant.projectId, projectId),
-				search
-					? or(
-							ilike(user.name, containsPattern(search)),
-							ilike(user.email, containsPattern(search)),
-						)
-					: undefined,
+				searchWhere,
 				roleFilter,
 			];
 
@@ -271,8 +268,17 @@ export const participantsRouter = createTRPCRouter({
 						.from(participant)
 						.leftJoin(user, eq(participant.userId, user.id))
 						.where(and(...whereClauses.filter(Boolean)))
-						// O id desempata nomes iguais e mantém a paginação estável
-						.orderBy(orderByClause, asc(participant.id))
+						// Relevância primeiro; o id desempata nomes iguais e
+						// mantém a paginação estável.
+						.orderBy(
+							...(searchRank
+								? [
+										desc(searchRank),
+										orderByClause,
+										asc(participant.id),
+									]
+								: [orderByClause, asc(participant.id)]),
+						)
 						.limit(pageSize)
 						.offset(pageIndex ? (pageIndex - 1) * pageSize : 0),
 					db
@@ -339,16 +345,16 @@ export const participantsRouter = createTRPCRouter({
 				access !== null &&
 				accessHasPermission(access, "participants.view");
 
+			const searchColumns = canSeeContacts
+				? [user.name, user.email]
+				: [user.name];
+			const searchWhere = fuzzySearch(searchColumns, query);
+			const searchRank = fuzzyRank(searchColumns, query);
+
 			const where = and(
 				eq(participant.projectId, projectId),
 				query
-					? or(
-							ilike(user.name, containsPattern(query)),
-							eq(participant.shortId, query),
-							canSeeContacts
-								? ilike(user.email, containsPattern(query))
-								: undefined,
-						)
+					? or(searchWhere, eq(participant.shortId, query))
 					: undefined,
 			);
 
@@ -362,7 +368,15 @@ export const participantsRouter = createTRPCRouter({
 					.from(participant)
 					.leftJoin(user, eq(participant.userId, user.id))
 					.where(where)
-					.orderBy(asc(user.name), asc(participant.id))
+					.orderBy(
+						...(searchRank
+							? [
+									desc(searchRank),
+									asc(user.name),
+									asc(participant.id),
+								]
+							: [asc(user.name), asc(participant.id)]),
+					)
 					.limit(pageSize)
 					.offset(page * pageSize),
 				db

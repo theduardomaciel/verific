@@ -1,5 +1,6 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
+	index,
 	pgTable,
 	text,
 	boolean,
@@ -29,7 +30,19 @@ export const user = pgTable(
 			.notNull()
 			.$onUpdate(() => new Date()),
 	},
-	(table) => [uniqueIndex().on(table.email)],
+	(table) => [
+		uniqueIndex().on(table.email),
+		// Busca aproximada (typos/acentos) por nome e e-mail. A expressão usa
+		// a forma imutável de `unaccent` para poder ser indexada.
+		index("users_name_trgm_idx").using(
+			"gin",
+			sql`unaccent('unaccent', lower(${table.name})) gin_trgm_ops`,
+		),
+		index("users_email_trgm_idx").using(
+			"gin",
+			sql`unaccent('unaccent', lower(${table.email})) gin_trgm_ops`,
+		),
+	],
 );
 
 export const userRelations = relations(user, ({ many }) => ({

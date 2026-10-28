@@ -13,7 +13,7 @@
 		"test:watch": "vitest",
 		"test:coverage": "vitest run --coverage",
 		"db:generate": "drizzle-kit generate",
-		"db:push": "drizzle-kit push",
+		"db:push": "pnpm tsx ./scripts/extensions.ts && drizzle-kit push",
 		"db:migrate": "pnpm tsx ./migrate.ts",
 		"db:migrate:prod": "pnpm tsx ./migrate.ts --prod",
 		"db:drop": "drizzle-kit drop",
