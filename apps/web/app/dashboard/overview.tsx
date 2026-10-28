@@ -142,7 +142,11 @@ export function Overview() {
 						<MetricCard
 							title="Taxa de ocupação"
 							value={`${stats.occupancyRate.toFixed(1)}%`}
-							change={`+${stats.occupancyRate.toFixed(1)}% do último dia`}
+							change={
+								stats.totalPossibleSeats > 0
+									? `${stats.totalEnrollments} de ${stats.totalPossibleSeats} vagas ocupadas`
+									: "Sem vagas limitadas"
+							}
 							icon={
 								<BarChart3 className="text-muted-foreground h-4 w-4" />
 							}

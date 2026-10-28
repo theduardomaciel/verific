@@ -2309,6 +2309,8 @@ export const activitiesRouter = createTRPCRouter({
 				activeParticipants,
 				activeParticipantsInLastDay,
 				occupancyRate,
+				totalEnrollments,
+				totalPossibleSeats: Number(totalPossible),
 				graphData,
 				coursesData: [] as Array<{ course: string; count: number }>,
 			};
