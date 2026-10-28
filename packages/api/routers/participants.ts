@@ -43,7 +43,7 @@ import {
 	notifyEventRegistrationRemoved,
 } from "../notifications";
 import { getParticipantsParams } from "../schemas";
-import { lockActivity } from "../seats";
+import { countEnrolled, lockActivity } from "../seats";
 import { settleActivity } from "../waitlist";
 
 // Re-export client-safe schema so existing server imports keep working.
@@ -602,6 +602,25 @@ export const participantsRouter = createTRPCRouter({
 				}
 			}
 
+			// Monitor credencia quem não está inscrito: marcamos para criar o vínculo
+			// (enrollment) dentro da transação, permitindo overbooking quando cheio.
+			let autoEnroll = false;
+			if (mode === "in" && isMonitor) {
+				const existing = await db
+					.select({ amount: count() })
+					.from(participantOnActivity)
+					.where(
+						and(
+							eq(participantOnActivity.activityId, activityId),
+							eq(
+								participantOnActivity.participantId,
+								participantId,
+							),
+						),
+					);
+				autoEnroll = (existing?.[0]?.amount ?? 0) === 0;
+			}
+
 			const sessionRef = {
 				id: session.id,
 				startsAt: session.startsAt,
@@ -615,6 +634,31 @@ export const participantsRouter = createTRPCRouter({
 				let pointsAwarded = 0;
 				let totalPoints = 0;
 				let unlockedStickers: StickerAward[] = [];
+
+				// Monitor credencia não-inscrito: cria o vínculo (enrollment),
+				// permitindo overbooking quando a atividade está cheia.
+				if (autoEnroll) {
+					const locked = await lockActivity(tx, activityId);
+					const enrolledCount = await countEnrolled(tx, activityId);
+					const full =
+						locked.participantsLimit != null &&
+						enrolledCount >= locked.participantsLimit;
+					await tx
+						.insert(participantOnActivity)
+						.values({
+							activityId,
+							participantId,
+							role: "participant",
+							noShow: false,
+							overbooked: full,
+							overbookReason: full
+								? "Credenciamento pelo monitor."
+								: null,
+							overbookedByUserId: full ? staffUserId : null,
+							overbookedAt: full ? new Date() : null,
+						})
+						.onConflictDoNothing();
+				}
 
 				if (mode === "in") {
 					const inserted = await tx

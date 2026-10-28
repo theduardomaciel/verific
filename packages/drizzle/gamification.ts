@@ -251,7 +251,7 @@ export function isSessionCompleted(input: {
 /* -------------------------------------------------------------------------- */
 
 export const STICKER_ICON_KEYS = [
-	"badge-check",
+	"qr-code",
 	"compass",
 	"timer",
 	"users",
