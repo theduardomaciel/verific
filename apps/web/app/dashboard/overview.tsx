@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 
 import { Activity, BarChart3, Clock, Globe, Users } from "lucide-react";
 
@@ -12,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
 import { ActivitiesList } from "@/components/dashboard/overview/activities-list";
 import { GraphSelector } from "@/components/dashboard/overview/graph-selector";
+import { LogsList } from "@/components/dashboard/overview/logs-list";
 import { MetricCard } from "@/components/dashboard/overview/metric-card";
 
 import { formatWorkload } from "@/lib/date";
@@ -35,7 +37,11 @@ export function DashboardSkeleton() {
 }
 
 export function Overview() {
-	const { projectId, projectUrl } = useDashboard();
+	const { projectId, projectUrl, can } = useDashboard();
+	const [tab, setTab] = useState("overview");
+
+	// Staff (monitores) e admins já têm `participants.view`/`reception.manage`.
+	const canSeeLogs = can("participants.view") || can("reception.manage");
 
 	const activitiesQuery = trpc.getActivities.useQuery(
 		{ projectId, sort: "asc", pageSize: 5 },
@@ -44,6 +50,14 @@ export function Overview() {
 	const statsQuery = trpc.getDashboardStats.useQuery(
 		{ projectId },
 		{ staleTime: 2 * 60 * 1000, refetchOnWindowFocus: false },
+	);
+	const logsQuery = trpc.getActivityLog.useQuery(
+		{ projectId },
+		{
+			enabled: tab === "logs" && canSeeLogs,
+			staleTime: 30 * 1000,
+			refetchOnWindowFocus: true,
+		},
 	);
 
 	if (activitiesQuery.isPending || statsQuery.isPending) {
@@ -67,7 +81,8 @@ export function Overview() {
 	return (
 		<main className="container-d py-container-v flex min-h-[calc(100dvh-var(--dashboard-header-height))] w-full flex-1 flex-col items-center justify-start gap-8 md:max-h-[calc(100dvh-var(--dashboard-header-height))]">
 			<Tabs
-				defaultValue="overview"
+				value={tab}
+				onValueChange={setTab}
 				className="flex w-full flex-1 flex-col lg:min-h-0"
 			>
 				<div className="mb-4 flex w-full flex-wrap items-center justify-between space-y-2">
@@ -84,7 +99,7 @@ export function Overview() {
 							<TabsTrigger value="analytics" disabled>
 								Relatórios
 							</TabsTrigger>
-							<TabsTrigger value="reports" disabled>
+							<TabsTrigger value="logs" disabled={!canSeeLogs}>
 								Logs
 							</TabsTrigger>
 						</TabsList>
@@ -155,6 +170,24 @@ export function Overview() {
 							className="min-h-0 overflow-hidden lg:h-full lg:min-h-0"
 						/>
 					</div>
+				</TabsContent>
+
+				<TabsContent
+					value="logs"
+					className="flex min-h-0 flex-1 flex-col"
+				>
+					{logsQuery.isPending ? (
+						<Skeleton className="h-96 w-full" />
+					) : logsQuery.isError || !logsQuery.data ? (
+						<p className="text-muted-foreground text-sm">
+							Não foi possível carregar o log.
+						</p>
+					) : (
+						<LogsList
+							entries={logsQuery.data.entries}
+							className="min-h-0"
+						/>
+					)}
 				</TabsContent>
 			</Tabs>
 		</main>
