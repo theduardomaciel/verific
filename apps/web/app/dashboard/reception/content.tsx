@@ -184,6 +184,7 @@ export function ReceptionPage() {
 					/>
 					<AddUsersDialog
 						projectId={projectId}
+						checkIn={{}}
 						alreadyAdded={[]}
 						title="Check-in manual"
 						description="Selecione os participantes para registrar o check-in de hoje."

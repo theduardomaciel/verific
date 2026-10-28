@@ -238,6 +238,7 @@ export function ActivityTicket({
 									<AddUsersDialog
 										projectId={activity.projectId}
 										activityId={activity.id}
+										checkIn={{ activityId: activity.id }}
 										alreadyAdded={[]}
 										title="Credenciamento manual"
 										description="Selecione os participantes para credenciar nesta sessão."
@@ -296,6 +297,9 @@ export function ActivityTicket({
 											<AddUsersDialog
 												projectId={activity.projectId}
 												activityId={activity.id}
+												checkIn={{
+													activityId: activity.id,
+												}}
 												alreadyAdded={[]}
 												title="Saída manual"
 												description="Selecione os participantes para registrar a saída desta sessão."
