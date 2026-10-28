@@ -23,6 +23,7 @@ import {
 import { z } from "@verific/zod";
 
 import { deleteActivityAnswers } from "../enrollment";
+import { recordEvent } from "../lib/event-log";
 import { revokeActivityPoints } from "../lib/gamification";
 import {
 	loadNotificationRecipients,
@@ -382,6 +383,17 @@ export const participantOnActivitiesRouter = createTRPCRouter({
 				}
 
 				await deleteActivityAnswers(tx, activityId, [participantId]);
+
+				await recordEvent(tx, {
+					projectId: eventId,
+					activityId,
+					participantId,
+					actorUserId: userId,
+					type: isSelfCancellation
+						? "enrollment.cancelled"
+						: "enrollment.removed",
+					metadata: { reason: reason ?? null },
+				});
 
 				// A vaga liberada vai para o próximo da fila
 				await settleActivity(tx, locked);

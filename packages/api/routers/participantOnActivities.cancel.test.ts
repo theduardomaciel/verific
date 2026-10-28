@@ -20,7 +20,13 @@ const tx = {
 	delete: () => ({
 		where: () => ({ returning: async () => deleted.rows }),
 	}),
-	select: () => ({ from: () => ({ where: async () => [] }) }),
+	select: () => ({
+		from: () => ({
+			where: async () => [],
+			innerJoin: () => ({ where: async () => [] }),
+		}),
+	}),
+	insert: () => ({ values: async () => {} }),
 	transaction: async () => undefined,
 };
 

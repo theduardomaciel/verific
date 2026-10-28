@@ -26,6 +26,7 @@ import {
 import { z } from "@verific/zod";
 
 import { parseCheckInCode } from "../lib/checkin-code";
+import { recordEvent } from "../lib/event-log";
 import {
 	awardSessionAttendance,
 	awardSessionCompletion,
@@ -798,6 +799,26 @@ export const participantsRouter = createTRPCRouter({
 					}
 				}
 
+				if (mode === "in" && !alreadyPresent) {
+					await recordEvent(tx, {
+						projectId: event.id,
+						activityId,
+						participantId,
+						actorUserId: staffUserId,
+						type: "session.checkin",
+						metadata: { sessionId },
+					});
+				} else if (mode === "out" && !alreadyCheckedOut) {
+					await recordEvent(tx, {
+						projectId: event.id,
+						activityId,
+						participantId,
+						actorUserId: staffUserId,
+						type: "session.checkout",
+						metadata: { sessionId },
+					});
+				}
+
 				return {
 					success: true as const,
 					participantId,
@@ -901,6 +922,17 @@ export const participantsRouter = createTRPCRouter({
 					locked.push(await lockActivity(tx, activityId));
 				}
 
+				// Grava antes do delete: o snapshot do nome preserva o registro
+				// e a FK é anulada em cascata.
+				await recordEvent(tx, {
+					projectId: participantData.project.id,
+					participantId,
+					actorUserId: requestUserId,
+					type: "participant.removed_event",
+					participantName: participantData.user.name,
+					metadata: { reason: reason ?? null, activityIds },
+				});
+
 				await tx
 					.delete(participant)
 					.where(eq(participant.id, participantId));
@@ -1000,6 +1032,14 @@ export const participantsRouter = createTRPCRouter({
 				for (const activityId of activityIds) {
 					locked.push(await lockActivity(tx, activityId));
 				}
+
+				await recordEvent(tx, {
+					projectId,
+					participantId,
+					actorUserId: requestUserId,
+					type: "participant.removed_event",
+					metadata: { self: true, activityIds },
+				});
 
 				await tx
 					.delete(participant)

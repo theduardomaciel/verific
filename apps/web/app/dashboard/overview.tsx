@@ -51,15 +51,6 @@ export function Overview() {
 		{ projectId },
 		{ staleTime: 2 * 60 * 1000, refetchOnWindowFocus: false },
 	);
-	const logsQuery = trpc.getActivityLog.useQuery(
-		{ projectId },
-		{
-			enabled: tab === "logs" && canSeeLogs,
-			staleTime: 30 * 1000,
-			refetchOnWindowFocus: true,
-		},
-	);
-
 	if (activitiesQuery.isPending || statsQuery.isPending) {
 		return <DashboardSkeleton />;
 	}
@@ -176,18 +167,7 @@ export function Overview() {
 					value="logs"
 					className="flex min-h-0 flex-1 flex-col"
 				>
-					{logsQuery.isPending ? (
-						<Skeleton className="h-96 w-full" />
-					) : logsQuery.isError || !logsQuery.data ? (
-						<p className="text-muted-foreground text-sm">
-							Não foi possível carregar o log.
-						</p>
-					) : (
-						<LogsList
-							entries={logsQuery.data.entries}
-							className="min-h-0"
-						/>
-					)}
+					<LogsList className="min-h-0" />
 				</TabsContent>
 			</Tabs>
 		</main>
