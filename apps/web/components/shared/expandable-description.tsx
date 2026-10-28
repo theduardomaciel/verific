@@ -23,13 +23,16 @@ import {
 import { ActivityDetailsContent } from "@/components/activity/activity-card/content";
 
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { cn } from "@/lib/utils";
 
 interface ExpandableDescriptionProps {
 	activity: any; // TODO: Use proper type from API
+	compact?: boolean;
 }
 
 export function ExpandableDescription({
 	activity,
+	compact = false,
 }: ExpandableDescriptionProps) {
 	const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 	const isDesktop = useMediaQuery("(min-width: 768px)");
@@ -39,7 +42,12 @@ export function ExpandableDescription({
 	return (
 		<>
 			<div className="flex flex-col gap-2">
-				<div className="prose prose-sm dark:prose-invert text-muted-foreground line-clamp-3 max-w-none text-sm">
+				<div
+					className={cn(
+						"prose prose-sm dark:prose-invert text-muted-foreground max-w-none text-sm",
+						compact ? "line-clamp-2" : "line-clamp-3",
+					)}
+				>
 					<ReactMarkdown remarkPlugins={[remarkGfm]}>
 						{activity.description}
 					</ReactMarkdown>

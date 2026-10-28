@@ -31,13 +31,14 @@ import { SearchBar } from "@/components/search-bar";
 import { SortBy } from "@/components/sort-by";
 
 import { useActivityAvailability } from "@/hooks/use-activity-availability";
-import { useToday } from "@/hooks/use-now";
+import { useNow } from "@/hooks/use-now";
 import { useSubscribedActivities } from "@/hooks/use-subscribed-activities";
 import {
 	categorizeByDate,
 	expandSessionOccurrences,
 	getFirstSessionStart,
 	hasEverySessionEnded,
+	type ActivitySessionLike,
 } from "@/lib/date";
 import { fuzzyFilter } from "@/lib/fuzzy-search";
 import { findScheduleConflicts, type Conflict } from "@/lib/schedule/conflicts";
@@ -48,6 +49,19 @@ interface ScheduleContentProps {
 	projectId: string;
 	eventUrl: string;
 }
+
+type ScheduleActivity = RouterOutput["getActivities"]["activities"][number];
+
+/** Uma atividade por sessão, como renderizada na programação. */
+interface Occurrence {
+	activity: ScheduleActivity;
+	session: ActivitySessionLike;
+	sessionIndex: number;
+	sessionCount: number;
+}
+
+/** Valor do item de acordeão que agrupa as atividades já encerradas. */
+const PAST_SECTION_ID = "ja-aconteceram";
 
 export function ScheduleContent({
 	activities,
@@ -137,11 +151,11 @@ export function ScheduleContent({
 	// O `now` congela na montagem (regras `react(purity)`/`set-state-in-effect`
 	// barram relógio no render): suficiente para avisos consultivos, que
 	// recalculam a cada navegação.
-	const [now] = useState(() => new Date());
+	const [frozenNow] = useState(() => new Date());
 
 	const conflictMap = useMemo(() => {
 		const map = new Map<string, Conflict[]>();
-		if (!userId || !participantId || !now) return map;
+		if (!userId || !participantId || !frozenNow) return map;
 		const enrolledIds = new Set([...(subscribedIds ?? []), ...joinedIds]);
 		if (enrolledIds.size === 0) return map;
 		const enrolledById = new Map(displayActivities.map((a) => [a.id, a]));
@@ -151,7 +165,11 @@ export function ScheduleContent({
 		for (const activity of displayActivities) {
 			if (enrolledIds.has(activity.id)) continue;
 			if (hasEverySessionEnded(activity.sessions)) continue;
-			const conflicts = findScheduleConflicts(activity, enrolled, now);
+			const conflicts = findScheduleConflicts(
+				activity,
+				enrolled,
+				frozenNow,
+			);
 			if (conflicts.length > 0) map.set(activity.id, conflicts);
 		}
 		return map;
@@ -161,7 +179,7 @@ export function ScheduleContent({
 		joinedIds,
 		userId,
 		participantId,
-		now,
+		frozenNow,
 	]);
 
 	function handleJoined(activity: QuickJoinActivity): void {
@@ -290,18 +308,79 @@ export function ScheduleContent({
 		return sorted;
 	}, [displayActivities, searchQuery, categoryFilter, tagFilter, sortBy]);
 
-	const today = useToday();
-	const { grouped, categories, initialExpanded } = useMemo(() => {
-		const occurrences = expandSessionOccurrences(filteredActivities);
-		const { grouped, categories } = categorizeByDate(
-			occurrences,
+	const now = useNow();
+
+	const occurrences = useMemo<Occurrence[]>(
+		() => expandSessionOccurrences(filteredActivities),
+		[filteredActivities],
+	);
+
+	// Sessão encerrada vira "Já aconteceram"; sessão em andamento continua na
+	// programação. `now` é nulo no HTML estático: até hidratar, nada é passado,
+	// para o corte não ficar congelado no build. Relógio único para o corte e
+	// para os rótulos "Hoje"/"Amanhã".
+	const { upcomingOccurrences, pastOccurrences } = useMemo(() => {
+		if (!now) {
+			return {
+				upcomingOccurrences: occurrences,
+				pastOccurrences: [] as Occurrence[],
+			};
+		}
+		const upcoming: Occurrence[] = [];
+		const past: Occurrence[] = [];
+		for (const occurrence of occurrences) {
+			const ended =
+				new Date(occurrence.session.endsAt).getTime() < now.getTime();
+			(ended ? past : upcoming).push(occurrence);
+		}
+		return { upcomingOccurrences: upcoming, pastOccurrences: past };
+	}, [occurrences, now]);
+
+	const {
+		grouped,
+		categories,
+		pastGrouped,
+		pastCategories,
+		pastRangeLabel,
+		initialExpanded,
+		opensPastSection,
+	} = useMemo(() => {
+		const upcoming = categorizeByDate(
+			upcomingOccurrences,
 			(occurrence) => occurrence.session.startsAt,
-			today,
+			now,
 		);
-		const hasToday = categories.includes("Hoje");
-		const initialExpanded = hasToday ? ["Hoje"] : categories;
-		return { grouped, categories, initialExpanded };
-	}, [filteredActivities, today]);
+		const past = categorizeByDate(
+			pastOccurrences,
+			(occurrence) => occurrence.session.startsAt,
+			now,
+		);
+		const hasToday = upcoming.categories.includes("Hoje");
+		// Evento já encerrado — ou busca que só encontra atividades antigas:
+		// abre o grupo, senão a página pareceria vazia.
+		const opensPastSection =
+			past.categories.length > 0 && upcoming.categories.length === 0;
+		return {
+			grouped: upcoming.grouped,
+			categories: upcoming.categories,
+			pastGrouped: past.grouped,
+			pastCategories: past.categories,
+			pastRangeLabel:
+				past.categories.length > 1
+					? `${past.categories[0]} – ${past.categories[past.categories.length - 1]}`
+					: (past.categories[0] ?? null),
+			initialExpanded: [
+				...(opensPastSection ? [PAST_SECTION_ID] : []),
+				...(hasToday ? ["Hoje"] : upcoming.categories),
+			],
+			opensPastSection,
+		};
+	}, [upcomingOccurrences, pastOccurrences, now]);
+
+	const pastActivityCount = useMemo(
+		() => new Set(pastOccurrences.map((o) => o.activity.id)).size,
+		[pastOccurrences],
+	);
 
 	const [expandedCategories, setExpandedCategories] =
 		useState<string[]>(initialExpanded);
@@ -316,11 +395,70 @@ export function ScheduleContent({
 		categoryFilter,
 		tagFilter,
 		categories.includes("Hoje"),
+		opensPastSection,
 	]);
 	const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
 	if (prevFilterKey !== filterKey) {
 		setPrevFilterKey(filterKey);
 		setExpandedCategories(initialExpanded);
+	}
+
+	function renderOccurrenceGrid(items: Occurrence[], ended: boolean) {
+		return (
+			<div className="flex flex-col gap-6 md:grid md:grid-cols-2">
+				{items.map((occurrence, idx, arr) => {
+					const { activity } = occurrence;
+					const isLastOdd =
+						arr.length % 2 === 1 && idx === arr.length - 1;
+					const isJoined = joinedIds.includes(activity.id);
+					const waitlistEntry = waitlistByActivity.get(activity.id);
+					return (
+						<ActivityCard
+							key={`${activity.id}-${occurrence.sessionIndex}`}
+							className={isLastOdd ? "md:col-span-2" : undefined}
+							activity={activity}
+							occurrenceSession={
+								occurrence.sessionCount > 1
+									? occurrence.session
+									: null
+							}
+							occurrenceLabel={
+								occurrence.sessionCount > 1
+									? `Sessão ${occurrence.sessionIndex + 1} de ${occurrence.sessionCount}`
+									: null
+							}
+							occurrenceEnded={ended}
+							participantId={
+								isJoined
+									? participantId
+									: subscribedIds?.includes(activity.id)
+										? participantId
+										: undefined
+							}
+							eventParticipantId={participantId}
+							subscribedIds={subscribedIds}
+							waitlistPosition={waitlistEntry?.position ?? null}
+							hasWaitlistOffer={
+								waitlistEntry?.status === "offered"
+							}
+							isActionLoading={isActionResolving}
+							userId={userId}
+							onQuickJoin={(selected) =>
+								setQuickJoinId(selected.id)
+							}
+							statusOverride={
+								exhaustedIds.includes(activity.id)
+									? "full"
+									: closedIds.includes(activity.id)
+										? "closed"
+										: null
+							}
+							conflicts={conflictMap.get(activity.id) ?? []}
+						/>
+					);
+				})}
+			</div>
+		);
 	}
 
 	return (
@@ -370,103 +508,52 @@ export function ScheduleContent({
 						onValueChange={setExpandedCategories}
 						className="w-full"
 					>
+						{pastCategories.length > 0 ? (
+							<AccordionItem value={PAST_SECTION_ID}>
+								<AccordionTrigger className="font-subtitle text-xl font-bold">
+									<span className="flex flex-col items-start gap-1 text-left">
+										<span>Já aconteceram</span>
+										<span className="text-muted-foreground text-sm font-normal">
+											{pastActivityCount}{" "}
+											{pastActivityCount === 1
+												? "atividade"
+												: "atividades"}
+											{pastRangeLabel
+												? ` · ${pastRangeLabel}`
+												: null}
+										</span>
+									</span>
+								</AccordionTrigger>
+								<AccordionContent className="-m-4 p-4">
+									<div className="flex flex-col gap-8">
+										{pastCategories.map((category) => (
+											<section
+												key={category}
+												className="flex flex-col gap-4"
+											>
+												<h3 className="text-muted-foreground font-subtitle text-base font-bold">
+													{category}
+												</h3>
+												{renderOccurrenceGrid(
+													pastGrouped.get(category)!,
+													true,
+												)}
+											</section>
+										))}
+									</div>
+								</AccordionContent>
+							</AccordionItem>
+						) : null}
 						{categories.map((category) => (
 							<AccordionItem key={category} value={category}>
 								<AccordionTrigger className="font-subtitle text-xl font-bold">
 									{category}
 								</AccordionTrigger>
 								<AccordionContent className="-m-4 p-4">
-									<div className="flex flex-col gap-6 md:grid md:grid-cols-2">
-										{grouped
-											.get(category)!
-											.map((occurrence, idx, arr) => {
-												const { activity } = occurrence;
-												const isLastOdd =
-													arr.length % 2 === 1 &&
-													idx === arr.length - 1;
-												const isJoined =
-													joinedIds.includes(
-														activity.id,
-													);
-												const waitlistEntry =
-													waitlistByActivity.get(
-														activity.id,
-													);
-												return (
-													<ActivityCard
-														key={`${activity.id}-${occurrence.sessionIndex}`}
-														className={
-															isLastOdd
-																? "md:col-span-2"
-																: undefined
-														}
-														activity={activity}
-														occurrenceSession={
-															occurrence.sessionCount >
-															1
-																? occurrence.session
-																: null
-														}
-														occurrenceLabel={
-															occurrence.sessionCount >
-															1
-																? `Sessão ${occurrence.sessionIndex + 1} de ${occurrence.sessionCount}`
-																: null
-														}
-														participantId={
-															isJoined
-																? participantId
-																: subscribedIds?.includes(
-																			activity.id,
-																	  )
-																	? participantId
-																	: undefined
-														}
-														eventParticipantId={
-															participantId
-														}
-														subscribedIds={
-															subscribedIds
-														}
-														waitlistPosition={
-															waitlistEntry?.position ??
-															null
-														}
-														hasWaitlistOffer={
-															waitlistEntry?.status ===
-															"offered"
-														}
-														isActionLoading={
-															isActionResolving
-														}
-														userId={userId}
-														onQuickJoin={(
-															selected,
-														) =>
-															setQuickJoinId(
-																selected.id,
-															)
-														}
-														statusOverride={
-															exhaustedIds.includes(
-																activity.id,
-															)
-																? "full"
-																: closedIds.includes(
-																			activity.id,
-																	  )
-																	? "closed"
-																	: null
-														}
-														conflicts={
-															conflictMap.get(
-																activity.id,
-															) ?? []
-														}
-													/>
-												);
-											})}
-									</div>
+									{renderOccurrenceGrid(
+										grouped.get(category)!,
+										false,
+									)}
 								</AccordionContent>
 							</AccordionItem>
 						))}

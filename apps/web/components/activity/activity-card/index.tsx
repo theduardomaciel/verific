@@ -13,6 +13,7 @@ import {
 import type { RouterOutput } from "@verific/api";
 import { activityCategoryLabels } from "@verific/drizzle/schema";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 import { ParticipantQuitButton } from "@/components/participant/participant-quit-button";
@@ -62,6 +63,8 @@ interface EventCardProps {
 	/** When rendered as one day of a multi-session activity. */
 	occurrenceSession?: ActivitySessionLike | null;
 	occurrenceLabel?: string | null;
+	/** Ocorrência já encerrada (definido pela programação ao agrupar). */
+	occurrenceEnded?: boolean;
 }
 
 export function ActivityCard({
@@ -81,6 +84,7 @@ export function ActivityCard({
 	lowSeatsThreshold = 7,
 	occurrenceSession,
 	occurrenceLabel,
+	occurrenceEnded,
 }: EventCardProps) {
 	const seats = describeSeats({
 		participantsLimit: activity.participantsLimit,
@@ -90,7 +94,8 @@ export function ActivityCard({
 
 	const isFull = statusOverride === "full" || seats.status === "full";
 	const isOpen = activity.isRegistrationOpen && statusOverride !== "closed";
-	const hasEnded = hasEverySessionEnded(activity.sessions);
+	const hasEnded = occurrenceEnded ?? hasEverySessionEnded(activity.sessions);
+	const attended = hasEnded && Boolean(participantId);
 	// Sem fila, lotada não oferece ação de fila: só "Esgotado".
 	const waitlistEnabled = offersWaitlistSpot(activity);
 
@@ -136,7 +141,7 @@ export function ActivityCard({
 			className={cn(
 				"bg-card flex flex-col justify-between gap-4 rounded-lg border p-6 outline-none z-20",
 				{
-					"pointer-events-none opacity-50 select-none": hasEnded,
+					"opacity-70 saturate-50": hasEnded,
 					"border-destructive/50 bg-[color-mix(in_oklab,var(--color-red-500)_3%,var(--card))]":
 						isFull && !waitlistEnabled && !isWaitlisted,
 					"border-warning/50 bg-[color-mix(in_oklab,var(--color-yellow-500)_3%,var(--card))]":
@@ -150,16 +155,18 @@ export function ActivityCard({
 					<span className="text-sm font-extrabold uppercase">
 						{activityCategoryLabels[activity.category]}
 					</span>
-					<span
-						className={cn("text-muted-foreground text-sm", {
-							"animate-pulse font-bold":
-								seats.status === "low" && !isFull,
-							"text-destructive uppercase font-black":
-								isFull && !waitlistEnabled,
-						})}
-					>
-						{isFull ? "Esgotado" : (seats.label ?? "")}
-					</span>
+					{hasEnded ? null : (
+						<span
+							className={cn("text-muted-foreground text-sm", {
+								"animate-pulse font-bold":
+									seats.status === "low" && !isFull,
+								"text-destructive uppercase font-black":
+									isFull && !waitlistEnabled,
+							})}
+						>
+							{isFull ? "Esgotado" : (seats.label ?? "")}
+						</span>
+					)}
 				</div>
 
 				<h3 className="text-lg font-bold">
@@ -178,7 +185,10 @@ export function ActivityCard({
 				) : null}
 				<TagBadges tags={activity.tags ?? []} />
 				{activity.description && (
-					<ExpandableDescription activity={activity} />
+					<ExpandableDescription
+						activity={activity}
+						compact={hasEnded}
+					/>
 				)}
 			</div>
 
@@ -194,14 +204,30 @@ export function ActivityCard({
 					activity={activity}
 					highlightSession={occurrenceSession}
 				/>
-				{conflicts.length > 0 && !showConflictBlock && !isWaitlisted ? (
+				{conflicts.length > 0 &&
+				!showConflictBlock &&
+				!isWaitlisted &&
+				!hasEnded ? (
 					<p className="text-muted-foreground flex w-full items-center gap-1.5 text-sm">
 						<CalendarClock className="size-4 shrink-0" />
 						Conflito de horário
 					</p>
 				) : null}
 				<div className="flex flex-row flex-wrap items-center justify-start gap-4">
-					{showJoinButton ? (
+					{hasEnded ? (
+						attended ? (
+							<Button variant={"default"} size={"lg"} asChild>
+								<Link href={pageHref} prefetch={false}>
+									<Check className="mr-2 h-4 w-4" />
+									Inscrito
+								</Link>
+							</Button>
+						) : (
+							<Badge variant="secondary" className="text-sm">
+								Encerrada
+							</Badge>
+						)
+					) : showJoinButton ? (
 						participantId ? (
 							<Button
 								variant={"default"}
