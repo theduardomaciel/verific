@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 
 import { Trophy } from "lucide-react";
@@ -126,9 +127,14 @@ async function RankingLoader({ params }: Props) {
 	// procedimento responde NOT_FOUND para os demais.
 	let initialData: RouterOutput["getEventRanking"] | null = null;
 	try {
-		initialData = config.ranking.isPublic
-			? await getCachedEventRanking(eventUrl)
-			: await serverClient.getEventRanking({ projectUrl: eventUrl });
+		if (config.ranking.isPublic) {
+			initialData = await getCachedEventRanking(eventUrl);
+		} else {
+			await connection();
+			initialData = await serverClient.getEventRanking({
+				projectUrl: eventUrl,
+			});
+		}
 	} catch (error) {
 		// Só NOT_FOUND vira 404; falha transitória de banco não pode ser
 		// gravada no cache da rota.
