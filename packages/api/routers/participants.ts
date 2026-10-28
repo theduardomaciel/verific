@@ -32,6 +32,7 @@ import {
 	awardSessionCompletion,
 	type StickerAward,
 } from "../lib/gamification";
+import { containsPattern } from "../lib/like";
 import {
 	accessHasPermission,
 	getProjectAccess,
@@ -225,8 +226,8 @@ export const participantsRouter = createTRPCRouter({
 				eq(participant.projectId, projectId),
 				search
 					? or(
-							ilike(user.name, `%${search}%`),
-							ilike(user.email, `%${search}%`),
+							ilike(user.name, containsPattern(search)),
+							ilike(user.email, containsPattern(search)),
 						)
 					: undefined,
 				roleFilter,
@@ -342,10 +343,10 @@ export const participantsRouter = createTRPCRouter({
 				eq(participant.projectId, projectId),
 				query
 					? or(
-							ilike(user.name, `%${query}%`),
+							ilike(user.name, containsPattern(query)),
 							eq(participant.shortId, query),
 							canSeeContacts
-								? ilike(user.email, `%${query}%`)
+								? ilike(user.email, containsPattern(query))
 								: undefined,
 						)
 					: undefined,

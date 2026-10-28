@@ -34,6 +34,7 @@ import {
 	eventAnswerRows,
 	latestByKey,
 } from "../lib/event-answers";
+import { containsPattern } from "../lib/like";
 import {
 	dropVisibilityForFields,
 	detachProfileLinks,
@@ -2148,8 +2149,8 @@ export const formsRouter = createTRPCRouter({
 			if (input.query) {
 				whereClauses.push(
 					or(
-						ilike(user.name, `%${input.query}%`),
-						ilike(user.email, `%${input.query}%`),
+						ilike(user.name, containsPattern(input.query)),
+						ilike(user.email, containsPattern(input.query)),
 					)!,
 				);
 			}

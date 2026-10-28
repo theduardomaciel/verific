@@ -47,6 +47,7 @@ import {
 	persistEnrollment,
 	prepareActivityAnswers,
 } from "../enrollment";
+import { containsPattern } from "../lib/like";
 import {
 	hasProjectAccess,
 	requireActivityPermission,
@@ -236,8 +237,8 @@ function buildActivitiesWhere(
 			: undefined,
 		opts.query
 			? or(
-					ilike(table.name, `%${opts.query}%`),
-					ilike(table.description, `%${opts.query}%`),
+					ilike(table.name, containsPattern(opts.query)),
+					ilike(table.description, containsPattern(opts.query)),
 				)
 			: undefined,
 	);
@@ -592,7 +593,7 @@ export const activitiesRouter = createTRPCRouter({
 			];
 
 			if (search) {
-				nonMonitorWhere.push(ilike(user.name, `%${search}%`));
+				nonMonitorWhere.push(ilike(user.name, containsPattern(search)));
 			}
 
 			let orderByClause;
