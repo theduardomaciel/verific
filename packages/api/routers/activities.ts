@@ -199,6 +199,22 @@ function hasUpcomingSession(table: ActivityRef, now: Date = new Date()) {
 	);
 }
 
+/** Matches activities with at least one speaker whose name contains `query`. */
+function hasSpeakerMatchingName(table: ActivityRef, query: string) {
+	return exists(
+		db
+			.select({ id: speakerOnActivity.activityId })
+			.from(speakerOnActivity)
+			.innerJoin(speaker, eq(speaker.id, speakerOnActivity.speakerId))
+			.where(
+				and(
+					eq(speakerOnActivity.activityId, table.id),
+					ilike(speaker.name, containsPattern(query)),
+				),
+			),
+	);
+}
+
 /** Matches activities that have at least one of `tagIds`. */
 function hasAnyTag(table: ActivityRef, tagIds: string[]) {
 	return exists(
@@ -242,6 +258,7 @@ function buildActivitiesWhere(
 			? or(
 					ilike(table.name, containsPattern(opts.query)),
 					ilike(table.description, containsPattern(opts.query)),
+					hasSpeakerMatchingName(table, opts.query),
 				)
 			: undefined,
 	);

@@ -111,7 +111,7 @@ export function ActivitiesContent() {
 				<div className="w-full space-y-4 md:col-span-2">
 					<div className="flex flex-col items-start gap-4 md:flex-row md:items-center">
 						<div className="relative w-full md:flex-1">
-							<SearchBar placeholder="Pesquisar atividades..." />
+							<SearchBar placeholder="Pesquisar por nome, descrição ou palestrante..." />
 						</div>
 						<SortBy
 							items={sortOptions.map((option) => ({
