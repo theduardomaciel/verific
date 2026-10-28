@@ -12,6 +12,7 @@ import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc/react";
 
 import { EditProfileDialog } from "./edit-profile-dialog";
+import { ProfileQrButton } from "./profile-qr-button";
 
 interface ProfileOwnerActionsProps {
 	eventUrl: string;
@@ -49,10 +50,11 @@ function ProfileOwnerActionsInner({
 	);
 
 	if (session.isPending || (userId && myProfile.isPending)) {
-		// Dois botões `size="lg"` (h-10): o esqueleto reserva a mesma altura.
+		// Três botões `size="lg"` (h-10): o esqueleto reserva a mesma altura.
 		return (
 			<div className="absolute top-8 right-8 z-20 flex flex-col items-end gap-2 md:flex-row md:items-center">
 				<Skeleton className="h-10 w-32 rounded-full" />
+				<Skeleton className="h-10 w-24 rounded-full" />
 				<Skeleton className="h-10 w-20 rounded-full" />
 			</div>
 		);
@@ -68,6 +70,7 @@ function ProfileOwnerActionsInner({
 				projectId={projectId}
 				shortId={shortId}
 			/>
+			<ProfileQrButton eventUrl={eventUrl} shortId={shortId} />
 			<LogoutForm redirectTo={`/${eventUrl}`}>
 				<Button
 					type="submit"
