@@ -33,12 +33,13 @@ function tokenize(query: string | undefined) {
 
 /**
  * Monta um `AND` de termos: cada termo precisa casar com ao menos uma coluna
- * por substring ou por similaridade de trigrama. Retorna `undefined` para
- * query vazia.
+ * por substring ou, com `approximate`, por similaridade de trigrama.
+ * Retorna `undefined` para query vazia.
  */
 export function fuzzySearch(
 	columns: readonly SQLWrapper[],
 	query: string | undefined,
+	{ approximate = true }: { approximate?: boolean } = {},
 ): SQL | undefined {
 	const terms = tokenize(query);
 	if (terms.length === 0 || columns.length === 0) return undefined;
@@ -51,7 +52,9 @@ export function fuzzySearch(
 		const matches = columns.map((column) => {
 			const haystack = normalizedText(column);
 			const substring = sql`${haystack} ilike ${pattern}`;
-			if (term.length < MIN_FUZZY_TERM_LENGTH) return substring;
+			if (!approximate || term.length < MIN_FUZZY_TERM_LENGTH) {
+				return substring;
+			}
 			// Limiar explícito: o operador `<%` usaria o GUC global do banco
 			// (padrão 0.6, alto demais para typos como "edurado").
 			return or(
@@ -86,4 +89,19 @@ export function fuzzyRank(
 	});
 
 	return sql.join(perTerm, sql` + `);
+}
+
+/**
+ * Busca por trecho e só tenta tolerar erros de digitação quando nada casa.
+ * A similaridade sozinha traz ruído que nenhum limiar separa ("maria" casa
+ * com "Martins" com nota maior que "edurado" com "Eduardo"); um erro de
+ * digitação, por outro lado, quase nunca casa por trecho.
+ */
+export async function searchWithTypoFallback<T extends { amount: number }>(
+	query: string | undefined,
+	run: (approximate: boolean) => Promise<T>,
+): Promise<T> {
+	const exact = await run(false);
+	if (exact.amount > 0 || !query?.trim()) return exact;
+	return run(true);
 }

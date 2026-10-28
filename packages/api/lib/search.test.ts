@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { SQL } from "@verific/drizzle/orm";
 import { user } from "@verific/drizzle/schema";
 
-import { fuzzyRank, fuzzySearch } from "./search";
+import { fuzzyRank, fuzzySearch, searchWithTypoFallback } from "./search";
 
 type BuildConfig = Parameters<SQL["toQuery"]>[0];
 
@@ -56,6 +56,15 @@ describe("fuzzySearch", () => {
 		expect(sql).not.toContain("word_similarity");
 	});
 
+	it("skips word similarity when approximate is off", () => {
+		const { sql } = fuzzySearch([user.name], "eduardo", {
+			approximate: false,
+		})!.toQuery(renderConfig);
+
+		expect(sql).toContain("ilike");
+		expect(sql).not.toContain("word_similarity");
+	});
+
 	it("requires every token to match", () => {
 		const { sql, params } = fuzzySearch([user.name], "ana silva")!.toQuery(
 			renderConfig,
@@ -81,5 +90,36 @@ describe("fuzzyRank", () => {
 		expect(sql).toContain("greatest(");
 		expect(sql).toContain("word_similarity(");
 		expect(params).toContain("joao");
+	});
+});
+
+describe("searchWithTypoFallback", () => {
+	it("keeps the exact results when something matches", async () => {
+		const run = vi.fn(async (approximate: boolean) => ({
+			amount: approximate ? 9 : 2,
+		}));
+
+		await expect(searchWithTypoFallback("maria", run)).resolves.toEqual({
+			amount: 2,
+		});
+		expect(run).toHaveBeenCalledTimes(1);
+	});
+
+	it("tolerates typos only when nothing matches exactly", async () => {
+		const run = vi.fn(async (approximate: boolean) => ({
+			amount: approximate ? 3 : 0,
+		}));
+
+		await expect(searchWithTypoFallback("edurado", run)).resolves.toEqual({
+			amount: 3,
+		});
+		expect(run).toHaveBeenLastCalledWith(true);
+	});
+
+	it("does not retry an empty query", async () => {
+		const run = vi.fn(async () => ({ amount: 0 }));
+
+		await searchWithTypoFallback("  ", run);
+		expect(run).toHaveBeenCalledTimes(1);
 	});
 });

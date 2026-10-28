@@ -37,7 +37,7 @@ import {
 	isActivityMonitor,
 	requireProjectPermission,
 } from "../lib/project-access";
-import { fuzzyRank, fuzzySearch } from "../lib/search";
+import { fuzzyRank, fuzzySearch, searchWithTypoFallback } from "../lib/search";
 import {
 	loadNotificationRecipients,
 	notifyEventRegistrationRemoved,
@@ -199,7 +199,6 @@ export const participantsRouter = createTRPCRouter({
 			);
 
 			const searchColumns = [user.name, user.email];
-			const searchWhere = fuzzySearch(searchColumns, search);
 			const searchRank = fuzzyRank(searchColumns, search);
 
 			let roleFilter: SQL | undefined;
@@ -225,12 +224,6 @@ export const participantsRouter = createTRPCRouter({
 				);
 			}
 
-			const whereClauses = [
-				eq(participant.projectId, projectId),
-				searchWhere,
-				roleFilter,
-			];
-
 			let orderByClause;
 
 			switch (sort) {
@@ -251,8 +244,13 @@ export const participantsRouter = createTRPCRouter({
 					orderByClause = desc(participant.joinedAt);
 			}
 
-			const [participants, countResult, emailDomains] = await Promise.all(
-				[
+			const loadPage = async (approximate: boolean) => {
+				const where = and(
+					eq(participant.projectId, projectId),
+					fuzzySearch(searchColumns, search, { approximate }),
+					roleFilter,
+				);
+				const [participants, countResult] = await Promise.all([
 					db
 						.select({
 							id: participant.id,
@@ -268,7 +266,7 @@ export const participantsRouter = createTRPCRouter({
 						})
 						.from(participant)
 						.leftJoin(user, eq(participant.userId, user.id))
-						.where(and(...whereClauses.filter(Boolean)))
+						.where(where)
 						// Relevância primeiro; o id desempata nomes iguais e
 						// mantém a paginação estável.
 						.orderBy(
@@ -286,20 +284,24 @@ export const participantsRouter = createTRPCRouter({
 						.select({ amount: count() })
 						.from(participant)
 						.leftJoin(user, eq(participant.userId, user.id))
-						.where(and(...whereClauses.filter(Boolean))),
-					// Extrai os domínios de e-mail únicos dos participantes
-					db
-						.select({
-							emailDomain: sql`SPLIT_PART(${user.email}, '@', 2)`,
-						})
-						.from(participant)
-						.leftJoin(user, eq(participant.userId, user.id))
-						.where(eq(participant.projectId, projectId))
-						.groupBy(sql`SPLIT_PART(${user.email}, '@', 2)`),
-				],
-			);
+						.where(where),
+				]);
+				return { participants, amount: countResult?.[0]?.amount ?? 0 };
+			};
 
-			const amount = countResult?.[0]?.amount ?? 0;
+			const [{ participants, amount }, emailDomains] = await Promise.all([
+				searchWithTypoFallback(search, loadPage),
+				// Extrai os domínios de e-mail únicos dos participantes
+				db
+					.select({
+						emailDomain: sql`SPLIT_PART(${user.email}, '@', 2)`,
+					})
+					.from(participant)
+					.leftJoin(user, eq(participant.userId, user.id))
+					.where(eq(participant.projectId, projectId))
+					.groupBy(sql`SPLIT_PART(${user.email}, '@', 2)`),
+			]);
+
 			const pageCount = Math.ceil(amount / pageSize);
 
 			return {
@@ -349,45 +351,57 @@ export const participantsRouter = createTRPCRouter({
 			const searchColumns = canSeeContacts
 				? [user.name, user.email]
 				: [user.name];
-			const searchWhere = fuzzySearch(searchColumns, query);
 			const searchRank = fuzzyRank(searchColumns, query);
 
-			const where = and(
-				eq(participant.projectId, projectId),
-				query
-					? or(searchWhere, eq(participant.shortId, query))
-					: undefined,
+			const loadPage = async (approximate: boolean) => {
+				const where = and(
+					eq(participant.projectId, projectId),
+					query
+						? or(
+								fuzzySearch(searchColumns, query, {
+									approximate,
+								}),
+								eq(participant.shortId, query),
+							)
+						: undefined,
+				);
+				const [participants, countResult] = await Promise.all([
+					db
+						.select({
+							id: participant.id,
+							shortId: participant.shortId,
+							user: {
+								name: user.name,
+								image_url: user.image_url,
+							},
+						})
+						.from(participant)
+						.leftJoin(user, eq(participant.userId, user.id))
+						.where(where)
+						.orderBy(
+							...(searchRank
+								? [
+										desc(searchRank),
+										asc(user.name),
+										asc(participant.id),
+									]
+								: [asc(user.name), asc(participant.id)]),
+						)
+						.limit(pageSize)
+						.offset(page * pageSize),
+					db
+						.select({ amount: count() })
+						.from(participant)
+						.leftJoin(user, eq(participant.userId, user.id))
+						.where(where),
+				]);
+				return { participants, amount: countResult[0]?.amount ?? 0 };
+			};
+
+			const { participants, amount } = await searchWithTypoFallback(
+				query,
+				loadPage,
 			);
-
-			const [participants, countResult] = await Promise.all([
-				db
-					.select({
-						id: participant.id,
-						shortId: participant.shortId,
-						user: { name: user.name, image_url: user.image_url },
-					})
-					.from(participant)
-					.leftJoin(user, eq(participant.userId, user.id))
-					.where(where)
-					.orderBy(
-						...(searchRank
-							? [
-									desc(searchRank),
-									asc(user.name),
-									asc(participant.id),
-								]
-							: [asc(user.name), asc(participant.id)]),
-					)
-					.limit(pageSize)
-					.offset(page * pageSize),
-				db
-					.select({ amount: count() })
-					.from(participant)
-					.leftJoin(user, eq(participant.userId, user.id))
-					.where(where),
-			]);
-
-			const amount = countResult[0]?.amount ?? 0;
 			return {
 				participants,
 				amount,
