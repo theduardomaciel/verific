@@ -63,9 +63,18 @@ function makeField(
 	};
 }
 
-function Harness({ field }: { field: DynamicFormField }) {
+function Harness({
+	field,
+	defaultValue,
+}: {
+	field: DynamicFormField;
+	defaultValue?: unknown;
+}) {
 	const form = useForm<{ answers: Record<string, unknown> }>({
-		defaultValues: { answers: {} },
+		defaultValues: {
+			answers:
+				defaultValue === undefined ? {} : { [field.key]: defaultValue },
+		},
 	});
 	return (
 		<FormProvider {...form}>
@@ -274,6 +283,24 @@ describe("DynamicField acessibilidade", () => {
 		const trigger = screen.getByRole("combobox", { name: "Turno" });
 		expect(trigger).toHaveAttribute("id", "answers-turno");
 		expect(trigger).toHaveAttribute("aria-required", "true");
+	});
+
+	it("mostra o valor inicial do select simples", () => {
+		render(
+			<Harness
+				field={makeField({
+					key: "turno",
+					label: "Turno",
+					type: "select_single",
+					options: ["Manhã", "Tarde"],
+				})}
+				defaultValue="Tarde"
+			/>,
+		);
+
+		expect(
+			screen.getByRole("combobox", { name: "Turno" }),
+		).toHaveTextContent("Tarde");
 	});
 
 	it("associa o checkbox único", () => {

@@ -368,6 +368,13 @@ export function DynamicField<TFieldValues extends FieldValues = FieldValues>({
 							: singleOtherSelected
 								? OTHER_SENTINEL
 								: "";
+						// Radix só registra o texto do item quando o conteúdo
+						// abre; sem isto o valor inicial apareceria vazio.
+						const singleDisplayLabel = singleInOptions
+							? singleRaw
+							: singleOtherSelected
+								? OTHER_LABEL
+								: undefined;
 						const singleOtherText =
 							singleOtherSelected &&
 							typeof singleRaw === "string" &&
@@ -455,7 +462,9 @@ export function DynamicField<TFieldValues extends FieldValues = FieldValues>({
 											aria-required={required}
 										>
 											<SelectTrigger className="w-full">
-												<SelectValue placeholder="Selecione uma opção" />
+												<SelectValue placeholder="Selecione uma opção">
+													{singleDisplayLabel}
+												</SelectValue>
 											</SelectTrigger>
 										</FormControl>
 										<SelectContent>

@@ -368,7 +368,12 @@ export function EditMyAnswersForm({
 								))}
 							</div>
 						))}
-						<Button type="submit" disabled={mutation.isPending}>
+						<Button
+							type="submit"
+							disabled={
+								mutation.isPending || !form.formState.isDirty
+							}
+						>
 							{mutation.isPending
 								? "Salvando..."
 								: "Salvar respostas"}
