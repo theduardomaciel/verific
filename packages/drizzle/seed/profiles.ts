@@ -25,10 +25,11 @@ export const STRESS_EVENT = {
 	url: "seed-stress",
 	activities: {
 		limit50: "Estresse: limite 50",
-		limit100: (n: number) => `Estresse: limite 100 (${n})`,
+		spread: (n: number) => `Estresse: espalhada (${n})`,
+		withForm: "Estresse: com formulário",
 		checkin: "Estresse: check-in",
 	},
-	limit100Count: 10,
+	spreadCount: 5,
 } as const;
 
 export const profiles = {
@@ -155,15 +156,17 @@ export const profiles = {
 	},
 	// Cenário dos testes de estresse: 1500 inscritos + 20 monitores no evento
 	// e 1500 usuários ainda não inscritos
+	// Dimensionado pela Secomp (~450 participantes, ~30 atividades): 450
+	// inscritos + 20 monitores no evento e 450 usuários ainda não inscritos
 	stress: {
-		users: 3020,
+		users: 920,
 		events: [
 			{
 				name: "Evento de Estresse",
 				url: STRESS_EVENT.url,
 				startsInDays: 7,
 				durationDays: 3,
-				participants: 1520,
+				participants: 470,
 				monitors: 20,
 				moderators: 0,
 				speakers: 10,
@@ -176,17 +179,27 @@ export const profiles = {
 						enrolled: 0,
 						monitors: 0,
 					},
+					// 300 vagas para 450 pessoas: a disputa espalhada também esgota
 					...Array.from(
-						{ length: STRESS_EVENT.limit100Count },
+						{ length: STRESS_EVENT.spreadCount },
 						(_, i) => ({
-							name: STRESS_EVENT.activities.limit100(i + 1),
-							participantsLimit: 100,
+							name: STRESS_EVENT.activities.spread(i + 1),
+							participantsLimit: 60,
 							sessions: 1,
 							slot: STRESS_JOIN_SLOT,
 							enrolled: 0,
 							monitors: 0,
 						}),
 					),
+					{
+						name: STRESS_EVENT.activities.withForm,
+						participantsLimit: 50,
+						sessions: 1,
+						slot: STRESS_JOIN_SLOT,
+						enrolled: 0,
+						monitors: 0,
+						form: true,
+					},
 					{
 						name: STRESS_EVENT.activities.checkin,
 						participantsLimit: null,
@@ -195,7 +208,7 @@ export const profiles = {
 						enrolled: "all",
 						monitors: "all",
 					},
-					...randomActivities(40),
+					...randomActivities(22),
 				],
 			},
 		],

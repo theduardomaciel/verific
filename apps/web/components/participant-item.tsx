@@ -34,7 +34,9 @@ export function ParticipantItem({
 			<div className="flex flex-row items-center justify-end gap-4">
 				{participant.user?.name && (
 					<span className="text-neutral hidden text-xs leading-none font-semibold opacity-50 md:flex">
-						@{participant.user?.email?.split("@")[0]}
+						@
+						{participant.user.email?.split("@")[0] ??
+							participant.shortId}
 					</span>
 				)}
 				<Checkbox

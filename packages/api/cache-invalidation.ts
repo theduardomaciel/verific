@@ -441,8 +441,11 @@ export const mutationCacheRules: Record<string, MutationCacheRule> = {
 			const projectId = readString(result, "projectId");
 			if (!projectId) return [];
 			return [
-				// Inscrição concede pontos (quando ligados) e muda o ranking.
-				projectGamificationCacheTag(projectId),
+				// Inscrição só muda ranking e perfis quando rende pontos
+				// (gamificação ligada e `enrollmentPoints` > 0).
+				record(result).gamificationChanged === true
+					? projectGamificationCacheTag(projectId)
+					: undefined,
 				// Sem respostas não há mudança no perfil público.
 				...(!record(input).formAnswers
 					? []

@@ -43,10 +43,12 @@ import { z } from "@verific/zod";
 
 import {
 	assertNoScheduleConflict,
+	findJoinRequester,
 	lockParticipant,
 	persistEnrollment,
 	prepareActivityAnswers,
 } from "../enrollment";
+import { containsPattern } from "../lib/like";
 import {
 	hasProjectAccess,
 	requireActivityPermission,
@@ -77,7 +79,9 @@ import {
 } from "../schemas";
 import {
 	assertActivityOpen,
+	assertNotFullBeforeLock,
 	assertSeatsAvailable,
+	contendedTransaction,
 	countEnrolled,
 	lockActivity,
 	normalizeOverbooked,
@@ -236,8 +240,8 @@ function buildActivitiesWhere(
 			: undefined,
 		opts.query
 			? or(
-					ilike(table.name, `%${opts.query}%`),
-					ilike(table.description, `%${opts.query}%`),
+					ilike(table.name, containsPattern(opts.query)),
+					ilike(table.description, containsPattern(opts.query)),
 				)
 			: undefined,
 	);
@@ -592,7 +596,7 @@ export const activitiesRouter = createTRPCRouter({
 			];
 
 			if (search) {
-				nonMonitorWhere.push(ilike(user.name, `%${search}%`));
+				nonMonitorWhere.push(ilike(user.name, containsPattern(search)));
 			}
 
 			let orderByClause;
@@ -1678,15 +1682,13 @@ export const activitiesRouter = createTRPCRouter({
 			}
 
 			// Participante do requisitante no evento (uma única leitura,
-			// reutilizada pelo probe do formulário e pelo gate de
-			// auto-inscrição abaixo).
-			const requesterParticipant = await db.query.participant.findFirst({
-				where: and(
-					eq(participant.projectId, foundActivity.projectId),
-					eq(participant.userId, ctx.session.user.id),
-				),
-				columns: { id: true },
-			});
+			// reutilizada pelo probe do formulário, pelo gate de
+			// auto-inscrição e pela recusa antes da trava abaixo).
+			const requesterParticipant = await findJoinRequester(
+				foundActivity.projectId,
+				ctx.session.user.id,
+				activityId,
+			);
 			const requesterParticipantId = requesterParticipant?.id ?? null;
 
 			// Auto-inscrição: o requisitante inscreve SOMENTE a si mesmo.
@@ -1697,6 +1699,9 @@ export const activitiesRouter = createTRPCRouter({
 				!!requesterParticipantId &&
 				participantsIdsToAdd.length === 1 &&
 				participantsIdsToAdd.includes(requesterParticipantId);
+			if (isSelfServiceJoin && requesterParticipant) {
+				assertNotFullBeforeLock(foundActivity, requesterParticipant);
+			}
 			// A organização vem antes: sem ela, a resposta diria quem é do evento
 			if (!isSelfServiceJoin) {
 				await requireProjectPermission(
@@ -1721,68 +1726,72 @@ export const activitiesRouter = createTRPCRouter({
 					participantsIdsToAdd.includes(requesterParticipantId),
 			});
 
-			const { inserted, resolved } = await db.transaction(async (tx) => {
-				if (isSelfServiceJoin && requesterParticipantId) {
-					// Checagem de conflito + inserção atômicas: dois joins
-					// concorrentes do mesmo participante serializam e no
-					// máximo um vence. Inscrições existentes nunca são tocadas.
-					await lockParticipant(tx, requesterParticipantId);
-					await assertNoScheduleConflict(
+			const { inserted, resolved, pointsAwarded } =
+				await contendedTransaction(async (tx) => {
+					if (isSelfServiceJoin && requesterParticipantId) {
+						// Checagem de conflito + inserção atômicas: dois joins
+						// concorrentes do mesmo participante serializam e no
+						// máximo um vence. Inscrições existentes nunca são tocadas.
+						await lockParticipant(tx, requesterParticipantId);
+						await assertNoScheduleConflict(
+							tx,
+							activityId,
+							requesterParticipantId,
+						);
+					}
+
+					// Quem se inscreve sozinho não passa à frente da fila; quem
+					// tem oferta em aberto usa a vaga reservada para si.
+					const locked = await lockActivity(tx, activityId);
+					assertActivityOpen(locked);
+					const queue = await settleActivity(tx, locked);
+					const queued = await assertSeatsAvailable(
+						tx,
+						locked,
+						queue,
+						participantsIdsToAdd,
+						{
+							queueFirst: isSelfServiceJoin,
+							allowOverCapacity:
+								allowOverCapacity && !isSelfServiceJoin,
+						},
+					);
+
+					const { inserted, pointsAwarded } = await persistEnrollment(
+						tx,
+						{
+							projectId: locked.projectId,
+							activityId,
+							participantIds: participantsIdsToAdd,
+							answerRows,
+							...(allowOverCapacity && !isSelfServiceJoin
+								? {
+										overCapacity: {
+											actorUserId: ctx.session.user.id,
+											reason: overCapacityReason ?? null,
+										},
+									}
+								: {}),
+						},
+					);
+					await normalizeOverbooked(
 						tx,
 						activityId,
-						requesterParticipantId,
+						locked.participantsLimit,
 					);
-				}
-
-				// Quem se inscreve sozinho não passa à frente da fila; quem
-				// tem oferta em aberto usa a vaga reservada para si.
-				const locked = await lockActivity(tx, activityId);
-				assertActivityOpen(locked);
-				const queue = await settleActivity(tx, locked);
-				const queued = await assertSeatsAvailable(
-					tx,
-					locked,
-					queue,
-					participantsIdsToAdd,
-					{
-						queueFirst: isSelfServiceJoin,
-						allowOverCapacity:
-							allowOverCapacity && !isSelfServiceJoin,
-					},
-				);
-
-				const inserted = await persistEnrollment(tx, {
-					projectId: locked.projectId,
-					activityId,
-					participantIds: participantsIdsToAdd,
-					answerRows,
-					...(allowOverCapacity && !isSelfServiceJoin
-						? {
-								overCapacity: {
-									actorUserId: ctx.session.user.id,
-									reason: overCapacityReason ?? null,
-								},
-							}
-						: {}),
+					const resolved = await resolveEnrolledEntries(
+						tx,
+						activityId,
+						queued,
+						{
+							type: isSelfServiceJoin ? "confirmed" : "promoted",
+							actorUserId: isSelfServiceJoin
+								? null
+								: ctx.session.user.id,
+						},
+					);
+					return { inserted, resolved, pointsAwarded };
 				});
-				await normalizeOverbooked(
-					tx,
-					activityId,
-					locked.participantsLimit,
-				);
-				const resolved = await resolveEnrolledEntries(
-					tx,
-					activityId,
-					queued,
-					{
-						type: isSelfServiceJoin ? "confirmed" : "promoted",
-						actorUserId: isSelfServiceJoin
-							? null
-							: ctx.session.user.id,
-					},
-				);
-				return { inserted, resolved };
-			});
 
 			// Só quem realmente ganhou vínculo novo recebe confirmação; quem
 			// saiu da fila recebe a promoção (nunca os dois).
@@ -1809,7 +1818,12 @@ export const activitiesRouter = createTRPCRouter({
 				resolved,
 			});
 
-			return { success: true, projectId: foundActivity.projectId };
+			return {
+				success: true,
+				projectId: foundActivity.projectId,
+				// Ranking e perfis só mudam quando a inscrição rende pontos
+				gamificationChanged: pointsAwarded,
+			};
 		}),
 
 	addMonitorsToActivity: protectedProcedure

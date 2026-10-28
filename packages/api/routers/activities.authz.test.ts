@@ -12,7 +12,7 @@ const {
 	findProject,
 	findActivity,
 	findManyActivities,
-	findParticipant,
+	findRequester,
 	findManyFormVersions,
 	selectMock,
 	transactionMock,
@@ -21,7 +21,7 @@ const {
 	findProject: vi.fn(),
 	findActivity: vi.fn(),
 	findManyActivities: vi.fn(),
-	findParticipant: vi.fn(),
+	findRequester: vi.fn(),
 	findManyFormVersions: vi.fn(async () => []),
 	selectMock: vi.fn(),
 	transactionMock: vi.fn(),
@@ -33,7 +33,6 @@ vi.mock("@verific/drizzle", () => ({
 		query: {
 			project: { findFirst: findProject },
 			activity: { findFirst: findActivity, findMany: findManyActivities },
-			participant: { findFirst: findParticipant },
 			formVersion: { findMany: findManyFormVersions },
 		},
 		select: selectMock,
@@ -45,6 +44,7 @@ vi.mock("@verific/env", () => ({ env: {} }));
 vi.mock("./forms", () => ({ hasPublishedActivityForm: async () => false }));
 vi.mock("../enrollment", () => ({
 	assertNoScheduleConflict: vi.fn(),
+	findJoinRequester: findRequester,
 	lockParticipant: vi.fn(),
 	persistEnrollment: vi.fn(),
 	prepareActivityAnswers: vi.fn(async () => []),
@@ -71,6 +71,13 @@ function selectChain(result: unknown) {
 }
 
 const intruder = { user: { id: "intruder" } } as unknown as Session;
+
+const selfRequester = {
+	id: SELF_PARTICIPANT,
+	involved: false,
+	enrolled: 0,
+	openOffers: 0,
+};
 
 const sessions = [
 	{
@@ -156,7 +163,7 @@ describe("activities: só a organização do evento altera", () => {
 		selectMock.mockReturnValue(
 			selectChain([{ id: SELF_PARTICIPANT }, { id: OTHER_PARTICIPANT }]),
 		);
-		findParticipant.mockResolvedValue({ id: SELF_PARTICIPANT });
+		findRequester.mockResolvedValue(selfRequester);
 		const caller = createCaller({ session: intruder });
 
 		await expect(
@@ -170,7 +177,7 @@ describe("activities: só a organização do evento altera", () => {
 
 	it("addActivityParticipants conta um id repetido uma vez só", async () => {
 		selectMock.mockReturnValue(selectChain([{ id: SELF_PARTICIPANT }]));
-		findParticipant.mockResolvedValue({ id: SELF_PARTICIPANT });
+		findRequester.mockResolvedValue(selfRequester);
 		transactionMock.mockRejectedValue(new Error("chegou à inscrição"));
 		const caller = createCaller({ session: intruder });
 

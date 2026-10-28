@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 
 import { db } from "@verific/drizzle";
-import { and, eq, ilike, isNull, ne } from "@verific/drizzle/orm";
+import { and, eq, isNull, ne, sql } from "@verific/drizzle/orm";
 import {
 	socialEntrySchema,
 	type SocialLinks,
@@ -32,7 +32,8 @@ export async function resolveSpeakerParticipantId(
 	normalizedEmail: string,
 ): Promise<string | null> {
 	const matchedUser = await db.query.user.findFirst({
-		where: ilike(user.email, normalizedEmail),
+		// Igualdade sem diferenciar maiúsculas, sem curingas de padrão
+		where: sql`lower(${user.email}) = ${normalizedEmail}`,
 		columns: { id: true },
 	});
 	if (!matchedUser) return null;

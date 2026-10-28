@@ -16,6 +16,7 @@ import {
 import { getNotificationEnabledMap, isNotificationEnabled } from "./settings";
 import { DrizzleNotificationStore, STALE_CLAIM_TIMEOUT_MS } from "./store";
 
+import type { ScheduleNotificationRetryArgs } from "../scheduler";
 import type { EmailConfig } from "./config";
 import type { BuildContext } from "./registry";
 import type {
@@ -34,6 +35,18 @@ import type {
 export const MAX_SEND_ATTEMPTS = 3;
 /** Short exponential backoff between retries (after attempt 1, then 2). */
 export const RETRY_BACKOFF_MS = [100, 400];
+/**
+ * Atraso antes de cada reenvio agendado, depois de uma rodada que falhou
+ * por erro temporário (limite de taxa, 5xx). Numa rajada de inscrições,
+ * o acréscimo aleatório espalha os reenvios para não voltarem juntos.
+ */
+export const RETRY_ROUND_DELAYS_MS = [
+	60_000,
+	5 * 60_000,
+	30 * 60_000,
+	2 * 60 * 60_000,
+];
+export const RETRY_JITTER_RATIO = 0.5;
 /** `email_quota_warning` fires once usage reaches this fraction of the cap. */
 export const QUOTA_WARNING_THRESHOLD = 0.8;
 
@@ -45,7 +58,11 @@ export interface ServiceDeps {
 	sleep?: (ms: number) => Promise<void>;
 	/** Optional per-batch cache (activity/project) for bulk sends. */
 	shared?: BuildContext;
+	scheduleRetry?: ScheduleRetry;
+	random?: () => number;
 }
+
+type ScheduleRetry = (args: ScheduleNotificationRetryArgs) => Promise<void>;
 
 interface ResolvedDeps {
 	store: NotificationStore;
@@ -53,6 +70,8 @@ interface ResolvedDeps {
 	config?: Pick<EmailConfig, "provider" | "from" | "dailyLimit">;
 	now: () => Date;
 	sleep: (ms: number) => Promise<void>;
+	scheduleRetry: ScheduleRetry;
+	random: () => number;
 	shared?: BuildContext;
 	/** Lote: configuração de cada tipo por evento, lida uma vez. */
 	enabledCache?: Map<string, boolean>;
@@ -85,8 +104,45 @@ function resolveDeps(deps?: ServiceDeps): ResolvedDeps {
 			deps?.sleep ??
 			((ms: number) =>
 				new Promise<void>((resolve) => setTimeout(resolve, ms))),
+		scheduleRetry:
+			deps?.scheduleRetry ??
+			(async (args) => {
+				const { getNotificationRetryScheduler } =
+					await import("../scheduler");
+				await (
+					await getNotificationRetryScheduler()
+				).scheduleRetry(args);
+			}),
+		random: deps?.random ?? Math.random,
 		shared: deps?.shared,
 	};
+}
+
+/**
+ * Agenda a próxima rodada de envio depois de uma falha temporária, até
+ * esgotar `RETRY_ROUND_DELAYS_MS`. Falhar ao agendar só fica no log: a
+ * linha continua `failed` e pode ser reprocessada pelo painel.
+ */
+async function scheduleNextRound(
+	id: string,
+	round: number,
+	resolved: ResolvedDeps,
+): Promise<void> {
+	const delay = RETRY_ROUND_DELAYS_MS[round - 1];
+	if (delay === undefined) return;
+	const jitter = delay * RETRY_JITTER_RATIO * resolved.random();
+	try {
+		await resolved.scheduleRetry({
+			notificationId: id,
+			round: round + 1,
+			notBefore: new Date(resolved.now().getTime() + delay + jitter),
+		});
+	} catch (err) {
+		console.error(
+			`[notifications] failed to schedule retry (id=${id}, round=${round + 1}):`,
+			messageOf(err),
+		);
+	}
 }
 
 async function isTypeEnabled(
@@ -363,6 +419,24 @@ export async function processNotification(
 	return processResolved(id, resolveDeps(deps));
 }
 
+/**
+ * Rodada agendada por `scheduleNextRound`. Só reenvia o que ainda está
+ * `failed` por erro temporário: enviada, pulada ou reprocessada pelo painel
+ * no meio do caminho, a entrega vira no-op.
+ */
+export async function processScheduledRetry(
+	id: string,
+	deps?: ServiceDeps,
+): Promise<{ status: "processed" | "no-op" }> {
+	const resolved = resolveDeps(deps);
+	const row = await resolved.store.getById(id);
+	if (row?.status !== "failed" || row.lastErrorRetryable !== true) {
+		return { status: "no-op" };
+	}
+	await processResolved(id, resolved);
+	return { status: "processed" };
+}
+
 async function processResolved(
 	id: string,
 	resolved: ResolvedDeps,
@@ -442,6 +516,8 @@ async function processResolved(
 			skipReason: null,
 		};
 
+		// `attempts` acumula entre rodadas (envio inicial e reenvios)
+		const priorAttempts = claimed.attempts;
 		for (let attempt = 1; attempt <= MAX_SEND_ATTEMPTS; attempt += 1) {
 			let result;
 			try {
@@ -471,7 +547,7 @@ async function processResolved(
 				const sent = await store.update(id, {
 					...renderMeta,
 					status: "sent",
-					attempts: attempt,
+					attempts: priorAttempts + attempt,
 					lastError: null,
 					lastErrorRetryable: null,
 					provider: provider.name,
@@ -488,7 +564,7 @@ async function processResolved(
 				const blocked = await store.update(id, {
 					...renderMeta,
 					status: "blocked_quota",
-					attempts: attempt,
+					attempts: priorAttempts + attempt,
 					lastError: `${result.code}: ${result.message}`,
 					lastErrorRetryable: false,
 					provider: provider.name,
@@ -498,13 +574,20 @@ async function processResolved(
 
 			await store.update(id, {
 				...renderMeta,
-				attempts: attempt,
+				attempts: priorAttempts + attempt,
 				lastError: `${result.code}: ${result.message}`,
 				lastErrorRetryable: result.retryable,
 				provider: provider.name,
 			});
 			if (!result.retryable || attempt >= MAX_SEND_ATTEMPTS) {
 				const failed = await store.update(id, { status: "failed" });
+				if (result.retryable) {
+					await scheduleNextRound(
+						id,
+						Math.floor(priorAttempts / MAX_SEND_ATTEMPTS) + 1,
+						resolved,
+					);
+				}
 				return { notification: failed ?? claimed };
 			}
 			await resolved.sleep(RETRY_BACKOFF_MS[attempt - 1] ?? 500);

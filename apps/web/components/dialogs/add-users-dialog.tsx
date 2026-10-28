@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useTransition, useMemo } from "react";
+import { useState, useTransition, useMemo } from "react";
 
+import { TRPCClientError } from "@trpc/client";
 import { Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
 
@@ -45,6 +46,18 @@ interface AddUsersDialogProps {
 	isFull?: boolean;
 	/** Qual mutation padrão usar quando não há handler customizado. */
 	mode?: SubmitMode;
+	/** Usa a busca do credenciamento, aberta a monitores da atividade. */
+	checkIn?: { activityId?: string };
+}
+
+/**
+ * Mensagem do servidor quando ela explica a recusa (ex.: não inscrito).
+ * Falha de rede não tem `data`, e o erro interno não diz nada útil.
+ */
+function serverReason(error: unknown) {
+	if (!(error instanceof TRPCClientError)) return null;
+	const code = (error.data as { code?: string } | undefined)?.code;
+	return code && code !== "INTERNAL_SERVER_ERROR" ? error.message : null;
 }
 
 export function AddUsersDialog({
@@ -60,6 +73,7 @@ export function AddUsersDialog({
 	allowOverCapacity = false,
 	isFull = false,
 	mode = "participants",
+	checkIn,
 }: AddUsersDialogProps) {
 	const resolvedTitle = title ?? "Adicionar usuários";
 	const customHandler = onSubmitSelected ?? onAdd ?? onSelect;
@@ -70,9 +84,6 @@ export function AddUsersDialog({
 	const [overbook, setOverbook] = useState(false);
 	const [overbookReason, setOverbookReason] = useState("");
 
-	const [addedUsersAmount, setAddedUsersAmount] = useState<
-		number | undefined
-	>(undefined);
 	const [isMutating, startTransition] = useTransition();
 
 	const {
@@ -83,11 +94,12 @@ export function AddUsersDialog({
 		hasMore,
 		setHasMore,
 		isSearching,
-		setIsSearching,
 		isDebouncing,
 		data,
 		isFetching,
-	} = useParticipantSearch({ projectId, isOpen });
+		isError,
+		refetch,
+	} = useParticipantSearch({ projectId, isOpen, checkIn });
 	const {
 		selectedParticipants,
 		toggleSelection,
@@ -119,7 +131,6 @@ export function AddUsersDialog({
 		if (data.pageCount && page >= data.pageCount - 1) {
 			setHasMore(false);
 		}
-		setIsSearching(false);
 	}
 
 	const filteredParticipants = useMemo(
@@ -199,53 +210,43 @@ export function AddUsersDialog({
 							: {}),
 					});
 				}
-				setAddedUsersAmount(selectedParticipantsIds.length);
-				await refreshRoute();
+				// O handler customizado (credenciamento) já avisa por pessoa
+				if (!customHandler) {
+					const many = selectedParticipantsIds.length > 1;
+					toast.success(
+						many ? "Usuários adicionados!" : "Usuário adicionado!",
+						{
+							description: many
+								? "Os usuários foram adicionados com sucesso."
+								: "O usuário foi adicionado com sucesso.",
+						},
+					);
+				}
+				setIsOpen(false);
+				setPage(0);
+				setSearch("");
+				setAllParticipants([]);
+				clearSelection();
+				// Falhar ao atualizar a rota não desfaz o que já foi salvo
+				void refreshRoute().catch(console.error);
 			} catch (error) {
 				console.error(error);
 				const message = error instanceof Error ? error.message : "";
-				toast.error("Erro ao adicionar", {
-					description:
-						message.includes("limit") && allowOverCapacity
-							? "A atividade está lotada. Marque a opção de exceder as vagas para continuar."
-							: "Ocorreu um erro ao adicionar. Tente novamente mais tarde.",
-				});
+				toast.error(
+					customHandler
+						? "Não foi possível concluir"
+						: "Erro ao adicionar",
+					{
+						description:
+							message.includes("limit") && allowOverCapacity
+								? "A atividade está lotada. Marque a opção de exceder as vagas para continuar."
+								: (serverReason(error) ??
+									"Ocorreu um erro. Tente novamente mais tarde."),
+					},
+				);
 			}
 		});
 	}
-
-	const [prevMutationDone, setPrevMutationDone] = useState({
-		isMutating,
-		addedUsersAmount,
-	});
-	if (
-		isMutating === false &&
-		addedUsersAmount &&
-		(prevMutationDone.isMutating !== isMutating ||
-			prevMutationDone.addedUsersAmount !== addedUsersAmount)
-	) {
-		setPrevMutationDone({ isMutating, addedUsersAmount });
-		setIsOpen(false);
-		setPage(0);
-		setSearch("");
-		setAllParticipants([]);
-		clearSelection();
-	}
-
-	useEffect(() => {
-		if (isMutating === false && addedUsersAmount) {
-			const titleText =
-				addedUsersAmount > 1
-					? "Usuários adicionados!"
-					: "Usuário adicionado!";
-			const descriptionText =
-				addedUsersAmount > 1
-					? "Os usuários foram adicionados com sucesso."
-					: "O usuário foi adicionado com sucesso.";
-
-			toast.success(titleText, { description: descriptionText });
-		}
-	}, [isMutating, addedUsersAmount]);
 
 	return (
 		<Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -351,6 +352,20 @@ export function AddUsersDialog({
 										)}
 									</div>
 								</ul>
+							</div>
+						) : isError ? (
+							<div className="flex w-full flex-col items-center justify-center gap-3 py-8 text-center">
+								<p>
+									Não foi possível carregar os participantes.
+								</p>
+								<Button
+									type="button"
+									variant="outline"
+									disabled={isFetching}
+									onClick={() => void refetch()}
+								>
+									Tentar de novo
+								</Button>
 							</div>
 						) : isSearching ? (
 							<div className="flex w-full items-center justify-center py-8">

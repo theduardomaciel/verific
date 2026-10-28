@@ -6,6 +6,7 @@ import { env } from "@verific/env";
 import { emailUrl } from "../notifications/urls";
 
 import type {
+	NotificationRetryScheduler,
 	OfferExpiryScheduler,
 	ScheduleOfferExpiryArgs,
 	ScheduleOfferExpiryResult,
@@ -63,6 +64,33 @@ export function createQStashScheduler(): OfferExpiryScheduler {
 			// @upstash/qstash v2 returns { messageId } on success
 			const messageId = (res as { messageId?: string }).messageId;
 			return { messageId };
+		},
+	};
+}
+
+/**
+ * Reenvio de notificações: publica no endpoint de retry com horário
+ * absoluto. Uma entrega por notificação e rodada (deduplicação).
+ */
+export function createQStashNotificationRetryScheduler(): NotificationRetryScheduler {
+	const token = env.QSTASH_TOKEN;
+	if (!token) {
+		throw new Error(
+			"QSTASH_TOKEN is not set. Set it or use SCHEDULER_PROVIDER=console.",
+		);
+	}
+	const client = new Client({ token });
+
+	return {
+		async scheduleRetry({ notificationId, round, notBefore }) {
+			const res = await client.publishJSON({
+				url: emailUrl("/api/jobs/notification-retry"),
+				body: { notificationId, round },
+				notBefore: Math.ceil(notBefore.getTime() / 1000),
+				retries: 3,
+				deduplicationId: `notification-retry:${notificationId}:${round}`,
+			});
+			return { messageId: (res as { messageId?: string }).messageId };
 		},
 	};
 }

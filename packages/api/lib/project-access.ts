@@ -8,7 +8,12 @@ import {
 	type ProjectMemberRole,
 	type ProjectPermission,
 } from "@verific/drizzle/permissions";
-import { activity, participant, project } from "@verific/drizzle/schema";
+import {
+	activity,
+	participant,
+	participantOnActivity,
+	project,
+} from "@verific/drizzle/schema";
 
 const ALL_PERMISSIONS: ProjectPermission[] = [...PROJECT_PERMISSIONS];
 
@@ -292,6 +297,31 @@ export async function ownsParticipantProfile(
 		),
 		columns: { id: true },
 	});
+	return Boolean(found);
+}
+
+/** Whether `userId` is a monitor of this activity of the event. */
+export async function isActivityMonitor(
+	projectId: string,
+	activityId: string,
+	userId: string,
+) {
+	const [found] = await db
+		.select({ participantId: participantOnActivity.participantId })
+		.from(participantOnActivity)
+		.innerJoin(
+			participant,
+			eq(participant.id, participantOnActivity.participantId),
+		)
+		.where(
+			and(
+				eq(participantOnActivity.activityId, activityId),
+				eq(participantOnActivity.role, "monitor"),
+				eq(participant.projectId, projectId),
+				eq(participant.userId, userId),
+			),
+		)
+		.limit(1);
 	return Boolean(found);
 }
 

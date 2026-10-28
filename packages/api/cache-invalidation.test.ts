@@ -125,10 +125,31 @@ describe("addActivityParticipants", () => {
 		expect(
 			rule.tags({
 				input,
-				result: { success: true, projectId: "e1" },
+				result: {
+					success: true,
+					projectId: "e1",
+					gamificationChanged: true,
+				},
 				ctx: { session: null },
 				snapshot: undefined,
 			}),
 		).toEqual([projectGamificationCacheTag("e1")]);
+	});
+
+	it("sem pontos, não invalida a gamificação", () => {
+		expect(
+			rule
+				.tags({
+					input,
+					result: {
+						success: true,
+						projectId: "e1",
+						gamificationChanged: false,
+					},
+					ctx: { session: null },
+					snapshot: undefined,
+				})
+				.filter(Boolean),
+		).toEqual([]);
 	});
 });

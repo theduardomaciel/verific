@@ -248,6 +248,7 @@ export function ActivityEnrollmentForm({
 		full: "As vagas acabaram enquanto você se inscrevia. Envie de novo para entrar na fila de espera.",
 		closed: "As inscrições foram encerradas.",
 		disabled: "A fila de espera desta atividade foi desativada.",
+		busy: "Muita gente está se inscrevendo agora. Tente de novo em instantes.",
 		unknown: "Houve um erro ao confirmar sua inscrição. Tente novamente.",
 	};
 

@@ -1,11 +1,13 @@
 import { TRPCError } from "@trpc/server";
 
+import { db } from "@verific/drizzle";
 import { parseGamificationConfig } from "@verific/drizzle/gamification";
 import { and, eq, inArray, sql } from "@verific/drizzle/orm";
 import {
 	activity,
 	formAnswer,
 	formVersion,
+	participant,
 	participantOnActivity,
 	project,
 } from "@verific/drizzle/schema";
@@ -20,11 +22,29 @@ import {
 } from "./routers/forms";
 import { findScheduleConflicts } from "./schedule-conflicts";
 import { validateAnswers, type answerValueSchema } from "./schemas";
-import { countEnrolled, type Tx } from "./seats";
+import { countEnrolled, occupancyColumns, type Tx } from "./seats";
 
 export type FormAnswersInput = {
 	answers: Record<string, z.infer<typeof answerValueSchema>>;
 };
+
+/** Participante de quem pede a inscrição, com a lotação da atividade. */
+export async function findJoinRequester(
+	projectId: string,
+	userId: string,
+	activityId: string,
+) {
+	const [row] = await db
+		.select({ id: participant.id, ...occupancyColumns(activityId) })
+		.from(participant)
+		.where(
+			and(
+				eq(participant.projectId, projectId),
+				eq(participant.userId, userId),
+			),
+		);
+	return row ?? null;
+}
 
 /**
  * Serializa as operações de um mesmo participante (inscrição, fila,
@@ -187,7 +207,8 @@ export async function saveActivityAnswers(
  * travou a atividade.
  * Só insere; nunca remove nada. Devolve apenas os vínculos novos (com o
  * `subscribedAt` gravado), para o trigger de e-mail não notificar quem já
- * estava inscrito.
+ * estava inscrito, e se a inscrição rendeu pontos, para o cache de
+ * gamificação só ser invalidado quando algo mudou.
  */
 export async function persistEnrollment(
 	tx: Tx,
@@ -206,9 +227,14 @@ export async function persistEnrollment(
 			reason?: string | null;
 		};
 	},
-): Promise<
-	Array<{ participantId: string; subscribedAt: Date; overbooked: boolean }>
-> {
+): Promise<{
+	inserted: Array<{
+		participantId: string;
+		subscribedAt: Date;
+		overbooked: boolean;
+	}>;
+	pointsAwarded: boolean;
+}> {
 	const { projectId, activityId, participantIds, answerRows } = args;
 
 	const [activityRow] = await tx
@@ -270,6 +296,7 @@ export async function persistEnrollment(
 
 	// Gamificação é acessória: roda num savepoint e nunca desfaz a
 	// inscrição. Só pontua vínculos realmente novos.
+	let pointsAwarded = false;
 	if (inserted.length > 0) {
 		const [projectRow] = await tx
 			.select({
@@ -284,25 +311,30 @@ export async function persistEnrollment(
 		const config = parseGamificationConfig(projectRow?.gamification);
 		if (projectRow && config.enabled && config.enrollmentPoints > 0) {
 			try {
+				let total = 0;
 				await tx.transaction(async (sp) => {
 					for (const row of inserted) {
-						await awardEnrollment(sp, {
+						total += await awardEnrollment(sp, {
 							project: projectRow,
 							participantId: row.participantId,
 							activityId,
 						});
 					}
 				});
+				pointsAwarded = total > 0;
 			} catch {
 				// Pontos nunca bloqueiam a inscrição.
 			}
 		}
 	}
 
-	return inserted.map((row) => ({
-		...row,
-		overbooked: overbookedIds.has(row.participantId),
-	}));
+	return {
+		inserted: inserted.map((row) => ({
+			...row,
+			overbooked: overbookedIds.has(row.participantId),
+		})),
+		pointsAwarded,
+	};
 }
 
 export async function deleteActivityAnswers(

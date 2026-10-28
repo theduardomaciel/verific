@@ -60,13 +60,16 @@ export const auth = betterAuth({
 		},
 	},
 	socialProviders: {
-		google: {
-			clientId: env.GOOGLE_CLIENT_ID,
-			clientSecret: env.GOOGLE_CLIENT_SECRET,
-			// Sempre exibe o seletor de contas do Google, permitindo
-			// trocar de conta mesmo com sessão Google pré-existente.
-			prompt: "select_account",
-		},
+		...(env.GOOGLE_CLIENT_ID &&
+			env.GOOGLE_CLIENT_SECRET && {
+				google: {
+					clientId: env.GOOGLE_CLIENT_ID,
+					clientSecret: env.GOOGLE_CLIENT_SECRET,
+					// Sempre exibe o seletor de contas do Google, permitindo
+					// trocar de conta mesmo com sessão Google pré-existente.
+					prompt: "select_account",
+				},
+			}),
 	},
 	session: {
 		modelName: "session",
