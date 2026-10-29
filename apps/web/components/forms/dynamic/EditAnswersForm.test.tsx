@@ -156,9 +156,21 @@ describe("EditMyAnswersForm", () => {
 		try {
 			render(<EditMyAnswersForm projectId="e1" projectUrl="evento" />);
 
-			fireEvent.click(
-				screen.getByRole("button", { name: "Salvar respostas" }),
+			// Sem mudança, não há o que salvar
+			const save = screen.getByRole("button", {
+				name: "Salvar respostas",
+			});
+			expect((save as HTMLButtonElement).disabled).toBe(true);
+			fireEvent.change(
+				screen.getByRole("textbox", { name: /Telefone/ }),
+				{
+					target: { value: "+5582988887777" },
+				},
 			);
+			await waitFor(() =>
+				expect((save as HTMLButtonElement).disabled).toBe(false),
+			);
+			fireEvent.click(save);
 
 			await waitFor(() => expect(mutate).toHaveBeenCalled());
 			expect(mutate.mock.lastCall![0].answers).toHaveProperty(
