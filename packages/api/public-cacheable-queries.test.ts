@@ -26,15 +26,17 @@ const { dbQuery, dbSelect } = vi.hoisted(() => ({
 		participant: { findFirst: vi.fn() },
 		formAnswer: { findMany: vi.fn() },
 		profileFieldVisibility: { findMany: vi.fn() },
-		profileConnection: { findMany: vi.fn() },
 	},
 	dbSelect: vi.fn(() => {
 		const rows: unknown[] = [];
 		// `getActivityAvailability` awaita o `where` e também encadeia
-		// `.groupBy(...)`; o perfil junta tabelas e ordena.
+		// `.groupBy(...)`; o perfil junta tabelas, ordena e limita.
+		const ordered = Object.assign(Promise.resolve(rows), {
+			limit: async () => rows,
+		});
 		const whereResult = Object.assign(Promise.resolve(rows), {
 			groupBy: async () => rows,
-			orderBy: async () => rows,
+			orderBy: () => ordered,
 		});
 		const query = {
 			innerJoin: () => query,
@@ -76,7 +78,6 @@ beforeEach(() => {
 	});
 	dbQuery.formAnswer.findMany.mockResolvedValue([]);
 	dbQuery.profileFieldVisibility.findMany.mockResolvedValue([]);
-	dbQuery.profileConnection.findMany.mockResolvedValue([]);
 });
 
 /** Contexto que registra toda leitura de propriedade (`ctx.*`). */
@@ -102,6 +103,7 @@ const INPUTS: Record<string, unknown> = {
 	getPublishedForm: { projectId: PROJECT_UUID },
 	getProfileLayout: { projectUrl: "event-1" },
 	getProfilePageData: { projectUrl: "event-1", shortId: "abc123" },
+	getProfileConnections: { projectUrl: "event-1", shortId: "abc123" },
 };
 
 describe("caminhos públicos cacheáveis não leem a sessão", () => {

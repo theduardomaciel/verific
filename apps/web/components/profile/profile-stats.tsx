@@ -2,19 +2,20 @@ import { EyeOff } from "lucide-react";
 
 import type { StatIconKey } from "@verific/drizzle/profile-layout";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
+import {
+	ConnectionsCard,
+	type ProfileConnectionsData,
+} from "./profile-connections";
 import { StatIcon } from "./stat-icons";
 
-export interface ProfileConnectionsData {
-	total: number;
-	/** Visitantes recentes (até ~7), com nome e avatar. */
-	visitors: Array<{ name: string; avatarUrl: string | null }>;
-}
+export type { ProfileConnectionsData };
 
 export interface ProfileStatsData {
+	/** Perfil de onde vem a lista completa de conexões (ausente na prévia). */
+	profile?: { eventUrl: string; shortId: string };
 	name: string;
 	stats: Array<{
 		label: string;
@@ -26,17 +27,6 @@ export interface ProfileStatsData {
 	/** Dono vê itens ocultos marcados (visitantes nunca os recebem). */
 	ownerView?: boolean;
 	connections?: ProfileConnectionsData;
-}
-
-function firstName(full: string): string {
-	return full.trim().split(/\s+/)[0] ?? full;
-}
-
-function initials(full: string): string {
-	const parts = full.trim().split(/\s+/).filter(Boolean);
-	const first = parts[0]?.[0] ?? "";
-	const second = parts.length > 1 ? (parts[1]?.[0] ?? "") : "";
-	return `${first}${second}`.toUpperCase() || "?";
 }
 
 /**
@@ -86,89 +76,11 @@ export function ProfileStats({ data }: { data: ProfileStatsData }) {
 			)}
 			{data.showConnections && (
 				<ConnectionsCard
+					profile={data.profile}
 					name={data.name}
 					connections={data.connections}
 				/>
 			)}
 		</div>
-	);
-}
-
-/**
- * Conexões incoming: quem visitou este perfil. `total` vem do servidor
- * (cache de minutos); `visitors` é amostra recente p/ nomes/iniciais.
- */
-function ConnectionsCard({
-	name,
-	connections,
-}: {
-	name: string;
-	connections?: ProfileConnectionsData;
-}) {
-	const total = connections?.total ?? 0;
-	const visitors = connections?.visitors ?? [];
-	const firstNames = visitors.slice(0, 3).map((v) => firstName(v.name));
-	const stack = visitors.slice(0, 6).map((v) => ({
-		name: v.name,
-		avatarUrl: v.avatarUrl,
-		initials: initials(v.name),
-	}));
-	const remaining = Math.max(total - stack.length, 0);
-
-	return (
-		<Card className="w-full items-start rounded-3xl p-6 md:flex-row md:items-center md:justify-between md:p-9">
-			<div className="flex flex-col items-start gap-2">
-				<h6 className="text-xl font-semibold">Conexões no evento</h6>
-				{total === 0 ? (
-					<p className="text-base font-medium">
-						<strong>{name}</strong> ainda não tem conexões — hora de
-						colocar o networking em dia!
-					</p>
-				) : (
-					<p className="text-base font-medium">
-						<strong>{name}</strong> já se conectou com{" "}
-						{firstNames.join(", ")}
-						{total - firstNames.length > 0 && (
-							<>
-								{" "}
-								e outros {total - firstNames.length}{" "}
-								participantes
-							</>
-						)}
-					</p>
-				)}
-			</div>
-			{total > 0 && (
-				<ul className="flex flex-row" aria-label="Conexões">
-					{stack.map((s) => (
-						<li
-							key={`${s.name}-${s.initials}`}
-							className="not-first:-ml-2"
-							title={s.name}
-						>
-							<Avatar className="bg-accent h-10 w-10 shadow-2xl md:h-16 md:w-16">
-								<AvatarImage
-									src={s.avatarUrl ?? undefined}
-									alt={s.name}
-									referrerPolicy="no-referrer"
-								/>
-								<AvatarFallback className="bg-background text-foreground text-xs leading-none font-semibold md:text-lg">
-									{s.initials}
-								</AvatarFallback>
-							</Avatar>
-						</li>
-					))}
-					{remaining > 0 && (
-						<li className="not-first:-ml-2">
-							<Avatar className="h-10 w-10 md:h-16 md:w-16">
-								<AvatarFallback className="bg-background text-foreground text-xs leading-none font-semibold md:text-lg">
-									+{remaining}
-								</AvatarFallback>
-							</Avatar>
-						</li>
-					)}
-				</ul>
-			)}
-		</Card>
 	);
 }

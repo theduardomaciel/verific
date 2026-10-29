@@ -163,6 +163,7 @@ function ProfileBody({
 							>
 								<ProfileStats
 									data={{
+										profile: { eventUrl, shortId },
 										name: pageData.name,
 										stats: slots.stats,
 										showConnections:
