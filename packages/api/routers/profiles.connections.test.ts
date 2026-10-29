@@ -46,7 +46,6 @@ function row(i: number) {
 	return {
 		participantId: randomUUID(),
 		createdAt: new Date(2026, 9, 29, 12, 0, 60 - i),
-		shortId: `p${i}`,
 		name: ` Pessoa ${i} `,
 		avatarUrl: null,
 	};
@@ -73,8 +72,8 @@ describe("getProfileConnections", () => {
 
 		expect(limits).toEqual([3]);
 		expect(page.connections).toEqual([
-			{ shortId: "p1", name: "Pessoa 1", avatarUrl: null },
-			{ shortId: "p2", name: "Pessoa 2", avatarUrl: null },
+			{ name: "Pessoa 1", avatarUrl: null },
+			{ name: "Pessoa 2", avatarUrl: null },
 		]);
 		expect(page.nextCursor).toEqual({
 			createdAt: rows[1]!.createdAt,

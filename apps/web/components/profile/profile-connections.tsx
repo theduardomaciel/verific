@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -190,24 +189,22 @@ function ConnectionsList({
 	return (
 		<div className="flex max-h-80 flex-col overflow-y-auto p-2">
 			<ul aria-label="Todas as conexões">
-				{people.map((person) => (
-					<li key={person.shortId}>
-						<Link
-							href={`/${eventUrl}/profile/${person.shortId}`}
-							className="hover:bg-accent flex items-center gap-3 rounded-md px-2 py-1.5 text-sm font-medium"
-						>
-							<Avatar className="h-8 w-8" aria-hidden>
-								<AvatarImage
-									src={person.avatarUrl ?? undefined}
-									alt=""
-									referrerPolicy="no-referrer"
-								/>
-								<AvatarFallback className="text-xs">
-									{initials(person.name)}
-								</AvatarFallback>
-							</Avatar>
-							{person.name}
-						</Link>
+				{people.map((person, index) => (
+					<li
+						key={index}
+						className="flex items-center gap-3 px-2 py-1.5 text-sm font-medium"
+					>
+						<Avatar className="h-8 w-8" aria-hidden>
+							<AvatarImage
+								src={person.avatarUrl ?? undefined}
+								alt=""
+								referrerPolicy="no-referrer"
+							/>
+							<AvatarFallback className="text-xs">
+								{initials(person.name)}
+							</AvatarFallback>
+						</Avatar>
+						{person.name}
 					</li>
 				))}
 			</ul>

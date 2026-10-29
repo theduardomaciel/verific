@@ -314,7 +314,6 @@ async function listProfileConnections(
 		.select({
 			participantId: profileConnection.viewerParticipantId,
 			createdAt: profileConnection.createdAt,
-			shortId: participant.shortId,
 			name: user.name,
 			avatarUrl: user.image_url,
 		})
@@ -358,7 +357,6 @@ async function listProfileConnections(
 	const last = page[page.length - 1];
 	return {
 		connections: page.map((row) => ({
-			shortId: row.shortId,
 			name: row.name!.trim(),
 			avatarUrl: row.avatarUrl,
 		})),
@@ -397,11 +395,7 @@ async function loadProfileConnections(
 			limit: PROFILE_CONNECTIONS_SAMPLE + 1,
 		}),
 	]);
-	const visitors = sample.connections.map(({ name, avatarUrl }) => ({
-		name,
-		avatarUrl,
-	}));
-	return { total: totalRows[0]?.n ?? 0, visitors };
+	return { total: totalRows[0]?.n ?? 0, visitors: sample.connections };
 }
 
 export const profilesRouter = createTRPCRouter({

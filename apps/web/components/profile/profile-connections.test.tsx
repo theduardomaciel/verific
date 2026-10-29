@@ -40,8 +40,8 @@ infiniteQuery.mockReturnValue({
 		pages: [
 			{
 				connections: [
-					{ shortId: "abc", name: "Pessoa 1", avatarUrl: null },
-					{ shortId: "def", name: "Pessoa 8", avatarUrl: null },
+					{ name: "Pessoa 1", avatarUrl: null },
+					{ name: "Pessoa 8", avatarUrl: null },
 				],
 			},
 		],
@@ -64,7 +64,7 @@ function renderCard(profile?: { eventUrl: string; shortId: string }) {
 }
 
 describe("ConnectionsCard", () => {
-	it("busca a lista só depois de aberta e leva a cada perfil", () => {
+	it("busca a lista só depois de aberta, sem links", () => {
 		renderCard({ eventUrl: "evento", shortId: "ana" });
 		expect(infiniteQuery).not.toHaveBeenCalled();
 
@@ -76,9 +76,9 @@ describe("ConnectionsCard", () => {
 			{ projectUrl: "evento", shortId: "ana" },
 			expect.anything(),
 		);
-		expect(
-			screen.getByRole("link", { name: "Pessoa 8" }).getAttribute("href"),
-		).toBe("/evento/profile/def");
+		const list = screen.getByRole("list", { name: "Todas as conexões" });
+		expect(list.textContent).toContain("Pessoa 8");
+		expect(screen.queryAllByRole("link")).toHaveLength(0);
 
 		fireEvent.click(screen.getByRole("button", { name: "Ver mais" }));
 		expect(fetchNextPage).toHaveBeenCalled();
