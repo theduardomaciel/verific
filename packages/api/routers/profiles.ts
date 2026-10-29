@@ -9,6 +9,9 @@ import {
 	eq,
 	inArray,
 	isNull,
+	lt,
+	or,
+	sql,
 } from "@verific/drizzle/orm";
 import {
 	formatProfileValue,
@@ -28,6 +31,7 @@ import {
 	profileConnection,
 	profileFieldVisibility,
 	project,
+	user,
 	activity,
 	participantOnActivity,
 } from "@verific/drizzle/schema";
@@ -294,6 +298,80 @@ async function loadVisibility(participantId: string) {
 
 const PROFILE_CONNECTIONS_SAMPLE = 6;
 
+type ConnectionsCursor = { createdAt: Date; participantId: string };
+
+/**
+ * Quem se conectou com o perfil, da conexão mais recente para a mais
+ * antiga. Fonte única da amostra do perfil e da lista completa, para as
+ * duas seguirem as mesmas regras.
+ */
+async function listProfileConnections(
+	projectId: string,
+	viewedParticipantId: string,
+	{ cursor, limit }: { cursor?: ConnectionsCursor | null; limit: number },
+) {
+	const rows = await db
+		.select({
+			participantId: profileConnection.viewerParticipantId,
+			createdAt: profileConnection.createdAt,
+			shortId: participant.shortId,
+			name: user.name,
+			avatarUrl: user.image_url,
+		})
+		.from(profileConnection)
+		.innerJoin(
+			participant,
+			eq(participant.id, profileConnection.viewerParticipantId),
+		)
+		.innerJoin(user, eq(user.id, participant.userId))
+		.where(
+			and(
+				eq(profileConnection.projectId, projectId),
+				eq(profileConnection.viewedParticipantId, viewedParticipantId),
+				// Quem não tem nome não aparece
+				sql`trim(${user.name}) <> ''`,
+				cursor
+					? or(
+							lt(profileConnection.createdAt, cursor.createdAt),
+							and(
+								eq(
+									profileConnection.createdAt,
+									cursor.createdAt,
+								),
+								lt(
+									profileConnection.viewerParticipantId,
+									cursor.participantId,
+								),
+							),
+						)
+					: undefined,
+			),
+		)
+		.orderBy(
+			desc(profileConnection.createdAt),
+			desc(profileConnection.viewerParticipantId),
+		)
+		.limit(limit + 1);
+
+	const hasMore = rows.length > limit;
+	const page = hasMore ? rows.slice(0, limit) : rows;
+	const last = page[page.length - 1];
+	return {
+		connections: page.map((row) => ({
+			shortId: row.shortId,
+			name: row.name!.trim(),
+			avatarUrl: row.avatarUrl,
+		})),
+		nextCursor:
+			hasMore && last
+				? {
+						createdAt: last.createdAt,
+						participantId: last.participantId,
+					}
+				: null,
+	};
+}
+
 /**
  * Conexões incoming do perfil: total + amostra recente de nomes.
  * Chamado só quando `connectionsEnabled`; fora disso retorna zero.
@@ -315,31 +393,14 @@ async function loadProfileConnections(
 					),
 				),
 			),
-		db.query.profileConnection.findMany({
-			where: and(
-				eq(profileConnection.projectId, projectId),
-				eq(profileConnection.viewedParticipantId, viewedParticipantId),
-			),
-			orderBy: desc(profileConnection.createdAt),
+		listProfileConnections(projectId, viewedParticipantId, {
 			limit: PROFILE_CONNECTIONS_SAMPLE + 1,
-			with: {
-				viewer: {
-					with: {
-						user: { columns: { name: true, image_url: true } },
-					},
-				},
-			},
 		}),
 	]);
-	const visitors = sample
-		.map((r) => {
-			const name = r.viewer?.user?.name?.trim();
-			if (!name) return null;
-			return { name, avatarUrl: r.viewer?.user?.image_url ?? null };
-		})
-		.filter(
-			(v): v is { name: string; avatarUrl: string | null } => v !== null,
-		);
+	const visitors = sample.connections.map(({ name, avatarUrl }) => ({
+		name,
+		avatarUrl,
+	}));
 	return { total: totalRows[0]?.n ?? 0, visitors };
 }
 
@@ -820,6 +881,60 @@ export const profilesRouter = createTRPCRouter({
 					set: { visible: input.visible },
 				});
 			return { visible: input.visible };
+		}),
+
+	/**
+	 * Lista completa de quem se conectou com o perfil, da mais recente para
+	 * a mais antiga. Pública como a amostra de `getProfilePageData`: nome e
+	 * avatar, sem contato.
+	 */
+	getProfileConnections: publicProcedure
+		.input(
+			z.object({
+				projectUrl: z.string(),
+				shortId: z.string(),
+				cursor: z
+					.object({
+						createdAt: z.date(),
+						participantId: z.string().uuid(),
+					})
+					.nullish(),
+				limit: z.number().int().min(1).max(50).default(20),
+			}),
+		)
+		.query(async ({ input }) => {
+			const projectRow = await db.query.project.findFirst({
+				where: eq(project.url, input.projectUrl),
+				columns: {
+					id: true,
+					profilesEnabled: true,
+					profileLayout: true,
+				},
+			});
+			if (
+				!projectRow?.profilesEnabled ||
+				!parseProfileLayout(projectRow.profileLayout).connectionsEnabled
+			) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Perfil não encontrado.",
+				});
+			}
+			const viewed = await db.query.participant.findFirst({
+				where: and(
+					eq(participant.projectId, projectRow.id),
+					eq(participant.shortId, input.shortId),
+				),
+				columns: { id: true },
+			});
+			if (!viewed) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Perfil não encontrado.",
+				});
+			}
+
+			return listProfileConnections(projectRow.id, viewed.id, input);
 		}),
 
 	/**

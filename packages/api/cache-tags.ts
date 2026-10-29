@@ -104,6 +104,7 @@ export const PUBLIC_CACHEABLE_QUERY_PATHS: ReadonlySet<string> = new Set([
 	"getAllProjects",
 	"getProject",
 	"getProfilePageData",
+	"getProfileConnections",
 	"getProfileLayout",
 	"getPublishedForm",
 	"getProjectTags",
