@@ -125,10 +125,10 @@ export function ConnectionsCard({
 										disabled={!canList}
 										{...listButton}
 										aria-label={`Ver todas as ${total} conexões`}
-										className="cursor-pointer rounded-full"
+										className="focus-visible:ring-ring cursor-pointer rounded-full focus-visible:ring-2 focus-visible:outline-none"
 									>
-										<Avatar className="h-10 w-10 md:h-16 md:w-16">
-											<AvatarFallback className="bg-background text-foreground text-xs leading-none font-semibold md:text-lg">
+										<Avatar className="h-10 w-10 shadow-2xl md:h-16 md:w-16">
+											<AvatarFallback className="bg-accent text-accent-foreground text-xs leading-none font-semibold md:text-lg">
 												+{remaining}
 											</AvatarFallback>
 										</Avatar>
