@@ -48,3 +48,6 @@ jobs:
 
             - name: Typecheck (tsc --noEmit via Turborepo)
               run: pnpm typecheck
+
+            - name: Time zones (only through packages/drizzle/time.ts)
+              run: pnpm check:time-zones

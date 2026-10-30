@@ -15,6 +15,7 @@
 		"fmt": "oxfmt",
 		"fmt:check": "turbo run fmt:check",
 		"typecheck": "turbo run typecheck",
+		"check:time-zones": "node scripts/check-time-zones.mjs",
 		"test": "turbo run test",
 		"test:coverage": "turbo run test:coverage",
 		"db:push": "turbo run db:push",
