@@ -27,6 +27,7 @@ import {
 	speakerOnActivity,
 	user,
 } from "@verific/drizzle/schema";
+import { isDayKey } from "@verific/drizzle/time";
 import { z } from "@verific/zod";
 
 import {
@@ -169,11 +170,8 @@ function mapValueToColumns(type: string, value: unknown) {
 			if (Number.isNaN(n)) return null;
 			return { valueNumber: n };
 		}
-		case "date": {
-			const d = value instanceof Date ? value : new Date(value as string);
-			if (Number.isNaN(d.getTime())) return null;
-			return { valueDate: d };
-		}
+		case "date":
+			return isDayKey(value) ? { valueDate: value } : null;
 		case "checkbox": {
 			const b =
 				value === true ||

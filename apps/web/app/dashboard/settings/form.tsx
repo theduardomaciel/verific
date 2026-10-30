@@ -13,7 +13,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { MarkdownTextarea } from "@/components/ui/markdown-textarea";
 
-import { DateRangePicker } from "@/components/pickers/date-range-picker";
+import { useEventTimeZone } from "@/components/event-time-zone";
+import { EventPeriodPicker } from "@/components/pickers/event-period-picker";
 import { PlacePicker } from "@/components/pickers/place-picker";
 import { SettingsFormCard } from "@/components/settings/SettingsFormCard";
 
@@ -40,6 +41,7 @@ interface Props {
 }
 
 export function ProjectSettingsGeneral({ project }: Props) {
+	const timeZone = useEventTimeZone();
 	const utils = trpc.useUtils();
 	const updateMutation = trpc.updateProject.useMutation({
 		onSuccess: () => {
@@ -235,24 +237,20 @@ export function ProjectSettingsGeneral({ project }: Props) {
 				}}
 				onSubmit={onSubmitDate}
 				renderField={(form) => (
-					<DateRangePicker
+					<EventPeriodPicker
+						timeZone={timeZone}
 						value={{
-							from: form.watch("startDate")
-								? new Date(form.watch("startDate"))
-								: undefined,
-							to: form.watch("endDate")
-								? new Date(form.watch("endDate"))
-								: undefined,
+							startDate: form.watch("startDate"),
+							endDate: form.watch("endDate"),
 						}}
-						onChange={(value) => {
-							if (value?.from)
-								form.setValue("startDate", value.from, {
-									shouldDirty: true,
-								});
-							if (value?.to)
-								form.setValue("endDate", value.to, {
-									shouldDirty: true,
-								});
+						onChange={(period) => {
+							form.setValue("startDate", period.startDate, {
+								shouldDirty: true,
+							});
+							form.setValue("endDate", period.endDate, {
+								shouldDirty: true,
+								shouldValidate: true,
+							});
 						}}
 					/>
 				)}

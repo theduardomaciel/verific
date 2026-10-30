@@ -2,12 +2,18 @@ import { eq } from "drizzle-orm";
 
 import {
 	DEFAULT_GAMIFICATION_CONFIG,
-	eventDayKeys,
 	isSessionCompleted,
 	sessionHours,
 	sessionPoints,
 } from "../gamification";
 import * as schema from "../schema";
+import {
+	dayKey,
+	eventDays,
+	eventTimeZone,
+	toWallTime,
+	zonedInstant,
+} from "../time";
 import {
 	buildActivity,
 	buildActivitySession,
@@ -457,13 +463,12 @@ async function seedGamificationData(
 	},
 ) {
 	const { config, project } = params;
-	const lastDay = new Date(
-		Math.min(params.endDate.getTime(), params.refDate.getTime()),
-	);
-	const dayKeys = eventDayKeys(params.startDate, lastDay);
-	const dayDates = dayKeys.map((key, index) => ({
+	const timeZone = eventTimeZone(project);
+	const today = dayKey(params.refDate, timeZone);
+	const dayKeys = eventDays(params).filter((day) => day <= today);
+	const dayDates = dayKeys.map((key) => ({
 		key,
-		at: addMinutes(addDays(params.startDate, index), 9 * 60),
+		at: zonedInstant(key, "09:00", timeZone),
 	}));
 
 	const checkins: Array<typeof schema.participantCheckin.$inferInsert> = [];
@@ -567,13 +572,7 @@ async function seedGamificationData(
 		params.sessions.map((session) => [session.id, session]),
 	);
 	const startHour = (date: Date) =>
-		Number(
-			new Intl.DateTimeFormat("en-US", {
-				timeZone: "America/Sao_Paulo",
-				hour: "numeric",
-				hourCycle: "h23",
-			}).format(date),
-		);
+		Number(toWallTime(date, timeZone).time.slice(0, 2));
 
 	for (const attendance of params.attendances) {
 		const session = sessionById.get(attendance.sessionId);
@@ -664,7 +663,7 @@ async function seedGamificationData(
 	const rankByParticipant = new Map(
 		ranking.map((row) => [row.participantId, row.rank]),
 	);
-	const eventDays = dayKeys.length;
+	const eventDayCount = dayKeys.length;
 	const stickers: Array<typeof schema.participantSticker.$inferInsert> = [];
 
 	for (const participant of params.participants) {
@@ -678,8 +677,8 @@ async function seedGamificationData(
 		if ((rankByParticipant.get(participant.id) ?? 999) <= 10) {
 			keys.push("elite");
 		}
-		if (days >= 3 && eventDays >= 3) keys.push("frequent");
-		if (eventDays >= 2 && days >= eventDays) keys.push("everyday");
+		if (days >= 3 && eventDayCount >= 3) keys.push("frequent");
+		if (eventDayCount >= 2 && days >= eventDayCount) keys.push("everyday");
 		if (
 			config.sessions.checkoutEnabled &&
 			(participantStats?.completed ?? 0) >= 5

@@ -7,6 +7,12 @@ import { toast } from "sonner";
 
 import type { RouterOutput } from "@verific/api";
 import { activityCategoryLabels } from "@verific/drizzle/enum/category";
+import {
+	dayKey,
+	formatDayKey,
+	formatInstant,
+	formatTime,
+} from "@verific/drizzle/time";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +33,8 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+import { useEventTimeZone } from "@/components/event-time-zone";
 
 import { getFirstSessionStart } from "@/lib/date";
 import { trpc } from "@/lib/trpc/react";
@@ -50,23 +58,23 @@ function capitalize(text: string) {
 	return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-function formatTime(date: Date | string) {
-	return new Date(date).toLocaleTimeString("pt-BR", {
-		hour: "2-digit",
-		minute: "2-digit",
-	});
-}
-
-function formatShortDate(date: Date | string) {
-	return new Date(date).toLocaleDateString("pt-BR", {
-		day: "2-digit",
-		month: "2-digit",
-	});
+/** Hora da primeira sessão quando agrupado por dia; a data, nos demais. */
+function firstSessionLabel(
+	activity: ReleasableActivity,
+	groupBy: GroupBy,
+	timeZone: string,
+) {
+	const first = getFirstSessionStart(activity.sessions);
+	if (!first) return "";
+	return groupBy === "day"
+		? formatTime(first, timeZone)
+		: formatInstant(first, timeZone, { day: "2-digit", month: "2-digit" });
 }
 
 function buildGroups(
 	activities: ReleasableActivity[],
 	groupBy: GroupBy,
+	timeZone: string,
 ): Group[] {
 	const sorted = [...activities].sort(
 		(a, b) =>
@@ -85,11 +93,11 @@ function buildGroups(
 	for (const activity of sorted) {
 		if (groupBy === "day") {
 			const firstStart = getFirstSessionStart(activity.sessions);
-			const date = firstStart ? new Date(firstStart) : new Date();
+			const day = dayKey(firstStart ?? new Date(), timeZone);
 			add(
-				date.toLocaleDateString("sv-SE"), // yyyy-mm-dd, local time
+				day,
 				capitalize(
-					date.toLocaleDateString("pt-BR", {
+					formatDayKey(day, {
 						weekday: "long",
 						day: "numeric",
 						month: "long",
@@ -127,6 +135,7 @@ function buildGroups(
 export function ReleaseRegistrationsDialog({
 	projectId,
 }: ReleaseRegistrationsDialogProps) {
+	const timeZone = useEventTimeZone();
 	const [open, setOpen] = useState(false);
 	const [groupBy, setGroupBy] = useState<GroupBy>("day");
 	const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -155,8 +164,8 @@ export function ReleaseRegistrationsDialog({
 
 	const activities = useMemo(() => data ?? [], [data]);
 	const groups = useMemo(
-		() => buildGroups(activities, groupBy),
-		[activities, groupBy],
+		() => buildGroups(activities, groupBy, timeZone),
+		[activities, groupBy, timeZone],
 	);
 
 	const selectedWithoutLimit = activities.filter(
@@ -330,29 +339,11 @@ export function ReleaseRegistrationsDialog({
 													</Badge>
 												)}
 												<span className="text-muted-foreground shrink-0 text-xs tabular-nums">
-													{groupBy === "day"
-														? (() => {
-																const first =
-																	getFirstSessionStart(
-																		activity.sessions,
-																	);
-																return first
-																	? formatTime(
-																			first,
-																		)
-																	: "";
-															})()
-														: (() => {
-																const first =
-																	getFirstSessionStart(
-																		activity.sessions,
-																	);
-																return first
-																	? formatShortDate(
-																			first,
-																		)
-																	: "";
-															})()}
+													{firstSessionLabel(
+														activity,
+														groupBy,
+														timeZone,
+													)}
 												</span>
 											</label>
 										))}

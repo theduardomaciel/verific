@@ -1,11 +1,6 @@
-import {
-	jsonb,
-	smallint,
-	uuid,
-	pgTable,
-	text,
-	timestamp,
-} from "drizzle-orm/pg-core";
+import { jsonb, smallint, uuid, pgTable, text } from "drizzle-orm/pg-core";
+
+import { instant } from "./columns";
 
 export const template = pgTable("templates", {
 	id: uuid("id").defaultRandom().notNull().primaryKey(),
@@ -20,5 +15,5 @@ export const template = pgTable("templates", {
 		}[]
 	>(),
 	maxSignatures: smallint("max_signatures").notNull().default(2),
-	issuedAt: timestamp("issued_at").defaultNow().notNull(),
+	issuedAt: instant("issued_at").defaultNow().notNull(),
 });

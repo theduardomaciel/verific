@@ -27,7 +27,7 @@ export interface NotificationFixtureInput {
 	}>;
 	/** E-mail do organizador, para a linha de aviso de limite. */
 	ownerEmail?: string | null;
-	/** Data de referência do seed (meia-noite de Brasília). */
+	/** Data de referência do seed (meia-noite no fuso padrão). */
 	refDate: Date;
 	/** Relógio injetável nos testes; default = agora. */
 	now?: Date;

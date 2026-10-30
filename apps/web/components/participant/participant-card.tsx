@@ -60,8 +60,6 @@ export async function ParticipantCard({ id: participantId, eventUrl }: Props) {
 				a.valueJson;
 			let display = "";
 			if (Array.isArray(raw)) display = raw.join("; ");
-			else if (raw instanceof Date)
-				display = raw.toISOString().slice(0, 10);
 			else if (typeof raw === "boolean") display = raw ? "Sim" : "Não";
 			else if (raw !== null && raw !== undefined)
 				display = String(raw as any);

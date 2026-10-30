@@ -4,6 +4,7 @@ import { Copy, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 import { NOTIFICATION_TYPE_LABELS } from "@verific/api/schemas";
+import { formatInstant } from "@verific/drizzle/time";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +20,8 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+import { useEventTimeZone } from "@/components/event-time-zone";
+
 import {
 	SKIP_REASON_LABELS,
 	buildDiagnostic,
@@ -32,11 +35,11 @@ import { StatusBadge } from "./status-badge";
 import type { EmailsListItem } from "./helpers";
 
 function AbsoluteTime({ value }: { value: string | Date }) {
+	const timeZone = useEventTimeZone();
 	return (
 		<span className="flex flex-col">
 			<span>
-				{new Date(value).toLocaleString("pt-BR", {
-					timeZone: "America/Sao_Paulo",
+				{formatInstant(value, timeZone, {
 					dateStyle: "short",
 					timeStyle: "short",
 				})}

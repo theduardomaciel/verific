@@ -11,9 +11,6 @@ import { z } from "@verific/zod";
 
 export const GAMIFICATION_VERSION = 1 as const;
 
-/** Fuso usado em todo o app para "dia do evento". */
-export const GAMIFICATION_TIME_ZONE = "America/Sao_Paulo";
-
 export const gamificationRankingSchema = z.object({
 	/** Quantidade de posições exibidas na página pública. */
 	top: z.number().int().min(3).max(100).default(50),
@@ -104,67 +101,6 @@ export type PointEventSource =
 	| "manual";
 
 export type StickerSource = "auto" | "manual";
-
-// `en-CA` formata como `YYYY-MM-DD`, independente do locale do runtime.
-const EVENT_DAY_FORMATTER = new Intl.DateTimeFormat("en-CA", {
-	timeZone: GAMIFICATION_TIME_ZONE,
-	year: "numeric",
-	month: "2-digit",
-	day: "2-digit",
-});
-
-/**
- * Chave do dia no fuso do app (`YYYY-MM-DD`). Usada para garantir um
- * check-in por participante por dia do evento.
- */
-export function eventDayKey(date: Date | string | number): string {
-	const parsed = new Date(date);
-	if (Number.isNaN(parsed.getTime())) return "";
-	return EVENT_DAY_FORMATTER.format(parsed);
-}
-
-/**
- * Todos os dias inclusivos entre `start` e `end`, no fuso do app.
- * Trabalha com as chaves como datas de calendário (UTC) para não sofrer
- * com mudanças de offset.
- */
-export function eventDayKeys(
-	start: Date | string | number,
-	end: Date | string | number,
-): string[] {
-	const startKey = eventDayKey(start);
-	const endKey = eventDayKey(end);
-	if (!startKey || !endKey || endKey < startKey) return [];
-
-	const [year, month, day] = startKey.split("-").map(Number);
-	const cursor = new Date(Date.UTC(year!, month! - 1, day!));
-	const endMs = Date.UTC(
-		Number(endKey.slice(0, 4)),
-		Number(endKey.slice(5, 7)) - 1,
-		Number(endKey.slice(8, 10)),
-	);
-
-	const keys: string[] = [];
-	while (cursor.getTime() <= endMs) {
-		keys.push(cursor.toISOString().slice(0, 10));
-		cursor.setUTCDate(cursor.getUTCDate() + 1);
-	}
-	return keys;
-}
-
-export function eventDayCount(
-	start: Date | string | number,
-	end: Date | string | number,
-): number {
-	return eventDayKeys(start, end).length;
-}
-
-export function isMultiDayEvent(
-	start: Date | string | number,
-	end: Date | string | number,
-): boolean {
-	return eventDayCount(start, end) > 1;
-}
 
 /** Duração agendada de uma sessão, em horas (nunca negativa). */
 export function sessionHours(

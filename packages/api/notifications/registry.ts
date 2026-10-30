@@ -12,6 +12,7 @@ import {
 	project,
 	user,
 } from "@verific/drizzle/schema";
+import { eventTimeZone } from "@verific/drizzle/time";
 
 import {
 	EVENT_REGISTRATION_CONFIRMATION_VERSION,
@@ -567,7 +568,10 @@ function assembleActivityProps(
 	perParticipant: { participantName: string; project: SharedProject },
 	shared: SharedActivity,
 ): Record<string, unknown> {
-	const activityDateText = formatActivitySessionsText(shared.sessions);
+	const activityDateText = formatActivitySessionsText(
+		shared.sessions,
+		eventTimeZone(shared.project),
+	);
 	const activityLocation =
 		shared.address?.trim() || shared.project.address?.trim() || undefined;
 	return {
@@ -685,6 +689,7 @@ export const notificationRegistry = {
 				eventDateText: formatEventDateText(
 					row.project.startDate,
 					row.project.endDate,
+					eventTimeZone(row.project),
 				),
 				eventLocation: row.project.address ?? undefined,
 				accessUrl: profileUrl(row.project.url, row.shortId),
@@ -869,6 +874,7 @@ export const notificationRegistry = {
 					? {
 							offerExpiresAtText: formatDeadlineText(
 								new Date(expires),
+								eventTimeZone({ id: base.projectId }),
 							),
 						}
 					: {}),

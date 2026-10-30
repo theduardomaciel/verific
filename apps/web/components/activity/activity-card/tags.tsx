@@ -2,6 +2,8 @@ import { Calendar, Clock, MapPin } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 
+import { useEventTimeZone } from "@/components/event-time-zone";
+
 import {
 	getSessionsDateString,
 	getSessionTimeString,
@@ -26,6 +28,7 @@ export function ActivityCardTags({
 	highlightSession,
 	tagsClassName,
 }: ActivityCardTagsProps) {
+	const timeZone = useEventTimeZone();
 	const sessions = getSessionsSorted(activity.sessions);
 	const sessionCount = sessions.length;
 
@@ -33,16 +36,16 @@ export function ActivityCardTags({
 
 	const displayDate =
 		highlightSession && sessionCount > 1
-			? getSessionsDateString([highlightSession])
-			: getSessionsDateString(sessions);
+			? getSessionsDateString([highlightSession], timeZone)
+			: getSessionsDateString(sessions, timeZone);
 
 	const displayTime =
 		(highlightSession ?? sessions.length === 1)
-			? getSessionTimeString((highlightSession ?? sessions[0])!)
+			? getSessionTimeString((highlightSession ?? sessions[0])!, timeZone)
 			: (() => {
 					const next = getNextSession(sessions);
 					const first = next ?? sessions[0]!;
-					return `${sessionCount} encontros · ${getSessionTimeString(first)}`;
+					return `${sessionCount} encontros · ${getSessionTimeString(first, timeZone)}`;
 				})();
 
 	return (

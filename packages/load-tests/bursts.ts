@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { parseArgs } from "node:util";
 
 import { db } from "@verific/drizzle";
-import { seed, todayInBrasilia } from "@verific/drizzle/seed";
+import { seed, startOfToday } from "@verific/drizzle/seed";
 
 import { checkStressEvent } from "./src/report";
 import { writeSessionsFile } from "./src/sessions-file";
@@ -57,7 +57,7 @@ async function main() {
 			profile: "stress",
 			seed: 1,
 			reset: true,
-			refDate: todayInBrasilia(),
+			refDate: startOfToday(),
 		});
 		await writeSessionsFile(db);
 		const before = (await checkStressEvent(db)).counts;

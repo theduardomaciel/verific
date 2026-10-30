@@ -3,8 +3,6 @@ import { randomUUID } from "node:crypto";
 
 import { db } from "@verific/drizzle";
 import {
-	eventDayCount,
-	eventDayKey,
 	gamificationConfigSchema,
 	parseGamificationConfig,
 	stickerByKey,
@@ -25,6 +23,7 @@ import {
 	participantPointEvent,
 	project,
 } from "@verific/drizzle/schema";
+import { dayKey, eventDays, eventTimeZone } from "@verific/drizzle/time";
 import { z } from "@verific/zod";
 
 import { parseCheckInCode } from "../lib/checkin-code";
@@ -216,7 +215,7 @@ export const gamificationRouter = createTRPCRouter({
 			);
 			return {
 				config: parseGamificationConfig(row.gamification),
-				eventDays: eventDayCount(row.startDate, row.endDate),
+				eventDays: eventDays(row).length,
 				profilesEnabled: Boolean(row.profilesEnabled),
 				eventName: row.name,
 			};
@@ -342,7 +341,7 @@ export const gamificationRouter = createTRPCRouter({
 				"reception.manage",
 			);
 			const config = parseGamificationConfig(row.gamification);
-			const day = eventDayKey(new Date());
+			const day = dayKey(new Date(), eventTimeZone(row));
 
 			const priorCheckins = aliasedTable(
 				participantCheckin,
@@ -418,7 +417,7 @@ export const gamificationRouter = createTRPCRouter({
 				totalUniqueCount: Number(uniqueTotal[0]?.amount ?? 0),
 				newTodayCount: Number(newToday[0]?.amount ?? 0),
 				totalParticipants: Number(registered[0]?.amount ?? 0),
-				eventDays: eventDayCount(row.startDate, row.endDate),
+				eventDays: eventDays(row).length,
 				config,
 			};
 		}),

@@ -4,12 +4,12 @@ import {
 	index,
 	integer,
 	pgTable,
-	timestamp,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
 
 import { activity } from "./activity";
+import { instant } from "./columns";
 import { formAnswer } from "./form-answer";
 import { formField } from "./form-field";
 import { formSection } from "./form-section";
@@ -37,8 +37,8 @@ export const formVersion = pgTable(
 			onDelete: "set null",
 			onUpdate: "cascade",
 		}),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		publishedAt: timestamp("published_at"),
+		createdAt: instant("created_at").defaultNow().notNull(),
+		publishedAt: instant("published_at"),
 	},
 	(table) => [
 		// The event form (activity_id IS NULL) and each activity keep their own

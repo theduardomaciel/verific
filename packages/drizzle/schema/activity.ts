@@ -6,7 +6,6 @@ import {
 	index,
 	pgTable,
 	text,
-	timestamp,
 	uuid,
 } from "drizzle-orm/pg-core";
 
@@ -15,6 +14,7 @@ import { categoryEnum } from "../enum/category";
 import { activityConflict } from "./activity-conflict";
 import { activitySession } from "./activity-session";
 import { activityWaitlist } from "./activity-waitlist";
+import { instant } from "./columns";
 import { participantOnActivity } from "./participant-on-activity";
 import { project } from "./project";
 import { speakerOnActivity } from "./speaker-on-activity";
@@ -54,7 +54,7 @@ export const activity = pgTable(
 		latitude: doublePrecision("latitude"),
 		longitude: doublePrecision("longitude"),
 
-		cancelledAt: timestamp("cancelled_at"),
+		cancelledAt: instant("cancelled_at"),
 
 		projectId: uuid("project_id")
 			.notNull()
@@ -63,7 +63,7 @@ export const activity = pgTable(
 				onUpdate: "cascade",
 			}),
 
-		createdAt: timestamp("created_at").defaultNow().notNull(),
+		createdAt: instant("created_at").defaultNow().notNull(),
 	},
 	(table) => [index("activities_project_id_idx").on(table.projectId)],
 );

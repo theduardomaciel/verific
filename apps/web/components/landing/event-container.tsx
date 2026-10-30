@@ -1,5 +1,7 @@
 import Image from "next/image";
 
+import { eventTimeZone, formatDayKey, periodDays } from "@verific/drizzle/time";
+
 import { cn } from "@/lib/utils";
 
 interface HolderProps {
@@ -198,18 +200,26 @@ export const Hero = Object.assign(HeroRoot, {
  * evento que repetiam esse bloco dentro da capa.
  */
 export function EventDateRange({
-	startDate,
-	endDate,
+	project,
 }: {
-	startDate: string | Date;
-	endDate: string | Date;
+	project: { startDate: string | Date; endDate: string | Date };
 }) {
-	const format = (value: string | Date) =>
-		new Date(value).toLocaleDateString("pt-BR");
+	const days = periodDays(
+		project.startDate,
+		project.endDate,
+		eventTimeZone(project),
+	);
+	if (!days) return null;
+	const format = (day: string) =>
+		formatDayKey(day, {
+			day: "2-digit",
+			month: "2-digit",
+			year: "numeric",
+		});
 
 	return (
 		<>
-			De {format(startDate)} a {format(endDate)}
+			De {format(days.first)} a {format(days.last)}
 		</>
 	);
 }

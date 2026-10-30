@@ -2,6 +2,10 @@
 
 import { Download } from "lucide-react";
 
+import { formatInstant } from "@verific/drizzle/time";
+
+import { useEventTimeZone } from "@/components/event-time-zone";
+
 import { Button } from "../ui/button";
 import {
 	Tooltip,
@@ -19,12 +23,19 @@ interface Props {
 }
 
 export function ExportParticipantsButton({ participants }: Props) {
+	const timeZone = useEventTimeZone();
 	function participantsToCsv() {
 		const headers = ["Nome", "Email", "Inscrito em"];
 		const rows = participants.map((participant) => [
 			participant.name,
 			participant.email,
-			participant.createdAt?.toLocaleDateString() || "",
+			participant.createdAt
+				? formatInstant(participant.createdAt, timeZone, {
+						day: "2-digit",
+						month: "2-digit",
+						year: "numeric",
+					})
+				: "",
 		]);
 		const csvContent =
 			"data:text/csv;charset=utf-8," +

@@ -3,6 +3,7 @@ import { db } from "@verific/drizzle";
 import { and, eq, sql } from "@verific/drizzle/orm";
 import { redactQueryParams } from "@verific/drizzle/redact";
 import { project, user, activityWaitlist } from "@verific/drizzle/schema";
+import { dayKey, DEFAULT_TIME_ZONE } from "@verific/drizzle/time";
 
 import { lockActivity } from "../seats";
 import { settleActivity } from "../waitlist";
@@ -621,13 +622,6 @@ function messageOf(err: unknown): string {
 	return redactQueryParams(err instanceof Error ? err.message : String(err));
 }
 
-const saoPauloDayKey = new Intl.DateTimeFormat("en-CA", {
-	timeZone: "America/Sao_Paulo",
-	year: "numeric",
-	month: "2-digit",
-	day: "2-digit",
-});
-
 /** Owner e-mail for the event that crossed the quota threshold. */
 async function loadOwnerEmail(projectId: string): Promise<string | null> {
 	const rows = await db
@@ -639,8 +633,8 @@ async function loadOwnerEmail(projectId: string): Promise<string | null> {
 }
 
 /**
- * Fires `email_quota_warning` once per São Paulo day when usage reaches 80%
- * of `EMAIL_DAILY_LIMIT`, after a successful send. The once-a-day guarantee
+ * Fires `email_quota_warning` once per day (in the default time zone) when
+ * usage reaches 80% of `EMAIL_DAILY_LIMIT`, after a successful send. The once-a-day guarantee
  * comes from the deterministic idempotency key
  * `email_quota_warning:{YYYY-MM-DD}`: replays find the existing row and are
  * never sent again (including when the type is disabled for the event — the
@@ -666,7 +660,7 @@ export async function maybeSendQuotaWarning(
 			projectId: row.eventId,
 			used,
 			limit,
-			day: saoPauloDayKey.format(resolved.now()),
+			day: dayKey(resolved.now(), DEFAULT_TIME_ZONE),
 		};
 		await sendNotification(
 			{
@@ -802,7 +796,7 @@ export async function reprocessBatchNotifications(
 	const last = batch[batch.length - 1];
 	result.nextCursor =
 		page.items.length > allowed && last
-			? { createdAt: last.createdAt.toISOString(), id: last.id }
+			? { createdAt: last.createdAt, id: last.id }
 			: null;
 	if (usage.limit !== null) {
 		const after = await store.countUsageLast24h();

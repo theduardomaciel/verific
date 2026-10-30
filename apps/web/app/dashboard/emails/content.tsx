@@ -21,6 +21,7 @@ import {
 	NOTIFICATION_TYPE_LABELS,
 	type NotificationListFilterInput,
 } from "@verific/api/schemas";
+import { formatInstant } from "@verific/drizzle/time";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,7 @@ import {
 
 import { useDashboard } from "@/components/dashboard/dashboard-context";
 import { Empty } from "@/components/empty";
+import { useEventTimeZone } from "@/components/event-time-zone";
 
 import { trpc } from "@/lib/trpc/react";
 
@@ -66,7 +68,7 @@ import { StatusChip, COUNTER_VARIANT } from "./status-chip";
 
 import type { EmailsListItem } from "./helpers";
 
-type PageCursor = { createdAt: string; id: string };
+type PageCursor = { createdAt: Date; id: string };
 
 const PAGE_SIZE = 20;
 /** Espera mínima entre recarregamentos manuais (evita spam no backend). */
@@ -85,19 +87,9 @@ function skipReasonLabel(reason: string): string {
 	return SKIP_REASON_LABELS[reason] ?? reason;
 }
 
-/** Timestamp no fuso do app (America/Sao_Paulo) + absoluto UTC no hover. */
-function formatDateTime(value: string | Date): string {
-	return new Date(value).toLocaleString("pt-BR", {
-		timeZone: "America/Sao_Paulo",
-		day: "2-digit",
-		month: "2-digit",
-		year: "2-digit",
-		hour: "2-digit",
-		minute: "2-digit",
-	});
-}
-
+/** Timestamp no fuso do evento + absoluto UTC no hover. */
 function Timestamp({ value }: { value: string | Date }) {
+	const timeZone = useEventTimeZone();
 	return (
 		<span
 			className="cursor-help whitespace-nowrap underline decoration-dotted underline-offset-2"
@@ -106,7 +98,13 @@ function Timestamp({ value }: { value: string | Date }) {
 			tabIndex={0}
 			aria-label={`Horário absoluto: ${toIsoUtc(value)} (UTC)`}
 		>
-			{formatDateTime(value)}
+			{formatInstant(value, timeZone, {
+				day: "2-digit",
+				month: "2-digit",
+				year: "2-digit",
+				hour: "2-digit",
+				minute: "2-digit",
+			})}
 		</span>
 	);
 }

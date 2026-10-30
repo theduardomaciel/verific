@@ -136,7 +136,7 @@ export class InMemoryNotificationStore implements NotificationStore {
 			items,
 			nextCursor:
 				ranked.length > options.limit && last
-					? { createdAt: last.createdAt.toISOString(), id: last.id }
+					? { createdAt: last.createdAt, id: last.id }
 					: null,
 		};
 	}

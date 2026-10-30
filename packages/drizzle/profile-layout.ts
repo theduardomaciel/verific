@@ -1,5 +1,7 @@
 import { z } from "@verific/zod";
 
+import { formatDayKey, isDayKey } from "./time";
+
 /**
  * Layout do perfil por evento (JSON em `projects.profile_layout`).
  * Organizadores ligam campos do PRÓPRIO formulário a slots fixos;
@@ -230,25 +232,14 @@ export function formatProfileValue(
 		if (typeof value === "string") {
 			const trimmed = value.trim();
 			if (!trimmed) return null;
-			if (type === "date") {
-				const d = new Date(trimmed);
-				if (!Number.isNaN(d.getTime())) {
-					return d.toLocaleDateString("pt-BR", {
-						day: "numeric",
-						month: "long",
-						year: "numeric",
-					});
-				}
+			if (type === "date" && isDayKey(trimmed)) {
+				return formatDayKey(trimmed, {
+					day: "numeric",
+					month: "long",
+					year: "numeric",
+				});
 			}
 			return trimmed;
-		}
-		if (value instanceof Date) {
-			if (Number.isNaN(value.getTime())) return null;
-			return value.toLocaleDateString("pt-BR", {
-				day: "numeric",
-				month: "long",
-				year: "numeric",
-			});
 		}
 		if (typeof value === "number") return value.toLocaleString("pt-BR");
 		if (typeof value === "boolean") return value ? "Sim" : "Não";

@@ -1,12 +1,7 @@
-import {
-	uuid,
-	pgTable,
-	primaryKey,
-	timestamp,
-	uniqueIndex,
-} from "drizzle-orm/pg-core";
+import { uuid, pgTable, primaryKey, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { activity } from "./activity";
+import { instant } from "./columns";
 import { participant } from "./participant";
 import { project } from "./project";
 import { template } from "./template";
@@ -39,7 +34,7 @@ export const certificate = pgTable(
 				onDelete: "cascade",
 				onUpdate: "cascade",
 			}),
-		issuedAt: timestamp("issued_at").defaultNow().notNull(),
+		issuedAt: instant("issued_at").defaultNow().notNull(),
 	},
 	(table) => [
 		uniqueIndex().on(table.token),

@@ -10,7 +10,7 @@ import {
 	insertNotificationFixtures,
 	loadNotificationFixtureInput,
 } from "./notification-fixtures";
-import { SEED_URL_PREFIX, todayInBrasilia } from "./utils";
+import { SEED_URL_PREFIX, startOfToday } from "./utils";
 
 // Adiciona as linhas fictícias de notificação aos eventos já semeados, sem
 // reset e sem tocar em qualquer outro dado. Idempotente: rodar de novo só
@@ -44,7 +44,7 @@ async function main() {
 			process.exit(1);
 		}
 
-		const refDate = todayInBrasilia();
+		const refDate = startOfToday();
 		let total = 0;
 		for (const project of projects) {
 			const input = await loadNotificationFixtureInput(

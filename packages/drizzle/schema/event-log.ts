@@ -1,14 +1,8 @@
 import { relations } from "drizzle-orm";
-import {
-	index,
-	jsonb,
-	pgTable,
-	text,
-	timestamp,
-	uuid,
-} from "drizzle-orm/pg-core";
+import { index, jsonb, pgTable, text, uuid } from "drizzle-orm/pg-core";
 
 import { activity } from "./activity";
+import { instant } from "./columns";
 import { participant } from "./participant";
 import { project } from "./project";
 import { user } from "./user";
@@ -79,7 +73,7 @@ export const eventLog = pgTable(
 			.$type<Record<string, unknown>>()
 			.notNull()
 			.default({}),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
+		createdAt: instant("created_at").defaultNow().notNull(),
 	},
 	(table) => [
 		index("event_logs_project_created_idx").on(

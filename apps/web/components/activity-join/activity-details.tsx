@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 
 import { ActivityCardTags } from "@/components/activity/activity-card/tags";
 import { TagBadges } from "@/components/activity/tag-badge";
+import { useEventTimeZone } from "@/components/event-time-zone";
 
 import { describeSeats } from "@/lib/activity-seats";
 import {
@@ -45,6 +46,7 @@ export function ActivityDetails({
 		participantsLimit: activity.participantsLimit,
 		participantsCount,
 	});
+	const timeZone = useEventTimeZone();
 	const sessions = getSessionsSorted(activity.sessions);
 	const speakers = (activity.speakerOnActivity ?? []).map((s) => ({
 		...s.speaker,
@@ -113,14 +115,20 @@ export function ActivityDetails({
 								<Badge className="bg-background text-foreground py-1 wrap-break-word brightness-95">
 									<Calendar className="mr-2 h-3.5! w-3.5!" />
 									<span className="-mt-0.5 text-sm">
-										{getSessionsDateString([session])}
+										{getSessionsDateString(
+											[session],
+											timeZone,
+										)}
 										{` · Sessão ${index + 1} de ${sessions.length}`}
 									</span>
 								</Badge>
 								<Badge className="bg-background text-foreground py-1 wrap-break-word brightness-95">
 									<Clock className="mr-2 h-3.5! w-3.5!" />
 									<span className="-mt-0.5 text-sm">
-										{getSessionTimeString(session)}
+										{getSessionTimeString(
+											session,
+											timeZone,
+										)}
 									</span>
 								</Badge>
 								{(session.address ?? activity.address) ? (

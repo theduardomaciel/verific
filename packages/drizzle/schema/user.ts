@@ -1,14 +1,8 @@
 import { relations } from "drizzle-orm";
-import {
-	pgTable,
-	text,
-	boolean,
-	timestamp,
-	uniqueIndex,
-	uuid,
-} from "drizzle-orm/pg-core";
+import { pgTable, text, boolean, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { account } from "./account";
+import { instant } from "./columns";
 import { participant } from "./participant";
 import { project } from "./project";
 import { projectModerator } from "./project-moderator";
@@ -23,8 +17,8 @@ export const user = pgTable(
 		emailVerified: boolean("emailVerified").default(false).notNull(),
 		publicEmail: text("public_email").notNull(),
 		image_url: text("image_url"),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
+		createdAt: instant("created_at").defaultNow().notNull(),
+		updatedAt: instant("updated_at")
 			.defaultNow()
 			.notNull()
 			.$onUpdate(() => new Date()),

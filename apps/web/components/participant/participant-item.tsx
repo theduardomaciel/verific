@@ -11,6 +11,9 @@ import {
 } from "lucide-react";
 
 import type { RouterOutput } from "@verific/api";
+import { formatInstant } from "@verific/drizzle/time";
+
+import { useEventTimeZone } from "@/components/event-time-zone";
 
 import { getTimeString } from "@/lib/date";
 import { cn } from "@/lib/utils";
@@ -82,6 +85,7 @@ function ActivityParticipantItem({
 	projectUrl,
 	currentParticipantId,
 }: ActivityParticipantCardProps) {
+	const timeZone = useEventTimeZone();
 	const attendances = participant.sessionAttendances ?? [];
 	const attendedSessionIds = new Set(attendances.map((a) => a.sessionId));
 	const attendedCount = sessions
@@ -157,6 +161,7 @@ function ActivityParticipantItem({
 														S{i + 1} ·{" "}
 														{getTimeString(
 															session.startsAt,
+															timeZone,
 															true,
 														)}
 													</span>
@@ -227,6 +232,7 @@ function GeneralParticipantItem({
 	participant,
 	url,
 }: GeneralParticipantCardProps) {
+	const timeZone = useEventTimeZone();
 	return (
 		<>
 			<li
@@ -241,14 +247,11 @@ function GeneralParticipantItem({
 						<div className="flex flex-row items-center justify-start gap-2">
 							<Calendar className="h-4 w-4" />
 							Inscreveu-se em{" "}
-							{new Date(participant.joinedAt).toLocaleDateString(
-								"pt-BR",
-								{
-									day: "2-digit",
-									month: "2-digit",
-									year: "2-digit",
-								},
-							)}
+							{formatInstant(participant.joinedAt, timeZone, {
+								day: "2-digit",
+								month: "2-digit",
+								year: "2-digit",
+							})}
 						</div>
 					</div>
 					<Button

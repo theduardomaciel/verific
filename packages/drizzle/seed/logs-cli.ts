@@ -7,7 +7,7 @@ import { parseArgs } from "node:util";
 import { drizzle_env as env } from "@verific/env/drizzle_env";
 
 import * as schema from "../schema";
-import { insertInChunks, SEED_URL_PREFIX, todayInBrasilia } from "./utils";
+import { insertInChunks, SEED_URL_PREFIX, startOfToday } from "./utils";
 
 import type { EventLogType } from "../schema";
 
@@ -111,7 +111,7 @@ async function main() {
 			process.exit(1);
 		}
 
-		const base = todayInBrasilia();
+		const base = startOfToday();
 		const day = base.toISOString().slice(0, 10);
 		let total = 0;
 
