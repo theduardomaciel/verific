@@ -256,15 +256,22 @@ export async function seedEvent(
 
 	const sessions: Session[] = [];
 	const activities = spec.activities.map((activitySpec) => {
-		const { day, startHour, hours } = activitySpec.slot ?? {
-			day: faker.number.int({ min: 0, max: spec.durationDays - 1 }),
-			startHour: faker.number.int({ min: 8, max: 18 }),
-			hours: faker.number.int({ min: 1, max: 3 }),
-		};
-		const startsAt = addMinutes(addDays(startDate, day), startHour * 60);
 		const sessionCount =
 			activitySpec.sessions ??
 			(faker.datatype.boolean({ probability: 1 / 3 }) ? 2 : 1);
+		// As sessões ocupam dias seguidos e precisam caber no evento
+		const lastFirstDay = spec.durationDays - sessionCount;
+		const { day, startHour, hours } = activitySpec.slot ?? {
+			day: faker.number.int({ min: 0, max: Math.max(lastFirstDay, 0) }),
+			startHour: faker.number.int({ min: 8, max: 18 }),
+			hours: faker.number.int({ min: 1, max: 3 }),
+		};
+		if (day > lastFirstDay) {
+			throw new Error(
+				`A atividade ${activitySpec.name ?? "sem nome"} tem sessões depois do último dia do evento ${params.index}.`,
+			);
+		}
+		const startsAt = addMinutes(addDays(startDate, day), startHour * 60);
 
 		const activity = buildActivity(
 			faker,
