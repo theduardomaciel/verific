@@ -1,12 +1,7 @@
 import { relations } from "drizzle-orm";
-import {
-	index,
-	pgTable,
-	primaryKey,
-	timestamp,
-	uuid,
-} from "drizzle-orm/pg-core";
+import { index, pgTable, primaryKey, uuid } from "drizzle-orm/pg-core";
 
+import { instant } from "./columns";
 import { participant } from "./participant";
 import { project } from "./project";
 
@@ -37,7 +32,7 @@ export const profileConnection = pgTable(
 				onDelete: "cascade",
 				onUpdate: "cascade",
 			}),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
+		createdAt: instant("created_at").defaultNow().notNull(),
 	},
 	(table) => [
 		primaryKey({

@@ -6,12 +6,12 @@ import {
 	jsonb,
 	pgTable,
 	text,
-	timestamp,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
 
 import { formFieldTypeEnum } from "../enum/form-field-type";
+import { instant } from "./columns";
 import { formAnswer } from "./form-answer";
 import { formSection } from "./form-section";
 import { formVersion } from "./form-version";
@@ -70,7 +70,7 @@ export const formField = pgTable(
 			.default(true)
 			.notNull(),
 		isActive: boolean("is_active").default(true).notNull(),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
+		createdAt: instant("created_at").defaultNow().notNull(),
 	},
 	(table) => [
 		uniqueIndex().on(table.formVersionId, table.key),

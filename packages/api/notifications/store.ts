@@ -364,7 +364,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 			items,
 			nextCursor:
 				rows.length > options.limit && last
-					? { createdAt: last.createdAt.toISOString(), id: last.id }
+					? { createdAt: last.createdAt, id: last.id }
 					: null,
 		};
 	}

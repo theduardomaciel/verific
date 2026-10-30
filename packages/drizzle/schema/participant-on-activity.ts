@@ -4,13 +4,13 @@ import {
 	index,
 	pgTable,
 	text,
-	timestamp,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
 
 import { roleEnum } from "../enum/role";
 import { activity } from "./activity";
+import { instant } from "./columns";
 import { participant } from "./participant";
 import { user } from "./user";
 
@@ -30,7 +30,7 @@ export const participantOnActivity = pgTable(
 				onUpdate: "cascade",
 			}),
 		role: roleEnum("role").notNull().default("participant"),
-		subscribedAt: timestamp("subscribedAt").notNull().defaultNow(),
+		subscribedAt: instant("subscribedAt").notNull().defaultNow(),
 		/**
 		 * Inscrição além do limite de vagas, autorizada pela organização.
 		 * A vaga não é oferecida a ninguém da fila enquanto este vínculo
@@ -45,7 +45,7 @@ export const participantOnActivity = pgTable(
 				onUpdate: "cascade",
 			},
 		),
-		overbookedAt: timestamp("overbooked_at"),
+		overbookedAt: instant("overbooked_at"),
 		/**
 		 * Marcado quando o participante não registrou presença em nenhuma
 		 * sessão encerrada da atividade. Usado para relatório e para liberar

@@ -73,9 +73,9 @@ describe("profile layout", () => {
 		expect(formatProfileValue("  x  ", "text")).toBe("x");
 		expect(formatProfileValue("", "text")).toBeNull();
 		expect(formatProfileValue(1500, "number")).toBe("1.500");
-		expect(
-			formatProfileValue(new Date("2004-03-16T12:00:00"), "date"),
-		).toContain("2004");
+		expect(formatProfileValue("2004-03-16", "date")).toBe(
+			"16 de março de 2004",
+		);
 		expect(formatProfileValue(true, "checkbox")).toBe("Sim");
 		expect(formatProfileValue(["a", "b"], "select_multiple")).toBe("a; b");
 		expect(formatProfileValue(null, "text")).toBeNull();

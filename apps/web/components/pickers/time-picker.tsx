@@ -2,6 +2,8 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 
+import { formatTime, WALL_TIME_REGEX } from "@verific/drizzle/time";
+
 import {
 	Command,
 	CommandEmpty,
@@ -137,6 +139,8 @@ interface TimePickerProps {
 	placeholder?: string;
 	className?: string;
 	disabled?: boolean;
+	/** Fuso do horário; sem valor, a lista abre perto da hora atual nele. */
+	timeZone: string;
 }
 
 export function TimePicker({
@@ -145,6 +149,7 @@ export function TimePicker({
 	placeholder,
 	className,
 	disabled,
+	timeZone,
 }: TimePickerProps) {
 	const [open, setOpen] = useState(false);
 	const [search, setSearch] = useState("");
@@ -175,7 +180,7 @@ export function TimePicker({
 		return results;
 	}, [search]);
 
-	const isValidTime = /^([01]\d|2[0-3]):[0-5]\d$/.test(search);
+	const isValidTime = WALL_TIME_REGEX.test(search);
 	const customTime =
 		isValidTime && !filteredTimes.includes(search) ? search : null;
 
@@ -208,10 +213,10 @@ export function TimePicker({
 								? nearestTime(h! * 60 + m!)
 								: times[0];
 					} else {
-						const now = new Date();
-						target = nearestTime(
-							now.getHours() * 60 + now.getMinutes(),
-						);
+						const [h, m] = formatTime(new Date(), timeZone)
+							.split(":")
+							.map(Number);
+						target = nearestTime(h! * 60 + m!);
 					}
 					setResolvedTarget(target);
 				}
@@ -294,9 +299,4 @@ export function TimePicker({
 			</PopoverContent>
 		</Popover>
 	);
-}
-
-// Função utilitária para converter Date em string HH:MM
-export function dateToTimeString(date: Date) {
-	return date.toTimeString().slice(0, 5);
 }

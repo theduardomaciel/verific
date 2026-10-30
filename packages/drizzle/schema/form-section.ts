@@ -5,10 +5,10 @@ import {
 	jsonb,
 	pgTable,
 	text,
-	timestamp,
 	uuid,
 } from "drizzle-orm/pg-core";
 
+import { instant } from "./columns";
 import { formField } from "./form-field";
 import { formVersion } from "./form-version";
 import { project } from "./project";
@@ -45,7 +45,7 @@ export const formSection = pgTable(
 		title: text("title").notNull(),
 		order: integer("order").default(0).notNull(),
 		visibilityRule: jsonb("visibility_rule").$type<SectionVisibilityRule>(),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
+		createdAt: instant("created_at").defaultNow().notNull(),
 	},
 	(table) => [
 		index("form_sections_form_version_id_idx").on(table.formVersionId),

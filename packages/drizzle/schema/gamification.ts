@@ -6,11 +6,11 @@ import {
 	pgTable,
 	primaryKey,
 	text,
-	timestamp,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
 
+import { instant } from "./columns";
 import { participant } from "./participant";
 import { project } from "./project";
 import { user } from "./user";
@@ -38,9 +38,9 @@ export const participantCheckin = pgTable(
 				onDelete: "cascade",
 				onUpdate: "cascade",
 			}),
-		/** Dia do evento em `America/Sao_Paulo` (`YYYY-MM-DD`). */
+		/** Dia do evento no fuso do evento (`YYYY-MM-DD`). */
 		day: date("day").notNull(),
-		checkedInAt: timestamp("checked_in_at").defaultNow().notNull(),
+		checkedInAt: instant("checked_in_at").defaultNow().notNull(),
 		checkedInByUserId: uuid("checked_in_by_user_id").references(
 			() => user.id,
 			{ onDelete: "set null", onUpdate: "cascade" },
@@ -86,7 +86,7 @@ export const participantPointEvent = pgTable(
 			onDelete: "set null",
 			onUpdate: "cascade",
 		}),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
+		createdAt: instant("created_at").defaultNow().notNull(),
 	},
 	(table) => [
 		uniqueIndex("participant_point_events_project_dedupe_unique").on(
@@ -117,7 +117,7 @@ export const participantPoints = pgTable(
 				onUpdate: "cascade",
 			}),
 		total: integer("total").default(0).notNull(),
-		updatedAt: timestamp("updated_at")
+		updatedAt: instant("updated_at")
 			.defaultNow()
 			.notNull()
 			.$onUpdate(() => new Date()),
@@ -148,7 +148,7 @@ export const participantSticker = pgTable(
 			}),
 		stickerKey: text("sticker_key").notNull(),
 		source: text("source").$type<StickerSource>().default("auto").notNull(),
-		earnedAt: timestamp("earned_at").defaultNow().notNull(),
+		earnedAt: instant("earned_at").defaultNow().notNull(),
 		awardedByUserId: uuid("awarded_by_user_id").references(() => user.id, {
 			onDelete: "set null",
 			onUpdate: "cascade",

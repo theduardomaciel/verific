@@ -1,15 +1,20 @@
 import { describe, expect, it } from "vitest";
 
+import { DEFAULT_TIME_ZONE } from "@verific/drizzle/time";
+
 import {
-	calculateWorkloadFromTimes,
 	categorizeByDate,
+	formatFriendlyDate,
+	getSessionsDateString,
+	getSessionTimeString,
 	getTimeString,
 	isDateDifferent,
 	isToday,
 	isTomorrow,
 	isWithinPeriod,
-	saoPauloDayKey,
 } from "@/lib/date";
+
+const SP = DEFAULT_TIME_ZONE;
 
 describe("isWithinPeriod", () => {
 	const start = new Date("2026-10-26T12:00:00.000Z");
@@ -44,46 +49,26 @@ describe("isWithinPeriod", () => {
 	});
 });
 
-describe("calculateWorkloadFromTimes", () => {
-	it("calculates the workload in hours between two times", () => {
-		expect(calculateWorkloadFromTimes("08:00", "10:30")).toBe(2.5);
-	});
-
-	it("rounds the workload to two decimal places", () => {
-		expect(calculateWorkloadFromTimes("08:00", "08:10")).toBe(0.17);
-	});
-
-	it("clamps overnight ranges to zero", () => {
-		expect(calculateWorkloadFromTimes("18:00", "08:00")).toBe(0);
-	});
-
-	it("returns undefined when either time is missing", () => {
-		expect(calculateWorkloadFromTimes(undefined, "10:00")).toBeUndefined();
-		expect(calculateWorkloadFromTimes("08:00", undefined)).toBeUndefined();
-		expect(
-			calculateWorkloadFromTimes(undefined, undefined),
-		).toBeUndefined();
-	});
-});
-
 describe("datas em Brasília", () => {
 	// 22h30 de 20/10 em Brasília, já 21/10 em UTC
 	const evening = new Date("2026-10-21T01:30:00Z");
 
 	it("usa a hora e o dia de Brasília, qualquer que seja o fuso", () => {
-		expect(getTimeString(evening, true)).toBe("22h30");
-		expect(saoPauloDayKey(evening)).toBe("2026-10-20");
-		expect(isDateDifferent(evening, new Date("2026-10-20T12:00:00Z"))).toBe(
-			false,
-		);
+		expect(getTimeString(evening, SP, true)).toBe("22h30");
+		expect(getTimeString(evening, SP)).toBe("22:30");
+		expect(
+			isDateDifferent(evening, new Date("2026-10-20T12:00:00Z"), SP),
+		).toBe(false);
 	});
 
 	it("reconhece hoje e amanhã pelo dia de Brasília", () => {
 		const now = new Date("2026-10-20T15:00:00Z");
 
-		expect(isToday(evening, now)).toBe(true);
-		expect(isTomorrow(new Date("2026-10-21T20:00:00Z"), now)).toBe(true);
-		expect(isToday(evening, null)).toBe(false);
+		expect(isToday(evening, SP, now)).toBe(true);
+		expect(isTomorrow(new Date("2026-10-21T20:00:00Z"), SP, now)).toBe(
+			true,
+		);
+		expect(isToday(evening, SP, null)).toBe(false);
 	});
 
 	it("agrupa por dia em ordem cronológica", () => {
@@ -95,14 +80,90 @@ describe("datas em Brasília", () => {
 		];
 
 		expect(
-			categorizeByDate(dates, (d) => d, new Date("2026-10-20T15:00:00Z"))
-				.categories,
+			categorizeByDate(
+				dates,
+				(d) => d,
+				SP,
+				new Date("2026-10-20T15:00:00Z"),
+			).categories,
 		).toEqual(["Hoje", "Amanhã", "28 de outubro", "02 de novembro"]);
-		expect(categorizeByDate(dates, (d) => d, null).categories).toEqual([
+		expect(categorizeByDate(dates, (d) => d, SP, null).categories).toEqual([
 			"20 de outubro",
 			"21 de outubro",
 			"28 de outubro",
 			"02 de novembro",
 		]);
+	});
+});
+
+describe("sessões em Brasília", () => {
+	// 14h às 16h30 de 20/10 em Brasília
+	const afternoon = {
+		startsAt: new Date("2026-10-20T17:00:00Z"),
+		endsAt: new Date("2026-10-20T19:30:00Z"),
+	};
+	// 21h às 23h de 20/10 em Brasília, já 21/10 em UTC
+	const night = {
+		startsAt: new Date("2026-10-21T00:00:00Z"),
+		endsAt: new Date("2026-10-21T02:00:00Z"),
+	};
+
+	it("mostra o dia de Brasília, mesmo quando o UTC já virou", () => {
+		expect(getSessionsDateString([night], SP)).toBe("20/10");
+		expect(getSessionsDateString([night, afternoon], SP)).toBe("20/10");
+		expect(
+			getSessionsDateString(
+				[
+					afternoon,
+					{
+						startsAt: new Date("2026-10-22T17:00:00Z"),
+						endsAt: new Date("2026-10-22T18:00:00Z"),
+					},
+				],
+				SP,
+			),
+		).toBe("20/10 - 22/10");
+		expect(getSessionsDateString([], SP)).toBe("");
+	});
+
+	it("mostra o horário de Brasília", () => {
+		expect(getSessionTimeString(afternoon, SP)).toBe("14h - 16h30");
+		expect(getSessionTimeString(night, SP)).toBe("21h - 23h");
+		expect(getSessionTimeString(afternoon, SP, false)).toBe(
+			"14:00 - 16:30",
+		);
+	});
+});
+
+describe("formatFriendlyDate", () => {
+	const now = new Date("2026-10-20T15:00:00Z");
+
+	it("usa hoje e amanhã pelo dia de Brasília", () => {
+		expect(
+			formatFriendlyDate(new Date("2026-10-21T01:30:00Z"), SP, {
+				now,
+				includeHour: true,
+			}),
+		).toBe("Hoje, 22:30");
+		expect(
+			formatFriendlyDate(new Date("2026-10-21T13:00:00Z"), SP, { now }),
+		).toBe("Amanhã");
+	});
+
+	it("formata os outros dias em Brasília", () => {
+		const late = new Date("2026-10-29T01:30:00Z");
+
+		expect(formatFriendlyDate(late, SP, { now })).toBe("28/10");
+		expect(formatFriendlyDate(late, SP, { now, includeHour: true })).toBe(
+			"28/10, às 22:30",
+		);
+		expect(
+			formatFriendlyDate(late, SP, {
+				now,
+				includeHour: true,
+				longMonth: true,
+			}),
+		).toBe("28 de outubro, às 22:30");
+		expect(formatFriendlyDate(late, SP, { now: null })).toBe("28/10");
 	});
 });

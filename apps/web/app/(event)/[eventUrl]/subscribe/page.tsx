@@ -87,8 +87,7 @@ export default async function EventSubscribePage({
 							<Calendar className="mr-2 h-4.5 w-4.5" />
 							<span className="-mt-0.5 text-base">
 								<EventContainer.EventDateRange
-									startDate={project.startDate}
-									endDate={project.endDate}
+									project={project}
 								/>
 							</span>
 						</EventContainer.Hero.Meta>

@@ -8,11 +8,13 @@ import { Suspense } from "react";
 import { projectCacheTag, projectUrlCacheTag } from "@verific/api";
 import { parseGamificationConfig } from "@verific/drizzle/gamification";
 import { presetOfFamily } from "@verific/drizzle/theme";
+import { eventTimeZone } from "@verific/drizzle/time";
 
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { EventHeader } from "@/components/event-header";
 import { EventThemeSync } from "@/components/event-theme-sync";
+import { EventTimeZoneProvider } from "@/components/event-time-zone";
 import { Footer } from "@/components/footer";
 import { EventBackgroundEffects } from "@/components/landing/event-container";
 
@@ -322,7 +324,9 @@ export default async function EventLayout({
 						}
 					/>
 				</Suspense>
-				{children}
+				<EventTimeZoneProvider timeZone={eventTimeZone(project)}>
+					{children}
+				</EventTimeZoneProvider>
 				<div className="container-p relative z-10 flex w-full items-center justify-center py-6">
 					<div
 						className="w-full rounded-xl md:rounded-full"

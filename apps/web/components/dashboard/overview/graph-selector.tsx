@@ -20,6 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { useDashboard } from "@/components/dashboard/dashboard-context";
 
+import { formatBucketLabel } from "@/lib/date";
 import { trpc } from "@/lib/trpc/react";
 
 import {
@@ -119,7 +120,11 @@ export function GraphSelector() {
 		return breakdown.data.map((point) => {
 			const count = point.counts[BREAKDOWN_REGISTRATIONS_SERIES] ?? 0;
 			cumulative += count;
-			return { date: point.date, total: cumulative, active: count };
+			return {
+				date: formatBucketLabel(point.date),
+				total: cumulative,
+				active: count,
+			};
 		});
 	}, [breakdown, isBreakdown]);
 

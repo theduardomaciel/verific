@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { Calendar, CircleAlert, Loader2, CheckCircle2 } from "lucide-react";
 
 import type { RouterOutput } from "@verific/api";
+import { formatInstant } from "@verific/drizzle/time";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -19,11 +20,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 
+import { useEventTimeZone } from "@/components/event-time-zone";
+
 import { useDialogConfetti } from "@/hooks/use-dialog-confetti";
 import { useJoinActivity, type JoinError } from "@/hooks/use-join-activity";
 import {
 	getSessionsDateString,
 	getSessionsSorted,
+	type ActivitySessionLike,
 	getSessionTimeString,
 } from "@/lib/date";
 
@@ -137,31 +141,7 @@ export function QuickJoinDialog({
 								</AlertDialogDescription>
 							</AlertDialogHeader>
 
-							<ul className="flex flex-col gap-2">
-								{getSessionsSorted(activity.sessions).map(
-									(session, index) => (
-										<li
-											key={`session-${index}`}
-											className="flex items-center gap-2 text-sm"
-										>
-											<Calendar className="text-muted-foreground h-4 w-4 shrink-0" />
-											<span>
-												{getSessionsDateString([
-													session,
-												])}{" "}
-												(
-												{new Date(
-													session.startsAt,
-												).toLocaleDateString("pt-BR", {
-													weekday: "long",
-												})}
-												) ·{" "}
-												{getSessionTimeString(session)}
-											</span>
-										</li>
-									),
-								)}
-							</ul>
+							<SessionList sessions={activity.sessions} />
 							{getSessionsSorted(activity.sessions).length > 1 ? (
 								<p className="text-muted-foreground text-sm">
 									Esta inscrição vale para todas as sessões.
@@ -201,31 +181,7 @@ export function QuickJoinDialog({
 								</AlertDialogDescription>
 							</AlertDialogHeader>
 
-							<ul className="flex flex-col gap-2">
-								{getSessionsSorted(activity.sessions).map(
-									(session, index) => (
-										<li
-											key={`session-${index}`}
-											className="flex items-center gap-2 text-sm"
-										>
-											<Calendar className="text-muted-foreground h-4 w-4 shrink-0" />
-											<span>
-												{getSessionsDateString([
-													session,
-												])}{" "}
-												(
-												{new Date(
-													session.startsAt,
-												).toLocaleDateString("pt-BR", {
-													weekday: "long",
-												})}
-												) ·{" "}
-												{getSessionTimeString(session)}
-											</span>
-										</li>
-									),
-								)}
-							</ul>
+							<SessionList sessions={activity.sessions} />
 							{getSessionsSorted(activity.sessions).length > 1 ? (
 								<p className="text-muted-foreground text-sm">
 									Esta inscrição vale para todas as sessões.
@@ -280,5 +236,28 @@ export function QuickJoinDialog({
 				</AlertDialogContent>
 			) : null}
 		</AlertDialog>
+	);
+}
+
+function SessionList({ sessions }: { sessions: ActivitySessionLike[] }) {
+	const timeZone = useEventTimeZone();
+	return (
+		<ul className="flex flex-col gap-2">
+			{getSessionsSorted(sessions).map((session, index) => (
+				<li
+					key={`session-${index}`}
+					className="flex items-center gap-2 text-sm"
+				>
+					<Calendar className="text-muted-foreground h-4 w-4 shrink-0" />
+					<span>
+						{getSessionsDateString([session], timeZone)} (
+						{formatInstant(session.startsAt, timeZone, {
+							weekday: "long",
+						})}
+						) · {getSessionTimeString(session, timeZone)}
+					</span>
+				</li>
+			))}
+		</ul>
 	);
 }

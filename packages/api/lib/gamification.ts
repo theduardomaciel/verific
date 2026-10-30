@@ -1,7 +1,4 @@
 import {
-	eventDayCount,
-	eventDayKey,
-	eventDayKeys,
 	GAMIFICATION_STICKERS,
 	isSessionCompleted,
 	isStickerAvailable,
@@ -42,6 +39,12 @@ import {
 	sessionAttendance,
 	user,
 } from "@verific/drizzle/schema";
+import {
+	dayKey,
+	eventDays,
+	eventTimeZone,
+	toWallTime,
+} from "@verific/drizzle/time";
 
 import { recordEvent } from "./event-log";
 
@@ -230,7 +233,7 @@ export function buildStickerStats(input: {
 	attendance: AttendanceRow[];
 	checkinDays: string[];
 	connections: number;
-	eventDays: number;
+	timeZone: string;
 	graceMinutes: number;
 	beforeHour: number;
 }): Pick<
@@ -247,9 +250,9 @@ export function buildStickerStats(input: {
 	let completedSessions = 0;
 
 	for (const row of input.attendance) {
-		days.add(eventDayKey(row.joinedAt));
+		days.add(dayKey(row.joinedAt, input.timeZone));
 		hours += sessionHours(row.startsAt, row.endsAt);
-		if (sessionStartHour(row.startsAt) < input.beforeHour) {
+		if (startHour(row.startsAt, input.timeZone) < input.beforeHour) {
 			earlySessions += 1;
 		}
 		if (
@@ -274,14 +277,8 @@ export function buildStickerStats(input: {
 	};
 }
 
-const SESSION_HOUR_FORMATTER = new Intl.DateTimeFormat("en-US", {
-	timeZone: "America/Sao_Paulo",
-	hour: "numeric",
-	hourCycle: "h23",
-});
-
-function sessionStartHour(date: Date | string | number): number {
-	const hour = Number(SESSION_HOUR_FORMATTER.format(new Date(date)));
+function startHour(date: Date | string | number, timeZone: string): number {
+	const hour = Number(toWallTime(date, timeZone).time.slice(0, 2));
 	return Number.isFinite(hour) ? hour : 99;
 }
 
@@ -309,7 +306,7 @@ export async function loadParticipantStats(
 	options?: { includeRank?: boolean },
 ): Promise<LoadedStats> {
 	const config = projectConfig(project);
-	const eventDays = eventDayCount(project.startDate, project.endDate);
+	const eventDayCount = eventDays(project).length;
 
 	const [me] = await tx
 		.select({
@@ -391,7 +388,7 @@ export async function loadParticipantStats(
 		attendance: attendanceRows,
 		checkinDays: checkinRows.map((row) => row.day),
 		connections: Number(connections[0]?.amount ?? 0),
-		eventDays,
+		timeZone: eventTimeZone(project),
 		graceMinutes: config.sessions.completionGraceMinutes,
 		beforeHour: 9,
 	});
@@ -420,7 +417,7 @@ export async function loadParticipantStats(
 		rank,
 		optOut,
 		context: {
-			eventDays,
+			eventDays: eventDayCount,
 			checkoutEnabled: config.sessions.checkoutEnabled,
 		},
 		stats: {
@@ -531,7 +528,7 @@ export async function evaluateStickers(
 	if (!config.enabled || !config.stickersEnabled) return [];
 
 	const context: StickerContext = {
-		eventDays: eventDayCount(project.startDate, project.endDate),
+		eventDays: eventDays(project).length,
 		checkoutEnabled: config.sessions.checkoutEnabled,
 	};
 	const available = GAMIFICATION_STICKERS.filter((sticker) =>
@@ -731,8 +728,8 @@ export async function checkInAtReception(
 	}
 
 	const now = input.now ?? new Date();
-	const day = eventDayKey(now);
-	const days = eventDayKeys(input.project.startDate, input.project.endDate);
+	const day = dayKey(now, eventTimeZone(input.project));
+	const days = eventDays(input.project);
 	if (!days.includes(day)) {
 		throw new Error("OUTSIDE_EVENT");
 	}

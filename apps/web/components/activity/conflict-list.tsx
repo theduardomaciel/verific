@@ -1,5 +1,9 @@
 import Link from "next/link";
 
+import { formatInstant } from "@verific/drizzle/time";
+
+import { useEventTimeZone } from "@/components/event-time-zone";
+
 import {
 	getSessionsDateString,
 	getSessionTimeString,
@@ -17,23 +21,26 @@ interface ConflictListProps {
 	className?: string;
 }
 
-function conflictLine(conflict: Conflict): string {
+function conflictLine(conflict: Conflict, timeZone: string): string {
 	const session = conflict.otherSession;
-	const date = getSessionsDateString([
-		{
-			startsAt: session.startsAt,
-			endsAt: session.endsAt ?? session.startsAt,
-		},
-	]);
-	const weekday = new Date(session.startsAt).toLocaleDateString("pt-BR", {
+	const date = getSessionsDateString(
+		[
+			{
+				startsAt: session.startsAt,
+				endsAt: session.endsAt ?? session.startsAt,
+			},
+		],
+		timeZone,
+	);
+	const weekday = formatInstant(session.startsAt, timeZone, {
 		weekday: "long",
 	});
 	const time = session.endsAt
-		? getSessionTimeString({
-				startsAt: session.startsAt,
-				endsAt: session.endsAt,
-			})
-		: getTimeString(new Date(session.startsAt), true);
+		? getSessionTimeString(
+				{ startsAt: session.startsAt, endsAt: session.endsAt },
+				timeZone,
+			)
+		: getTimeString(new Date(session.startsAt), timeZone, true);
 	return `${date} (${weekday}) · ${time}`;
 }
 
@@ -47,6 +54,7 @@ export function ConflictList({
 	eventUrl,
 	className,
 }: ConflictListProps) {
+	const timeZone = useEventTimeZone();
 	if (conflicts.length === 0) return null;
 
 	const shown = conflicts.slice(0, MAX_LINES);
@@ -66,7 +74,7 @@ export function ConflictList({
 						>
 							{conflict.otherActivity.name}
 						</Link>
-						{`: ${conflictLine(conflict)}`}
+						{`: ${conflictLine(conflict, timeZone)}`}
 					</li>
 				))}
 			</ul>

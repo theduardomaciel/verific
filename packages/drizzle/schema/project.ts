@@ -2,7 +2,6 @@ import { relations } from "drizzle-orm";
 import {
 	pgTable,
 	text,
-	timestamp,
 	uuid,
 	integer,
 	doublePrecision,
@@ -12,6 +11,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { activity } from "./activity";
+import { instant } from "./columns";
 import { formAnswer } from "./form-answer";
 import { formField } from "./form-field";
 import { formVersion } from "./form-version";
@@ -74,8 +74,8 @@ export const project = pgTable(
 
 		gamification: jsonb("gamification").$type<GamificationConfig>(),
 
-		startDate: timestamp("start_date").notNull(),
-		endDate: timestamp("end_date").notNull(),
+		startDate: instant("start_date").notNull(),
+		endDate: instant("end_date").notNull(),
 
 		ownerId: uuid("owner_id")
 			.notNull()
@@ -84,7 +84,7 @@ export const project = pgTable(
 				onUpdate: "cascade",
 			}),
 
-		createdAt: timestamp("created_at").defaultNow().notNull(),
+		createdAt: instant("created_at").defaultNow().notNull(),
 	},
 	(table) => [index("projects_owner_id_idx").on(table.ownerId)],
 );

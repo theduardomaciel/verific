@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+
+import { renderInEventTimeZone } from "@/test/render";
 
 import { ActivityTicket, type WorkshopTicketProps } from "./activity-ticket";
 
@@ -50,7 +52,9 @@ function renderMonitorTicket(
 			},
 		],
 	} as unknown as WorkshopTicketProps["activity"];
-	render(<ActivityTicket activity={activity} checkInCode="abc" />);
+	renderInEventTimeZone(
+		<ActivityTicket activity={activity} checkInCode="abc" />,
+	);
 }
 
 describe("ActivityTicket", () => {

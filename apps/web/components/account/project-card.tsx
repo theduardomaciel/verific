@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ArrowRight, Ticket } from "lucide-react";
 
 import type { RouterOutput } from "@verific/api";
+import { eventTimeZone, formatInstant } from "@verific/drizzle/time";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -57,11 +58,15 @@ export function AccountEventCard({ project }: EventCardProps) {
 					</h3>
 					<p className="text-foreground text-sm">
 						Criado em{" "}
-						{project.createdAt.toLocaleDateString("pt-BR", {
-							day: "2-digit",
-							month: "2-digit",
-							year: "numeric",
-						})}
+						{formatInstant(
+							project.createdAt,
+							eventTimeZone(project),
+							{
+								day: "2-digit",
+								month: "2-digit",
+								year: "numeric",
+							},
+						)}
 					</p>
 				</div>
 			</div>

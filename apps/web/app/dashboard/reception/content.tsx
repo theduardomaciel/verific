@@ -5,6 +5,8 @@ import Link from "next/link";
 import { CalendarCheck, Settings, UserPlus, Users } from "lucide-react";
 import { toast } from "sonner";
 
+import { formatDayKey, isDayKey } from "@verific/drizzle/time";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,9 +18,8 @@ import { AddUsersDialog } from "@/components/dialogs/add-users-dialog";
 import { trpc } from "@/lib/trpc/react";
 
 function formatDay(day: string): string {
-	const date = new Date(`${day}T12:00:00`);
-	if (Number.isNaN(date.getTime())) return day;
-	return date.toLocaleDateString("pt-BR", {
+	if (!isDayKey(day)) return day;
+	return formatDayKey(day, {
 		weekday: "long",
 		day: "2-digit",
 		month: "long",

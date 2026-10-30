@@ -1,13 +1,7 @@
 import { relations } from "drizzle-orm";
-import {
-	pgTable,
-	timestamp,
-	uniqueIndex,
-	uuid,
-	text,
-	boolean,
-} from "drizzle-orm/pg-core";
+import { pgTable, uniqueIndex, uuid, text, boolean } from "drizzle-orm/pg-core";
 
+import { instant } from "./columns";
 import { formAnswer } from "./form-answer";
 import { participantOnActivity } from "./participant-on-activity";
 import { project } from "./project";
@@ -31,7 +25,7 @@ export const participant = pgTable(
 				onUpdate: "cascade",
 			}),
 
-		joinedAt: timestamp("joined_at").notNull().defaultNow(),
+		joinedAt: instant("joined_at").notNull().defaultNow(),
 
 		shortId: text("short_id").notNull(),
 

@@ -19,7 +19,7 @@ export const emailQuotaWarningPayloadSchema = z.object({
 	used: z.number().int().nonnegative(),
 	/** Configured EMAIL_DAILY_LIMIT. */
 	limit: z.number().int().positive(),
-	/** ISO day (America/Sao_Paulo) the warning refers to: YYYY-MM-DD. */
+	/** Day the warning refers to (default time zone): YYYY-MM-DD. */
 	day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 	accessUrl: z
 		.url()
