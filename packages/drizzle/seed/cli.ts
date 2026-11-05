@@ -5,7 +5,7 @@ import { parseArgs } from "node:util";
 
 import { drizzle_env as env } from "@verific/env/drizzle_env";
 
-import { profiles, seed, todayInBrasilia, type ProfileName } from ".";
+import { profiles, seed, startOfToday, type ProfileName } from ".";
 import * as schema from "../schema";
 
 // Seeds target the development database by default. Pass `--prod` (or
@@ -83,7 +83,7 @@ async function main() {
 			// Linhas fictícias de notificação só por padrão em dev; em prod
 			// exigem `--notifications` explícito.
 			notifications: values.notifications ?? !targetProduction,
-			refDate: todayInBrasilia(),
+			refDate: startOfToday(),
 		});
 
 		console.log(`✅ ${result.users} usuários`);

@@ -3,10 +3,6 @@ import { describe, expect, it } from "vitest";
 import {
 	DEFAULT_GAMIFICATION_CONFIG,
 	attendedSessionHours,
-	eventDayCount,
-	eventDayKey,
-	eventDayKeys,
-	isMultiDayEvent,
 	isSessionCompleted,
 	isStickerAvailable,
 	isStickerEarned,
@@ -64,29 +60,6 @@ describe("gamification config", () => {
 		expect(config.sessions.checkoutEnabled).toBe(true);
 		expect(config.sessions.completionBonus).toBe(0);
 		expect(config.sessions.perHour).toBe(100);
-	});
-});
-
-describe("event days", () => {
-	it("usa o fuso America/Sao_Paulo", () => {
-		// 02:00Z = 23:00 do dia anterior em São Paulo.
-		expect(eventDayKey("2026-10-22T02:00:00.000Z")).toBe("2026-10-21");
-		expect(eventDayKey("2026-10-22T12:00:00.000Z")).toBe("2026-10-22");
-	});
-
-	it("lista dias inclusivos", () => {
-		expect(
-			eventDayKeys(
-				"2026-10-21T12:00:00.000Z",
-				"2026-10-23T12:00:00.000Z",
-			),
-		).toEqual(["2026-10-21", "2026-10-22", "2026-10-23"]);
-		expect(
-			eventDayCount("2026-10-21T12:00:00Z", "2026-10-21T20:00:00Z"),
-		).toBe(1);
-		expect(
-			isMultiDayEvent("2026-10-21T12:00:00Z", "2026-10-22T12:00:00Z"),
-		).toBe(true);
 	});
 });
 

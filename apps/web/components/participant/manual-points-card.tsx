@@ -6,6 +6,7 @@ import { Plus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { GAMIFICATION_STICKERS } from "@verific/drizzle/gamification";
+import { formatInstant } from "@verific/drizzle/time";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+
+import { useEventTimeZone } from "@/components/event-time-zone";
 
 import { trpc } from "@/lib/trpc/react";
 
@@ -50,6 +53,7 @@ export function ManualPointsCard({
 	participantId: string;
 	participantName: string;
 }) {
+	const timeZone = useEventTimeZone();
 	const utils = trpc.useUtils();
 	const query = trpc.getParticipantPoints.useQuery(
 		{ projectId, participantId },
@@ -226,14 +230,16 @@ export function ManualPointsCard({
 												event.source}
 										</span>
 										<span className="text-muted-foreground text-xs">
-											{new Date(
+											{formatInstant(
 												event.createdAt,
-											).toLocaleString("pt-BR", {
-												day: "2-digit",
-												month: "2-digit",
-												hour: "2-digit",
-												minute: "2-digit",
-											})}
+												timeZone,
+												{
+													day: "2-digit",
+													month: "2-digit",
+													hour: "2-digit",
+													minute: "2-digit",
+												},
+											)}
 											{event.note
 												? ` · ${event.note}`
 												: ""}

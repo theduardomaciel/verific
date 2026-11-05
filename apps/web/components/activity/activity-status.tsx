@@ -2,6 +2,8 @@ import { Calendar, Timer } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 
+import { useEventTimeZone } from "@/components/event-time-zone";
+
 import { useNow } from "@/hooks/use-now";
 import {
 	formatFriendlyDate,
@@ -21,6 +23,7 @@ interface Props {
 export function ActivityStatus({ className, sessions, dateFormat }: Props) {
 	// Sem hora no servidor: mostra só a data da primeira sessão
 	const now = useNow();
+	const timeZone = useEventTimeZone();
 	const live = now ? getLiveSession(sessions, now) : null;
 	const next = now ? (live ? null : getNextSession(sessions, now)) : null;
 	const format = { ...dateFormat, now };
@@ -55,7 +58,11 @@ export function ActivityStatus({ className, sessions, dateFormat }: Props) {
 			>
 				<Calendar className="mt-[1.2px] h-4 w-4" />
 				<p className="text-sm leading-0 overflow-ellipsis">
-					{formatFriendlyDate(new Date(next.startsAt), format)}
+					{formatFriendlyDate(
+						new Date(next.startsAt),
+						timeZone,
+						format,
+					)}
 				</p>
 			</div>
 		);
@@ -74,7 +81,7 @@ export function ActivityStatus({ className, sessions, dateFormat }: Props) {
 		>
 			<Calendar className="mt-[1.2px] h-4 w-4" />
 			<p className="text-sm leading-0 overflow-ellipsis">
-				{formatFriendlyDate(new Date(last.startsAt), format)}
+				{formatFriendlyDate(new Date(last.startsAt), timeZone, format)}
 			</p>
 		</div>
 	);

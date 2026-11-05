@@ -12,7 +12,7 @@ import {
 } from "@/lib/trpc/hydrate";
 import { getCachedProjectAccess } from "@/lib/trpc/server";
 
-import { SettingsFormSkeleton } from "./skeleton";
+import { SettingsFormSkeleton, SettingsShellSkeleton } from "./skeleton";
 
 const settingsLinks: Array<{
 	href: string;
@@ -100,10 +100,16 @@ async function SettingsShell({ children }: { children: React.ReactNode }) {
 	);
 }
 
-export default async function AccountSettingsLayout({
+// O acesso ao projeto é lido por requisição: sem a fronteira, ele trava a
+// navegação entre as páginas do dashboard
+export default function AccountSettingsLayout({
 	children,
 }: {
 	children: React.ReactNode;
 }) {
-	return <SettingsShell>{children}</SettingsShell>;
+	return (
+		<Suspense fallback={<SettingsShellSkeleton />}>
+			<SettingsShell>{children}</SettingsShell>
+		</Suspense>
+	);
 }

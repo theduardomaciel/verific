@@ -23,11 +23,13 @@ import {
 
 import type { RouterOutput } from "@verific/api";
 import type { EventLogType } from "@verific/drizzle/schema";
+import { formatInstant } from "@verific/drizzle/time";
 
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 
 import { useDashboard } from "@/components/dashboard/dashboard-context";
+import { useEventTimeZone } from "@/components/event-time-zone";
 
 import { useDebounce } from "@/hooks/use-debounce";
 import { trpc } from "@/lib/trpc/react";
@@ -118,13 +120,12 @@ const FILTER_GROUPS: Array<{ label: string; types: EventLogType[] }> = [
 	},
 ];
 
-const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
-	timeZone: "America/Sao_Paulo",
+const DATE_FORMAT: Intl.DateTimeFormatOptions = {
 	day: "2-digit",
 	month: "short",
 	hour: "2-digit",
 	minute: "2-digit",
-});
+};
 
 export function LogsList({ className }: { className?: string }) {
 	const { projectId } = useDashboard();
@@ -255,6 +256,7 @@ export function LogsList({ className }: { className?: string }) {
 }
 
 function LogRow({ entry }: { entry: LogEntry }) {
+	const timeZone = useEventTimeZone();
 	const meta = TYPE_META[entry.type];
 	const Icon = meta.icon;
 	return (
@@ -279,7 +281,7 @@ function LogRow({ entry }: { entry: LogEntry }) {
 				) : null}
 			</div>
 			<span className="text-muted-foreground shrink-0 text-xs tabular-nums">
-				{dateFormatter.format(new Date(entry.at))}
+				{formatInstant(entry.at, timeZone, DATE_FORMAT)}
 			</span>
 		</li>
 	);

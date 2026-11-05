@@ -1,13 +1,7 @@
 import { relations } from "drizzle-orm";
-import {
-	index,
-	pgTable,
-	text,
-	timestamp,
-	uniqueIndex,
-	uuid,
-} from "drizzle-orm/pg-core";
+import { index, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
+import { instant } from "./columns";
 import { user } from "./user";
 
 export const account = pgTable(
@@ -25,12 +19,12 @@ export const account = pgTable(
 		accessToken: text("access_token"),
 		refreshToken: text("refresh_token"),
 		idToken: text("id_token"),
-		accessTokenExpiresAt: timestamp("access_token_expires_at"),
-		refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+		accessTokenExpiresAt: instant("access_token_expires_at"),
+		refreshTokenExpiresAt: instant("refresh_token_expires_at"),
 		scope: text("scope"),
 		password: text("password"),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
+		createdAt: instant("created_at").defaultNow().notNull(),
+		updatedAt: instant("updated_at")
 			.defaultNow()
 			.notNull()
 			.$onUpdate(() => new Date()),

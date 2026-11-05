@@ -4,12 +4,12 @@ import {
 	index,
 	jsonb,
 	pgTable,
-	timestamp,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
 
 import { projectMemberRoleEnum } from "../enum/project-role";
+import { instant } from "./columns";
 import { project } from "./project";
 import { user } from "./user";
 
@@ -48,7 +48,7 @@ export const projectModerator = pgTable(
 		includeInRanking: boolean("include_in_ranking")
 			.notNull()
 			.default(false),
-		assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+		assignedAt: instant("assigned_at").defaultNow().notNull(),
 	},
 	(table) => [
 		uniqueIndex("project_moderators_project_user_unique").on(

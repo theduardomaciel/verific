@@ -24,6 +24,7 @@ import {
 	ChartTooltipContent,
 } from "@/components/ui/chart";
 
+import { formatBucketLabel } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
 export type BreakdownGraphType =
@@ -160,7 +161,7 @@ export function BreakdownGraph({
 		() =>
 			data.map((point) => {
 				const row: Record<string, string | number> = {
-					date: point.date,
+					date: formatBucketLabel(point.date),
 				};
 				for (const item of aliasedSeries) {
 					row[item.key] = point.counts[item.label] ?? 0;

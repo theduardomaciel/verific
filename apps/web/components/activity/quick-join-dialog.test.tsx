@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
 	QuickJoinDialog,
 	type QuickJoinActivity,
 } from "@/components/activity/quick-join-dialog";
+
+import { renderInEventTimeZone } from "@/test/render";
 
 afterEach(cleanup);
 
@@ -90,7 +92,7 @@ function setup(overrides?: {
 	const onJoined = vi.fn(overrides?.onJoined);
 	const onBlocked = vi.fn(overrides?.onBlocked);
 	const onOpenChange = vi.fn(overrides?.onOpenChange);
-	render(
+	renderInEventTimeZone(
 		<QuickJoinDialog
 			activity={activity}
 			participantId="part-1"

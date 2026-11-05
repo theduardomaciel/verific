@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, screen } from "@testing-library/react";
 import { TRPCClientError } from "@trpc/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AddUsersDialog } from "@/components/dialogs/add-users-dialog";
+
+import { renderInEventTimeZone } from "@/test/render";
 
 afterEach(cleanup);
 
@@ -76,7 +78,7 @@ describe("AddUsersDialog", () => {
 	it("mostra o erro da mutação sem derrubar a página", async () => {
 		mutateAsyncMock.mockRejectedValue(new Error("FORBIDDEN"));
 		vi.spyOn(console, "error").mockImplementation(() => {});
-		render(
+		renderInEventTimeZone(
 			<AddUsersDialog
 				projectId="project-1"
 				activityId="activity-1"
@@ -98,7 +100,7 @@ describe("AddUsersDialog", () => {
 	it("mostra o erro da busca com a opção de tentar de novo", async () => {
 		state.isError = true;
 		state.selected = false;
-		render(
+		renderInEventTimeZone(
 			<AddUsersDialog
 				projectId="project-1"
 				checkIn={{ activityId: "a1" }}
@@ -119,7 +121,7 @@ describe("AddUsersDialog", () => {
 
 	it("fecha o diálogo a cada envio, mesmo com a mesma quantidade", async () => {
 		const handler = vi.fn(async () => {});
-		render(
+		renderInEventTimeZone(
 			<AddUsersDialog projectId="project-1" onSubmitSelected={handler}>
 				<button type="button">Credenciar por nome</button>
 			</AddUsersDialog>,
@@ -146,7 +148,7 @@ describe("AddUsersDialog", () => {
 		refreshMock.mockRejectedValueOnce(new Error("rede"));
 		vi.spyOn(console, "error").mockImplementation(() => {});
 		const handler = vi.fn(async () => {});
-		render(
+		renderInEventTimeZone(
 			<AddUsersDialog projectId="project-1" onSubmitSelected={handler}>
 				<button type="button">Credenciar por nome</button>
 			</AddUsersDialog>,
@@ -175,7 +177,7 @@ describe("AddUsersDialog", () => {
 			} as never);
 		});
 		vi.spyOn(console, "error").mockImplementation(() => {});
-		render(
+		renderInEventTimeZone(
 			<AddUsersDialog projectId="project-1" onSubmitSelected={handler}>
 				<button type="button">Credenciar por nome</button>
 			</AddUsersDialog>,

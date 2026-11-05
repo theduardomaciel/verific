@@ -84,10 +84,7 @@ function EventPageBody({ project }: { project: EventPageProject }) {
 					<EventContainer.Hero.Meta className="mb-6">
 						<Calendar className="mr-2 h-4.5 w-4.5" />
 						<span className="-mt-0.5 text-base">
-							<EventContainer.EventDateRange
-								startDate={project.startDate}
-								endDate={project.endDate}
-							/>
+							<EventContainer.EventDateRange project={project} />
 						</span>
 					</EventContainer.Hero.Meta>
 					<div className="mb-8 flex flex-wrap gap-3">

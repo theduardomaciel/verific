@@ -1,7 +1,8 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, uuid, index } from "drizzle-orm/pg-core";
+import { pgTable, text, uuid, index } from "drizzle-orm/pg-core";
 
 import { activity } from "./activity";
+import { instant } from "./columns";
 import { sessionAttendance } from "./session-attendance";
 
 export const activitySession = pgTable(
@@ -14,10 +15,10 @@ export const activitySession = pgTable(
 				onDelete: "cascade",
 				onUpdate: "cascade",
 			}),
-		startsAt: timestamp("starts_at").notNull(),
-		endsAt: timestamp("ends_at").notNull(),
+		startsAt: instant("starts_at").notNull(),
+		endsAt: instant("ends_at").notNull(),
 		address: text("address"),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
+		createdAt: instant("created_at").defaultNow().notNull(),
 	},
 	(table) => [
 		index("activity_sessions_activity_id_idx").on(table.activityId),

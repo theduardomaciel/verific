@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { DEFAULT_TIME_ZONE } from "@verific/drizzle/time";
+
 import {
 	buildStickerStats,
 	isGamificationOn,
@@ -12,7 +14,7 @@ describe("gamification service helpers", () => {
 		const stats = buildStickerStats({
 			checkinDays: ["2026-10-21"],
 			connections: 4,
-			eventDays: 3,
+			timeZone: DEFAULT_TIME_ZONE,
 			graceMinutes: 10,
 			beforeHour: 9,
 			attendance: [
@@ -48,7 +50,7 @@ describe("gamification service helpers", () => {
 		const stats = buildStickerStats({
 			checkinDays: [],
 			connections: 0,
-			eventDays: 1,
+			timeZone: DEFAULT_TIME_ZONE,
 			graceMinutes: 5,
 			beforeHour: 9,
 			attendance: [

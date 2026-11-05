@@ -26,6 +26,7 @@ import {
 	type QuickJoinActivity,
 } from "@/components/activity/quick-join-dialog";
 import { Empty } from "@/components/empty";
+import { useEventTimeZone } from "@/components/event-time-zone";
 import { FilterBy } from "@/components/filter-by";
 import { SearchBar } from "@/components/search-bar";
 import { SortBy } from "@/components/sort-by";
@@ -309,6 +310,7 @@ export function ScheduleContent({
 	}, [displayActivities, searchQuery, categoryFilter, tagFilter, sortBy]);
 
 	const now = useNow();
+	const timeZone = useEventTimeZone();
 
 	const occurrences = useMemo<Occurrence[]>(
 		() => expandSessionOccurrences(filteredActivities),
@@ -348,11 +350,13 @@ export function ScheduleContent({
 		const upcoming = categorizeByDate(
 			upcomingOccurrences,
 			(occurrence) => occurrence.session.startsAt,
+			timeZone,
 			now,
 		);
 		const past = categorizeByDate(
 			pastOccurrences,
 			(occurrence) => occurrence.session.startsAt,
+			timeZone,
 			now,
 		);
 		const hasToday = upcoming.categories.includes("Hoje");
@@ -375,7 +379,7 @@ export function ScheduleContent({
 			],
 			opensPastSection,
 		};
-	}, [upcomingOccurrences, pastOccurrences, now]);
+	}, [upcomingOccurrences, pastOccurrences, timeZone, now]);
 
 	const pastActivityCount = useMemo(
 		() => new Set(pastOccurrences.map((o) => o.activity.id)).size,

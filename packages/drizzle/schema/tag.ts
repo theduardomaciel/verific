@@ -1,12 +1,7 @@
 import { relations } from "drizzle-orm";
-import {
-	pgTable,
-	text,
-	timestamp,
-	uniqueIndex,
-	uuid,
-} from "drizzle-orm/pg-core";
+import { pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
+import { instant } from "./columns";
 import { project } from "./project";
 import { tagOnActivity } from "./tag-on-activity";
 
@@ -22,7 +17,7 @@ export const tag = pgTable(
 			}),
 		name: text("name").notNull(),
 		color: text("color").notNull(),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
+		createdAt: instant("created_at").defaultNow().notNull(),
 	},
 	(table) => [uniqueIndex().on(table.projectId, table.name)],
 );

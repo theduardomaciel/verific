@@ -1,6 +1,9 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
+// Longe de Brasília e de UTC: o código não pode depender do fuso do processo
+process.env.TZ = "Asia/Tokyo";
+
 export default defineConfig({
 	plugins: [react()],
 	resolve: {

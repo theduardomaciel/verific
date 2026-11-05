@@ -5,8 +5,10 @@ import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import type { ProjectPermission } from "@verific/drizzle/permissions";
+import { eventTimeZone } from "@verific/drizzle/time";
 
 import { DashboardProvider } from "@/components/dashboard/dashboard-context";
+import { EventTimeZoneProvider } from "@/components/event-time-zone";
 import { Footer } from "@/components/footer";
 import { DashboardHeader } from "@/components/header/dashboard-header";
 
@@ -105,7 +107,9 @@ async function DashboardLayoutContent({
 				role={access.role}
 				permissions={access.permissions}
 			>
-				{children}
+				<EventTimeZoneProvider timeZone={eventTimeZone(currentProject)}>
+					{children}
+				</EventTimeZoneProvider>
 			</DashboardProvider>
 			<Footer />
 		</div>

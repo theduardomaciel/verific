@@ -1,30 +1,25 @@
 import { activityAudiences } from "@verific/drizzle/enum/audience";
 import { activityCategories } from "@verific/drizzle/enum/category";
+import { isDayKey, minutesOf, WALL_TIME_REGEX } from "@verific/drizzle/time";
 import { z } from "@verific/zod";
-
-const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
-
-const toMinutes = (time: string) => {
-	const [h, m] = time.split(":").map(Number);
-	return h! * 60 + m!;
-};
 
 export const activitySessionFormSchema = z.object({
 	/** Id de uma sessão já salva (ausente em sessões novas). */
 	id: z.uuid().optional(),
-	date: z.coerce.date({
-		error: "É necessário inserir a data da sessão",
-	}),
+	/** Dia da sessão no fuso do evento. */
+	date: z
+		.string({ error: "É necessário inserir a data da sessão" })
+		.refine(isDayKey, "É necessário inserir a data da sessão"),
 	timeFrom: z
 		.string({
 			error: "É necessário inserir o horário de início da sessão",
 		})
-		.regex(timeRegex, "Formato de horário inválido"),
+		.regex(WALL_TIME_REGEX, "Formato de horário inválido"),
 	timeTo: z
 		.string({
 			error: "É necessário inserir o horário de término da sessão",
 		})
-		.regex(timeRegex, "Formato de horário inválido"),
+		.regex(WALL_TIME_REGEX, "Formato de horário inválido"),
 	address: z.string().optional(),
 });
 
@@ -100,7 +95,7 @@ export const mutateActivityFormSchema = z
 		for (let i = 0; i < (data.sessions ?? []).length; i++) {
 			const session = data.sessions[i]!;
 			if (session.timeFrom && session.timeTo) {
-				if (toMinutes(session.timeTo) <= toMinutes(session.timeFrom)) {
+				if (minutesOf(session.timeTo) <= minutesOf(session.timeFrom)) {
 					ctx.addIssue({
 						code: "custom",
 						message:
@@ -109,16 +104,16 @@ export const mutateActivityFormSchema = z
 					});
 					continue;
 				}
-				const startsAt = new Date(session.date);
-				setTimeOnDate(startsAt, session.timeFrom);
-				const endsAt = new Date(session.date);
-				setTimeOnDate(endsAt, session.timeTo);
-				intervals.push({ startsAt, endsAt });
+				// Dia e hora no mesmo fuso: a ordem do texto é a do tempo
+				intervals.push({
+					startsAt: `${session.date}T${session.timeFrom}`,
+					endsAt: `${session.date}T${session.timeTo}`,
+				});
 			}
 		}
 
-		const sorted = [...intervals].sort(
-			(a, b) => a.startsAt.getTime() - b.startsAt.getTime(),
+		const sorted = [...intervals].sort((a, b) =>
+			a.startsAt.localeCompare(b.startsAt),
 		);
 		for (let i = 1; i < sorted.length; i++) {
 			if (sorted[i]!.startsAt < sorted[i - 1]!.endsAt) {
@@ -131,10 +126,5 @@ export const mutateActivityFormSchema = z
 			}
 		}
 	});
-
-const setTimeOnDate = (date: Date, time: string) => {
-	const timeParts = time.split(":");
-	date.setUTCHours(Number(timeParts[0]) + 3, Number(timeParts[1]));
-};
 
 export type MutateActivityFormSchema = z.infer<typeof mutateActivityFormSchema>;

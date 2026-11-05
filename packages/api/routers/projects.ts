@@ -60,11 +60,20 @@ export const updateProjectSchema = z.object({
 	secondaryColor: z.string().optional().nullable(),
 	theme: eventThemeSchema.optional(),
 	profilesEnabled: z.boolean().optional(),
-	startDate: z.coerce.date().optional(),
-	endDate: z.coerce.date().optional(),
+	startDate: z.date().optional(),
+	endDate: z.date().optional(),
 });
 
 const projectPermissionsSchema = z.array(z.enum(PROJECT_PERMISSIONS));
+
+function assertEventPeriod(startDate: Date, endDate: Date) {
+	if (endDate <= startDate) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "O fim do evento deve ser depois do início.",
+		});
+	}
+}
 
 const projectMemberInputSchema = z.object({
 	role: z.enum(projectMemberRoles).default("staff"),
@@ -122,8 +131,8 @@ export const projectsRouter = createTRPCRouter({
 				largeLogoDarkUrl: z.string().optional().nullable(),
 				coverUrl: z.string().optional().nullable(),
 				thumbnailUrl: z.string().optional().nullable(),
-				startDate: z.coerce.date(),
-				endDate: z.coerce.date(),
+				startDate: z.date(),
+				endDate: z.date(),
 			}),
 		)
 		.mutation(async ({ input, ctx }) => {
@@ -142,6 +151,7 @@ export const projectsRouter = createTRPCRouter({
 				startDate,
 				endDate,
 			} = input;
+			assertEventPeriod(startDate, endDate);
 
 			const userId = ctx.session.user.id;
 			console.log("userId", userId);
@@ -192,6 +202,13 @@ export const projectsRouter = createTRPCRouter({
 				ctx.session.user.id,
 				"event.manage",
 			);
+
+			if (rest.startDate || rest.endDate) {
+				assertEventPeriod(
+					rest.startDate ?? current.startDate,
+					rest.endDate ?? current.endDate,
+				);
+			}
 
 			// URLs antigas podem ter acento; só uma URL nova é normalizada
 			if (rest.url !== undefined && rest.url !== current.url) {

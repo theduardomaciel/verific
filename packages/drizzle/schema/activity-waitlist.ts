@@ -1,15 +1,9 @@
 import { relations, sql } from "drizzle-orm";
-import {
-	index,
-	pgTable,
-	text,
-	timestamp,
-	uniqueIndex,
-	uuid,
-} from "drizzle-orm/pg-core";
+import { index, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { waitlistEventTypeEnum, waitlistStatusEnum } from "../enum/waitlist";
 import { activity } from "./activity";
+import { instant } from "./columns";
 import { participant } from "./participant";
 import { user } from "./user";
 
@@ -30,10 +24,10 @@ export const activityWaitlist = pgTable(
 				onUpdate: "cascade",
 			}),
 		status: waitlistStatusEnum("status").notNull().default("waiting"),
-		joinedAt: timestamp("joined_at").defaultNow().notNull(),
-		offeredAt: timestamp("offered_at"),
-		offerExpiresAt: timestamp("offer_expires_at"),
-		resolvedAt: timestamp("resolved_at"),
+		joinedAt: instant("joined_at").defaultNow().notNull(),
+		offeredAt: instant("offered_at"),
+		offerExpiresAt: instant("offer_expires_at"),
+		resolvedAt: instant("resolved_at"),
 	},
 	(table) => [
 		// Uma entrada ativa por pessoa; quem saiu pode voltar
@@ -73,7 +67,7 @@ export const activityWaitlistEvent = pgTable(
 		// Motivo informado pelo organizador na ação (promover/remover).
 		// Nulo quando a mudança foi automática ou sem motivo.
 		reason: text("reason"),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
+		createdAt: instant("created_at").defaultNow().notNull(),
 	},
 	(table) => [
 		index().on(table.activityId, table.createdAt),

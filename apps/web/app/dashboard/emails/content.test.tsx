@@ -2,7 +2,6 @@
 import {
 	cleanup,
 	fireEvent,
-	render,
 	screen,
 	waitFor,
 	within,
@@ -10,6 +9,8 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { PublicNotification } from "@verific/api";
+
+import { renderInEventTimeZone } from "@/test/render";
 
 const { state } = vi.hoisted(() => ({
 	state: {
@@ -125,7 +126,7 @@ function stubClipboard() {
 describe("EmailsContent filters", () => {
 	it("filters the table when a counter is clicked and marks it active", async () => {
 		state.items = [row()];
-		render(<EmailsContent />);
+		renderInEventTimeZone(<EmailsContent />);
 
 		const falhas = screen.getByRole("button", { name: /^Falhas/ });
 		fireEvent.click(falhas);
@@ -149,7 +150,7 @@ describe("EmailsContent filters", () => {
 
 	it("applies the recipient e-mail search after the debounce", async () => {
 		state.items = [row()];
-		render(<EmailsContent />);
+		renderInEventTimeZone(<EmailsContent />);
 
 		fireEvent.change(
 			screen.getByLabelText("Buscar por e-mail do destinatário"),
@@ -172,7 +173,7 @@ describe("EmailsContent copy actions", () => {
 		const item = row();
 		state.items = [item];
 		const writeText = stubClipboard();
-		render(<EmailsContent />);
+		renderInEventTimeZone(<EmailsContent />);
 
 		fireEvent.click(screen.getByLabelText("Copiar erro"));
 
@@ -192,7 +193,7 @@ describe("EmailsContent copy actions", () => {
 			}),
 		];
 		const writeText = stubClipboard();
-		render(<EmailsContent />);
+		renderInEventTimeZone(<EmailsContent />);
 
 		fireEvent.click(screen.getByLabelText("Copiar diagnóstico"));
 
@@ -214,7 +215,7 @@ describe("EmailsContent copy actions", () => {
 	it("keeps the full error in the truncated cell", () => {
 		const item = row();
 		state.items = [item];
-		render(<EmailsContent />);
+		renderInEventTimeZone(<EmailsContent />);
 
 		expect(screen.getByTestId("error-text").textContent).toBe(
 			item.lastError,
@@ -225,7 +226,7 @@ describe("EmailsContent copy actions", () => {
 describe("EmailsContent reprocess button", () => {
 	it("disables reprocessing for sent rows with an explanatory label", () => {
 		state.items = [row({ status: "sent", sentAt: new Date() })];
-		render(<EmailsContent />);
+		renderInEventTimeZone(<EmailsContent />);
 
 		const button = screen.getByRole("button", {
 			name: /Reprocessar indisponível/,
@@ -246,7 +247,7 @@ describe("EmailsContent reprocess button", () => {
 					resolve = r;
 				}),
 		);
-		render(<EmailsContent />);
+		renderInEventTimeZone(<EmailsContent />);
 
 		fireEvent.click(
 			screen.getByRole("button", { name: "Reprocessar este e-mail" }),
@@ -275,7 +276,7 @@ describe("EmailsContent reprocess button", () => {
 describe("EmailsContent reload", () => {
 	it("reloads the list and the counters and debounces repeat clicks", async () => {
 		state.items = [row()];
-		render(<EmailsContent />);
+		renderInEventTimeZone(<EmailsContent />);
 
 		const reload = screen.getByLabelText("Recarregar lista e contagens");
 		fireEvent.click(reload);
@@ -299,7 +300,7 @@ describe("EmailsContent bulk selection", () => {
 		state.mutateAsync = vi.fn(async () => ({
 			notification: { status: "sent" },
 		}));
-		render(<EmailsContent />);
+		renderInEventTimeZone(<EmailsContent />);
 
 		fireEvent.click(
 			screen.getByLabelText(
@@ -330,7 +331,7 @@ describe("EmailsContent bulk selection", () => {
 
 	it("disables the checkbox of a non-reprocessable row", () => {
 		state.items = [row({ status: "sent", sentAt: new Date() })];
-		render(<EmailsContent />);
+		renderInEventTimeZone(<EmailsContent />);
 
 		expect(
 			screen.getByLabelText(/Não selecionável: Já enviada/),
@@ -341,7 +342,7 @@ describe("EmailsContent bulk selection", () => {
 describe("EmailsContent detail sheet", () => {
 	it("opens the sheet with entityRefs and the stored error", async () => {
 		state.items = [row()];
-		render(<EmailsContent />);
+		renderInEventTimeZone(<EmailsContent />);
 
 		fireEvent.click(screen.getByLabelText("Ver detalhes"));
 

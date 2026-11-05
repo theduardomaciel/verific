@@ -22,6 +22,14 @@ import {
 	activityCategories,
 	activityCategoryLabels,
 } from "@verific/drizzle/enum/category";
+import {
+	calendarDate,
+	dayKey,
+	dayOfCalendarDate,
+	isDayKey,
+	minutesOf,
+	zonedInstant,
+} from "@verific/drizzle/time";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -54,10 +62,10 @@ import {
 
 import { SpeakerDeleteDialog } from "@/components/dialogs/delete-dialog";
 import { MutateSpeakerDialog } from "@/components/dialogs/mutate-speaker-dialog";
+import { useEventTimeZone } from "@/components/event-time-zone";
 import { InstancePicker } from "@/components/pickers/instance-picker";
 import { TimePicker } from "@/components/pickers/time-picker";
 
-import { sumSessionsHours } from "@/lib/date";
 import { trpc } from "@/lib/trpc/react";
 
 import type { MutateActivityFormSchema } from "@/lib/validations/forms/mutate-activity-form";
@@ -65,7 +73,8 @@ import type { MutateActivityFormSchema } from "@/lib/validations/forms/mutate-ac
 interface Props {
 	form: UseFormReturn<MutateActivityFormSchema>;
 	projectId: string;
-	endDate?: Date;
+	/** Período do evento, para avisar de sessões fora dele. */
+	period?: { startDate: Date; endDate: Date };
 	isEditing?: boolean;
 	/** Disables the submit button while a save is in progress. */
 	isPending?: boolean;
@@ -275,35 +284,47 @@ function RegistrationSettings({
 /*                               Sessions editor                              */
 /* -------------------------------------------------------------------------- */
 
-const setTimeOnDate = (date: Date, time: string) => {
-	const timeParts = time.split(":");
-	date.setUTCHours(Number(timeParts[0]) + 3, Number(timeParts[1]));
-};
+type SessionValues = MutateActivityFormSchema["sessions"][number];
 
-function buildSessionIntervals(
-	sessions: Array<{ date: Date; timeFrom: string; timeTo: string }>,
-) {
-	const intervals: Array<{ startsAt: Date; endsAt: Date }> = [];
+/** Soma das durações, em horas, pelas horas de relógio de cada sessão. */
+function sessionsHours(sessions: SessionValues[]) {
+	let minutes = 0;
 	for (const session of sessions) {
-		if (!session?.date || !session.timeFrom || !session.timeTo) continue;
-		const startsAt = new Date(session.date);
-		setTimeOnDate(startsAt, session.timeFrom);
-		const endsAt = new Date(session.date);
-		setTimeOnDate(endsAt, session.timeTo);
-		if (endsAt > startsAt) intervals.push({ startsAt, endsAt });
+		if (!session?.timeFrom || !session.timeTo) continue;
+		const span = minutesOf(session.timeTo) - minutesOf(session.timeFrom);
+		if (span > 0) minutes += span;
 	}
-	return intervals;
+	return Math.round((minutes / 60) * 100) / 100;
+}
+
+function isOutsidePeriod(
+	session: SessionValues | undefined,
+	period: { startDate: Date; endDate: Date },
+	timeZone: string,
+) {
+	if (!session || !isDayKey(session.date)) return false;
+	if (!session.timeFrom || !session.timeTo) return false;
+	const startsAt = zonedInstant(session.date, session.timeFrom, timeZone);
+	const endsAt = zonedInstant(session.date, session.timeTo, timeZone);
+	return (
+		startsAt < new Date(period.startDate) ||
+		endsAt > new Date(period.endDate)
+	);
 }
 
 function SessionsEditor({
 	form,
+	period,
 }: {
 	form: UseFormReturn<MutateActivityFormSchema>;
+	period?: { startDate: Date; endDate: Date };
 }) {
+	const timeZone = useEventTimeZone();
 	const { fields, append, remove } = useFieldArray({
 		control: form.control,
 		name: "sessions",
 	});
+	const values = useWatch({ control: form.control, name: "sessions" });
 
 	return (
 		<div className="flex w-full flex-col gap-4">
@@ -339,14 +360,27 @@ function SessionsEditor({
 									<Calendar
 										mode="single"
 										lang="pt-br"
-										selected={field.value}
-										onSelect={field.onChange}
-										defaultMonth={field.value}
-										disabled={(date) => {
-											const today = new Date();
-											today.setHours(0, 0, 0, 0);
-											return date < today;
-										}}
+										selected={
+											field.value
+												? calendarDate(field.value)
+												: undefined
+										}
+										onSelect={(date) =>
+											field.onChange(
+												date
+													? dayOfCalendarDate(date)
+													: undefined,
+											)
+										}
+										defaultMonth={
+											field.value
+												? calendarDate(field.value)
+												: undefined
+										}
+										disabled={(date) =>
+											dayOfCalendarDate(date) <
+											dayKey(new Date(), timeZone)
+										}
 										className="max-w-full rounded-md border [--cell-size:2rem] min-[375px]:[--cell-size:2.15rem] min-[1024px]:[--cell-size:3rem] min-[1280px]:[--cell-size:3.25rem]"
 									/>
 								</div>
@@ -383,6 +417,7 @@ function SessionsEditor({
 												}
 											}}
 											placeholder="HH:MM"
+											timeZone={timeZone}
 										/>
 										<FormMessage />
 									</FormItem>
@@ -398,6 +433,7 @@ function SessionsEditor({
 											value={field.value}
 											onChange={field.onChange}
 											placeholder="HH:MM"
+											timeZone={timeZone}
 											disabled={
 												!form.getValues(
 													`sessions.${index}.timeFrom`,
@@ -409,6 +445,12 @@ function SessionsEditor({
 								)}
 							/>
 						</div>
+						{period &&
+						isOutsidePeriod(values?.[index], period, timeZone) ? (
+							<p className="text-sm text-amber-600">
+								Esta sessão fica fora do período do evento.
+							</p>
+						) : null}
 					</div>
 
 					<FormField
@@ -442,7 +484,7 @@ function SessionsEditor({
 				className="w-full"
 				onClick={() =>
 					append({
-						date: new Date(),
+						date: dayKey(new Date(), timeZone),
 						timeFrom: "",
 						timeTo: "",
 						address: "",
@@ -602,6 +644,7 @@ function TagsPicker({
 export function MutateActivityFormContent({
 	form,
 	projectId,
+	period,
 	isEditing,
 	isPending,
 	registrationFormAction,
@@ -833,12 +876,10 @@ export function MutateActivityFormContent({
 															onClick={() =>
 																// Soma a duração de todas as sessões
 																field.onChange(
-																	sumSessionsHours(
-																		buildSessionIntervals(
-																			form.getValues()
-																				.sessions ??
-																				[],
-																		),
+																	sessionsHours(
+																		form.getValues()
+																			.sessions ??
+																			[],
 																	),
 																)
 															}
@@ -1125,7 +1166,7 @@ export function MutateActivityFormContent({
 
 				{/* ------------------------------ Side column ------------------------------ */}
 				<aside className="w-full shrink-0 md:sticky md:top-24 md:w-auto">
-					<SessionsEditor form={form} />
+					<SessionsEditor form={form} period={period} />
 				</aside>
 			</div>
 		</div>

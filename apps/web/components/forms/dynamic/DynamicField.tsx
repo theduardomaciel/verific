@@ -320,18 +320,7 @@ export function DynamicField<TFieldValues extends FieldValues = FieldValues>({
 									<Input
 										type="date"
 										disabled={disabled}
-										value={
-											// `instanceof Date` exige `any`/`object` no LHS; com o
-											// controle genérico o valor chega como tipo preciso,
-											// então detecta Date por duck-typing sem casts.
-											Object.prototype.toString.call(
-												value,
-											) === "[object Date]"
-												? (value as unknown as Date)
-														.toISOString()
-														.slice(0, 10)
-												: ((value as string) ?? "")
-										}
+										value={(value as string) ?? ""}
 										onChange={(e) =>
 											rhf.onChange(
 												e.target.value || undefined,

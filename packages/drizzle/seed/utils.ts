@@ -1,3 +1,5 @@
+import { dayKey, DEFAULT_TIME_ZONE, zonedInstant } from "../time";
+
 import type * as schema from "../schema";
 import type {
 	PgDatabase,
@@ -33,15 +35,11 @@ export function addMinutes(date: Date, minutes: number) {
 	return new Date(date.getTime() + minutes * 60 * 1000);
 }
 
-// Meia-noite de hoje no horário de Brasília (UTC-3)
-export function todayInBrasilia(now = new Date()) {
-	const brasilia = new Date(now.getTime() - 3 * 60 * 60 * 1000);
-	return new Date(
-		Date.UTC(
-			brasilia.getUTCFullYear(),
-			brasilia.getUTCMonth(),
-			brasilia.getUTCDate(),
-			3,
-		),
+/** Meia-noite de hoje no fuso padrão. */
+export function startOfToday(now = new Date()) {
+	return zonedInstant(
+		dayKey(now, DEFAULT_TIME_ZONE),
+		"00:00",
+		DEFAULT_TIME_ZONE,
 	);
 }

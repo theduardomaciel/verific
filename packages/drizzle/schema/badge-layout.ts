@@ -1,12 +1,7 @@
 import { relations } from "drizzle-orm";
-import {
-	jsonb,
-	pgTable,
-	timestamp,
-	uniqueIndex,
-	uuid,
-} from "drizzle-orm/pg-core";
+import { jsonb, pgTable, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
+import { instant } from "./columns";
 import { project } from "./project";
 
 /**
@@ -25,8 +20,8 @@ export const badgeLayout = pgTable(
 				onUpdate: "cascade",
 			}),
 		layout: jsonb("layout").notNull().$type<unknown>(),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
+		createdAt: instant("created_at").defaultNow().notNull(),
+		updatedAt: instant("updated_at")
 			.defaultNow()
 			.notNull()
 			.$onUpdate(() => new Date()),

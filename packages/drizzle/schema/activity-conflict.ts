@@ -1,13 +1,8 @@
 import { relations } from "drizzle-orm";
-import {
-	pgTable,
-	timestamp,
-	uniqueIndex,
-	uuid,
-	index,
-} from "drizzle-orm/pg-core";
+import { pgTable, uniqueIndex, uuid, index } from "drizzle-orm/pg-core";
 
 import { activity } from "./activity";
+import { instant } from "./columns";
 
 export const activityConflict = pgTable(
 	"activity_conflicts",
@@ -28,7 +23,7 @@ export const activityConflict = pgTable(
 				onUpdate: "cascade",
 			}),
 
-		createdAt: timestamp("created_at").defaultNow().notNull(),
+		createdAt: instant("created_at").defaultNow().notNull(),
 	},
 	(table) => [
 		uniqueIndex("unique_activity_conflict").on(

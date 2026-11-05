@@ -12,6 +12,7 @@ import {
 	socialEntrySchema,
 	socialServiceById,
 } from "@verific/drizzle/profile-layout";
+import { isDayKey } from "@verific/drizzle/time";
 import { z } from "@verific/zod";
 
 import {
@@ -112,7 +113,7 @@ export type NotificationListFilterInput = z.infer<
 >;
 
 export const notificationCursorSchema = z.object({
-	createdAt: z.coerce.date(),
+	createdAt: z.date(),
 	id: z.string().uuid(),
 });
 
@@ -393,7 +394,6 @@ export const answerValueSchema = z.union([
 	z.string(),
 	z.number(),
 	z.boolean(),
-	z.date(),
 	z.array(z.string()),
 	z.array(socialEntrySchema),
 	z.null(),
@@ -631,7 +631,7 @@ function fieldValueSchema(field: FormFieldForValidation) {
 		case "date": {
 			base = z.preprocess(
 				blankToUndefined,
-				z.coerce.date({ error: "Informe uma data válida." }),
+				z.string().refine(isDayKey, "Informe uma data válida."),
 			);
 			break;
 		}
@@ -909,14 +909,9 @@ export function formatAnswerValue(
 			.join("; ");
 	}
 	if (Array.isArray(value)) return value.join("; ");
-	if (value instanceof Date) return value.toISOString().slice(0, 10);
 	if (typeof value === "boolean") return value ? "Sim" : "Não";
 	if (typeof value === "number") return String(value);
 	if (typeof value === "string") {
-		if (type === "date") {
-			const d = new Date(value);
-			if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0, 10);
-		}
 		if (type === "phone" && value !== "") {
 			try {
 				return (

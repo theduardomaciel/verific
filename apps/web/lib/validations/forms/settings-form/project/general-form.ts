@@ -28,12 +28,17 @@ const eventDescriptionSchema = z.object({
 });
 
 // Datas
-const dateSchema = z.object({
-	startDate: z.coerce.date({
-		error: "Data inicial obrigatória",
-	}),
-	endDate: z.coerce.date({ error: "Data final obrigatória" }),
-});
+const dateSchema = z
+	.object({
+		startDate: z.coerce.date({
+			error: "Data inicial obrigatória",
+		}),
+		endDate: z.coerce.date({ error: "Data final obrigatória" }),
+	})
+	.refine((period) => period.endDate > period.startDate, {
+		message: "O fim deve ser depois do início",
+		path: ["endDate"],
+	});
 
 // Endereço
 const addressSchema = z.object({

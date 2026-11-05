@@ -36,6 +36,7 @@ import { DashboardPagination } from "@/components/dashboard/pagination";
 import { AddUsersDialog } from "@/components/dialogs/add-users-dialog";
 import { ActivityDeleteDialog } from "@/components/dialogs/delete-dialog";
 import { ShareDialog } from "@/components/dialogs/share-dialog";
+import { useEventTimeZone } from "@/components/event-time-zone";
 import { ExportParticipantsButton } from "@/components/participant/export-button";
 import * as ParticipantsList from "@/components/participant/participants-list";
 import { SearchBar } from "@/components/search-bar";
@@ -71,6 +72,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 	const isDesktop = useMediaQuery("(min-width: 1024px)");
 	const [tab, setTab] = useState<ActivityTab>("participants");
 	const now = useNow();
+	const timeZone = useEventTimeZone();
 
 	const { data, isPending, isError } = trpc.getActivity.useQuery(
 		{
@@ -127,7 +129,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 	);
 
 	const sessions = getSessionsSorted(activity.sessions);
-	const dateString = getSessionsDateString(sessions);
+	const dateString = getSessionsDateString(sessions, timeZone);
 
 	// The waitlist only makes sense when the activity has a seat limit.
 	const hasWaitlist =
@@ -326,7 +328,7 @@ export function ActivityContent({ activityId }: { activityId: string }) {
 					{sessions.map((session, i) => (
 						<Badge key={i} variant={"secondary"}>
 							<Clock className="h-4 w-4" />
-							{getSessionTimeString(session)}
+							{getSessionTimeString(session, timeZone)}
 						</Badge>
 					))}
 					{activity.tolerance && activity.tolerance > 0 ? (

@@ -1,15 +1,16 @@
 import { relations } from "drizzle-orm";
 import {
+	date,
 	doublePrecision,
 	index,
 	jsonb,
 	pgTable,
 	text,
-	timestamp,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
 
+import { instant } from "./columns";
 import { formField, type FormFieldSnapshot } from "./form-field";
 import { formVersion } from "./form-version";
 import { participant } from "./participant";
@@ -45,11 +46,12 @@ export const formAnswer = pgTable(
 			}),
 		valueText: text("value_text"),
 		valueNumber: doublePrecision("value_number"),
-		valueDate: timestamp("value_date"),
+		/** Dia de calendário (`"YYYY-MM-DD"`), sem fuso. */
+		valueDate: date("value_date"),
 		valueJson: jsonb("value_json").$type<unknown>(),
 		fieldSnapshot: jsonb("field_snapshot").$type<FormFieldSnapshot>(),
-		answeredAt: timestamp("answered_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
+		answeredAt: instant("answered_at").defaultNow().notNull(),
+		updatedAt: instant("updated_at")
 			.defaultNow()
 			.notNull()
 			.$onUpdate(() => new Date()),

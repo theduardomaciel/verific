@@ -4,6 +4,9 @@ import type {
 	StickerIconKey,
 	StickerTier,
 } from "@verific/drizzle/gamification";
+import { formatInstant } from "@verific/drizzle/time";
+
+import { useEventTimeZone } from "@/components/event-time-zone";
 
 import { cn } from "@/lib/utils";
 
@@ -53,11 +56,14 @@ const TIER_STYLES: Record<
 	},
 };
 
-export function stickerProgressLabel(sticker: StickerView): string {
+export function stickerProgressLabel(
+	sticker: StickerView,
+	timeZone: string,
+): string {
 	if (!sticker.available) return "Indisponível";
 	if (sticker.earned) {
 		if (sticker.earnedAt) {
-			return new Date(sticker.earnedAt).toLocaleDateString("pt-BR", {
+			return formatInstant(sticker.earnedAt, timeZone, {
 				day: "2-digit",
 				month: "short",
 			});
@@ -94,10 +100,11 @@ export function StickerSeal({
 	sticker: StickerView;
 	className?: string;
 }) {
+	const timeZone = useEventTimeZone();
 	if (!sticker.available) return null;
 
 	const tier = TIER_STYLES[sticker.tier];
-	const label = stickerProgressLabel(sticker);
+	const label = stickerProgressLabel(sticker, timeZone);
 
 	return (
 		<figure

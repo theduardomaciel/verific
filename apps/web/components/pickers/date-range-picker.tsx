@@ -5,6 +5,13 @@ import * as React from "react";
 import { ptBR } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 
+import {
+	calendarDate,
+	dayOfCalendarDate,
+	formatDayKey,
+	type DayKey,
+} from "@verific/drizzle/time";
+
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -15,30 +22,22 @@ import {
 
 import { cn } from "@/lib/utils";
 
-import type { DateRange } from "react-day-picker";
+export interface DayRange {
+	from?: DayKey;
+	to?: DayKey;
+}
 
 interface Props {
 	className?: string;
-	value?: DateRange;
-	onChange?: (range: DateRange | undefined) => void;
+	value?: DayRange;
+	onChange?: (range: DayRange | undefined) => void;
 }
 
+const formatDay = (day: DayKey) =>
+	formatDayKey(day, { day: "2-digit", month: "long", year: "numeric" });
+
+/** Intervalo de dias de calendário, sem hora nem fuso. */
 export function DateRangePicker({ className, value, onChange }: Props) {
-	const formatDate = (date: Date) => {
-		const str = date.toLocaleDateString("pt-BR", {
-			day: "2-digit",
-			month: "long",
-			year: "numeric",
-		});
-		const parts = str.split(" ");
-		return `${parts[0]} de ${parts[2]}, ${parts[4]}`;
-	};
-
-	const isSameDay = (a: Date, b: Date) =>
-		a.getFullYear() === b.getFullYear() &&
-		a.getMonth() === b.getMonth() &&
-		a.getDate() === b.getDate();
-
 	return (
 		<div className={cn("grid gap-2", className)}>
 			<Popover>
@@ -53,17 +52,13 @@ export function DateRangePicker({ className, value, onChange }: Props) {
 					>
 						<CalendarIcon className="mr-2 h-4 w-4" />
 						{value?.from ? (
-							value.to ? (
-								isSameDay(value.from, value.to) ? (
-									formatDate(value.from)
-								) : (
-									<>
-										{formatDate(value.from)} -{" "}
-										{formatDate(value.to)}
-									</>
-								)
+							value.to && value.to !== value.from ? (
+								<>
+									{formatDay(value.from)} -{" "}
+									{formatDay(value.to)}
+								</>
 							) : (
-								formatDate(value.from)
+								formatDay(value.from)
 							)
 						) : (
 							<span>Escolha uma data</span>
@@ -74,9 +69,25 @@ export function DateRangePicker({ className, value, onChange }: Props) {
 					<Calendar
 						// initialFocus removido para compatibilidade com Firefox
 						mode="range"
-						defaultMonth={value?.from}
-						selected={value}
-						onSelect={onChange}
+						defaultMonth={
+							value?.from ? calendarDate(value.from) : undefined
+						}
+						selected={{
+							from: value?.from
+								? calendarDate(value.from)
+								: undefined,
+							to: value?.to ? calendarDate(value.to) : undefined,
+						}}
+						onSelect={(range) =>
+							onChange?.(
+								range && {
+									from:
+										range.from &&
+										dayOfCalendarDate(range.from),
+									to: range.to && dayOfCalendarDate(range.to),
+								},
+							)
+						}
 						numberOfMonths={2}
 						locale={ptBR}
 					/>

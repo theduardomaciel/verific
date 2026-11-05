@@ -1,5 +1,8 @@
 import { defineConfig } from "vitest/config";
 
+// Longe de Brasília e de UTC: o código não pode depender do fuso do processo
+process.env.TZ = "Asia/Tokyo";
+
 export default defineConfig({
 	test: {
 		environment: "node",

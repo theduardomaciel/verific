@@ -1,6 +1,7 @@
 import { relations } from "drizzle-orm";
-import { index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { index, pgTable, text, uuid } from "drizzle-orm/pg-core";
 
+import { instant } from "./columns";
 import { user } from "./user";
 
 export const session = pgTable(
@@ -14,11 +15,11 @@ export const session = pgTable(
 				onDelete: "cascade",
 				onUpdate: "cascade",
 			}),
-		expiresAt: timestamp("expires_at").notNull(),
+		expiresAt: instant("expires_at").notNull(),
 		ipAddress: text("ip_address"),
 		userAgent: text("user_agent"),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
+		createdAt: instant("created_at").defaultNow().notNull(),
+		updatedAt: instant("updated_at")
 			.defaultNow()
 			.notNull()
 			.$onUpdate(() => new Date()),

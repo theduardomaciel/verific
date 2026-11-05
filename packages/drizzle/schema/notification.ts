@@ -6,11 +6,11 @@ import {
 	jsonb,
 	pgTable,
 	text,
-	timestamp,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
 
+import { instant } from "./columns";
 import { project } from "./project";
 
 export const NOTIFICATION_STATUSES = [
@@ -63,12 +63,12 @@ export const notification = pgTable(
 		propsHash: text("props_hash"),
 		/** Why a row was skipped instead of sent (see notification SkipReason). */
 		skipReason: text("skip_reason"),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
+		createdAt: instant("created_at").defaultNow().notNull(),
+		updatedAt: instant("updated_at")
 			.defaultNow()
 			.notNull()
 			.$onUpdate(() => new Date()),
-		sentAt: timestamp("sent_at"),
+		sentAt: instant("sent_at"),
 	},
 	(table) => [
 		uniqueIndex().on(table.idempotencyKey),
@@ -105,8 +105,8 @@ export const projectNotificationSetting = pgTable(
 			}),
 		type: text("type").notNull(),
 		enabled: boolean("enabled").notNull(),
-		createdAt: timestamp("created_at").defaultNow().notNull(),
-		updatedAt: timestamp("updated_at")
+		createdAt: instant("created_at").defaultNow().notNull(),
+		updatedAt: instant("updated_at")
 			.defaultNow()
 			.notNull()
 			.$onUpdate(() => new Date()),

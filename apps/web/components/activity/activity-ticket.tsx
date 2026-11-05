@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 
 import { BadgeScanner } from "@/components/badge-scanner";
 import { AddUsersDialog } from "@/components/dialogs/add-users-dialog";
+import { useEventTimeZone } from "@/components/event-time-zone";
 import { ExpandableDescription } from "@/components/shared/expandable-description";
 
 import { useNow } from "@/hooks/use-now";
@@ -59,6 +60,7 @@ export function ActivityTicket({
 	}
 
 	const now = useNow();
+	const timeZone = useEventTimeZone();
 	const sessions = getSessionsSorted(activity.sessions);
 	const attendedCount = sessions.filter((s) => s.joinedAt).length;
 
@@ -117,10 +119,14 @@ export function ActivityTicket({
 										{getDateString(
 											session.startsAt,
 											session.startsAt,
+											timeZone,
 										)}
 									</span>
 									<span className="text-muted-foreground text-sm">
-										{getSessionTimeString(session)}
+										{getSessionTimeString(
+											session,
+											timeZone,
+										)}
 									</span>
 								</div>
 								{session.joinedAt ? (
@@ -133,6 +139,7 @@ export function ActivityTicket({
 										<Clock className="size-4" />
 										{formatFriendlyDate(
 											new Date(session.startsAt),
+											timeZone,
 											{ includeHour: true, now },
 										)}
 									</span>
@@ -220,7 +227,10 @@ export function ActivityTicket({
 											{sessions.length > 1
 												? `Sessão ${i + 1} · `
 												: null}
-											{getSessionTimeString(session)}
+											{getSessionTimeString(
+												session,
+												timeZone,
+											)}
 										</span>
 										<span className="text-muted-foreground flex shrink-0 items-center gap-1">
 											<User size={14} />

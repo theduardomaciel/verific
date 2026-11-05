@@ -235,7 +235,7 @@ export const activityWaitlistedPreviewProps: ActivityWaitlistedProps = {
 export const ACTIVITY_WAITLIST_OFFERED_VERSION = "v1" as const;
 
 export const activityWaitlistOfferedPayloadSchema = baseSchema.extend({
-	/** Confirm-by deadline, already formatted (America/Sao_Paulo). */
+	/** Confirm-by deadline, already formatted in the event time zone. */
 	offerExpiresAtText: z.string().trim().min(1),
 });
 export type ActivityWaitlistOfferedProps = z.infer<

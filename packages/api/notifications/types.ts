@@ -123,7 +123,7 @@ export type NotificationListFilter = (typeof NOTIFICATION_LIST_FILTERS)[number];
 
 /** Keyset cursor on (createdAt, id). createdAt travels as an ISO string. */
 export interface NotificationCursor {
-	createdAt: string;
+	createdAt: Date;
 	id: string;
 }
 

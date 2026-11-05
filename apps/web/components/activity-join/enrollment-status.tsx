@@ -21,6 +21,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
 import { ConflictList } from "@/components/activity/conflict-list";
+import { useEventTimeZone } from "@/components/event-time-zone";
 import { ParticipantQuitButton } from "@/components/participant/participant-quit-button";
 
 import { useToday } from "@/hooks/use-now";
@@ -38,10 +39,11 @@ import type { Conflict } from "@/lib/schedule/conflicts";
 
 function sessionsSummary(
 	sessions: ActivitySessionLike[] | undefined | null,
+	timeZone: string,
 ): string | null {
 	const sorted = getSessionsSorted(sessions);
 	if (sorted.length === 0) return null;
-	const range = getSessionsDateString(sorted);
+	const range = getSessionsDateString(sorted, timeZone);
 	if (sorted.length === 1) return range;
 	return `${sorted.length} encontros · ${range}`;
 }
@@ -128,7 +130,8 @@ export function AlreadySubscribedStatus({
 	participantId: string;
 	projectUrl: string;
 }) {
-	const summary = sessionsSummary(activity.sessions);
+	const timeZone = useEventTimeZone();
+	const summary = sessionsSummary(activity.sessions, timeZone);
 	const hasEnded = hasEverySessionEnded(activity.sessions);
 
 	return (
@@ -313,9 +316,10 @@ export function OfferStatus({
 	onDecline: () => void;
 	pending: "confirm" | "leave" | null;
 }) {
-	const now = useToday();
+	const timeZone = useEventTimeZone();
+	const now = useToday(timeZone);
 	const deadline = expiresAt
-		? ` Prazo: ${formatFriendlyDate(new Date(expiresAt), { includeHour: true, now })}.`
+		? ` Prazo: ${formatFriendlyDate(new Date(expiresAt), timeZone, { includeHour: true, now })}.`
 		: "";
 	const blocked = conflicts.length > 0;
 
@@ -375,7 +379,8 @@ export function EnrollmentSuccess({
 	scheduleHref: string;
 }) {
 	const headingRef = useRef<HTMLHeadingElement>(null);
-	const summary = sessionsSummary(sessions);
+	const timeZone = useEventTimeZone();
+	const summary = sessionsSummary(sessions, timeZone);
 
 	useEffect(() => {
 		headingRef.current?.focus();

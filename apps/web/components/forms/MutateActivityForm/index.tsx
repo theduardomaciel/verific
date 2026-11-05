@@ -7,16 +7,17 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
 import type { RouterOutput } from "@verific/api";
+import { dayKey, toWallTime, zonedInstant } from "@verific/drizzle/time";
 
 import { Form } from "@/components/ui/form";
 
+import { useEventTimeZone } from "@/components/event-time-zone";
 import {
 	ErrorDialog,
 	LoadingDialog,
 	SuccessDialog,
 } from "@/components/forms/dialogs";
 import { MutateActivityFormContent } from "@/components/forms/MutateActivityForm/Content";
-import { dateToTimeString } from "@/components/pickers/time-picker";
 
 import { refreshRoute } from "@/app/actions";
 import { trpc } from "@/lib/trpc/react";
@@ -53,10 +54,10 @@ export default function MutateActivityForm({
 	const isSubmitting = useRef(false);
 	const router = useRouter();
 
-	// 1. Define your form.
-	// Data padrão fixada na montagem (inicializador executa uma única vez).
-	const [defaultSessionDate] = useState(
-		() => new Date(startDate || Date.now()),
+	const timeZone = useEventTimeZone();
+	// Dia padrão fixado na montagem (inicializador executa uma única vez).
+	const [defaultSessionDay] = useState(() =>
+		dayKey(startDate ?? new Date(), timeZone),
 	);
 	const form = useForm<MutateActivityFormSchema>({
 		resolver: zodResolver(mutateActivityFormSchema) as Resolver<
@@ -73,16 +74,19 @@ export default function MutateActivityForm({
 				) || [],
 			tagIds: activity?.tags?.map((tag) => tag.id) || [],
 			sessions: activity?.sessions?.length
-				? activity.sessions.map((session) => ({
-						id: session.id,
-						date: new Date(session.startsAt),
-						timeFrom: dateToTimeString(session.startsAt),
-						timeTo: dateToTimeString(session.endsAt),
-						address: session.address || "",
-					}))
+				? activity.sessions.map((session) => {
+						const start = toWallTime(session.startsAt, timeZone);
+						return {
+							id: session.id,
+							date: start.day,
+							timeFrom: start.time,
+							timeTo: toWallTime(session.endsAt, timeZone).time,
+							address: session.address || "",
+						};
+					})
 				: [
 						{
-							date: defaultSessionDate,
+							date: defaultSessionDay,
 							timeFrom: undefined,
 							timeTo: undefined,
 							address: "",
@@ -134,14 +138,14 @@ export default function MutateActivityForm({
 		const { sessions, ...rest } = data;
 
 		const apiSessions = sessions.map((session) => {
-			const startsAt = new Date(session.date);
-			setTimeOnDate(startsAt, session.timeFrom);
-			const endsAt = new Date(session.date);
-			setTimeOnDate(endsAt, session.timeTo);
 			return {
 				id: session.id,
-				startsAt,
-				endsAt,
+				startsAt: zonedInstant(
+					session.date,
+					session.timeFrom,
+					timeZone,
+				),
+				endsAt: zonedInstant(session.date, session.timeTo, timeZone),
 				address: session.address || undefined,
 			};
 		});
@@ -207,7 +211,11 @@ export default function MutateActivityForm({
 			>
 				<MutateActivityFormContent
 					projectId={projectId}
-					endDate={endDate}
+					period={
+						startDate && endDate
+							? { startDate, endDate }
+							: undefined
+					}
 					form={form}
 					isEditing={!!activity}
 					isPending={currentState === "submitting"}
@@ -256,8 +264,3 @@ export default function MutateActivityForm({
 		</Form>
 	);
 }
-
-const setTimeOnDate = (date: Date, time: string) => {
-	const timeParts = time.split(":");
-	date.setUTCHours(Number(timeParts[0]) + 3, Number(timeParts[1]));
-};

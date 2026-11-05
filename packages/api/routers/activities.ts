@@ -39,6 +39,7 @@ import {
 	tagOnActivity,
 	user,
 } from "@verific/drizzle/schema";
+import { eventTimeZone } from "@verific/drizzle/time";
 import { z } from "@verific/zod";
 
 import {
@@ -108,8 +109,8 @@ import { activityCategories } from "@verific/drizzle/enum/category";
 const activitySessionSchema = z.object({
 	/** Id de uma sessão já existente (omisso quando é nova). */
 	id: z.uuid().optional(),
-	startsAt: z.coerce.date(),
-	endsAt: z.coerce.date(),
+	startsAt: z.date(),
+	endsAt: z.date(),
 	address: z.string().optional(),
 });
 
@@ -427,27 +428,23 @@ async function assertSpeakersInProject(
 }
 
 /**
- * Início do dia ou da hora em Brasília. As colunas guardam UTC sem fuso, e o
- * resultado volta como texto ("2026-10-20 21:00:00").
+ * Início do dia ou da hora no fuso, como texto sem fuso ("2026-10-20
+ * 21:00:00"). O fuso entra como literal: como parâmetro, cada ocorrência no
+ * select, no group by e no order by viraria um `$n` diferente, e o Postgres
+ * não reconheceria a mesma expressão.
  */
-function localTrunc(unit: "hour" | "day", column: AnyColumn) {
-	return sql<string>`date_trunc(${sql.raw(`'${unit}'`)}, (${column} at time zone 'UTC') at time zone 'America/Sao_Paulo')`;
+function localTrunc(unit: "hour" | "day", column: AnyColumn, timeZone: string) {
+	if (!/^[A-Za-z0-9_/+-]+$/.test(timeZone)) {
+		throw new Error(`Fuso inválido: ${timeZone}`);
+	}
+	return sql<string>`date_trunc(${sql.raw(`'${unit}'`)}, ${column} at time zone ${sql.raw(`'${timeZone}'`)})`;
 }
 
-/** Rótulo de um intervalo de `localTrunc`, sem depender do fuso do servidor. */
-function formatLocalBucket(raw: string, unit: "hour" | "day") {
-	const date = new Date(`${raw.replace(" ", "T")}Z`);
+/** Chave de um grupo de `localTrunc`: "2026-10-20" ou "2026-10-20T21:00". */
+function bucketKey(raw: string, unit: "hour" | "day") {
 	return unit === "hour"
-		? date.toLocaleTimeString("pt-BR", {
-				timeZone: "UTC",
-				hour: "2-digit",
-				minute: "2-digit",
-			})
-		: date.toLocaleDateString("pt-BR", {
-				timeZone: "UTC",
-				month: "short",
-				day: "numeric",
-			});
+		? raw.slice(0, 16).replace(" ", "T")
+		: raw.slice(0, 10);
 }
 
 /**
@@ -2236,71 +2233,6 @@ export const activitiesRouter = createTRPCRouter({
 					? (totalEnrollments / Number(totalPossible)) * 100
 					: 0;
 
-			// Graph data: participants per day for last 7 days
-			const sevenDaysAgo = new Date(
-				now.getTime() - 7 * 24 * 60 * 60 * 1000,
-			);
-			let graphDataQuery = await db
-				.select({
-					date: localTrunc("day", participant.joinedAt),
-					count: count(),
-				})
-				.from(participant)
-				.where(
-					and(
-						eq(participant.projectId, projectId),
-						gte(participant.joinedAt, sevenDaysAgo),
-					),
-				)
-				.groupBy(localTrunc("day", participant.joinedAt))
-				.orderBy(localTrunc("day", participant.joinedAt));
-
-			let graphData: Array<{
-				date: string;
-				total: number;
-				active: number;
-			}> = [];
-			if (graphDataQuery.length > 0) {
-				let cumulative = 0;
-				graphData = graphDataQuery.map((row) => {
-					cumulative += row.count;
-					return {
-						date: formatLocalBucket(row.date, "day"),
-						total: cumulative,
-						active: row.count,
-					};
-				});
-			} else {
-				// Fallback to hours for last 24 hours
-				const twentyFourHoursAgo = new Date(
-					now.getTime() - 24 * 60 * 60 * 1000,
-				);
-				const hoursDataQuery = await db
-					.select({
-						hour: localTrunc("hour", participant.joinedAt),
-						count: count(),
-					})
-					.from(participant)
-					.where(
-						and(
-							eq(participant.projectId, projectId),
-							gte(participant.joinedAt, twentyFourHoursAgo),
-						),
-					)
-					.groupBy(localTrunc("hour", participant.joinedAt))
-					.orderBy(localTrunc("hour", participant.joinedAt));
-
-				let cumulative = 0;
-				graphData = hoursDataQuery.map((row) => {
-					cumulative += row.count;
-					return {
-						date: formatLocalBucket(row.hour, "hour"),
-						total: cumulative,
-						active: row.count,
-					};
-				});
-			}
-
 			return {
 				totalParticipants,
 				participantsInLastHourPercentage,
@@ -2311,7 +2243,6 @@ export const activitiesRouter = createTRPCRouter({
 				occupancyRate,
 				totalEnrollments,
 				totalPossibleSeats: Number(totalPossible),
-				graphData,
 				coursesData: [] as Array<{ course: string; count: number }>,
 			};
 		}),
@@ -2393,12 +2324,16 @@ export const activitiesRouter = createTRPCRouter({
 		)
 		.query(async ({ input, ctx }) => {
 			const { projectId, window } = input;
-			await requireProjectAccess(projectId, ctx.session.user.id);
+			const projectRow = await requireProjectAccess(
+				projectId,
+				ctx.session.user.id,
+			);
+			const timeZone = eventTimeZone(projectRow);
 
 			// Bucket granularity: hours for the 24h window, days otherwise.
 			const granularity = window === "24h" ? "hour" : "day";
 			const truncate = (column: AnyColumn) =>
-				localTrunc(granularity, column);
+				localTrunc(granularity, column, timeZone);
 
 			// Window bounds. "event" anchors on the project dates; "all" is unbounded.
 			const now = new Date();
@@ -2623,16 +2558,16 @@ export const activitiesRouter = createTRPCRouter({
 				series = [BREAKDOWN_REGISTRATIONS_SERIES];
 			}
 
-			const formatBucket = (raw: string) =>
-				formatLocalBucket(raw, granularity);
-
 			const data = [...perBucket.entries()]
 				.sort(([a], [b]) => a.localeCompare(b))
 				.map(([bucketDate, point]) => {
 					const row: {
 						date: string;
 						counts: Record<string, number>;
-					} = { date: formatBucket(bucketDate), counts: {} };
+					} = {
+						date: bucketKey(bucketDate, granularity),
+						counts: {},
+					};
 					for (const key of series) {
 						row.counts[key] = point.get(key) ?? 0;
 					}

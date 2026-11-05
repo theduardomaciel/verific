@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus } from "lucide-react";
 import { useForm, type UseFormReturn } from "react-hook-form";
 
+import { DEFAULT_TIME_ZONE, dayKey, zonedInstant } from "@verific/drizzle/time";
 import { z } from "@verific/zod";
 
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-import { DateRangePicker } from "@/components/pickers/date-range-picker";
+import { EventPeriodPicker } from "@/components/pickers/event-period-picker";
 import { PlacePicker } from "@/components/pickers/place-picker";
 
 import { revalidateProjects, updateProjectCookies } from "@/app/actions";
@@ -51,6 +52,9 @@ import { ErrorDialog, LoadingDialog } from "../forms/dialogs";
 
 import type { FormState } from "@/lib/types/forms";
 
+// Ainda não há fuso por evento: todo evento novo usa o padrão
+const NEW_EVENT_TIME_ZONE = DEFAULT_TIME_ZONE;
+
 const formSchema = z.object({
 	name: z.string().min(2, {
 		message: "Nome deve conter pelo menos 2 caracteres.",
@@ -58,10 +62,14 @@ const formSchema = z.object({
 	description: z.string().max(3000, {
 		message: "Descrições devem ter no máximo 3000 caracteres.",
 	}),
-	date: z.object({
-		from: z.date({ error: "Selecione a data inicial." }),
-		to: z.date({ error: "Selecione a data final." }),
-	}),
+	date: z
+		.object({
+			from: z.date({ error: "Selecione a data inicial." }),
+			to: z.date({ error: "Selecione a data final." }),
+		})
+		.refine((date) => date.to > date.from, {
+			message: "O fim deve ser depois do início.",
+		}),
 	location: z.object({
 		address: z.string().min(1, {
 			message: "Por favor, selecione um endereço.",
@@ -77,11 +85,14 @@ export function CreateProjectDialog() {
 	const isDesktop = useMediaQuery("(min-width: 768px)");
 
 	// Inicializamos o formulário com o Zod e o React Hook Form
-	// Datas padrão fixadas na montagem (inicializador executa uma única vez).
-	const [defaultDates] = useState(() => ({
-		from: new Date(),
-		to: new Date(),
-	}));
+	// Hoje inteiro, fixado na montagem (inicializador executa uma única vez).
+	const [defaultDates] = useState(() => {
+		const today = dayKey(new Date(), NEW_EVENT_TIME_ZONE);
+		return {
+			from: zonedInstant(today, "00:00", NEW_EVENT_TIME_ZONE),
+			to: zonedInstant(today, "23:59", NEW_EVENT_TIME_ZONE),
+		};
+	});
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
@@ -283,9 +294,18 @@ function CreateProjectForm({ form }: Props) {
 					<FormItem>
 						<FormLabel>Data</FormLabel>
 						<FormControl>
-							<DateRangePicker
-								value={field.value}
-								onChange={field.onChange}
+							<EventPeriodPicker
+								timeZone={NEW_EVENT_TIME_ZONE}
+								value={{
+									startDate: field.value.from,
+									endDate: field.value.to,
+								}}
+								onChange={(period) =>
+									field.onChange({
+										from: period.startDate,
+										to: period.endDate,
+									})
+								}
 							/>
 						</FormControl>
 						<FormMessage />

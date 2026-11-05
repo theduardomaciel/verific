@@ -210,9 +210,7 @@ describe("formatAnswerValue", () => {
 		expect(formatAnswerValue("select_multiple", ["a", "b"])).toBe("a; b");
 		expect(formatAnswerValue("checkbox", true)).toBe("Sim");
 		expect(formatAnswerValue("checkbox", false)).toBe("Não");
-		expect(
-			formatAnswerValue("date", new Date("2026-04-12T00:00:00Z")),
-		).toBe("2026-04-12");
+		expect(formatAnswerValue("date", "2026-04-12")).toBe("2026-04-12");
 	});
 
 	it("returns an empty string for empty values", () => {
@@ -454,7 +452,7 @@ describe("validateSectionVisibilityRule", () => {
 	});
 });
 
-describe("answer transport values (RHF-coerced)", () => {
+describe("respostas de data", () => {
 	const birthField = {
 		key: "data_de_nascimento",
 		label: "Data de nascimento",
@@ -464,26 +462,26 @@ describe("answer transport values (RHF-coerced)", () => {
 		isActive: true,
 	} satisfies FormFieldForValidation;
 
-	it("submitAnswersInput accepts Date instances (SuperJSON)", () => {
-		const parsed = submitAnswersInput.safeParse({
-			projectId: "11111111-1111-4111-8111-111111111111",
-			name: "Fulana de Tal",
-			answers: { data_de_nascimento: new Date("2004-03-16T12:00:00") },
-		});
+	it("circulam como dia, não como Date", () => {
+		const input = (value: unknown) =>
+			submitAnswersInput.safeParse({
+				projectId: "11111111-1111-4111-8111-111111111111",
+				name: "Fulana de Tal",
+				answers: { data_de_nascimento: value },
+			}).success;
 
-		expect(parsed.success).toBe(true);
+		expect(input("2004-03-16")).toBe(true);
+		expect(input(new Date("2004-03-16T12:00:00"))).toBe(false);
 	});
 
-	it("validateAnswers accepts Date and ISO strings for date fields", () => {
-		const fromDate = validateAnswers([birthField], {
-			data_de_nascimento: new Date("2004-03-16T12:00:00"),
-		});
-		expect(fromDate.success).toBe(true);
+	it("aceitam só dias que existem", () => {
+		const valid = (value: string) =>
+			validateAnswers([birthField], { data_de_nascimento: value })
+				.success;
 
-		const fromString = validateAnswers([birthField], {
-			data_de_nascimento: "2004-03-16",
-		});
-		expect(fromString.success).toBe(true);
+		expect(valid("2004-03-16")).toBe(true);
+		expect(valid("2026-02-31")).toBe(false);
+		expect(valid("16/03/2004")).toBe(false);
 	});
 });
 

@@ -1,10 +1,10 @@
-import { useSyncExternalStore } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 
-import { saoPauloDayKey } from "@/lib/date";
+import { dayKey } from "@verific/drizzle/time";
 
 const MINUTE = 60_000;
 let now: Date | null = null;
-let today: Date | null = null;
+const todayByZone = new Map<string, Date>();
 
 function getNow() {
 	const current = Date.now();
@@ -12,12 +12,14 @@ function getNow() {
 	return now;
 }
 
-function getToday() {
+function getToday(timeZone: string) {
 	const current = getNow();
-	if (!today || saoPauloDayKey(today) !== saoPauloDayKey(current)) {
-		today = current;
+	const today = todayByZone.get(timeZone);
+	if (today && dayKey(today, timeZone) === dayKey(current, timeZone)) {
+		return today;
 	}
-	return today;
+	todayByZone.set(timeZone, current);
+	return current;
 }
 
 function subscribe(onChange: () => void) {
@@ -35,7 +37,8 @@ export function useNow(): Date | null {
 	return useSyncExternalStore(subscribe, getNow, onServer);
 }
 
-/** Como `useNow`, mas só muda quando o dia (em Brasília) muda. */
-export function useToday(): Date | null {
-	return useSyncExternalStore(subscribe, getToday, onServer);
+/** Como `useNow`, mas só muda quando o dia muda no fuso. */
+export function useToday(timeZone: string): Date | null {
+	const getSnapshot = useCallback(() => getToday(timeZone), [timeZone]);
+	return useSyncExternalStore(subscribe, getSnapshot, onServer);
 }

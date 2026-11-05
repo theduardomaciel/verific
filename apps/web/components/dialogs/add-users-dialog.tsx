@@ -6,6 +6,8 @@ import { TRPCClientError } from "@trpc/client";
 import { Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
 
+import { formatInstant } from "@verific/drizzle/time";
+
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -18,6 +20,8 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+
+import { useEventTimeZone } from "@/components/event-time-zone";
 
 import { refreshRoute } from "@/app/actions";
 import { useParticipantSearch } from "@/hooks/participant/use-participant-search";
@@ -78,6 +82,7 @@ export function AddUsersDialog({
 	const resolvedTitle = title ?? "Adicionar usuários";
 	const customHandler = onSubmitSelected ?? onAdd ?? onSelect;
 
+	const timeZone = useEventTimeZone();
 	const [currentDate] = useState(() => new Date());
 
 	const [isOpen, setIsOpen] = useState(false);
@@ -256,7 +261,7 @@ export function AddUsersDialog({
 					<DialogTitle>{resolvedTitle}</DialogTitle>
 					<DialogDescription>
 						{description ??
-							currentDate.toLocaleString("pt-BR", {
+							formatInstant(currentDate, timeZone, {
 								weekday: "long",
 								day: "numeric",
 								month: "long",

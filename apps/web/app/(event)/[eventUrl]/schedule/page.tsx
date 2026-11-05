@@ -46,10 +46,7 @@ function SchedulePageBody({ project }: { project: SchedulePageProject }) {
 					<EventContainer.Hero.Meta>
 						<Calendar className="mr-2 h-4.5 w-4.5" />
 						<span className="-mt-0.5 text-base">
-							<EventContainer.EventDateRange
-								startDate={project.startDate}
-								endDate={project.endDate}
-							/>
+							<EventContainer.EventDateRange project={project} />
 						</span>
 					</EventContainer.Hero.Meta>
 					<EventContainer.Hero.Title>

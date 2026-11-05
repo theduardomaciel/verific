@@ -2,15 +2,15 @@
 
 import Image from "next/image";
 
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 
 import type { RouterOutput } from "@verific/api";
+import { formatInstant, formatTime } from "@verific/drizzle/time";
 
 import { Button } from "@/components/ui/button";
 
 import { WaitlistActionDialog } from "@/components/dialogs/waitlist-action-dialog";
+import { useEventTimeZone } from "@/components/event-time-zone";
 
 import { cn } from "@/lib/utils";
 
@@ -41,6 +41,16 @@ interface WaitlistListProps {
 // Position | Participant | Status | Joined | Actions
 // Every column except the participant one has a FIXED width, so the header
 // and each row (separate grids) always resolve to identical tracks.
+/** "30/10/2026 14:00" */
+function formatDateTime(date: Date, timeZone: string) {
+	const day = formatInstant(date, timeZone, {
+		day: "2-digit",
+		month: "2-digit",
+		year: "numeric",
+	});
+	return `${day} ${formatTime(date, timeZone)}`;
+}
+
 // Below `lg` the rows stack as cards instead.
 const ROW_GRID =
 	"lg:grid lg:grid-cols-[2.5rem_minmax(0,1fr)_7rem_9rem_15rem] lg:items-center lg:gap-3";
@@ -55,6 +65,7 @@ export function WaitlistList({
 	isRemoving,
 	isSettling,
 }: WaitlistListProps) {
+	const timeZone = useEventTimeZone();
 	const { participantsLimit, enrolled, freeSeats, overbooked, entries } =
 		waitlistData;
 
@@ -209,21 +220,14 @@ export function WaitlistList({
 									<span className="lg:hidden">
 										Entrada na fila:{" "}
 									</span>
-									{format(
-										entry.joinedAt,
-										"dd/MM/yyyy HH:mm",
-										{
-											locale: ptBR,
-										},
-									)}
+									{formatDateTime(entry.joinedAt, timeZone)}
 									{entry.status === "offered" &&
 										entry.offerExpiresAt && (
 											<div className="text-xs text-amber-600">
 												Oferta expira:{" "}
-												{format(
+												{formatDateTime(
 													entry.offerExpiresAt,
-													"dd/MM/yyyy HH:mm",
-													{ locale: ptBR },
+													timeZone,
 												)}
 											</div>
 										)}
